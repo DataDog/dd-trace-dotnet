@@ -18,6 +18,10 @@ namespace Datadog.Tracer
 
         internal string OperationName { get; set; }
 
+        internal string Service { get; set; }
+
+        internal string Resource { get; set; }
+
         internal Span(IDatadogTracer tracer, SpanContext parent, DateTimeOffset? start)
         {
             _tracer = tracer;
@@ -112,6 +116,14 @@ namespace Datadog.Tracer
 
         public ISpan SetTag(string key, string value)
         {
+            switch (key) {
+                case Tags.Service:
+                    Service = value;
+                    return this;
+                case Tags.Resource:
+                    Resource = value;
+                    return this;
+            }
             if(_tags == null)
             {
                 _tags = new Dictionary<string, string>();

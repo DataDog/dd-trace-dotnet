@@ -7,6 +7,22 @@ namespace Datadog.Tracer.Tests
     public class SpanTests
     {
         [Fact]
+        public void SetTag_Tags_TagsAreProperlySet()
+        {
+            var span = new Span(null, null, null);
+
+            span.SetTag("StringKey", "What's tracing");
+            span.SetTag("IntKey", 42);
+            span.SetTag("DoubleKey", 1.618);
+            span.SetTag("BoolKey", true);
+
+            Assert.Equal("What's tracing", span.GetTag("StringKey"));
+            Assert.Equal("42", span.GetTag("IntKey"));
+            Assert.Equal("1.618", span.GetTag("DoubleKey"));
+            Assert.Equal("True", span.GetTag("BoolKey"));
+        }
+
+        [Fact]
         public void SetOperationName_ValidOperationName_OperationNameIsProperlySet()
         {
             var span = new Span(null, null, null);

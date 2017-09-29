@@ -112,6 +112,19 @@ namespace Datadog.Tracer.Tests
         }
 
         [Fact]
+        public void Start_SettingServiceAndResource_ServiceAndResourceAreSet()
+        {
+            var spanBuilder = new SpanBuilder(null);
+            spanBuilder.WithTag(Tags.Service, "MyService");
+            spanBuilder.WithTag(Tags.Resource, "MyResource");
+
+            var span = (Span)spanBuilder.Start();
+
+            Assert.Equal("MyService", span.Service);
+            Assert.Equal("MyResource", span.Resource);
+        }
+
+        [Fact]
         public void Start_WithStartTimeStamp_TimeStampProperlySet()
         {
             var spanBuilder = new SpanBuilder(null);
