@@ -8,7 +8,7 @@ namespace Datadog.Tracer
     {
         public ISpanBuilder BuildSpan(string operationName)
         {
-            return new SpanBuilder(this);
+            return new SpanBuilder(this, operationName);
         }
 
         public ISpanContext Extract<TCarrier>(Format<TCarrier> format, TCarrier carrier)

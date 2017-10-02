@@ -9,7 +9,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void SetTag_Tags_TagsAreProperlySet()
         {
-            var span = new Span(null, null, null);
+            var span = new Span(null, null, null, null);
 
             span.SetTag("StringKey", "What's tracing");
             span.SetTag("IntKey", 42);
@@ -25,7 +25,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void SetOperationName_ValidOperationName_OperationNameIsProperlySet()
         {
-            var span = new Span(null, null, null);
+            var span = new Span(null, null, null, null);
 
             span.SetOperationName("Op1");
 
@@ -36,7 +36,7 @@ namespace Datadog.Tracer.Tests
         public void Finish_NoEndTimeProvided_SpanWriten()
         {
             var tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
-            var span = new Span(tracerMock.Object, null, null);
+            var span = new Span(tracerMock.Object, null, null, null);
             tracerMock
                .Setup(x => x.Write(It.Is<Span>(s => s == span)));
 
@@ -52,7 +52,7 @@ namespace Datadog.Tracer.Tests
         {
             var endTime = new DateTimeOffset(2017, 01, 01, 0, 0, 0, TimeSpan.Zero);
             var tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
-            var span = new Span(tracerMock.Object, null, null);
+            var span = new Span(tracerMock.Object, null, null, null);
             tracerMock
                .Setup(x => x.Write(It.Is<Span>(s => s == span)));
 
@@ -69,7 +69,7 @@ namespace Datadog.Tracer.Tests
             var endTime = new DateTimeOffset(2017, 01, 01, 0, 0, 0, TimeSpan.Zero);
             var tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
             Span span;
-            using (span = new Span(tracerMock.Object, null, null))
+            using (span = new Span(tracerMock.Object, null, null, null))
             {
                 tracerMock
                    .Setup(x => x.Write(It.Is<Span>(s => s == span)));

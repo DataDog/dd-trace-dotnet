@@ -7,13 +7,15 @@ namespace Datadog.Tracer
     public class SpanBuilder : ISpanBuilder
     {
         private IDatadogTracer _tracer;
+        private string _operationName;
         private SpanContext _parent;
         private DateTimeOffset? _start;
         private Dictionary<string, string> _tags;
 
-        internal SpanBuilder(IDatadogTracer tracer)
+        internal SpanBuilder(IDatadogTracer tracer, string operationName)
         {
             _tracer = tracer;
+            _operationName = operationName;
         }
 
         public ISpanBuilder AddReference(string referenceType, ISpanContext referencedContext)
@@ -50,7 +52,7 @@ namespace Datadog.Tracer
 
         public ISpan Start()
         {
-            var span = new Span(_tracer, _parent, _start);
+            var span = new Span(_tracer, _parent, _operationName, _start);
             if(_tags != null)
             {
                 foreach(var pair in _tags)

@@ -9,8 +9,9 @@ namespace Datadog.Tracer
         private IDatadogTracer _tracer;
         private Dictionary<string, string> _tags;
         private bool isFinished;
+        private SpanContext _context;
 
-        public ISpanContext Context { get; }
+        public ISpanContext Context => _context;
 
         internal DateTimeOffset StartTime { get; }
 
@@ -18,21 +19,22 @@ namespace Datadog.Tracer
 
         internal string OperationName { get; set; }
 
-        internal string Service { get; set; }
+        internal string ServiceName => _context.ServiceName;
 
-        internal string Resource { get; set; }
+        internal string ResourceName { get; set; }
 
-        internal Span(IDatadogTracer tracer, SpanContext parent, DateTimeOffset? start)
+        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, DateTimeOffset? start)
         {
             _tracer = tracer;
             if(parent != null)
             {
-                Context = new SpanContext(parent.TraceId, parent.SpanId);
+                _context = new SpanContext(parent);
             }
             else
             {
-                Context = new SpanContext();
+                _context = new SpanContext();
             }
+            OperationName = operationName;
             if (start.HasValue)
             {
                 StartTime = start.Value;
@@ -118,10 +120,10 @@ namespace Datadog.Tracer
         {
             switch (key) {
                 case Tags.Service:
-                    Service = value;
+                    this._context.ServiceName = value;
                     return this;
                 case Tags.Resource:
-                    Resource = value;
+                    ResourceName = value;
                     return this;
             }
             if(_tags == null)
