@@ -6,6 +6,16 @@ namespace Datadog.Tracer
 {
     public class Tracer : ITracer, IDatadogTracer
     {
+        private string _defaultServiceName;
+
+        string IDatadogTracer.DefaultServiceName => _defaultServiceName;
+
+        public Tracer(string defaultServiceName = "UnknownService")
+        {
+            //TODO:bertrand be smarter about the service name
+            _defaultServiceName = defaultServiceName;
+        }
+
         public ISpanBuilder BuildSpan(string operationName)
         {
             return new SpanBuilder(this, operationName);

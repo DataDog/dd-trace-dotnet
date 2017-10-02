@@ -41,6 +41,7 @@ namespace Datadog.Tracer
             {
                 _context = new SpanContext();
             }
+            _context.ServiceName = _context.ServiceName ?? _tracer.DefaultServiceName;
             OperationName = operationName;
             if (start.HasValue)
             {

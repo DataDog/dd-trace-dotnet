@@ -1,3 +1,4 @@
+using Moq;
 using OpenTracing;
 using System;
 using Xunit;
@@ -6,11 +7,29 @@ namespace Datadog.Tracer.Tests
 {
     public class SpanBuilderTests
     {
+        private Mock<IDatadogTracer> _tracerMock;
+        private SpanBuilder _spanBuilder;
+        private const string _defaultServiceName = "DefaultServiceName";
+
+        public SpanBuilderTests()
+        {
+            _tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
+            _tracerMock.Setup(x => x.DefaultServiceName).Returns(_defaultServiceName);
+            _spanBuilder = new SpanBuilder(_tracerMock.Object, null);
+        }
+
+        [Fact]
+        public void Start_NoServiceName_DefaultServiceNameIsSet()
+        {
+            var span = (Span)_spanBuilder.Start();
+
+            Assert.Equal(_defaultServiceName, span.ServiceName);
+        }
+
         [Fact]
         public void Start_NoParentProvided_RootSpan()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            var span = spanBuilder.Start();
+            var span = _spanBuilder.Start();
             var spanContext = (SpanContext)span.Context;
             Assert.Null(spanContext.ParentId);
             Assert.NotEqual<ulong>(0, spanContext.SpanId);
@@ -20,12 +39,11 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_AsChildOfSpan_ChildReferencesParent()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            var root = spanBuilder.Start();
+            var root = _spanBuilder.Start();
             var rootContext = (SpanContext)root.Context;
-            spanBuilder = new SpanBuilder(null, null);
-            spanBuilder.AsChildOf(root);
-            var child = spanBuilder.Start();
+            _spanBuilder = new SpanBuilder(null, null);
+            _spanBuilder.AsChildOf(root);
+            var child = _spanBuilder.Start();
             var childContext = (SpanContext)child.Context;
 
             Assert.Null(rootContext.ParentId);
@@ -39,12 +57,11 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_AsChildOfSpanContext_ChildReferencesParent()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            var root = spanBuilder.Start();
+            var root = _spanBuilder.Start();
             var rootContext = (SpanContext)root.Context;
-            spanBuilder = new SpanBuilder(null, null);
-            spanBuilder.AsChildOf(rootContext);
-            var child = spanBuilder.Start();
+            _spanBuilder = new SpanBuilder(null, null);
+            _spanBuilder.AsChildOf(rootContext);
+            var child = _spanBuilder.Start();
             var childContext = (SpanContext)child.Context;
 
             Assert.Null(rootContext.ParentId);
@@ -58,12 +75,11 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_ReferenceAsChildOf_ChildReferencesParent()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            var root = spanBuilder.Start();
+            var root = _spanBuilder.Start();
             var rootContext = (SpanContext)root.Context;
-            spanBuilder = new SpanBuilder(null, null);
-            spanBuilder.AddReference(References.ChildOf, rootContext);
-            var child = spanBuilder.Start();
+            _spanBuilder = new SpanBuilder(null, null);
+            _spanBuilder.AddReference(References.ChildOf, rootContext);
+            var child = _spanBuilder.Start();
             var childContext = (SpanContext)child.Context;
 
             Assert.Null(rootContext.ParentId);
@@ -77,13 +93,12 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_SetStartTimeStamp_TimeStampIsProperlySet()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            var root = spanBuilder.Start();
+            var root = _spanBuilder.Start();
             var rootContext = (SpanContext)root.Context;
-            spanBuilder = new SpanBuilder(null, null);
-            spanBuilder.AddReference(References.ChildOf, rootContext);
+            _spanBuilder = new SpanBuilder(null, null);
+            _spanBuilder.AddReference(References.ChildOf, rootContext);
 
-            var child = spanBuilder.Start();
+            var child = _spanBuilder.Start();
 
             var childContext = (SpanContext)child.Context;
             Assert.Null(rootContext.ParentId);
@@ -97,13 +112,12 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_WithTags_TagsAreProperlySet()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            spanBuilder.WithTag("StringKey", "What's tracing");
-            spanBuilder.WithTag("IntKey", 42);
-            spanBuilder.WithTag("DoubleKey", 1.618);
-            spanBuilder.WithTag("BoolKey", true);
+            _spanBuilder.WithTag("StringKey", "What's tracing");
+            _spanBuilder.WithTag("IntKey", 42);
+            _spanBuilder.WithTag("DoubleKey", 1.618);
+            _spanBuilder.WithTag("BoolKey", true);
 
-            var span = (Span)spanBuilder.Start();
+            var span = (Span)_spanBuilder.Start();
 
             Assert.Equal("What's tracing", span.GetTag("StringKey"));
             Assert.Equal("42", span.GetTag("IntKey"));
@@ -114,10 +128,9 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_SettingService_ServiceIsSet()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            spanBuilder.WithTag(Tags.Service, "MyService");
+            _spanBuilder.WithTag(Tags.Service, "MyService");
 
-            var span = (Span)spanBuilder.Start();
+            var span = (Span)_spanBuilder.Start();
 
             Assert.Equal("MyService", span.ServiceName);
         }
@@ -125,10 +138,9 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_SettingResource_ResourceIsSet()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            spanBuilder.WithTag(Tags.Resource, "MyResource");
+            _spanBuilder.WithTag(Tags.Resource, "MyResource");
 
-            var span = (Span)spanBuilder.Start();
+            var span = (Span)_spanBuilder.Start();
 
             Assert.Equal("MyResource", span.ResourceName);
         }
@@ -136,10 +148,9 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_SettingType_TypeIsSet()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            spanBuilder.WithTag(Tags.Type, "web");
+            _spanBuilder.WithTag(Tags.Type, "web");
 
-            var span = (Span)spanBuilder.Start();
+            var span = (Span)_spanBuilder.Start();
 
             Assert.Equal("web", span.Type);
         }
@@ -147,10 +158,9 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_SettingError_ErrorIsSet()
         {
-            var spanBuilder = new SpanBuilder(null, null);
-            spanBuilder.WithTag(Tags.Error, true);
+            _spanBuilder.WithTag(Tags.Error, true);
 
-            var span = (Span)spanBuilder.Start();
+            var span = (Span)_spanBuilder.Start();
 
             Assert.Equal(true, span.Error);
         }
@@ -158,11 +168,10 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_WithStartTimeStamp_TimeStampProperlySet()
         {
-            var spanBuilder = new SpanBuilder(null, null);
             var startTime = new DateTimeOffset(2017, 01, 01, 0, 0, 0, TimeSpan.Zero);
-            spanBuilder.WithStartTimestamp(startTime);
+            _spanBuilder.WithStartTimestamp(startTime);
 
-            var span = (Span)spanBuilder.Start();
+            var span = (Span)_spanBuilder.Start();
 
             Assert.Equal(startTime, span.StartTime);
         }
@@ -170,7 +179,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Start_SetOperationName_OperationNameProperlySet()
         {
-            var spanBuilder = new SpanBuilder(null, "Op1");
+            var spanBuilder = new SpanBuilder(_tracerMock.Object, "Op1");
 
             var span = (Span)spanBuilder.Start();
 

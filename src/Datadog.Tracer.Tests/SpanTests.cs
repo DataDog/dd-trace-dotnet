@@ -6,10 +6,17 @@ namespace Datadog.Tracer.Tests
 {
     public class SpanTests
     {
+        private Mock<IDatadogTracer> _tracerMock;
+        public SpanTests()
+        {
+            _tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
+            _tracerMock.Setup(x => x.DefaultServiceName).Returns("DefaultServiceName");
+        }
+
         [Fact]
         public void SetTag_Tags_TagsAreProperlySet()
         {
-            var span = new Span(null, null, null, null);
+            var span = new Span(_tracerMock.Object, null, null, null);
 
             span.SetTag("StringKey", "What's tracing");
             span.SetTag("IntKey", 42);
@@ -25,7 +32,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void SetOperationName_ValidOperationName_OperationNameIsProperlySet()
         {
-            var span = new Span(null, null, null, null);
+            var span = new Span(_tracerMock.Object, null, null, null);
 
             span.SetOperationName("Op1");
 
@@ -35,81 +42,76 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Finish_StartTimeInThePastWithNoEndTime_DurationProperlyComputed()
         {
-            var tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
             var startTime = DateTimeOffset.UtcNow.AddMinutes(-1);
-            var span = new Span(tracerMock.Object, null, null, startTime);
-            tracerMock
+            var span = new Span(_tracerMock.Object, null, null, startTime);
+            _tracerMock
                .Setup(x => x.Write(It.Is<Span>(s => s == span)));
 
             span.Finish();
 
             Assert.True(span.Duration > TimeSpan.FromMinutes(1) && span.Duration < TimeSpan.FromMinutes(2));
-            tracerMock
+            _tracerMock
                 .Verify(x => x.Write(It.Is<Span>(s => s == span)), Times.Once);
         }
 
         [Fact]
         public void Finish_NoEndTimeProvided_SpanWriten()
         {
-            var tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
-            var span = new Span(tracerMock.Object, null, null, null);
-            tracerMock
+            var span = new Span(_tracerMock.Object, null, null, null);
+            _tracerMock
                .Setup(x => x.Write(It.Is<Span>(s => s == span)));
 
             span.Finish();
 
             Assert.True(span.Duration > TimeSpan.Zero);
-            tracerMock
+            _tracerMock
                 .Verify(x => x.Write(It.Is<Span>(s => s == span)), Times.Once);
         }
 
         [Fact]
         public void Finish_EndTimeProvided_SpanWritenWithCorrectDuration()
         {
-            var tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
             var startTime = DateTimeOffset.UtcNow;
             var endTime = DateTime.UtcNow.AddMilliseconds(10);
-            var span = new Span(tracerMock.Object, null, null, startTime);
-            tracerMock
+            var span = new Span(_tracerMock.Object, null, null, startTime);
+            _tracerMock
                .Setup(x => x.Write(It.Is<Span>(s => s == span)));
 
             span.Finish(endTime);
 
             Assert.Equal(endTime - startTime, span.Duration);
-            tracerMock
+            _tracerMock
                 .Verify(x => x.Write(It.Is<Span>(s => s == span)), Times.Once);
         }
 
         [Fact]
         public void Finish_EndTimeInThePast_DurationIs0()
         {
-            var tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
             var startTime = DateTimeOffset.UtcNow;
             var endTime = DateTime.UtcNow.AddMilliseconds(-10);
-            var span = new Span(tracerMock.Object, null, null, startTime);
-            tracerMock
+            var span = new Span(_tracerMock.Object, null, null, startTime);
+            _tracerMock
                .Setup(x => x.Write(It.Is<Span>(s => s == span)));
 
             span.Finish(endTime);
 
             Assert.Equal(TimeSpan.Zero, span.Duration);
-            tracerMock
+            _tracerMock
                 .Verify(x => x.Write(It.Is<Span>(s => s == span)), Times.Once);
         }
 
         [Fact]
         public void Dispose_ExitUsing_SpanWriten()
         {
-            var tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
             Span span;
-            using (span = new Span(tracerMock.Object, null, null, null))
+            using (span = new Span(_tracerMock.Object, null, null, null))
             {
-                tracerMock
+                _tracerMock
                    .Setup(x => x.Write(It.Is<Span>(s => s == span)));
             }
 
             Assert.True(span.Duration > TimeSpan.Zero);
-            tracerMock
+            _tracerMock
                 .Verify(x => x.Write(It.Is<Span>(s => s == span)), Times.Once);
         }
     }
