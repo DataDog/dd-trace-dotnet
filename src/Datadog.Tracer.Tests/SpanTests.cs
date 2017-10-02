@@ -42,7 +42,7 @@ namespace Datadog.Tracer.Tests
 
             span.Finish();
 
-            Assert.True(DateTimeOffset.UtcNow - span.EndTime < TimeSpan.FromMinutes(1));
+            Assert.True(span.Duration > TimeSpan.Zero);
             tracerMock
                 .Verify(x => x.Write(It.Is<Span>(s => s == span)), Times.Once);
         }
@@ -50,15 +50,16 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void Finish_EndTimeProvided_SpanWritenWithCorrectEndTime()
         {
-            var endTime = new DateTimeOffset(2017, 01, 01, 0, 0, 0, TimeSpan.Zero);
             var tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
-            var span = new Span(tracerMock.Object, null, null, null);
+            var startTime = DateTimeOffset.UtcNow;
+            var endTime = DateTime.UtcNow.AddMilliseconds(10);
+            var span = new Span(tracerMock.Object, null, null, startTime);
             tracerMock
                .Setup(x => x.Write(It.Is<Span>(s => s == span)));
 
             span.Finish(endTime);
 
-            Assert.Equal(endTime, span.EndTime);
+            Assert.Equal(endTime - startTime, span.Duration);
             tracerMock
                 .Verify(x => x.Write(It.Is<Span>(s => s == span)), Times.Once);
         }
@@ -75,7 +76,7 @@ namespace Datadog.Tracer.Tests
                    .Setup(x => x.Write(It.Is<Span>(s => s == span)));
             }
 
-            Assert.True(DateTimeOffset.UtcNow - span.EndTime < TimeSpan.FromMinutes(1));
+            Assert.True(span.Duration > TimeSpan.Zero);
             tracerMock
                 .Verify(x => x.Write(It.Is<Span>(s => s == span)), Times.Once);
         }

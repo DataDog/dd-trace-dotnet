@@ -1,6 +1,7 @@
 ﻿using OpenTracing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Datadog.Tracer
 {
@@ -10,18 +11,23 @@ namespace Datadog.Tracer
         private Dictionary<string, string> _tags;
         private bool isFinished;
         private SpanContext _context;
+        private Stopwatch _sw;
 
         public ISpanContext Context => _context;
 
         internal DateTimeOffset StartTime { get; }
 
-        internal DateTimeOffset EndTime { get; set; }
+        internal TimeSpan Duration { get; set; }
 
         internal string OperationName { get; set; }
 
+        internal string ResourceName { get; set; }
+
         internal string ServiceName => _context.ServiceName;
 
-        internal string ResourceName { get; set; }
+        internal string Type { get; set; }
+
+        internal uint Error { get; set; }
 
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, DateTimeOffset? start)
         {
@@ -43,6 +49,7 @@ namespace Datadog.Tracer
             {
                 StartTime = DateTimeOffset.UtcNow;
             }
+            _sw = Stopwatch.StartNew();
         }
 
         public void Dispose()
@@ -52,7 +59,12 @@ namespace Datadog.Tracer
 
         public void Finish()
         {
-            Finish(DateTimeOffset.UtcNow);
+            if (!isFinished)
+            {
+                isFinished = true;
+                Duration = _sw.Elapsed;
+                _tracer.Write(this);
+            }
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
@@ -60,7 +72,11 @@ namespace Datadog.Tracer
             if (!isFinished)
             {
                 isFinished = true;
-                EndTime = finishTimestamp;
+                Duration = finishTimestamp - StartTime;
+                if(Duration < TimeSpan.Zero)
+                {
+                    Duration = TimeSpan.Zero;
+                }
                 _tracer.Write(this);
             }
         }
