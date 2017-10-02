@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Tracer
 {
-    class SpanContext : ISpanContext
+    internal class SpanContext : ISpanContext
     {
         public UInt64 TraceId { get; }
 
@@ -15,11 +15,14 @@ namespace Datadog.Tracer
         // TODO:bertrand do we really want ServiceName to be mutable?
         public string ServiceName { get; set; }
 
-        public SpanContext()
+        public ITraceContext TraceContext { get; }
+
+        public SpanContext(ITraceContext traceContext)
         {
             Random r = new Random();
             TraceId = r.NextUInt64();
             SpanId = r.NextUInt64();
+            TraceContext = traceContext;
         }
 
         public SpanContext(SpanContext parent)
@@ -27,6 +30,7 @@ namespace Datadog.Tracer
             TraceId = parent.TraceId;
             ParentId = parent.SpanId;
             ServiceName = parent.ServiceName;
+            TraceContext = parent.TraceContext;
             // TODO:bertrand pool the random objects
             Random r = new Random();
             SpanId = r.NextUInt64();

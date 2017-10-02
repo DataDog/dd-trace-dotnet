@@ -53,6 +53,7 @@ namespace Datadog.Tracer
         public ISpan Start()
         {
             var span = new Span(_tracer, _parent, _operationName, _start);
+            span.TraceContext.AddSpan(span);
             if(_tags != null)
             {
                 foreach(var pair in _tags)

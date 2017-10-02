@@ -16,6 +16,8 @@ namespace Datadog.Tracer
 
         public ISpanContext Context => _context;
 
+        internal ITraceContext TraceContext => _context.TraceContext;
+
         internal DateTimeOffset StartTime { get; }
 
         internal TimeSpan Duration { get; set; }
@@ -30,6 +32,8 @@ namespace Datadog.Tracer
 
         internal bool Error { get; set; }
 
+        internal bool IsRootSpan { get { return _context.ParentId == null; } }
+
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, DateTimeOffset? start)
         {
             _tracer = tracer;
@@ -39,7 +43,8 @@ namespace Datadog.Tracer
             }
             else
             {
-                _context = new SpanContext();
+                var traceContext = _tracer.GetTraceContext();
+                _context = new SpanContext(traceContext);
             }
             _context.ServiceName = _context.ServiceName ?? _tracer.DefaultServiceName;
             OperationName = operationName;
@@ -73,7 +78,7 @@ namespace Datadog.Tracer
                 {
                     Duration = _sw.Elapsed;
                 }
-                _tracer.Write(this);
+                _context.TraceContext.CloseSpan(this);
                 _isFinished = true;
             }
         }
@@ -87,7 +92,7 @@ namespace Datadog.Tracer
                 {
                     Duration = TimeSpan.Zero;
                 }
-                _tracer.Write(this);
+                _context.TraceContext.CloseSpan(this);
                 _isFinished = true;
             }
         }

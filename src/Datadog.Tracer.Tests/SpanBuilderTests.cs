@@ -8,12 +8,16 @@ namespace Datadog.Tracer.Tests
     public class SpanBuilderTests
     {
         private Mock<IDatadogTracer> _tracerMock;
+        private Mock<ITraceContext> _traceContextMock;
         private SpanBuilder _spanBuilder;
         private const string _defaultServiceName = "DefaultServiceName";
 
         public SpanBuilderTests()
         {
             _tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
+            _traceContextMock = new Mock<ITraceContext>(MockBehavior.Strict);
+            _traceContextMock.Setup(x => x.AddSpan(It.IsAny<Span>()));
+            _tracerMock.Setup(x => x.GetTraceContext()).Returns(_traceContextMock.Object);
             _tracerMock.Setup(x => x.DefaultServiceName).Returns(_defaultServiceName);
             _spanBuilder = new SpanBuilder(_tracerMock.Object, null);
         }
@@ -31,6 +35,8 @@ namespace Datadog.Tracer.Tests
         {
             var span = _spanBuilder.Start();
             var spanContext = (SpanContext)span.Context;
+
+            _traceContextMock.Verify(x => x.AddSpan(It.IsAny<Span>()), Times.Once);
             Assert.Null(spanContext.ParentId);
             Assert.NotEqual<ulong>(0, spanContext.SpanId);
             Assert.NotEqual<ulong>(0, spanContext.TraceId);
@@ -46,6 +52,7 @@ namespace Datadog.Tracer.Tests
             var child = _spanBuilder.Start();
             var childContext = (SpanContext)child.Context;
 
+            _traceContextMock.Verify(x => x.AddSpan(It.IsAny<Span>()), Times.Exactly(2));
             Assert.Null(rootContext.ParentId);
             Assert.NotEqual<ulong>(0, rootContext.SpanId);
             Assert.NotEqual<ulong>(0, rootContext.TraceId);
@@ -64,6 +71,7 @@ namespace Datadog.Tracer.Tests
             var child = _spanBuilder.Start();
             var childContext = (SpanContext)child.Context;
 
+            _traceContextMock.Verify(x => x.AddSpan(It.IsAny<Span>()), Times.Exactly(2));
             Assert.Null(rootContext.ParentId);
             Assert.NotEqual<ulong>(0, rootContext.SpanId);
             Assert.NotEqual<ulong>(0, rootContext.TraceId);
@@ -82,6 +90,7 @@ namespace Datadog.Tracer.Tests
             var child = _spanBuilder.Start();
             var childContext = (SpanContext)child.Context;
 
+            _traceContextMock.Verify(x => x.AddSpan(It.IsAny<Span>()), Times.Exactly(2));
             Assert.Null(rootContext.ParentId);
             Assert.NotEqual<ulong>(0, rootContext.SpanId);
             Assert.NotEqual<ulong>(0, rootContext.TraceId);
@@ -100,6 +109,7 @@ namespace Datadog.Tracer.Tests
 
             var child = _spanBuilder.Start();
 
+            _traceContextMock.Verify(x => x.AddSpan(It.IsAny<Span>()), Times.Exactly(2));
             var childContext = (SpanContext)child.Context;
             Assert.Null(rootContext.ParentId);
             Assert.NotEqual<ulong>(0, rootContext.SpanId);

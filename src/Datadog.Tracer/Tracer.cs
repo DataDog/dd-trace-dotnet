@@ -1,6 +1,7 @@
 ﻿using OpenTracing;
 using OpenTracing.Propagation;
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Tracer
 {
@@ -34,9 +35,14 @@ namespace Datadog.Tracer
 
         // Trick to keep the method from being accessed from outside the assembly while having it exposed as an interface.
         // https://stackoverflow.com/a/18944374
-        void IDatadogTracer.Write(Span span)
+        void IDatadogTracer.Write(List<Span> span)
         {
             throw new NotImplementedException();
+        }
+
+        ITraceContext IDatadogTracer.GetTraceContext()
+        {
+            return new TraceContext(this);
         }
     }
 }
