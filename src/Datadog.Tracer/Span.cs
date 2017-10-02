@@ -5,11 +5,12 @@ using System.Diagnostics;
 
 namespace Datadog.Tracer
 {
+    // TODO:bertrand, should a Span be threadsafe?
     public class Span : ISpan
     {
         private IDatadogTracer _tracer;
         private Dictionary<string, string> _tags;
-        private bool isFinished;
+        private bool _isFinished;
         private SpanContext _context;
         private Stopwatch _sw;
 
@@ -48,8 +49,8 @@ namespace Datadog.Tracer
             else
             {
                 StartTime = DateTimeOffset.UtcNow;
+                _sw = Stopwatch.StartNew();
             }
-            _sw = Stopwatch.StartNew();
         }
 
         public void Dispose()
@@ -59,25 +60,34 @@ namespace Datadog.Tracer
 
         public void Finish()
         {
-            if (!isFinished)
+            if (!_isFinished)
             {
-                isFinished = true;
-                Duration = _sw.Elapsed;
+                // If the startTime was explicitely provided, we don't use a StopWatch to compute the duration
+                if (_sw == null)
+                {
+                    Finish(DateTimeOffset.UtcNow);
+                    return;
+                }
+                else
+                {
+                    Duration = _sw.Elapsed;
+                }
                 _tracer.Write(this);
+                _isFinished = true;
             }
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
         {
-            if (!isFinished)
+            if (!_isFinished)
             {
-                isFinished = true;
                 Duration = finishTimestamp - StartTime;
-                if(Duration < TimeSpan.Zero)
+                if (Duration < TimeSpan.Zero)
                 {
                     Duration = TimeSpan.Zero;
                 }
                 _tracer.Write(this);
+                _isFinished = true;
             }
         }
 
