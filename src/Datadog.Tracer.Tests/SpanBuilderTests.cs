@@ -112,16 +112,47 @@ namespace Datadog.Tracer.Tests
         }
 
         [Fact]
-        public void Start_SettingServiceAndResource_ServiceAndResourceAreSet()
+        public void Start_SettingService_ServiceIsSet()
         {
             var spanBuilder = new SpanBuilder(null, null);
             spanBuilder.WithTag(Tags.Service, "MyService");
-            spanBuilder.WithTag(Tags.Resource, "MyResource");
 
             var span = (Span)spanBuilder.Start();
 
             Assert.Equal("MyService", span.ServiceName);
+        }
+
+        [Fact]
+        public void Start_SettingResource_ResourceIsSet()
+        {
+            var spanBuilder = new SpanBuilder(null, null);
+            spanBuilder.WithTag(Tags.Resource, "MyResource");
+
+            var span = (Span)spanBuilder.Start();
+
             Assert.Equal("MyResource", span.ResourceName);
+        }
+
+        [Fact]
+        public void Start_SettingType_TypeIsSet()
+        {
+            var spanBuilder = new SpanBuilder(null, null);
+            spanBuilder.WithTag(Tags.Type, "web");
+
+            var span = (Span)spanBuilder.Start();
+
+            Assert.Equal("web", span.Type);
+        }
+
+        [Fact]
+        public void Start_SettingError_ErrorIsSet()
+        {
+            var spanBuilder = new SpanBuilder(null, null);
+            spanBuilder.WithTag(Tags.Error, true);
+
+            var span = (Span)spanBuilder.Start();
+
+            Assert.Equal(true, span.Error);
         }
 
         [Fact]

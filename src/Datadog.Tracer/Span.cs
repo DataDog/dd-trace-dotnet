@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Datadog.Tracer
 {
-    // TODO:bertrand, should a Span be threadsafe?
+    // TODO:bertrand, should a Span be thread safe?
     public class Span : ISpan
     {
         private IDatadogTracer _tracer;
@@ -28,7 +28,7 @@ namespace Datadog.Tracer
 
         internal string Type { get; set; }
 
-        internal uint Error { get; set; }
+        internal bool Error { get; set; }
 
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, DateTimeOffset? start)
         {
@@ -150,6 +150,12 @@ namespace Datadog.Tracer
                     return this;
                 case Tags.Resource:
                     ResourceName = value;
+                    return this;
+                case Tags.Error:
+                    Error = value == "True";
+                    return this;
+                case Tags.Type:
+                    Type = value;
                     return this;
             }
             if(_tags == null)
