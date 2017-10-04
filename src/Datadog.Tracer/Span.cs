@@ -16,6 +16,8 @@ namespace Datadog.Tracer
 
         public ISpanContext Context => _context;
 
+        internal SpanContext DatadogContext => _context;
+
         internal ITraceContext TraceContext => _context.TraceContext;
 
         internal DateTimeOffset StartTime { get; }
@@ -37,15 +39,7 @@ namespace Datadog.Tracer
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, DateTimeOffset? start)
         {
             _tracer = tracer;
-            if(parent != null)
-            {
-                _context = new SpanContext(parent);
-            }
-            else
-            {
-                var traceContext = _tracer.GetTraceContext();
-                _context = new SpanContext(traceContext);
-            }
+            _context = new SpanContext(parent?.TraceContext ?? _tracer.GetTraceContext());
             _context.ServiceName = _context.ServiceName ?? _tracer.DefaultServiceName;
             OperationName = operationName;
             if (start.HasValue)

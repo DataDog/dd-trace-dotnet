@@ -1,5 +1,6 @@
 ﻿using Moq;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Datadog.Tracer.Tests
@@ -14,6 +15,7 @@ namespace Datadog.Tracer.Tests
             _tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
             _traceContextMock = new Mock<ITraceContext>(MockBehavior.Strict);
             _traceContextMock.Setup(x => x.CloseSpan(It.IsAny<Span>()));
+            _traceContextMock.Setup(x => x.GetCurrentSpanContext()).Returns<SpanContext>(null);
             _tracerMock.Setup(x => x.GetTraceContext()).Returns(_traceContextMock.Object);
             _tracerMock.Setup(x => x.DefaultServiceName).Returns("DefaultServiceName");
         }
@@ -59,10 +61,10 @@ namespace Datadog.Tracer.Tests
         }
 
         [Fact]
-        public void Finish_NoEndTimeProvided_SpanWriten()
+        public async Task Finish_NoEndTimeProvided_SpanWriten()
         {
             var span = new Span(_tracerMock.Object, null, null, null);
-
+            await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
             _traceContextMock.Verify(x => x.CloseSpan(It.IsAny<Span>()), Times.Once);

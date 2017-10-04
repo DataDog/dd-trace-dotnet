@@ -7,5 +7,7 @@
         void AddSpan(Span span);
 
         void CloseSpan(Span span);
+
+        SpanContext GetCurrentSpanContext();
     }
 }

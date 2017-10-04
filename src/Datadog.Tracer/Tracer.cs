@@ -2,19 +2,23 @@
 using OpenTracing.Propagation;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Datadog.Tracer
 {
     public class Tracer : ITracer, IDatadogTracer
     {
+        private AsyncLocal<TraceContext> _currentContext = new AsyncLocal<TraceContext>();
         private string _defaultServiceName;
+        private bool _automaticContextPropagation;
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
-        public Tracer(string defaultServiceName = "UnknownService")
+        public Tracer(string defaultServiceName = Constants.UnkownService, bool automaticContextPropagation = true)
         {
             //TODO:bertrand be smarter about the service name
             _defaultServiceName = defaultServiceName;
+            _automaticContextPropagation = true;
         }
 
         public ISpanBuilder BuildSpan(string operationName)
@@ -42,7 +46,15 @@ namespace Datadog.Tracer
 
         ITraceContext IDatadogTracer.GetTraceContext()
         {
-            return new TraceContext(this);
+            if (!_automaticContextPropagation)
+            {
+                return new TraceContext(this);
+            }
+            if(_currentContext.Value == null)
+            {
+                _currentContext.Value = new TraceContext(this);
+            }
+            return _currentContext.Value;
         }
     }
 }

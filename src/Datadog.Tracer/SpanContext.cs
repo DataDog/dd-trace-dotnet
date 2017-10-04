@@ -6,9 +6,11 @@ namespace Datadog.Tracer
 {
     internal class SpanContext : ISpanContext
     {
+        public SpanContext Parent { get; }
+
         public UInt64 TraceId { get; }
 
-        public UInt64? ParentId { get; }
+        public UInt64? ParentId { get { return Parent?.SpanId; } }
 
         public UInt64 SpanId { get; }
 
@@ -19,21 +21,23 @@ namespace Datadog.Tracer
 
         public SpanContext(ITraceContext traceContext)
         {
-            Random r = new Random();
-            TraceId = r.NextUInt64();
-            SpanId = r.NextUInt64();
-            TraceContext = traceContext;
-        }
-
-        public SpanContext(SpanContext parent)
-        {
-            TraceId = parent.TraceId;
-            ParentId = parent.SpanId;
-            ServiceName = parent.ServiceName;
-            TraceContext = parent.TraceContext;
             // TODO:bertrand pool the random objects
             Random r = new Random();
-            SpanId = r.NextUInt64();
+            var parent = traceContext.GetCurrentSpanContext();
+            if (parent != null)
+            {
+                Parent = parent;
+                TraceId = parent.TraceId;
+                ServiceName = parent.ServiceName;
+                TraceContext = parent.TraceContext;
+                SpanId = r.NextUInt64();
+        }
+            else
+            {
+                TraceId = r.NextUInt64();
+                SpanId = r.NextUInt64();
+                TraceContext = traceContext;
+            }
         }
 
         public IEnumerable<KeyValuePair<string, string>> GetBaggageItems()
