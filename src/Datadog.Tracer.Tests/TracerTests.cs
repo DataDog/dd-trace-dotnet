@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Moq;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,10 +9,12 @@ namespace Datadog.Tracer.Tests
 {
     public class TracerTests
     {
+        private Mock<IApi> _apiMock = new Mock<IApi>(MockBehavior.Strict);
+
         [Fact]
         public void BuildSpan_NoParameterAutomaticContextPropagation_DefaultParameters()
         {
-            var tracer = new Tracer(automaticContextPropagation: true);
+            var tracer = new Tracer(_apiMock.Object, automaticContextPropagation: true);
 
             var builder = tracer.BuildSpan("Op1");
             var span = (Span)builder.Start();
@@ -23,7 +26,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_NoParameterNoAutomaticContextPropagation_DefaultParameters()
         {
-            var tracer = new Tracer(automaticContextPropagation: false);
+            var tracer = new Tracer(_apiMock.Object, automaticContextPropagation: false);
 
             var builder = tracer.BuildSpan("Op1");
             var span = (Span)builder.Start();
@@ -35,7 +38,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_OneChildAutomaticContextPropagation_ChildParentProperlySet()
         {
-            var tracer = new Tracer(automaticContextPropagation: true);
+            var tracer = new Tracer(_apiMock.Object, automaticContextPropagation: true);
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -51,7 +54,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_2ChildrenOfRootAutomaticContextPropagation_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer(automaticContextPropagation: true);
+            var tracer = new Tracer(_apiMock.Object, automaticContextPropagation: true);
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -73,7 +76,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_2LevelChildrenAutomaticContextPropagation_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer(automaticContextPropagation: true);
+            var tracer = new Tracer(_apiMock.Object, automaticContextPropagation: true);
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -94,7 +97,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public async Task BuildSpan_AsyncChildrenCreationAutomaticContextPropagation_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer(automaticContextPropagation: true);
+            var tracer = new Tracer(_apiMock.Object, automaticContextPropagation: true);
             var tcs = new TaskCompletionSource<bool>();
 
             var root = (Span)tracer

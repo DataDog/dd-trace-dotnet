@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Text;
 
 namespace Datadog.Tracer
 {
@@ -35,6 +37,8 @@ namespace Datadog.Tracer
         internal bool Error { get; set; }
 
         internal bool IsRootSpan { get { return _context.ParentId == null; } }
+
+        internal IReadOnlyDictionary<string, string> Tags { get { return _tags; } }
 
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, DateTimeOffset? start)
         {
@@ -145,16 +149,16 @@ namespace Datadog.Tracer
         public ISpan SetTag(string key, string value)
         {
             switch (key) {
-                case Tags.Service:
+                case Datadog.Tracer.Tags.Service:
                     this._context.ServiceName = value;
                     return this;
-                case Tags.Resource:
+                case Datadog.Tracer.Tags.Resource:
                     ResourceName = value;
                     return this;
-                case Tags.Error:
+                case Datadog.Tracer.Tags.Error:
                     Error = value == "True";
                     return this;
-                case Tags.Type:
+                case Datadog.Tracer.Tags.Type:
                     Type = value;
                     return this;
             }
@@ -171,6 +175,30 @@ namespace Datadog.Tracer
             string s = null;
             _tags?.TryGetValue(key, out s);
             return s;
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"TraceId: {_context.TraceId}");
+            sb.AppendLine($"ParentId: {_context.ParentId}");
+            sb.AppendLine($"SpanId: {_context.SpanId}");
+            sb.AppendLine($"ServiceName: {_context.ServiceName}");
+            sb.AppendLine($"OperationName: {OperationName}");
+            sb.AppendLine($"Resource: {ResourceName}");
+            sb.AppendLine($"Type: {Type}");
+            sb.AppendLine($"Start: {StartTime}");
+            sb.AppendLine($"Duration: {Duration}");
+            sb.AppendLine($"Error: {Error}");
+            sb.AppendLine($"Meta:");
+            if(Tags != null)
+            {
+                foreach(var kv in Tags)
+                {
+                    sb.Append($"\t{kv.Key}:{kv.Value}");
+                }
+            }
+            return sb.ToString();
         }
     }
 }

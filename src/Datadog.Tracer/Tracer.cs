@@ -2,23 +2,46 @@
 using OpenTracing.Propagation;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Datadog.Tracer
 {
-    public class Tracer : ITracer, IDatadogTracer
+    internal class Tracer : ITracer, IDatadogTracer
     {
         private AsyncLocal<TraceContext> _currentContext = new AsyncLocal<TraceContext>();
         private string _defaultServiceName;
         private bool _automaticContextPropagation;
+        private IApi _api;
+        private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
-        public Tracer(string defaultServiceName = Constants.UnkownService, bool automaticContextPropagation = true)
+        public Tracer(IApi api, List<ServiceInfo> serviceInfo = null, string defaultServiceName = Constants.UnkownService, bool automaticContextPropagation = true)
         {
+            _api = api;
             //TODO:bertrand be smarter about the service name
             _defaultServiceName = defaultServiceName;
             _automaticContextPropagation = true;
+            if(serviceInfo != null)
+            {
+                if(defaultServiceName == Constants.UnkownService)
+                {
+                    _services[Constants.UnkownService] = new ServiceInfo
+                    {
+                        ServiceName = Constants.UnkownService,
+                        App = Constants.UnkownApp,
+                        AppType = Constants.WebAppType,
+                    };
+                }
+                foreach(var service in serviceInfo)
+                {
+                    _services[service.ServiceName] = service;
+                }
+                // TODO:bertrand handle errors properly
+                Task.WhenAll(_services.Values.Select(_api.SendServiceAsync)).Wait();
+            }
         }
 
         public ISpanBuilder BuildSpan(string operationName)
@@ -39,9 +62,10 @@ namespace Datadog.Tracer
 
         // Trick to keep the method from being accessed from outside the assembly while having it exposed as an interface.
         // https://stackoverflow.com/a/18944374
-        void IDatadogTracer.Write(List<Span> span)
+        void IDatadogTracer.Write(List<Span> trace)
         {
-            throw new NotImplementedException();
+            // TODO:bertrand should be non blocking + retry mechanism
+            _api.SendTracesAsync(new List<List<Span>> { trace }).Wait();
         }
 
         ITraceContext IDatadogTracer.GetTraceContext()

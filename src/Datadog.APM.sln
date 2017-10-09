@@ -6,6 +6,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Tracer", "Datadog.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Tracer.Tests", "Datadog.Tracer.Tests\Datadog.Tracer.Tests.csproj", "{73A1BE1C-9C8A-43FA-86A8-BF2744B4C1BB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Tracer.IntegrationTests", "Datadog.Tracer.IntegrationTests\Datadog.Tracer.IntegrationTests.csproj", "{0434F813-5F94-4195-8A2C-E2E755513822}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,18 @@ Global
 		{73A1BE1C-9C8A-43FA-86A8-BF2744B4C1BB}.Release|x64.Build.0 = Release|Any CPU
 		{73A1BE1C-9C8A-43FA-86A8-BF2744B4C1BB}.Release|x86.ActiveCfg = Release|Any CPU
 		{73A1BE1C-9C8A-43FA-86A8-BF2744B4C1BB}.Release|x86.Build.0 = Release|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Debug|x64.Build.0 = Debug|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Debug|x86.Build.0 = Debug|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Release|x64.ActiveCfg = Release|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Release|x64.Build.0 = Release|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Release|x86.ActiveCfg = Release|Any CPU
+		{0434F813-5F94-4195-8A2C-E2E755513822}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
