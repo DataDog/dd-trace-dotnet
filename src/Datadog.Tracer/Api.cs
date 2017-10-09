@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Datadog.Tracer
@@ -42,6 +44,10 @@ namespace Datadog.Tracer
         {
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _servicesEndpoint = new Uri(baseEndpoint, ServicesPath);
+            // TODO:bertrand add header for os version
+            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang", ".NET");
+            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Version", RuntimeInformation.FrameworkDescription);
+            _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetEntryAssembly().GetName().Version.ToString());
         }
 
         public async Task SendTracesAsync(List<List<Span>> traces)
