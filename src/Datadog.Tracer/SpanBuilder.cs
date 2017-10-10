@@ -6,6 +6,7 @@ namespace Datadog.Tracer
 {
     public class SpanBuilder : ISpanBuilder
     {
+        private Object _lock = new Object();
         private IDatadogTracer _tracer;
         private string _operationName;
         private SpanContext _parent;
@@ -21,24 +22,33 @@ namespace Datadog.Tracer
 
         public ISpanBuilder AddReference(string referenceType, ISpanContext referencedContext)
         {
-            if (referenceType == References.ChildOf)
+            lock (_lock)
             {
-                _parent = referencedContext as SpanContext;
-                return this;
+                if (referenceType == References.ChildOf)
+                {
+                    _parent = referencedContext as SpanContext;
+                    return this;
+                }
             }
             throw new NotImplementedException();
         }
 
         public ISpanBuilder AsChildOf(ISpan parent)
         {
-            _parent = parent.Context as SpanContext;
-            return this;
+            lock (_lock)
+            {
+                _parent = parent.Context as SpanContext;
+                return this;
+            }
         }
 
         public ISpanBuilder AsChildOf(ISpanContext parent)
         {
-            _parent = parent as SpanContext;
-            return this;
+            lock (_lock)
+            {
+                _parent = parent as SpanContext;
+                return this;
+            }
         }
 
         public ISpanBuilder FollowsFrom(ISpan parent)
@@ -53,22 +63,28 @@ namespace Datadog.Tracer
 
         public ISpan Start()
         {
-            var span = new Span(_tracer, _parent, _operationName, _serviceName, _start);
-            span.TraceContext.AddSpan(span);
-            if(_tags != null)
+            lock (_lock)
             {
-                foreach(var pair in _tags)
+                var span = new Span(_tracer, _parent, _operationName, _serviceName, _start);
+                span.TraceContext.AddSpan(span);
+                if (_tags != null)
                 {
-                    span.SetTag(pair.Key, pair.Value);
+                    foreach (var pair in _tags)
+                    {
+                        span.SetTag(pair.Key, pair.Value);
+                    }
                 }
+                return span;
             }
-            return span;
         }
 
         public ISpanBuilder WithStartTimestamp(DateTimeOffset startTimestamp)
         {
-            _start = startTimestamp;
-            return this;
+            lock (_lock)
+            {
+                _start = startTimestamp;
+                return this;
+            }
         }
 
         public ISpanBuilder WithTag(string key, bool value)
@@ -88,17 +104,20 @@ namespace Datadog.Tracer
 
         public ISpanBuilder WithTag(string key, string value)
         {
-            if(key == Tags.Service)
+            lock (_lock)
             {
-                _serviceName = value;
+                if (key == Tags.Service)
+                {
+                    _serviceName = value;
+                    return this;
+                }
+                if (_tags == null)
+                {
+                    _tags = new Dictionary<string, string>();
+                }
+                _tags[key] = value;
                 return this;
             }
-            if(_tags == null)
-            {
-                _tags = new Dictionary<string, string>();
-            }
-            _tags[key] = value;
-            return this;
         }
     }
 }
