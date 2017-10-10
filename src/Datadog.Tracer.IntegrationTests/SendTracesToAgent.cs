@@ -10,7 +10,7 @@ namespace Datadog.Tracer.IntegrationTests
         {
             var tracer = new Tracer(new Api(new Uri("http://localhost:8126")));
             tracer.BuildSpan("Operation")
-                .WithTag(Tags.Resource, "This is a resource")
+                .WithTag(Tags.ResourceName, "This is a resource")
                 .Start()
                 .Finish();
         }
@@ -20,8 +20,8 @@ namespace Datadog.Tracer.IntegrationTests
         {
             var tracer = new Tracer(new Api(new Uri("http://localhost:8126")));
             tracer.BuildSpan("Operation")
-                .WithTag(Tags.Resource, "This is a resource")
-                .WithTag(Tags.Service, "Service1")
+                .WithTag(Tags.ResourceName, "This is a resource")
+                .WithTag(Tags.ServiceName, "Service1")
                 .Start()
                 .Finish();
         }
