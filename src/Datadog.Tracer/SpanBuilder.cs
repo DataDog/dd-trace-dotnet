@@ -106,7 +106,7 @@ namespace Datadog.Tracer
         {
             lock (_lock)
             {
-                if (key == Tags.Service)
+                if (key == Tags.ServiceName)
                 {
                     _serviceName = value;
                     return this;

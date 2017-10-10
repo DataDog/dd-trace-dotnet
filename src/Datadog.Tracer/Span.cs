@@ -174,13 +174,13 @@ namespace Datadog.Tracer
                     throw new NotSupportedException("Impossible to add data to a finished span");
                 }
                 switch (key) {
-                    case Datadog.Tracer.Tags.Resource:
+                    case Datadog.Tracer.Tags.ResourceName:
                         ResourceName = value;
                         return this;
-                    case Datadog.Tracer.Tags.Error:
+                    case OpenTracing.Tags.Error:
                         Error = value == "True";
                         return this;
-                    case Datadog.Tracer.Tags.Type:
+                    case Datadog.Tracer.Tags.SpanType:
                         Type = value;
                         return this;
                 }
