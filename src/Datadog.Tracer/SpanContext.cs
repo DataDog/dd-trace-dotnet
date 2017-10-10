@@ -30,12 +30,12 @@ namespace Datadog.Tracer
                 TraceId = parent.TraceId;
                 ServiceName = parent.ServiceName;
                 TraceContext = parent.TraceContext;
-                SpanId = r.NextUInt64();
+                SpanId = r.NextUInt63();
         }
             else
             {
-                TraceId = r.NextUInt64();
-                SpanId = r.NextUInt64();
+                TraceId = r.NextUInt63();
+                SpanId = r.NextUInt63();
                 TraceContext = traceContext;
             }
         }
