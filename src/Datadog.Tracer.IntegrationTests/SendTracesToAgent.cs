@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Xunit;
 
 namespace Datadog.Tracer.IntegrationTests
@@ -22,6 +22,18 @@ namespace Datadog.Tracer.IntegrationTests
             tracer.BuildSpan("Operation")
                 .WithTag(Tags.ResourceName, "This is a resource")
                 .WithTag(Tags.ServiceName, "Service1")
+                .Start()
+                .Finish();
+        }
+
+        [Fact]
+        public void Utf8Everywhere()
+        {
+            var tracer = new Tracer(new Api(new Uri("http://localhost:8126")));
+            tracer.BuildSpan("Aᛗᚪᚾᚾᚪ")
+                .WithTag(Tags.ResourceName, "η γλώσσα μου έδωσαν ελληνική")
+                .WithTag(Tags.ServiceName, "На берегу пустынных волн")
+                .WithTag("யாமறிந்த", "ნუთუ კვლა")
                 .Start()
                 .Finish();
         }
