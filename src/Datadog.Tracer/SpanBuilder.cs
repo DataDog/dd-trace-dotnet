@@ -11,6 +11,7 @@ namespace Datadog.Tracer
         private SpanContext _parent;
         private DateTimeOffset? _start;
         private Dictionary<string, string> _tags;
+        private string _serviceName;
 
         internal SpanBuilder(IDatadogTracer tracer, string operationName)
         {
@@ -52,7 +53,7 @@ namespace Datadog.Tracer
 
         public ISpan Start()
         {
-            var span = new Span(_tracer, _parent, _operationName, _start);
+            var span = new Span(_tracer, _parent, _operationName, _serviceName, _start);
             span.TraceContext.AddSpan(span);
             if(_tags != null)
             {
@@ -87,6 +88,11 @@ namespace Datadog.Tracer
 
         public ISpanBuilder WithTag(string key, string value)
         {
+            if(key == Tags.Service)
+            {
+                _serviceName = value;
+                return this;
+            }
             if(_tags == null)
             {
                 _tags = new Dictionary<string, string>();

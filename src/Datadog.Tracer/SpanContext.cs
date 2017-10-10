@@ -14,13 +14,13 @@ namespace Datadog.Tracer
 
         public UInt64 SpanId { get; }
 
-        // TODO:bertrand do we really want ServiceName to be mutable?
-        public string ServiceName { get; set; }
+        public string ServiceName { get; }
 
         public ITraceContext TraceContext { get; }
 
-        public SpanContext(ITraceContext traceContext)
+        public SpanContext(ITraceContext traceContext, string serviceName)
         {
+            ServiceName = serviceName;
             // TODO:bertrand pool the random objects
             Random r = new Random();
             var parent = traceContext.GetCurrentSpanContext();
