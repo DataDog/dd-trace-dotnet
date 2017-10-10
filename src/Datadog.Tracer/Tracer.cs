@@ -12,18 +12,16 @@ namespace Datadog.Tracer
     {
         private AsyncLocal<TraceContext> _currentContext = new AsyncLocal<TraceContext>();
         private string _defaultServiceName;
-        private bool _automaticContextPropagation;
         private IApi _api;
         private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
-        public Tracer(IApi api, List<ServiceInfo> serviceInfo = null, string defaultServiceName = Constants.UnkownService, bool automaticContextPropagation = true)
+        public Tracer(IApi api, List<ServiceInfo> serviceInfo = null, string defaultServiceName = Constants.UnkownService)
         {
             _api = api;
             // TODO:bertrand be smarter about the service name
             _defaultServiceName = defaultServiceName;
-            _automaticContextPropagation = true;
             if(serviceInfo != null)
             {
                 if(defaultServiceName == Constants.UnkownService)
@@ -70,10 +68,6 @@ namespace Datadog.Tracer
 
         ITraceContext IDatadogTracer.GetTraceContext()
         {
-            if (!_automaticContextPropagation)
-            {
-                return new TraceContext(this);
-            }
             if(_currentContext.Value == null)
             {
                 _currentContext.Value = new TraceContext(this);
