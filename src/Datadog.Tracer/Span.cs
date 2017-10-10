@@ -40,11 +40,10 @@ namespace Datadog.Tracer
 
         internal IReadOnlyDictionary<string, string> Tags { get { return _tags; } }
 
-        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, DateTimeOffset? start)
+        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
         {
             _tracer = tracer;
-            _context = new SpanContext(parent?.TraceContext ?? _tracer.GetTraceContext());
-            _context.ServiceName = _context.ServiceName ?? _tracer.DefaultServiceName;
+            _context = new SpanContext(parent?.TraceContext ?? _tracer.GetTraceContext(), serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName);
             OperationName = operationName;
             if (start.HasValue)
             {
@@ -149,9 +148,6 @@ namespace Datadog.Tracer
         public ISpan SetTag(string key, string value)
         {
             switch (key) {
-                case Datadog.Tracer.Tags.Service:
-                    _context.ServiceName = value;
-                    return this;
                 case Datadog.Tracer.Tags.Resource:
                     ResourceName = value;
                     return this;
