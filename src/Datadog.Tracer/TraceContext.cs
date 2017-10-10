@@ -43,9 +43,14 @@ namespace Datadog.Tracer
                 {
                     if (_openSpans != 0)
                     {
-                        //TODO:bertrand log warning
+                        // TODO:bertrand log error and do not send anything
+                        // Instead detect if we are being garbage collected and warn at that point
                     }
-                    _tracer.Write(_spans);
+                    else
+                    {
+                        _tracer.Write(_spans);
+                    }
+                    // TODO:bertrand make sure the tracecontext is reset
                 }
             }
         }

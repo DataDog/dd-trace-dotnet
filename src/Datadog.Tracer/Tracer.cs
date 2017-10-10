@@ -21,7 +21,7 @@ namespace Datadog.Tracer
         public Tracer(IApi api, List<ServiceInfo> serviceInfo = null, string defaultServiceName = Constants.UnkownService, bool automaticContextPropagation = true)
         {
             _api = api;
-            //TODO:bertrand be smarter about the service name
+            // TODO:bertrand be smarter about the service name
             _defaultServiceName = defaultServiceName;
             _automaticContextPropagation = true;
             if(serviceInfo != null)

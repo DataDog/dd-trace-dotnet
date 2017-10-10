@@ -76,8 +76,8 @@ namespace Datadog.Tracer
                 {
                     Duration = _sw.Elapsed;
                 }
-                _context.TraceContext.CloseSpan(this);
                 _isFinished = true;
+                _context.TraceContext.CloseSpan(this);
             }
         }
 
@@ -90,8 +90,8 @@ namespace Datadog.Tracer
                 {
                     Duration = TimeSpan.Zero;
                 }
-                _context.TraceContext.CloseSpan(this);
                 _isFinished = true;
+                _context.TraceContext.CloseSpan(this);
             }
         }
 
@@ -150,7 +150,7 @@ namespace Datadog.Tracer
         {
             switch (key) {
                 case Datadog.Tracer.Tags.Service:
-                    this._context.ServiceName = value;
+                    _context.ServiceName = value;
                     return this;
                 case Datadog.Tracer.Tags.Resource:
                     ResourceName = value;

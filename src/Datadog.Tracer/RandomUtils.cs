@@ -4,12 +4,12 @@ namespace Datadog.Tracer
 {
     public static class RandomUtils
     {
-        public static UInt64 NextUInt64(this Random rnd)
+        public static UInt64 NextUInt63(this Random rnd)
         {
             // From https://stackoverflow.com/a/677390
             var buffer = new byte[sizeof(UInt64)];
             rnd.NextBytes(buffer);
-            return BitConverter.ToUInt64(buffer, 0);
+            return BitConverter.ToUInt64(buffer, 0) & (~(1 << 63));
         }
     }
 }

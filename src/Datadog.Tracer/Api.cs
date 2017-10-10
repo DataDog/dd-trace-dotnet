@@ -46,7 +46,7 @@ namespace Datadog.Tracer
             _servicesEndpoint = new Uri(baseEndpoint, ServicesPath);
             // TODO:bertrand add header for os version
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang", ".NET");
-            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Version", RuntimeInformation.FrameworkDescription);
+            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Interpreter", RuntimeInformation.FrameworkDescription);
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetEntryAssembly().GetName().Version.ToString());
         }
 
