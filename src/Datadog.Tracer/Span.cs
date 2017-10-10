@@ -2,14 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 
 namespace Datadog.Tracer
 {
-    // TODO:bertrand, should a Span be thread safe?
     public class Span : ISpan
     {
+        private Object _lock = new Object();
         private IDatadogTracer _tracer;
         private Dictionary<string, string> _tags;
         private bool _isFinished;
@@ -24,20 +23,22 @@ namespace Datadog.Tracer
 
         internal DateTimeOffset StartTime { get; }
 
-        internal TimeSpan Duration { get; set; }
+        internal TimeSpan Duration { get; private set; }
 
-        internal string OperationName { get; set; }
+        internal string OperationName { get; private set; }
 
-        internal string ResourceName { get; set; }
+        internal string ResourceName { get; private set; }
 
         internal string ServiceName => _context.ServiceName;
 
-        internal string Type { get; set; }
+        internal string Type { get; private set; }
 
-        internal bool Error { get; set; }
+        internal bool Error { get; private set; }
 
         internal bool IsRootSpan { get { return _context.ParentId == null; } }
 
+        // This is threadsafe only if used after the span has been closed.
+        // It is acceptable because this property is internal. But if we were to make it public we would need to add some checks.
         internal IReadOnlyDictionary<string, string> Tags { get { return _tags; } }
 
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
@@ -63,34 +64,50 @@ namespace Datadog.Tracer
 
         public void Finish()
         {
-            if (!_isFinished)
+            // If the startTime was explicitely provided, we don't use a StopWatch to compute the duration
+            if (_sw == null)
             {
-                // If the startTime was explicitely provided, we don't use a StopWatch to compute the duration
-                if (_sw == null)
+                Finish(DateTimeOffset.UtcNow);
+                return;
+            }
+            else
+            {
+                var shouldCloseSpan = false;
+                lock (_lock)
                 {
-                    Finish(DateTimeOffset.UtcNow);
-                    return;
+                    if (!_isFinished)
+                    {
+                        Duration = _sw.Elapsed;
+                        _isFinished = true;
+                        shouldCloseSpan = true;
+                    }
                 }
-                else
+                if (shouldCloseSpan)
                 {
-                    Duration = _sw.Elapsed;
+                    _context.TraceContext.CloseSpan(this);
                 }
-                _isFinished = true;
-                _context.TraceContext.CloseSpan(this);
             }
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
         {
-            if (!_isFinished)
+            lock (_lock)
             {
-                Duration = finishTimestamp - StartTime;
-                if (Duration < TimeSpan.Zero)
+                var shouldCloseSpan = false;
+                if (!_isFinished)
                 {
-                    Duration = TimeSpan.Zero;
+                    Duration = finishTimestamp - StartTime;
+                    if (Duration < TimeSpan.Zero)
+                    {
+                        Duration = TimeSpan.Zero;
+                    }
+                    _isFinished = true;
+                    shouldCloseSpan = true;
                 }
-                _isFinished = true;
-                _context.TraceContext.CloseSpan(this);
+                if (shouldCloseSpan)
+                {
+                    _context.TraceContext.CloseSpan(this);
+                }
             }
         }
 
@@ -126,8 +143,11 @@ namespace Datadog.Tracer
 
         public ISpan SetOperationName(string operationName)
         {
-            OperationName = operationName;
-            return this;
+            lock (_lock)
+            {
+                OperationName = operationName;
+                return this;
+            }
         }
 
         public ISpan SetTag(string key, bool value)
@@ -147,30 +167,40 @@ namespace Datadog.Tracer
 
         public ISpan SetTag(string key, string value)
         {
-            switch (key) {
-                case Datadog.Tracer.Tags.Resource:
-                    ResourceName = value;
-                    return this;
-                case Datadog.Tracer.Tags.Error:
-                    Error = value == "True";
-                    return this;
-                case Datadog.Tracer.Tags.Type:
-                    Type = value;
-                    return this;
-            }
-            if(_tags == null)
+            lock (_lock)
             {
-                _tags = new Dictionary<string, string>();
+                if (_isFinished)
+                {
+                    throw new NotSupportedException("Impossible to add data to a finished span");
+                }
+                switch (key) {
+                    case Datadog.Tracer.Tags.Resource:
+                        ResourceName = value;
+                        return this;
+                    case Datadog.Tracer.Tags.Error:
+                        Error = value == "True";
+                        return this;
+                    case Datadog.Tracer.Tags.Type:
+                        Type = value;
+                        return this;
+                }
+                if (_tags == null)
+                {
+                    _tags = new Dictionary<string, string>();
+                }
+                _tags[key] = value;
+                return this;
             }
-            _tags[key] = value;
-            return this;
         }
 
         internal string GetTag(string key)
         {
-            string s = null;
-            _tags?.TryGetValue(key, out s);
-            return s;
+            lock (_lock)
+            {
+                string s = null;
+                _tags?.TryGetValue(key, out s);
+                return s;
+            }
         }
 
         public override string ToString()
