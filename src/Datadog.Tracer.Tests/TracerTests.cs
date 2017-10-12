@@ -35,7 +35,7 @@ namespace Datadog.Tracer.Tests
                 .Start();
 
             Assert.Equal(root.TraceContext, child.TraceContext);
-            Assert.Equal(root.DatadogContext.SpanId, child.DatadogContext.ParentId);
+            Assert.Equal(root.Context.SpanId, child.Context.ParentId);
         }
 
         [Fact]
@@ -55,9 +55,9 @@ namespace Datadog.Tracer.Tests
                 .Start();
 
             Assert.Equal(root.TraceContext, child1.TraceContext);
-            Assert.Equal(root.DatadogContext.SpanId, child1.DatadogContext.ParentId);
+            Assert.Equal(root.Context.SpanId, child1.Context.ParentId);
             Assert.Equal(root.TraceContext, child2.TraceContext);
-            Assert.Equal(root.DatadogContext.SpanId, child2.DatadogContext.ParentId);
+            Assert.Equal(root.Context.SpanId, child2.Context.ParentId);
         }
 
         [Fact]
@@ -76,9 +76,9 @@ namespace Datadog.Tracer.Tests
                 .Start();
 
             Assert.Equal(root.TraceContext, child1.TraceContext);
-            Assert.Equal(root.DatadogContext.SpanId, child1.DatadogContext.ParentId);
+            Assert.Equal(root.Context.SpanId, child1.Context.ParentId);
             Assert.Equal(root.TraceContext, child2.TraceContext);
-            Assert.Equal(child1.DatadogContext.SpanId, child2.DatadogContext.ParentId);
+            Assert.Equal(child1.Context.SpanId, child2.Context.ParentId);
         }
 
         [Fact]
@@ -98,12 +98,12 @@ namespace Datadog.Tracer.Tests
             tcs.SetResult(true);
 
             Assert.Equal(root.TraceContext, syncChild.TraceContext);
-            Assert.Equal(root.DatadogContext.SpanId, syncChild.DatadogContext.ParentId);
+            Assert.Equal(root.Context.SpanId, syncChild.Context.ParentId);
             foreach(var task in tasks)
             {
                 var span = await task;
                 Assert.Equal(root.TraceContext, span.TraceContext);
-                Assert.Equal(root.DatadogContext.SpanId, span.DatadogContext.ParentId);
+                Assert.Equal(root.Context.SpanId, span.Context.ParentId);
             }
         }
     }

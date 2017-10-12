@@ -27,7 +27,7 @@ namespace Datadog.Tracer
         {
             lock (_lock)
             {
-                _currentSpanContext.Value = span.DatadogContext;
+                _currentSpanContext.Value = span.Context;
                 _spans.Add(span);
                 _openSpans++;
             }

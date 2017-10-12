@@ -15,7 +15,7 @@ namespace Datadog.Tracer
             // First, pack array length (or map length).
             // It should be the number of members of the object to be serialized.
             var len = 8;
-            if (value.DatadogContext.ParentId != null)
+            if (value.Context.ParentId != null)
             {
                 len += 1;
             }
@@ -29,9 +29,9 @@ namespace Datadog.Tracer
             }
             packer.PackMapHeader(len);
             packer.PackString("trace_id");
-            packer.Pack(value.DatadogContext.TraceId);
+            packer.Pack(value.Context.TraceId);
             packer.PackString("span_id");
-            packer.Pack(value.DatadogContext.SpanId);
+            packer.Pack(value.Context.SpanId);
             packer.PackString("name");
             packer.PackString(value.OperationName);
             packer.PackString("resource");
@@ -44,10 +44,10 @@ namespace Datadog.Tracer
             packer.Pack(value.StartTime.ToUnixTimeNanoseconds());
             packer.PackString("duration");
             packer.Pack(value.Duration.ToNanoseconds());
-            if (value.DatadogContext.ParentId != null)
+            if (value.Context.ParentId != null)
             {
                 packer.PackString("parent_id");
-                packer.Pack(value.DatadogContext.ParentId);
+                packer.Pack(value.Context.ParentId);
             }
             if (value.Error)
             {
