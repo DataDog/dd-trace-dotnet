@@ -75,6 +75,7 @@ namespace Datadog.Tracer
                 var shouldCloseSpan = false;
                 lock (_lock)
                 {
+                    ResourceName = ResourceName ?? OperationName;
                     if (!_isFinished)
                     {
                         Duration = _sw.Elapsed;
@@ -93,6 +94,7 @@ namespace Datadog.Tracer
         {
             lock (_lock)
             {
+                ResourceName = ResourceName ?? OperationName;
                 var shouldCloseSpan = false;
                 if (!_isFinished)
                 {

@@ -9,12 +9,10 @@ namespace Datadog.Tracer.Tests
 {
     public class TracerTests
     {
-        private Mock<IApi> _apiMock = new Mock<IApi>();
-
         [Fact]
         public void BuildSpan_NoParameter_DefaultParameters()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer();
 
             var builder = tracer.BuildSpan("Op1");
             var span = (Span)builder.Start();
@@ -26,7 +24,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_OneChild_ChildParentProperlySet()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer();
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -42,7 +40,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_2ChildrenOfRoot_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer();
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -64,7 +62,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_2LevelChildren_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer();
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -85,7 +83,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public async Task BuildSpan_AsyncChildrenCreation_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer();
             var tcs = new TaskCompletionSource<bool>();
 
             var root = (Span)tracer

@@ -2,9 +2,7 @@
 using OpenTracing.Propagation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Datadog.Tracer
 {
@@ -12,16 +10,14 @@ namespace Datadog.Tracer
     {
         private AsyncLocal<TraceContext> _currentContext = new AsyncLocal<TraceContext>();
         private string _defaultServiceName;
-        private IApi _api;
         private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
-        public Tracer(IApi api, List<ServiceInfo> serviceInfo = null, string defaultServiceName = Constants.UnkownService)
+        public Tracer(List<ServiceInfo> serviceInfo = null, string defaultServiceName = null)
         {
-            _api = api;
             // TODO:bertrand be smarter about the service name
-            _defaultServiceName = defaultServiceName;
+            _defaultServiceName = defaultServiceName ?? Constants.UnkownService;
             if (defaultServiceName == Constants.UnkownService)
             {
                 _services[Constants.UnkownService] = new ServiceInfo
@@ -38,8 +34,7 @@ namespace Datadog.Tracer
                     _services[service.ServiceName] = service;
                 }
             }
-            // TODO:bertrand handle errors properly
-            Task.WhenAll(_services.Values.Select(_api.SendServiceAsync)).Wait();
+            // TODO:bertrand send me
         }
 
         public ISpanBuilder BuildSpan(string operationName)
@@ -57,13 +52,9 @@ namespace Datadog.Tracer
             throw new NotImplementedException();
         }
 
-
-        // Trick to keep the method from being accessed from outside the assembly while having it exposed as an interface.
-        // https://stackoverflow.com/a/18944374
         void IDatadogTracer.Write(List<Span> trace)
         {
-            // TODO:bertrand should be non blocking + retry mechanism
-            _api.SendTracesAsync(new List<List<Span>> { trace }).Wait();
+            // TODO:bertrand send me
         }
 
         ITraceContext IDatadogTracer.GetTraceContext()
@@ -73,6 +64,11 @@ namespace Datadog.Tracer
                 _currentContext.Value = new TraceContext(this);
             }
             return _currentContext.Value;
+        }
+
+        void IDatadogTracer.CloseCurrentTraceContext()
+        {
+            _currentContext.Value = null;
         }
     }
 }
