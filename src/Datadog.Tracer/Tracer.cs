@@ -22,24 +22,24 @@ namespace Datadog.Tracer
             _api = api;
             // TODO:bertrand be smarter about the service name
             _defaultServiceName = defaultServiceName;
-            if(serviceInfo != null)
+            if (defaultServiceName == Constants.UnkownService)
             {
-                if(defaultServiceName == Constants.UnkownService)
+                _services[Constants.UnkownService] = new ServiceInfo
                 {
-                    _services[Constants.UnkownService] = new ServiceInfo
-                    {
-                        ServiceName = Constants.UnkownService,
-                        App = Constants.UnkownApp,
-                        AppType = Constants.WebAppType,
-                    };
-                }
+                    ServiceName = Constants.UnkownService,
+                    App = Constants.UnkownApp,
+                    AppType = Constants.WebAppType,
+                };
+            }
+            if (serviceInfo != null)
+            {
                 foreach(var service in serviceInfo)
                 {
                     _services[service.ServiceName] = service;
                 }
-                // TODO:bertrand handle errors properly
-                Task.WhenAll(_services.Values.Select(_api.SendServiceAsync)).Wait();
             }
+            // TODO:bertrand handle errors properly
+            Task.WhenAll(_services.Values.Select(_api.SendServiceAsync)).Wait();
         }
 
         public ISpanBuilder BuildSpan(string operationName)
