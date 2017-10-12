@@ -1,6 +1,7 @@
 ﻿using OpenTracing;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Threading.Tasks.Dataflow;
@@ -17,9 +18,9 @@ namespace Datadog.Tracer
             return GetTracer(uri, Scheduler.Default);
         }
 
-        internal static Tracer GetTracer(Uri uri, IScheduler scheduler)
+        internal static Tracer GetTracer(Uri uri, IScheduler scheduler, DelegatingHandler delegatingHandler = null)
         {
-            var api = new Api(uri);
+            var api = new Api(uri, delegatingHandler);
             var tracer = new Tracer();
             // The BufferBlock is converting the synchronous flow of traces into an asynchronous one to make sure we don't block the context that is emiting the traces and drops traces once it's full.
             var bufferBlock = new BufferBlock<List<Span>>(new DataflowBlockOptions { BoundedCapacity = 1000 });

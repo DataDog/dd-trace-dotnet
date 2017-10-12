@@ -40,8 +40,9 @@ namespace Datadog.Tracer
         private Uri _servicesEndpoint;
         private HttpClient _client = new HttpClient();
 
-        public Api(Uri baseEndpoint)
+        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler = null)
         {
+            _client = new HttpClient(delegatingHandler);
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _servicesEndpoint = new Uri(baseEndpoint, ServicesPath);
             // TODO:bertrand add header for os version

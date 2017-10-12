@@ -2,65 +2,155 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace Datadog.Tracer.IntegrationTests
 {
+    public class RecordHttpHandler : DelegatingHandler
+    {
+        private Object _lock = new Object();
+        private int _count = 0;
+        private int _target = 0;
+        private TaskCompletionSource<bool> _tcs;
+
+        public List<HttpRequestMessage> Requests { get; set; }
+
+        public List<HttpResponseMessage> Responses { get; set;  }
+
+        public RecordHttpHandler()
+        {
+            InnerHandler = new HttpClientHandler();
+            Requests = new List<HttpRequestMessage>();
+            Responses = new List<HttpResponseMessage>();
+        }
+
+        protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var response =  await base.SendAsync(request, cancellationToken);
+            lock(_lock)
+            {
+                Requests.Add(request);
+                Responses.Add(response);
+                _count++;
+                if(_tcs != null && _count >= _target)
+                {
+                    _tcs.SetResult(true);
+                    _tcs = null;
+                }
+            }
+            return response;
+        }
+
+        public Task<bool> WaitForCompletion(int target, TimeSpan? timeout = null)
+        {
+            timeout = timeout ?? TimeSpan.FromSeconds(3);
+            lock (_lock)
+            {
+                if (_count >= target)
+                {
+                    return Task.FromResult(true);
+                }
+                if (_tcs == null)
+                {
+                    _target = target;
+                    _tcs = new TaskCompletionSource<bool>();
+                    var cancelationSource = new CancellationTokenSource(timeout.Value);
+                    cancelationSource.Token.Register(() => _tcs?.SetException(new TimeoutException()));
+                    return _tcs.Task;
+                }
+                else
+                {
+                    throw new InvalidOperationException("This method should not be called twice on the same instance");
+                }
+            }
+        }
+    }
+
     public class SendTracesToAgent
     {
-        [Fact]
-        public void MinimalSpan()
-        {
-            var scheduler = new TestScheduler();
-            var tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), scheduler);
-            var services = tracer.AsList<ServiceInfo>();
-            var traces = tracer.AsList<List<Span>>();
-            tracer.BuildSpan("Operation")
-                .WithTag(Tags.ResourceName, "This is a resource")
-                .Start()
-                .Finish();
-            scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
+        private TestScheduler _scheduler;
+        private Tracer _tracer;
+        private RecordHttpHandler _httpRecorder;
+        private List<List<Span>> _traces;
+        private List<ServiceInfo> _services;
 
-            var trace = traces.Single();
-            Assert.Equal(1, trace.Count);
-            Assert.Equal(1, services.Count);
+        public SendTracesToAgent()
+        {
+            _scheduler = new TestScheduler();
+            _httpRecorder = new RecordHttpHandler();
+            _tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), _scheduler, _httpRecorder);
+            _services = _tracer.AsList<ServiceInfo>();
+            _traces = _tracer.AsList<List<Span>>();
         }
 
         [Fact]
-        public void CustomServiceName()
+        public async void MinimalSpan()
         {
-            var tracer = new Tracer();
-            var traces = tracer.AsList<List<Span>>();
-            var services = tracer.AsList<ServiceInfo>();
-            tracer.BuildSpan("Operation")
+            _tracer.BuildSpan("Operation")
+                .WithTag(Tags.ResourceName, "This is a resource")
+                .Start()
+                .Finish();
+            _scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
+
+            // Check that the tracer sends the proper traces
+            var trace = _traces.Single();
+            Assert.Equal(1, trace.Count);
+            Assert.Equal(1, _services.Count);
+
+            // Check that the HTTP call went as expected
+            await _httpRecorder.WaitForCompletion(1);
+            var request = _httpRecorder.Requests.Single();
+            var response = _httpRecorder.Responses.Single();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async void CustomServiceName()
+        {
+            _tracer.BuildSpan("Operation")
                 .WithTag(Tags.ResourceName, "This is a resource")
                 .WithTag(Tags.ServiceName, "Service1")
                 .Start()
                 .Finish();
+            _scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
 
-            var trace = traces.Single();
+            // Check that the tracer sends the proper traces
+            var trace = _traces.Single();
             Assert.Equal(1, trace.Count);
-            Assert.Equal(1, services.Count);
+            Assert.Equal(1, _services.Count);
+
+            // Check that the HTTP call went as expected
+            await _httpRecorder.WaitForCompletion(1);
+            var request = _httpRecorder.Requests.Single();
+            var response = _httpRecorder.Responses.Single();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
-        public void Utf8Everywhere()
+        public async void Utf8Everywhere()
         {
-            var tracer = new Tracer();
-            var traces = tracer.AsList<List<Span>>();
-            var services = tracer.AsList<ServiceInfo>();
-            tracer.BuildSpan("Aᛗᚪᚾᚾᚪ")
+            _tracer.BuildSpan("Aᛗᚪᚾᚾᚪ")
                 .WithTag(Tags.ResourceName, "η γλώσσα μου έδωσαν ελληνική")
                 .WithTag(Tags.ServiceName, "На берегу пустынных волн")
                 .WithTag("யாமறிந்த", "ნუთუ კვლა")
                 .Start()
                 .Finish();
+            _scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
 
-            var trace = traces.Single();
+            // Check that the tracer sends the proper traces
+            var trace = _traces.Single();
             Assert.Equal(1, trace.Count);
-            Assert.Equal(1, services.Count);
+            Assert.Equal(1, _services.Count);
+
+            // Check that the HTTP call went as expected
+            await _httpRecorder.WaitForCompletion(1);
+            var request = _httpRecorder.Requests.Single();
+            var response = _httpRecorder.Responses.Single();
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }
 }
