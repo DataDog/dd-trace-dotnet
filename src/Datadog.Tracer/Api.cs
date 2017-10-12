@@ -14,7 +14,7 @@ namespace Datadog.Tracer
         private const string TracesPath = "/v0.3/traces";
         private const string ServicesPath = "/v0.3/services";
 
-        private static MessagePackSerializer<List<List<Span>>> _traceSerializer;
+        private static MessagePackSerializer<IList<List<Span>>> _traceSerializer;
         private static MessagePackSerializer<ServiceInfo> _serviceSerializer;
 
         static Api()
@@ -32,7 +32,7 @@ namespace Datadog.Tracer
                     eventArgs.SetSerializer(serviceSerializer);
                 }
             };
-            _traceSerializer = serializationContext.GetSerializer<List<List<Span>>>();
+            _traceSerializer = serializationContext.GetSerializer<IList<List<Span>>>();
             _serviceSerializer = serializationContext.GetSerializer<ServiceInfo>();
         }
 
@@ -50,7 +50,7 @@ namespace Datadog.Tracer
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetEntryAssembly().GetName().Version.ToString());
         }
 
-        public async Task SendTracesAsync(List<List<Span>> traces)
+        public async Task SendTracesAsync(IList<List<Span>> traces)
         {
             // TODO:bertrand avoid using a memory stream and stream the serialized content directly to the network
             using (var ms = new MemoryStream())
