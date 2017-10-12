@@ -15,9 +15,9 @@ namespace Datadog.Tracer
         private SpanContext _context;
         private Stopwatch _sw;
 
-        public ISpanContext Context => _context;
+        ISpanContext ISpan.Context => _context;
 
-        internal SpanContext DatadogContext => _context;
+        internal SpanContext Context => _context;
 
         internal ITraceContext TraceContext => _context.TraceContext;
 

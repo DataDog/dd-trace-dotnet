@@ -48,12 +48,12 @@ namespace Datadog.Tracer.Tests
                 .AsChildOf(root)
                 .Start();
 
-            Assert.Null(root.DatadogContext.ParentId);
-            Assert.NotEqual<ulong>(0, root.DatadogContext.SpanId);
-            Assert.NotEqual<ulong>(0, root.DatadogContext.TraceId);
-            Assert.Equal(root.DatadogContext.SpanId, child.DatadogContext.ParentId);
-            Assert.Equal(root.DatadogContext.TraceId, child.DatadogContext.TraceId);
-            Assert.NotEqual<ulong>(0, child.DatadogContext.SpanId);
+            Assert.Null(root.Context.ParentId);
+            Assert.NotEqual<ulong>(0, root.Context.SpanId);
+            Assert.NotEqual<ulong>(0, root.Context.TraceId);
+            Assert.Equal(root.Context.SpanId, child.Context.ParentId);
+            Assert.Equal(root.Context.TraceId, child.Context.TraceId);
+            Assert.NotEqual<ulong>(0, child.Context.SpanId);
         }
 
         [Fact]
@@ -61,15 +61,15 @@ namespace Datadog.Tracer.Tests
         {
             var root = (Span)CreateSpanBuilder().Start();
             var child = (Span)CreateSpanBuilder()
-                .AsChildOf(root.DatadogContext)
+                .AsChildOf(root.Context)
                 .Start();
 
-            Assert.Null(root.DatadogContext.ParentId);
-            Assert.NotEqual<ulong>(0, root.DatadogContext.SpanId);
-            Assert.NotEqual<ulong>(0, root.DatadogContext.TraceId);
-            Assert.Equal(root.DatadogContext.SpanId, child.DatadogContext.ParentId);
-            Assert.Equal(root.DatadogContext.TraceId, child.DatadogContext.TraceId);
-            Assert.NotEqual<ulong>(0, child.DatadogContext.SpanId);
+            Assert.Null(root.Context.ParentId);
+            Assert.NotEqual<ulong>(0, root.Context.SpanId);
+            Assert.NotEqual<ulong>(0, root.Context.TraceId);
+            Assert.Equal(root.Context.SpanId, child.Context.ParentId);
+            Assert.Equal(root.Context.TraceId, child.Context.TraceId);
+            Assert.NotEqual<ulong>(0, child.Context.SpanId);
         }
 
         [Fact]
@@ -77,15 +77,15 @@ namespace Datadog.Tracer.Tests
         {
             var root = (Span)CreateSpanBuilder().Start();
             var child = (Span)CreateSpanBuilder()
-                .AddReference(References.ChildOf, root.DatadogContext)
+                .AddReference(References.ChildOf, root.Context)
                 .Start();
 
-            Assert.Null(root.DatadogContext.ParentId);
-            Assert.NotEqual<ulong>(0, root.DatadogContext.SpanId);
-            Assert.NotEqual<ulong>(0, root.DatadogContext.TraceId);
-            Assert.Equal(root.DatadogContext.SpanId, child.DatadogContext.ParentId);
-            Assert.Equal(root.DatadogContext.TraceId, child.DatadogContext.TraceId);
-            Assert.NotEqual<ulong>(0, child.DatadogContext.SpanId);
+            Assert.Null(root.Context.ParentId);
+            Assert.NotEqual<ulong>(0, root.Context.SpanId);
+            Assert.NotEqual<ulong>(0, root.Context.TraceId);
+            Assert.Equal(root.Context.SpanId, child.Context.ParentId);
+            Assert.Equal(root.Context.TraceId, child.Context.TraceId);
+            Assert.NotEqual<ulong>(0, child.Context.SpanId);
         }
 
         [Fact]
