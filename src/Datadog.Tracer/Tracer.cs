@@ -18,10 +18,10 @@ namespace Datadog.Tracer
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
-        public Tracer(List<ServiceInfo> serviceInfo = null, string defaultServiceName = Constants.UnkownService)
+        public Tracer(List<ServiceInfo> serviceInfo = null, string defaultServiceName = null)
         {
             // TODO:bertrand be smarter about the service name
-            _defaultServiceName = defaultServiceName;
+            _defaultServiceName = defaultServiceName ?? Constants.UnkownService;
             if (defaultServiceName == Constants.UnkownService)
             {
                 _services[Constants.UnkownService] = new ServiceInfo
@@ -70,6 +70,11 @@ namespace Datadog.Tracer
                 _currentContext.Value = new TraceContext(this);
             }
             return _currentContext.Value;
+        }
+
+        void IDatadogTracer.CloseCurrentTraceContext()
+        {
+            _currentContext.Value = null;
         }
 
         public IDisposable Subscribe(IObserver<List<Span>> observer)

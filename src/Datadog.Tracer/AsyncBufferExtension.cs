@@ -25,13 +25,12 @@ namespace Datadog.Tracer
             // Based on https://stackoverflow.com/a/9423830
             // Creates a BatchBlock triggered by a timer with a TransformBlock acting as a debouncer
             _batchBlock = new BatchBlock<T>(batchSize, new GroupingDataflowBlockOptions { BoundedCapacity = boundedCapacity });
-            _triggerBatchTimer = new Timer((s) => _batchBlock.TriggerBatch());
+            _triggerBatchTimer = new Timer((s) => _batchBlock.TriggerBatch(), null, period, period);
             _timeoutTransformBlock = new TransformBlock<T[], T[]>((value) =>
             {
-                _triggerBatchTimer.Change(period, TimeSpan.FromMilliseconds(-1));
+                _triggerBatchTimer.Change(period, period);
                 return value;
             });
-            _triggerBatchTimer.Change(period, TimeSpan.FromMilliseconds(-1));
             _batchBlock.LinkTo(_timeoutTransformBlock);
 
             _observable = _timeoutTransformBlock.AsObservable();

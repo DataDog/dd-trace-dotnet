@@ -72,7 +72,6 @@ namespace Datadog.Tracer.IntegrationTests
 
     public class SendTracesToAgent
     {
-        private TestScheduler _scheduler;
         private Tracer _tracer;
         private RecordHttpHandler _httpRecorder;
         private List<List<Span>> _traces;
@@ -81,7 +80,7 @@ namespace Datadog.Tracer.IntegrationTests
         public SendTracesToAgent()
         {
             _httpRecorder = new RecordHttpHandler();
-            _tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), _httpRecorder);
+            _tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), null, null, _httpRecorder);
             _services = _tracer.AsList<ServiceInfo>();
             _traces = _tracer.AsList<List<Span>>();
         }
@@ -90,7 +89,6 @@ namespace Datadog.Tracer.IntegrationTests
         public async void MinimalSpan()
         {
             _tracer.BuildSpan("Operation")
-                .WithTag(Tags.ResourceName, "This is a resource")
                 .Start()
                 .Finish();
 
@@ -147,6 +145,16 @@ namespace Datadog.Tracer.IntegrationTests
             Assert.Equal(2, _httpRecorder.Requests.Count);
             Assert.Equal(2, _httpRecorder.Responses.Count);
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
+        }
+
+        [Fact]
+        public void WithDefaultFactory()
+        {
+            var tracer = TracerFactory.GetTracer();
+            tracer.BuildSpan("Operation")
+                .Start()
+                .Finish();
+
         }
     }
 }
