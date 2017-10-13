@@ -80,9 +80,8 @@ namespace Datadog.Tracer.IntegrationTests
 
         public SendTracesToAgent()
         {
-            _scheduler = new TestScheduler();
             _httpRecorder = new RecordHttpHandler();
-            _tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), _scheduler, _httpRecorder);
+            _tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), _httpRecorder);
             _services = _tracer.AsList<ServiceInfo>();
             _traces = _tracer.AsList<List<Span>>();
         }
@@ -94,7 +93,6 @@ namespace Datadog.Tracer.IntegrationTests
                 .WithTag(Tags.ResourceName, "This is a resource")
                 .Start()
                 .Finish();
-            _scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
 
             // Check that the tracer sends the proper traces
             var trace = _traces.Single();
@@ -102,10 +100,10 @@ namespace Datadog.Tracer.IntegrationTests
             Assert.Equal(1, _services.Count);
 
             // Check that the HTTP call went as expected
-            await _httpRecorder.WaitForCompletion(1);
-            var request = _httpRecorder.Requests.Single();
-            var response = _httpRecorder.Responses.Single();
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            await _httpRecorder.WaitForCompletion(2);
+            Assert.Equal(2, _httpRecorder.Requests.Count);
+            Assert.Equal(2, _httpRecorder.Responses.Count);
+            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
         }
 
         [Fact]
@@ -116,7 +114,6 @@ namespace Datadog.Tracer.IntegrationTests
                 .WithTag(Tags.ServiceName, "Service1")
                 .Start()
                 .Finish();
-            _scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
 
             // Check that the tracer sends the proper traces
             var trace = _traces.Single();
@@ -124,10 +121,10 @@ namespace Datadog.Tracer.IntegrationTests
             Assert.Equal(1, _services.Count);
 
             // Check that the HTTP call went as expected
-            await _httpRecorder.WaitForCompletion(1);
-            var request = _httpRecorder.Requests.Single();
-            var response = _httpRecorder.Responses.Single();
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            await _httpRecorder.WaitForCompletion(2);
+            Assert.Equal(2, _httpRecorder.Requests.Count);
+            Assert.Equal(2, _httpRecorder.Responses.Count);
+            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
         }
 
         [Fact]
@@ -139,7 +136,6 @@ namespace Datadog.Tracer.IntegrationTests
                 .WithTag("யாமறிந்த", "ნუთუ კვლა")
                 .Start()
                 .Finish();
-            _scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
 
             // Check that the tracer sends the proper traces
             var trace = _traces.Single();
@@ -147,10 +143,10 @@ namespace Datadog.Tracer.IntegrationTests
             Assert.Equal(1, _services.Count);
 
             // Check that the HTTP call went as expected
-            await _httpRecorder.WaitForCompletion(1);
-            var request = _httpRecorder.Requests.Single();
-            var response = _httpRecorder.Responses.Single();
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            await _httpRecorder.WaitForCompletion(2);
+            Assert.Equal(2, _httpRecorder.Requests.Count);
+            Assert.Equal(2, _httpRecorder.Responses.Count);
+            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
         }
     }
 }
