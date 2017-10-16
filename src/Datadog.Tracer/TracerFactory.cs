@@ -18,8 +18,8 @@ namespace Datadog.Tracer
         internal static Tracer GetTracer(Uri uri, List<ServiceInfo> serviceInfos = null, string defaultServiceName = null, DelegatingHandler delegatingHandler = null)
         {
             var api = new Api(uri, delegatingHandler);
-            var tracer = new Tracer(serviceInfos, defaultServiceName);
-
+            var agentWriter = new AgentWriter(api);
+            var tracer = new Tracer(agentWriter, serviceInfos, defaultServiceName);
             return tracer;
         }
     }

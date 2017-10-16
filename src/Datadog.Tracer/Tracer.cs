@@ -11,14 +11,16 @@ namespace Datadog.Tracer
         private AsyncLocal<TraceContext> _currentContext = new AsyncLocal<TraceContext>();
         private string _defaultServiceName;
         private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
+        private IAgentWriter _agentWriter;
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
-        public Tracer(List<ServiceInfo> serviceInfo = null, string defaultServiceName = null)
+        public Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null)
         {
+            _agentWriter = agentWriter;
             // TODO:bertrand be smarter about the service name
             _defaultServiceName = defaultServiceName ?? Constants.UnkownService;
-            if (defaultServiceName == Constants.UnkownService)
+            if (_defaultServiceName == Constants.UnkownService)
             {
                 _services[Constants.UnkownService] = new ServiceInfo
                 {
@@ -34,7 +36,10 @@ namespace Datadog.Tracer
                     _services[service.ServiceName] = service;
                 }
             }
-            // TODO:bertrand send me
+            foreach(var service in _services.Values)
+            {
+                _agentWriter.WriteServiceInfo(service);
+            }
         }
 
         public ISpanBuilder BuildSpan(string operationName)
@@ -55,6 +60,7 @@ namespace Datadog.Tracer
         void IDatadogTracer.Write(List<Span> trace)
         {
             // TODO:bertrand send me
+            _agentWriter.WriteTrace(trace);
         }
 
         ITraceContext IDatadogTracer.GetTraceContext()

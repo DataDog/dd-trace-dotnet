@@ -9,10 +9,19 @@ namespace Datadog.Tracer.Tests
 {
     public class TracerTests
     {
+        private Mock<IAgentWriter> _agentWriter = new Mock<IAgentWriter>();
+
+        [Fact]
+        public void Ctor_DefaultValues_ShouldSendDefaultServiceInfo()
+        {
+            var tracer = new Tracer(_agentWriter.Object);
+            _agentWriter.Verify(x => x.WriteServiceInfo(It.Is<ServiceInfo>(y => y.ServiceName == Constants.UnkownService && y.AppType == Constants.WebAppType && y.App == Constants.UnkownApp)), Times.Once);
+        }
+
         [Fact]
         public void BuildSpan_NoParameter_DefaultParameters()
         {
-            var tracer = new Tracer();
+            var tracer = new Tracer(_agentWriter.Object);
 
             var builder = tracer.BuildSpan("Op1");
             var span = (Span)builder.Start();
@@ -24,7 +33,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_OneChild_ChildParentProperlySet()
         {
-            var tracer = new Tracer();
+            var tracer = new Tracer(_agentWriter.Object);
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -40,7 +49,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_2ChildrenOfRoot_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer();
+            var tracer = new Tracer(_agentWriter.Object);
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -62,7 +71,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_2LevelChildren_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer();
+            var tracer = new Tracer(_agentWriter.Object);
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -83,7 +92,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public async Task BuildSpan_AsyncChildrenCreation_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer();
+            var tracer = new Tracer(_agentWriter.Object);
             var tcs = new TaskCompletionSource<bool>();
 
             var root = (Span)tracer
