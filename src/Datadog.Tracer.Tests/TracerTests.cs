@@ -1,5 +1,6 @@
 ﻿using Moq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -8,7 +9,7 @@ namespace Datadog.Tracer.Tests
 {
     public class TracerTests
     {
-        private Mock<IApi> _apiMock = new Mock<IApi>(MockBehavior.Strict);
+        private Mock<IApi> _apiMock = new Mock<IApi>();
 
         [Fact]
         public void BuildSpan_NoParameter_DefaultParameters()
