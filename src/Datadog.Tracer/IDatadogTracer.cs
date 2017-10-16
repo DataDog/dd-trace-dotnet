@@ -10,5 +10,7 @@ namespace Datadog.Tracer
         void Write(List<Span> span);
 
         ITraceContext GetTraceContext();
+
+        void CloseCurrentTraceContext();
     }
 }

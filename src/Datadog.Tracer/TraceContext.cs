@@ -41,6 +41,7 @@ namespace Datadog.Tracer
                 _openSpans--;
                 if (span.IsRootSpan)
                 {
+                    _tracer.CloseCurrentTraceContext();
                     if (_openSpans != 0)
                     {
                         // TODO:bertrand log error and do not send anything
@@ -50,7 +51,6 @@ namespace Datadog.Tracer
                     {
                         _tracer.Write(_spans);
                     }
-                    // TODO:bertrand make sure the tracecontext is reset
                 }
             }
         }

@@ -14,7 +14,7 @@ namespace Datadog.Tracer
         private const string TracesPath = "/v0.3/traces";
         private const string ServicesPath = "/v0.3/services";
 
-        private static MessagePackSerializer<List<List<Span>>> _traceSerializer;
+        private static MessagePackSerializer<IList<List<Span>>> _traceSerializer;
         private static MessagePackSerializer<ServiceInfo> _serviceSerializer;
 
         static Api()
@@ -32,7 +32,7 @@ namespace Datadog.Tracer
                     eventArgs.SetSerializer(serviceSerializer);
                 }
             };
-            _traceSerializer = serializationContext.GetSerializer<List<List<Span>>>();
+            _traceSerializer = serializationContext.GetSerializer<IList<List<Span>>>();
             _serviceSerializer = serializationContext.GetSerializer<ServiceInfo>();
         }
 
@@ -40,8 +40,16 @@ namespace Datadog.Tracer
         private Uri _servicesEndpoint;
         private HttpClient _client = new HttpClient();
 
-        public Api(Uri baseEndpoint)
+        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler = null)
         {
+            if (delegatingHandler != null)
+            {
+                _client = new HttpClient(delegatingHandler);
+            }
+            else
+            {
+                _client = new HttpClient();
+            }
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _servicesEndpoint = new Uri(baseEndpoint, ServicesPath);
             // TODO:bertrand add header for os version
@@ -50,29 +58,43 @@ namespace Datadog.Tracer
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetEntryAssembly().GetName().Version.ToString());
         }
 
-        public async Task SendTracesAsync(List<List<Span>> traces)
+        public async Task SendTracesAsync(IList<List<Span>> traces)
         {
-            // TODO:bertrand avoid using a memory stream and stream the serialized content directly to the network
-            using (var ms = new MemoryStream())
+            try
             {
-                await _traceSerializer.PackAsync(ms, traces);
-                var content = new ByteArrayContent(ms.GetBuffer());
-                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/msgpack");
-                var response = await _client.PostAsync(_tracesEndpoint, content);
-                response.EnsureSuccessStatusCode();
+                // TODO:bertrand avoid using a memory stream and stream the serialized content directly to the network
+                using (var ms = new MemoryStream())
+                {
+                    await _traceSerializer.PackAsync(ms, traces);
+                    var content = new ByteArrayContent(ms.GetBuffer());
+                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/msgpack");
+                    var response = await _client.PostAsync(_tracesEndpoint, content);
+                    response.EnsureSuccessStatusCode();
+                }
+            }
+            catch
+            {
+                //TODO:bertrand Log exception
             }
         }
 
         public async Task SendServiceAsync(ServiceInfo service)
         {
-            // TODO:bertrand avoid using a memory stream and stream the serialized content directly to the network
-            using (var ms = new MemoryStream())
+            try
             {
-                await _serviceSerializer.PackAsync(ms, service);
-                var content = new ByteArrayContent(ms.GetBuffer());
-                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/msgpack");
-                var response = await _client.PostAsync(_servicesEndpoint, content);
-                response.EnsureSuccessStatusCode();
+                // TODO:bertrand avoid using a memory stream and stream the serialized content directly to the network
+                using (var ms = new MemoryStream())
+                {
+                    await _serviceSerializer.PackAsync(ms, service);
+                    var content = new ByteArrayContent(ms.GetBuffer());
+                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/msgpack");
+                    var response = await _client.PostAsync(_servicesEndpoint, content);
+                    response.EnsureSuccessStatusCode();
+                }
+            }
+            catch
+            {
+                // TODO:bertrand log exception 
             }
         }
     }
