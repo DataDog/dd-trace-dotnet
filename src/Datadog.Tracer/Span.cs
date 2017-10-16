@@ -171,7 +171,7 @@ namespace Datadog.Tracer
             {
                 if (_isFinished)
                 {
-                    throw new NotSupportedException("Impossible to add data to a finished span");
+                    // TODO:log an error instead
                 }
                 switch (key) {
                     case Datadog.Tracer.Tags.ResourceName:
