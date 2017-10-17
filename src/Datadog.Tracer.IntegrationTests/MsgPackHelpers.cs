@@ -4,6 +4,12 @@ using System.Linq;
 
 namespace Datadog.Tracer.IntegrationTests
 {
+    /// <summary>
+    /// This class provides a bunch of helpers to read Span and ServiceInfo data
+    /// from their serialized MsgPack representation. (It is not straightfoward
+    /// to create deserializer for them since they are not public and don't provide
+    /// setters for all fields)
+    /// </summary>
     public static class MsgPackHelpers
     {
         public static ulong TraceId(this MessagePackObject obj)
@@ -57,6 +63,15 @@ namespace Datadog.Tracer.IntegrationTests
         public static Dictionary<string, string> Tags(this MessagePackObject obj)
         {
             return obj.AsList().First().AsDictionary()["meta"].AsDictionary().ToDictionary(kv => kv.Key.AsString(), kv => kv.Value.AsString());
+        }
+
+        public static IEnumerable<ServiceInfo> ServiceInfos(this MessagePackObjectDictionary obj)
+        {
+            foreach(var kv in obj)
+            {
+                var s = kv.Value.AsDictionary();
+                yield return new ServiceInfo { App = s["app"].AsString(), AppType = s["app_type"].AsString(), ServiceName = kv.Key.AsString() };
+            }
         }
     }
 }

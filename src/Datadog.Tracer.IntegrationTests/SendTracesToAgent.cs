@@ -1,5 +1,6 @@
 ﻿using MsgPack;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Xunit;
@@ -56,25 +57,44 @@ namespace Datadog.Tracer.IntegrationTests
 
             var trace = _httpRecorder.Traces.Single();
             AssertSpanEqual(span, trace.Single());
+
+            var serviceInfo = _httpRecorder.Services.Single().ServiceInfos().Single();
+            Assert.Equal(Constants.UnkownService, serviceInfo.ServiceName);
+            Assert.Equal(Constants.UnkownApp, serviceInfo.App);
+            Assert.Equal(Constants.WebAppType, serviceInfo.AppType);
         }
 
         [Fact]
         public async void CustomServiceName()
         {
+            const string App = "MyApp";
+            const string AppType = "db";
+            const string ServiceName = "MyService";
+            var serviceList = new List<ServiceInfo> { new ServiceInfo { App = App, AppType = AppType, ServiceName = ServiceName } };
+            _httpRecorder = new RecordHttpHandler();
+            _tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), serviceList, null, _httpRecorder);
+
             var span = (Span)_tracer.BuildSpan("Operation")
                 .WithTag(Tags.ResourceName, "This is a resource")
-                .WithTag(Tags.ServiceName, "Service1")
+                .WithTag(Tags.ServiceName, ServiceName)
                 .Start();
             span.Finish();
 
             // Check that the HTTP calls went as expected
-            await _httpRecorder.WaitForCompletion(2);
-            Assert.Equal(2, _httpRecorder.Requests.Count);
-            Assert.Equal(2, _httpRecorder.Responses.Count);
+            await _httpRecorder.WaitForCompletion(3);
+            Assert.Equal(3, _httpRecorder.Requests.Count);
+            Assert.Equal(3, _httpRecorder.Responses.Count);
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
             AssertSpanEqual(span, trace.Single());
+
+            var serviceInfos = _httpRecorder.Services.Select(x => x.ServiceInfos().Single()).ToList();
+            Assert.Equal(2, serviceInfos.Count);
+            var serviceInfo = serviceInfos.Single(x => x.ServiceName == ServiceName);
+            Assert.Equal(ServiceName, serviceInfo.ServiceName);
+            Assert.Equal(App, serviceInfo.App);
+            Assert.Equal(AppType, serviceInfo.AppType);
         }
 
         [Fact]

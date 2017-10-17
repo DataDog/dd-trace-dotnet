@@ -8,6 +8,11 @@ using System.Threading.Tasks;
 
 namespace Datadog.Tracer.IntegrationTests
 {
+    /// <summary>
+    /// This class implements a handler that can be passed as parameter of a new HttpClient
+    /// and will record all requests made by that client.
+    /// </summary>
+    /// <seealso cref="System.Net.Http.DelegatingHandler" />
     public class RecordHttpHandler : DelegatingHandler
     {
         private Object _lock = new Object();
@@ -16,12 +21,16 @@ namespace Datadog.Tracer.IntegrationTests
         private TaskCompletionSource<bool> _tcs;
 
         public List<HttpRequestMessage> Requests { get; set; }
+
         public List<IList<MessagePackObject>> Traces => Requests
             .Where(x => x.RequestUri.ToString().Contains("/v0.3/traces"))
             .Select(x => Unpacking.UnpackObject(x.Content.ReadAsByteArrayAsync().Result).Value.AsList())
             .ToList();
 
-        public List<HttpRequestMessage> Services => Requests.Where(x => x.RequestUri.ToString().Contains("/v0.3/services")).ToList();
+        public List<MessagePackObjectDictionary> Services => Requests
+            .Where(x => x.RequestUri.ToString().Contains("/v0.3/services"))
+            .Select(x => Unpacking.UnpackObject(x.Content.ReadAsByteArrayAsync().Result).Value.AsDictionary())
+            .ToList();
 
         public List<HttpResponseMessage> Responses { get; set;  }
 
@@ -51,7 +60,7 @@ namespace Datadog.Tracer.IntegrationTests
 
         public Task<bool> WaitForCompletion(int target, TimeSpan? timeout = null)
         {
-            timeout = timeout ?? TimeSpan.FromSeconds(3);
+            timeout = timeout ?? TimeSpan.FromSeconds(10);
             lock (_lock)
             {
                 if (_count >= target)
