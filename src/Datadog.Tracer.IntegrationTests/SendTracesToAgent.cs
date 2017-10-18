@@ -59,7 +59,7 @@ namespace Datadog.Tracer.IntegrationTests
             AssertSpanEqual(span, trace.Single());
 
             var serviceInfo = _httpRecorder.Services.Single().ServiceInfos().Single();
-            Assert.Equal(Constants.UnkownService, serviceInfo.ServiceName);
+            Assert.Equal("Datadog.Tracer", serviceInfo.ServiceName);
             Assert.Equal(Constants.UnkownApp, serviceInfo.App);
             Assert.Equal(Constants.WebAppType, serviceInfo.AppType);
         }

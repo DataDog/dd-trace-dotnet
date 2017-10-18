@@ -15,7 +15,7 @@ namespace Datadog.Tracer.Tests
         public void Ctor_DefaultValues_ShouldSendDefaultServiceInfo()
         {
             var tracer = new Tracer(_agentWriter.Object);
-            _agentWriter.Verify(x => x.WriteServiceInfo(It.Is<ServiceInfo>(y => y.ServiceName == Constants.UnkownService && y.AppType == Constants.WebAppType && y.App == Constants.UnkownApp)), Times.Once);
+            _agentWriter.Verify(x => x.WriteServiceInfo(It.Is<ServiceInfo>(y => y.ServiceName == "Datadog.Tracer" && y.AppType == Constants.WebAppType && y.App == Constants.UnkownApp)), Times.Once);
         }
 
         [Fact]
@@ -26,7 +26,7 @@ namespace Datadog.Tracer.Tests
             var builder = tracer.BuildSpan("Op1");
             var span = (Span)builder.Start();
 
-            Assert.Equal(Constants.UnkownService, span.ServiceName);
+            Assert.Equal("Datadog.Tracer", span.ServiceName);
             Assert.Equal("Op1", span.OperationName);
         }
 
