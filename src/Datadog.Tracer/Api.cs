@@ -13,16 +13,14 @@ namespace Datadog.Tracer
     {
         private const string TracesPath = "/v0.3/traces";
         private const string ServicesPath = "/v0.3/services";
-
-        private static MessagePackSerializer<IList<List<Span>>> _traceSerializer;
-        private static MessagePackSerializer<ServiceInfo> _serviceSerializer;
+        private static SerializationContext _serializationContext;
 
         static Api()
         {
-            var serializationContext = new SerializationContext();
-            var spanSerializer = new SpanMessagePackSerializer(serializationContext);
-            var serviceSerializer = new ServiceInfoMessagePackSerializer(serializationContext);
-            serializationContext.ResolveSerializer += (sender, eventArgs) => {
+            _serializationContext = new SerializationContext();
+            var spanSerializer = new SpanMessagePackSerializer(_serializationContext);
+            var serviceSerializer = new ServiceInfoMessagePackSerializer(_serializationContext);
+            _serializationContext.ResolveSerializer += (sender, eventArgs) => {
                 if (eventArgs.TargetType == typeof(Span))
                 {
                     eventArgs.SetSerializer(spanSerializer);
@@ -32,8 +30,6 @@ namespace Datadog.Tracer
                     eventArgs.SetSerializer(serviceSerializer);
                 }
             };
-            _traceSerializer = serializationContext.GetSerializer<IList<List<Span>>>();
-            _serviceSerializer = serializationContext.GetSerializer<ServiceInfo>();
         }
 
         private Uri _tracesEndpoint;
@@ -62,15 +58,9 @@ namespace Datadog.Tracer
         {
             try
             {
-                // TODO:bertrand avoid using a memory stream and stream the serialized content directly to the network
-                using (var ms = new MemoryStream())
-                {
-                    await _traceSerializer.PackAsync(ms, traces);
-                    var content = new ByteArrayContent(ms.GetBuffer());
-                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/msgpack");
-                    var response = await _client.PostAsync(_tracesEndpoint, content);
-                    response.EnsureSuccessStatusCode();
-                }
+                var content = new MsgPackContent<IList<List<Span>>>(traces, _serializationContext);
+                var response = await _client.PostAsync(_tracesEndpoint, content);
+                response.EnsureSuccessStatusCode();
             }
             catch
             {
@@ -82,15 +72,9 @@ namespace Datadog.Tracer
         {
             try
             {
-                // TODO:bertrand avoid using a memory stream and stream the serialized content directly to the network
-                using (var ms = new MemoryStream())
-                {
-                    await _serviceSerializer.PackAsync(ms, service);
-                    var content = new ByteArrayContent(ms.GetBuffer());
-                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/msgpack");
-                    var response = await _client.PostAsync(_servicesEndpoint, content);
-                    response.EnsureSuccessStatusCode();
-                }
+                var content = new MsgPackContent<ServiceInfo>(service, _serializationContext);
+                var response = await _client.PostAsync(_servicesEndpoint, content);
+                response.EnsureSuccessStatusCode();
             }
             catch
             {
