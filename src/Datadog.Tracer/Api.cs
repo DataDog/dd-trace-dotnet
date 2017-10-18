@@ -1,7 +1,7 @@
 ﻿using MsgPack.Serialization;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -54,32 +54,42 @@ namespace Datadog.Tracer
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetEntryAssembly().GetName().Version.ToString());
         }
 
+        private async Task SendAsync<T>(T value, Uri endpoint)
+        {
+            const int retries = 2;
+            for (int i = 0; i < retries + 1; i++)
+            {
+                try
+                {
+                    var content = new MsgPackContent<T>(value, _serializationContext);
+                    var response = await _client.PostAsync(endpoint, content);
+                    if(response.StatusCode == HttpStatusCode.OK)
+                    {
+                        return;
+                    }
+                    if((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
+                    {
+                        // TODO:bertrand log
+                        return;
+                    }
+                    throw new HttpRequestException($"The request to {endpoint} failed with status {response.StatusCode}");
+                }
+                catch
+                {
+                    // TODO:bertrand Log
+                }
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+        }
+
         public async Task SendTracesAsync(IList<List<Span>> traces)
         {
-            try
-            {
-                var content = new MsgPackContent<IList<List<Span>>>(traces, _serializationContext);
-                var response = await _client.PostAsync(_tracesEndpoint, content);
-                response.EnsureSuccessStatusCode();
-            }
-            catch
-            {
-                //TODO:bertrand Log exception
-            }
+            await SendAsync(traces, _tracesEndpoint);
         }
 
         public async Task SendServiceAsync(ServiceInfo service)
         {
-            try
-            {
-                var content = new MsgPackContent<ServiceInfo>(service, _serializationContext);
-                var response = await _client.PostAsync(_servicesEndpoint, content);
-                response.EnsureSuccessStatusCode();
-            }
-            catch
-            {
-                // TODO:bertrand log exception 
-            }
+            await SendAsync(service, _servicesEndpoint);
         }
     }
 }
