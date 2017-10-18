@@ -8,11 +8,13 @@ namespace Datadog.Tracer
         private readonly Object _lock = new Object();
         private readonly int _maxSize;
         private List<T> _items;
+        private Random _random;
 
         public AgentWriterBuffer(int maxSize)
         {
             _maxSize = maxSize;
             _items = new List<T>();
+            _random = new Random();
         }
 
         public bool Push(T item)
@@ -24,7 +26,11 @@ namespace Datadog.Tracer
                     _items.Add(item);
                     return true;
                 }
-                return false;
+                else
+                {
+                    _items[_random.Next(_items.Count)] = item;
+                    return false;
+                }
             }
         }
 
