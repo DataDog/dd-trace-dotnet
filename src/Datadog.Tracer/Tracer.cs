@@ -9,7 +9,7 @@ namespace Datadog.Tracer
 {
     internal class Tracer : ITracer, IDatadogTracer
     {
-        private AsyncLocal<TraceContext> _currentContext = new AsyncLocal<TraceContext>();
+        private AsyncLocalCompat<TraceContext> _currentContext = new AsyncLocalCompat<TraceContext>("Datadog.Tracer.Tracer._currentContext");
         private string _defaultServiceName;
         private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
         private IAgentWriter _agentWriter;
@@ -69,16 +69,16 @@ namespace Datadog.Tracer
 
         ITraceContext IDatadogTracer.GetTraceContext()
         {
-            if(_currentContext.Value == null)
+            if(_currentContext.Get() == null)
             {
-                _currentContext.Value = new TraceContext(this);
+                _currentContext.Set(new TraceContext(this));
             }
-            return _currentContext.Value;
+            return _currentContext.Get();
         }
 
         void IDatadogTracer.CloseCurrentTraceContext()
         {
-            _currentContext.Value = null;
+            _currentContext.Set(null);
         }
     }
 }

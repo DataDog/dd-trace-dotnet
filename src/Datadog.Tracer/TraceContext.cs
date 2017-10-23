@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading;
 
 namespace Datadog.Tracer
 {
@@ -9,7 +8,7 @@ namespace Datadog.Tracer
         private IDatadogTracer _tracer;
         private List<Span> _spans = new List<Span>();
         private int _openSpans = 0;
-        private AsyncLocal<SpanContext> _currentSpanContext = new AsyncLocal<SpanContext>();
+        private AsyncLocalCompat<SpanContext> _currentSpanContext = new AsyncLocalCompat<SpanContext>("Datadog.Tracer.TraceContext._currentSpanContext");
 
         public bool Sampled { get; set; }
 
@@ -20,14 +19,14 @@ namespace Datadog.Tracer
 
         public SpanContext GetCurrentSpanContext()
         {
-            return _currentSpanContext.Value;
+            return _currentSpanContext.Get();
         }
 
         public void AddSpan(Span span)
         {
             lock (_lock)
             {
-                _currentSpanContext.Value = span.Context;
+                _currentSpanContext.Set(span.Context);
                 _spans.Add(span);
                 _openSpans++;
             }
@@ -37,7 +36,7 @@ namespace Datadog.Tracer
         {
             lock (_lock)
             {
-                _currentSpanContext.Value = _currentSpanContext.Value?.Parent;
+                _currentSpanContext.Set(_currentSpanContext.Get()?.Parent);
                 _openSpans--;
                 if (span.IsRootSpan)
                 {
