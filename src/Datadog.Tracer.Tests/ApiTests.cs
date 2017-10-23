@@ -26,8 +26,6 @@ namespace Datadog.Tracer.Tests
 
     public class ApiTests
     {
-        private const int _retries = 2;
-
         [Fact]
         public async Task SendServiceAsync_200OK_AllGood()
         {
@@ -44,7 +42,7 @@ namespace Datadog.Tracer.Tests
         }
 
         [Fact]
-        public async Task SendServiceAsync_500_Retry()
+        public async Task SendServiceAsync_500_ErrorIsCaught()
         {
             var response = new HttpResponseMessage
             {
@@ -55,7 +53,8 @@ namespace Datadog.Tracer.Tests
 
             await api.SendServiceAsync(new ServiceInfo());
 
-            Assert.Equal(1 + _retries, handler.RequestsCount);
+            Assert.Equal(1, handler.RequestsCount);
+            // TODO:bertrand check that it's properly logged
         }
     }
 }

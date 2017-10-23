@@ -56,29 +56,15 @@ namespace Datadog.Tracer
 
         private async Task SendAsync<T>(T value, Uri endpoint)
         {
-            const int retries = 2;
-            for (int i = 0; i < retries + 1; i++)
+            try
             {
-                try
-                {
-                    var content = new MsgPackContent<T>(value, _serializationContext);
-                    var response = await _client.PostAsync(endpoint, content);
-                    if(response.StatusCode == HttpStatusCode.OK)
-                    {
-                        return;
-                    }
-                    if((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
-                    {
-                        // TODO:bertrand log
-                        return;
-                    }
-                    throw new HttpRequestException($"The request to {endpoint} failed with status {response.StatusCode}");
-                }
-                catch
-                {
-                    // TODO:bertrand Log
-                }
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                var content = new MsgPackContent<T>(value, _serializationContext);
+                var response = await _client.PostAsync(endpoint, content);
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                // TODO:bertrand log
             }
         }
 
