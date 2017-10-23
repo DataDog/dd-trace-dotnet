@@ -1,6 +1,5 @@
 ﻿using Moq;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -9,24 +8,24 @@ namespace Datadog.Tracer.Tests
 {
     public class TracerTests
     {
-        private Mock<IApi> _apiMock = new Mock<IApi>();
+        private Mock<IAgentWriter> _agentWriter = new Mock<IAgentWriter>();
 
         [Fact]
         public void BuildSpan_NoParameter_DefaultParameters()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer(_agentWriter.Object);
 
             var builder = tracer.BuildSpan("Op1");
             var span = (Span)builder.Start();
 
-            Assert.Equal(Constants.UnkownService, span.ServiceName);
+            Assert.Equal("Datadog.Tracer", span.ServiceName);
             Assert.Equal("Op1", span.OperationName);
         }
 
         [Fact]
         public void BuildSpan_OneChild_ChildParentProperlySet()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer(_agentWriter.Object);
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -42,7 +41,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_2ChildrenOfRoot_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer(_agentWriter.Object);
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -64,7 +63,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public void BuildSpan_2LevelChildren_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer(_agentWriter.Object);
 
             var root = (Span)tracer
                 .BuildSpan("Root")
@@ -85,7 +84,7 @@ namespace Datadog.Tracer.Tests
         [Fact]
         public async Task BuildSpan_AsyncChildrenCreation_ChildrenParentProperlySet()
         {
-            var tracer = new Tracer(_apiMock.Object);
+            var tracer = new Tracer(_agentWriter.Object);
             var tcs = new TaskCompletionSource<bool>();
 
             var root = (Span)tracer

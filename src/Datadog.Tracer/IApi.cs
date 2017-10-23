@@ -5,7 +5,7 @@ namespace Datadog.Tracer
 {
     interface IApi
     {
-        Task SendTracesAsync(List<List<Span>> traces);
+        Task SendTracesAsync(IList<List<Span>> traces);
 
         Task SendServiceAsync(ServiceInfo service);
     }
