@@ -50,18 +50,13 @@ namespace Datadog.Tracer.IntegrationTests
             span.Finish();
 
             // Check that the HTTP calls went as expected
-            await _httpRecorder.WaitForCompletion(2);
-            Assert.Equal(2, _httpRecorder.Requests.Count);
-            Assert.Equal(2, _httpRecorder.Responses.Count);
+            await _httpRecorder.WaitForCompletion(1);
+            Assert.Equal(1, _httpRecorder.Requests.Count);
+            Assert.Equal(1, _httpRecorder.Responses.Count);
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
             AssertSpanEqual(span, trace.Single());
-
-            var serviceInfo = _httpRecorder.Services.Single().ServiceInfos().Single();
-            Assert.Equal(Constants.UnkownService, serviceInfo.ServiceName);
-            Assert.Equal(Constants.UnkownApp, serviceInfo.App);
-            Assert.Equal(Constants.WebAppType, serviceInfo.AppType);
         }
 
         [Fact]
@@ -81,17 +76,15 @@ namespace Datadog.Tracer.IntegrationTests
             span.Finish();
 
             // Check that the HTTP calls went as expected
-            await _httpRecorder.WaitForCompletion(3);
-            Assert.Equal(3, _httpRecorder.Requests.Count);
-            Assert.Equal(3, _httpRecorder.Responses.Count);
+            await _httpRecorder.WaitForCompletion(2);
+            Assert.Equal(2, _httpRecorder.Requests.Count);
+            Assert.Equal(2, _httpRecorder.Responses.Count);
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
             AssertSpanEqual(span, trace.Single());
 
-            var serviceInfos = _httpRecorder.Services.Select(x => x.ServiceInfos().Single()).ToList();
-            Assert.Equal(2, serviceInfos.Count);
-            var serviceInfo = serviceInfos.Single(x => x.ServiceName == ServiceName);
+            var serviceInfo = _httpRecorder.Services.Select(x => x.ServiceInfos().Single()).Single();
             Assert.Equal(ServiceName, serviceInfo.ServiceName);
             Assert.Equal(App, serviceInfo.App);
             Assert.Equal(AppType, serviceInfo.AppType);
@@ -108,9 +101,9 @@ namespace Datadog.Tracer.IntegrationTests
             span.Finish();
 
             // Check that the HTTP calls went as expected
-            await _httpRecorder.WaitForCompletion(2);
-            Assert.Equal(2, _httpRecorder.Requests.Count);
-            Assert.Equal(2, _httpRecorder.Responses.Count);
+            await _httpRecorder.WaitForCompletion(1);
+            Assert.Equal(1, _httpRecorder.Requests.Count);
+            Assert.Equal(1, _httpRecorder.Responses.Count);
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();

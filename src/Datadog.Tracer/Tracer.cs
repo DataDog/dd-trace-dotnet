@@ -2,6 +2,7 @@
 using OpenTracing.Propagation;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 
 namespace Datadog.Tracer
@@ -18,17 +19,7 @@ namespace Datadog.Tracer
         public Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null)
         {
             _agentWriter = agentWriter;
-            // TODO:bertrand be smarter about the service name
-            _defaultServiceName = defaultServiceName ?? Constants.UnkownService;
-            if (_defaultServiceName == Constants.UnkownService)
-            {
-                _services[Constants.UnkownService] = new ServiceInfo
-                {
-                    ServiceName = Constants.UnkownService,
-                    App = Constants.UnkownApp,
-                    AppType = Constants.WebAppType,
-                };
-            }
+            _defaultServiceName = GetExecutingAssemblyName() ?? Constants.UnkownService;
             if (serviceInfo != null)
             {
                 foreach(var service in serviceInfo)
@@ -39,6 +30,19 @@ namespace Datadog.Tracer
             foreach(var service in _services.Values)
             {
                 _agentWriter.WriteServiceInfo(service);
+            }
+        }
+
+        private string GetExecutingAssemblyName()
+        {
+            try
+            {
+                var name = Assembly.GetExecutingAssembly().GetName();
+                return name.Name;
+            }
+            catch
+            {
+                return null;
             }
         }
 
