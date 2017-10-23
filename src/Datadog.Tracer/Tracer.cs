@@ -19,17 +19,7 @@ namespace Datadog.Tracer
         public Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null)
         {
             _agentWriter = agentWriter;
-            _defaultServiceName = defaultServiceName;
-            if (_defaultServiceName == null)
-            {
-                _defaultServiceName = GetExecutingAssemblyName() ?? Constants.UnkownService;
-                _services[_defaultServiceName] = new ServiceInfo
-                {
-                    ServiceName = _defaultServiceName,
-                    App = Constants.UnkownApp,
-                    AppType = Constants.WebAppType,
-                };
-            }
+            _defaultServiceName = GetExecutingAssemblyName() ?? Constants.UnkownService;
             if (serviceInfo != null)
             {
                 foreach(var service in serviceInfo)

@@ -12,13 +12,6 @@ namespace Datadog.Tracer.Tests
         private Mock<IAgentWriter> _agentWriter = new Mock<IAgentWriter>();
 
         [Fact]
-        public void Ctor_DefaultValues_ShouldSendDefaultServiceInfo()
-        {
-            var tracer = new Tracer(_agentWriter.Object);
-            _agentWriter.Verify(x => x.WriteServiceInfo(It.Is<ServiceInfo>(y => y.ServiceName == "Datadog.Tracer" && y.AppType == Constants.WebAppType && y.App == Constants.UnkownApp)), Times.Once);
-        }
-
-        [Fact]
         public void BuildSpan_NoParameter_DefaultParameters()
         {
             var tracer = new Tracer(_agentWriter.Object);
