@@ -11,7 +11,7 @@ This repository contains what you need to trace C# applications. Some quick note
 - It does not support out of process propagation
 - It does not provide automatic framework instrumentation, all instrumentation is [manual](#manual-instrumentation)
 - Multiple AppDomains are not supported (but it could work).
-- It does not support OpenTracing `FollowsFrom` references, `Baggage` or `Log`
+- Our tracer is based on the current OpenTracing standard, however we do not yet support the following features: `FollowsFrom` references, `Baggage` or `Log`.
 
 ## The Components
 
@@ -22,7 +22,7 @@ This repository contains what you need to trace C# applications. Some quick note
 
 ## Getting Started
 
-Before instrumenting your code, [install the Datadog Agent](https://app.datadoghq.com/account/settings#agent) on your application servers (or locally, if you're just trying out C# APM) and enable the APM Agent. See the special instructions for [Windows](https://github.com/DataDog/datadog-trace-agent#run-on-windows) and [Docker](https://github.com/DataDog/docker-dd-agent#tracing--apm) if you're using either.
+Before instrumenting your code, [install the Datadog Agent](https://app.datadoghq.com/account/settings#agent) on your application servers (or locally, if you're just trying out C# APM) and enable the APM Agent. On Windows, the trace agent is shipped together with the Datadog Agent only since version 5.18.2, so users must update to 5.18.2 or above. See special instructions for [Docker](https://github.com/DataDog/docker-dd-agent#tracing--apm) if you're using it.
 
 ### Manual Instrumentation
 
