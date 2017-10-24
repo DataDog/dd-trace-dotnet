@@ -20,16 +20,16 @@ namespace Datadog.Tracer.IntegrationTests
         private int _target = 0;
         private TaskCompletionSource<bool> _tcs;
 
-        public List<HttpRequestMessage> Requests { get; set; }
+        public List<Tuple<HttpRequestMessage, byte[]>> Requests { get; set; }
 
         public List<IList<MessagePackObject>> Traces => Requests
-            .Where(x => x.RequestUri.ToString().Contains("/v0.3/traces"))
-            .Select(x => Unpacking.UnpackObject(x.Content.ReadAsByteArrayAsync().Result).Value.AsList())
+            .Where(x => x.Item1.RequestUri.ToString().Contains("/v0.3/traces"))
+            .Select(x => Unpacking.UnpackObject(x.Item2).Value.AsList())
             .ToList();
 
         public List<MessagePackObjectDictionary> Services => Requests
-            .Where(x => x.RequestUri.ToString().Contains("/v0.3/services"))
-            .Select(x => Unpacking.UnpackObject(x.Content.ReadAsByteArrayAsync().Result).Value.AsDictionary())
+            .Where(x => x.Item1.RequestUri.ToString().Contains("/v0.3/services"))
+            .Select(x => Unpacking.UnpackObject(x.Item2).Value.AsDictionary())
             .ToList();
 
         public List<HttpResponseMessage> Responses { get; set;  }
@@ -37,16 +37,17 @@ namespace Datadog.Tracer.IntegrationTests
         public RecordHttpHandler()
         {
             InnerHandler = new HttpClientHandler();
-            Requests = new List<HttpRequestMessage>();
+            Requests = new List<Tuple<HttpRequestMessage, byte[]>>();
             Responses = new List<HttpResponseMessage>();
         }
 
         protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            var requestContent = await request.Content.ReadAsByteArrayAsync();
             var response =  await base.SendAsync(request, cancellationToken);
             lock(_lock)
             {
-                Requests.Add(request);
+                Requests.Add(Tuple.Create(request, requestContent));
                 Responses.Add(response);
                 _count++;
                 if(_tcs != null && _count >= _target)

@@ -1,7 +1,6 @@
 ﻿using MsgPack.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -34,7 +33,7 @@ namespace Datadog.Tracer
 
         private Uri _tracesEndpoint;
         private Uri _servicesEndpoint;
-        private HttpClient _client = new HttpClient();
+        private HttpClient _client;
 
         public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler = null)
         {
@@ -51,7 +50,7 @@ namespace Datadog.Tracer
             // TODO:bertrand add header for os version
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang", ".NET");
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Interpreter", RuntimeInformation.FrameworkDescription);
-            _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetEntryAssembly().GetName().Version.ToString());
+            _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetAssembly(typeof(Api)).GetName().Version.ToString());
         }
 
         private async Task SendAsync<T>(T value, Uri endpoint)

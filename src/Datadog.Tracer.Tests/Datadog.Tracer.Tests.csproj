@@ -1,8 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFrameworks>netcoreapp2.0;</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(TestAllFramworkVersions)' == 'true' ">
+    <TargetFrameworks>netcoreapp2.0;net452;net46;net461;net462;net47;net471</TargetFrameworks>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

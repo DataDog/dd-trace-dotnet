@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if !NET45 && !NET451 && !NET452
+using System;
 using Xunit;
 
 namespace Datadog.Tracer.Tests
@@ -20,3 +21,4 @@ namespace Datadog.Tracer.Tests
         }
     }
 }
+#endif
