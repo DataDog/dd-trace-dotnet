@@ -7,12 +7,18 @@ Datadog APM traces the path of each request through your application stack, reco
 This repository contains what you need to trace C# applications. Some quick notes up front:
 
 - **Datadog C# APM is currently in Alpha**
-- It support .Net Framework version above 4.5 and .Net Core 2.0
+- It supports .Net Framework version above 4.5 and .Net Core 2.0
 - It does not support out of process propagation
 - It does not provide automatic framework instrumentation, all instrumentation is [manual](#manual-instrumentation)
 - Multiple AppDomains are not supported (but it could work).
 - It does not support OpenTracing `FollowsFrom` references, `Baggage` or `Log`
 
+## The Components
+
+
+**[Datadog Tracer](https://github.com/DataDog/dd-trace-csharp)**: an OpenTracing-compatible library that lets you trace any piece of your C# code.
+
+**[Datadog APM Agent](https://github.com/DataDog/datadog-trace-agent)**: a service that runs on your application servers, accepting trace data from the Datadog Tracer and sending it to Datadog. (The APM Agent is not part of this repo; it's the same Agent to which all Datadog tracers—Go, Python, etc—send data)
 
 ## Getting Started
 
