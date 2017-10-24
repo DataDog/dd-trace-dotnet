@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TestAllFramworkVersions)' == 'true' ">
-    <TargetFrameworks>netcoreapp2.0;net452;net46;net461;net462;net47;net471</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.0;net452;net46;net461;net462;net47</TargetFrameworks>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
