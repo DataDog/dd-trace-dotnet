@@ -118,32 +118,38 @@ namespace Datadog.Tracer
 
         public string GetBaggageItem(string key)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.GetBaggageItem is not implemented by Datadog.Tracer");
+            return null;
         }
 
         public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.Log is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.Log is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan Log(string eventName)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.Log is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan Log(DateTimeOffset timestamp, string eventName)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.Log is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan SetBaggageItem(string key, string value)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.SetBaggageItem is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan SetOperationName(string operationName)

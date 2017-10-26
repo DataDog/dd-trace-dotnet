@@ -1,11 +1,14 @@
 ﻿using System;
 using OpenTracing;
 using System.Collections.Generic;
+using Datadog.Tracer.Logging;
 
 namespace Datadog.Tracer
 {
     public class SpanBuilder : ISpanBuilder
     {
+        private static ILog _log = LogProvider.For<SpanBuilder>();
+
         private Object _lock = new Object();
         private IDatadogTracer _tracer;
         private string _operationName;
@@ -30,7 +33,8 @@ namespace Datadog.Tracer
                     return this;
                 }
             }
-            throw new NotImplementedException();
+            _log.Debug("ISpanBuilder.AddReference is not implemented for other references than ChildOf by Datadog.Tracer");
+            return this;
         }
 
         public ISpanBuilder AsChildOf(ISpan parent)
@@ -53,12 +57,14 @@ namespace Datadog.Tracer
 
         public ISpanBuilder FollowsFrom(ISpan parent)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpanBuilder.FollowsFrom is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpanBuilder FollowsFrom(ISpanContext parent)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpanBuilder.FollowsFrom is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan Start()

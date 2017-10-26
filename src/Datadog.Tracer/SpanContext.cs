@@ -1,4 +1,5 @@
-﻿using OpenTracing;
+﻿using Datadog.Tracer.Logging;
+using OpenTracing;
 using System;
 using System.Collections.Generic;
 
@@ -6,6 +7,8 @@ namespace Datadog.Tracer
 {
     internal class SpanContext : ISpanContext
     {
+        private static ILog _log = LogProvider.For<SpanBuilder>();
+
         public SpanContext Parent { get; }
 
         public UInt64 TraceId { get; }
@@ -42,7 +45,8 @@ namespace Datadog.Tracer
 
         public IEnumerable<KeyValuePair<string, string>> GetBaggageItems()
         {
-            throw new NotImplementedException();
+            _log.Debug("SpanContext.GetBaggageItems is not implemented by Datadog.Tracer");
+            yield break;
         }
     }
 }
