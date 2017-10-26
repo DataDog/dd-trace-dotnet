@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Datadog.Tracer.Logging;
+using System.Collections.Generic;
 
 namespace Datadog.Tracer
 {
     internal class TraceContext : ITraceContext
     {
+        private static ILog _log = LogProvider.For<TraceContext>();
+
         private object _lock = new object();
         private IDatadogTracer _tracer;
         private List<Span> _spans = new List<Span>();
@@ -43,8 +46,8 @@ namespace Datadog.Tracer
                     _tracer.CloseCurrentTraceContext();
                     if (_openSpans != 0)
                     {
-                        // TODO:bertrand log error and do not send anything
-                        // Instead detect if we are being garbage collected and warn at that point
+                        _log.DebugFormat("All child spans were not finished before the root. {NumberOfOpenSpans}", _openSpans);
+                        // TODO:bertrand Instead detect if we are being garbage collected and warn at that point
                     }
                     else
                     {

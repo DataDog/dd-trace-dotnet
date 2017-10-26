@@ -1,14 +1,15 @@
-﻿using OpenTracing;
+﻿using Datadog.Tracer.Logging;
+using OpenTracing;
 using OpenTracing.Propagation;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading;
 
 namespace Datadog.Tracer
 {
     internal class Tracer : ITracer, IDatadogTracer
     {
+        private static readonly ILog Logger = LogProvider.For<Tracer>();
         private AsyncLocalCompat<TraceContext> _currentContext = new AsyncLocalCompat<TraceContext>("Datadog.Tracer.Tracer._currentContext");
         private string _defaultServiceName;
         private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
@@ -63,7 +64,6 @@ namespace Datadog.Tracer
 
         void IDatadogTracer.Write(List<Span> trace)
         {
-            // TODO:bertrand send me
             _agentWriter.WriteTrace(trace);
         }
 

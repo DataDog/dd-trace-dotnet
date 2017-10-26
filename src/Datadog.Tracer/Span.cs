@@ -1,4 +1,5 @@
-﻿using OpenTracing;
+﻿using Datadog.Tracer.Logging;
+using OpenTracing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,6 +9,8 @@ namespace Datadog.Tracer
 {
     public class Span : ISpan
     {
+        private static ILog _log = LogProvider.For<Span>();
+
         private Object _lock = new Object();
         private IDatadogTracer _tracer;
         private Dictionary<string, string> _tags;
@@ -173,7 +176,7 @@ namespace Datadog.Tracer
             {
                 if (_isFinished)
                 {
-                    // TODO:log an error instead
+                    _log.Debug("SetTag should not be called after the span was closed");
                 }
                 switch (key) {
                     case Datadog.Tracer.Tags.ResourceName:

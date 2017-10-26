@@ -1,4 +1,5 @@
-﻿using MsgPack.Serialization;
+﻿using Datadog.Tracer.Logging;
+using MsgPack.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -10,6 +11,8 @@ namespace Datadog.Tracer
 {
     internal class Api : IApi
     {
+        private static ILog _log = LogProvider.For<Api>();
+
         private const string TracesPath = "/v0.3/traces";
         private const string ServicesPath = "/v0.3/services";
         private static SerializationContext _serializationContext;
@@ -61,9 +64,9 @@ namespace Datadog.Tracer
                 var response = await _client.PostAsync(endpoint, content);
                 response.EnsureSuccessStatusCode();
             }
-            catch
+            catch(Exception ex)
             {
-                // TODO:bertrand log
+                _log.ErrorException("An error occured while sending traces to the agent at {Endpoint}", ex, endpoint);
             }
         }
 
