@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace
 {
-    public class MsgPackContent<T> : HttpContent
+    internal class MsgPackContent<T> : HttpContent
     {
         public T Value { get; private set; }
         private SerializationContext _serializationContext;

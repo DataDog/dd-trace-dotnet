@@ -5,7 +5,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    public class SpanBuilder : ISpanBuilder
+    internal class SpanBuilder : ISpanBuilder
     {
         private static ILog _log = LogProvider.For<SpanBuilder>();
 

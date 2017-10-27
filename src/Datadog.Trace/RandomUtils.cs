@@ -2,7 +2,7 @@
 
 namespace Datadog.Trace
 {
-    public static class RandomUtils
+    internal static class RandomUtils
     {
         public static UInt64 NextUInt63(this Random rnd)
         {
