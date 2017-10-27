@@ -28,7 +28,83 @@ Before instrumenting your code, [install the Datadog Agent](https://app.datadogh
 
 #### Setup
 
+In order to instrument you code you need to add the `Datadog.Tracer` NuGet package to your project.
+
+Your tracing adventure starts with the `ITracer` object, you should typically instantiate only one `ITracer` for the lifetime of your app and use it in all places of your code where you want to add tracing. Instantiating the `ITracer` is done with the `TracerFactory.GetTracer` method.
+
+To get a tracer with default parameters (i.e. the agent endpoint set to `http://localhost:8126`, and the default service name set to the name of the executing assembly):
+
+```csharp
+ITracer tracer = TracerFactory.GetTracer();
+```
+
+It can be customized to send traces to a different endpoint:
+
+```csharp
+ITracer tracer = TracerFactory.GetTracer(agentEndpoint: new Url("http://myendpoint:port"));
+```
+
+You may also add some metadata to your services to customize how they will appear in the web ui:
+
+```csharp
+var serviceInfoList = new List<ServiceInfo>
+{
+    new ServiceInfo
+    {
+        App = "MyAppName",
+        AppType = "web",
+        ServiceName = "MyServiceName"
+    }
+};
+ITracer tracer = TracerFactory.GetTracer(serviceInfoList: serviceInfoList);
+```
+
 #### Examples
+
+You can then use the shared `ITracer` object you created to instrument any section of your code and get detailed metrics on it. A minimal examples is:
+
+```csharp
+using (ISpan span = tracer.BuildSpan("OperationName").Start())
+{
+    // Set the resource and service name for this span (see https://docs.datadoghq.com/tracing/terminology/)
+    span.SetTag(DDTags.ResourceName, "ResourceName");
+    span.SetTag(DDTags.ServiceName, "ServiceName");
+
+    // Instrumented code
+    Thread.Sleep(1000);
+}
+```
+
+You may also choose, not to use the `using` construct and close the `ISpan` object explictly:
+
+
+```csharp
+ISpan span = tracer.BuildSpan("OperationName").Start();
+// Set the resource and service name for this span (see https://docs.datadoghq.com/tracing/terminology/)
+span.SetTag(DDTags.ResourceName, "ResourceName");
+span.SetTag(DDTags.ServiceName, "ServiceName");
+
+// Instrumented code
+Thread.Sleep(1000);
+
+
+// Finish sets the span duration and sends it to the agent (if you don't call finish the data will never be sent to Datadog)
+span.Finish();
+```
+
+You may add custom tags by calling `ISpan.SetTag`:
+
+```csharp
+ISpan span = tracer.BuildSpan("SqlQuery").Start();
+span.SetTag("db.rows", 10);
+```
+
+You should not have to explicitly declare parent/children relationship between your spans, but if you wish to override the default behavior (a new span is considered a child of the innermost open span in its logical context) you may use:
+
+```csharp
+ISpan parent = tracer.BuildSpan("Parent").Start();
+ISpan child = tracer.BuildSpan("Child").AsChildOf(parent).Start();
+```
 
 ## Further Reading
 
