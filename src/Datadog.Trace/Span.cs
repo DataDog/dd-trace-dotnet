@@ -187,13 +187,13 @@ namespace Datadog.Trace
                     return this;
                 }
                 switch (key) {
-                    case Datadog.Trace.Tags.ResourceName:
+                    case DDTags.ResourceName:
                         ResourceName = value;
                         return this;
                     case OpenTracing.Tags.Error:
                         Error = value == "True";
                         return this;
-                    case Datadog.Trace.Tags.SpanType:
+                    case DDTags.SpanType:
                         Type = value;
                         return this;
                 }

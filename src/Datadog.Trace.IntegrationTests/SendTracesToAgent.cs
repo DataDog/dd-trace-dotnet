@@ -70,8 +70,8 @@ namespace Datadog.Trace.IntegrationTests
             _tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), serviceList, null, _httpRecorder);
 
             var span = (Span)_tracer.BuildSpan("Operation")
-                .WithTag(Tags.ResourceName, "This is a resource")
-                .WithTag(Tags.ServiceName, ServiceName)
+                .WithTag(DDTags.ResourceName, "This is a resource")
+                .WithTag(DDTags.ServiceName, ServiceName)
                 .Start();
             span.Finish();
 
@@ -94,8 +94,8 @@ namespace Datadog.Trace.IntegrationTests
         public async void Utf8Everywhere()
         {
             var span = (Span)_tracer.BuildSpan("Aᛗᚪᚾᚾᚪ")
-                .WithTag(Tags.ResourceName, "η γλώσσα μου έδωσαν ελληνική")
-                .WithTag(Tags.ServiceName, "На берегу пустынных волн")
+                .WithTag(DDTags.ResourceName, "η γλώσσα μου έδωσαν ελληνική")
+                .WithTag(DDTags.ServiceName, "На берегу пустынных волн")
                 .WithTag("யாமறிந்த", "ნუთუ კვლა")
                 .Start();
             span.Finish();
