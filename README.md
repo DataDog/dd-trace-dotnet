@@ -26,6 +26,10 @@ Before instrumenting your code, [install the Datadog Agent](https://app.datadogh
 
 ### Manual Instrumentation
 
+#### Introduction
+
+Before instrumenting your application, please have a look at the [Datadog APM Terminology](https://docs.datadoghq.com/tracing/terminology/) to get familiar with the core concepts of Datadog APM.
+
 #### Setup
 
 In order to instrument you code you need to add the `Datadog.Tracer` NuGet package to your project.
@@ -38,35 +42,33 @@ To get a tracer with default parameters (i.e. the agent endpoint set to `http://
 ITracer tracer = TracerFactory.GetTracer();
 ```
 
-It can be customized to send traces to a different endpoint:
+The tracer object can be customized by adding optional parameters to the `TracerFactory.GetTracer` call:
+
+When you build a new span, if you do not set the service name it gets a default one. The default value is the name of the executing assembly, however you can choose a custom name with the defaultServiceName parameter:
+
+```csharp
+ITracer tracer = TracerFactory.GetTracer(defaultServiceName: "YourServiceName")
+```
+
+You may send traces to a different endpoint:
 
 ```csharp
 ITracer tracer = TracerFactory.GetTracer(agentEndpoint: new Url("http://myendpoint:port"));
 ```
 
-You may also add some metadata to your services to customize how they will appear in the web ui:
-
-```csharp
-var serviceInfoList = new List<ServiceInfo>
-{
-    new ServiceInfo
-    {
-        App = "MyAppName",
-        AppType = "web",
-        ServiceName = "MyServiceName"
-    }
-};
-ITracer tracer = TracerFactory.GetTracer(serviceInfoList: serviceInfoList);
-```
-
 #### Examples
 
-You can then use the shared `ITracer` object you created to instrument any section of your code and get detailed metrics on it. A minimal examples is:
+You can then use the shared `ITracer` object you created to create spans and instrument any section of your code and get detailed metrics on it.
+
+When creating a span:
+- You MUST set the ServiceName to recognize which service this trace belongs to; if you don't, the parent span's service name or in case of a root span the defaultServiceName stated above will be used.
+- You MAY set the ResourceName to scope this trace to a specific, endpoint or SQL Query; good examples are "GET /users/:id" or "SELECT * FROM ..."
+
+A minimal examples is:
 
 ```csharp
 using (ISpan span = tracer.BuildSpan("OperationName").Start())
 {
-    // Set the resource and service name for this span (see https://docs.datadoghq.com/tracing/terminology/)
     span.SetTag(DDTags.ResourceName, "ResourceName");
     span.SetTag(DDTags.ServiceName, "ServiceName");
 
@@ -77,10 +79,8 @@ using (ISpan span = tracer.BuildSpan("OperationName").Start())
 
 You may also choose, not to use the `using` construct and close the `ISpan` object explictly:
 
-
 ```csharp
 ISpan span = tracer.BuildSpan("OperationName").Start();
-// Set the resource and service name for this span (see https://docs.datadoghq.com/tracing/terminology/)
 span.SetTag(DDTags.ResourceName, "ResourceName");
 span.SetTag(DDTags.ServiceName, "ServiceName");
 
@@ -105,6 +105,24 @@ You should not have to explicitly declare parent/children relationship between y
 ISpan parent = tracer.BuildSpan("Parent").Start();
 ISpan child = tracer.BuildSpan("Child").AsChildOf(parent).Start();
 ```
+
+#### Advanced Usage
+
+When creating a tracer, you may also add some metadata to your services to customize how they will appear in the web ui:
+
+```csharp
+var serviceInfoList = new List<ServiceInfo>
+{
+    new ServiceInfo
+    {
+        App = "MyAppName",
+        AppType = "web",
+        ServiceName = "MyServiceName"
+    }
+};
+ITracer tracer = TracerFactory.GetTracer(serviceInfoList: serviceInfoList);
+```
+
 
 ## Further Reading
 
