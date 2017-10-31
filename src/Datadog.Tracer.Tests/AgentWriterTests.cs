@@ -28,12 +28,12 @@ namespace Datadog.Tracer.Tests
         {
             var serviceInfo = new ServiceInfo { App = "AA", AppType = "BB", ServiceName = "CC" };
             _agentWriter.WriteServiceInfo(serviceInfo);
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(1.5));
             _api.Verify(x => x.SendServiceAsync(It.Is<ServiceInfo>(y => y.Equals(serviceInfo))), Times.Once);
 
             serviceInfo = new ServiceInfo { App = "DD", AppType = "EE", ServiceName = "FF" };
             _agentWriter.WriteServiceInfo(serviceInfo);
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(1.5));
             _api.Verify(x => x.SendServiceAsync(It.Is<ServiceInfo>(y => y.Equals(serviceInfo))), Times.Once);
         }
 
@@ -43,12 +43,12 @@ namespace Datadog.Tracer.Tests
             // TODO:bertrand it is too complicated to setup such a simple test
             var trace = new List<Span> { new Span(_tracer.Object, null, "Operation", "Service", null) };
             _agentWriter.WriteTrace(trace);
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(1.5));
             _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
 
             trace = new List<Span> { new Span(_tracer.Object, null, "Operation2", "AnotherService", null) };
             _agentWriter.WriteTrace(trace);
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(1.5));
             _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
         }
     }

@@ -57,7 +57,7 @@ namespace Datadog.Tracer.Tests
             span.Finish();
 
             _traceContextMock.Verify(x => x.CloseSpan(It.IsAny<Span>()), Times.Once);
-            Assert.True(span.Duration > TimeSpan.FromMinutes(1) && span.Duration < TimeSpan.FromMinutes(2));
+            Assert.True(span.Duration >= TimeSpan.FromMinutes(1) && span.Duration < TimeSpan.FromMinutes(2));
         }
 
         [Fact]
