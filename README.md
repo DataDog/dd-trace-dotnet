@@ -61,8 +61,8 @@ ITracer tracer = TracerFactory.GetTracer(agentEndpoint: new Url("http://myendpoi
 You can then use the shared `ITracer` object you created to create spans and instrument any section of your code and get detailed metrics on it.
 
 When creating a span:
-- You MUST set the ServiceName to recognize which service this trace belongs to; if you don't, the parent span's service name or in case of a root span the defaultServiceName stated above will be used.
-- You MAY set the ResourceName to scope this trace to a specific, endpoint or SQL Query; good examples are "GET /users/:id" or "SELECT * FROM ..."
+- You can set the ServiceName to recognize which service this trace belongs to; if you don't, the parent span's service name or in case of a root span the defaultServiceName stated above will be used.
+- You can set the ResourceName to scope this trace to a specific, endpoint or SQL Query; good examples are "GET /users/:id" or "SELECT * FROM ...", if you don't the OperationName will be used.
 
 A minimal examples is:
 
@@ -122,7 +122,6 @@ var serviceInfoList = new List<ServiceInfo>
 };
 ITracer tracer = TracerFactory.GetTracer(serviceInfoList: serviceInfoList);
 ```
-
 
 ## Further Reading
 
