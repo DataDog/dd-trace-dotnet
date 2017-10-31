@@ -1,4 +1,5 @@
-﻿using OpenTracing;
+﻿using Datadog.Tracer.Logging;
+using OpenTracing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,10 +9,11 @@ namespace Datadog.Tracer
 {
     public class Span : ISpan
     {
+        private static ILog _log = LogProvider.For<Span>();
+
         private Object _lock = new Object();
         private IDatadogTracer _tracer;
         private Dictionary<string, string> _tags;
-        private bool _isFinished;
         private SpanContext _context;
         private Stopwatch _sw;
 
@@ -40,6 +42,8 @@ namespace Datadog.Tracer
         // This is threadsafe only if used after the span has been closed.
         // It is acceptable because this property is internal. But if we were to make it public we would need to add some checks.
         internal IReadOnlyDictionary<string, string> Tags { get { return _tags; } }
+
+        internal bool IsFinished { get; private set; }
 
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
         {
@@ -76,10 +80,10 @@ namespace Datadog.Tracer
                 lock (_lock)
                 {
                     ResourceName = ResourceName ?? OperationName;
-                    if (!_isFinished)
+                    if (!IsFinished)
                     {
                         Duration = _sw.Elapsed;
-                        _isFinished = true;
+                        IsFinished = true;
                         shouldCloseSpan = true;
                     }
                 }
@@ -96,14 +100,14 @@ namespace Datadog.Tracer
             {
                 ResourceName = ResourceName ?? OperationName;
                 var shouldCloseSpan = false;
-                if (!_isFinished)
+                if (!IsFinished)
                 {
                     Duration = finishTimestamp - StartTime;
                     if (Duration < TimeSpan.Zero)
                     {
                         Duration = TimeSpan.Zero;
                     }
-                    _isFinished = true;
+                    IsFinished = true;
                     shouldCloseSpan = true;
                 }
                 if (shouldCloseSpan)
@@ -115,32 +119,38 @@ namespace Datadog.Tracer
 
         public string GetBaggageItem(string key)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.GetBaggageItem is not implemented by Datadog.Tracer");
+            return null;
         }
 
         public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.Log is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.Log is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan Log(string eventName)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.Log is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan Log(DateTimeOffset timestamp, string eventName)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.Log is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan SetBaggageItem(string key, string value)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.SetBaggageItem is not implemented by Datadog.Tracer");
+            return this;
         }
 
         public ISpan SetOperationName(string operationName)
@@ -171,9 +181,10 @@ namespace Datadog.Tracer
         {
             lock (_lock)
             {
-                if (_isFinished)
+                if (IsFinished)
                 {
-                    // TODO:log an error instead
+                    _log.Debug("SetTag should not be called after the span was closed");
+                    return this;
                 }
                 switch (key) {
                     case Datadog.Tracer.Tags.ResourceName:

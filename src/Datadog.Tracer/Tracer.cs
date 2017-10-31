@@ -1,14 +1,16 @@
-﻿using OpenTracing;
+﻿using Datadog.Tracer.Logging;
+using OpenTracing;
 using OpenTracing.Propagation;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading;
 
 namespace Datadog.Tracer
 {
     internal class Tracer : ITracer, IDatadogTracer
     {
+        private static readonly ILog _log = LogProvider.For<Tracer>();
+
         private AsyncLocalCompat<TraceContext> _currentContext = new AsyncLocalCompat<TraceContext>("Datadog.Tracer.Tracer._currentContext");
         private string _defaultServiceName;
         private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
@@ -53,17 +55,18 @@ namespace Datadog.Tracer
 
         public ISpanContext Extract<TCarrier>(Format<TCarrier> format, TCarrier carrier)
         {
-            throw new NotImplementedException();
+            _log.Error("Tracer.Extract is not implemented by Datadog.Tracer");
+            throw new UnsupportedFormatException();
         }
 
         public void Inject<TCarrier>(ISpanContext spanContext, Format<TCarrier> format, TCarrier carrier)
         {
-            throw new NotImplementedException();
+            _log.Error("Tracer.Extract is not implemented by Datadog.Tracer");
+            throw new UnsupportedFormatException();
         }
 
         void IDatadogTracer.Write(List<Span> trace)
         {
-            // TODO:bertrand send me
             _agentWriter.WriteTrace(trace);
         }
 

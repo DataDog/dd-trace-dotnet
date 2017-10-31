@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Datadog.Tracer.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +8,8 @@ namespace Datadog.Tracer
 {
     internal class AgentWriter : IAgentWriter
     {
+        private static ILog _log = LogProvider.For<AgentWriter>();
+
         private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(1000);
         private readonly AgentWriterBuffer<ServiceInfo> _servicesBuffer = new AgentWriterBuffer<ServiceInfo>(100);
         private readonly IApi _api;
@@ -20,12 +23,20 @@ namespace Datadog.Tracer
 
         public void WriteServiceInfo(ServiceInfo serviceInfo)
         {
-            _servicesBuffer.Push(serviceInfo);
+            var success = _servicesBuffer.Push(serviceInfo);
+            if (!success)
+            {
+                _log.Debug("ServiceInfo buffer is full, dropping it.");
+            }
         }
 
         public void WriteTrace(List<Span> trace)
         {
-            _tracesBuffer.Push(trace);
+            var success = _tracesBuffer.Push(trace);
+            if (!success)
+            {
+                _log.Debug("Trace buffer is full, dropping it.");
+            }
         }
 
         public async Task FlushTracesTaskLoop()
@@ -48,9 +59,9 @@ namespace Datadog.Tracer
                         await Task.WhenAll(services.Select(_api.SendServiceAsync));
                     }
                 }
-                catch
+                catch(Exception ex)
                 {
-                    // TODO: log errors
+                    _log.ErrorException("An unhandled error occurred during the flushing task", ex);
                 }
             }
         }
