@@ -21,7 +21,7 @@ namespace Datadog.Trace
         public Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null)
         {
             _agentWriter = agentWriter;
-            _defaultServiceName = GetExecutingAssemblyName() ?? Constants.UnkownService;
+            _defaultServiceName = GetAppDomainFriendlyName() ?? Constants.UnkownService;
             if (serviceInfo != null)
             {
                 foreach(var service in serviceInfo)
@@ -35,12 +35,11 @@ namespace Datadog.Trace
             }
         }
 
-        private string GetExecutingAssemblyName()
+        private string GetAppDomainFriendlyName()
         {
             try
             {
-                var name = Assembly.GetExecutingAssembly().GetName();
-                return name.Name;
+                return AppDomain.CurrentDomain.FriendlyName;
             }
             catch
             {

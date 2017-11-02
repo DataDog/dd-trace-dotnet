@@ -36,7 +36,7 @@ In order to instrument you code you need to add the `Datadog.Trace` NuGet packag
 
 Your tracing adventure starts with the `ITracer` object, you should typically instantiate only one `ITracer` for the lifetime of your app and use it in all places of your code where you want to add tracing. Instantiating the `ITracer` is done with the `TracerFactory.GetTracer` method.
 
-To get a tracer with default parameters (i.e. the agent endpoint set to `http://localhost:8126`, and the default service name set to the name of the executing assembly):
+To get a tracer with default parameters (i.e. the agent endpoint set to `http://localhost:8126`, and the default service name set to the name of the AppDomain):
 
 ```csharp
 ITracer tracer = TracerFactory.GetTracer();
@@ -44,7 +44,7 @@ ITracer tracer = TracerFactory.GetTracer();
 
 Customize your tracer object by adding optional parameters to the `TracerFactory.GetTracer` call:
 
-By default the service name is set to the name of the executing assembly, choose a custom name with the defaultServiceName parameter:
+By default the service name is set to the name of the AppDomain, choose a custom name with the defaultServiceName parameter:
 
 ```csharp
 ITracer tracer = TracerFactory.GetTracer(defaultServiceName: "YourServiceName")
