@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Datadog.Trace
 {
-    internal class Span : ISpan
+    public class Span : ISpan
     {
         private static ILog _log = LogProvider.For<Span>();
 
