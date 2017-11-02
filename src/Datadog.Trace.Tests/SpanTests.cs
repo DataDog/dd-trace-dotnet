@@ -8,15 +8,14 @@ namespace Datadog.Trace.Tests
     public class SpanTests
     {
         private Mock<IDatadogTracer> _tracerMock;
-        private Mock<ITraceContext> _traceContextMock;
+        private TraceContext _traceContext;
 
         public SpanTests()
         {
             _tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
-            _traceContextMock = new Mock<ITraceContext>(MockBehavior.Strict);
-            _traceContextMock.Setup(x => x.CloseSpan(It.IsAny<Span>()));
-            _traceContextMock.Setup(x => x.GetCurrentSpanContext()).Returns<SpanContext>(null);
-            _tracerMock.Setup(x => x.GetTraceContext()).Returns(_traceContextMock.Object);
+            _traceContext = new TraceContext(_tracerMock.Object);
+            _tracerMock.Setup(x => x.GetTraceContext()).Returns(_traceContext);
+            _tracerMock.Setup(x => x.CloseCurrentTraceContext());
             _tracerMock.Setup(x => x.DefaultServiceName).Returns("DefaultServiceName");
         }
 
@@ -30,7 +29,7 @@ namespace Datadog.Trace.Tests
             span.SetTag("DoubleKey", 1.618);
             span.SetTag("BoolKey", true);
 
-            _traceContextMock.Verify(x => x.CloseSpan(It.IsAny<Span>()), Times.Never);
+            _tracerMock.Verify(x => x.CloseCurrentTraceContext(), Times.Never);
             Assert.Equal("What's tracing", span.GetTag("StringKey"));
             Assert.Equal("42", span.GetTag("IntKey"));
             Assert.Equal("1.618", span.GetTag("DoubleKey"));
@@ -44,19 +43,20 @@ namespace Datadog.Trace.Tests
 
             span.SetOperationName("Op1");
 
-            _traceContextMock.Verify(x => x.CloseSpan(It.IsAny<Span>()), Times.Never);
+            _tracerMock.Verify(x => x.CloseCurrentTraceContext(), Times.Never);
             Assert.Equal("Op1", span.OperationName);
         }
 
         [Fact]
         public void Finish_StartTimeInThePastWithNoEndTime_DurationProperlyComputed()
         {
-            var startTime = DateTimeOffset.UtcNow.AddMinutes(-1);
+            // The 10 additional milliseconds account for the clock precision
+            var startTime = DateTimeOffset.UtcNow.AddMinutes(-1).AddMilliseconds(-10);
             var span = new Span(_tracerMock.Object, null, null, null, startTime);
 
             span.Finish();
 
-            _traceContextMock.Verify(x => x.CloseSpan(It.IsAny<Span>()), Times.Once);
+            _tracerMock.Verify(x => x.CloseCurrentTraceContext(), Times.Once);
             Assert.True(span.Duration >= TimeSpan.FromMinutes(1) && span.Duration < TimeSpan.FromMinutes(2));
         }
 
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
-            _traceContextMock.Verify(x => x.CloseSpan(It.IsAny<Span>()), Times.Once);
+            _tracerMock.Verify(x => x.CloseCurrentTraceContext(), Times.Once);
             Assert.True(span.Duration > TimeSpan.Zero);
     }
 
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests
 
             span.Finish(endTime);
 
-            _traceContextMock.Verify(x => x.CloseSpan(It.IsAny<Span>()), Times.Once);
+            _tracerMock.Verify(x => x.CloseCurrentTraceContext(), Times.Once);
             Assert.Equal(endTime - startTime, span.Duration);
         }
 
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Tests
 
             span.Finish(endTime);
 
-            _traceContextMock.Verify(x => x.CloseSpan(It.IsAny<Span>()), Times.Once);
+            _tracerMock.Verify(x => x.CloseCurrentTraceContext(), Times.Once);
             Assert.Equal(TimeSpan.Zero, span.Duration);
         }
 
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests
             {
             }
 
-            _traceContextMock.Verify(x => x.CloseSpan(It.IsAny<Span>()), Times.Once);
+            _tracerMock.Verify(x => x.CloseCurrentTraceContext(), Times.Once);
             Assert.True(span.Duration > TimeSpan.Zero);
         }
     }

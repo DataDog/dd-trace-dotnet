@@ -2,7 +2,6 @@
 using OpenTracing;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text;
 
 namespace Datadog.Trace
@@ -15,7 +14,6 @@ namespace Datadog.Trace
         private IDatadogTracer _tracer;
         private Dictionary<string, string> _tags;
         private SpanContext _context;
-        private Stopwatch _sw;
 
         ISpanContext ISpan.Context => _context;
 
@@ -56,8 +54,7 @@ namespace Datadog.Trace
             }
             else
             {
-                StartTime = DateTimeOffset.UtcNow;
-                _sw = Stopwatch.StartNew();
+                StartTime = _context.TraceContext.UtcNow();
             }
         }
 
@@ -68,38 +65,15 @@ namespace Datadog.Trace
 
         public void Finish()
         {
-            // If the startTime was explicitely provided, we don't use a StopWatch to compute the duration
-            if (_sw == null)
-            {
-                Finish(DateTimeOffset.UtcNow);
-                return;
-            }
-            else
-            {
-                var shouldCloseSpan = false;
-                lock (_lock)
-                {
-                    ResourceName = ResourceName ?? OperationName;
-                    if (!IsFinished)
-                    {
-                        Duration = _sw.Elapsed;
-                        IsFinished = true;
-                        shouldCloseSpan = true;
-                    }
-                }
-                if (shouldCloseSpan)
-                {
-                    _context.TraceContext.CloseSpan(this);
-                }
-            }
+            Finish(_context.TraceContext.UtcNow());
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
         {
+            var shouldCloseSpan = false;
             lock (_lock)
             {
                 ResourceName = ResourceName ?? OperationName;
-                var shouldCloseSpan = false;
                 if (!IsFinished)
                 {
                     Duration = finishTimestamp - StartTime;
@@ -110,10 +84,10 @@ namespace Datadog.Trace
                     IsFinished = true;
                     shouldCloseSpan = true;
                 }
-                if (shouldCloseSpan)
-                {
-                    _context.TraceContext.CloseSpan(this);
-                }
+            }
+            if (shouldCloseSpan)
+            {
+                _context.TraceContext.CloseSpan(this);
             }
         }
 

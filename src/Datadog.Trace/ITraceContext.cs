@@ -1,4 +1,6 @@
-﻿namespace Datadog.Trace
+﻿using System;
+
+namespace Datadog.Trace
 {
     internal interface ITraceContext
     {
@@ -9,5 +11,7 @@
         void CloseSpan(Span span);
 
         SpanContext GetCurrentSpanContext();
+
+        DateTimeOffset UtcNow();
     }
 }
