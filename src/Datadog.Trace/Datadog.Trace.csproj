@@ -8,7 +8,7 @@
     <Description>Datadog tracing code</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>Alpha release</PackageReleaseNotes>
-    <Copyright></Copyright>
+    <Copyright>Datadog, Inc. 2017</Copyright>
     <PackageTags></PackageTags>
   </PropertyGroup>
 
