@@ -32,7 +32,7 @@ Before instrumenting your application, please have a look at the [Datadog APM Te
 
 #### Setup
 
-In order to instrument you code you need to add the `Datadog.Tracer` NuGet package to your project.
+In order to instrument you code you need to add the `Datadog.Trace` NuGet package to your project.
 
 Your tracing adventure starts with the `ITracer` object, you should typically instantiate only one `ITracer` for the lifetime of your app and use it in all places of your code where you want to add tracing. Instantiating the `ITracer` is done with the `TracerFactory.GetTracer` method.
 
