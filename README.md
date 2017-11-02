@@ -7,10 +7,10 @@ Datadog APM traces the path of each request through your application stack, reco
 This repository contains what you need to trace C# applications. Some quick notes up front:
 
 - **Datadog C# APM is currently in Alpha**
-- It supports .Net Framework version above 4.5 and .Net Core 2.0
-- It does not support out of process propagation
-- It does not provide automatic framework instrumentation, all instrumentation is [manual](#manual-instrumentation)
-- Multiple AppDomains are not supported (but it could work).
+- It supports .Net Framework version above 4.5 and .Net Core 2.0.
+- It does not support out of process propagation.
+- It does not provide automatic framework instrumentation, all instrumentation is [manual](#manual-instrumentation).
+- Multiple AppDomains are not supported.
 - Our tracer is based on the current OpenTracing standard, however we do not yet support the following features: `FollowsFrom` references, `Baggage` or `Log`.
 
 ## The Components
@@ -50,7 +50,7 @@ By default the service name is set to the name of the AppDomain, choose a custom
 ITracer tracer = TracerFactory.GetTracer(defaultServiceName: "YourServiceName")
 ```
 
-By default, the trace endpoint is set to http://localhost:8126, send traces to a different endpoint: with the agentEndpoint parameter:
+By default, the trace endpoint is set to http://localhost:8126, send traces to a different endpoint with the agentEndpoint parameter:
 
 ```csharp
 ITracer tracer = TracerFactory.GetTracer(agentEndpoint: new Url("http://myendpoint:port"));
@@ -70,10 +70,9 @@ if you don't the OperationName will be used.
 A minimal examples is:
 
 ```csharp
-using (ISpan span = tracer.BuildSpan("OperationName").Start())
+using (ISpan span = tracer.BuildSpan("OperationName").WithTag(DDTags.ServiceName, "ServiceName").Start())
 {
     span.SetTag(DDTags.ResourceName, "ResourceName");
-    span.SetTag(DDTags.ServiceName, "ServiceName");
 
     // Instrumented code
     Thread.Sleep(1000);
@@ -83,9 +82,8 @@ using (ISpan span = tracer.BuildSpan("OperationName").Start())
 You may also choose, not to use the `using` construct and close the `ISpan` object explictly:
 
 ```csharp
-ISpan span = tracer.BuildSpan("OperationName").Start();
+ISpan span = tracer.BuildSpan("OperationName").WithTag(DDTags.ServiceName, "ServiceName").Start();
 span.SetTag(DDTags.ResourceName, "ResourceName");
-span.SetTag(DDTags.ServiceName, "ServiceName");
 
 // Instrumented code
 Thread.Sleep(1000);
