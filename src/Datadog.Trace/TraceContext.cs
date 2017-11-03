@@ -32,6 +32,8 @@ namespace Datadog.Trace
             return _start.Add(_sw.Elapsed);
         }
 
+        public string DefaultServiceName => _tracer.DefaultServiceName;
+
         public SpanContext GetCurrentSpanContext()
         {
             return _currentSpanContext.Get();

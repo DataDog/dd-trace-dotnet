@@ -46,7 +46,7 @@ namespace Datadog.Trace
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
         {
             _tracer = tracer;
-            _context = new SpanContext(parent?.TraceContext ?? _tracer.GetTraceContext(), serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName);
+            _context = new SpanContext(parent?.TraceContext ?? _tracer.GetTraceContext(), serviceName);
             OperationName = operationName;
             if (start.HasValue)
             {

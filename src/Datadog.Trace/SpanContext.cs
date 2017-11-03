@@ -23,7 +23,6 @@ namespace Datadog.Trace
 
         public SpanContext(ITraceContext traceContext, string serviceName)
         {
-            ServiceName = serviceName;
             // TODO:bertrand pool the random objects
             Random r = new Random();
             var parent = traceContext.GetCurrentSpanContext();
@@ -31,15 +30,16 @@ namespace Datadog.Trace
             {
                 Parent = parent;
                 TraceId = parent.TraceId;
-                ServiceName = parent.ServiceName;
-                TraceContext = parent.TraceContext;
+                TraceContext = traceContext;
                 SpanId = r.NextUInt63();
-        }
+                ServiceName = serviceName ?? parent.ServiceName;
+            }
             else
             {
                 TraceId = r.NextUInt63();
                 SpanId = r.NextUInt63();
                 TraceContext = traceContext;
+                ServiceName = serviceName ?? traceContext.DefaultServiceName;
             }
         }
 

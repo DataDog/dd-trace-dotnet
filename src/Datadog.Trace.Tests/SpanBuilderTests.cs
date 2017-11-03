@@ -115,6 +115,33 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void Start_SettingServiceInParent_ChildInheritServiceName()
+        {
+            var root = (Span)CreateSpanBuilder()
+                 .WithTag("service.name", "MyService")
+                 .Start();
+            var child = (Span)CreateSpanBuilder()
+                 .Start();
+
+            Assert.Equal("MyService", root.ServiceName);
+            Assert.Equal("MyService", child.ServiceName);
+        }
+
+        [Fact]
+        public void Start_SettingServiceInChild_ServiceNameOverrideParent()
+        {
+            var root = (Span)CreateSpanBuilder()
+                 .WithTag("service.name", "MyService")
+                 .Start();
+            var child = (Span)CreateSpanBuilder()
+                 .WithTag("service.name", "AnotherService")
+                 .Start();
+
+            Assert.Equal("MyService", root.ServiceName);
+            Assert.Equal("AnotherService", child.ServiceName);
+        }
+
+        [Fact]
         public void Start_SettingResource_ResourceIsSet()
         {
             var span = (Span)CreateSpanBuilder()

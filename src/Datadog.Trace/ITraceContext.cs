@@ -13,5 +13,7 @@ namespace Datadog.Trace
         SpanContext GetCurrentSpanContext();
 
         DateTimeOffset UtcNow();
+
+        string DefaultServiceName { get; }
     }
 }
