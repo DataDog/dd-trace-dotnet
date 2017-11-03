@@ -22,7 +22,7 @@ This repository contains what you need to trace C# applications. Some quick note
 
 ## Getting Started
 
-Before instrumenting your code, [install the Datadog Agent](https://app.datadoghq.com/account/settings#agent) on your application servers (or locally, if you're just trying out C# APM) and enable the APM Agent. On Windows, the trace agent is shipped together with the Datadog Agent only since version 5.18.2, so users must update to 5.18.2 or above. See special instructions for [Docker](https://github.com/DataDog/docker-dd-agent#tracing--apm) if you're using it.
+Before instrumenting your code, [install the Datadog Agent](https://app.datadoghq.com/account/settings#agent) on your application servers (or locally, if you're just trying out C# APM) and enable the APM Agent. On Windows, the trace agent is not yet shipped together with the Datadog Agent so it must be installed separately, see [instructions](https://github.com/DataDog/datadog-trace-agent#run-on-windows). See special instructions for [Docker](https://github.com/DataDog/docker-dd-agent#tracing--apm) if you're using it.
 
 ### Manual Instrumentation
 
