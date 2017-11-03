@@ -5,7 +5,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    public class SpanBuilder : ISpanBuilder
+    internal class SpanBuilder : ISpanBuilder
     {
         private static ILog _log = LogProvider.For<SpanBuilder>();
 
@@ -112,7 +112,7 @@ namespace Datadog.Trace
         {
             lock (_lock)
             {
-                if (key == Tags.ServiceName)
+                if (key == DDTags.ServiceName)
                 {
                     _serviceName = value;
                     return this;
