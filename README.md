@@ -22,7 +22,39 @@ This repository contains what you need to trace C# applications. Some quick note
 
 ## Getting Started
 
-Before instrumenting your code, [install the Datadog Agent](https://app.datadoghq.com/account/settings#agent) on your application servers (or locally, if you're just trying out C# APM) and enable the APM Agent. On Windows, the trace agent is not yet shipped together with the Datadog Agent so it must be installed separately, see [instructions](https://github.com/DataDog/datadog-trace-agent#run-on-windows). See special instructions for [Docker](https://github.com/DataDog/docker-dd-agent#tracing--apm) if you're using it.
+Before instrumenting your code, [install the Datadog Agent](https://app.datadoghq.com/account/settings#agent) on your application servers (or locally, if you're just trying out C# APM) and enable the APM Agent. On Windows, please see the instructions below. See special instructions for [Docker](https://github.com/DataDog/docker-dd-agent#tracing--apm) if you're using it.
+
+### Windows
+
+On Windows, the trace agent is shipped together with the Datadog Agent only since version 5.19.0, so users must update to 5.19.0 or above. However the Windows trace agent is in beta and some manual steps are required.
+
+Update your config file to include:
+
+```
+[Main]
+apm_enabled: yes
+[trace.config]
+log_file = C:\ProgramData\Datadog\logs\trace-agent.log
+```
+
+Restart the datadogagent service:
+
+```
+net stop datadogagent
+net start datadogagent
+```
+
+For this beta the trace agent status and logs are not displayed in the Agent Manager GUI.
+
+To see the trace agent status either use the Service tab of the Task Manager or run:
+
+```
+sc.exe query datadog-trace-agent
+```
+
+And check that the status is "running".
+
+The logs are available at the path you configured in `trace.config` `log_file` above.
 
 ### Manual Instrumentation
 
