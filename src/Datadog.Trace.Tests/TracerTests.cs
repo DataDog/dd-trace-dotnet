@@ -19,8 +19,10 @@ namespace Datadog.Trace.Tests
             var span = (Span)builder.Start();
 #if NETCOREAPP2_0
             Assert.Equal("testhost", span.ServiceName);
-#else
+#elif NET45
             Assert.Equal("Datadog.Trace.Tests.Net45", span.ServiceName);
+#else
+            Assert.Equal("Datadog.Trace.Tests", span.ServiceName);
 #endif
             Assert.Equal("Op1", span.OperationName);
         }
