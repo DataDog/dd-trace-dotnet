@@ -12,5 +12,7 @@ namespace Datadog.Trace
         ITraceContext GetTraceContext();
 
         void CloseCurrentTraceContext();
+
+        bool IsDebugEnabled { get; }
     }
 }
