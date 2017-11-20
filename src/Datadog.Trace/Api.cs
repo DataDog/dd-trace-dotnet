@@ -17,6 +17,10 @@ namespace Datadog.Trace
         private const string ServicesPath = "/v0.3/services";
         private static SerializationContext _serializationContext;
 
+#if !NETSTANDARD2_0
+        private static readonly string _frameworkDescription = string.Format(".NET Framework {0}", typeof(object).GetTypeInfo().Assembly.GetName().Version);
+#endif
+
         static Api()
         {
             _serializationContext = new SerializationContext();
@@ -52,7 +56,11 @@ namespace Datadog.Trace
             _servicesEndpoint = new Uri(baseEndpoint, ServicesPath);
             // TODO:bertrand add header for os version
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang", ".NET");
+#if NETSTANDARD2_0
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Interpreter", RuntimeInformation.FrameworkDescription);
+#else
+            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Interpreter", _frameworkDescription);
+#endif
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetAssembly(typeof(Api)).GetName().Version.ToString());
         }
 
