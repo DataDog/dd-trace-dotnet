@@ -39,9 +39,6 @@
     <Reference Include="Moq, Version=4.7.142.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
       <HintPath>..\packages\Moq.4.7.142\lib\net45\Moq.dll</HintPath>
     </Reference>
-    <Reference Include="OpenTracing, Version=0.10.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\OpenTracing.0.10.0\lib\netstandard1.0\OpenTracing.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Configuration" />
@@ -92,13 +89,19 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\lib\opentracing-csharp\src\OpenTracing\OpenTracing.csproj">
+      <Project>{6a48cb37-c924-4df3-8524-abd3bb9b04c4}</Project>
+      <Name>OpenTracing</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj">
       <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
       <Name>Datadog.Trace</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
