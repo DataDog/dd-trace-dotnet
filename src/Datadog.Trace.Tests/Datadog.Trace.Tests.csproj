@@ -17,6 +17,11 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
   </ItemGroup>
 
+  <ItemGroup Condition=" '$(TargetFramework)' != 'netcoreapp2.0;' ">
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\lib\opentracing-csharp\src\OpenTracing\OpenTracing.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
