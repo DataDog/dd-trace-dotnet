@@ -1,0 +1,3 @@
+[submodule "lib/opentracing-csharp"]
+	path = lib/opentracing-csharp
+	url = https://github.com/bmermet/opentracing-csharp
