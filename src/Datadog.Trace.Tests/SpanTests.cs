@@ -1,6 +1,6 @@
-﻿using Moq;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests

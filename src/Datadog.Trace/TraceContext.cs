@@ -1,8 +1,8 @@
-﻿using Datadog.Trace.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
@@ -18,8 +18,6 @@ namespace Datadog.Trace
         private DateTimeOffset _start;
         private Stopwatch _sw;
 
-        public bool Sampled { get; set; }
-
         public TraceContext(IDatadogTracer tracer)
         {
             _tracer = tracer;
@@ -27,12 +25,14 @@ namespace Datadog.Trace
             _sw = Stopwatch.StartNew();
         }
 
+        public string DefaultServiceName => _tracer.DefaultServiceName;
+
+        public bool Sampled { get; set; }
+
         public DateTimeOffset UtcNow()
         {
             return _start.Add(_sw.Elapsed);
         }
-
-        public string DefaultServiceName => _tracer.DefaultServiceName;
 
         public SpanContext GetCurrentSpanContext()
         {
@@ -67,6 +67,7 @@ namespace Datadog.Trace
                             {
                                 _log.DebugFormat("Span {UnfinishedSpan} was not finished before its root span", s);
                             }
+
                             // TODO:bertrand Instead detect if we are being garbage collected and warn at that point
                         }
                     }

@@ -1,10 +1,10 @@
-﻿using MsgPack;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using MsgPack;
 
 namespace Datadog.Trace.IntegrationTests
 {
@@ -15,10 +15,17 @@ namespace Datadog.Trace.IntegrationTests
     /// <seealso cref="System.Net.Http.DelegatingHandler" />
     public class RecordHttpHandler : DelegatingHandler
     {
-        private Object _lock = new Object();
+        private object _lock = new object();
         private int _count = 0;
         private int _target = 0;
         private TaskCompletionSource<bool> _tcs;
+
+        public RecordHttpHandler()
+        {
+            InnerHandler = new HttpClientHandler();
+            Requests = new List<Tuple<HttpRequestMessage, byte[]>>();
+            Responses = new List<HttpResponseMessage>();
+        }
 
         public List<Tuple<HttpRequestMessage, byte[]>> Requests { get; set; }
 
@@ -34,31 +41,6 @@ namespace Datadog.Trace.IntegrationTests
 
         public List<HttpResponseMessage> Responses { get; set;  }
 
-        public RecordHttpHandler()
-        {
-            InnerHandler = new HttpClientHandler();
-            Requests = new List<Tuple<HttpRequestMessage, byte[]>>();
-            Responses = new List<HttpResponseMessage>();
-        }
-
-        protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            var requestContent = await request.Content.ReadAsByteArrayAsync();
-            var response =  await base.SendAsync(request, cancellationToken);
-            lock(_lock)
-            {
-                Requests.Add(Tuple.Create(request, requestContent));
-                Responses.Add(response);
-                _count++;
-                if(_tcs != null && _count >= _target)
-                {
-                    _tcs.SetResult(true);
-                    _tcs = null;
-                }
-            }
-            return response;
-        }
-
         public Task<bool> WaitForCompletion(int target, TimeSpan? timeout = null)
         {
             timeout = timeout ?? TimeSpan.FromSeconds(10);
@@ -68,6 +50,7 @@ namespace Datadog.Trace.IntegrationTests
                 {
                     return Task.FromResult(true);
                 }
+
                 if (_tcs == null)
                 {
                     _target = target;
@@ -81,6 +64,25 @@ namespace Datadog.Trace.IntegrationTests
                     throw new InvalidOperationException("This method should not be called twice on the same instance");
                 }
             }
+        }
+
+        protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var requestContent = await request.Content.ReadAsByteArrayAsync();
+            var response = await base.SendAsync(request, cancellationToken);
+            lock (_lock)
+            {
+                Requests.Add(Tuple.Create(request, requestContent));
+                Responses.Add(response);
+                _count++;
+                if (_tcs != null && _count >= _target)
+                {
+                    _tcs.SetResult(true);
+                    _tcs = null;
+                }
+            }
+
+            return response;
         }
     }
 }

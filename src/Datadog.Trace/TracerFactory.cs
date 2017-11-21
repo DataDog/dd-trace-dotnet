@@ -1,7 +1,7 @@
-﻿using OpenTracing;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using OpenTracing;
 
 namespace Datadog.Trace
 {
@@ -10,13 +10,14 @@ namespace Datadog.Trace
         private static Uri _defaultUri = new Uri("http://localhost:8126");
 
         /// <summary>
-        /// Create a  new ITracer object  with the given parameters
+        /// Create a new Datadog compatible ITracer implementation with the given parameters
         /// </summary>
         /// <param name="agentEndpoint">The agent endpoint where the traces will be sent (default is http://localhost:8126).</param>
         /// <param name="serviceInfoList">The service information list.</param>
         /// <param name="defaultServiceName">Default name of the service (default is the name of the executing assembly).</param>
         /// <param name="isDebugEnabled">Turns on all debug logging (this may have an impact on application performance).</param>
         /// <returns></returns>
+        /// <returns>A Datadog compatible ITracer implementation</returns>
         public static ITracer GetTracer(Uri agentEndpoint = null, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             agentEndpoint = agentEndpoint ?? _defaultUri;

@@ -1,8 +1,8 @@
-﻿using Datadog.Trace.Logging;
-using OpenTracing;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.Logging;
+using OpenTracing;
 
 namespace Datadog.Trace
 {
@@ -10,10 +10,25 @@ namespace Datadog.Trace
     {
         private static ILog _log = LogProvider.For<Span>();
 
-        private Object _lock = new Object();
+        private object _lock = new object();
         private IDatadogTracer _tracer;
         private Dictionary<string, string> _tags;
         private SpanContext _context;
+
+        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
+        {
+            _tracer = tracer;
+            _context = new SpanContext(parent?.TraceContext ?? _tracer.GetTraceContext(), serviceName);
+            OperationName = operationName;
+            if (start.HasValue)
+            {
+                StartTime = start.Value;
+            }
+            else
+            {
+                StartTime = _context.TraceContext.UtcNow();
+            }
+        }
 
         ISpanContext ISpan.Context => _context;
 
@@ -35,28 +50,13 @@ namespace Datadog.Trace
 
         internal bool Error { get; private set; }
 
-        internal bool IsRootSpan { get { return _context.ParentId == null; } }
+        internal bool IsRootSpan => _context.ParentId == null;
 
         // This is threadsafe only if used after the span has been closed.
         // It is acceptable because this property is internal. But if we were to make it public we would need to add some checks.
-        internal IReadOnlyDictionary<string, string> Tags { get { return _tags; } }
+        internal IReadOnlyDictionary<string, string> Tags => _tags;
 
         internal bool IsFinished { get; private set; }
-
-        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
-        {
-            _tracer = tracer;
-            _context = new SpanContext(parent?.TraceContext ?? _tracer.GetTraceContext(), serviceName);
-            OperationName = operationName;
-            if (start.HasValue)
-            {
-                StartTime = start.Value;
-            }
-            else
-            {
-                StartTime = _context.TraceContext.UtcNow();
-            }
-        }
 
         public void Dispose()
         {
@@ -81,10 +81,12 @@ namespace Datadog.Trace
                     {
                         Duration = TimeSpan.Zero;
                     }
+
                     IsFinished = true;
                     shouldCloseSpan = true;
                 }
             }
+
             if (shouldCloseSpan)
             {
                 _context.TraceContext.CloseSpan(this);
@@ -160,7 +162,9 @@ namespace Datadog.Trace
                     _log.Debug("SetTag should not be called after the span was closed");
                     return this;
                 }
-                switch (key) {
+
+                switch (key)
+                {
                     case DDTags.ResourceName:
                         ResourceName = value;
                         return this;
@@ -171,22 +175,14 @@ namespace Datadog.Trace
                         Type = value;
                         return this;
                 }
+
                 if (_tags == null)
                 {
                     _tags = new Dictionary<string, string>();
                 }
+
                 _tags[key] = value;
                 return this;
-            }
-        }
-
-        internal string GetTag(string key)
-        {
-            lock (_lock)
-            {
-                string s = null;
-                _tags?.TryGetValue(key, out s);
-                return s;
             }
         }
 
@@ -204,14 +200,25 @@ namespace Datadog.Trace
             sb.AppendLine($"Duration: {Duration}");
             sb.AppendLine($"Error: {Error}");
             sb.AppendLine($"Meta:");
-            if(Tags != null)
+            if (Tags != null)
             {
-                foreach(var kv in Tags)
+                foreach (var kv in Tags)
                 {
                     sb.Append($"\t{kv.Key}:{kv.Value}");
                 }
             }
+
             return sb.ToString();
+        }
+
+        internal string GetTag(string key)
+        {
+            lock (_lock)
+            {
+                string s = null;
+                _tags?.TryGetValue(key, out s);
+                return s;
+            }
         }
     }
 }

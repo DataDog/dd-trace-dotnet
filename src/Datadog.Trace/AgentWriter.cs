@@ -1,8 +1,8 @@
-﻿using Datadog.Trace.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
@@ -57,6 +57,7 @@ namespace Datadog.Trace
             {
                 await _api.SendTracesAsync(traces);
             }
+
             var services = _servicesBuffer.Pop();
             if (services.Any())
             {
@@ -82,7 +83,7 @@ namespace Datadog.Trace
                         await FlushTracesAsync();
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _log.ErrorException("An unhandled error occurred during the flushing task", ex);
                 }

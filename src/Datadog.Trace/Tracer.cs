@@ -1,8 +1,8 @@
-﻿using Datadog.Trace.Logging;
+﻿using System;
+using System.Collections.Generic;
+using Datadog.Trace.Logging;
 using OpenTracing;
 using OpenTracing.Propagation;
-using System;
-using System.Collections.Generic;
 
 namespace Datadog.Trace
 {
@@ -17,10 +17,6 @@ namespace Datadog.Trace
         private bool _isDebugEnabled;
         private Dictionary<string, ICodec> _codecs;
 
-        bool IDatadogTracer.IsDebugEnabled => _isDebugEnabled;
-
-        string IDatadogTracer.DefaultServiceName => _defaultServiceName;
-
         public Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             _isDebugEnabled = isDebugEnabled;
@@ -28,33 +24,28 @@ namespace Datadog.Trace
             _defaultServiceName = GetAppDomainFriendlyName() ?? Constants.UnkownService;
             if (serviceInfo != null)
             {
-                foreach(var service in serviceInfo)
+                foreach (var service in serviceInfo)
                 {
                     _services[service.ServiceName] = service;
                 }
             }
-            foreach(var service in _services.Values)
+
+            foreach (var service in _services.Values)
             {
                 _agentWriter.WriteServiceInfo(service);
             }
+
             _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec(this) } };
+
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
         }
 
-        private string GetAppDomainFriendlyName()
-        {
-            try
-            {
-                return AppDomain.CurrentDomain.FriendlyName;
-            }
-            catch
-            {
-                return null;
-            }
-        }
+        bool IDatadogTracer.IsDebugEnabled => _isDebugEnabled;
+
+        string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
         public ISpanBuilder BuildSpan(string operationName)
         {
@@ -64,7 +55,7 @@ namespace Datadog.Trace
         public ISpanContext Extract<TCarrier>(Format<TCarrier> format, TCarrier carrier)
         {
             _codecs.TryGetValue(format.Name, out ICodec codec);
-            if(codec != null)
+            if (codec != null)
             {
                 return codec.Extract(carrier);
             }
@@ -78,13 +69,14 @@ namespace Datadog.Trace
         public void Inject<TCarrier>(ISpanContext spanContext, Format<TCarrier> format, TCarrier carrier)
         {
             _codecs.TryGetValue(format.Name, out ICodec codec);
-            if(codec != null)
+            if (codec != null)
             {
                 var ddSpanContext = spanContext as SpanContext;
-                if(ddSpanContext == null)
+                if (ddSpanContext == null)
                 {
                     throw new ArgumentException("Inject should be called with a Datadog.Trace.SpanContext argument");
                 }
+
                 codec.Inject(ddSpanContext, carrier);
             }
             else
@@ -101,12 +93,19 @@ namespace Datadog.Trace
 
         ITraceContext IDatadogTracer.GetTraceContext()
         {
-            if(_currentContext.Get() == null)
+            if (_currentContext.Get() == null)
             {
                 _currentContext.Set(new TraceContext(this));
             }
+
             return _currentContext.Get();
         }
+
+        void IDatadogTracer.CloseCurrentTraceContext()
+        {
+            _currentContext.Set(null);
+        }
+
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
             _agentWriter.FlushAndCloseAsync().Wait();
@@ -122,9 +121,16 @@ namespace Datadog.Trace
             _agentWriter.FlushAndCloseAsync().Wait();
         }
 
-        void IDatadogTracer.CloseCurrentTraceContext()
+        private string GetAppDomainFriendlyName()
         {
-            _currentContext.Set(null);
+            try
+            {
+                return AppDomain.CurrentDomain.FriendlyName;
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tests
         public void Push_MoreThanCapacity_False()
         {
             var buffer = new AgentWriterBuffer<int>(100);
-            for(int i = 0; i <100; i++)
+            for (int i = 0; i < 100; i++)
             {
                 Assert.True(buffer.Push(i));
             }
@@ -37,15 +37,15 @@ namespace Datadog.Trace.Tests
             // Check that one random element of the queue was replaced
             var vals = buffer.Pop();
             var replaced = 0;
-            for(int i = 0; i <100; i++)
+            for (int i = 0; i < 100; i++)
             {
-                if(vals[i] != i)
+                if (vals[i] != i)
                 {
                     replaced++;
                 }
             }
+
             Assert.Equal(1, replaced);
         }
-
     }
 }

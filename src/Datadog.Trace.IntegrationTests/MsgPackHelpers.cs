@@ -1,6 +1,6 @@
-﻿using MsgPack;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using MsgPack;
 
 namespace Datadog.Trace.IntegrationTests
 {
@@ -31,6 +31,7 @@ namespace Datadog.Trace.IntegrationTests
         {
             return obj.AsList().First().AsDictionary()["name"].AsString();
         }
+
         public static string ResourceName(this MessagePackObject obj)
         {
             return obj.AsList().First().AsDictionary()["resource"].AsString();
@@ -45,6 +46,7 @@ namespace Datadog.Trace.IntegrationTests
         {
             return obj.AsList().First().AsDictionary()["start"].AsInt64();
         }
+
         public static long Duration(this MessagePackObject obj)
         {
             return obj.AsList().First().AsDictionary()["duration"].AsInt64();
@@ -67,7 +69,7 @@ namespace Datadog.Trace.IntegrationTests
 
         public static IEnumerable<ServiceInfo> ServiceInfos(this MessagePackObjectDictionary obj)
         {
-            foreach(var kv in obj)
+            foreach (var kv in obj)
             {
                 var s = kv.Value.AsDictionary();
                 yield return new ServiceInfo { App = s["app"].AsString(), AppType = s["app_type"].AsString(), ServiceName = kv.Key.AsString() };

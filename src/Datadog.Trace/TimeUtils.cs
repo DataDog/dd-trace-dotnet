@@ -2,7 +2,7 @@
 
 namespace Datadog.Trace
 {
-    static class TimeUtils
+    internal static class TimeUtils
     {
         private const long NanoSecondsPerTick = 1000000 / TimeSpan.TicksPerMillisecond;
         private static readonly long UnixEpochInTicks = new DateTimeOffset(1970, 1, 1,  0, 0, 0, TimeSpan.Zero).Ticks;

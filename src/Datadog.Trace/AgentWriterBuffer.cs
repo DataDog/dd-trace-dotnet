@@ -5,7 +5,7 @@ namespace Datadog.Trace
 {
     internal class AgentWriterBuffer<T>
     {
-        private readonly Object _lock = new Object();
+        private readonly object _lock = new object();
         private readonly int _maxSize;
         private List<T> _items;
         private Random _random;
@@ -21,7 +21,7 @@ namespace Datadog.Trace
         {
             lock (_lock)
             {
-                if(_items.Count < _maxSize)
+                if (_items.Count < _maxSize)
                 {
                     _items.Add(item);
                     return true;
