@@ -3,7 +3,6 @@ using OpenTracing;
 using OpenTracing.Propagation;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace Datadog.Trace
 {
@@ -15,11 +14,15 @@ namespace Datadog.Trace
         private string _defaultServiceName;
         private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
         private IAgentWriter _agentWriter;
+        private bool _isDebugEnabled;
+
+        bool IDatadogTracer.IsDebugEnabled => _isDebugEnabled;
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
-        public Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null)
+        public Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
+            _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
             _defaultServiceName = GetAppDomainFriendlyName() ?? Constants.UnkownService;
             if (serviceInfo != null)

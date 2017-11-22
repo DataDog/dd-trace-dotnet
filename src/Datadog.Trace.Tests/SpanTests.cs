@@ -17,6 +17,7 @@ namespace Datadog.Trace.Tests
             _tracerMock.Setup(x => x.GetTraceContext()).Returns(_traceContext);
             _tracerMock.Setup(x => x.CloseCurrentTraceContext());
             _tracerMock.Setup(x => x.DefaultServiceName).Returns("DefaultServiceName");
+            _tracerMock.Setup(x => x.IsDebugEnabled).Returns(true);
         }
 
         [Fact]
