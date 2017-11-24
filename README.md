@@ -139,6 +139,23 @@ ISpan parent = tracer.BuildSpan("Parent").Start();
 ISpan child = tracer.BuildSpan("Child").AsChildOf(parent).Start();
 ```
 
+#### Cross-process tracing
+
+Cross-process tracing is supported by propagating context through HTTP headers. This is done with the `ITracer.Inject` and `ITracer.Extract` methods as documented in the [opentracing documentation](http://opentracing.io/documentation/pages/api/cross-process-tracing.html)
+
+Example code to send a HTTP request with the right headers:
+
+```csharp
+using (var span = tracer.BuildSpan("Operation").Start())
+{
+    var client = new HttpClient();
+    var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com");
+    var carrier = new HttpHeadersCarrier(_request.Headers);
+    tracer.Inject(span.Context, Formats.HttpHeaders, carrier);
+    await client.SendAsync(request);
+}
+```
+
 #### Advanced Usage
 
 When creating a tracer, add some metadata to your services to customize how they will appear in your Datadog application:
