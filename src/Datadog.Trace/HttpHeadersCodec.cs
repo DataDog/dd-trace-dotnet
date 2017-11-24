@@ -4,7 +4,7 @@ using System;
 
 namespace Datadog.Trace
 {
-    class HttpHeadersCodec : ICodec
+    internal class HttpHeadersCodec : ICodec
     {
         public IDatadogTracer _tracer;
 
