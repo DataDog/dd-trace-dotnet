@@ -20,10 +20,6 @@ namespace Datadog.Trace
         {
             _api = api;
             _flushTask = Task.Run(FlushTracesTaskLoop);
-            // Register callbacks to make sure we flush the traces before exiting
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            Console.CancelKeyPress += Console_CancelKeyPress;
         }
 
         public void WriteServiceInfo(ServiceInfo serviceInfo)
@@ -44,7 +40,7 @@ namespace Datadog.Trace
             }
         }
 
-        private async Task FlushBeforeExitAsync()
+        public async Task FlushAndCloseAsync()
         {
             _processExit.SetResult(true);
             await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(2)));
@@ -52,21 +48,6 @@ namespace Datadog.Trace
             {
                 _log.Warn("Could not flush all traces before process exit");
             }
-        }
-
-        private void CurrentDomain_ProcessExit(object sender, EventArgs e)
-        {
-            FlushBeforeExitAsync().Wait();
-        }
-
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            FlushBeforeExitAsync().Wait();
-        }
-
-        private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            FlushBeforeExitAsync().Wait();
         }
 
         private async Task FlushTracesAsync()
