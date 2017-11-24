@@ -15,6 +15,7 @@ namespace Datadog.Trace
         private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
         private IAgentWriter _agentWriter;
         private bool _isDebugEnabled;
+        private Dictionary<string, ICodec> _codecs;
 
         bool IDatadogTracer.IsDebugEnabled => _isDebugEnabled;
 
@@ -36,6 +37,7 @@ namespace Datadog.Trace
             {
                 _agentWriter.WriteServiceInfo(service);
             }
+            _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec(this) } };
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -61,14 +63,35 @@ namespace Datadog.Trace
 
         public ISpanContext Extract<TCarrier>(Format<TCarrier> format, TCarrier carrier)
         {
-            _log.Error("Tracer.Extract is not implemented by Datadog.Trace");
-            throw new UnsupportedFormatException();
+            _codecs.TryGetValue(format.Name, out ICodec codec);
+            if(codec != null)
+            {
+                return codec.Extract(carrier);
+            }
+            else
+            {
+                _log.Error($"Tracer.Extract is not implemented for {format.Name} by Datadog.Trace");
+                throw new UnsupportedFormatException();
+            }
         }
 
         public void Inject<TCarrier>(ISpanContext spanContext, Format<TCarrier> format, TCarrier carrier)
         {
-            _log.Error("Tracer.Extract is not implemented by Datadog.Trace");
-            throw new UnsupportedFormatException();
+            _codecs.TryGetValue(format.Name, out ICodec codec);
+            if(codec != null)
+            {
+                var ddSpanContext = spanContext as SpanContext;
+                if(ddSpanContext == null)
+                {
+                    throw new ArgumentException("Inject should be called with a Datadog.Trace.SpanContext argument");
+                }
+                codec.Inject(ddSpanContext, carrier);
+            }
+            else
+            {
+                _log.Error($"Tracer.Inject is not implemented for {format.Name} by Datadog.Trace");
+                throw new UnsupportedFormatException();
+            }
         }
 
         void IDatadogTracer.Write(List<Span> trace)

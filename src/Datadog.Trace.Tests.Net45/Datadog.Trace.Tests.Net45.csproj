@@ -74,11 +74,23 @@
     <Compile Include="..\Datadog.Trace.Tests\ApiTests.cs">
       <Link>ApiTests.cs</Link>
     </Compile>
+    <Compile Include="..\Datadog.Trace.Tests\HttpHeaderCodecTests.cs">
+      <Link>HttpHeaderCodecTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace.Tests\HttpHeadersCarrierTests.cs">
+      <Link>HttpHeadersCarrierTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace.Tests\MockTextMap.cs">
+      <Link>MockTextMap.cs</Link>
+    </Compile>
     <Compile Include="..\Datadog.Trace.Tests\SpanBuilderTests.cs">
       <Link>SpanBuilderTests.cs</Link>
     </Compile>
     <Compile Include="..\Datadog.Trace.Tests\SpanTests.cs">
       <Link>SpanTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace.Tests\TraceContextTests.cs">
+      <Link>TraceContextTests.cs</Link>
     </Compile>
     <Compile Include="..\Datadog.Trace.Tests\TracerTests.cs">
       <Link>TracerTests.cs</Link>

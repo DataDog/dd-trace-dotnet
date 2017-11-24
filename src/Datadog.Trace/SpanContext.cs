@@ -32,7 +32,7 @@ namespace Datadog.Trace
                 TraceId = parent.TraceId;
                 TraceContext = traceContext;
                 SpanId = r.NextUInt63();
-                ServiceName = serviceName ?? parent.ServiceName;
+                ServiceName = serviceName ?? parent.ServiceName ?? traceContext.DefaultServiceName;
             }
             else
             {
@@ -41,6 +41,14 @@ namespace Datadog.Trace
                 TraceContext = traceContext;
                 ServiceName = serviceName ?? traceContext.DefaultServiceName;
             }
+        }
+
+        public SpanContext(ITraceContext traceContext, ulong traceId, ulong spanId)
+        {
+            TraceContext = traceContext;
+            TraceId = traceId;
+            SpanId = spanId;
+            ServiceName = traceContext.DefaultServiceName;
         }
 
         public IEnumerable<KeyValuePair<string, string>> GetBaggageItems()
