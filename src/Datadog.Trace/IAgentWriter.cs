@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace
 {
@@ -7,5 +8,7 @@ namespace Datadog.Trace
         void WriteTrace(List<Span> trace);
 
         void WriteServiceInfo(ServiceInfo serviceInfo);
+
+        Task FlushAndCloseAsync();
     }
 }

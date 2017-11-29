@@ -36,6 +36,10 @@ namespace Datadog.Trace
             {
                 _agentWriter.WriteServiceInfo(service);
             }
+            // Register callbacks to make sure we flush the traces before exiting
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            Console.CancelKeyPress += Console_CancelKeyPress;
         }
 
         private string GetAppDomainFriendlyName()
@@ -79,6 +83,20 @@ namespace Datadog.Trace
                 _currentContext.Set(new TraceContext(this));
             }
             return _currentContext.Get();
+        }
+        private void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        {
+            _agentWriter.FlushAndCloseAsync().Wait();
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            _agentWriter.FlushAndCloseAsync().Wait();
+        }
+
+        private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
+        {
+            _agentWriter.FlushAndCloseAsync().Wait();
         }
 
         void IDatadogTracer.CloseCurrentTraceContext()

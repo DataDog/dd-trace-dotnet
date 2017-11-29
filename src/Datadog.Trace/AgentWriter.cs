@@ -14,6 +14,7 @@ namespace Datadog.Trace
         private readonly AgentWriterBuffer<ServiceInfo> _servicesBuffer = new AgentWriterBuffer<ServiceInfo>(100);
         private readonly IApi _api;
         private readonly Task _flushTask;
+        private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
         public AgentWriter(IApi api)
         {
@@ -39,24 +40,46 @@ namespace Datadog.Trace
             }
         }
 
-        public async Task FlushTracesTaskLoop()
+        public async Task FlushAndCloseAsync()
+        {
+            _processExit.SetResult(true);
+            await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(2)));
+            if (!_flushTask.IsCompleted)
+            {
+                _log.Warn("Could not flush all traces before process exit");
+            }
+        }
+
+        private async Task FlushTracesAsync()
+        {
+            var traces = _tracesBuffer.Pop();
+            if (traces.Any())
+            {
+                await _api.SendTracesAsync(traces);
+            }
+            var services = _servicesBuffer.Pop();
+            if (services.Any())
+            {
+                // TODO:bertrand batch these calls
+                await Task.WhenAll(services.Select(_api.SendServiceAsync));
+            }
+        }
+
+        private async Task FlushTracesTaskLoop()
         {
             while (true)
             {
                 try
                 {
-                    // TODO:bertrand trigger on process exit too
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-                    var traces = _tracesBuffer.Pop();
-                    if (traces.Any())
+                    await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(1)), _processExit.Task);
+                    if (_processExit.Task.IsCompleted)
                     {
-                        await _api.SendTracesAsync(traces);
+                        await FlushTracesAsync();
+                        return;
                     }
-                    var services = _servicesBuffer.Pop();
-                    if (services.Any())
+                    else
                     {
-                        // TODO:bertrand batch these calls
-                        await Task.WhenAll(services.Select(_api.SendServiceAsync));
+                        await FlushTracesAsync();
                     }
                 }
                 catch(Exception ex)
