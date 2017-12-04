@@ -20,8 +20,19 @@ namespace Datadog.Trace
             {
                 throw new UnsupportedFormatException("Carrier should have type ITextMap");
             }
-            var parentIdHeader = map.Get(Constants.HttpHeaderParentId);
-            var traceIdHeader = map.Get(Constants.HttpHeaderTraceId);
+            string parentIdHeader = null;
+            string traceIdHeader = null;
+            foreach (var keyVal in map.GetEntries())
+            {
+                if(keyVal.Key.Equals(Constants.HttpHeaderParentId, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    parentIdHeader = keyVal.Value;
+                }
+                if(keyVal.Key.Equals(Constants.HttpHeaderTraceId, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    traceIdHeader = keyVal.Value;
+                }
+            }
             if(parentIdHeader == null)
             {
                 throw new ArgumentException($"{Constants.HttpHeaderParentId} should be set.");

@@ -77,6 +77,21 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void Extract_WrongHeaderCase_ExtractionStillWorks()
+        {
+            const ulong traceId = 10;
+            const ulong parentId = 120;
+            var headers = new MockTextMap();
+            headers.Set(HttpHeaderTraceId.ToUpper(), traceId.ToString());
+            headers.Set(HttpHeaderParentId.ToUpper(), parentId.ToString());
+            var spanContext = _codec.Extract(headers);
+
+            Assert.NotNull(spanContext);
+            Assert.Equal(traceId, spanContext.TraceId);
+            Assert.Equal(parentId, spanContext.SpanId);
+        }
+
+        [Fact]
         public void Inject_SpanContext_HeadersWithCorrectInfo()
         {
             var spanContext = new SpanContext(new TraceContext(_tracerMock.Object), "MyService");
