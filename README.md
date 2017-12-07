@@ -139,6 +139,77 @@ ISpan parent = tracer.BuildSpan("Parent").Start();
 ISpan child = tracer.BuildSpan("Child").AsChildOf(parent).Start();
 ```
 
+#### Cross-process tracing
+
+Cross-process tracing is supported by propagating context through HTTP headers. This is done with the `ITracer.Inject` and `ITracer.Extract` methods as documented in the [opentracing documentation](http://opentracing.io/documentation/pages/api/cross-process-tracing.html)
+
+##### Injection
+
+Example code to send a HTTP request with the right headers:
+
+```csharp
+using (var span = tracer.BuildSpan("Operation").Start())
+{
+    var client = new HttpClient();
+    var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com");
+    var carrier = new HttpHeadersCarrier(_request.Headers);
+    tracer.Inject(span.Context, Formats.HttpHeaders, carrier);
+    await client.SendAsync(request);
+}
+```
+
+##### Extraction
+
+In order to extract context from a http request, you need to write a wrapper
+around the header container used by your web framework to make it implement the
+`ITextMap` interface.
+
+For example such a wrapper for the `IHeaderDictionary` used by Asp.Net Core could be:
+
+```csharp
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
+using OpenTracing.Propagation;
+
+public class AspNetHeadersTextMap : ITextMap
+{
+    private readonly IHeaderDictionary _headers;
+
+    public AspNetHeadersTextMap(IHeaderDictionary headers)
+    {
+        _headers = headers;
+    }
+
+    public string Get(string key)
+    {
+        return _headers[key];
+    }
+
+    public IEnumerable<KeyValuePair<string, string>> GetEntries()
+    {
+        return (IEnumerable<KeyValuePair<string, string>>)_headers;
+    }
+
+    public void Set(string key, string value)
+    {
+        _headers[key] = value;
+    }
+}
+```
+
+You can then leverage the extract method to extract the cross-process
+correlation context from a request's headers:
+
+```csharp
+var tracer = TracerFactory.GetTracer();
+var headersTextMap = new AspNetHeadersTextMap(HttpContext.Request.Headers);
+var spanContext = tracer.Extract(Formats.HttpHeaders, headersTextMap);
+using (var span = tracer.BuildSpan("Operation").AsChildOf(spanContext).Start())
+{
+    // Your instrumented code
+}
+```
+
 #### Advanced Usage
 
 When creating a tracer, add some metadata to your services to customize how they will appear in your Datadog application:
