@@ -156,6 +156,32 @@ var serviceInfoList = new List<ServiceInfo>
 ITracer tracer = TracerFactory.GetTracer(serviceInfoList: serviceInfoList);
 ```
 
+## Development
+
+### Dependencies
+
+In order to build and run all the projects and test included in this repo you need to have Visual Studio 2017 as well as the .Net Core 2.+ SDK installed on your machine.
+
+Alternatively for non Windows users, it's possible to build the library only for netstandard2.0 and run the tests for the .net core runtime. This should prove enough for most development tasks and the CI will run the tests on the full .Net Framework.
+
+### Setup
+
+This project makes use of git submodules. This means that in order to start developping on this project, you should either clone this repository with the `--recurse-submodules` option or run the following commands in the cloned repository:
+
+```
+git submodule init
+git submodule update
+
+```
+
+### Running tests
+
+If you are using Visual Studio, the tests should appear in the test explorer and can be run from there.
+
+The tests contained in the projects "Datadog.Trace.IntegrationTests" and "Datadog.Trace.IntegrationTests.Net45" require to have the Datadog trace agent running on the same machine and listening on the port 8126.
+
+If you are not using Visual Studio, you can run the tests in "Datadog.Trace.Tests" and "Datadog.Trace.IntegrationTests" with the `dotnet test` command.
+
 ## Further Reading
 
 - [OpenTracing's documentation](https://github.com/opentracing/opentracing-csharp); feel free to use the Trace C# API to customize your instrumentation.
