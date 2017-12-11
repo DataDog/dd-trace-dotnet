@@ -1,8 +1,8 @@
-﻿using Moq;
-using OpenTracing.Propagation;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Moq;
+using OpenTracing.Propagation;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -94,7 +94,11 @@ namespace Datadog.Trace.Tests
                 .BuildSpan("Root")
                 .Start();
 
-            Func<Tracer, Task<Span>> createSpanAsync = async (t) => { await tcs.Task; return (Span)_tracer.BuildSpan("AsyncChild").Start(); };
+            Func<Tracer, Task<Span>> createSpanAsync = async (t) =>
+            {
+                await tcs.Task;
+                return (Span)_tracer.BuildSpan("AsyncChild").Start();
+            };
             var tasks = Enumerable.Range(0, 10).Select(x => createSpanAsync(_tracer)).ToArray();
 
             var syncChild = (Span)_tracer.BuildSpan("SyncChild").Start();
@@ -102,7 +106,7 @@ namespace Datadog.Trace.Tests
 
             Assert.Equal(root.TraceContext, syncChild.TraceContext);
             Assert.Equal(root.Context.SpanId, syncChild.Context.ParentId);
-            foreach(var task in tasks)
+            foreach (var task in tasks)
             {
                 var span = await task;
                 Assert.Equal(root.TraceContext, span.TraceContext);

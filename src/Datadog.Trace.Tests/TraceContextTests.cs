@@ -1,7 +1,5 @@
-﻿using Moq;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -18,7 +16,6 @@ namespace Datadog.Trace.Tests
             var now = traceContext.UtcNow();
             var expectedNow = DateTimeOffset.UtcNow;
 
-
             Assert.True(expectedNow.Subtract(now) < TimeSpan.FromMilliseconds(30));
         }
 
@@ -29,7 +26,6 @@ namespace Datadog.Trace.Tests
 
             var t1 = traceContext.UtcNow();
             var t2 = traceContext.UtcNow();
-
 
             Assert.True(t2.Subtract(t1) > TimeSpan.Zero);
         }

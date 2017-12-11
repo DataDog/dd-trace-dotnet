@@ -1,7 +1,7 @@
 ﻿using System;
-using OpenTracing;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
+using OpenTracing;
 
 namespace Datadog.Trace
 {
@@ -9,7 +9,7 @@ namespace Datadog.Trace
     {
         private static ILog _log = LogProvider.For<SpanBuilder>();
 
-        private Object _lock = new Object();
+        private object _lock = new object();
         private IDatadogTracer _tracer;
         private string _operationName;
         private SpanContext _parent;
@@ -33,6 +33,7 @@ namespace Datadog.Trace
                     return this;
                 }
             }
+
             _log.Debug("ISpanBuilder.AddReference is not implemented for other references than ChildOf by Datadog.Trace");
             return this;
         }
@@ -80,6 +81,7 @@ namespace Datadog.Trace
                         span.SetTag(pair.Key, pair.Value);
                     }
                 }
+
                 return span;
             }
         }
@@ -117,10 +119,12 @@ namespace Datadog.Trace
                     _serviceName = value;
                     return this;
                 }
+
                 if (_tags == null)
                 {
                     _tags = new Dictionary<string, string>();
                 }
+
                 _tags[key] = value;
                 return this;
             }

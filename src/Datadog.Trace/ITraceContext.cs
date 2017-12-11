@@ -6,6 +6,8 @@ namespace Datadog.Trace
     {
         bool Sampled { get; set; }
 
+        string DefaultServiceName { get; }
+
         void AddSpan(Span span);
 
         void CloseSpan(Span span);
@@ -13,7 +15,5 @@ namespace Datadog.Trace
         SpanContext GetCurrentSpanContext();
 
         DateTimeOffset UtcNow();
-
-        string DefaultServiceName { get; }
     }
 }

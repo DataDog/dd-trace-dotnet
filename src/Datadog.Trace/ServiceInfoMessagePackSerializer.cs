@@ -5,7 +5,8 @@ namespace Datadog.Trace
 {
     internal class ServiceInfoMessagePackSerializer : MessagePackSerializer<ServiceInfo>
     {
-        public ServiceInfoMessagePackSerializer(SerializationContext context) : base(context)
+        public ServiceInfoMessagePackSerializer(SerializationContext context)
+            : base(context)
         {
         }
 

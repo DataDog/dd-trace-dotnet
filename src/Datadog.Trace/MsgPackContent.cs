@@ -1,15 +1,14 @@
-﻿using MsgPack.Serialization;
-using System.IO;
+﻿using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using MsgPack.Serialization;
 
 namespace Datadog.Trace
 {
     internal class MsgPackContent<T> : HttpContent
     {
-        public T Value { get; private set; }
         private SerializationContext _serializationContext;
 
         public MsgPackContent(T value, SerializationContext serializationContext)
@@ -18,6 +17,8 @@ namespace Datadog.Trace
             Headers.ContentType = new MediaTypeHeaderValue("application/msgpack");
             _serializationContext = serializationContext;
         }
+
+        public T Value { get; private set; }
 
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {

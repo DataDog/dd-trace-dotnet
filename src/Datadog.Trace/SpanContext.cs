@@ -1,25 +1,13 @@
-﻿using Datadog.Trace.Logging;
-using OpenTracing;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Datadog.Trace.Logging;
+using OpenTracing;
 
 namespace Datadog.Trace
 {
     internal class SpanContext : ISpanContext
     {
         private static ILog _log = LogProvider.For<SpanBuilder>();
-
-        public SpanContext Parent { get; }
-
-        public UInt64 TraceId { get; }
-
-        public UInt64? ParentId { get { return Parent?.SpanId; } }
-
-        public UInt64 SpanId { get; }
-
-        public string ServiceName { get; }
-
-        public ITraceContext TraceContext { get; }
 
         public SpanContext(ITraceContext traceContext, string serviceName)
         {
@@ -50,6 +38,18 @@ namespace Datadog.Trace
             SpanId = spanId;
             ServiceName = traceContext.DefaultServiceName;
         }
+
+        public SpanContext Parent { get; }
+
+        public ulong TraceId { get; }
+
+        public ulong? ParentId => Parent?.SpanId;
+
+        public ulong SpanId { get; }
+
+        public string ServiceName { get; }
+
+        public ITraceContext TraceContext { get; }
 
         public IEnumerable<KeyValuePair<string, string>> GetBaggageItems()
         {

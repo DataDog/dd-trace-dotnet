@@ -7,15 +7,20 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
     public class SetResponseHandler : DelegatingHandler
+#pragma warning restore SA1649 // File name must match first type name
+#pragma warning restore SA1402 // File may only contain a single class
     {
         private HttpResponseMessage _response;
-        public int RequestsCount { get; set; }
 
         public SetResponseHandler(HttpResponseMessage response)
         {
             _response = response;
         }
+
+        public int RequestsCount { get; set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -54,6 +59,7 @@ namespace Datadog.Trace.Tests
             await api.SendServiceAsync(new ServiceInfo());
 
             Assert.Equal(1, handler.RequestsCount);
+
             // TODO:bertrand check that it's properly logged
         }
     }

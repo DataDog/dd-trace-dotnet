@@ -1,12 +1,13 @@
-﻿using MsgPack;
+﻿using System;
+using MsgPack;
 using MsgPack.Serialization;
-using System;
 
 namespace Datadog.Trace
 {
     internal class SpanMessagePackSerializer : MessagePackSerializer<Span>
     {
-        public SpanMessagePackSerializer(SerializationContext context) : base(context)
+        public SpanMessagePackSerializer(SerializationContext context)
+            : base(context)
         {
         }
 
@@ -19,14 +20,17 @@ namespace Datadog.Trace
             {
                 len += 1;
             }
+
             if (value.Error)
             {
                 len += 1;
             }
+
             if (value.Tags != null)
             {
                 len += 1;
             }
+
             packer.PackMapHeader(len);
             packer.PackString("trace_id");
             packer.Pack(value.Context.TraceId);
@@ -49,11 +53,13 @@ namespace Datadog.Trace
                 packer.PackString("parent_id");
                 packer.Pack(value.Context.ParentId);
             }
+
             if (value.Error)
             {
                 packer.PackString("error");
                 packer.Pack(1);
             }
+
             if (value.Tags != null)
             {
                 packer.PackString("meta");
