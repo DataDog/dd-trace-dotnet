@@ -25,14 +25,22 @@
     }
 
 #else
+    using System;
+    using System.Collections.Concurrent;
     using System.Threading;
 
     internal class AsyncLocalCompat<T>
     {
-        private AsyncLocal<T> _asyncLocal = new AsyncLocal<T>();
+        private static readonly ConcurrentDictionary<string, AsyncLocal<T>> AsyncLocalByName
+            = new ConcurrentDictionary<string, AsyncLocal<T>>();
+
+        private static readonly Func<string, AsyncLocal<T>> Create = name => new AsyncLocal<T>();
+
+        private AsyncLocal<T> _asyncLocal;
 
         public AsyncLocalCompat(string name)
         {
+            _asyncLocal = AsyncLocalByName.GetOrAdd(name, Create);
         }
 
         public T Get()
