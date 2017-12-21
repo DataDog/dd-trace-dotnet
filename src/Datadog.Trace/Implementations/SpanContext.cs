@@ -7,7 +7,7 @@ namespace Datadog.Trace
 {
     internal class SpanContext : ISpanContext
     {
-        private static ILog _log = LogProvider.For<SpanBuilder>();
+        private static ILog _log = LogProvider.For<SpanContext>();
 
         public SpanContext(ITraceContext traceContext, string serviceName)
         {

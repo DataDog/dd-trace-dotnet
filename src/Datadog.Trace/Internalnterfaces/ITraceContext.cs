@@ -8,9 +8,9 @@ namespace Datadog.Trace
 
         string DefaultServiceName { get; }
 
-        void AddSpan(Span span);
+        void AddSpan(SpanBase span);
 
-        void CloseSpan(Span span);
+        void CloseSpan(SpanBase span);
 
         SpanContext GetCurrentSpanContext();
 

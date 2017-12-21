@@ -16,7 +16,6 @@ namespace Datadog.Trace
         /// <param name="serviceInfoList">The service information list.</param>
         /// <param name="defaultServiceName">Default name of the service (default is the name of the executing assembly).</param>
         /// <param name="isDebugEnabled">Turns on all debug logging (this may have an impact on application performance).</param>
-        /// <returns></returns>
         /// <returns>A Datadog compatible ITracer implementation</returns>
         public static ITracer GetTracer(Uri agentEndpoint = null, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {

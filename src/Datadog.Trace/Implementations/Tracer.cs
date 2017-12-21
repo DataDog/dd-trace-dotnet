@@ -86,7 +86,7 @@ namespace Datadog.Trace
             }
         }
 
-        void IDatadogTracer.Write(List<Span> trace)
+        void IDatadogTracer.Write(List<SpanBase> trace)
         {
             _agentWriter.WriteTrace(trace);
         }

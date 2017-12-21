@@ -5,7 +5,7 @@ namespace Datadog.Trace
 {
     internal interface IAgentWriter
     {
-        void WriteTrace(List<Span> trace);
+        void WriteTrace(List<SpanBase> trace);
 
         void WriteServiceInfo(ServiceInfo serviceInfo);
 

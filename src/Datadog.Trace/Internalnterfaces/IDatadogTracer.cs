@@ -9,7 +9,7 @@ namespace Datadog.Trace
 
         bool IsDebugEnabled { get; }
 
-        void Write(List<Span> span);
+        void Write(List<SpanBase> span);
 
         ITraceContext GetTraceContext();
 
