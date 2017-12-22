@@ -6,16 +6,26 @@ using OpenTracing;
 namespace Datadog.Trace
 {
     // TODO:bertrand this class should not be public
-    public class Span : SpanBase, ISpan
+    public class Span : ISpan
     {
         private static ILog _log = LogProvider.For<Span>();
 
-        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
-            : base(tracer, parent, operationName, serviceName, start)
+        private SpanBase _span;
+
+        internal Span(SpanBase span)
         {
+            _span = span;
         }
 
-        ISpanContext ISpan.Context => Context;
+        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
+        {
+            _span = new SpanBase(tracer, parent, operationName, serviceName, start);
+        }
+
+        public ISpanContext Context => _span.Context;
+
+        // This is only exposed for tests
+        internal SpanBase DDSpan => _span;
 
         public string GetBaggageItem(string key)
         {
@@ -55,7 +65,7 @@ namespace Datadog.Trace
 
         public ISpan SetOperationName(string operationName)
         {
-            OperationName = operationName;
+            _span.OperationName = operationName;
             return this;
         }
 
@@ -74,33 +84,39 @@ namespace Datadog.Trace
             return SetTag(key, value.ToString());
         }
 
-        public new ISpan SetTag(string key, string value)
+        public ISpan SetTag(string key, string value)
         {
+            // TODO:bertrand do we want this behavior on the Span object too ?
             switch (key)
             {
                 case DDTags.ResourceName:
-                    ResourceName = value;
+                    _span.ResourceName = value;
                     return this;
-                case OpenTracing.Tags.Error:
-                    Error = value == "True";
+                case Tags.Error:
+                    _span.Error = value == "True";
                     return this;
                 case DDTags.SpanType:
-                    Type = value;
+                    _span.Type = value;
                     return this;
             }
 
-            base.SetTag(key, value);
+            _span.SetTag(key, value);
             return this;
         }
 
-        public new void Finish()
+        public void Finish()
         {
-            base.Finish();
+            _span.Finish();
         }
 
-        public new void Finish(DateTimeOffset finishTimestamp)
+        public void Finish(DateTimeOffset finishTimestamp)
         {
-            base.Finish(finishTimestamp);
+            _span.Finish(finishTimestamp);
+        }
+
+        public void Dispose()
+        {
+            _span.Dispose();
         }
     }
 }

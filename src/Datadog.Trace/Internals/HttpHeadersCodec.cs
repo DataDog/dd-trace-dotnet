@@ -66,7 +66,7 @@ namespace Datadog.Trace
                 throw new FormatException($"{Constants.HttpHeaderTraceId} should contain an unsigned integer value");
             }
 
-            return new SpanContext(_tracer.GetTraceContext(), traceId, parentId);
+            return new SpanContext(_tracer, traceId, parentId);
         }
 
         public void Inject(SpanContext spanContext, object carrier)

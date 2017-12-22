@@ -4,13 +4,15 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
-    internal class SpanBuilder : SpanBuilderBase<Span>, ISpanBuilder
+    internal class SpanBuilder : ISpanBuilder
     {
         private static ILog _log = LogProvider.For<SpanBuilder>();
 
+        private SpanBuilderBase _spanBuilder;
+
         internal SpanBuilder(IDatadogTracer tracer, string operationName)
-            : base(tracer, operationName)
         {
+           _spanBuilder = new SpanBuilderBase(tracer, operationName);
         }
 
         public ISpanBuilder AddReference(string referenceType, ISpanContext referencedContext)
@@ -33,7 +35,7 @@ namespace Datadog.Trace
 
         public ISpanBuilder AsChildOf(ISpanContext parent)
         {
-            base.AsChildOf(parent as SpanContext);
+            _spanBuilder.AsChildOf(parent as SpanContext);
             return this;
         }
 
@@ -49,14 +51,14 @@ namespace Datadog.Trace
             return this;
         }
 
-        public new ISpan Start()
+        public ISpan Start()
         {
-            return base.Start();
+            return new Span(_spanBuilder.Start());
         }
 
-        public new ISpanBuilder WithStartTimestamp(DateTimeOffset startTimestamp)
+        public ISpanBuilder WithStartTimestamp(DateTimeOffset startTimestamp)
         {
-            base.WithStartTimestamp(startTimestamp);
+            _spanBuilder.WithStartTimestamp(startTimestamp);
             return this;
         }
 
@@ -75,21 +77,16 @@ namespace Datadog.Trace
             return WithTag(key, value.ToString());
         }
 
-        public new ISpanBuilder WithTag(string key, string value)
+        public ISpanBuilder WithTag(string key, string value)
         {
             if (key == DDTags.ServiceName)
             {
-                WithServiceName(value);
+                _spanBuilder.WithServiceName(value);
                 return this;
             }
 
-            base.WithTag(key, value);
+            _spanBuilder.WithTag(key, value);
             return this;
-        }
-
-        protected override Span NewSpan(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? startTime)
-        {
-            return new Span(tracer, parent, operationName, serviceName, startTime);
         }
     }
 }

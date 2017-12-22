@@ -32,7 +32,7 @@ namespace Datadog.Trace.IntegrationTests
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
-            AssertSpanEqual(span, trace.Single());
+            AssertSpanEqual(span.DDSpan, trace.Single());
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Datadog.Trace.IntegrationTests
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
-            AssertSpanEqual(span, trace.Single());
+            AssertSpanEqual(span.DDSpan, trace.Single());
 
             var serviceInfo = _httpRecorder.Services.Select(x => x.ServiceInfos().Single()).Single();
             Assert.Equal(ServiceName, serviceInfo.ServiceName);
@@ -83,7 +83,7 @@ namespace Datadog.Trace.IntegrationTests
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
-            AssertSpanEqual(span, trace.Single());
+            AssertSpanEqual(span.DDSpan, trace.Single());
         }
 
         [Fact]
@@ -96,7 +96,7 @@ namespace Datadog.Trace.IntegrationTests
                 .Finish();
         }
 
-        private void AssertSpanEqual(Span expected, MessagePackObject actual)
+        private void AssertSpanEqual(SpanBase expected, MessagePackObject actual)
         {
             Assert.Equal(expected.Context.TraceId, actual.TraceId());
             Assert.Equal(expected.Context.SpanId, actual.SpanId());

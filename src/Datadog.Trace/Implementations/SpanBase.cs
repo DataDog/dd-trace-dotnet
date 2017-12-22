@@ -5,10 +5,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    // TODO:bertrand This should not be public
     public class SpanBase : IDisposable
     {
-        private static ILog _log = LogProvider.For<Span>();
+        private static ILog _log = LogProvider.For<SpanBase>();
 
         private object _lock = new object();
         private IDatadogTracer _tracer;
@@ -18,7 +17,7 @@ namespace Datadog.Trace
         internal SpanBase(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
         {
             _tracer = tracer;
-            _context = new SpanContext(parent?.TraceContext ?? _tracer.GetTraceContext(), serviceName);
+            _context = new SpanContext(tracer, parent, serviceName);
             OperationName = operationName;
             if (start.HasValue)
             {
@@ -81,27 +80,32 @@ namespace Datadog.Trace
             return sb.ToString();
         }
 
-        void IDisposable.Dispose()
-        {
-            Finish();
-        }
-
-        internal string GetTag(string key)
+        public SpanBase SetTag(string key, string value)
         {
             lock (_lock)
             {
-                string s = null;
-                _tags?.TryGetValue(key, out s);
-                return s;
+                if (IsFinished)
+                {
+                    _log.Debug("SetTag should not be called after the span was closed");
+                    return this;
+                }
+
+                if (_tags == null)
+                {
+                    _tags = new Dictionary<string, string>();
+                }
+
+                _tags[key] = value;
+                return this;
             }
         }
 
-        protected void Finish()
+        public void Finish()
         {
             Finish(_context.TraceContext.UtcNow());
         }
 
-        protected void Finish(DateTimeOffset finishTimestamp)
+        public void Finish(DateTimeOffset finishTimestamp)
         {
             var shouldCloseSpan = false;
             lock (_lock)
@@ -126,23 +130,18 @@ namespace Datadog.Trace
             }
         }
 
-        protected SpanBase SetTag(string key, string value)
+        public void Dispose()
+        {
+            Finish();
+        }
+
+        internal string GetTag(string key)
         {
             lock (_lock)
             {
-                if (IsFinished)
-                {
-                    _log.Debug("SetTag should not be called after the span was closed");
-                    return this;
-                }
-
-                if (_tags == null)
-                {
-                    _tags = new Dictionary<string, string>();
-                }
-
-                _tags[key] = value;
-                return this;
+                string s = null;
+                _tags?.TryGetValue(key, out s);
+                return s;
             }
         }
     }

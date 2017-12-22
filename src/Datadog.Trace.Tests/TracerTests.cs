@@ -23,13 +23,13 @@ namespace Datadog.Trace.Tests
             var builder = _tracer.BuildSpan("Op1");
             var span = (Span)builder.Start();
 #if NETCOREAPP2_0
-            Assert.Equal("testhost", span.ServiceName);
+            Assert.Equal("testhost", span.DDSpan.ServiceName);
 #elif NET45_TESTS
-            Assert.Equal("Datadog.Trace.Tests.Net45", span.ServiceName);
+            Assert.Equal("Datadog.Trace.Tests.Net45", span.DDSpan.ServiceName);
 #else
-            Assert.Equal("Datadog.Trace.Tests", span.ServiceName);
+            Assert.Equal("Datadog.Trace.Tests", span.DDSpan.ServiceName);
 #endif
-            Assert.Equal("Op1", span.OperationName);
+            Assert.Equal("Op1", span.DDSpan.OperationName);
         }
 
         [Fact]
@@ -42,8 +42,8 @@ namespace Datadog.Trace.Tests
                 .BuildSpan("Child")
                 .Start();
 
-            Assert.Equal(root.TraceContext, child.TraceContext);
-            Assert.Equal(root.Context.SpanId, child.Context.ParentId);
+            Assert.Equal(root.DDSpan.TraceContext, child.DDSpan.TraceContext);
+            Assert.Equal(root.DDSpan.Context.SpanId, child.DDSpan.Context.ParentId);
         }
 
         [Fact]
@@ -60,10 +60,10 @@ namespace Datadog.Trace.Tests
                 .BuildSpan("Child2")
                 .Start();
 
-            Assert.Equal(root.TraceContext, child1.TraceContext);
-            Assert.Equal(root.Context.SpanId, child1.Context.ParentId);
-            Assert.Equal(root.TraceContext, child2.TraceContext);
-            Assert.Equal(root.Context.SpanId, child2.Context.ParentId);
+            Assert.Equal(root.DDSpan.TraceContext, child1.DDSpan.TraceContext);
+            Assert.Equal(root.DDSpan.Context.SpanId, child1.DDSpan.Context.ParentId);
+            Assert.Equal(root.DDSpan.TraceContext, child2.DDSpan.TraceContext);
+            Assert.Equal(root.DDSpan.Context.SpanId, child2.DDSpan.Context.ParentId);
         }
 
         [Fact]
@@ -79,10 +79,10 @@ namespace Datadog.Trace.Tests
                 .BuildSpan("Child2")
                 .Start();
 
-            Assert.Equal(root.TraceContext, child1.TraceContext);
-            Assert.Equal(root.Context.SpanId, child1.Context.ParentId);
-            Assert.Equal(root.TraceContext, child2.TraceContext);
-            Assert.Equal(child1.Context.SpanId, child2.Context.ParentId);
+            Assert.Equal(root.DDSpan.TraceContext, child1.DDSpan.TraceContext);
+            Assert.Equal(root.DDSpan.Context.SpanId, child1.DDSpan.Context.ParentId);
+            Assert.Equal(root.DDSpan.TraceContext, child2.DDSpan.TraceContext);
+            Assert.Equal(child1.DDSpan.Context.SpanId, child2.DDSpan.Context.ParentId);
         }
 
         [Fact]
@@ -104,13 +104,13 @@ namespace Datadog.Trace.Tests
             var syncChild = (Span)_tracer.BuildSpan("SyncChild").Start();
             tcs.SetResult(true);
 
-            Assert.Equal(root.TraceContext, syncChild.TraceContext);
-            Assert.Equal(root.Context.SpanId, syncChild.Context.ParentId);
+            Assert.Equal(root.DDSpan.TraceContext, syncChild.DDSpan.TraceContext);
+            Assert.Equal(root.DDSpan.Context.SpanId, syncChild.DDSpan.Context.ParentId);
             foreach (var task in tasks)
             {
                 var span = await task;
-                Assert.Equal(root.TraceContext, span.TraceContext);
-                Assert.Equal(root.Context.SpanId, span.Context.ParentId);
+                Assert.Equal(root.DDSpan.TraceContext, span.DDSpan.TraceContext);
+                Assert.Equal(root.DDSpan.Context.SpanId, span.DDSpan.Context.ParentId);
             }
         }
 
@@ -122,8 +122,8 @@ namespace Datadog.Trace.Tests
 
             _tracer.Inject(span.Context, Formats.HttpHeaders, headers);
 
-            Assert.Equal(span.Context.TraceId.ToString(), headers.Get(Constants.HttpHeaderTraceId));
-            Assert.Equal(span.Context.SpanId.ToString(), headers.Get(Constants.HttpHeaderParentId));
+            Assert.Equal(span.DDSpan.Context.TraceId.ToString(), headers.Get(Constants.HttpHeaderTraceId));
+            Assert.Equal(span.DDSpan.Context.SpanId.ToString(), headers.Get(Constants.HttpHeaderParentId));
         }
 
         [Fact]

@@ -5,38 +5,36 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
-    internal class SpanContext : ISpanContext
+    public class SpanContext : ISpanContext
     {
         private static ILog _log = LogProvider.For<SpanContext>();
 
-        public SpanContext(ITraceContext traceContext, string serviceName)
+        internal SpanContext(IDatadogTracer tracer, SpanContext parent, string serviceName)
         {
             // TODO:bertrand pool the random objects
             Random r = new Random();
-            var parent = traceContext.GetCurrentSpanContext();
             if (parent != null)
             {
                 Parent = parent;
                 TraceId = parent.TraceId;
-                TraceContext = traceContext;
-                SpanId = r.NextUInt63();
-                ServiceName = serviceName ?? parent.ServiceName ?? traceContext.DefaultServiceName;
+                TraceContext = parent.TraceContext;
             }
             else
             {
                 TraceId = r.NextUInt63();
-                SpanId = r.NextUInt63();
-                TraceContext = traceContext;
-                ServiceName = serviceName ?? traceContext.DefaultServiceName;
+                TraceContext = new TraceContext(tracer);
             }
+
+            SpanId = r.NextUInt63();
+            ServiceName = serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName;
         }
 
-        public SpanContext(ITraceContext traceContext, ulong traceId, ulong spanId)
+        internal SpanContext(IDatadogTracer tracer, ulong traceId, ulong spanId)
         {
-            TraceContext = traceContext;
             TraceId = traceId;
             SpanId = spanId;
-            ServiceName = traceContext.DefaultServiceName;
+            ServiceName = tracer.DefaultServiceName;
+            TraceContext = new TraceContext(tracer);
         }
 
         public SpanContext Parent { get; }
@@ -49,8 +47,9 @@ namespace Datadog.Trace
 
         public string ServiceName { get; }
 
-        public ITraceContext TraceContext { get; }
+        internal TraceContext TraceContext { get; }
 
+        // TODO: extract me
         public IEnumerable<KeyValuePair<string, string>> GetBaggageItems()
         {
             _log.Debug("SpanContext.GetBaggageItems is not implemented by Datadog.Trace");

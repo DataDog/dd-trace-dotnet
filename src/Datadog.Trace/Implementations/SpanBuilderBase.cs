@@ -4,10 +4,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    internal abstract class SpanBuilderBase<TSpan>
-        where TSpan : Span
+    internal class SpanBuilderBase
     {
-        private static ILog _log = LogProvider.For<SpanBuilderBase<TSpan>>();
+        private static ILog _log = LogProvider.For<SpanBuilderBase>();
 
         private object _lock = new object();
         private IDatadogTracer _tracer;
@@ -23,9 +22,7 @@ namespace Datadog.Trace
             _operationName = operationName;
         }
 
-        protected abstract TSpan NewSpan(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? startTime);
-
-        protected SpanBuilderBase<TSpan> AsChildOf(SpanContext parent)
+        public SpanBuilderBase AsChildOf(SpanContext parent)
         {
             lock (_lock)
             {
@@ -34,11 +31,11 @@ namespace Datadog.Trace
             }
         }
 
-        protected TSpan Start()
+        public SpanBase Start()
         {
             lock (_lock)
             {
-                var span = NewSpan(_tracer, _parent, _operationName, _serviceName, _start);
+                var span = new SpanBase(_tracer, _parent, _operationName, _serviceName, _start);
                 span.TraceContext.AddSpan(span);
                 if (_tags != null)
                 {
@@ -52,7 +49,7 @@ namespace Datadog.Trace
             }
         }
 
-        protected SpanBuilderBase<TSpan> WithTag(string key, string value)
+        public SpanBuilderBase WithTag(string key, string value)
         {
             lock (_lock)
             {
@@ -66,7 +63,7 @@ namespace Datadog.Trace
             }
         }
 
-        protected SpanBuilderBase<TSpan> WithServiceName(string serviceName)
+        public SpanBuilderBase WithServiceName(string serviceName)
         {
             lock (_lock)
             {
@@ -75,7 +72,7 @@ namespace Datadog.Trace
             }
         }
 
-        protected SpanBuilderBase<TSpan> WithStartTimestamp(DateTimeOffset startTimestamp)
+        public SpanBuilderBase WithStartTimestamp(DateTimeOffset startTimestamp)
         {
             lock (_lock)
             {
