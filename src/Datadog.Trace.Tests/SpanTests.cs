@@ -7,21 +7,19 @@ namespace Datadog.Trace.Tests
 {
     public class SpanTests
     {
-        private Mock<IDatadogTracer> _tracerMock;
-        private TraceContext _traceContext;
+        private Mock<IAgentWriter> _writerMock;
+        private TracerBase _tracer;
 
         public SpanTests()
         {
-            _tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
-            _traceContext = new TraceContext(_tracerMock.Object);
-            _tracerMock.Setup(x => x.DefaultServiceName).Returns("DefaultServiceName");
-            _tracerMock.Setup(x => x.IsDebugEnabled).Returns(true);
+            _writerMock = new Mock<IAgentWriter>();
+            _tracer = new TracerBase(_writerMock.Object);
         }
 
         [Fact]
         public void SetTag_Tags_TagsAreProperlySet()
         {
-            var span = new Span(_tracerMock.Object, null, null, null, null);
+            var span = new Span(_tracer.StartActive(null, null, null, null));
 
             span.SetTag("StringKey", "What's tracing");
             span.SetTag("IntKey", 42);
@@ -38,7 +36,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetOperationName_ValidOperationName_OperationNameIsProperlySet()
         {
-            var span = new Span(_tracerMock.Object, null, null, null, null);
+            var span = new Span(_tracer.StartActive(null, null, null, null));
 
             span.SetOperationName("Op1");
 
@@ -51,7 +49,7 @@ namespace Datadog.Trace.Tests
         {
             // The 10 additional milliseconds account for the clock precision
             var startTime = DateTimeOffset.UtcNow.AddMinutes(-1).AddMilliseconds(-10);
-            var span = new Span(_tracerMock.Object, null, null, null, startTime);
+            var span = new Span(_tracer.StartActive(null, null, null, startTime));
 
             span.Finish();
 
@@ -62,7 +60,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task Finish_NoEndTimeProvided_SpanWriten()
         {
-            var span = new Span(_tracerMock.Object, null, null, null, null);
+            var span = new Span(_tracer.StartActive(null, null, null, null));
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
@@ -75,7 +73,7 @@ namespace Datadog.Trace.Tests
         {
             var startTime = DateTimeOffset.UtcNow;
             var endTime = DateTime.UtcNow.AddMilliseconds(10);
-            var span = new Span(_tracerMock.Object, null, null, null, startTime);
+            var span = new Span(_tracer.StartActive(null, null, null, startTime));
 
             span.Finish(endTime);
 
@@ -88,7 +86,7 @@ namespace Datadog.Trace.Tests
         {
             var startTime = DateTimeOffset.UtcNow;
             var endTime = DateTime.UtcNow.AddMilliseconds(-10);
-            var span = new Span(_tracerMock.Object, null, null, null, startTime);
+            var span = new Span(_tracer.StartActive(null, null, null, startTime));
 
             span.Finish(endTime);
 
@@ -100,7 +98,7 @@ namespace Datadog.Trace.Tests
         public void Dispose_ExitUsing_SpanWriten()
         {
             Span span;
-            using (span = new Span(_tracerMock.Object, null, null, null, null))
+            using (span = new Span(_tracer.StartActive(null, null, null, null)))
             {
             }
 

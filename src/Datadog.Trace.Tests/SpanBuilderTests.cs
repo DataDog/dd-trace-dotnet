@@ -9,16 +9,15 @@ namespace Datadog.Trace.Tests
     {
         private const string _defaultServiceName = "DefaultServiceName";
 
-        private Mock<IDatadogTracer> _tracerMock;
-        private TraceContext _traceContext;
+        private Mock<IAgentWriter> _writerMock;
+        private TracerBase _tracer;
         private Func<SpanBuilder> _createSpanBuilder;
 
         public SpanBuilderTests()
         {
-            _tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
-            _traceContext = new TraceContext(_tracerMock.Object);
-            _tracerMock.Setup(x => x.DefaultServiceName).Returns(_defaultServiceName);
-            _createSpanBuilder = () => new SpanBuilder(_tracerMock.Object, null);
+            _writerMock = new Mock<IAgentWriter>(MockBehavior.Strict);
+            _tracer = new TracerBase(_writerMock.Object, defaultServiceName: _defaultServiceName);
+            _createSpanBuilder = () => new SpanBuilder(_tracer, null);
         }
 
         [Fact]
@@ -185,7 +184,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Start_SetOperationName_OperationNameProperlySet()
         {
-            var spanBuilder = new SpanBuilder(_tracerMock.Object, "Op1");
+            var spanBuilder = new SpanBuilder(_tracer, "Op1");
 
             var span = (Span)spanBuilder.Start();
 

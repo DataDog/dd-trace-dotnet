@@ -18,7 +18,7 @@ namespace Datadog.Trace
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
-            _defaultServiceName = GetAppDomainFriendlyName() ?? Constants.UnkownService;
+            _defaultServiceName = defaultServiceName ?? GetAppDomainFriendlyName() ?? Constants.UnkownService;
             if (serviceInfo != null)
             {
                 foreach (var service in serviceInfo)
@@ -45,25 +45,22 @@ namespace Datadog.Trace
 
         AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
-        public SpanBase StartActive(SpanContext parent, string operationName, string serviceName = null, DateTime? startTime = null, bool ignoreActiveScope = false)
+        public Scope StartActive(SpanContext parent, string operationName, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
         {
-            // TODO: honor the ignore active span
-            // TODO: ajouter au span la possibilité de se désactiver comme ça le scope peut être construit on-demand par dessus
-            // Genre Span.AsScope()
             // TODO test ignore active scope
             if (parent == null && !ignoreActiveScope)
             {
-                parent = _scopeManager.Active.Context;
+                parent = _scopeManager.Active?.Span?.Context;
             }
 
             var span = new SpanBase(this, parent, operationName, serviceName, startTime);
             span.TraceContext.AddSpan(span);
-            _scopeManager.Activate(span);
-            return span;
+            return _scopeManager.Activate(span);
         }
 
-        public SpanBase StartManual(SpanContext parent, string operationName, string serviceName = null, DateTime? startTime = null, bool ignoreActiveScope = false)
+        public SpanBase StartManual(SpanContext parent, string operationName, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
         {
+            // TODO inherit parent from current Scope
             var span = new SpanBase(this, parent, operationName, serviceName, startTime);
             span.TraceContext.AddSpan(span);
             return span;

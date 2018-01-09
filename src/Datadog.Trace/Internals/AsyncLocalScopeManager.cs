@@ -6,27 +6,32 @@ namespace Datadog.Trace
     {
         private static ILog _log = LogProvider.For<AsyncLocalScopeManager>();
 
-        private AsyncLocalCompat<SpanBase> _currentSpan = new AsyncLocalCompat<SpanBase>("Datadog.Trace.AsyncLocalScopeManager._currentSpan");
+        private AsyncLocalCompat<Scope> _currentSpan = new AsyncLocalCompat<Scope>("Datadog.Trace.AsyncLocalScopeManager._currentSpan");
 
-        public SpanBase Active => _currentSpan.Get();
+        public Scope Active => _currentSpan.Get();
 
-        public void Activate(SpanBase span)
+        public Scope Activate(SpanBase span, bool finishOnClose = true)
         {
             var current = _currentSpan.Get();
-            _currentSpan.Set(span);
-
-            // TODO make span aware of its predecessor
+            var scope = new Scope(current, span, this, finishOnClose);
+            _currentSpan.Set(scope);
+            return scope;
         }
 
-        public void Desactivate(SpanBase span)
+        public void Close(Scope scope)
         {
             var current = _currentSpan.Get();
-            if (current != span)
+            if (current == null)
+            {
+                _log.Error("Trying to close a null scope");
+            }
+
+            if (current != scope)
             {
                 _log.Warn("Current span doesn't match desactivated span");
             }
 
-            // TODO activate parent of current span
+            _currentSpan.Set(current.Parent);
         }
     }
 }

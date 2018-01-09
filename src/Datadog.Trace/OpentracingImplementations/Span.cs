@@ -6,26 +6,21 @@ using OpenTracing;
 namespace Datadog.Trace
 {
     // TODO:bertrand this class should not be public
-    public class Span : ISpan
+    internal class Span : ISpan
     {
         private static ILog _log = LogProvider.For<Span>();
 
-        private SpanBase _span;
+        private Scope _scope;
 
-        internal Span(SpanBase span)
+        internal Span(Scope scope)
         {
-            _span = span;
+            _scope = scope;
         }
 
-        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
-        {
-            _span = new SpanBase(tracer, parent, operationName, serviceName, start);
-        }
-
-        public ISpanContext Context => _span.Context;
+        public ISpanContext Context => _scope.Span.Context;
 
         // This is only exposed for tests
-        internal SpanBase DDSpan => _span;
+        internal SpanBase DDSpan => _scope.Span;
 
         public string GetBaggageItem(string key)
         {
@@ -65,7 +60,7 @@ namespace Datadog.Trace
 
         public ISpan SetOperationName(string operationName)
         {
-            _span.OperationName = operationName;
+            _scope.Span.OperationName = operationName;
             return this;
         }
 
@@ -90,33 +85,36 @@ namespace Datadog.Trace
             switch (key)
             {
                 case DDTags.ResourceName:
-                    _span.ResourceName = value;
+                    _scope.Span.ResourceName = value;
                     return this;
                 case Tags.Error:
-                    _span.Error = value == "True";
+                    _scope.Span.Error = value == "True";
                     return this;
                 case DDTags.SpanType:
-                    _span.Type = value;
+                    _scope.Span.Type = value;
                     return this;
             }
 
-            _span.SetTag(key, value);
+            _scope.Span.SetTag(key, value);
             return this;
         }
 
         public void Finish()
         {
-            _span.Finish();
+            _scope.Span.Finish();
+            _scope.Dispose();
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
         {
-            _span.Finish(finishTimestamp);
+            _scope.Span.Finish(finishTimestamp);
+            _scope.Dispose();
         }
 
         public void Dispose()
         {
-            _span.Dispose();
+            _scope.Span.Finish();
+            _scope.Dispose();
         }
     }
 }
