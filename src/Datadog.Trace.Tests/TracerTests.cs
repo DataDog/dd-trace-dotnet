@@ -2,143 +2,233 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Moq;
-using OpenTracing.Propagation;
 using Xunit;
 
 namespace Datadog.Trace.Tests
 {
     public class TracerTests
     {
-        private Mock<IAgentWriter> _agentWriter = new Mock<IAgentWriter>();
+        private Mock<IAgentWriter> _writerMock;
         private Tracer _tracer;
 
         public TracerTests()
         {
-           _tracer = new Tracer(_agentWriter.Object);
+            _writerMock = new Mock<IAgentWriter>();
+            _tracer = new Tracer(_writerMock.Object);
         }
 
         [Fact]
-        public void BuildSpan_NoParameter_DefaultParameters()
+        public void StartActive_SetOperationName_OperationNameIsSet()
         {
-            var builder = _tracer.BuildSpan("Op1");
-            var span = (Span)builder.Start();
+            var scope = _tracer.StartActive("Operation", null);
+
+            Assert.Equal("Operation", scope.Span.OperationName);
+        }
+
+        [Fact]
+        public void StartActive_SetOperationName_ActiveScopeIsSet()
+        {
+            var scope = _tracer.StartActive("Operation", null);
+
+            var activeScope = _tracer.ActiveScope;
+            Assert.Equal(scope, activeScope);
+        }
+
+        [Fact]
+        public void StartActive_NoActiveScope_RootSpan()
+        {
+            var scope = _tracer.StartActive("Operation", null);
+
+            Assert.True(scope.Span.IsRootSpan);
+        }
+
+        [Fact]
+        public void StartActive_ActiveScope_UseCurrentScopeAsParent()
+        {
+            var parentScope = _tracer.StartActive("Parent");
+            var childScope = _tracer.StartActive("Child");
+
+            Assert.Equal(parentScope.Span.Context, childScope.Span.Context.Parent);
+        }
+
+        [Fact]
+        public void StartActive_IgnoreActiveScope_RootSpan()
+        {
+            var firstScope = _tracer.StartActive("First");
+            var secondScope = _tracer.StartActive("Second", ignoreActiveScope: true);
+
+            Assert.True(secondScope.Span.IsRootSpan);
+        }
+
+        [Fact]
+        public void StartActive_FinishOnClose_SpanIsFinishedWhenScopeIsClosed()
+        {
+            var scope = _tracer.StartActive("Operation");
+            Assert.False(scope.Span.IsFinished);
+
+            scope.Dispose();
+
+            Assert.True(scope.Span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Fact]
+        public void StartActive_NoFinishOnClose_SpanIsNotFinishedWhenScopeIsClosed()
+        {
+            var scope = _tracer.StartActive("Operation", finishOnClose: false);
+            Assert.False(scope.Span.IsFinished);
+
+            scope.Dispose();
+
+            Assert.False(scope.Span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Fact]
+        public void StartActive_SetParentManually_ParentIsSet()
+        {
+            var parent = _tracer.StartManual("Parent");
+            var child = _tracer.StartActive("Child", parent: parent.Context);
+
+            Assert.Equal(parent.Context, child.Span.Context.Parent);
+        }
+
+        [Fact]
+        public void StartActive_NoServiceName_DefaultServiceName()
+        {
+            var scope = _tracer.StartActive("Operation");
+
 #if NETCOREAPP2_0
-            Assert.Equal("testhost", span.DDSpan.ServiceName);
+            Assert.Equal("testhost", scope.Span.ServiceName);
 #elif NET45_TESTS
-            Assert.Equal("Datadog.Trace.Tests.Net45", span.DDSpan.ServiceName);
+            Assert.Equal("Datadog.Trace.Tests.Net45", scope.Span.ServiceName);
 #else
-            Assert.Equal("Datadog.Trace.Tests", span.DDSpan.ServiceName);
+            Assert.Equal("Datadog.Trace.Tests", scope.Span.ServiceName);
 #endif
-            Assert.Equal("Op1", span.DDSpan.OperationName);
         }
 
         [Fact]
-        public void BuildSpan_OneChild_ChildParentProperlySet()
+        public void StartActive_SetServiceName_ServiceNameIsSet()
         {
-            var root = (Span)_tracer
-                .BuildSpan("Root")
-                .Start();
-            var child = (Span)_tracer
-                .BuildSpan("Child")
-                .Start();
+            var scope = _tracer.StartActive("Operation", serviceName: "MyAwesomeService");
 
-            Assert.Equal(root.DDSpan.TraceContext, child.DDSpan.TraceContext);
-            Assert.Equal(root.DDSpan.Context.SpanId, child.DDSpan.Context.ParentId);
+            Assert.Equal("MyAwesomeService", scope.Span.ServiceName);
         }
 
         [Fact]
-        public void BuildSpan_2ChildrenOfRoot_ChildrenParentProperlySet()
+        public void StartActive_SetParentServiceName_ChildServiceNameIsSet()
         {
-            var root = (Span)_tracer
-                .BuildSpan("Root")
-                .Start();
-            var child1 = (Span)_tracer
-                .BuildSpan("Child1")
-                .Start();
-            child1.Finish();
-            var child2 = (Span)_tracer
-                .BuildSpan("Child2")
-                .Start();
+            var parent = _tracer.StartActive("Parent", serviceName: "MyAwesomeService");
+            var child = _tracer.StartActive("Child");
 
-            Assert.Equal(root.DDSpan.TraceContext, child1.DDSpan.TraceContext);
-            Assert.Equal(root.DDSpan.Context.SpanId, child1.DDSpan.Context.ParentId);
-            Assert.Equal(root.DDSpan.TraceContext, child2.DDSpan.TraceContext);
-            Assert.Equal(root.DDSpan.Context.SpanId, child2.DDSpan.Context.ParentId);
+            Assert.Equal("MyAwesomeService", child.Span.ServiceName);
         }
 
         [Fact]
-        public void BuildSpan_2LevelChildren_ChildrenParentProperlySet()
+        public void StartActive_SetStartTime_StartTimeIsProperlySet()
         {
-            var root = (Span)_tracer
-                .BuildSpan("Root")
-                .Start();
-            var child1 = (Span)_tracer
-                .BuildSpan("Child1")
-                .Start();
-            var child2 = (Span)_tracer
-                .BuildSpan("Child2")
-                .Start();
+            var startTime = new DateTimeOffset(2017, 01, 01, 0, 0, 0, TimeSpan.Zero);
+            var scope = _tracer.StartActive("Operation", startTime: startTime);
 
-            Assert.Equal(root.DDSpan.TraceContext, child1.DDSpan.TraceContext);
-            Assert.Equal(root.DDSpan.Context.SpanId, child1.DDSpan.Context.ParentId);
-            Assert.Equal(root.DDSpan.TraceContext, child2.DDSpan.TraceContext);
-            Assert.Equal(child1.DDSpan.Context.SpanId, child2.DDSpan.Context.ParentId);
+            Assert.Equal(startTime, scope.Span.StartTime);
         }
 
         [Fact]
-        public async Task BuildSpan_AsyncChildrenCreation_ChildrenParentProperlySet()
+        public void StartManual_SetOperationName_OperationNameIsSet()
+        {
+            var span = _tracer.StartManual("Operation", null);
+
+            Assert.Equal("Operation", span.OperationName);
+        }
+
+        [Fact]
+        public void StartManual_SetOperationName_ActiveScopeIsNotSet()
+        {
+            _tracer.StartManual("Operation", null);
+
+            Assert.Equal(null, _tracer.ActiveScope);
+        }
+
+        [Fact]
+        public void StartManual_NoActiveScope_RootSpan()
+        {
+            var scope = _tracer.StartActive("Operation", null);
+
+            Assert.True(scope.Span.IsRootSpan);
+        }
+
+        [Fact]
+        public void StartManula_ActiveScope_UseCurrentScopeAsParent()
+        {
+            var parentSpan = _tracer.StartManual("Parent");
+            _tracer.ActivateSpan(parentSpan);
+            var childSpan = _tracer.StartManual("Child");
+
+            Assert.Equal(parentSpan.Context, childSpan.Context.Parent);
+        }
+
+        [Fact]
+        public void StartManual_IgnoreActiveScope_RootSpan()
+        {
+            var firstSpan = _tracer.StartManual("First");
+            _tracer.ActivateSpan(firstSpan);
+            var secondSpan = _tracer.StartManual("Second", ignoreActiveScope: true);
+
+            Assert.True(secondSpan.IsRootSpan);
+        }
+
+        [Fact]
+        public void StartActive_2ChildrenOfRoot_ChildrenParentProperlySet()
+        {
+            var root = _tracer.StartActive("Root");
+            var child1 = _tracer.StartActive("Child1");
+            child1.Dispose();
+            var child2 = _tracer.StartActive("Child2");
+
+            Assert.Equal(root.Span.TraceContext, child1.Span.TraceContext);
+            Assert.Equal(root.Span.Context.SpanId, child1.Span.Context.ParentId);
+            Assert.Equal(root.Span.TraceContext, child2.Span.TraceContext);
+            Assert.Equal(root.Span.Context.SpanId, child2.Span.Context.ParentId);
+        }
+
+        [Fact]
+        public void StartActive_2LevelChildren_ChildrenParentProperlySet()
+        {
+            var root = _tracer.StartActive("Root");
+            var child1 = _tracer.StartActive("Child1");
+            var child2 = _tracer.StartActive("Child2");
+
+            Assert.Equal(root.Span.TraceContext, child1.Span.TraceContext);
+            Assert.Equal(root.Span.Context.SpanId, child1.Span.Context.ParentId);
+            Assert.Equal(root.Span.TraceContext, child2.Span.TraceContext);
+            Assert.Equal(child1.Span.Context.SpanId, child2.Span.Context.ParentId);
+        }
+
+        [Fact]
+        public async Task StartActive_AsyncChildrenCreation_ChildrenParentProperlySet()
         {
             var tcs = new TaskCompletionSource<bool>();
 
-            var root = (Span)_tracer
-                .BuildSpan("Root")
-                .Start();
+            var root = _tracer.StartActive("Root");
 
-            Func<Tracer, Task<Span>> createSpanAsync = async (t) =>
+            Func<Tracer, Task<Scope>> createSpanAsync = async (t) =>
             {
                 await tcs.Task;
-                return (Span)_tracer.BuildSpan("AsyncChild").Start();
+                return t.StartActive("AsyncChild");
             };
             var tasks = Enumerable.Range(0, 10).Select(x => createSpanAsync(_tracer)).ToArray();
 
-            var syncChild = (Span)_tracer.BuildSpan("SyncChild").Start();
+            var syncChild = _tracer.StartActive("SyncChild");
             tcs.SetResult(true);
 
-            Assert.Equal(root.DDSpan.TraceContext, syncChild.DDSpan.TraceContext);
-            Assert.Equal(root.DDSpan.Context.SpanId, syncChild.DDSpan.Context.ParentId);
+            Assert.Equal(root.Span.TraceContext, syncChild.Span.TraceContext);
+            Assert.Equal(root.Span.Context.SpanId, syncChild.Span.Context.ParentId);
             foreach (var task in tasks)
             {
                 var span = await task;
-                Assert.Equal(root.DDSpan.TraceContext, span.DDSpan.TraceContext);
-                Assert.Equal(root.DDSpan.Context.SpanId, span.DDSpan.Context.ParentId);
+                Assert.Equal(root.Span.TraceContext, span.Span.TraceContext);
+                Assert.Equal(root.Span.Context.SpanId, span.Span.Context.ParentId);
             }
-        }
-
-        [Fact]
-        public void Inject_HttpHeadersFormat_CorrectHeaders()
-        {
-            var span = (Span)_tracer.BuildSpan("Span").Start();
-            var headers = new MockTextMap();
-
-            _tracer.Inject(span.Context, Formats.HttpHeaders, headers);
-
-            Assert.Equal(span.DDSpan.Context.TraceId.ToString(), headers.Get(Constants.HttpHeaderTraceId));
-            Assert.Equal(span.DDSpan.Context.SpanId.ToString(), headers.Get(Constants.HttpHeaderParentId));
-        }
-
-        [Fact]
-        public void Extract_HeadersProperlySet_SpanContext()
-        {
-            const ulong parentId = 10;
-            const ulong traceId = 42;
-            var headers = new MockTextMap();
-            headers.Set(Constants.HttpHeaderParentId, parentId.ToString());
-            headers.Set(Constants.HttpHeaderTraceId, traceId.ToString());
-
-            var context = (SpanContext)_tracer.Extract(Formats.HttpHeaders, headers);
-
-            Assert.Equal(parentId, context.SpanId);
-            Assert.Equal(traceId, context.TraceId);
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Datadog.Trace
     {
         private static ILog _log = LogProvider.For<AgentWriter>();
 
-        private readonly AgentWriterBuffer<List<SpanBase>> _tracesBuffer = new AgentWriterBuffer<List<SpanBase>>(1000);
+        private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(1000);
         private readonly AgentWriterBuffer<ServiceInfo> _servicesBuffer = new AgentWriterBuffer<ServiceInfo>(100);
         private readonly IApi _api;
         private readonly Task _flushTask;
@@ -31,7 +31,7 @@ namespace Datadog.Trace
             }
         }
 
-        public void WriteTrace(List<SpanBase> trace)
+        public void WriteTrace(List<Span> trace)
         {
             var success = _tracesBuffer.Push(trace);
             if (!success)

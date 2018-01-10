@@ -10,7 +10,7 @@ namespace Datadog.Trace
 
         public Scope Active => _currentSpan.Get();
 
-        public Scope Activate(SpanBase span, bool finishOnClose = true)
+        public Scope Activate(Span span, bool finishOnClose = true)
         {
             var current = _currentSpan.Get();
             var scope = new Scope(current, span, this, finishOnClose);

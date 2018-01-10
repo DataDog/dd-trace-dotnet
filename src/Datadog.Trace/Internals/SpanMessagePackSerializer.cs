@@ -4,14 +4,14 @@ using MsgPack.Serialization;
 
 namespace Datadog.Trace
 {
-    internal class SpanMessagePackSerializer : MessagePackSerializer<SpanBase>
+    internal class SpanMessagePackSerializer : MessagePackSerializer<Span>
     {
         public SpanMessagePackSerializer(SerializationContext context)
             : base(context)
         {
         }
 
-        protected override void PackToCore(Packer packer, SpanBase value)
+        protected override void PackToCore(Packer packer, Span value)
         {
             // First, pack array length (or map length).
             // It should be the number of members of the object to be serialized.
@@ -67,7 +67,7 @@ namespace Datadog.Trace
             }
         }
 
-        protected override SpanBase UnpackFromCore(Unpacker unpacker)
+        protected override Span UnpackFromCore(Unpacker unpacker)
         {
             throw new NotImplementedException();
         }

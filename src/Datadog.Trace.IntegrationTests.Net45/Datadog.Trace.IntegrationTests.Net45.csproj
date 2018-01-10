@@ -59,6 +59,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Datadog.Trace.IntegrationTests\GlobalSuppressions.cs">
+      <Link>GlobalSuppressions.cs</Link>
+    </Compile>
     <Compile Include="..\Datadog.Trace.IntegrationTests\MsgPackHelpers.cs">
       <Link>MsgPackHelpers.cs</Link>
     </Compile>
@@ -68,6 +71,7 @@
     <Compile Include="..\Datadog.Trace.IntegrationTests\SendTracesToAgent.cs">
       <Link>SendTracesToAgent.cs</Link>
     </Compile>
+    <Compile Include="OpenTracingSendTracesToAgent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

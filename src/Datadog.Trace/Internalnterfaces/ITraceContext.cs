@@ -4,9 +4,9 @@ namespace Datadog.Trace
 {
     internal interface ITraceContext
     {
-        void AddSpan(SpanBase span);
+        void AddSpan(Span span);
 
-        void CloseSpan(SpanBase span);
+        void CloseSpan(Span span);
 
         DateTimeOffset UtcNow();
     }

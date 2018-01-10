@@ -32,7 +32,7 @@ namespace Datadog.Trace
             var serviceSerializer = new ServiceInfoMessagePackSerializer(_serializationContext);
             _serializationContext.ResolveSerializer += (sender, eventArgs) =>
             {
-                if (eventArgs.TargetType == typeof(SpanBase))
+                if (eventArgs.TargetType == typeof(Span))
                 {
                     eventArgs.SetSerializer(spanSerializer);
                 }
@@ -68,7 +68,7 @@ namespace Datadog.Trace
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetAssembly(typeof(Api)).GetName().Version.ToString());
         }
 
-        public async Task SendTracesAsync(IList<List<SpanBase>> traces)
+        public async Task SendTracesAsync(IList<List<Span>> traces)
         {
             await SendAsync(traces, _tracesEndpoint);
         }

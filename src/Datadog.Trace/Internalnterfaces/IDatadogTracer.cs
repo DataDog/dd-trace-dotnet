@@ -10,6 +10,6 @@ namespace Datadog.Trace
 
         AsyncLocalScopeManager ScopeManager { get; }
 
-        void Write(List<SpanBase> span);
+        void Write(List<Span> span);
     }
 }

@@ -12,7 +12,7 @@ namespace Datadog.Trace
 
         private object _lock = new object();
         private IDatadogTracer _tracer;
-        private List<SpanBase> _spans = new List<SpanBase>();
+        private List<Span> _spans = new List<Span>();
         private int _openSpans = 0;
         private DateTimeOffset _start;
         private Stopwatch _sw;
@@ -29,7 +29,7 @@ namespace Datadog.Trace
             return _start.Add(_sw.Elapsed);
         }
 
-        public void AddSpan(SpanBase span)
+        public void AddSpan(Span span)
         {
             lock (_lock)
             {
@@ -38,7 +38,7 @@ namespace Datadog.Trace
             }
         }
 
-        public void CloseSpan(SpanBase span)
+        public void CloseSpan(Span span)
         {
             lock (_lock)
             {

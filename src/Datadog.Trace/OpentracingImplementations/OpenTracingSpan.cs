@@ -6,13 +6,13 @@ using OpenTracing;
 namespace Datadog.Trace
 {
     // TODO:bertrand this class should not be public
-    internal class Span : ISpan
+    internal class OpenTracingSpan : ISpan
     {
-        private static ILog _log = LogProvider.For<Span>();
+        private static ILog _log = LogProvider.For<OpenTracingSpan>();
 
         private Scope _scope;
 
-        internal Span(Scope scope)
+        internal OpenTracingSpan(Scope scope)
         {
             _scope = scope;
         }
@@ -20,7 +20,7 @@ namespace Datadog.Trace
         public ISpanContext Context => _scope.Span.Context;
 
         // This is only exposed for tests
-        internal SpanBase DDSpan => _scope.Span;
+        internal Span DDSpan => _scope.Span;
 
         public string GetBaggageItem(string key)
         {

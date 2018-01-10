@@ -7,7 +7,7 @@ namespace Datadog.Trace
         private readonly AsyncLocalScopeManager _scopeManager;
         private bool _finishOnClose;
 
-        internal Scope(Scope parent, SpanBase span,  AsyncLocalScopeManager scopeManager, bool finishOnClose)
+        internal Scope(Scope parent, Span span,  AsyncLocalScopeManager scopeManager, bool finishOnClose)
         {
             Parent = parent;
             Span = span;
@@ -15,7 +15,7 @@ namespace Datadog.Trace
             _finishOnClose = finishOnClose;
         }
 
-        public SpanBase Span { get; }
+        public Span Span { get; }
 
         internal Scope Parent { get; }
 

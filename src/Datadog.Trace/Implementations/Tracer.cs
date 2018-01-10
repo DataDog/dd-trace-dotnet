@@ -4,9 +4,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    public class TracerBase : IDatadogTracer
+    public class Tracer : IDatadogTracer
     {
-        private static readonly ILog _log = LogProvider.For<TracerBase>();
+        private static readonly ILog _log = LogProvider.For<Tracer>();
 
         private AsyncLocalScopeManager _scopeManager;
         private string _defaultServiceName;
@@ -14,7 +14,7 @@ namespace Datadog.Trace
         private IAgentWriter _agentWriter;
         private bool _isDebugEnabled;
 
-        internal TracerBase(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null, bool isDebugEnabled = false)
+        internal Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
@@ -39,34 +39,38 @@ namespace Datadog.Trace
             _scopeManager = new AsyncLocalScopeManager();
         }
 
+        public Scope ActiveScope => _scopeManager.Active;
+
         bool IDatadogTracer.IsDebugEnabled => _isDebugEnabled;
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
         AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
-        public Scope StartActive(SpanContext parent, string operationName, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
+        public Scope ActivateSpan(Span span, bool finishOnClose = true)
         {
-            // TODO test ignore active scope
+            return _scopeManager.Activate(span, finishOnClose);
+        }
+
+        public Scope StartActive(string operationName, SpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
+        {
+            var span = StartManual(operationName, parent, serviceName, startTime, ignoreActiveScope);
+            return _scopeManager.Activate(span, finishOnClose);
+        }
+
+        public Span StartManual(string operationName, SpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
+        {
             if (parent == null && !ignoreActiveScope)
             {
                 parent = _scopeManager.Active?.Span?.Context;
             }
 
-            var span = new SpanBase(this, parent, operationName, serviceName, startTime);
-            span.TraceContext.AddSpan(span);
-            return _scopeManager.Activate(span);
-        }
-
-        public SpanBase StartManual(SpanContext parent, string operationName, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
-        {
-            // TODO inherit parent from current Scope
-            var span = new SpanBase(this, parent, operationName, serviceName, startTime);
+            var span = new Span(this, parent, operationName, serviceName, startTime);
             span.TraceContext.AddSpan(span);
             return span;
         }
 
-        void IDatadogTracer.Write(List<SpanBase> trace)
+        void IDatadogTracer.Write(List<Span> trace)
         {
             _agentWriter.WriteTrace(trace);
         }
