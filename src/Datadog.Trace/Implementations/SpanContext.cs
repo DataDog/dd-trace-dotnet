@@ -5,6 +5,9 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
+    // TODO:bertrand it's not great that our SpanContext implements the opentracing interface since it couples both.
+    // However I haven't found a way to avoid that without significantly complexifying the code.
+    // So I'll keep it that way for now.
     public class SpanContext : ISpanContext
     {
         private static ILog _log = LogProvider.For<SpanContext>();

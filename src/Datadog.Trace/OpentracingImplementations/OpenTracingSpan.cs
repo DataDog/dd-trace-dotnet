@@ -5,7 +5,6 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
-    // TODO:bertrand this class should not be public
     internal class OpenTracingSpan : ISpan
     {
         private static ILog _log = LogProvider.For<OpenTracingSpan>();
@@ -101,7 +100,6 @@ namespace Datadog.Trace
 
         public void Finish()
         {
-            _scope.Span.Finish();
             _scope.Dispose();
         }
 
@@ -113,7 +111,6 @@ namespace Datadog.Trace
 
         public void Dispose()
         {
-            _scope.Span.Finish();
             _scope.Dispose();
         }
     }
