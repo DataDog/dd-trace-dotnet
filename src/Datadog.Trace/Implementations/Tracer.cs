@@ -43,7 +43,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Return the active scope
+        /// Gets the active scope
         /// </summary>
         public Scope ActiveScope => _scopeManager.Active;
 

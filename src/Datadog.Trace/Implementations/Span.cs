@@ -37,27 +37,27 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// The operation name
+        /// Gets or sets operation name
         /// </summary>
         public string OperationName { get; set; }
 
         /// <summary>
-        /// The resource name
+        /// Gets or sets the resource name
         /// </summary>
         public string ResourceName { get; set; }
 
         /// <summary>
-        /// The type of request this span represents (ex: web, db)
+        /// Gets or sets the type of request this span represents (ex: web, db)
         /// </summary>
         public string Type { get; set; }
 
         /// <summary>
-        /// The error status of this span
+        /// Gets or sets a value indicating whether this span represents an error
         /// </summary>
         public bool Error { get; set; }
 
         /// <summary>
-        /// The service name
+        /// Gets the service name
         /// </summary>
         public string ServiceName => _context.ServiceName;
 
@@ -68,7 +68,6 @@ namespace Datadog.Trace
         internal DateTimeOffset StartTime { get; }
 
         internal TimeSpan Duration { get; private set; }
-
 
         internal bool IsRootSpan => _context.ParentId == null;
 
@@ -108,7 +107,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="key">The tag's key</param>
         /// <param name="value">The tag's value</param>
-        /// <returns> The Span object itself</returns>
+        /// <returns> The span object itself</returns>
         public Span SetTag(string key, string value)
         {
             lock (_lock)
@@ -130,7 +129,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Records the end time of the span and flushes it to the backend.
+        /// Record the end time of the span and flushes it to the backend.
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
         public void Finish()
@@ -169,7 +168,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Records the end time of the span and flushes it to the backend.
+        /// Record the end time of the span and flushes it to the backend.
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
         public void Dispose()

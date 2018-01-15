@@ -47,22 +47,22 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// The SpanContext of the parent span (if any)
+        /// Gets the SpanContext of the parent span (if any)
         /// </summary>
         public SpanContext Parent { get; }
 
         /// <summary>
-        /// The trace id
+        /// Gets the trace id
         /// </summary>
         public ulong TraceId { get; }
 
         /// <summary>
-        /// The span id of the parent span
+        /// Gets the span id of the parent span
         /// </summary>
         public ulong? ParentId => Parent?.SpanId;
 
         /// <summary>
-        /// The span id
+        /// Gets the span id
         /// </summary>
         public ulong SpanId { get; }
 

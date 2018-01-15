@@ -22,7 +22,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// The active span wrapped in this scope
+        /// Gets the active span wrapped in this scope
         /// </summary>
         public Span Span { get; }
 
