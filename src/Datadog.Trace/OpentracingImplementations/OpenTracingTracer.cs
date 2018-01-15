@@ -49,7 +49,7 @@ namespace Datadog.Trace
             _codecs.TryGetValue(format.Name, out ICodec codec);
             if (codec != null)
             {
-                var ddSpanContext = spanContext as SpanContext;
+                var ddSpanContext = spanContext as OpenTracingSpanContext;
                 if (ddSpanContext == null)
                 {
                     throw new ArgumentException("Inject should be called with a Datadog.Trace.SpanContext argument");

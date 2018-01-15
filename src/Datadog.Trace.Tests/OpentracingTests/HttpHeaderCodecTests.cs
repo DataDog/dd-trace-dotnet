@@ -93,7 +93,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Inject_SpanContext_HeadersWithCorrectInfo()
         {
-            var spanContext = new SpanContext(_tracerMock.Object, null, "MyService");
+            var spanContext = new OpenTracingSpanContext(_tracerMock.Object, null, "MyService");
             var headers = new MockTextMap();
 
             _codec.Inject(spanContext, headers);

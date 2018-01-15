@@ -1,14 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using Datadog.Trace.Logging;
-using OpenTracing;
 
 namespace Datadog.Trace
 {
-    // TODO:bertrand it's not great that our SpanContext implements the opentracing interface since it couples both.
-    // However I haven't found a way to avoid that without significantly complexifying the code.
-    // So I'll keep it that way for now.
-    public class SpanContext : ISpanContext
+    public class SpanContext
     {
         private static ILog _log = LogProvider.For<SpanContext>();
 
@@ -40,6 +35,14 @@ namespace Datadog.Trace
             TraceContext = new TraceContext(tracer);
         }
 
+        internal SpanContext(SpanContext spanContext)
+        {
+            TraceId = spanContext.TraceId;
+            SpanId = spanContext.SpanId;
+            ServiceName = spanContext.ServiceName;
+            TraceContext = spanContext.TraceContext;
+        }
+
         public SpanContext Parent { get; }
 
         public ulong TraceId { get; }
@@ -51,12 +54,5 @@ namespace Datadog.Trace
         public string ServiceName { get; }
 
         internal TraceContext TraceContext { get; }
-
-        // TODO: extract me
-        public IEnumerable<KeyValuePair<string, string>> GetBaggageItems()
-        {
-            _log.Debug("SpanContext.GetBaggageItems is not implemented by Datadog.Trace");
-            yield break;
-        }
     }
 }

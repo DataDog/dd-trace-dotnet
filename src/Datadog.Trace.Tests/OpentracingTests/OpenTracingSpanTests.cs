@@ -101,5 +101,13 @@ namespace Datadog.Trace.Tests
 
             Assert.True(span.DDSpan.Duration > TimeSpan.Zero);
         }
+
+        [Fact]
+        public void Context_TwoCalls_ContextStaysEqual()
+        {
+            var span = new OpenTracingSpan(_tracer.StartActive(null, null, null, null));
+
+            Assert.Equal(span.Context, span.Context);
+        }
     }
 }

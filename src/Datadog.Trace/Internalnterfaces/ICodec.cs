@@ -1,11 +1,9 @@
-﻿using OpenTracing;
-
-namespace Datadog.Trace
+﻿namespace Datadog.Trace
 {
     internal interface ICodec
     {
-        void Inject(SpanContext spanContext, object carrier);
+        void Inject(OpenTracingSpanContext spanContext, object carrier);
 
-        SpanContext Extract(object carrier);
+        OpenTracingSpanContext Extract(object carrier);
     }
 }

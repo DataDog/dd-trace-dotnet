@@ -13,7 +13,7 @@ namespace Datadog.Trace
             _tracer = tracer;
         }
 
-        public SpanContext Extract(object carrier)
+        public OpenTracingSpanContext Extract(object carrier)
         {
             ITextMap map = carrier as ITextMap;
             if (map == null)
@@ -66,10 +66,10 @@ namespace Datadog.Trace
                 throw new FormatException($"{Constants.HttpHeaderTraceId} should contain an unsigned integer value");
             }
 
-            return new SpanContext(_tracer, traceId, parentId);
+            return new OpenTracingSpanContext(_tracer, traceId, parentId);
         }
 
-        public void Inject(SpanContext spanContext, object carrier)
+        public void Inject(OpenTracingSpanContext spanContext, object carrier)
         {
             ITextMap map = carrier as ITextMap;
             if (map == null)

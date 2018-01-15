@@ -16,7 +16,7 @@ namespace Datadog.Trace
             _scope = scope;
         }
 
-        public ISpanContext Context => _scope.Span.Context;
+        public ISpanContext Context => new OpenTracingSpanContext(_scope.Span.Context);
 
         // This is only exposed for tests
         internal Span DDSpan => _scope.Span;
