@@ -3,6 +3,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
+    /// <summary>
+    /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
+    /// </summary>
     public class SpanContext
     {
         private static ILog _log = LogProvider.For<SpanContext>();
@@ -43,15 +46,27 @@ namespace Datadog.Trace
             TraceContext = spanContext.TraceContext;
         }
 
+        /// <summary>
+        /// The SpanContext of the parent span (if any)
+        /// </summary>
         public SpanContext Parent { get; }
 
+        /// <summary>
+        /// The trace id
+        /// </summary>
         public ulong TraceId { get; }
 
+        /// <summary>
+        /// The span id of the parent span
+        /// </summary>
         public ulong? ParentId => Parent?.SpanId;
 
+        /// <summary>
+        /// The span id
+        /// </summary>
         public ulong SpanId { get; }
 
-        public string ServiceName { get; }
+        internal string ServiceName { get; }
 
         internal TraceContext TraceContext { get; }
     }

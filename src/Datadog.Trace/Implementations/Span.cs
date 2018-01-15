@@ -5,6 +5,12 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
+    /// <summary>
+    /// A Span represents a logical unit of work in the system. It may be
+    /// related to other spans by parent/children relationships. The span
+    /// tracks the duration of an operation as well as associated metadata in
+    /// the form of a resource name, a service name, and user defined tags.
+    /// </summary>
     public class Span : IDisposable
     {
         private static ILog _log = LogProvider.For<Span>();
@@ -30,13 +36,30 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// The operation name
+        /// </summary>
         public string OperationName { get; set; }
 
+        /// <summary>
+        /// The resource name
+        /// </summary>
         public string ResourceName { get; set; }
 
+        /// <summary>
+        /// The type of request this span represents (ex: web, db)
+        /// </summary>
         public string Type { get; set; }
 
+        /// <summary>
+        /// The error status of this span
+        /// </summary>
         public bool Error { get; set; }
+
+        /// <summary>
+        /// The service name
+        /// </summary>
+        public string ServiceName => _context.ServiceName;
 
         internal SpanContext Context => _context;
 
@@ -46,7 +69,6 @@ namespace Datadog.Trace
 
         internal TimeSpan Duration { get; private set; }
 
-        internal string ServiceName => _context.ServiceName;
 
         internal bool IsRootSpan => _context.ParentId == null;
 
@@ -81,6 +103,12 @@ namespace Datadog.Trace
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Add a tag metadata to the span
+        /// </summary>
+        /// <param name="key">The tag's key</param>
+        /// <param name="value">The tag's value</param>
+        /// <returns> The Span object itself</returns>
         public Span SetTag(string key, string value)
         {
             lock (_lock)
@@ -101,11 +129,20 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// Records the end time of the span and flushes it to the backend.
+        /// After the span has been finished all modifications will be ignored.
+        /// </summary>
         public void Finish()
         {
             Finish(_context.TraceContext.UtcNow());
         }
 
+        /// <summary>
+        /// Explicitly set the end time of the span and flushes it to the backend.
+        /// After the span has been finished all modifications will be ignored.
+        /// </summary>
+        /// <param name="finishTimestamp">Explicit value for the end time of the Span</param>
         public void Finish(DateTimeOffset finishTimestamp)
         {
             var shouldCloseSpan = false;
@@ -131,6 +168,10 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// Records the end time of the span and flushes it to the backend.
+        /// After the span has been finished all modifications will be ignored.
+        /// </summary>
         public void Dispose()
         {
             Finish();
