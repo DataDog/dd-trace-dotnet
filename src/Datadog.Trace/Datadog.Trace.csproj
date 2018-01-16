@@ -11,6 +11,7 @@
     <Copyright>Datadog, Inc. 2017</Copyright>
     <PackageTags></PackageTags>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeOpentracingLib</TargetsForTfmSpecificBuildOutput>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -33,10 +34,6 @@
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <DefineConstants>LIBLOG_PORTABLE</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Datadog.Trace.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
