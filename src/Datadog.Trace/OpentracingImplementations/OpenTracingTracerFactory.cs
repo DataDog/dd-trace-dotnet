@@ -5,6 +5,9 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
+    /// <summary>
+    /// This class contains factory methods to instantiate an OpenTracing compatible tracer that sends data to DataDog
+    /// </summary>
     public static class OpenTracingTracerFactory
     {
         private static Uri _defaultUri = new Uri("http://localhost:8126");

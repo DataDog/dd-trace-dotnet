@@ -4,6 +4,9 @@ using System.Net.Http;
 
 namespace Datadog.Trace
 {
+    /// <summary>
+    /// This class contains factory methods to instantiate a <see cref="Tracer"/>
+    /// </summary>
     public class TracerFactory
     {
         private static Uri _defaultUri = new Uri("http://localhost:8126");

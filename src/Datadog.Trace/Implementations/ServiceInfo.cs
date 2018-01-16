@@ -6,17 +6,17 @@
     public class ServiceInfo
     {
         /// <summary>
-        /// The service Name
+        /// Gets or sets the service Name
         /// </summary>
         public string ServiceName { get; set; }
 
         /// <summary>
-        /// The name of the application
+        /// Gets or sets the name of the application
         /// </summary>
         public string App { get; set; }
 
         /// <summary>
-        /// The type of the application
+        /// Gets or sets the type of the application
         /// </summary>
         public string AppType { get; set; }
     }
