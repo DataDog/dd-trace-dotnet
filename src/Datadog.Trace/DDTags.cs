@@ -16,7 +16,7 @@
         public const string ResourceName = "resource.name";
 
         /// <summary>
-        /// This tag set the span type
+        /// This tag sets the span type
         /// </summary>
         public const string SpanType = "span.type";
     }
