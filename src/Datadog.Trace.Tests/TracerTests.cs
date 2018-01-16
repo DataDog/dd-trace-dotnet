@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartActive_SetParentManually_ParentIsSet()
         {
-            var parent = _tracer.StartManual("Parent");
+            var parent = _tracer.StartSpan("Parent");
             var child = _tracer.StartActive("Child", parent: parent.Context);
 
             Assert.Equal(parent.Context, child.Span.Context.Parent);
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManual_SetOperationName_OperationNameIsSet()
         {
-            var span = _tracer.StartManual("Operation", null);
+            var span = _tracer.StartSpan("Operation", null);
 
             Assert.Equal("Operation", span.OperationName);
         }
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManual_SetOperationName_ActiveScopeIsNotSet()
         {
-            _tracer.StartManual("Operation", null);
+            _tracer.StartSpan("Operation", null);
 
             Assert.Equal(null, _tracer.ActiveScope);
         }
@@ -160,9 +160,9 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManula_ActiveScope_UseCurrentScopeAsParent()
         {
-            var parentSpan = _tracer.StartManual("Parent");
+            var parentSpan = _tracer.StartSpan("Parent");
             _tracer.ActivateSpan(parentSpan);
-            var childSpan = _tracer.StartManual("Child");
+            var childSpan = _tracer.StartSpan("Child");
 
             Assert.Equal(parentSpan.Context, childSpan.Context.Parent);
         }
@@ -170,9 +170,9 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManual_IgnoreActiveScope_RootSpan()
         {
-            var firstSpan = _tracer.StartManual("First");
+            var firstSpan = _tracer.StartSpan("First");
             _tracer.ActivateSpan(firstSpan);
-            var secondSpan = _tracer.StartManual("Second", ignoreActiveScope: true);
+            var secondSpan = _tracer.StartSpan("Second", ignoreActiveScope: true);
 
             Assert.True(secondSpan.IsRootSpan);
         }

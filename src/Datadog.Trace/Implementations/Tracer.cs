@@ -65,7 +65,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// This is a shortcut for StartManual and ActivateSpan, it creates a new span with the given parameters and makes it active.
+        /// This is a shortcut for <see cref="StartSpan"/> and <see cref="ActivateSpan"/>, it creates a new span with the given parameters and makes it active.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
         /// <param name="parent">The span's parent</param>
@@ -76,7 +76,7 @@ namespace Datadog.Trace
         /// <returns>A scope wrapping the newly created span</returns>
         public Scope StartActive(string operationName, SpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
         {
-            var span = StartManual(operationName, parent, serviceName, startTime, ignoreActiveScope);
+            var span = StartSpan(operationName, parent, serviceName, startTime, ignoreActiveScope);
             return _scopeManager.Activate(span, finishOnClose);
         }
 
@@ -89,7 +89,7 @@ namespace Datadog.Trace
         /// <param name="startTime">An explicit start time for that span</param>
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <returns>The newly created span</returns>
-        public Span StartManual(string operationName, SpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
+        public Span StartSpan(string operationName, SpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
         {
             if (parent == null && !ignoreActiveScope)
             {

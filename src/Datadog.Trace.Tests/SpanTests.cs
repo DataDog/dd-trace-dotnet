@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests
         {
             const string key = "Key";
             const string value = "Value";
-            var span = _tracer.StartManual("Operation");
+            var span = _tracer.StartSpan("Operation");
             Assert.Null(span.GetTag(key));
 
             span.SetTag(key, value);
@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests
         {
             // The 10 additional milliseconds account for the clock precision
             var startTime = DateTimeOffset.UtcNow.AddMinutes(-1).AddMilliseconds(-10);
-            var span = _tracer.StartManual("Operation", startTime: startTime);
+            var span = _tracer.StartSpan("Operation", startTime: startTime);
 
             span.Finish();
 
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task Finish_NoEndTimeProvided_SpanWriten()
         {
-            var span = _tracer.StartManual("Operation");
+            var span = _tracer.StartSpan("Operation");
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Tests
         {
             var startTime = DateTimeOffset.UtcNow;
             var endTime = DateTime.UtcNow.AddMilliseconds(10);
-            var span = _tracer.StartManual("Operation", startTime: startTime);
+            var span = _tracer.StartSpan("Operation", startTime: startTime);
 
             span.Finish(endTime);
 
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests
         {
             var startTime = DateTimeOffset.UtcNow;
             var endTime = DateTime.UtcNow.AddMilliseconds(-10);
-            var span = _tracer.StartManual("Operation", startTime: startTime);
+            var span = _tracer.StartSpan("Operation", startTime: startTime);
 
             span.Finish(endTime);
 
