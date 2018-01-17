@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 
 namespace Datadog.Trace.AspNetCore
 {
-    public class DatadogTraceStartupFilter : IStartupFilter
+    internal class DatadogTraceStartupFilter : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
         {
