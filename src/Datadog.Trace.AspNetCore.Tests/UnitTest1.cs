@@ -35,6 +35,7 @@ namespace Datadog.Trace.AspNetCore.Tests
                 .ConfigureServices(s => s.AddDatadogTrace(_tracer))
                 .Configure(app => app
                 .Map("/error", HandleError)
+                .Map("/child", HandleWithChild)
                 .Run(HandleNormal))
                 .Build();
             _host.StartAsync().Wait();
@@ -61,6 +62,25 @@ namespace Datadog.Trace.AspNetCore.Tests
         }
 
         [Fact]
+        public async void OkResponseWithChildSpan()
+        {
+            var response = await _client.GetAsync("/child");
+            var content = await response.Content.ReadAsStringAsync();
+            await Task.Delay(TimeSpan.FromMilliseconds(1));
+
+            Assert.Equal(Content, content);
+            var trace = _writer.Traces.Single();
+            Assert.Equal(2, trace.Count);
+            var root = trace[0];
+            Assert.Equal("GET", root.Tags[MethodTag]);
+            Assert.Equal("/child", root.Tags[UrlTag]);
+            Assert.Equal("200", root.Tags[StatusCodeTag]);
+            var child = trace[1];
+            Assert.Equal("Child", child.OperationName);
+            Assert.Equal(root.Context, child.Context.Parent);
+        }
+
+        [Fact]
         public async void Error()
         {
             var response = await _client.GetAsync("/error");
@@ -78,7 +98,7 @@ namespace Datadog.Trace.AspNetCore.Tests
 
         private static async Task HandleNormal(HttpContext context)
         {
-            await context.Response.WriteAsync(Content);
+                await context.Response.WriteAsync(Content);
         }
 
         private static void HandleError(IApplicationBuilder app)
@@ -86,6 +106,17 @@ namespace Datadog.Trace.AspNetCore.Tests
             app.Run(context =>
             {
                 throw new InvalidOperationException("Invalid");
+            });
+        }
+
+        private void HandleWithChild(IApplicationBuilder app)
+        {
+            app.Run(async context =>
+            {
+                using (_tracer.StartActive("Child"))
+                {
+                    await context.Response.WriteAsync(Content);
+                }
             });
         }
     }
