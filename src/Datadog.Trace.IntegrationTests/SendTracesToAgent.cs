@@ -14,7 +14,7 @@ namespace Datadog.Trace.IntegrationTests
         public SendTracesToAgent()
         {
             _httpRecorder = new RecordHttpHandler();
-            _tracer = Tracer.CreateTracer(new Uri("http://localhost:8126"), null, null, _httpRecorder);
+            _tracer = Tracer.Create(new Uri("http://localhost:8126"), null, null, _httpRecorder);
         }
 
         [Fact]
@@ -41,7 +41,7 @@ namespace Datadog.Trace.IntegrationTests
             const string ServiceName = "MyService";
             var serviceList = new List<ServiceInfo> { new ServiceInfo { App = App, AppType = AppType, ServiceName = ServiceName } };
             _httpRecorder = new RecordHttpHandler();
-            _tracer = Tracer.CreateTracer(new Uri("http://localhost:8126"), serviceList, null, _httpRecorder);
+            _tracer = Tracer.Create(new Uri("http://localhost:8126"), serviceList, null, _httpRecorder);
 
             var scope = _tracer.StartActive("Operation", serviceName: ServiceName);
             scope.Span.ResourceName = "This is a resource";
@@ -84,7 +84,7 @@ namespace Datadog.Trace.IntegrationTests
         public void WithDefaultFactory()
         {
             // This test does not check anything it validates that this codepath runs without exceptions
-            var tracer = Tracer.CreateTracer();
+            var tracer = Tracer.Create();
             tracer.StartActive("Operation")
                 .Dispose();
         }

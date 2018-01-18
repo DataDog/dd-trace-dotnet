@@ -21,7 +21,7 @@ namespace Datadog.Trace
 
         static Tracer()
         {
-            Instance = CreateTracer();
+            Instance = Create();
         }
 
         internal Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null, bool isDebugEnabled = false)
@@ -73,10 +73,10 @@ namespace Datadog.Trace
         /// <param name="defaultServiceName">Default name of the service (default is the name of the executing assembly).</param>
         /// <param name="isDebugEnabled">Turns on all debug logging (this may have an impact on application performance).</param>
         /// <returns>The newly created tracer</returns>
-        public static Tracer CreateTracer(Uri agentEndpoint = null, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, bool isDebugEnabled = false)
+        public static Tracer Create(Uri agentEndpoint = null, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             agentEndpoint = agentEndpoint ?? _defaultUri;
-            return CreateTracer(agentEndpoint, serviceInfoList, defaultServiceName, null, isDebugEnabled);
+            return Create(agentEndpoint, serviceInfoList, defaultServiceName, null, isDebugEnabled);
         }
 
         /// <summary>
@@ -132,7 +132,7 @@ namespace Datadog.Trace
             _agentWriter.WriteTrace(trace);
         }
 
-        internal static Tracer CreateTracer(Uri agentEndpoint, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
+        internal static Tracer Create(Uri agentEndpoint, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
         {
             var api = new Api(agentEndpoint, delegatingHandler);
             var agentWriter = new AgentWriter(api);
