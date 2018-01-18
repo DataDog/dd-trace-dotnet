@@ -52,7 +52,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         {
             var response = await _client.GetAsync("/");
             var content = await response.Content.ReadAsStringAsync();
-            await Task.Delay(TimeSpan.FromMilliseconds(1));
+            await Task.Delay(TimeSpan.FromMilliseconds(10));
 
             Assert.Equal(Content, content);
             var span = _writer.Traces.Single().Single();
@@ -66,7 +66,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         {
             var response = await _client.GetAsync("/child");
             var content = await response.Content.ReadAsStringAsync();
-            await Task.Delay(TimeSpan.FromMilliseconds(1));
+            await Task.Delay(TimeSpan.FromMilliseconds(10));
 
             Assert.Equal(Content, content);
             var trace = _writer.Traces.Single();
@@ -84,7 +84,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         public async void Error()
         {
             var response = await _client.GetAsync("/error");
-            await Task.Delay(TimeSpan.FromMilliseconds(1));
+            await Task.Delay(TimeSpan.FromMilliseconds(10));
 
             var span = _writer.Traces.Single().Single();
             Assert.Equal("GET", span.Tags[MethodTag]);
