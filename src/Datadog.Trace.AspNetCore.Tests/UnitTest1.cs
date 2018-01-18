@@ -1,11 +1,11 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Datadog.Trace.AspNetCore.Tests
@@ -35,10 +35,12 @@ namespace Datadog.Trace.AspNetCore.Tests
             _host = new WebHostBuilder()
                 .UseUrls("http://localhost:5050")
                 .UseKestrel()
-                .ConfigureServices(s => s.AddDatadogTrace(_tracer))
+                .ConfigureServices(s => s.AddDatadogTrace(_tracer)
+                                         .AddMvc())
                 .Configure(app => app
                 .Map("/error", HandleError)
                 .Map("/child", HandleWithChild)
+                .UseMvcWithDefaultRoute()
                 .Run(HandleNormal))
                 .Build();
             _host.StartAsync().Wait();
@@ -98,6 +100,21 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal(typeof(InvalidOperationException).ToString(), span.GetTag(ErrorTypeTag));
             Assert.Equal("Invalid", span.GetTag(ErrorMsgTag));
             Assert.False(string.IsNullOrEmpty(span.GetTag(ErrorStackTag)));
+        }
+
+        [Fact]
+        public async void MvcOkResponse()
+        {
+            var response = await _client.GetAsync("/Test");
+            var content = await response.Content.ReadAsStringAsync();
+            _waiter.Wait();
+
+            Assert.Equal("ActionContent", content);
+            var span = _writer.Traces.Single().Single();
+            Assert.Equal("GET", span.Tags[MethodTag]);
+            Assert.Equal("/Test", span.Tags[UrlTag]);
+            Assert.Equal("200", span.Tags[StatusCodeTag]);
+            Assert.Equal("Test.Index", span.ResourceName);
         }
 
         private static async Task HandleNormal(HttpContext context)
