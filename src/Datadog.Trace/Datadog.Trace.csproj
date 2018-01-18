@@ -10,6 +10,8 @@
     <PackageReleaseNotes>Alpha release</PackageReleaseNotes>
     <Copyright>Datadog, Inc. 2017</Copyright>
     <PackageTags></PackageTags>
+    <!-- Use the python license's url while the project's github is not public -->
+    <PackageLicenseUrl>https://github.com/DataDog/dd-trace-py/blob/master/LICENSE</PackageLicenseUrl>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeOpentracingLib</TargetsForTfmSpecificBuildOutput>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
