@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using MsgPack;
+using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
 {
@@ -73,6 +74,32 @@ namespace Datadog.Trace.IntegrationTests
             {
                 var s = kv.Value.AsDictionary();
                 yield return new ServiceInfo { App = s["app"].AsString(), AppType = s["app_type"].AsString(), ServiceName = kv.Key.AsString() };
+            }
+        }
+
+        public static void AssertSpanEqual(Span expected, MessagePackObject actual)
+        {
+            Assert.Equal(expected.Context.TraceId, actual.TraceId());
+            Assert.Equal(expected.Context.SpanId, actual.SpanId());
+            if (expected.Context.ParentId.HasValue)
+            {
+                Assert.Equal(expected.Context.ParentId, actual.ParentId());
+            }
+
+            Assert.Equal(expected.OperationName, actual.OperationName());
+            Assert.Equal(expected.ResourceName, actual.ResourceName());
+            Assert.Equal(expected.ServiceName, actual.ServiceName());
+            Assert.Equal(expected.Type, actual.Type());
+            Assert.Equal(expected.StartTime.ToUnixTimeNanoseconds(), actual.StartTime());
+            Assert.Equal(expected.Duration.ToNanoseconds(), actual.Duration());
+            if (expected.Error)
+            {
+                Assert.Equal("1", actual.Error());
+            }
+
+            if (expected.Tags != null)
+            {
+                Assert.Equal(expected.Tags, actual.Tags());
             }
         }
     }

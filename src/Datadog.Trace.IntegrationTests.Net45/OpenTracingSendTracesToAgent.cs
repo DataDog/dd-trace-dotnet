@@ -6,22 +6,23 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
 {
-    public class SendTracesToAgent
+    public class OpenTracingSendTracesToAgent
     {
-        private Tracer _tracer;
+        private OpenTracingTracer _tracer;
         private RecordHttpHandler _httpRecorder;
 
-        public SendTracesToAgent()
+        public OpenTracingSendTracesToAgent()
         {
             _httpRecorder = new RecordHttpHandler();
-            _tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), null, null, _httpRecorder);
+            _tracer = OpenTracingTracerFactory.GetTracer(new Uri("http://localhost:8126"), null, null, _httpRecorder);
         }
 
         [Fact]
         public async void MinimalSpan()
         {
-            var scope = _tracer.StartActive("Operation");
-            scope.Dispose();
+            var span = (OpenTracingSpan)_tracer.BuildSpan("Operation")
+                .Start();
+            span.Finish();
 
             // Check that the HTTP calls went as expected
             await _httpRecorder.WaitForCompletion(1);
@@ -30,7 +31,7 @@ namespace Datadog.Trace.IntegrationTests
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
-            MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
+            MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
         }
 
         [Fact]
@@ -41,11 +42,13 @@ namespace Datadog.Trace.IntegrationTests
             const string ServiceName = "MyService";
             var serviceList = new List<ServiceInfo> { new ServiceInfo { App = App, AppType = AppType, ServiceName = ServiceName } };
             _httpRecorder = new RecordHttpHandler();
-            _tracer = TracerFactory.GetTracer(new Uri("http://localhost:8126"), serviceList, null, _httpRecorder);
+            _tracer = OpenTracingTracerFactory.GetTracer(new Uri("http://localhost:8126"), serviceList, null, _httpRecorder);
 
-            var scope = _tracer.StartActive("Operation", serviceName: ServiceName);
-            scope.Span.ResourceName = "This is a resource";
-            scope.Dispose();
+            var span = (OpenTracingSpan)_tracer.BuildSpan("Operation")
+                .WithTag(DDTags.ResourceName, "This is a resource")
+                .WithTag(DDTags.ServiceName, ServiceName)
+                .Start();
+            span.Finish();
 
             // Check that the HTTP calls went as expected
             await _httpRecorder.WaitForCompletion(2);
@@ -54,7 +57,7 @@ namespace Datadog.Trace.IntegrationTests
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
-            MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
+            MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
 
             var serviceInfo = _httpRecorder.Services.Select(x => x.ServiceInfos().Single()).Single();
             Assert.Equal(ServiceName, serviceInfo.ServiceName);
@@ -65,10 +68,12 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public async void Utf8Everywhere()
         {
-            var scope = _tracer.StartActive("Aᛗᚪᚾᚾᚪ", serviceName: "На берегу пустынных волн");
-            scope.Span.ResourceName = "η γλώσσα μου έδωσαν ελληνική";
-            scope.Span.SetTag("யாமறிந்த", "ნუთუ კვლა");
-            scope.Dispose();
+            var span = (OpenTracingSpan)_tracer.BuildSpan("Aᛗᚪᚾᚾᚪ")
+                .WithTag(DDTags.ResourceName, "η γλώσσα μου έδωσαν ελληνική")
+                .WithTag(DDTags.ServiceName, "На берегу пустынных волн")
+                .WithTag("யாமறிந்த", "ნუთუ კვლა")
+                .Start();
+            span.Finish();
 
             // Check that the HTTP calls went as expected
             await _httpRecorder.WaitForCompletion(1);
@@ -77,7 +82,7 @@ namespace Datadog.Trace.IntegrationTests
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
-            MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
+            MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
         }
 
         [Fact]

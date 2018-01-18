@@ -5,7 +5,10 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
-    public static class TracerFactory
+    /// <summary>
+    /// This class contains factory methods to instantiate an OpenTracing compatible tracer that sends data to DataDog
+    /// </summary>
+    public static class OpenTracingTracerFactory
     {
         private static Uri _defaultUri = new Uri("http://localhost:8126");
 
@@ -16,7 +19,6 @@ namespace Datadog.Trace
         /// <param name="serviceInfoList">The service information list.</param>
         /// <param name="defaultServiceName">Default name of the service (default is the name of the executing assembly).</param>
         /// <param name="isDebugEnabled">Turns on all debug logging (this may have an impact on application performance).</param>
-        /// <returns></returns>
         /// <returns>A Datadog compatible ITracer implementation</returns>
         public static ITracer GetTracer(Uri agentEndpoint = null, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
@@ -24,11 +26,11 @@ namespace Datadog.Trace
             return GetTracer(agentEndpoint, serviceInfoList, defaultServiceName, null, isDebugEnabled);
         }
 
-        internal static Tracer GetTracer(Uri agentEndpoint, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
+        internal static OpenTracingTracer GetTracer(Uri agentEndpoint, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
         {
             var api = new Api(agentEndpoint, delegatingHandler);
             var agentWriter = new AgentWriter(api);
-            var tracer = new Tracer(agentWriter, serviceInfoList, defaultServiceName, isDebugEnabled);
+            var tracer = new OpenTracingTracer(agentWriter, serviceInfoList, defaultServiceName, isDebugEnabled);
             return tracer;
         }
     }

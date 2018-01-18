@@ -5,19 +5,19 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
-    internal class SpanBuilder : ISpanBuilder
+    internal class OpenTracingSpanBuilder : ISpanBuilder
     {
-        private static ILog _log = LogProvider.For<SpanBuilder>();
+        private static ILog _log = LogProvider.For<OpenTracingSpanBuilder>();
 
-        private object _lock = new object();
-        private IDatadogTracer _tracer;
-        private string _operationName;
+        private readonly Tracer _tracer;
+        private readonly object _lock = new object();
+        private readonly string _operationName;
         private SpanContext _parent;
         private DateTimeOffset? _start;
         private Dictionary<string, string> _tags;
         private string _serviceName;
 
-        internal SpanBuilder(IDatadogTracer tracer, string operationName)
+        internal OpenTracingSpanBuilder(Tracer tracer, string operationName)
         {
             _tracer = tracer;
             _operationName = operationName;
@@ -72,8 +72,8 @@ namespace Datadog.Trace
         {
             lock (_lock)
             {
-                var span = new Span(_tracer, _parent, _operationName, _serviceName, _start);
-                span.TraceContext.AddSpan(span);
+                var span = new OpenTracingSpan(_tracer.StartActive(_operationName, _parent, _serviceName, _start));
+
                 if (_tags != null)
                 {
                     foreach (var pair in _tags)

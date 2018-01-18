@@ -14,7 +14,6 @@ namespace Datadog.Trace
         private IDatadogTracer _tracer;
         private List<Span> _spans = new List<Span>();
         private int _openSpans = 0;
-        private AsyncLocalCompat<SpanContext> _currentSpanContext = new AsyncLocalCompat<SpanContext>("Datadog.Trace.TraceContext._currentSpanContext");
         private DateTimeOffset _start;
         private Stopwatch _sw;
 
@@ -25,25 +24,15 @@ namespace Datadog.Trace
             _sw = Stopwatch.StartNew();
         }
 
-        public string DefaultServiceName => _tracer.DefaultServiceName;
-
-        public bool Sampled { get; set; }
-
         public DateTimeOffset UtcNow()
         {
             return _start.Add(_sw.Elapsed);
-        }
-
-        public SpanContext GetCurrentSpanContext()
-        {
-            return _currentSpanContext.Get();
         }
 
         public void AddSpan(Span span)
         {
             lock (_lock)
             {
-                _currentSpanContext.Set(span.Context);
                 _spans.Add(span);
                 _openSpans++;
             }
@@ -53,11 +42,9 @@ namespace Datadog.Trace
         {
             lock (_lock)
             {
-                _currentSpanContext.Set(_currentSpanContext.Get()?.Parent);
                 _openSpans--;
                 if (span.IsRootSpan)
                 {
-                    _tracer.CloseCurrentTraceContext();
                     if (_openSpans != 0)
                     {
                         _log.DebugFormat("Some child spans were not finished before the root. {NumberOfOpenSpans}", _openSpans);

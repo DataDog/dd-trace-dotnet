@@ -65,6 +65,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Datadog.Trace.IntegrationTests\GlobalSuppressions.cs">
+      <Link>GlobalSuppressions.cs</Link>
+    </Compile>
     <Compile Include="..\Datadog.Trace.Tests\AgentWriterBufferTests.cs">
       <Link>AgentWriterBufferTests.cs</Link>
     </Compile>
@@ -74,17 +77,23 @@
     <Compile Include="..\Datadog.Trace.Tests\ApiTests.cs">
       <Link>ApiTests.cs</Link>
     </Compile>
-    <Compile Include="..\Datadog.Trace.Tests\HttpHeaderCodecTests.cs">
-      <Link>HttpHeaderCodecTests.cs</Link>
+    <Compile Include="..\Datadog.Trace.Tests\OpentracingTests\HttpHeaderCodecTests.cs">
+      <Link>OpentracingTests\HttpHeaderCodecTests.cs</Link>
     </Compile>
-    <Compile Include="..\Datadog.Trace.Tests\HttpHeadersCarrierTests.cs">
-      <Link>HttpHeadersCarrierTests.cs</Link>
+    <Compile Include="..\Datadog.Trace.Tests\OpentracingTests\HttpHeadersCarrierTests.cs">
+      <Link>OpentracingTests\HttpHeadersCarrierTests.cs</Link>
     </Compile>
-    <Compile Include="..\Datadog.Trace.Tests\MockTextMap.cs">
-      <Link>MockTextMap.cs</Link>
+    <Compile Include="..\Datadog.Trace.Tests\OpentracingTests\MockTextMap.cs">
+      <Link>OpentracingTests\MockTextMap.cs</Link>
     </Compile>
-    <Compile Include="..\Datadog.Trace.Tests\SpanBuilderTests.cs">
-      <Link>SpanBuilderTests.cs</Link>
+    <Compile Include="..\Datadog.Trace.Tests\OpentracingTests\OpenTracingSpanBuilderTests.cs">
+      <Link>OpentracingTests\OpenTracingSpanBuilderTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace.Tests\OpentracingTests\OpenTracingSpanTests.cs">
+      <Link>OpentracingTests\OpenTracingSpanTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace.Tests\OpentracingTests\OpenTracingTracerTests.cs">
+      <Link>OpentracingTests\OpenTracingTracerTests.cs</Link>
     </Compile>
     <Compile Include="..\Datadog.Trace.Tests\SpanTests.cs">
       <Link>SpanTests.cs</Link>

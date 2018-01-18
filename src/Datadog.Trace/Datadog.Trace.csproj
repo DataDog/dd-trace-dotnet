@@ -11,13 +11,30 @@
     <Copyright>Datadog, Inc. 2017</Copyright>
     <PackageTags></PackageTags>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeOpentracingLib</TargetsForTfmSpecificBuildOutput>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
 
   <Target Name="IncludeOpentracingLib">
     <ItemGroup>
       <BuildOutputInPackage Include="$(OutputPath)opentracing.dll" />
     </ItemGroup>
   </Target>
+  <ItemGroup>
+    <ProjectReference Include="..\..\lib\opentracing-csharp\src\OpenTracing\OpenTracing.csproj" PrivateAssets="All" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>LIBLOG_PORTABLE</DefineConstants>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MsgPack.Cli" Version="0.9.2" />
@@ -26,15 +43,6 @@
     </PackageReference>
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <DefineConstants>LIBLOG_PORTABLE</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-  </PropertyGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageReference Include="Microsoft.CSharp" Version="4.0.1" />
     <PackageReference Include="System.Dynamic.Runtime" Version="4.0.11" />
@@ -42,9 +50,6 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net46' ">
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\lib\opentracing-csharp\src\OpenTracing\OpenTracing.csproj" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

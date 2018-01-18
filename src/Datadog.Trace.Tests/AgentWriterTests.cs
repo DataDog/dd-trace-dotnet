@@ -18,7 +18,6 @@ namespace Datadog.Trace.Tests
             _tracer = new Mock<IDatadogTracer>();
             _tracer.Setup(x => x.DefaultServiceName).Returns("Default");
             var context = new Mock<ITraceContext>();
-            _tracer.Setup(x => x.GetTraceContext()).Returns(context.Object);
             _api = new Mock<IApi>();
             _agentWriter = new AgentWriter(_api.Object);
         }

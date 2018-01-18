@@ -16,7 +16,6 @@ namespace Datadog.Trace.Tests
         public HttpHeaderCodecTests()
         {
             _tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
-            _tracerMock.Setup(x => x.GetTraceContext()).Returns(new TraceContext(_tracerMock.Object));
             _tracerMock.Setup(x => x.DefaultServiceName).Returns("Plop");
             _codec = new HttpHeadersCodec(_tracerMock.Object);
         }
@@ -94,7 +93,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Inject_SpanContext_HeadersWithCorrectInfo()
         {
-            var spanContext = new SpanContext(new TraceContext(_tracerMock.Object), "MyService");
+            var spanContext = new OpenTracingSpanContext(_tracerMock.Object, null, "MyService");
             var headers = new MockTextMap();
 
             _codec.Inject(spanContext, headers);

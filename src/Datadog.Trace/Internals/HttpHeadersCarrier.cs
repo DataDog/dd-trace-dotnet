@@ -14,6 +14,10 @@ namespace Datadog.Trace
     {
         private HttpHeaders _headers;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpHeadersCarrier"/> class.
+        /// </summary>
+        /// <param name="headers">The <see cref="HttpHeaders"/> to wrap.</param>
         public HttpHeadersCarrier(HttpHeaders headers)
         {
             _headers = headers;
