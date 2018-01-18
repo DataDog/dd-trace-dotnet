@@ -14,7 +14,7 @@ namespace Datadog.Trace.IntegrationTests
         public OpenTracingSendTracesToAgent()
         {
             _httpRecorder = new RecordHttpHandler();
-            _tracer = OpenTracingTracerFactory.GetTracer(new Uri("http://localhost:8126"), null, null, _httpRecorder);
+            _tracer = OpenTracingTracerFactory.CreateTracer(new Uri("http://localhost:8126"), null, null, _httpRecorder);
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace Datadog.Trace.IntegrationTests
             const string ServiceName = "MyService";
             var serviceList = new List<ServiceInfo> { new ServiceInfo { App = App, AppType = AppType, ServiceName = ServiceName } };
             _httpRecorder = new RecordHttpHandler();
-            _tracer = OpenTracingTracerFactory.GetTracer(new Uri("http://localhost:8126"), serviceList, null, _httpRecorder);
+            _tracer = OpenTracingTracerFactory.CreateTracer(new Uri("http://localhost:8126"), serviceList, null, _httpRecorder);
 
             var span = (OpenTracingSpan)_tracer.BuildSpan("Operation")
                 .WithTag(DDTags.ResourceName, "This is a resource")
@@ -89,7 +89,7 @@ namespace Datadog.Trace.IntegrationTests
         public void WithDefaultFactory()
         {
             // This test does not check anything it validates that this codepath runs without exceptions
-            var tracer = OpenTracingTracerFactory.GetTracer();
+            var tracer = OpenTracingTracerFactory.CreateTracer();
             tracer.BuildSpan("Operation")
                 .Start()
                 .Finish();

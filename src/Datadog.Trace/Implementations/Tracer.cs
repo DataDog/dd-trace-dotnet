@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -10,12 +11,18 @@ namespace Datadog.Trace
     public class Tracer : IDatadogTracer
     {
         private static readonly ILog _log = LogProvider.For<Tracer>();
+        private static Uri _defaultUri = new Uri("http://localhost:8126");
 
         private AsyncLocalScopeManager _scopeManager;
         private string _defaultServiceName;
         private Dictionary<string, ServiceInfo> _services = new Dictionary<string, ServiceInfo>();
         private IAgentWriter _agentWriter;
         private bool _isDebugEnabled;
+
+        static Tracer()
+        {
+            Instance = Create();
+        }
 
         internal Tracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
@@ -43,6 +50,11 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Gets or sets the global tracer object
+        /// </summary>
+        public static Tracer Instance { get; set; }
+
+        /// <summary>
         /// Gets the active scope
         /// </summary>
         public Scope ActiveScope => _scopeManager.Active;
@@ -52,6 +64,20 @@ namespace Datadog.Trace
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
         AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
+
+        /// <summary>
+        /// Create a new Tracer with the given parameters
+        /// </summary>
+        /// <param name="agentEndpoint">The agent endpoint where the traces will be sent (default is http://localhost:8126).</param>
+        /// <param name="serviceInfoList">The service information list.</param>
+        /// <param name="defaultServiceName">Default name of the service (default is the name of the executing assembly).</param>
+        /// <param name="isDebugEnabled">Turns on all debug logging (this may have an impact on application performance).</param>
+        /// <returns>The newly created tracer</returns>
+        public static Tracer Create(Uri agentEndpoint = null, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, bool isDebugEnabled = false)
+        {
+            agentEndpoint = agentEndpoint ?? _defaultUri;
+            return Create(agentEndpoint, serviceInfoList, defaultServiceName, null, isDebugEnabled);
+        }
 
         /// <summary>
         /// Make a span active and return a scope that can be disposed to desactivate the span
@@ -104,6 +130,14 @@ namespace Datadog.Trace
         void IDatadogTracer.Write(List<Span> trace)
         {
             _agentWriter.WriteTrace(trace);
+        }
+
+        internal static Tracer Create(Uri agentEndpoint, List<ServiceInfo> serviceInfoList = null, string defaultServiceName = null, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
+        {
+            var api = new Api(agentEndpoint, delegatingHandler);
+            var agentWriter = new AgentWriter(api);
+            var tracer = new Tracer(agentWriter, serviceInfoList, defaultServiceName, isDebugEnabled);
+            return tracer;
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
