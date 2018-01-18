@@ -5,7 +5,7 @@
     <PackageId>Datadog.Trace.AspNetCore</PackageId>
     <PackageVersion>0.1.1</PackageVersion>
     <Authors>Datadog</Authors>
-    <Description>Datadog APM ASP.NET Core integration</Description>
+    <Description>Datadog Trace ASP.NET Core integration</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>Alpha release</PackageReleaseNotes>
     <Copyright>Datadog, Inc. 2017</Copyright>
@@ -21,8 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Routing.Abstractions" Version="2.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Routing.Abstractions" Version="1.0.0" />
     <PackageReference Include="Microsoft.Extensions.DiagnosticAdapter" Version="1.0.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
       <PrivateAssets>all</PrivateAssets>
