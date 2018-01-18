@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -24,11 +25,13 @@ namespace Datadog.Trace.AspNetCore.Tests
         private readonly HttpClient _client;
         private readonly MockWriter _writer;
         private readonly Tracer _tracer;
+        private readonly EndRequestWaiter _waiter;
 
         public UnitTest1()
         {
             _writer = new MockWriter();
             _tracer = new Tracer(_writer);
+            _waiter = new EndRequestWaiter();
             _host = new WebHostBuilder()
                 .UseUrls("http://localhost:5050")
                 .UseKestrel()
@@ -45,6 +48,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         public void Dispose()
         {
             _host.StopAsync().Wait();
+            _waiter.Dispose();
         }
 
         [Fact]
@@ -52,7 +56,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         {
             var response = await _client.GetAsync("/");
             var content = await response.Content.ReadAsStringAsync();
-            await Task.Delay(TimeSpan.FromMilliseconds(10));
+            _waiter.Wait();
 
             Assert.Equal(Content, content);
             var span = _writer.Traces.Single().Single();
@@ -66,7 +70,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         {
             var response = await _client.GetAsync("/child");
             var content = await response.Content.ReadAsStringAsync();
-            await Task.Delay(TimeSpan.FromMilliseconds(10));
+            _waiter.Wait();
 
             Assert.Equal(Content, content);
             var trace = _writer.Traces.Single();
@@ -84,7 +88,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         public async void Error()
         {
             var response = await _client.GetAsync("/error");
-            await Task.Delay(TimeSpan.FromMilliseconds(10));
+            _waiter.Wait();
 
             var span = _writer.Traces.Single().Single();
             Assert.Equal("GET", span.Tags[MethodTag]);
