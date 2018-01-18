@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Datadog.Trace.AspNetCore.Tests
 {
-    public class UnitTest1 : IDisposable
+    public class FunctionalTests : IDisposable
     {
         private const string MethodTag = "http.method";
         private const string UrlTag = "http.url";
@@ -27,7 +27,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         private readonly Tracer _tracer;
         private readonly EndRequestWaiter _waiter;
 
-        public UnitTest1()
+        public FunctionalTests()
         {
             _writer = new MockWriter();
             _tracer = new Tracer(_writer);
