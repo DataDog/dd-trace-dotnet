@@ -6,11 +6,18 @@ namespace Datadog.Trace.AspNetCore
 {
     internal class DatadogTraceStartupFilter : IStartupFilter
     {
+        private AspNetCoreListener _listener;
+
+        public DatadogTraceStartupFilter(AspNetCoreListener listener)
+        {
+            _listener = listener;
+        }
+
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
         {
             return builder =>
             {
-                // Initialize tracer
+                _listener.Listen();
                 next(builder);
             };
         }

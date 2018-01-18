@@ -182,6 +182,18 @@ namespace Datadog.Trace
             Finish();
         }
 
+        /// <summary>
+        /// Add the StackTrace and other exception metadata to the span
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        public void SetException(Exception exception)
+        {
+            Error = true;
+            SetTag(Trace.Tags.ErrorMsg, exception.Message);
+            SetTag(Trace.Tags.ErrorStack, exception.StackTrace);
+            SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+        }
+
         internal string GetTag(string key)
         {
             lock (_lock)

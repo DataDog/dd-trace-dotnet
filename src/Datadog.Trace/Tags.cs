@@ -1,0 +1,38 @@
+﻿namespace Datadog.Trace
+{
+    /// <summary>
+    /// This class contains a set of standard tags that can be used by integrations
+    /// </summary>
+    public static class Tags
+    {
+        /// <summary>
+        /// The URL of an HTTP request
+        /// </summary>
+        public const string HttpUrl = "http.url";
+
+        /// <summary>
+        /// The method of an HTTP request
+        /// </summary>
+        public const string HttpMethod = "http.method";
+
+        /// <summary>
+        /// The status code of an HTTP response
+        /// </summary>
+        public const string HttpStatusCode = "http.status_code";
+
+        /// <summary>
+        /// The error message of an exception
+        /// </summary>
+        public const string ErrorMsg = "error.msg";
+
+        /// <summary>
+        /// The type of an exception
+        /// </summary>
+        public const string ErrorType = "error.type";
+
+        /// <summary>
+        /// The stack trace of an exception
+        /// </summary>
+        public const string ErrorStack = "error.stack";
+    }
+}
