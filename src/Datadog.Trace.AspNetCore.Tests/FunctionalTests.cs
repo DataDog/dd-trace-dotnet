@@ -43,13 +43,13 @@ namespace Datadog.Trace.AspNetCore.Tests
                 .UseMvcWithDefaultRoute()
                 .Run(HandleNormal))
                 .Build();
-            _host.StartAsync().Wait();
+            _host.Start();
             _client = new HttpClient() { BaseAddress = new Uri("http://localhost:5050") };
         }
 
         public void Dispose()
         {
-            _host.StopAsync().Wait();
+            _host.Dispose();
             _waiter.Dispose();
         }
 

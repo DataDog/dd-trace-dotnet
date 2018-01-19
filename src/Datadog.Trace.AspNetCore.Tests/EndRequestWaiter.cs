@@ -22,15 +22,14 @@ namespace Datadog.Trace.AspNetCore.Tests
             });
         }
 
-        // This is needed to enable the Activity logging in Asp.Net DiagnosticSource
-        // If it's not present the other events are not writen
-        [DiagnosticName("Microsoft.AspNetCore.Hosting.HttpRequestIn")]
-        public void OnHttpRequestIn()
+        [DiagnosticName("Microsoft.AspNetCore.Hosting.EndRequest")]
+        public void OnHttpRequestInStop()
         {
+            _resetEvent.Set();
         }
 
-        [DiagnosticName("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")]
-        public void OnHttpRequestInStop()
+        [DiagnosticName("Microsoft.AspNetCore.Hosting.UnhandledException")]
+        public void OnUnhandledException()
         {
             _resetEvent.Set();
         }

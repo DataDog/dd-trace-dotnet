@@ -16,7 +16,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTracing", "..\lib\opent
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNetCore", "Datadog.Trace.AspNetCore\Datadog.Trace.AspNetCore.csproj", "{631443F7-86F1-4F85-A5A0-1939B31F5D43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.AspNetCore.Tests", "Datadog.Trace.AspNetCore.Tests\Datadog.Trace.AspNetCore.Tests.csproj", "{2857C9E0-5CF0-489C-85C4-E22F7A547FAF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNetCore.Tests", "Datadog.Trace.AspNetCore.Tests\Datadog.Trace.AspNetCore.Tests.csproj", "{2857C9E0-5CF0-489C-85C4-E22F7A547FAF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNetCore10.Tests", "Datadog.Trace.AspNetCore10.Tests\Datadog.Trace.AspNetCore10.Tests.csproj", "{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -124,6 +126,18 @@ Global
 		{2857C9E0-5CF0-489C-85C4-E22F7A547FAF}.Release|x64.Build.0 = Release|Any CPU
 		{2857C9E0-5CF0-489C-85C4-E22F7A547FAF}.Release|x86.ActiveCfg = Release|Any CPU
 		{2857C9E0-5CF0-489C-85C4-E22F7A547FAF}.Release|x86.Build.0 = Release|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Debug|x64.Build.0 = Debug|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Debug|x86.Build.0 = Debug|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Release|x64.ActiveCfg = Release|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Release|x64.Build.0 = Release|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Release|x86.ActiveCfg = Release|Any CPU
+		{B1DD48A6-50CA-4ECE-A7F2-2971E864C109}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

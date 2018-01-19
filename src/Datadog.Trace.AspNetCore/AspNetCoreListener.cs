@@ -32,15 +32,8 @@ namespace Datadog.Trace.AspNetCore
             }
         }
 
-        // This is needed to enable the Activity logging in Asp.Net DiagnosticSource
-        // If it's not present the other events are not writen
-        [DiagnosticName("Microsoft.AspNetCore.Hosting.HttpRequestIn")]
-        public void OnHttpRequestIn()
-        {
-        }
-
-        [DiagnosticName("Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")]
-        public void OnHttpRequestInStart(HttpContext httpContext)
+        [DiagnosticName("Microsoft.AspNetCore.Hosting.BeginRequest")]
+        public void OnBeginRequest(HttpContext httpContext)
         {
             var scope = _tracer.StartActive("aspnet.request");
 
@@ -52,8 +45,8 @@ namespace Datadog.Trace.AspNetCore
             scope.Span.SetTag(Tags.HttpUrl, httpContext.Request.Path);
         }
 
-        [DiagnosticName("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")]
-        public void OnHttpRequestInStop(HttpContext httpContext)
+        [DiagnosticName("Microsoft.AspNetCore.Hosting.EndRequest")]
+        public void OnEndRequest(HttpContext httpContext)
         {
             httpContext.Items.TryGetValue(ScopeKey, out object value);
             var scope = value as Scope;
@@ -77,6 +70,7 @@ namespace Datadog.Trace.AspNetCore
             }
 
             scope.Span.SetException(exception);
+            OnEndRequest(httpContext);
         }
 
         [DiagnosticName("Microsoft.AspNetCore.Mvc.BeforeAction")]
