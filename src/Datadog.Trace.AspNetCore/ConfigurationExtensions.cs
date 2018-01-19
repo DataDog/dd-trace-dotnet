@@ -12,21 +12,14 @@ namespace Datadog.Trace.AspNetCore
         /// Enable Datadog Trace
         /// </summary>
         /// <param name="services">The <see cref="IServiceCollection"/>.</param>
-        /// <returns>The <see cref="IServiceCollection"/></returns>
-        public static IServiceCollection AddDatadogTrace(this IServiceCollection services)
-        {
-            return services.AddDatadogTrace(Tracer.Instance);
-        }
-
-        /// <summary>
-        /// Enable Datadog Trace
-        /// </summary>
-        /// <param name="services">The <see cref="IServiceCollection"/>.</param>
         /// <param name="tracer">The tracer.</param>
+        /// <param name="serviceName">The service name that will be set on the spans created by the instrumentation</param>
         /// <returns>The <see cref="IServiceCollection"/></returns>
-        public static IServiceCollection AddDatadogTrace(this IServiceCollection services, Tracer tracer)
+        public static IServiceCollection AddDatadogTrace(this IServiceCollection services, Tracer tracer = null, string serviceName = null)
         {
+            tracer = tracer ?? Tracer.Instance;
             services.AddSingleton(tracer);
+            services.AddSingleton(new AspNetCoreListenerConfig { ServiceName = serviceName });
             services.AddSingleton<AspNetCoreListener, AspNetCoreListener>();
             services.AddSingleton<IStartupFilter, DatadogTraceStartupFilter>();
             return services;

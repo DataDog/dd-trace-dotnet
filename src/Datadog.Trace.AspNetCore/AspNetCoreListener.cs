@@ -11,12 +11,14 @@ namespace Datadog.Trace.AspNetCore
         private static readonly object ScopeKey = new object();
         private readonly DiagnosticListener _listener;
         private readonly Tracer _tracer;
+        private readonly string _serviceName;
         private IDisposable _subscription;
 
-        public AspNetCoreListener(DiagnosticListener listener, Tracer tracer)
+        public AspNetCoreListener(DiagnosticListener listener, Tracer tracer, AspNetCoreListenerConfig config)
         {
             _listener = listener;
             _tracer = tracer;
+            _serviceName = config.ServiceName;
         }
 
         public void Listen()
@@ -35,7 +37,7 @@ namespace Datadog.Trace.AspNetCore
         [DiagnosticName("Microsoft.AspNetCore.Hosting.BeginRequest")]
         public void OnBeginRequest(HttpContext httpContext)
         {
-            var scope = _tracer.StartActive("aspnet.request");
+            var scope = _tracer.StartActive("aspnet.request", serviceName: _serviceName);
 
             // The scope is stored here to reduce the risk of getting the wrong active scope later
             // because of an interference with other instrumentations

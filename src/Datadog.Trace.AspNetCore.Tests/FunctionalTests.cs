@@ -20,6 +20,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         private const string ErrorStackTag = "error.stack";
 
         private const string Content = "Hello World!";
+        private const string DefaultServiceName = "testhost";
 
         private readonly IWebHost _host;
         private readonly HttpClient _client;
@@ -66,6 +67,36 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal("/", span.Tags[UrlTag]);
             Assert.Equal("200", span.Tags[StatusCodeTag]);
             Assert.Equal("GET 200", span.ResourceName);
+            Assert.Equal(DefaultServiceName, span.ServiceName);
+        }
+
+        [Fact]
+        public async void OkResponseOverrideServiceName()
+        {
+            const string serviceNameOverride = "Blublu";
+            _host.Dispose();
+            using (var host = new WebHostBuilder()
+                .UseUrls("http://localhost:5050")
+                .UseKestrel()
+                .ConfigureServices(s => s.AddDatadogTrace(_tracer, serviceNameOverride))
+                .Configure(app => app
+                    .UseDeveloperExceptionPage()
+                    .Run(HandleNormal))
+                .Build())
+            {
+                host.Start();
+                var response = await _client.GetAsync("/");
+                var content = await response.Content.ReadAsStringAsync();
+                _waiter.Wait();
+
+                Assert.Equal(Content, content);
+                var span = _writer.Traces.Single().Single();
+                Assert.Equal("GET", span.Tags[MethodTag]);
+                Assert.Equal("/", span.Tags[UrlTag]);
+                Assert.Equal("200", span.Tags[StatusCodeTag]);
+                Assert.Equal("GET 200", span.ResourceName);
+                Assert.Equal(serviceNameOverride, span.ServiceName);
+            }
         }
 
         [Fact]
@@ -83,6 +114,7 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal("/child", root.Tags[UrlTag]);
             Assert.Equal("200", root.Tags[StatusCodeTag]);
             Assert.Equal("GET 200", root.ResourceName);
+            Assert.Equal(DefaultServiceName, root.ServiceName);
             var child = trace[1];
             Assert.Equal("Child", child.OperationName);
             Assert.Equal(root.Context, child.Context.Parent);
@@ -103,6 +135,7 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal("Invalid", span.GetTag(ErrorMsgTag));
             Assert.False(string.IsNullOrEmpty(span.GetTag(ErrorStackTag)));
             Assert.Equal("GET 500", span.ResourceName);
+            Assert.Equal(DefaultServiceName, span.ServiceName);
         }
 
         [Fact]
@@ -118,6 +151,7 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal("/Test", span.Tags[UrlTag]);
             Assert.Equal("200", span.Tags[StatusCodeTag]);
             Assert.Equal("Test.Index", span.ResourceName);
+            Assert.Equal(DefaultServiceName, span.ServiceName);
         }
 
         [Fact]
@@ -146,6 +180,7 @@ namespace Datadog.Trace.AspNetCore.Tests
                 Assert.Equal("Invalid", span.GetTag(ErrorMsgTag));
                 Assert.False(string.IsNullOrEmpty(span.GetTag(ErrorStackTag)));
                 Assert.Equal("GET 500", span.ResourceName);
+                Assert.Equal(DefaultServiceName, span.ServiceName);
             }
         }
 
@@ -176,6 +211,7 @@ namespace Datadog.Trace.AspNetCore.Tests
                 Assert.Equal("Invalid", span.GetTag(ErrorMsgTag));
                 Assert.False(string.IsNullOrEmpty(span.GetTag(ErrorStackTag)));
                 Assert.Equal("GET 500", span.ResourceName);
+                Assert.Equal(DefaultServiceName, span.ServiceName);
             }
         }
 
