@@ -120,6 +120,65 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal("Test.Index", span.ResourceName);
         }
 
+        [Fact]
+        public async void DeveloperExceptionPage()
+        {
+            _host.Dispose();
+            using (var host = new WebHostBuilder()
+                .UseUrls("http://localhost:5050")
+                .UseKestrel()
+                .ConfigureServices(s => s.AddDatadogTrace(_tracer))
+                .Configure(app => app
+                    .UseDeveloperExceptionPage()
+                    .Map("/error", HandleError))
+                .Build())
+            {
+                host.Start();
+                var response = await _client.GetAsync("/error");
+                _waiter.Wait();
+
+                var span = _writer.Traces.Single().Single();
+                Assert.Equal("GET", span.Tags[MethodTag]);
+                Assert.Equal("/error", span.Tags[UrlTag]);
+                Assert.Equal("500", span.Tags[StatusCodeTag]);
+                Assert.True(span.Error);
+                Assert.Equal(typeof(InvalidOperationException).ToString(), span.GetTag(ErrorTypeTag));
+                Assert.Equal("Invalid", span.GetTag(ErrorMsgTag));
+                Assert.False(string.IsNullOrEmpty(span.GetTag(ErrorStackTag)));
+                Assert.Equal("GET 500", span.ResourceName);
+            }
+        }
+
+        [Fact]
+        public async void ExceptionHandler()
+        {
+            _host.Dispose();
+            using (var host = new WebHostBuilder()
+                .UseUrls("http://localhost:5050")
+                .UseKestrel()
+                .ConfigureServices(s => s.AddDatadogTrace(_tracer))
+                .Configure(app => app
+                    .UseExceptionHandler("/index")
+                    .Map("/error", HandleError)
+                    .Run(HandleNormal))
+                .Build())
+            {
+                host.Start();
+                var response = await _client.GetAsync("/error");
+                _waiter.Wait();
+
+                var span = _writer.Traces.Single().Single();
+                Assert.Equal("GET", span.Tags[MethodTag]);
+                Assert.Equal("/error", span.Tags[UrlTag]);
+                Assert.Equal("500", span.Tags[StatusCodeTag]);
+                Assert.True(span.Error);
+                Assert.Equal(typeof(InvalidOperationException).ToString(), span.GetTag(ErrorTypeTag));
+                Assert.Equal("Invalid", span.GetTag(ErrorMsgTag));
+                Assert.False(string.IsNullOrEmpty(span.GetTag(ErrorStackTag)));
+                Assert.Equal("GET 500", span.ResourceName);
+            }
+        }
+
         private static async Task HandleNormal(HttpContext context)
         {
                 await context.Response.WriteAsync(Content);

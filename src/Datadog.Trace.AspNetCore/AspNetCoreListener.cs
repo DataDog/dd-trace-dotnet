@@ -67,15 +67,20 @@ namespace Datadog.Trace.AspNetCore
         [DiagnosticName("Microsoft.AspNetCore.Hosting.UnhandledException")]
         public void OnUnhandledException(HttpContext httpContext, Exception exception)
         {
-            httpContext.Items.TryGetValue(ScopeKey, out object value);
-            var scope = value as Scope;
-            if (scope == null)
-            {
-                return;
-            }
-
-            scope.Span.SetException(exception);
+            OnException(httpContext, exception);
             OnEndRequest(httpContext);
+        }
+
+        [DiagnosticName("Microsoft.AspNetCore.Diagnostics.HandledException")]
+        public void OnDiagnosticsHandledException(HttpContext httpContext, Exception exception)
+        {
+            OnException(httpContext, exception);
+        }
+
+        [DiagnosticName("Microsoft.AspNetCore.Diagnostics.UnhandledException")]
+        public void OnDiagnosticsUnhandledException(HttpContext httpContext, Exception exception)
+        {
+            OnException(httpContext, exception);
         }
 
         [DiagnosticName("Microsoft.AspNetCore.Mvc.BeforeAction")]
@@ -96,5 +101,17 @@ namespace Datadog.Trace.AspNetCore
             action = action ?? "UnknownAction";
             scope.Span.ResourceName = $"{controller}.{action}";
        }
+
+        private void OnException(HttpContext httpContext, Exception exception)
+        {
+            httpContext.Items.TryGetValue(ScopeKey, out object value);
+            var scope = value as Scope;
+            if (scope == null)
+            {
+                return;
+            }
+
+            scope.Span.SetException(exception);
+        }
     }
 }
