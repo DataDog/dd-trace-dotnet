@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace.AspNetCore.Tests\EndRequestWaiter.cs" Link="EndRequestWaiter.cs" />
+    <Compile Include="..\Datadog.Trace.AspNetCore.Tests\FunctionalTests.cs" Link="FunctionalTests.cs" />
+    <Compile Include="..\Datadog.Trace.AspNetCore.Tests\GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
+    <Compile Include="..\Datadog.Trace.AspNetCore.Tests\MockWriter.cs" Link="MockWriter.cs" />
+    <Compile Include="..\Datadog.Trace.AspNetCore.Tests\TestController.cs" Link="TestController.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="1.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="1.1.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <PackageReference Include="System.Reactive" Version="3.1.1" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.0.2" />
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.AspNetCore\Datadog.Trace.AspNetCore.csproj" />
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+</Project>

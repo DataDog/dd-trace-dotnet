@@ -86,7 +86,7 @@ namespace Datadog.Trace
                 case DDTags.ResourceName:
                     _scope.Span.ResourceName = value;
                     return this;
-                case Tags.Error:
+                case OpenTracing.Tags.Error:
                     _scope.Span.Error = value == "True";
                     return this;
                 case DDTags.SpanType:

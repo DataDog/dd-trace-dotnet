@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Datadog.Trace.AspNetCore</PackageId>
+    <PackageVersion>0.1.2</PackageVersion>
+    <Authors>Datadog</Authors>
+    <Description>Datadog Trace ASP.NET Core integration</Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>Alpha release</PackageReleaseNotes>
+    <Copyright>Datadog, Inc. 2017</Copyright>
+    <PackageTags></PackageTags>
+    <!-- Use the python license's url while the project's github is not public -->
+    <PackageLicenseUrl>https://github.com/DataDog/dd-trace-py/blob/master/LICENSE</PackageLicenseUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Routing.Abstractions" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DiagnosticAdapter" Version="1.0.0" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+</Project>
