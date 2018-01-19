@@ -56,6 +56,11 @@ namespace Datadog.Trace.AspNetCore
             }
 
             scope.Span.SetTag(Tags.HttpStatusCode, httpContext.Response.StatusCode.ToString());
+            if (string.IsNullOrEmpty(scope.Span.ResourceName))
+            {
+                scope.Span.ResourceName = $"{httpContext.Request.Method} {httpContext.Response.StatusCode}";
+            }
+
             scope.Dispose();
         }
 

@@ -65,6 +65,7 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal("GET", span.Tags[MethodTag]);
             Assert.Equal("/", span.Tags[UrlTag]);
             Assert.Equal("200", span.Tags[StatusCodeTag]);
+            Assert.Equal("GET 200", span.ResourceName);
         }
 
         [Fact]
@@ -81,6 +82,7 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal("GET", root.Tags[MethodTag]);
             Assert.Equal("/child", root.Tags[UrlTag]);
             Assert.Equal("200", root.Tags[StatusCodeTag]);
+            Assert.Equal("GET 200", root.ResourceName);
             var child = trace[1];
             Assert.Equal("Child", child.OperationName);
             Assert.Equal(root.Context, child.Context.Parent);
@@ -100,6 +102,7 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal(typeof(InvalidOperationException).ToString(), span.GetTag(ErrorTypeTag));
             Assert.Equal("Invalid", span.GetTag(ErrorMsgTag));
             Assert.False(string.IsNullOrEmpty(span.GetTag(ErrorStackTag)));
+            Assert.Equal("GET 500", span.ResourceName);
         }
 
         [Fact]
