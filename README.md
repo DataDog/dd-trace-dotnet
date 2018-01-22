@@ -91,29 +91,17 @@ instrument your code and should be accessed exclusively through the
 `Tracer` created with the default settings but you may instantiate a new one
 with customized values with the `Tracer.Create` method.
 
-To get a tracer with default parameters (i.e. the agent endpoint set to
-`http://localhost:8126`, and the default service name set to the name of the
-AppDomain):
+`Tracer.Create` takes a number of optional parameters that can be used to
+customize the returned `Tracer`:
 
-```csharp
-Tracer.Instance = Tracer.Create();
-```
+- agentEndpoint: the agent endpoint where the traces will be sent (default is http://localhost:8126)
+- defaultServiceName: default name of the service (default is the name of the executing assembly)
+- isDebugEnabled: turns on all debug logging, this may have an impact on application performance (default is false)
 
-Customize your tracer object by adding optional parameters to the
-`Tracer.Create` call:
-
-By default the service name is set to the name of the AppDomain, choose a
-custom name with the defaultServiceName parameter:
+For example to set a custom service name:
 
 ```csharp
 Tracer.Instance = Tracer.Create(defaultServiceName: "YourServiceName")
-```
-
-By default, the trace endpoint is set to `http://localhost:8126`, send traces
-to a different endpoint with the agentEndpoint parameter:
-
-```csharp
-Tracer.Instance = Tracer.Create(agentEndpoint: new Uri("http://myendpoint:port"));
 ```
 
 #### In process propagation
@@ -183,8 +171,8 @@ scope.Span = "ResourceName";
 Thread.Sleep(1000);
 
 
-// Dispose closes the underlying span, this sets its duration and sends it to the agent (if you don't call Dispose the data will never be sent to Datadog)
-scope.Dispose();
+// Close closes the underlying span, this sets its duration and sends it to the agent (if you don't call Close the data will never be sent to Datadog)
+scope.Close();
 ```
 
 You may add custom tags by calling `Span.SetTag`:
@@ -198,24 +186,7 @@ You should not have to explicitly declare parent/children relationship between y
 
 ```csharp
 Span parent = tracer.StartSpan("Parent");
-Span child = tracer.StartSpan("Child", parent: parent.Context);
-```
-
-#### Advanced Usage
-
-When creating a tracer, add some metadata to your services to customize how they will appear in your Datadog application:
-
-```csharp
-var serviceInfoList = new List<ServiceInfo>
-{
-    new ServiceInfo
-    {
-        App = "MyAppName",
-            AppType = "web",
-            ServiceName = "MyServiceName"
-    }
-};
-Tracer tracer = Tracer.CreateTracer(serviceInfoList: serviceInfoList);
+Span child = tracer.StartSpan("Child", childOf: parent.Context);
 ```
 
 ## Development
