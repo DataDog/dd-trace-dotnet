@@ -19,9 +19,9 @@ namespace Datadog.Trace
             _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec(_tracer) } };
         }
 
-        public OpenTracingTracer(IAgentWriter agentWriter, List<ServiceInfo> serviceInfo = null, string defaultServiceName = null, bool isDebugEnabled = false)
+        public OpenTracingTracer(IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            _tracer = new Tracer(agentWriter, serviceInfo, defaultServiceName, isDebugEnabled);
+            _tracer = new Tracer(agentWriter, defaultServiceName, isDebugEnabled);
             _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec(_tracer) } };
         }
 

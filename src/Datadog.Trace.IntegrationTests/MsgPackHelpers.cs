@@ -68,15 +68,6 @@ namespace Datadog.Trace.IntegrationTests
             return obj.AsList().First().AsDictionary()["meta"].AsDictionary().ToDictionary(kv => kv.Key.AsString(), kv => kv.Value.AsString());
         }
 
-        public static IEnumerable<ServiceInfo> ServiceInfos(this MessagePackObjectDictionary obj)
-        {
-            foreach (var kv in obj)
-            {
-                var s = kv.Value.AsDictionary();
-                yield return new ServiceInfo { App = s["app"].AsString(), AppType = s["app_type"].AsString(), ServiceName = kv.Key.AsString() };
-            }
-        }
-
         public static void AssertSpanEqual(Span expected, MessagePackObject actual)
         {
             Assert.Equal(expected.Context.TraceId, actual.TraceId());

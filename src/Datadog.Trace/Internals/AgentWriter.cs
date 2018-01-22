@@ -11,7 +11,6 @@ namespace Datadog.Trace
         private static ILog _log = LogProvider.For<AgentWriter>();
 
         private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(1000);
-        private readonly AgentWriterBuffer<ServiceInfo> _servicesBuffer = new AgentWriterBuffer<ServiceInfo>(100);
         private readonly IApi _api;
         private readonly Task _flushTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
@@ -20,15 +19,6 @@ namespace Datadog.Trace
         {
             _api = api;
             _flushTask = Task.Run(FlushTracesTaskLoop);
-        }
-
-        public void WriteServiceInfo(ServiceInfo serviceInfo)
-        {
-            var success = _servicesBuffer.Push(serviceInfo);
-            if (!success)
-            {
-                _log.Debug("ServiceInfo buffer is full, dropping it.");
-            }
         }
 
         public void WriteTrace(List<Span> trace)
@@ -56,13 +46,6 @@ namespace Datadog.Trace
             if (traces.Any())
             {
                 await _api.SendTracesAsync(traces);
-            }
-
-            var services = _servicesBuffer.Pop();
-            if (services.Any())
-            {
-                // TODO:bertrand batch these calls
-                await Task.WhenAll(services.Select(_api.SendServiceAsync));
             }
         }
 
