@@ -31,13 +31,21 @@ namespace Datadog.Trace
         /// <summary>
         /// Closes the current scope and makes its parent scope active
         /// </summary>
-        public void Dispose()
+        public void Close()
         {
             _scopeManager.Close(this);
             if (_finishOnClose)
             {
                 Span.Finish();
             }
+        }
+
+        /// <summary>
+        /// Closes the current scope and makes its parent scope active
+        /// </summary>
+        public void Dispose()
+        {
+            Close();
         }
     }
 }
