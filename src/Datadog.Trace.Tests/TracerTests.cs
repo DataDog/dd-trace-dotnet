@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_SetParentManually_ParentIsSet()
         {
             var parent = _tracer.StartSpan("Parent");
-            var child = _tracer.StartActive("Child", parent: parent.Context);
+            var child = _tracer.StartActive("Child", childOf: parent.Context);
 
             Assert.Equal(parent.Context, child.Span.Context.Parent);
         }
