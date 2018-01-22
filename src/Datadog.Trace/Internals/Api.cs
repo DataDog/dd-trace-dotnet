@@ -12,7 +12,6 @@ namespace Datadog.Trace
     internal class Api : IApi
     {
         private const string TracesPath = "/v0.3/traces";
-        private const string ServicesPath = "/v0.3/services";
 
 #if !NETSTANDARD2_0
         private static readonly string _frameworkDescription = string.Format(".NET Framework {0}", typeof(object).GetTypeInfo().Assembly.GetName().Version);
@@ -22,24 +21,17 @@ namespace Datadog.Trace
         private static SerializationContext _serializationContext;
 
         private Uri _tracesEndpoint;
-        private Uri _servicesEndpoint;
         private HttpClient _client;
 
         static Api()
         {
             _serializationContext = new SerializationContext();
             var spanSerializer = new SpanMessagePackSerializer(_serializationContext);
-            var serviceSerializer = new ServiceInfoMessagePackSerializer(_serializationContext);
             _serializationContext.ResolveSerializer += (sender, eventArgs) =>
             {
                 if (eventArgs.TargetType == typeof(Span))
                 {
                     eventArgs.SetSerializer(spanSerializer);
-                }
-
-                if (eventArgs.TargetType == typeof(ServiceInfo))
-                {
-                    eventArgs.SetSerializer(serviceSerializer);
                 }
             };
         }
@@ -56,7 +48,6 @@ namespace Datadog.Trace
             }
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
-            _servicesEndpoint = new Uri(baseEndpoint, ServicesPath);
 
             // TODO:bertrand add header for os version
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang", ".NET");
@@ -71,11 +62,6 @@ namespace Datadog.Trace
         public async Task SendTracesAsync(IList<List<Span>> traces)
         {
             await SendAsync(traces, _tracesEndpoint);
-        }
-
-        public async Task SendServiceAsync(ServiceInfo service)
-        {
-            await SendAsync(service, _servicesEndpoint);
         }
 
         private async Task SendAsync<T>(T value, Uri endpoint)

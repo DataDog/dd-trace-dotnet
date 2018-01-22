@@ -23,20 +23,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public async Task WriteServiceInfo_2Services_SendToApi()
-        {
-            var serviceInfo = new ServiceInfo { App = "AA", AppType = "BB", ServiceName = "CC" };
-            _agentWriter.WriteServiceInfo(serviceInfo);
-            await Task.Delay(TimeSpan.FromSeconds(1.5));
-            _api.Verify(x => x.SendServiceAsync(It.Is<ServiceInfo>(y => y.Equals(serviceInfo))), Times.Once);
-
-            serviceInfo = new ServiceInfo { App = "DD", AppType = "EE", ServiceName = "FF" };
-            _agentWriter.WriteServiceInfo(serviceInfo);
-            await Task.Delay(TimeSpan.FromSeconds(1.5));
-            _api.Verify(x => x.SendServiceAsync(It.Is<ServiceInfo>(y => y.Equals(serviceInfo))), Times.Once);
-        }
-
-        [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
         {
             // TODO:bertrand it is too complicated to setup such a simple test

@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -31,8 +33,17 @@ namespace Datadog.Trace.Tests
 
     public class ApiTests
     {
+        private Mock<IAgentWriter> _writerMock;
+        private Tracer _tracer;
+
+        public ApiTests()
+        {
+            _writerMock = new Mock<IAgentWriter>();
+            _tracer = new Tracer(_writerMock.Object);
+        }
+
         [Fact]
-        public async Task SendServiceAsync_200OK_AllGood()
+        public async Task SendTraceAsync_200OK_AllGood()
         {
             var response = new HttpResponseMessage
             {
@@ -41,13 +52,13 @@ namespace Datadog.Trace.Tests
             var handler = new SetResponseHandler(response);
             var api = new Api(new Uri("http://localhost:1234"), handler);
 
-            await api.SendServiceAsync(new ServiceInfo());
+            await api.SendTracesAsync(new List<List<Span>> { new List<Span> { _tracer.StartSpan("Operation") } });
 
             Assert.Equal(1, handler.RequestsCount);
         }
 
         [Fact]
-        public async Task SendServiceAsync_500_ErrorIsCaught()
+        public async Task SendTracesAsync_500_ErrorIsCaught()
         {
             var response = new HttpResponseMessage
             {
@@ -56,7 +67,7 @@ namespace Datadog.Trace.Tests
             var handler = new SetResponseHandler(response);
             var api = new Api(new Uri("http://localhost:1234"), handler);
 
-            await api.SendServiceAsync(new ServiceInfo());
+            await api.SendTracesAsync(new List<List<Span>> { new List<Span> { _tracer.StartSpan("Operation") } });
 
             Assert.Equal(1, handler.RequestsCount);
 

@@ -7,8 +7,6 @@ namespace Datadog.Trace
     {
         void WriteTrace(List<Span> trace);
 
-        void WriteServiceInfo(ServiceInfo serviceInfo);
-
         Task FlushAndCloseAsync();
     }
 }

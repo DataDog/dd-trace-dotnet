@@ -14,7 +14,7 @@ namespace Datadog.Trace.IntegrationTests
         public OpenTracingSendTracesToAgent()
         {
             _httpRecorder = new RecordHttpHandler();
-            _tracer = OpenTracingTracerFactory.CreateTracer(new Uri("http://localhost:8126"), null, null, _httpRecorder);
+            _tracer = OpenTracingTracerFactory.CreateTracer(new Uri("http://localhost:8126"), null, _httpRecorder);
         }
 
         [Fact]
@@ -37,12 +37,9 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public async void CustomServiceName()
         {
-            const string App = "MyApp";
-            const string AppType = "db";
             const string ServiceName = "MyService";
-            var serviceList = new List<ServiceInfo> { new ServiceInfo { App = App, AppType = AppType, ServiceName = ServiceName } };
             _httpRecorder = new RecordHttpHandler();
-            _tracer = OpenTracingTracerFactory.CreateTracer(new Uri("http://localhost:8126"), serviceList, null, _httpRecorder);
+            _tracer = OpenTracingTracerFactory.CreateTracer(new Uri("http://localhost:8126"), null, _httpRecorder);
 
             var span = (OpenTracingSpan)_tracer.BuildSpan("Operation")
                 .WithTag(DDTags.ResourceName, "This is a resource")
@@ -51,18 +48,13 @@ namespace Datadog.Trace.IntegrationTests
             span.Finish();
 
             // Check that the HTTP calls went as expected
-            await _httpRecorder.WaitForCompletion(2);
-            Assert.Equal(2, _httpRecorder.Requests.Count);
-            Assert.Equal(2, _httpRecorder.Responses.Count);
+            await _httpRecorder.WaitForCompletion(1);
+            Assert.Equal(1, _httpRecorder.Requests.Count);
+            Assert.Equal(1, _httpRecorder.Responses.Count);
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
             MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
-
-            var serviceInfo = _httpRecorder.Services.Select(x => x.ServiceInfos().Single()).Single();
-            Assert.Equal(ServiceName, serviceInfo.ServiceName);
-            Assert.Equal(App, serviceInfo.App);
-            Assert.Equal(AppType, serviceInfo.AppType);
         }
 
         [Fact]

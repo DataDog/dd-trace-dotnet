@@ -17,10 +17,6 @@ namespace Datadog.Trace.AspNetCore.Tests
             return Task.FromResult(true);
         }
 
-        public void WriteServiceInfo(ServiceInfo serviceInfo)
-        {
-        }
-
         public void WriteTrace(List<Span> trace)
         {
             Traces.Add(trace);
