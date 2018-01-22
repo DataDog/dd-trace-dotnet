@@ -54,6 +54,26 @@ And check that the status is "running".
 
 The logs are available at the path you configured in `trace.config` `log_file` above.
 
+### Automatic Instrumentation
+
+#### ASP.NET Core
+
+To instrument you ASP.NET Core application install the
+`Datadog.Trace.AspNetCore` NuGet package and the following line to your
+`ConfigureServices` method:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services
+        .AddDatadogTrace()
+}
+```
+
+Once your application is configured this way all the requests to your
+application will be traced and the active span will automatically be set to the
+currently executing request.
+
 ### Manual Instrumentation
 
 #### Introduction
