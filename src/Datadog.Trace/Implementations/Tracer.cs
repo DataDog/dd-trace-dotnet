@@ -94,15 +94,15 @@ namespace Datadog.Trace
         /// This is a shortcut for <see cref="StartSpan"/> and <see cref="ActivateSpan"/>, it creates a new span with the given parameters and makes it active.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
-        /// <param name="parent">The span's parent</param>
+        /// <param name="childOf">The span's parent</param>
         /// <param name="serviceName">The span's service name</param>
         /// <param name="startTime">An explicit start time for that span</param>
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
         /// <returns>A scope wrapping the newly created span</returns>
-        public Scope StartActive(string operationName, SpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
+        public Scope StartActive(string operationName, SpanContext childOf = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
         {
-            var span = StartSpan(operationName, parent, serviceName, startTime, ignoreActiveScope);
+            var span = StartSpan(operationName, childOf, serviceName, startTime, ignoreActiveScope);
             return _scopeManager.Activate(span, finishOnClose);
         }
 
@@ -110,19 +110,19 @@ namespace Datadog.Trace
         /// This create a Span with the given parameters
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
-        /// <param name="parent">The span's parent</param>
+        /// <param name="childOf">The span's parent</param>
         /// <param name="serviceName">The span's service name</param>
         /// <param name="startTime">An explicit start time for that span</param>
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <returns>The newly created span</returns>
-        public Span StartSpan(string operationName, SpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
+        public Span StartSpan(string operationName, SpanContext childOf = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
         {
-            if (parent == null && !ignoreActiveScope)
+            if (childOf == null && !ignoreActiveScope)
             {
-                parent = _scopeManager.Active?.Span?.Context;
+                childOf = _scopeManager.Active?.Span?.Context;
             }
 
-            var span = new Span(this, parent, operationName, serviceName, startTime);
+            var span = new Span(this, childOf, operationName, serviceName, startTime);
             span.TraceContext.AddSpan(span);
             return span;
         }
