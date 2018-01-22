@@ -66,7 +66,19 @@ namespace Datadog.Trace.Tests
             var scope = _tracer.StartActive("Operation");
             Assert.False(scope.Span.IsFinished);
 
-            scope.Dispose();
+            scope.Close();
+
+            Assert.True(scope.Span.IsFinished);
+            Assert.Null(_tracer.ActiveScope);
+        }
+
+        [Fact]
+        public void StartActive_FinishOnClose_SpanIsFinishedWhenScopeIsDisposed()
+        {
+            Scope scope;
+            using(scope = _tracer.StartActive("Operation")){
+                Assert.False(scope.Span.IsFinished);
+            }
 
             Assert.True(scope.Span.IsFinished);
             Assert.Null(_tracer.ActiveScope);
