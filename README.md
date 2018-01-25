@@ -193,9 +193,17 @@ Span child = tracer.StartSpan("Child", childOf: parent.Context);
 
 ### Dependencies
 
+#### Windows
+
 In order to build and run all the projects and test included in this repo you need to have Visual Studio 2017 as well as the .Net Core 2.+ SDK installed on your machine.
 
-Alternatively for non Windows users, it's possible to build the library only for netstandard2.0 and run the tests for the .net core runtime. This should prove enough for most development tasks and the CI will run the tests on the full .Net Framework.
+#### Unix
+
+Make sure you have installed:
+- The .Net Core 2 SDK 
+- Mono
+
+Because some projects target the desktop framework and of [this bug](https://github.com/dotnet/sdk/issues/335), you'll need [this workaround](https://github.com/dotnet/netcorecli-fsc/wiki/.NET-Core-SDK-rc4#using-net-framework-as-targets-framework-the-osxunix-build-fails) to make the build work.
 
 ### Setup
 
@@ -209,11 +217,19 @@ git submodule update
 
 ### Running tests
 
-If you are using Visual Studio, the tests should appear in the test explorer and can be run from there.
+The tests require to have the Datadog trace agent running on the same machine and listening on port 8126.
 
-The tests contained in the projects "Datadog.Trace.IntegrationTests" and "Datadog.Trace.IntegrationTests.Net45" require to have the Datadog trace agent running on the same machine and listening on the port 8126.
+To build and run the tests on Windows:
 
-If you are not using Visual Studio, you can run the tests in "Datadog.Trace.Tests" and "Datadog.Trace.IntegrationTests" with the `dotnet test` command.
+```
+./build.ps1
+```
+
+Or on Unix systems:
+
+```
+./build.sh
+````
 
 ## Further Reading
 
