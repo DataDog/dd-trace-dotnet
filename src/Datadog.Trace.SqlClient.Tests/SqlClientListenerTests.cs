@@ -1,4 +1,5 @@
 using System;
+using System.Data.SqlClient;
 using Xunit;
 
 namespace Datadog.Trace.SqlClient.Tests
@@ -18,6 +19,14 @@ namespace Datadog.Trace.SqlClient.Tests
         [Fact]
         public void Test1()
         {
+            using (var connection = new SqlConnection())
+            {
+                SqlCommand command = new SqlCommand("Select * from lol", connection);
+
+                // connection.Open();
+                var reader = command.ExecuteReader();
+                reader.Close();
+            }
         }
     }
 }
