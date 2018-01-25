@@ -9,6 +9,16 @@ Task("Restore")
   NuGetRestore("./src/Datadog.Trace.sln");
 });
 
+Task("Clean")
+  .Does(() =>
+{
+  DotNetCoreClean("./src",
+    new DotNetCoreCleanSettings()
+    {
+      Configuration = configuration
+    });
+});
+
 Task("Build")
   .IsDependentOn("Restore")
   .Does(() =>

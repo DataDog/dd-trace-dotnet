@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNetCore10.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.SqlClient", "Datadog.Trace.SqlClient\Datadog.Trace.SqlClient.csproj", "{C831ED09-8EE8-4B78-A232-28997E9B94FF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.SqlClient.Tests", "Datadog.Trace.SqlClient.Tests\Datadog.Trace.SqlClient.Tests.csproj", "{7B76D6FD-60D9-4998-A723-2A5683588321}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -152,6 +154,18 @@ Global
 		{C831ED09-8EE8-4B78-A232-28997E9B94FF}.Release|x64.Build.0 = Release|x64
 		{C831ED09-8EE8-4B78-A232-28997E9B94FF}.Release|x86.ActiveCfg = Release|x86
 		{C831ED09-8EE8-4B78-A232-28997E9B94FF}.Release|x86.Build.0 = Release|x86
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Debug|x64.ActiveCfg = Debug|x64
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Debug|x64.Build.0 = Debug|x64
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Debug|x86.ActiveCfg = Debug|x86
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Debug|x86.Build.0 = Debug|x86
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Release|x64.ActiveCfg = Release|x64
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Release|x64.Build.0 = Release|x64
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Release|x86.ActiveCfg = Release|x86
+		{7B76D6FD-60D9-4998-A723-2A5683588321}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

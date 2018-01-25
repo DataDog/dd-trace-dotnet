@@ -15,7 +15,6 @@
     <Compile Include="..\Datadog.Trace.AspNetCore.Tests\EndRequestWaiter.cs" Link="EndRequestWaiter.cs" />
     <Compile Include="..\Datadog.Trace.AspNetCore.Tests\FunctionalTests.cs" Link="FunctionalTests.cs" />
     <Compile Include="..\Datadog.Trace.AspNetCore.Tests\GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
-    <Compile Include="..\Datadog.Trace.AspNetCore.Tests\MockWriter.cs" Link="MockWriter.cs" />
     <Compile Include="..\Datadog.Trace.AspNetCore.Tests\TestController.cs" Link="TestController.cs" />
   </ItemGroup>
 
@@ -33,6 +32,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.AspNetCore\Datadog.Trace.AspNetCore.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestUtils\Datadog.Trace.TestUtils.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
