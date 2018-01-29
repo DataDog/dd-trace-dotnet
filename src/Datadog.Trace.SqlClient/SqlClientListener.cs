@@ -7,40 +7,36 @@ using Microsoft.Extensions.DiagnosticAdapter;
 internal class SqlClientListener
 {
     private readonly Tracer _tracer;
+    private readonly string _serviceName;
 
-    public SqlClientListener(Tracer tracer)
+    public SqlClientListener(Tracer tracer, string serviceName)
     {
         _tracer = tracer;
+        _serviceName = serviceName;
     }
 
     [DiagnosticName("System.Data.SqlClient.WriteCommandBefore")]
-    public void OnWriteCommandBefore(Guid operationId, string operation, Guid connectionId, SqlCommand command)
+    public void OnWriteCommandBefore(SqlCommand command)
     {
-        Console.WriteLine($"OperationId:{operationId}");
-        Console.WriteLine($"Operation:{operation}");
-        Console.WriteLine($"ConnectionId:{connectionId}");
-        Console.WriteLine($"Command:{command.CommandText}");
+        var scope = _tracer.StartActive("sqlclient.command", serviceName: _serviceName);
+        var span = scope.Span;
+        span.ResourceName = command?.CommandText;
+        span.SetTag(Tags.SqlQuery, command?.CommandText);
+        span.Type = "sql";
     }
 
     [DiagnosticName("System.Data.SqlClient.WriteCommandAfter")]
-    public void OnWriteCommandAfter(Guid operationId, string operation, Guid connectionId, SqlCommand command, IDictionary<object, object> statistics, long timestamp)
+    public void OnWriteCommandAfter(SqlCommand command, IDictionary<object, object> statistics)
     {
-        Console.WriteLine($"OperationId:{operationId}");
-        Console.WriteLine($"Operation:{operation}");
-        Console.WriteLine($"ConnectionId:{connectionId}");
-        Console.WriteLine($"Command:{command.CommandText}");
-        Console.WriteLine($"Statistics:{string.Join(" ", statistics.Keys)}");
-        Console.WriteLine($"Timestamp:{timestamp}");
+        _tracer.ActiveScope.Close();
     }
 
     [DiagnosticName("System.Data.SqlClient.WriteCommandError")]
-    public void OnWriteCommandError(Guid operationId, string operation, Guid connectionId, SqlCommand command, Exception exception, long timestamp)
+    public void OnWriteCommandError(SqlCommand command, Exception exception)
     {
-        Console.WriteLine($"OperationId:{operationId}");
-        Console.WriteLine($"Operation:{operation}");
-        Console.WriteLine($"ConnectionId:{connectionId}");
-        Console.WriteLine($"Command:{command.CommandText}");
-        Console.WriteLine($"Exception:{exception.Message}");
-        Console.WriteLine($"Timstamp:{timestamp}");
+        using (var scope = _tracer.ActiveScope)
+        {
+            scope.Span.SetException(exception);
+        }
     }
 }

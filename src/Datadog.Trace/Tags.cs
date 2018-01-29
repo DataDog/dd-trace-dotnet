@@ -34,5 +34,15 @@
         /// The stack trace of an exception
         /// </summary>
         public const string ErrorStack = "error.stack";
+
+        /// <summary>
+        /// The query text
+        /// </summary>
+        public const string SqlQuery = "sql.query";
+
+        /// <summary>
+        /// The number of rows returned by a query
+        /// </summary>
+        public const string SqlRows = "sql.rows";
     }
 }

@@ -2,23 +2,32 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-internal class GlobalListener : IObserver<DiagnosticListener>
+internal class GlobalListener : IObserver<DiagnosticListener>, IDisposable
 {
     private readonly string _sourceName;
     private readonly object _target;
+    private List<IDisposable> _subscriptions = new List<IDisposable>();
 
     public GlobalListener(string sourceName, object target)
     {
         _sourceName = sourceName;
         _target = target;
-        DiagnosticListener.AllListeners.Subscribe(this);
+        _subscriptions.Add(DiagnosticListener.AllListeners.Subscribe(this));
+    }
+
+    public void Dispose()
+    {
+        foreach (var subscription in _subscriptions)
+        {
+            subscription.Dispose();
+        }
     }
 
     void IObserver<DiagnosticListener>.OnNext(DiagnosticListener diagnosticListener)
     {
         if (diagnosticListener.Name == _sourceName)
         {
-            diagnosticListener.SubscribeWithAdapter(_target);
+            _subscriptions.Add(diagnosticListener.SubscribeWithAdapter(_target));
         }
     }
 

@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.TestUtils\Datadog.Trace.TestUtils.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.SqlClient\Datadog.Trace.SqlClient.csproj" />
   </ItemGroup>
