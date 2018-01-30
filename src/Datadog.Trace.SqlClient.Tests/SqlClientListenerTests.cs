@@ -8,7 +8,7 @@ namespace Datadog.Trace.SqlClient.Tests
 {
     public class SqlClientListenerTests : IDisposable
     {
-        private const string InitConnectionString = "Server=172.29.111.140;User Id=SA;Password=password!123";
+        private const string InitConnectionString = "Server=172.29.104.216;User Id=SA;Password=password!123";
         private const string ConnectionString = InitConnectionString + ";Database=Test";
         private const string SqlRowsTag = "sql.rows";
         private const string SqlQueryTag = "sql.query";
