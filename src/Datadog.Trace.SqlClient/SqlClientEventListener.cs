@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.Tracing;
 using System.Globalization;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.SqlClient
 {
@@ -20,6 +21,8 @@ namespace Datadog.Trace.SqlClient
         /// Defines EventId for EndExecute (Reader, Scalar, NonQuery, XmlReader).
         /// </summary>
         private const int EndExecuteEventId = 2;
+
+        private static ILog _log = LogProvider.For<SqlClientEventListener>();
 
         private readonly Tracer _tracer;
 
@@ -53,24 +56,9 @@ namespace Datadog.Trace.SqlClient
                         break;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO logme
-            }
-        }
-
-        private void ProcessEndExecute(EventWrittenEventArgs eventData)
-        {
-            using (var scope = _tracer.ActiveScope)
-            {
-                int compositeState = Convert.ToInt32(eventData.Payload[1], CultureInfo.InvariantCulture);
-                bool error = (compositeState & 1) == 0;
-                scope.Span.Error = error;
-                var sqlExceptionNumber = Convert.ToInt32(eventData.Payload[2], CultureInfo.InvariantCulture);
-                if (sqlExceptionNumber != 0)
-                {
-                    scope.Span.SetTag("sql.exceptionNumber", sqlExceptionNumber.ToString());
-                }
+                _log.ErrorException("An error occured while processing SqlClient ETW events", ex);
             }
         }
 
@@ -88,6 +76,21 @@ namespace Datadog.Trace.SqlClient
 
             span.SetTag(Tags.SqlDatabase, database);
             span.Type = "sql";
+        }
+
+        private void ProcessEndExecute(EventWrittenEventArgs eventData)
+        {
+            using (var scope = _tracer.ActiveScope)
+            {
+                int compositeState = Convert.ToInt32(eventData.Payload[1], CultureInfo.InvariantCulture);
+                bool error = (compositeState & 1) == 0;
+                scope.Span.Error = error;
+                var sqlExceptionNumber = Convert.ToInt32(eventData.Payload[2], CultureInfo.InvariantCulture);
+                if (sqlExceptionNumber != 0)
+                {
+                    scope.Span.SetTag("sql.exceptionNumber", sqlExceptionNumber.ToString());
+                }
+            }
         }
     }
 }

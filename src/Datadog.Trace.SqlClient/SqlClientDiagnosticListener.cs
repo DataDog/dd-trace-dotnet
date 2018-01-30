@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Logging;
 using Microsoft.Extensions.DiagnosticAdapter;
 
 namespace Datadog.Trace.SqlClient
 {
     internal class SqlClientDiagnosticListener
     {
+        private static ILog _log = LogProvider.For<SqlClientDiagnosticListener>();
         private readonly Tracer _tracer;
         private readonly string _serviceName;
 
@@ -37,7 +39,7 @@ namespace Datadog.Trace.SqlClient
             _currentSpans.TryGetValue(command, out Span span);
             if (span == null)
             {
-                // TODO log
+                _log.Warn("No span corresponding to the SqlCommand in OnWriteCommandAfter");
                 return;
             }
 
@@ -50,7 +52,7 @@ namespace Datadog.Trace.SqlClient
             _currentSpans.TryGetValue(command, out Span span);
             if (span == null)
             {
-                // TODO log
+                _log.Warn("No span corresponding to the SqlCommand in OnWriteCommandAfter");
                 return;
             }
 
