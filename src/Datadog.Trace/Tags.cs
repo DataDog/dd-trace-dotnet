@@ -44,5 +44,10 @@
         /// The number of rows returned by a query
         /// </summary>
         public const string SqlRows = "sql.rows";
+
+        /// <summary>
+        /// The name of the database
+        /// </summary>
+        public const string SqlDatabase = "sql.db";
     }
 }

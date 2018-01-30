@@ -26,6 +26,7 @@ internal class SqlClientListener
         _currentSpans.Add(command, span);
         span.ResourceName = command?.CommandText;
         span.SetTag(Tags.SqlQuery, command?.CommandText);
+        span.SetTag(Tags.SqlDatabase, command?.Connection?.Database);
         span.Type = "sql";
     }
 

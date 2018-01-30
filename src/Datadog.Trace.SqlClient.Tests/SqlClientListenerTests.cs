@@ -12,9 +12,12 @@ namespace Datadog.Trace.SqlClient.Tests
         private const string ConnectionString = InitConnectionString + ";Database=Test";
         private const string SqlRowsTag = "sql.rows";
         private const string SqlQueryTag = "sql.query";
+        private const string SqlDatabaseTag = "sql.db";
         private const string ErrorMsgTag = "error.msg";
         private const string ErrorTypeTag = "error.type";
         private const string ErrorStackTag = "error.stack";
+        private const string SqlSpanType = "sql";
+        private const string DatabaseName = "Test";
 
         private static readonly string[] _initDb = new string[]
         {
@@ -90,7 +93,8 @@ VALUES
             var span = _writer.Traces.Single().Single();
             Assert.Equal(query, span.ResourceName);
             Assert.Equal(query, span.GetTag(SqlQueryTag));
-            Assert.Equal("sql", span.Type);
+            Assert.Equal(DatabaseName, span.GetTag(SqlDatabaseTag));
+            Assert.Equal(SqlSpanType, span.Type);
             Assert.False(span.Error);
             Assert.Equal("testhost", span.ServiceName);
         }
@@ -115,7 +119,8 @@ VALUES
             var span = _writer.Traces.Single().Single();
             Assert.Equal(query, span.ResourceName);
             Assert.Equal(query, span.GetTag(SqlQueryTag));
-            Assert.Equal("sql", span.Type);
+            Assert.Equal(DatabaseName, span.GetTag(SqlDatabaseTag));
+            Assert.Equal(SqlSpanType, span.Type);
             Assert.True(span.Error);
             Assert.Equal(typeof(SqlException).ToString(), span.GetTag(ErrorTypeTag));
             Assert.Equal("Invalid object name 'dbo.Perso'.", span.GetTag(ErrorMsgTag));
@@ -142,9 +147,10 @@ VALUES
             var span = _writer.Traces.Single().Single();
             Assert.Equal(query, span.ResourceName);
             Assert.Equal(query, span.GetTag(SqlQueryTag));
-            Assert.Equal("sql", span.Type);
+            Assert.Equal(DatabaseName, span.GetTag(SqlDatabaseTag));
+            Assert.Equal(SqlSpanType, span.Type);
             Assert.False(span.Error);
-            Assert.Equal("CustomServiceName", span.ServiceName);
+            Assert.Equal(customServiceName, span.ServiceName);
         }
     }
 }
