@@ -13,11 +13,17 @@ namespace Datadog.Trace.SqlClient.Tests
         private const string SqlRowsTag = "sql.rows";
         private const string SqlQueryTag = "sql.query";
         private const string SqlDatabaseTag = "sql.db";
+        private const string SqlExceptionNumberTag = "sql.exceptionNumber";
         private const string ErrorMsgTag = "error.msg";
         private const string ErrorTypeTag = "error.type";
         private const string ErrorStackTag = "error.stack";
         private const string SqlSpanType = "sql";
         private const string DatabaseName = "Test";
+#if NETCOREAPP2_0
+        private const string DefaultServiceName = "testhost";
+#else
+        private const string DefaultServiceName = "Datadog.Trace.SqlClient.Tests";
+#endif
 
         private static readonly string[] _initDb = new string[]
         {
@@ -91,12 +97,14 @@ VALUES
             }
 
             var span = _writer.Traces.Single().Single();
+#if NETCOREAPP2_0
             Assert.Equal(query, span.ResourceName);
             Assert.Equal(query, span.GetTag(SqlQueryTag));
+#endif
             Assert.Equal(DatabaseName, span.GetTag(SqlDatabaseTag));
             Assert.Equal(SqlSpanType, span.Type);
             Assert.False(span.Error);
-            Assert.Equal("testhost", span.ServiceName);
+            Assert.Equal(DefaultServiceName, span.ServiceName);
         }
 
         [Fact]
@@ -117,15 +125,19 @@ VALUES
             }
 
             var span = _writer.Traces.Single().Single();
-            Assert.Equal(query, span.ResourceName);
-            Assert.Equal(query, span.GetTag(SqlQueryTag));
-            Assert.Equal(DatabaseName, span.GetTag(SqlDatabaseTag));
-            Assert.Equal(SqlSpanType, span.Type);
-            Assert.True(span.Error);
+#if NETCOREAPP2_0
             Assert.Equal(typeof(SqlException).ToString(), span.GetTag(ErrorTypeTag));
             Assert.Equal("Invalid object name 'dbo.Perso'.", span.GetTag(ErrorMsgTag));
             Assert.False(string.IsNullOrEmpty(span.GetTag(ErrorStackTag)));
-            Assert.Equal("testhost", span.ServiceName);
+            Assert.Equal(query, span.ResourceName);
+            Assert.Equal(query, span.GetTag(SqlQueryTag));
+#else
+            Assert.NotNull(span.GetTag(SqlExceptionNumberTag));
+#endif
+            Assert.Equal(DatabaseName, span.GetTag(SqlDatabaseTag));
+            Assert.Equal(SqlSpanType, span.Type);
+            Assert.True(span.Error);
+            Assert.Equal(DefaultServiceName, span.ServiceName);
         }
 
         [Fact]
@@ -145,8 +157,10 @@ VALUES
             }
 
             var span = _writer.Traces.Single().Single();
+#if NETCOREAPP2_0
             Assert.Equal(query, span.ResourceName);
             Assert.Equal(query, span.GetTag(SqlQueryTag));
+#endif
             Assert.Equal(DatabaseName, span.GetTag(SqlDatabaseTag));
             Assert.Equal(SqlSpanType, span.Type);
             Assert.False(span.Error);

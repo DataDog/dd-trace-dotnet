@@ -2,40 +2,43 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-internal class GlobalListener : IObserver<DiagnosticListener>, IDisposable
+namespace Datadog.Trace.SqlClient
 {
-    private readonly string _sourceName;
-    private readonly object _target;
-    private List<IDisposable> _subscriptions = new List<IDisposable>();
-
-    public GlobalListener(string sourceName, object target)
+    internal class GlobalListener : IObserver<DiagnosticListener>, IDisposable
     {
-        _sourceName = sourceName;
-        _target = target;
-        _subscriptions.Add(DiagnosticListener.AllListeners.Subscribe(this));
-    }
+        private readonly string _sourceName;
+        private readonly object _target;
+        private List<IDisposable> _subscriptions = new List<IDisposable>();
 
-    public void Dispose()
-    {
-        foreach (var subscription in _subscriptions)
+        public GlobalListener(string sourceName, object target)
         {
-            subscription.Dispose();
+            _sourceName = sourceName;
+            _target = target;
+            _subscriptions.Add(DiagnosticListener.AllListeners.Subscribe(this));
         }
-    }
 
-    void IObserver<DiagnosticListener>.OnNext(DiagnosticListener diagnosticListener)
-    {
-        if (diagnosticListener.Name == _sourceName)
+        public void Dispose()
         {
-            _subscriptions.Add(diagnosticListener.SubscribeWithAdapter(_target));
+            foreach (var subscription in _subscriptions)
+            {
+                subscription.Dispose();
+            }
         }
-    }
 
-    void IObserver<DiagnosticListener>.OnCompleted()
-    {
-    }
+        void IObserver<DiagnosticListener>.OnNext(DiagnosticListener diagnosticListener)
+        {
+            if (diagnosticListener.Name == _sourceName)
+            {
+                _subscriptions.Add(diagnosticListener.SubscribeWithAdapter(_target));
+            }
+        }
 
-    void IObserver<DiagnosticListener>.OnError(Exception error)
-    {
+        void IObserver<DiagnosticListener>.OnCompleted()
+        {
+        }
+
+        void IObserver<DiagnosticListener>.OnError(Exception error)
+        {
+        }
     }
 }
