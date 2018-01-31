@@ -74,6 +74,16 @@ Once your application is configured this way all the requests to your
 application will be traced and the active span will automatically be set to the
 currently executing request.
 
+#### Ado.Net / System.Data.SqlClient
+
+To instrument Ado.Net to trace all the SQL queries made by your application
+install the `Datadog.Trace.SqlClient` NugGet package and execute the
+following code at application startup:
+
+```csharp
+SqlClientIntegration.Enable()
+```
+
 ### Manual Instrumentation
 
 #### Introduction
@@ -197,11 +207,14 @@ Span child = tracer.StartSpan("Child", childOf: parent.Context);
 
 In order to build and run all the projects and test included in this repo you need to have Visual Studio 2017 as well as the .Net Core 2.+ SDK installed on your machine.
 
+Some tests require you to have enable docker support on your machine or to manually install the required dependencies.
+
 #### Unix
 
 Make sure you have installed:
 - The .Net Core 2 SDK 
 - Mono
+- Docker
 
 Because some projects target the desktop framework and of [this bug](https://github.com/dotnet/sdk/issues/335), you'll need [this workaround](https://github.com/dotnet/netcorecli-fsc/wiki/.NET-Core-SDK-rc4#using-net-framework-as-targets-framework-the-osxunix-build-fails) to make the build work.
 
@@ -217,7 +230,8 @@ git submodule update
 
 ### Running tests
 
-The tests require to have the Datadog trace agent running on the same machine and listening on port 8126.
+The tests require the dependencies specified in `docker-compose.yaml` to be running on the same machine.
+For this you need to have docker installed on your machine, and to start the dependencies with `./build.sh --target=dockerup`.
 
 To build and run the tests on Windows:
 
