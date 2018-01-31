@@ -1,7 +1,24 @@
 #tool "xunit.runner.console"
+#addin "Cake.Docker"
 
 var target = Argument("Target", "Default");
 var configuration = Argument("Configuration", "Release");
+
+Task("DockerUp")
+  .Does(() =>
+{
+  DockerComposeUp(
+    new DockerComposeUpSettings()
+    {
+      DetachedMode = true
+    });
+});
+
+Task("DockerDown")
+  .Does(() =>
+{
+  DockerComposeDown();
+});
 
 Task("Restore")
   .Does(() =>
