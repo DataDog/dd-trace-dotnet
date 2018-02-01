@@ -99,7 +99,9 @@ VALUES
             var span = _writer.Traces.Single().Single();
 #if NETCOREAPP2_0
             Assert.Equal(query, span.ResourceName);
-            Assert.Equal(query, span.GetTag(SqlQueryTag));
+
+            // "sql.query" should not be set otherwise the query will not be anonymized
+            Assert.Null(span.GetTag(SqlQueryTag));
 #endif
             Assert.Equal(DatabaseName, span.GetTag(SqlDatabaseTag));
             Assert.Equal(SqlSpanType, span.Type);
@@ -130,7 +132,9 @@ VALUES
             Assert.Equal("Invalid object name 'dbo.Perso'.", span.GetTag(ErrorMsgTag));
             Assert.False(string.IsNullOrEmpty(span.GetTag(ErrorStackTag)));
             Assert.Equal(query, span.ResourceName);
-            Assert.Equal(query, span.GetTag(SqlQueryTag));
+
+            // "sql.query" should not be set otherwise the query will not be anonymized
+            Assert.Null(span.GetTag(SqlQueryTag));
 #else
             Assert.NotNull(span.GetTag(SqlExceptionNumberTag));
 #endif
@@ -159,7 +163,9 @@ VALUES
             var span = _writer.Traces.Single().Single();
 #if NETCOREAPP2_0
             Assert.Equal(query, span.ResourceName);
-            Assert.Equal(query, span.GetTag(SqlQueryTag));
+
+            // "sql.query" should not be set otherwise the query will not be anonymized
+            Assert.Null(span.GetTag(SqlQueryTag));
 #endif
             Assert.Equal(DatabaseName, span.GetTag(SqlDatabaseTag));
             Assert.Equal(SqlSpanType, span.Type);
