@@ -38,7 +38,7 @@ namespace Datadog.Trace.SqlClient
             _currentSpans.TryGetValue(command, out Span span);
             if (span == null)
             {
-                _log.Warn("No span corresponding to the SqlCommand in OnWriteCommandAfter");
+                _log.Debug("No span corresponding to the SqlCommand in OnWriteCommandAfter");
                 return;
             }
 
@@ -51,7 +51,7 @@ namespace Datadog.Trace.SqlClient
             _currentSpans.TryGetValue(command, out Span span);
             if (span == null)
             {
-                _log.Warn("No span corresponding to the SqlCommand in OnWriteCommandAfter");
+                _log.Debug("No span corresponding to the SqlCommand in OnWriteCommandAfter");
                 return;
             }
 

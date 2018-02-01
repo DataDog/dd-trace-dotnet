@@ -58,7 +58,7 @@ namespace Datadog.Trace.SqlClient
             }
             catch (Exception ex)
             {
-                _log.ErrorException("An error occured while processing SqlClient ETW events", ex);
+                _log.DebugException("An error occured while processing SqlClient ETW events", ex);
             }
         }
 
