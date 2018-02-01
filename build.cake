@@ -4,6 +4,19 @@
 var target = Argument("Target", "Default");
 var configuration = Argument("Configuration", "Release");
 
+Task("Pack")
+  .Does(() =>
+{
+  var settings = new DotNetCorePackSettings
+  {
+    OutputDirectory = "./artifacts",
+    Configuration = configuration
+  };
+  DotNetCorePack("./src/Datadog.Trace", settings);
+  DotNetCorePack("./src/Datadog.Trace.AspNetCore", settings);
+  DotNetCorePack("./src/Datadog.Trace.SqlClient", settings);
+});
+
 Task("DockerUp")
   .Does(() =>
 {
