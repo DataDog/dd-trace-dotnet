@@ -1,6 +1,7 @@
 ﻿namespace Datadog.Trace
 {
 #if NET45
+    using System;
     using System.Runtime.Remoting.Messaging;
 
     // TODO:bertrand revisit this when we want to support multiple AppDomains
@@ -8,9 +9,9 @@
     {
         private string _name;
 
-        public AsyncLocalCompat(string name)
+        public AsyncLocalCompat()
         {
-            _name = name;
+            _name = Guid.NewGuid().ToString();
         }
 
         public T Get()
@@ -31,7 +32,7 @@
     {
         private AsyncLocal<T> _asyncLocal = new AsyncLocal<T>();
 
-        public AsyncLocalCompat(string name)
+        public AsyncLocalCompat()
         {
         }
 
