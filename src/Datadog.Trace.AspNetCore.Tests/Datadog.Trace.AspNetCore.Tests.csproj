@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.AspNetCore\Datadog.Trace.AspNetCore.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestUtils\Datadog.Trace.TestUtils.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
