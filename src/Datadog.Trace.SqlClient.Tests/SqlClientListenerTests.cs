@@ -19,11 +19,7 @@ namespace Datadog.Trace.SqlClient.Tests
         private const string ErrorStackTag = "error.stack";
         private const string SqlSpanType = "sql";
         private const string DatabaseName = "Test";
-#if NETCOREAPP2_0
-        private const string DefaultServiceName = "testhost";
-#else
-        private const string DefaultServiceName = "Datadog.Trace.SqlClient.Tests";
-#endif
+        private const string DefaultServiceName = "mssql";
 
         private static readonly string[] _initDb = new string[]
         {

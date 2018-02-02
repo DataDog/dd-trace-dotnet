@@ -7,6 +7,8 @@ namespace Datadog.Trace.SqlClient
 {
     internal class SqlClientEventListener : EventListener
     {
+        private const string DefaultServiceName = "mssql";
+
         /// <summary>
         /// The Ado.Net event source name
         /// </summary>
@@ -64,10 +66,10 @@ namespace Datadog.Trace.SqlClient
 
         private void ProcessBeginExecute(EventWrittenEventArgs eventData)
         {
-            var scope = _tracer.StartActive("sqlclient.command", serviceName: _serviceName);
-            var span = scope.Span;
             var database = eventData.Payload[2] as string;
             var commandText = eventData.Payload[3] as string;
+            var scope = _tracer.StartActive("sqlclient.command", serviceName: _serviceName ?? DefaultServiceName);
+            var span = scope.Span;
             if (!string.IsNullOrEmpty(commandText))
             {
                 span.ResourceName = commandText;

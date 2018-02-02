@@ -9,6 +9,8 @@ namespace Datadog.Trace.SqlClient
 {
     internal class SqlClientDiagnosticListener
     {
+        private const string DefaultServiceName = "mssql";
+
         private static ILog _log = LogProvider.For<SqlClientDiagnosticListener>();
         private readonly Tracer _tracer;
         private readonly string _serviceName;
@@ -25,7 +27,7 @@ namespace Datadog.Trace.SqlClient
         [DiagnosticName("System.Data.SqlClient.WriteCommandBefore")]
         public void OnWriteCommandBefore(SqlCommand command)
         {
-            var span = _tracer.StartSpan("sqlclient.command", serviceName: _serviceName);
+            var span = _tracer.StartSpan("sqlclient.command", serviceName: _serviceName ?? DefaultServiceName);
             _currentSpans.Add(command, span);
             span.ResourceName = command?.CommandText;
             span.SetTag(Tags.SqlDatabase, command?.Connection?.Database);
