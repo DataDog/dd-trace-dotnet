@@ -14,4 +14,6 @@ jobs:
            - SA_PASSWORD=password!123
      steps:
        - checkout
+       - run: git submodule init
+       - run: git submodule update
        - run: ./build.sh
