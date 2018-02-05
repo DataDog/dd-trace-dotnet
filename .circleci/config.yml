@@ -1,0 +1,17 @@
+version: 2
+jobs:
+   build:
+     docker:
+       - image: bemermet/dd-trace-csharp-ci
+       - image: datadog/docker-dd-agent
+         env:
+           - DD_APM_ENABLED=true
+           - DD_BIND_HOST=0.0.0.0
+           - DD_API_KEY=invalid_key_but_this_is_fine
+       - image: microsoft/mssql-server-linux:2017-CU3
+         env:
+           - ACCEPT_EULA=Y
+           - SA_PASSWORD=password!123
+     steps:
+       - checkout
+       - run: ./build.sh
