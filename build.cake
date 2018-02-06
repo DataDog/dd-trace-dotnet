@@ -91,6 +91,17 @@ Task("TestNet45")
   }
 });
 
+Task("Benchmarks")
+.Does(() =>
+{
+  DotNetCoreRun("./src/Benchmarks",
+    new ProcessArgumentBuilder(),
+    new DotNetCoreRunSettings()
+    {
+      Configuration = "Release"
+    });
+});
+
 Task("Default")
   .IsDependentOn("TestNet45")
   .IsDependentOn("Test")

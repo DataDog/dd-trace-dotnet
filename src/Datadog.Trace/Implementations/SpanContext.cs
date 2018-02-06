@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -9,11 +10,10 @@ namespace Datadog.Trace
     public class SpanContext
     {
         private static ILog _log = LogProvider.For<SpanContext>();
+        private static ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
 
         internal SpanContext(IDatadogTracer tracer, SpanContext parent, string serviceName)
         {
-            // TODO:bertrand pool the random objects
-            Random r = new Random();
             if (parent != null)
             {
                 Parent = parent;
@@ -22,11 +22,11 @@ namespace Datadog.Trace
             }
             else
             {
-                TraceId = r.NextUInt63();
+                TraceId = _random.Value.NextUInt63();
                 TraceContext = new TraceContext(tracer);
             }
 
-            SpanId = r.NextUInt63();
+            SpanId = _random.Value.NextUInt63();
             ServiceName = serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName;
         }
 
