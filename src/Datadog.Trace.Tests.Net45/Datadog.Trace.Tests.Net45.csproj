@@ -77,6 +77,15 @@
     <Compile Include="..\Datadog.Trace.Tests\ApiTests.cs">
       <Link>ApiTests.cs</Link>
     </Compile>
+    <Compile Include="..\Datadog.Trace.Tests\HeaderCollectionPropagatorTests.cs">
+      <Link>HeaderCollectionPropagatorTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace.Tests\HttpHeadersPropagatorTests.cs">
+      <Link>HttpHeadersPropagatorTests.cs</Link>
+    </Compile>
+    <Compile Include="..\Datadog.Trace.Tests\HttpHeadersWrapperTests.cs">
+      <Link>HttpHeadersWrapperTests.cs</Link>
+    </Compile>
     <Compile Include="..\Datadog.Trace.Tests\OpentracingTests\HttpHeaderCodecTests.cs">
       <Link>OpentracingTests\HttpHeaderCodecTests.cs</Link>
     </Compile>

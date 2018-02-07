@@ -13,8 +13,8 @@ namespace Datadog.Trace
         {
         }
 
-        internal OpenTracingSpanContext(IDatadogTracer tracer, ulong traceId, ulong spanId)
-            : base(tracer, traceId, spanId)
+        internal OpenTracingSpanContext(ulong traceId, ulong spanId)
+            : base(traceId, spanId)
         {
         }
 

@@ -69,7 +69,9 @@ namespace Datadog.Trace
 
         internal TimeSpan Duration { get; private set; }
 
-        internal bool IsRootSpan => _context.ParentId == null;
+        // In case we inject a context from another process,
+        // the _context.Parent will not be null but TraceContext will be null.
+        internal bool IsRootSpan => _context.Parent?.TraceContext == null;
 
         // This is threadsafe only if used after the span has been closed.
         // It is acceptable because this property is internal. But if we were to make it public we would need to add some checks.

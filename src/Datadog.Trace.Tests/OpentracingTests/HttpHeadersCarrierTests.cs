@@ -7,12 +7,12 @@ namespace Datadog.Trace.Tests
     public class HttpHeadersCarrierTests
     {
         private HttpRequestMessage _request;
-        private HttpHeadersCarrier _carrier;
+        private OpenTracingHttpHeadersCarrier _carrier;
 
         public HttpHeadersCarrierTests()
         {
             _request = new HttpRequestMessage();
-            _carrier = new HttpHeadersCarrier(_request.Headers);
+            _carrier = new OpenTracingHttpHeadersCarrier(_request.Headers);
         }
 
         [Fact]

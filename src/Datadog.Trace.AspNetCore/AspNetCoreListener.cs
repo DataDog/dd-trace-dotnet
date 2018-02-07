@@ -37,7 +37,8 @@ namespace Datadog.Trace.AspNetCore
         [DiagnosticName("Microsoft.AspNetCore.Hosting.BeginRequest")]
         public void OnBeginRequest(HttpContext httpContext)
         {
-            var scope = _tracer.StartActive("aspnet.request", serviceName: _serviceName);
+            var context = httpContext.Request.Headers.Extract();
+            var scope = _tracer.StartActive("aspnet.request", serviceName: _serviceName, childOf: context);
 
             // The scope is stored here to reduce the risk of getting the wrong active scope later
             // because of an interference with other instrumentations
@@ -51,6 +52,7 @@ namespace Datadog.Trace.AspNetCore
         public void OnEndRequest(HttpContext httpContext)
         {
             httpContext.Items.TryGetValue(ScopeKey, out object value);
+            httpContext.Items.Remove(ScopeKey);
             var scope = value as Scope;
             if (scope == null)
             {

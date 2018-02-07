@@ -18,7 +18,9 @@ namespace Datadog.Trace
             {
                 Parent = parent;
                 TraceId = parent.TraceId;
-                TraceContext = parent.TraceContext;
+
+                // TraceContext may be null if SpanContext was extracted from another process context
+                TraceContext = parent.TraceContext ?? new TraceContext(tracer);
             }
             else
             {
@@ -30,12 +32,10 @@ namespace Datadog.Trace
             ServiceName = serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName;
         }
 
-        internal SpanContext(IDatadogTracer tracer, ulong traceId, ulong spanId)
+        internal SpanContext(ulong traceId, ulong spanId)
         {
             TraceId = traceId;
             SpanId = spanId;
-            ServiceName = tracer.DefaultServiceName;
-            TraceContext = new TraceContext(tracer);
         }
 
         internal SpanContext(SpanContext spanContext)
@@ -68,6 +68,7 @@ namespace Datadog.Trace
 
         internal string ServiceName { get; }
 
+        // This may be null if SpanContext was extracted from another process context
         internal TraceContext TraceContext { get; }
     }
 }
