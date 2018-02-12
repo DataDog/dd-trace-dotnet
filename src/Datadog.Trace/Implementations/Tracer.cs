@@ -11,7 +11,7 @@ namespace Datadog.Trace
     public class Tracer : IDatadogTracer
     {
         private static readonly ILog _log = LogProvider.For<Tracer>();
-        private static Uri _defaultUri = new Uri("http://localhost:8126");
+        private static Uri _defaultUri = new Uri("http://127.0.0.1:8126");
 
         private AsyncLocalScopeManager _scopeManager;
         private string _defaultServiceName;

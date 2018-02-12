@@ -9,4 +9,5 @@
 [assembly: InternalsVisibleTo("Datadog.Trace.AspNetCore.Tests")]
 [assembly: InternalsVisibleTo("Datadog.Trace.AspNetCore10.Tests")]
 [assembly: InternalsVisibleTo("Datadog.Trace.SqlClient.Tests")]
+[assembly: InternalsVisibleTo("Datadog.Trace.AutoInstrument.Tests")]
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
