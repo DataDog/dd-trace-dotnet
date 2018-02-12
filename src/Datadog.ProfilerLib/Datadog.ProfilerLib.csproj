@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net452;net461;netstandard2.0</TargetFrameworks>
+    <AssemblyName>Datadog.ProfilerLib</AssemblyName>
+    <RootNamespace>Datadog.ProfilerLib</RootNamespace>
+  </PropertyGroup>
+
+</Project>
