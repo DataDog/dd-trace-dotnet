@@ -198,9 +198,12 @@ namespace Datadog.ProfilerLib
 
         public static void Instrument(MethodInfo m, MethodInfo before, MethodInfo after, MethodInfo exception = null)
         {
-            CheckBeforeMethod(m, before);
-            CheckAfterMethod(m, after);
-            CheckInstrumentedMethod(m);
+            if (!(m.IsGenericMethod || m.IsGenericMethodDefinition))
+            {
+                CheckBeforeMethod(m, before);
+                CheckAfterMethod(m, after);
+            }
+            //CheckInstrumentedMethod(m);
             RuntimeHelpers.PrepareMethod(before.MethodHandle);
             RuntimeHelpers.PrepareMethod(after.MethodHandle);
             var beforePtr = before.MethodHandle.GetFunctionPointer();
@@ -208,7 +211,10 @@ namespace Datadog.ProfilerLib
             IntPtr exceptionPtr = IntPtr.Zero;
             if (exception != null)
             {
-                CheckExceptionMethod(m, exception);
+                if (!(m.IsGenericMethod || m.IsGenericMethodDefinition))
+                {
+                    CheckExceptionMethod(m, exception);
+                }
                 RuntimeHelpers.PrepareMethod(exception.MethodHandle);
                 exceptionPtr = exception.MethodHandle.GetFunctionPointer();
             }
@@ -224,8 +230,9 @@ namespace Datadog.ProfilerLib
             }
         }
 
+        // TODO make me private
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static bool InstrumentInternal(string assemblyName, string moduleName, int methodToken, IntPtr before, IntPtr after, IntPtr exception)
+        public static bool InstrumentInternal(string assemblyName, string moduleName, int methodToken, IntPtr before, IntPtr after, IntPtr exception)
         {
             return false;
         }
