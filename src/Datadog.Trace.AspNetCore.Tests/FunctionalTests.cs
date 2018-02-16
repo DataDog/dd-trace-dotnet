@@ -73,7 +73,7 @@ namespace Datadog.Trace.AspNetCore.Tests
         }
 
         [Fact]
-        public async void OkResponse_WithContextPropagation()
+        public async void OkResponse_WithContextPropagationDisabled()
         {
             const ulong parentId = 7;
             const ulong traceId = 9;
@@ -92,18 +92,18 @@ namespace Datadog.Trace.AspNetCore.Tests
             Assert.Equal("GET 200", span.ResourceName);
             Assert.Equal(DefaultServiceName, span.ServiceName);
             Assert.True(span.IsRootSpan);
-            Assert.Equal(parentId, span.Context.ParentId);
-            Assert.Equal(traceId, span.Context.TraceId);
+            Assert.Null(span.Context.ParentId);
+            Assert.NotEqual(traceId, span.Context.TraceId);
         }
 
         [Fact]
-        public async void OkResponse_WithContextPropagationDisabled()
+        public async void OkResponse_WithContextPropagationEnabled()
         {
             _host.Dispose();
             using (var host = new WebHostBuilder()
                 .UseUrls("http://localhost:5050")
                 .UseKestrel()
-                .ConfigureServices(s => s.AddDatadogTrace(_tracer, enableDistributedTracing: false))
+                .ConfigureServices(s => s.AddDatadogTrace(_tracer, enableDistributedTracing: true))
                 .Configure(app => app
                     .UseDeveloperExceptionPage()
                     .Run(HandleNormal))
@@ -127,8 +127,8 @@ namespace Datadog.Trace.AspNetCore.Tests
                 Assert.Equal("GET 200", span.ResourceName);
                 Assert.Equal(DefaultServiceName, span.ServiceName);
                 Assert.True(span.IsRootSpan);
-                Assert.Null(span.Context.ParentId);
-                Assert.NotEqual(traceId, span.Context.TraceId);
+                Assert.Equal(parentId, span.Context.ParentId);
+                Assert.Equal(traceId, span.Context.TraceId);
             }
         }
 
