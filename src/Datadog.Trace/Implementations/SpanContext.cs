@@ -12,6 +12,18 @@ namespace Datadog.Trace
         private static ILog _log = LogProvider.For<SpanContext>();
         private static ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContext"/> class.
+        /// This is useful to implement custom context propagation
+        /// </summary>
+        /// <param name="traceId">The trace identifier.</param>
+        /// <param name="spanId">The span identifier.</param>
+        public SpanContext(ulong traceId, ulong spanId)
+        {
+            TraceId = traceId;
+            SpanId = spanId;
+        }
+
         internal SpanContext(IDatadogTracer tracer, SpanContext parent, string serviceName)
         {
             if (parent != null)
@@ -30,12 +42,6 @@ namespace Datadog.Trace
 
             SpanId = _random.Value.NextUInt63();
             ServiceName = serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName;
-        }
-
-        internal SpanContext(ulong traceId, ulong spanId)
-        {
-            TraceId = traceId;
-            SpanId = spanId;
         }
 
         internal SpanContext(SpanContext spanContext)

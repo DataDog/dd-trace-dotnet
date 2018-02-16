@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 
 namespace Datadog.Trace
 {
-    // TODO test performance difference with a struct
     internal class HttpHeadersWrapper : IHeaderCollection
     {
         private readonly HttpHeaders _headers;

@@ -97,6 +97,42 @@ namespace Datadog.Trace.AspNetCore.Tests
         }
 
         [Fact]
+        public async void OkResponse_WithContextPropagationDisabled()
+        {
+            _host.Dispose();
+            using (var host = new WebHostBuilder()
+                .UseUrls("http://localhost:5050")
+                .UseKestrel()
+                .ConfigureServices(s => s.AddDatadogTrace(_tracer, enableDistributedTracing: false))
+                .Configure(app => app
+                    .UseDeveloperExceptionPage()
+                    .Run(HandleNormal))
+                .Build())
+            {
+                host.Start();
+                const ulong parentId = 7;
+                const ulong traceId = 9;
+                var context = new SpanContext(traceId, parentId);
+                var request = new HttpRequestMessage(HttpMethod.Get, "/");
+                request.Headers.Inject(context);
+                var response = await _client.SendAsync(request);
+                var content = await response.Content.ReadAsStringAsync();
+                _waiter.Wait();
+
+                Assert.Equal(Content, content);
+                var span = _writer.Traces.Single().Single();
+                Assert.Equal("GET", span.Tags[MethodTag]);
+                Assert.Equal("/", span.Tags[UrlTag]);
+                Assert.Equal("200", span.Tags[StatusCodeTag]);
+                Assert.Equal("GET 200", span.ResourceName);
+                Assert.Equal(DefaultServiceName, span.ServiceName);
+                Assert.True(span.IsRootSpan);
+                Assert.Null(span.Context.ParentId);
+                Assert.NotEqual(traceId, span.Context.TraceId);
+            }
+        }
+
+        [Fact]
         public async void OkResponseOverrideServiceName()
         {
             const string serviceNameOverride = "Blublu";

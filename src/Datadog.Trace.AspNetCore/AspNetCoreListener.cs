@@ -12,6 +12,7 @@ namespace Datadog.Trace.AspNetCore
         private readonly DiagnosticListener _listener;
         private readonly Tracer _tracer;
         private readonly string _serviceName;
+        private readonly bool _isDistributedTracingEnabled;
         private IDisposable _subscription;
 
         public AspNetCoreListener(DiagnosticListener listener, Tracer tracer, AspNetCoreListenerConfig config)
@@ -19,6 +20,7 @@ namespace Datadog.Trace.AspNetCore
             _listener = listener;
             _tracer = tracer;
             _serviceName = config.ServiceName;
+            _isDistributedTracingEnabled = config.EnableDistributedTracing;
         }
 
         public void Listen()
@@ -37,7 +39,12 @@ namespace Datadog.Trace.AspNetCore
         [DiagnosticName("Microsoft.AspNetCore.Hosting.BeginRequest")]
         public void OnBeginRequest(HttpContext httpContext)
         {
-            var context = httpContext.Request.Headers.Extract();
+            SpanContext context = null;
+            if (_isDistributedTracingEnabled)
+            {
+                context = httpContext.Request.Headers.Extract();
+            }
+
             var scope = _tracer.StartActive("aspnet.request", serviceName: _serviceName, childOf: context);
 
             // The scope is stored here to reduce the risk of getting the wrong active scope later
