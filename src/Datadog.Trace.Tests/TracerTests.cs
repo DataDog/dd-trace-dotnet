@@ -107,6 +107,22 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void StartActive_SetParentManuallyFromExternalContext_ParentIsSet()
+        {
+            const ulong traceId = 11;
+            const ulong parentId = 7;
+            var parent = new SpanContext(traceId, parentId);
+            var child = _tracer.StartActive("Child", childOf: parent);
+
+            Assert.True(child.Span.IsRootSpan);
+            Assert.Equal(traceId, parent.TraceId);
+            Assert.Equal(parentId, parent.SpanId);
+            Assert.Null(parent.TraceContext);
+            Assert.Equal(parent, child.Span.Context.Parent);
+            Assert.NotNull(child.Span.TraceContext);
+        }
+
+        [Fact]
         public void StartActive_NoServiceName_DefaultServiceName()
         {
             var scope = _tracer.StartActive("Operation");

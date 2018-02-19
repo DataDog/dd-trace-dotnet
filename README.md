@@ -8,7 +8,6 @@ This repository contains what you need to trace C# applications. Some quick note
 
 - **Datadog C# APM is currently in Alpha**
 - It supports .Net Framework version above 4.5 and .Net Core 2.0.
-- It does not support out of process propagation.
 - Multiple AppDomains are not supported.
 
 ## The Components
@@ -198,6 +197,35 @@ You should not have to explicitly declare parent/children relationship between y
 Span parent = tracer.StartSpan("Parent");
 Span child = tracer.StartSpan("Child", childOf: parent.Context);
 ```
+
+#### Cross-Process context propagation
+
+##### Outgoing HttpClient requests
+
+To inject the relevant headers in your request use the `Datadog.Trace` `Inject` extension method of `HttpHeaders`.
+
+For example:
+
+```csharp
+using (var scope = Tracer.Instance.StartActive("OutgoingRequest"))
+{
+    var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com");
+    request.Headers.Inject(scope.Span.Context);
+    var response = await _client.SendAsync(request);
+}
+```
+
+##### Incoming requests
+
+For Asp.Net Core, HTTP context propagation is done automatically as part of the framework instrumentation.
+
+To manually add HTTP context propagation to other frameworks you will need to
+write a wrapper around the headers representation used by your framework to
+implement `Datadog.Trace.IHeaderCollection`and you will then be able to use the
+`Inject` and `Extract` methods on this wrapper.
+
+For an example of this see [HeaderDictionnaryWrapper.cs](./src/Datadog.Trace.AspNetCore/HeaderDictionaryWrapper.cs)
+and [HeaderDictionaryPropagator]((./src/Datadog.Trace.AspNetCore/HeaderDictionaryPropagator.cs)
 
 ## Development
 

@@ -10,15 +10,15 @@ namespace Datadog.Trace
     /// to enable injecting context propagation headers on outgoing http requests.
     /// </summary>
     /// <seealso cref="OpenTracing.Propagation.ITextMap" />
-    public class HttpHeadersCarrier : ITextMap
+    public class OpenTracingHttpHeadersCarrier : ITextMap
     {
         private HttpHeaders _headers;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="HttpHeadersCarrier"/> class.
+        /// Initializes a new instance of the <see cref="OpenTracingHttpHeadersCarrier"/> class.
         /// </summary>
         /// <param name="headers">The <see cref="HttpHeaders"/> to wrap.</param>
-        public HttpHeadersCarrier(HttpHeaders headers)
+        public OpenTracingHttpHeadersCarrier(HttpHeaders headers)
         {
             _headers = headers;
         }

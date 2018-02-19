@@ -16,13 +16,13 @@ namespace Datadog.Trace
         public OpenTracingTracer(Tracer tracer)
         {
             _tracer = tracer;
-            _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec(_tracer) } };
+            _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec() } };
         }
 
         public OpenTracingTracer(IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             _tracer = new Tracer(agentWriter, defaultServiceName, isDebugEnabled);
-            _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec(_tracer) } };
+            _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec() } };
         }
 
         public ISpanBuilder BuildSpan(string operationName)

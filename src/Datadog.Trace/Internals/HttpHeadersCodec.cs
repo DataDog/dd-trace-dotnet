@@ -6,11 +6,8 @@ namespace Datadog.Trace
 {
     internal class HttpHeadersCodec : ICodec
     {
-        private IDatadogTracer _tracer;
-
-        public HttpHeadersCodec(IDatadogTracer tracer)
+        public HttpHeadersCodec()
         {
-            _tracer = tracer;
         }
 
         public OpenTracingSpanContext Extract(object carrier)
@@ -66,7 +63,7 @@ namespace Datadog.Trace
                 throw new FormatException($"{Constants.HttpHeaderTraceId} should contain an unsigned integer value");
             }
 
-            return new OpenTracingSpanContext(_tracer, traceId, parentId);
+            return new OpenTracingSpanContext(traceId, parentId);
         }
 
         public void Inject(OpenTracingSpanContext spanContext, object carrier)

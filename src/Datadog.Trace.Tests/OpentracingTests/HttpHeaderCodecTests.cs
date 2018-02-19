@@ -1,5 +1,4 @@
 ﻿using System;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -7,17 +6,14 @@ namespace Datadog.Trace.Tests
     public class HttpHeaderCodecTests
     {
         // The values are duplicated here to make sure that if they are changed it will break tests
-        public const string HttpHeaderTraceId = "x-datadog-trace-id";
-        public const string HttpHeaderParentId = "x-datadog-parent-id";
+        private const string HttpHeaderTraceId = "x-datadog-trace-id";
+        private const string HttpHeaderParentId = "x-datadog-parent-id";
 
         private HttpHeadersCodec _codec;
-        private Mock<IDatadogTracer> _tracerMock;
 
         public HttpHeaderCodecTests()
         {
-            _tracerMock = new Mock<IDatadogTracer>(MockBehavior.Strict);
-            _tracerMock.Setup(x => x.DefaultServiceName).Returns("Plop");
-            _codec = new HttpHeadersCodec(_tracerMock.Object);
+            _codec = new HttpHeadersCodec();
         }
 
         [Fact]
@@ -93,13 +89,15 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Inject_SpanContext_HeadersWithCorrectInfo()
         {
-            var spanContext = new OpenTracingSpanContext(_tracerMock.Object, null, "MyService");
+            const ulong spanId = 10;
+            const ulong traceId = 7;
+            var spanContext = new OpenTracingSpanContext(traceId, spanId);
             var headers = new MockTextMap();
 
             _codec.Inject(spanContext, headers);
 
-            Assert.Equal(spanContext.SpanId.ToString(), headers.Get(HttpHeaderParentId));
-            Assert.Equal(spanContext.TraceId.ToString(), headers.Get(HttpHeaderTraceId));
+            Assert.Equal(spanId.ToString(), headers.Get(HttpHeaderParentId));
+            Assert.Equal(traceId.ToString(), headers.Get(HttpHeaderTraceId));
         }
     }
 }
