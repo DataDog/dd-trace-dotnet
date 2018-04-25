@@ -78,10 +78,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\lib\opentracing-csharp\src\OpenTracing\OpenTracing.csproj">
-      <Project>{6a48cb37-c924-4df3-8524-abd3bb9b04c4}</Project>
-      <Name>OpenTracing</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj">
       <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
       <Name>Datadog.Trace</Name>

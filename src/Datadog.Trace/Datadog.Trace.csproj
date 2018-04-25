@@ -26,9 +26,6 @@
       <BuildOutputInPackage Include="$(OutputPath)opentracing.dll" />
     </ItemGroup>
   </Target>
-  <ItemGroup>
-    <ProjectReference Include="..\..\lib\opentracing-csharp\src\OpenTracing\OpenTracing.csproj" PrivateAssets="All" />
-  </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <DefineConstants>LIBLOG_PORTABLE</DefineConstants>
