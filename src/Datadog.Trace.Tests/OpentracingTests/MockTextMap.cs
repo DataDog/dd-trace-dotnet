@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using OpenTracing.Propagation;
 
 namespace Datadog.Trace.Tests
@@ -21,6 +23,19 @@ namespace Datadog.Trace.Tests
         public void Set(string key, string value)
         {
             _dictionary[key] = value;
+        }
+
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+        {
+            foreach (KeyValuePair<string, string> pair in _dictionary)
+            {
+                yield return pair;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

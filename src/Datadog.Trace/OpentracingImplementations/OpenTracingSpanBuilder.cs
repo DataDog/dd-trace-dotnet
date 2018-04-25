@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using OpenTracing;
+using OpenTracing.Util;
 
 namespace Datadog.Trace
 {
@@ -66,6 +67,19 @@ namespace Datadog.Trace
         {
             _log.Debug("ISpanBuilder.FollowsFrom is not implemented by Datadog.Trace");
             return this;
+        }
+
+        public ISpanBuilder IgnoreActiveSpan()
+        {
+            _log.Debug("ISpanBuilder.FollowsFrom is not implemented by Datadog.Trace");
+            return this;
+        }
+
+        public IScope StartActive(bool finishSpanOnDispose)
+        {
+            // TODO Lucas
+            // Scope scope = _tracer.StartActive("", finishOnClose: finishSpanOnDispose);
+            throw new NotImplementedException();
         }
 
         public ISpan Start()

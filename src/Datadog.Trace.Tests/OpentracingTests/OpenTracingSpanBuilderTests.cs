@@ -164,7 +164,7 @@ namespace Datadog.Trace.Tests
         public void Start_SettingError_ErrorIsSet()
         {
             var span = (OpenTracingSpan)_createSpanBuilder()
-                .WithTag(OpenTracing.Tags.Error, true)
+                .WithTag(OpenTracing.Tag.Tags.Error.Key, true)
                 .Start();
 
             Assert.Equal(true, span.DDSpan.Error);

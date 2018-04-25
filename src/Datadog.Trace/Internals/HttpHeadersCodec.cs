@@ -15,12 +15,12 @@ namespace Datadog.Trace
             ITextMap map = carrier as ITextMap;
             if (map == null)
             {
-                throw new UnsupportedFormatException("Carrier should have type ITextMap");
+                throw new NotSupportedException("Carrier should have type ITextMap");
             }
 
             string parentIdHeader = null;
             string traceIdHeader = null;
-            foreach (var keyVal in map.GetEntries())
+            foreach (var keyVal in map)
             {
                 if (keyVal.Key.Equals(Constants.HttpHeaderParentId, StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -71,7 +71,7 @@ namespace Datadog.Trace
             ITextMap map = carrier as ITextMap;
             if (map == null)
             {
-                throw new UnsupportedFormatException("Carrier should have type ITextMap");
+                throw new NotSupportedException("Carrier should have type ITextMap");
             }
 
             map.Set(Constants.HttpHeaderParentId, spanContext.SpanId.ToString());

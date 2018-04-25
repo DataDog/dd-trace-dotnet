@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests
             var span = (OpenTracingSpan)_tracer.BuildSpan("Span").Start();
             var headers = new MockTextMap();
 
-            _tracer.Inject(span.Context, Formats.HttpHeaders, headers);
+            _tracer.Inject(span.Context, BuiltinFormats.HttpHeaders, headers);
 
             Assert.Equal(span.DDSpan.Context.TraceId.ToString(), headers.Get(Constants.HttpHeaderTraceId));
             Assert.Equal(span.DDSpan.Context.SpanId.ToString(), headers.Get(Constants.HttpHeaderParentId));
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Tests
             headers.Set(Constants.HttpHeaderParentId, parentId.ToString());
             headers.Set(Constants.HttpHeaderTraceId, traceId.ToString());
 
-            var context = (SpanContext)_tracer.Extract(Formats.HttpHeaders, headers);
+            var context = (SpanContext)_tracer.Extract(BuiltinFormats.HttpHeaders, headers);
 
             Assert.Equal(parentId, context.SpanId);
             Assert.Equal(traceId, context.TraceId);

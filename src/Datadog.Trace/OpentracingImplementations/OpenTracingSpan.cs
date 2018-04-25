@@ -5,7 +5,7 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
-    internal class OpenTracingSpan : ISpan
+    internal class OpenTracingSpan : ISpan, IDisposable
     {
         private static ILog _log = LogProvider.For<OpenTracingSpan>();
 
@@ -39,6 +39,12 @@ namespace Datadog.Trace
             return this;
         }
 
+        public ISpan Log(DateTimeOffset timestamp, IDictionary<string, object> fields)
+        {
+            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
+            return this;
+        }
+
         public ISpan Log(string eventName)
         {
             _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
@@ -46,6 +52,12 @@ namespace Datadog.Trace
         }
 
         public ISpan Log(DateTimeOffset timestamp, string eventName)
+        {
+            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
+            return this;
+        }
+
+        public ISpan Log(IDictionary<string, object> fields)
         {
             _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
             return this;
@@ -81,17 +93,22 @@ namespace Datadog.Trace
         public ISpan SetTag(string key, string value)
         {
             // TODO:bertrand do we want this behavior on the Span object too ?
-            switch (key)
+            if (key == DDTags.ResourceName)
             {
-                case DDTags.ResourceName:
-                    _scope.Span.ResourceName = value;
-                    return this;
-                case OpenTracing.Tags.Error:
-                    _scope.Span.Error = value == "True";
-                    return this;
-                case DDTags.SpanType:
-                    _scope.Span.Type = value;
-                    return this;
+                _scope.Span.ResourceName = value;
+                return this;
+            }
+
+            if (key == OpenTracing.Tag.Tags.Error.Key)
+            {
+                _scope.Span.Error = value == "True";
+                return this;
+            }
+
+            if (key == DDTags.SpanType)
+            {
+                _scope.Span.Type = value;
+                return this;
             }
 
             _scope.Span.SetTag(key, value);
