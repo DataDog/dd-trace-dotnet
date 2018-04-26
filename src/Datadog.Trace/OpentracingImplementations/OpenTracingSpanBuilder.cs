@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using OpenTracing;
-using OpenTracing.Util;
 
 namespace Datadog.Trace
 {
@@ -55,18 +54,6 @@ namespace Datadog.Trace
                 _parent = parent as SpanContext;
                 return this;
             }
-        }
-
-        public ISpanBuilder FollowsFrom(ISpan parent)
-        {
-            _log.Debug("ISpanBuilder.FollowsFrom is not implemented by Datadog.Trace");
-            return this;
-        }
-
-        public ISpanBuilder FollowsFrom(ISpanContext parent)
-        {
-            _log.Debug("ISpanBuilder.FollowsFrom is not implemented by Datadog.Trace");
-            return this;
         }
 
         public ISpanBuilder IgnoreActiveSpan()
