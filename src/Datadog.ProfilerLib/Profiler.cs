@@ -198,11 +198,8 @@ namespace Datadog.ProfilerLib
 
         public static void Instrument(MethodInfo m, MethodInfo before, MethodInfo after, MethodInfo exception = null)
         {
-            if (!(m.IsGenericMethod || m.IsGenericMethodDefinition))
-            {
-                CheckBeforeMethod(m, before);
-                CheckAfterMethod(m, after);
-            }
+            CheckBeforeMethod(m, before);
+            CheckAfterMethod(m, after);
             //CheckInstrumentedMethod(m);
             RuntimeHelpers.PrepareMethod(before.MethodHandle);
             RuntimeHelpers.PrepareMethod(after.MethodHandle);
@@ -211,10 +208,7 @@ namespace Datadog.ProfilerLib
             IntPtr exceptionPtr = IntPtr.Zero;
             if (exception != null)
             {
-                if (!(m.IsGenericMethod || m.IsGenericMethodDefinition))
-                {
-                    CheckExceptionMethod(m, exception);
-                }
+                CheckExceptionMethod(m, exception);
                 RuntimeHelpers.PrepareMethod(exception.MethodHandle);
                 exceptionPtr = exception.MethodHandle.GetFunctionPointer();
             }

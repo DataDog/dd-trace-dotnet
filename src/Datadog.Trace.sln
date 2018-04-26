@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Autoinstrumen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Autoinstrument.Tests", "Datadog.Trace.Autoinstrument.Tests\Datadog.Trace.Autoinstrument.Tests.csproj", "{27F70A03-77AE-41FE-8BDE-CC2FD6EA08C0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestRedis", "TestRedis\TestRedis.csproj", "{4669BD13-0A13-48CA-B1A7-0B1575968BF3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -250,6 +252,18 @@ Global
 		{27F70A03-77AE-41FE-8BDE-CC2FD6EA08C0}.Release|x64.Build.0 = Release|Any CPU
 		{27F70A03-77AE-41FE-8BDE-CC2FD6EA08C0}.Release|x86.ActiveCfg = Release|Any CPU
 		{27F70A03-77AE-41FE-8BDE-CC2FD6EA08C0}.Release|x86.Build.0 = Release|Any CPU
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Debug|x64.ActiveCfg = Debug|x64
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Debug|x64.Build.0 = Debug|x64
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Debug|x86.ActiveCfg = Debug|x86
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Debug|x86.Build.0 = Debug|x86
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Release|x64.ActiveCfg = Release|x64
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Release|x64.Build.0 = Release|x64
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Release|x86.ActiveCfg = Release|x86
+		{4669BD13-0A13-48CA-B1A7-0B1575968BF3}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

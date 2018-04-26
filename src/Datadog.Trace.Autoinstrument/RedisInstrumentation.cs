@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Datadog.ProfilerLib;
 using StackExchange.Redis;
 
@@ -31,6 +32,22 @@ namespace Datadog.Trace.Autoinstrument
                 typeof(RedisInstrumentation).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).Single(x => x.Name == "ExecuteSyncBefore"),
                 typeof(RedisInstrumentation).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).Single(x => x.Name == "ExecuteSyncAfter"),
                 typeof(RedisInstrumentation).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).Single(x => x.Name == "ExecuteSyncException"));
+            /*
+            var f = typeof(RedisInstrumentation).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).Single(x => x.Name == "F");
+            Profiler.Instrument(
+                f,
+                typeof(RedisInstrumentation).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).Single(x => x.Name == "ExecuteSyncBefore"),
+                typeof(RedisInstrumentation).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).Single(x => x.Name == "ExecuteSyncAfter"),
+                typeof(RedisInstrumentation).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).Single(x => x.Name == "ExecuteSyncException"));
+            Thread.Sleep(1000);
+            F(6);
+            */
+       }
+
+       private static T F<T>(T t)
+       {
+           var a = (object)t;
+           return t;
        }
 
         private static object ExecuteSyncBefore(object o, object message, object processor, object server)
