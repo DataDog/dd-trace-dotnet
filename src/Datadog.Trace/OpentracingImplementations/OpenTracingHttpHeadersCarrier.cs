@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Headers;
 using OpenTracing.Propagation;
 
@@ -40,17 +39,6 @@ namespace Datadog.Trace
             // Comma appears to be the right separator to join several values for the same header name
             // source: https://stackoverflow.com/a/3097052
             return string.Join(",", values);
-        }
-
-        /// <summary>
-        /// <para>Returns all key:value pairs from the underlying source.</para>
-        /// <para>Note that for some Formats, the iterator may include entries that
-        /// were never injected by a Tracer implementation (e.g., unrelated HTTP headers).</para>
-        /// </summary>
-        /// <returns>All key value pairs</returns>
-        public IEnumerable<KeyValuePair<string, string>> GetEntries()
-        {
-            return _headers.Select(x => new KeyValuePair<string, string>(x.Key, x.Value == null ? null : string.Join(",", x.Value)));
         }
 
         /// <summary>

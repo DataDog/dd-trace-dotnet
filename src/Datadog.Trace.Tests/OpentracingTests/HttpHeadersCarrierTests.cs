@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests
             _request.Headers.Add("key1", "value");
             _request.Headers.Add("key2", "value");
 
-            Assert.Equal(2, _carrier.GetEntries().Count());
+            Assert.Equal(2, _carrier.Count());
         }
     }
 }
