@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using Datadog.Trace.Logging;
 using OpenTracing;
 using OpenTracing.Propagation;
@@ -13,8 +12,6 @@ namespace Datadog.Trace
 
         private readonly Tracer _tracer;
         private readonly Dictionary<string, ICodec> _codecs;
-        private readonly Lazy<OpenTracing.Util.AsyncLocalScopeManager> _scopeManagerLazy = new Lazy<OpenTracing.Util.AsyncLocalScopeManager>(LazyThreadSafetyMode.ExecutionAndPublication);
-        private OpenTracingSpan _activeSpan;
 
         public OpenTracingTracer(Tracer tracer)
         {
@@ -28,21 +25,9 @@ namespace Datadog.Trace
             _codecs = new Dictionary<string, ICodec> { { BuiltinFormats.HttpHeaders.ToString(), new HttpHeadersCodec() } };
         }
 
-        public IScopeManager ScopeManager => _scopeManagerLazy.Value;
+        public OpenTracing.IScopeManager ScopeManager { get; } = new OpenTracing.Util.AsyncLocalScopeManager();
 
-        public ISpan ActiveSpan
-        {
-            get
-            {
-                if (_tracer.ActiveScope.Span == _activeSpan.DDSpan)
-                {
-                    return _activeSpan;
-                }
-
-                _activeSpan = new OpenTracingSpan(_tracer.ActiveScope);
-                return _activeSpan;
-            }
-        }
+        public ISpan ActiveSpan => ScopeManager.Active?.Span;
 
         public ISpanBuilder BuildSpan(string operationName)
         {
