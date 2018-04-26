@@ -5,21 +5,21 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
-    internal class OpenTracingSpan : ISpan
+    internal class OpenTracingSpan : ISpan, IDisposable
     {
         private static ILog _log = LogProvider.For<OpenTracingSpan>();
 
-        private Scope _scope;
+        private Span _span;
 
-        internal OpenTracingSpan(Scope scope)
+        internal OpenTracingSpan(Span span)
         {
-            _scope = scope;
+            _span = span;
         }
 
-        public ISpanContext Context => new OpenTracingSpanContext(_scope.Span.Context);
+        public ISpanContext Context => new OpenTracingSpanContext(_span.Context);
 
         // This is only exposed for tests
-        internal Span DDSpan => _scope.Span;
+        internal Span DDSpan => _span;
 
         public string GetBaggageItem(string key)
         {
@@ -71,7 +71,7 @@ namespace Datadog.Trace
 
         public ISpan SetOperationName(string operationName)
         {
-            _scope.Span.OperationName = operationName;
+            _span.OperationName = operationName;
             return this;
         }
 
@@ -95,35 +95,40 @@ namespace Datadog.Trace
             // TODO:bertrand do we want this behavior on the Span object too ?
             if (key == DDTags.ResourceName)
             {
-                _scope.Span.ResourceName = value;
+                _span.ResourceName = value;
                 return this;
             }
 
             if (key == OpenTracing.Tag.Tags.Error.Key)
             {
-                _scope.Span.Error = value == "True";
+                _span.Error = value == "True";
                 return this;
             }
 
             if (key == DDTags.SpanType)
             {
-                _scope.Span.Type = value;
+                _span.Type = value;
                 return this;
             }
 
-            _scope.Span.SetTag(key, value);
+            _span.SetTag(key, value);
             return this;
         }
 
         public void Finish()
         {
-            _scope.Dispose();
+            _span.Dispose();
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
         {
-            _scope.Span.Finish(finishTimestamp);
-            _scope.Dispose();
+            _span.Finish(finishTimestamp);
+            _span.Dispose();
+        }
+
+        public void Dispose()
+        {
+            _span.Dispose();
         }
     }
 }
