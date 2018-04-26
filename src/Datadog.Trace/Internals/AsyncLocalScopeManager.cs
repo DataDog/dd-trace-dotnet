@@ -28,7 +28,7 @@ namespace Datadog.Trace
 
             if (current != scope)
             {
-                _log.Warn("Current span doesn't match desactivated span");
+                _log.Warn("Current span doesn't match deactivated span");
             }
 
             _currentSpan.Set(current.Parent);
