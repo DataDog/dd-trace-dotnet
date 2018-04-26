@@ -77,16 +77,16 @@ namespace Datadog.Trace
 
         public IScope StartActive(bool finishSpanOnDispose)
         {
-            // TODO Lucas
-            // Scope scope = _tracer.StartActive("", finishOnClose: finishSpanOnDispose);
-            throw new NotImplementedException();
+            Scope scope = _tracer.StartActive(string.Empty, finishOnClose: finishSpanOnDispose);
+            return new OpenTracingScope(scope);
         }
 
         public ISpan Start()
         {
             lock (_lock)
             {
-                var span = new OpenTracingSpan(_tracer.StartActive(_operationName, _parent, _serviceName, _start));
+                Scope scope = _tracer.StartActive(_operationName, _parent, _serviceName, _start);
+                var span = new OpenTracingSpan(scope.Span);
 
                 if (_tags != null)
                 {
