@@ -2,7 +2,7 @@
 
 namespace Datadog.Trace
 {
-    internal class AsyncLocalScopeManager
+    internal class AsyncLocalScopeManager : IScopeManager
     {
         private static ILog _log = LogProvider.For<AsyncLocalScopeManager>();
 

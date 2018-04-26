@@ -13,7 +13,7 @@ namespace Datadog.Trace
         private static readonly ILog _log = LogProvider.For<Tracer>();
         private static Uri _defaultUri = new Uri("http://localhost:8126");
 
-        private AsyncLocalScopeManager _scopeManager;
+        private IScopeManager _scopeManager;
         private string _defaultServiceName;
         private IAgentWriter _agentWriter;
         private bool _isDebugEnabled;
@@ -50,7 +50,7 @@ namespace Datadog.Trace
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
-        AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
+        IScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
         /// <summary>
         /// Create a new Tracer with the given parameters

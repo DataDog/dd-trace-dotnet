@@ -8,7 +8,7 @@ namespace Datadog.Trace
 
         bool IsDebugEnabled { get; }
 
-        AsyncLocalScopeManager ScopeManager { get; }
+        IScopeManager ScopeManager { get; }
 
         void Write(List<Span> span);
     }
