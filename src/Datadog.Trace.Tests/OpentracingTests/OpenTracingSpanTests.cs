@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests
         {
             var startTime = DateTimeOffset.UtcNow;
             var endTime = DateTime.UtcNow.AddMilliseconds(10);
-            Scope scope = _tracer.StartActive(null, null, null, null);
+            Scope scope = _tracer.StartActive(null, null, null, startTime);
             var span = new OpenTracingSpan(scope.Span);
 
             span.Finish(endTime);
