@@ -25,8 +25,8 @@ namespace Datadog.Trace.IntegrationTests
 
             // Check that the HTTP calls went as expected
             await _httpRecorder.WaitForCompletion(1);
-            Assert.Equal(1, _httpRecorder.Requests.Count);
-            Assert.Equal(1, _httpRecorder.Responses.Count);
+            Assert.Single(_httpRecorder.Requests);
+            Assert.Single(_httpRecorder.Responses);
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
@@ -48,8 +48,8 @@ namespace Datadog.Trace.IntegrationTests
 
             // Check that the HTTP calls went as expected
             await _httpRecorder.WaitForCompletion(1);
-            Assert.Equal(1, _httpRecorder.Requests.Count);
-            Assert.Equal(1, _httpRecorder.Responses.Count);
+            Assert.Single(_httpRecorder.Requests);
+            Assert.Single(_httpRecorder.Responses);
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();
@@ -68,8 +68,8 @@ namespace Datadog.Trace.IntegrationTests
 
             // Check that the HTTP calls went as expected
             await _httpRecorder.WaitForCompletion(1);
-            Assert.Equal(1, _httpRecorder.Requests.Count);
-            Assert.Equal(1, _httpRecorder.Responses.Count);
+            Assert.Single(_httpRecorder.Requests);
+            Assert.Single(_httpRecorder.Responses);
             Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
 
             var trace = _httpRecorder.Traces.Single();

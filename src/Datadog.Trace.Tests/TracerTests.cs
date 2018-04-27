@@ -175,7 +175,7 @@ namespace Datadog.Trace.Tests
         {
             _tracer.StartSpan("Operation", null);
 
-            Assert.Equal(null, _tracer.ActiveScope);
+            Assert.Null(_tracer.ActiveScope);
         }
 
         [Fact]
