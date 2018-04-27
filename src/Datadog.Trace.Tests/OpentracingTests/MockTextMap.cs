@@ -15,11 +15,6 @@ namespace Datadog.Trace.Tests
             return value;
         }
 
-        public IEnumerable<KeyValuePair<string, string>> GetEntries()
-        {
-            return _dictionary;
-        }
-
         public void Set(string key, string value)
         {
             _dictionary[key] = value;
