@@ -117,13 +117,12 @@ namespace Datadog.Trace
 
         public void Finish()
         {
-            _span.Dispose();
+            _span.Finish();
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
         {
             _span.Finish(finishTimestamp);
-            _span.Dispose();
         }
 
         public void Dispose()
