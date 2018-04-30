@@ -125,15 +125,10 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartActive_NoServiceName_DefaultServiceName()
         {
+            string currentDomainFriendlyName = AppDomain.CurrentDomain.FriendlyName;
             var scope = _tracer.StartActive("Operation");
 
-#if NETCOREAPP2_0
-            Assert.Equal("testhost", scope.Span.ServiceName);
-#elif NET45_TESTS
-            Assert.Equal("Datadog.Trace.Tests.Net45", scope.Span.ServiceName);
-#else
-            Assert.Equal("Datadog.Trace.Tests", scope.Span.ServiceName);
-#endif
+            Assert.Equal(currentDomainFriendlyName, scope.Span.ServiceName);
         }
 
         [Fact]
