@@ -27,7 +27,7 @@ namespace Datadog.Trace
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
-            _defaultServiceName = defaultServiceName ?? GetAppDomainFriendlyName() ?? Constants.UnkownService;
+            _defaultServiceName = defaultServiceName ?? GetAppDomainFriendlyName() ?? Constants.UnknownService;
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
