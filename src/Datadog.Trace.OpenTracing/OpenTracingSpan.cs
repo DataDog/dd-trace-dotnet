@@ -1,25 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Logging;
 using OpenTracing;
 
 namespace Datadog.Trace
 {
-    internal class OpenTracingSpan : ISpan
+    public class OpenTracingSpan : ISpan
     {
         private static ILog _log = LogProvider.For<OpenTracingSpan>();
 
-        private Scope _scope;
+        public ISpanContext Context { get; }
 
-        internal OpenTracingSpan(Scope scope)
+        public Span DatadogSpan { get; }
+
+        internal OpenTracingSpan(Span datadogSpan)
         {
-            _scope = scope;
+            DatadogSpan = datadogSpan;
+            Context = new OpenTracingSpanContext(DatadogSpan.Context);
         }
-
-        public ISpanContext Context => new OpenTracingSpanContext(_scope.Span.Context);
-
-        // This is only exposed for tests
-        internal Span DDSpan => _scope.Span;
 
         public string GetBaggageItem(string key)
         {
@@ -27,13 +26,7 @@ namespace Datadog.Trace
             return null;
         }
 
-        public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields)
-        {
-            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
-            return this;
-        }
-
-        public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields)
+        public ISpan Log(DateTimeOffset timestamp, IDictionary<string, object> fields)
         {
             _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
             return this;
@@ -51,6 +44,12 @@ namespace Datadog.Trace
             return this;
         }
 
+        public ISpan Log(IDictionary<string, object> fields)
+        {
+            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
+            return this;
+        }
+
         public ISpan SetBaggageItem(string key, string value)
         {
             _log.Debug("ISpan.SetBaggageItem is not implemented by Datadog.Trace");
@@ -59,7 +58,7 @@ namespace Datadog.Trace
 
         public ISpan SetOperationName(string operationName)
         {
-            _scope.Span.OperationName = operationName;
+            DatadogSpan.OperationName = operationName;
             return this;
         }
 
@@ -70,7 +69,7 @@ namespace Datadog.Trace
 
         public ISpan SetTag(string key, double value)
         {
-            return SetTag(key, value.ToString());
+            return SetTag(key, value.ToString(CultureInfo.CurrentCulture));
         }
 
         public ISpan SetTag(string key, int value)
@@ -81,37 +80,36 @@ namespace Datadog.Trace
         public ISpan SetTag(string key, string value)
         {
             // TODO:bertrand do we want this behavior on the Span object too ?
-            switch (key)
+            if (key == DDTags.ResourceName)
             {
-                case DDTags.ResourceName:
-                    _scope.Span.ResourceName = value;
-                    return this;
-                case OpenTracing.Tags.Error:
-                    _scope.Span.Error = value == "True";
-                    return this;
-                case DDTags.SpanType:
-                    _scope.Span.Type = value;
-                    return this;
+                DatadogSpan.ResourceName = value;
+                return this;
             }
 
-            _scope.Span.SetTag(key, value);
+            if (key == global::OpenTracing.Tag.Tags.Error.Key)
+            {
+                DatadogSpan.Error = value == bool.TrueString;
+                return this;
+            }
+
+            if (key == DDTags.SpanType)
+            {
+                DatadogSpan.Type = value;
+                return this;
+            }
+
+            DatadogSpan.SetTag(key, value);
             return this;
         }
 
         public void Finish()
         {
-            _scope.Dispose();
+            DatadogSpan.Finish();
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
         {
-            _scope.Span.Finish(finishTimestamp);
-            _scope.Dispose();
-        }
-
-        public void Dispose()
-        {
-            _scope.Dispose();
+            DatadogSpan.Finish(finishTimestamp);
         }
     }
 }

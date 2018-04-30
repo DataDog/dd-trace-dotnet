@@ -13,7 +13,7 @@ namespace Datadog.Trace
         private static readonly ILog _log = LogProvider.For<Tracer>();
         private static Uri _defaultUri = new Uri("http://localhost:8126");
 
-        private AsyncLocalScopeManager _scopeManager;
+        private IScopeManager _scopeManager;
         private string _defaultServiceName;
         private IAgentWriter _agentWriter;
         private bool _isDebugEnabled;
@@ -27,7 +27,7 @@ namespace Datadog.Trace
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
-            _defaultServiceName = defaultServiceName ?? GetAppDomainFriendlyName() ?? Constants.UnkownService;
+            _defaultServiceName = defaultServiceName ?? GetAppDomainFriendlyName() ?? Constants.UnknownService;
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
@@ -50,7 +50,7 @@ namespace Datadog.Trace
 
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
-        AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
+        IScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
         /// <summary>
         /// Create a new Tracer with the given parameters
@@ -66,7 +66,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Make a span active and return a scope that can be disposed to desactivate the span
+        /// Make a span active and return a scope that can be disposed to deactivate the span
         /// </summary>
         /// <param name="span">The span to activate</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>

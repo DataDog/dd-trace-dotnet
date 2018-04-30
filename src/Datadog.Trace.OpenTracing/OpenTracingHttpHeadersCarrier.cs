@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 using OpenTracing.Propagation;
 
@@ -42,17 +42,6 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// <para>Returns all key:value pairs from the underlying source.</para>
-        /// <para>Note that for some Formats, the iterator may include entries that
-        /// were never injected by a Tracer implementation (e.g., unrelated HTTP headers).</para>
-        /// </summary>
-        /// <returns>All key value pairs</returns>
-        public IEnumerable<KeyValuePair<string, string>> GetEntries()
-        {
-            return _headers.Select(x => new KeyValuePair<string, string>(x.Key, x.Value == null ? null : string.Join(",", x.Value)));
-        }
-
-        /// <summary>
         /// Adds a key:value pair into the underlying source. If the source already contains the key, the value will be overwritten.
         /// </summary>
         /// <param name="key">A string, possibly with constraints dictated by the particular Format this <see cref="T:OpenTracing.Propagation.ITextMap" /> is paired with.</param>
@@ -62,6 +51,31 @@ namespace Datadog.Trace
             // We remove all the existing values for that key before adding the new one to have a "set" behavior
             _headers.Remove(key);
             _headers.Add(key, value);
+        }
+
+        /// <summary>
+        /// <para>Returns all key:value pairs from the underlying source.</para>
+        /// <para>Note that for some Formats, the iterator may include entries that
+        /// were never injected by a Tracer implementation (e.g., unrelated HTTP headers).</para>
+        /// </summary>
+        /// <returns>All key value pairs</returns>
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+        {
+            foreach (KeyValuePair<string, IEnumerable<string>> x in _headers)
+            {
+                yield return new KeyValuePair<string, string>(x.Key, x.Value == null ? null : string.Join(",", x.Value));
+            }
+        }
+
+        /// <summary>
+        /// <para>Returns all key:value pairs from the underlying source.</para>
+        /// <para>Note that for some Formats, the iterator may include entries that
+        /// were never injected by a Tracer implementation (e.g., unrelated HTTP headers).</para>
+        /// </summary>
+        /// <returns>All key value pairs</returns>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

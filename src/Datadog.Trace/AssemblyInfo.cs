@@ -1,5 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Datadog.Trace.OpenTracing")]
+[assembly: InternalsVisibleTo("Datadog.Trace.OpenTracing.Tests")]
 [assembly: InternalsVisibleTo("Datadog.Trace.SqlClient")]
 [assembly: InternalsVisibleTo("Datadog.Trace.Tests")]
 [assembly: InternalsVisibleTo("Datadog.Trace.Tests.Net45")]
