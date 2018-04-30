@@ -4,33 +4,38 @@ using OpenTracing;
 namespace Datadog.Trace
 {
     /// <summary>
-    /// A Datadog implementation of <see cref="OpenTracing.IScope"/>
-    /// that wraps <see cref="Scope"/>.
+    /// A Datadog implementation of <see cref="IScope"/>
+    /// that wraps <see cref="DatadogScope"/>.
     /// </summary>
     public class OpenTracingScope : IScope
     {
-        private readonly Scope _scope;
+        public Scope DatadogScope { get; }
 
-        private OpenTracingSpan _span;
+        /// <summary>
+        /// Gets the Span that has been scoped by this Scope.
+        /// </summary>
+        public OpenTracingSpan Span { get; }
+
+        /// <summary>
+        /// Gets the Span that has been scoped by this Scope.
+        /// </summary>
+        ISpan IScope.Span => Span;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenTracingScope"/> class
-        /// that wraps the specified <paramref name="scope"/>.
+        /// that wraps the specified <paramref name="datadogScope"/>.
         /// </summary>
-        /// <param name="scope">The Datadog <see cref="Scope"/> to wrap.</param>
-        public OpenTracingScope(Scope scope)
+        /// <param name="datadogScope">The Datadog <see cref="DatadogScope"/> to wrap.</param>
+        public OpenTracingScope(Scope datadogScope)
         {
-            _scope = scope;
-            _span = new OpenTracingSpan(_scope); 
+            DatadogScope = datadogScope;
+            Span = new OpenTracingSpan(DatadogScope.Span);
         }
-
-        /// <inheritdoc />
-        public ISpan Span => _span;
 
         /// <inheritdoc />
         public void Dispose()
         {
-            _scope?.Dispose();
+            DatadogScope?.Dispose();
         }
     }
 }

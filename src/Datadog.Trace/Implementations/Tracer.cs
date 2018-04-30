@@ -66,7 +66,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Make a span active and return a scope that can be disposed to desactivate the span
+        /// Make a span active and return a scope that can be disposed to deactivate the span
         /// </summary>
         /// <param name="span">The span to activate</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>

@@ -9,19 +9,21 @@ namespace Datadog.Trace.Tests
     public class OpenTracingSpanTests
     {
         private Mock<IAgentWriter> _writerMock;
-        private Tracer _tracer;
+        private OpenTracingTracer _tracer;
 
         public OpenTracingSpanTests()
         {
             _writerMock = new Mock<IAgentWriter>();
-            _tracer = new Tracer(_writerMock.Object);
+            var ddTracer = new Tracer(_writerMock.Object);
+            _tracer = new OpenTracingTracer(ddTracer);
         }
 
         [Fact]
         public void SetTag_Tags_TagsAreProperlySet()
         {
-            Scope scope = _tracer.StartActive(null, null, null, null);
-            var span = new OpenTracingSpan(scope);
+            var scope = (OpenTracingScope)_tracer.BuildSpan("Op1")
+                                                 .StartActive(finishSpanOnDispose: true);
+            var span = scope.Span;
 
             span.SetTag("StringKey", "What's tracing");
             span.SetTag("IntKey", 42);
@@ -29,95 +31,82 @@ namespace Datadog.Trace.Tests
             span.SetTag("BoolKey", true);
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<List<Span>>()), Times.Never);
-            Assert.Equal("What's tracing", span.DDSpan.GetTag("StringKey"));
-            Assert.Equal("42", span.DDSpan.GetTag("IntKey"));
-            Assert.Equal("1.618", span.DDSpan.GetTag("DoubleKey"));
-            Assert.Equal("True", span.DDSpan.GetTag("BoolKey"));
+            Assert.Equal("What's tracing", span.DatadogSpan.GetTag("StringKey"));
+            Assert.Equal("42", span.DatadogSpan.GetTag("IntKey"));
+            Assert.Equal("1.618", span.DatadogSpan.GetTag("DoubleKey"));
+            Assert.Equal("True", span.DatadogSpan.GetTag("BoolKey"));
         }
 
         [Fact]
         public void SetOperationName_ValidOperationName_OperationNameIsProperlySet()
         {
-            Scope scope = _tracer.StartActive(null, null, null, null);
-            var span = new OpenTracingSpan(scope);
+            var scope = (OpenTracingScope)_tracer.BuildSpan("Op1")
+                                                 .StartActive(finishSpanOnDispose: true);
+            var span = scope.Span;
 
             span.SetOperationName("Op1");
 
-            Assert.Equal("Op1", span.DDSpan.OperationName);
-        }
-
-        [Fact]
-        public void Finish_StartTimeInThePastWithNoEndTime_DurationProperlyComputed()
-        {
-            // The 10 additional milliseconds account for the clock precision
-            var startTime = DateTimeOffset.UtcNow.AddMinutes(-1).AddMilliseconds(-10);
-
-            Scope scope = _tracer.StartActive(null, null, null, startTime);
-            var span = new OpenTracingSpan(scope);
-
-            span.Finish();
-
-            Assert.True(span.DDSpan.Duration >= TimeSpan.FromMinutes(1) && span.DDSpan.Duration < TimeSpan.FromMinutes(2));
+            Assert.Equal("Op1", span.DatadogSpan.OperationName);
         }
 
         [Fact]
         public async Task Finish_NoEndTimeProvided_SpanWriten()
         {
-            Scope scope = _tracer.StartActive(null);
-            var span = new OpenTracingSpan(scope);
+            var scope = (OpenTracingScope)_tracer.BuildSpan("Op1")
+                                                 .StartActive(finishSpanOnDispose: true);
+            var span = scope.Span;
 
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<List<Span>>()), Times.Once);
-            Assert.True(span.DDSpan.Duration > TimeSpan.Zero);
+            Assert.True(span.DatadogSpan.Duration > TimeSpan.Zero);
         }
 
         [Fact]
         public void Finish_EndTimeProvided_SpanWritenWithCorrectDuration()
         {
-            var startTime = DateTimeOffset.UtcNow;
-            var endTime = startTime.AddMilliseconds(10);
-            Scope scope = _tracer.StartActive(null, startTime: startTime);
-            var span = new OpenTracingSpan(scope);
+            var duration = TimeSpan.FromSeconds(1);
 
-            span.Finish(endTime);
+            var scope = (OpenTracingScope)_tracer.BuildSpan("Op1")
+                                                 .StartActive(finishSpanOnDispose: true);
+            var span = scope.Span;
+            span.Finish(span.DatadogSpan.StartTime + duration);
 
-            Assert.Equal(endTime - startTime, span.DDSpan.Duration);
+            Assert.Equal(duration, span.DatadogSpan.Duration);
         }
 
         [Fact]
         public void Finish_EndTimeInThePast_DurationIs0()
         {
-            var startTime = DateTimeOffset.UtcNow;
-            var endTime = startTime.AddMilliseconds(-10);
+            var scope = (OpenTracingScope)_tracer.BuildSpan("Op1")
+                                                 .StartActive(finishSpanOnDispose: true);
+            var span = scope.Span;
 
-            Scope scope = _tracer.StartActive(null, startTime: startTime);
-            var span = new OpenTracingSpan(scope);
+            span.Finish(DateTimeOffset.UtcNow.AddMinutes(-1));
 
-            span.Finish(endTime);
-
-            Assert.Equal(TimeSpan.Zero, span.DDSpan.Duration);
+            Assert.Equal(TimeSpan.Zero, span.DatadogSpan.Duration);
         }
 
         [Fact]
         public void Dispose_ExitUsing_SpanWriten()
         {
-            Scope scope = _tracer.StartActive(null);
-
-            var span = new OpenTracingSpan(scope);
+            var scope = (OpenTracingScope)_tracer.BuildSpan("Op1")
+                                                 .StartActive(finishSpanOnDispose: true);
+            var span = scope.Span;
             span.Finish();
 
-            Assert.True(span.DDSpan.Duration > TimeSpan.Zero);
+            Assert.True(span.DatadogSpan.Duration > TimeSpan.Zero);
         }
 
         [Fact]
         public void Context_TwoCalls_ContextStaysEqual()
         {
-            Scope scope = _tracer.StartActive(null);
-            var span = new OpenTracingSpan(scope);
+            var scope = _tracer.BuildSpan("Op1")
+                               .StartActive(finishSpanOnDispose: true);
+            var span = scope.Span;
 
-            Assert.Equal(span.Context, span.Context);
+            Assert.Same(span.Context, span.Context);
         }
     }
 }

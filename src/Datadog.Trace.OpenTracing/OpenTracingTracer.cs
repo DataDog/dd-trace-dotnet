@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTracing;
 using OpenTracing;
 using OpenTracing.Propagation;
 
@@ -10,24 +11,31 @@ namespace Datadog.Trace
     {
         private static readonly ILog _log = LogProvider.For<OpenTracingTracer>();
 
-        private readonly Tracer _tracer;
+        private readonly global::OpenTracing.IScopeManager _scopeManager;
+        private readonly IDatadogTracer _tracer;
         private readonly Dictionary<string, ICodec> _codecs;
 
-        public OpenTracingTracer(Tracer tracer)
+        public OpenTracingTracer(IDatadogTracer tracer)
         {
             _tracer = tracer;
             _codecs = new Dictionary<string, ICodec> { { BuiltinFormats.HttpHeaders.ToString(), new HttpHeadersCodec() } };
+
+            IScopeManager ddScopeManager = ((IDatadogTracer)tracer).ScopeManager;
+            _scopeManager = new OpenTracingScopeManager(ddScopeManager);
         }
 
-        public OpenTracingTracer(IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
+        /*
+        public OpenTracingTracer(global::OpenTracing.IScopeManager scopeManager, IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
         {
+            _scopeManager = scopeManager;
             _tracer = new Tracer(agentWriter, defaultServiceName, isDebugEnabled);
             _codecs = new Dictionary<string, ICodec> { { BuiltinFormats.HttpHeaders.ToString(), new HttpHeadersCodec() } };
         }
+        */
 
-        public OpenTracing.IScopeManager ScopeManager { get; } = new OpenTracing.Util.AsyncLocalScopeManager();
+        public global::OpenTracing.IScopeManager ScopeManager => _scopeManager;
 
-        public ISpan ActiveSpan => ScopeManager.Active?.Span;
+        public ISpan ActiveSpan => _scopeManager?.Active?.Span;
 
         public ISpanBuilder BuildSpan(string operationName)
         {

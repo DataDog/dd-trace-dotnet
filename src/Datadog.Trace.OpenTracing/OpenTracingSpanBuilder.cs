@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Logging;
 using OpenTracing;
 
@@ -9,15 +10,16 @@ namespace Datadog.Trace
     {
         private static ILog _log = LogProvider.For<OpenTracingSpanBuilder>();
 
-        private readonly Tracer _tracer;
+        private readonly IDatadogTracer _tracer;
         private readonly object _lock = new object();
         private readonly string _operationName;
         private SpanContext _parent;
         private DateTimeOffset? _start;
         private Dictionary<string, string> _tags;
         private string _serviceName;
+        private bool _ignoreActiveSpan;
 
-        internal OpenTracingSpanBuilder(Tracer tracer, string operationName)
+        internal OpenTracingSpanBuilder(IDatadogTracer tracer, string operationName)
         {
             _tracer = tracer;
             _operationName = operationName;
@@ -58,32 +60,32 @@ namespace Datadog.Trace
 
         public ISpanBuilder IgnoreActiveSpan()
         {
-            _log.Debug("ISpanBuilder.FollowsFrom is not implemented by Datadog.Trace");
+            _ignoreActiveSpan = true;
             return this;
         }
 
         public IScope StartActive(bool finishSpanOnDispose)
         {
-            Scope scope = _tracer.StartActive(string.Empty, finishOnClose: finishSpanOnDispose);
-            return new OpenTracingScope(scope);
+            Scope ddScope = _tracer.StartActive(_operationName, _parent, _serviceName, _start, _ignoreActiveSpan, finishSpanOnDispose);
+            return new OpenTracingScope(ddScope);
         }
 
         public ISpan Start()
         {
             lock (_lock)
             {
-                Scope scope = _tracer.StartActive(_operationName, _parent, _serviceName, _start);
-                var span = new OpenTracingSpan(scope);
+                Span ddSpan = _tracer.StartSpan(_operationName, _parent, _serviceName, _start);
+                var otSpan = new OpenTracingSpan(ddSpan);
 
                 if (_tags != null)
                 {
                     foreach (var pair in _tags)
                     {
-                        span.SetTag(pair.Key, pair.Value);
+                        otSpan.SetTag(pair.Key, pair.Value);
                     }
                 }
 
-                return span;
+                return otSpan;
             }
         }
 
@@ -103,7 +105,7 @@ namespace Datadog.Trace
 
         public ISpanBuilder WithTag(string key, double value)
         {
-            return WithTag(key, value.ToString());
+            return WithTag(key, value.ToString(CultureInfo.CurrentCulture));
         }
 
         public ISpanBuilder WithTag(string key, int value)

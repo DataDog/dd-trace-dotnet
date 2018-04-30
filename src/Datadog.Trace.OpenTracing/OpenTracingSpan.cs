@@ -1,45 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Logging;
 using OpenTracing;
 
 namespace Datadog.Trace
 {
-    internal class OpenTracingSpan : ISpan
+    public class OpenTracingSpan : ISpan
     {
         private static ILog _log = LogProvider.For<OpenTracingSpan>();
 
-        private Scope _scope;
+        public ISpanContext Context { get; }
 
-        private Span _span;
+        public Span DatadogSpan { get; }
 
-        internal OpenTracingSpan(Scope scope)
+        internal OpenTracingSpan(Span datadogSpan)
         {
-            _scope = scope;
-            _span = scope.Span;
+            DatadogSpan = datadogSpan;
+            Context = new OpenTracingSpanContext(DatadogSpan.Context);
         }
-
-        public ISpanContext Context => new OpenTracingSpanContext(_span.Context);
-
-        // This is only exposed for tests
-        internal Span DDSpan => _span;
 
         public string GetBaggageItem(string key)
         {
             _log.Debug("ISpan.GetBaggageItem is not implemented by Datadog.Trace");
             return null;
-        }
-
-        public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields)
-        {
-            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
-            return this;
-        }
-
-        public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields)
-        {
-            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
-            return this;
         }
 
         public ISpan Log(DateTimeOffset timestamp, IDictionary<string, object> fields)
@@ -74,7 +58,7 @@ namespace Datadog.Trace
 
         public ISpan SetOperationName(string operationName)
         {
-            _span.OperationName = operationName;
+            DatadogSpan.OperationName = operationName;
             return this;
         }
 
@@ -85,7 +69,7 @@ namespace Datadog.Trace
 
         public ISpan SetTag(string key, double value)
         {
-            return SetTag(key, value.ToString());
+            return SetTag(key, value.ToString(CultureInfo.CurrentCulture));
         }
 
         public ISpan SetTag(string key, int value)
@@ -98,36 +82,34 @@ namespace Datadog.Trace
             // TODO:bertrand do we want this behavior on the Span object too ?
             if (key == DDTags.ResourceName)
             {
-                _span.ResourceName = value;
+                DatadogSpan.ResourceName = value;
                 return this;
             }
 
-            if (key == OpenTracing.Tag.Tags.Error.Key)
+            if (key == global::OpenTracing.Tag.Tags.Error.Key)
             {
-                _span.Error = value == "True";
+                DatadogSpan.Error = value == bool.TrueString;
                 return this;
             }
 
             if (key == DDTags.SpanType)
             {
-                _span.Type = value;
+                DatadogSpan.Type = value;
                 return this;
             }
 
-            _span.SetTag(key, value);
+            DatadogSpan.SetTag(key, value);
             return this;
         }
 
         public void Finish()
         {
-            _span.Finish();
-            _scope.Close();
+            DatadogSpan.Finish();
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
         {
-            _span.Finish(finishTimestamp);
-            _scope.Close();
+            DatadogSpan.Finish(finishTimestamp);
         }
     }
 }
