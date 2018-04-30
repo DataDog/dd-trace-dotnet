@@ -11,7 +11,7 @@ namespace Datadog.Trace
     {
         private readonly Scope _scope;
 
-        private OpenTracingSpan _lastActiveSpan;
+        private OpenTracingSpan _span;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenTracingScope"/> class
@@ -21,23 +21,11 @@ namespace Datadog.Trace
         public OpenTracingScope(Scope scope)
         {
             _scope = scope;
+            _span = new OpenTracingSpan(_scope); 
         }
 
         /// <inheritdoc />
-        public ISpan Span
-        {
-            get
-            {
-                // as long as the active span is the same instance, keep returning the same wrapper;
-                // else, create a new wrapper
-                if (!ReferenceEquals(_lastActiveSpan.DDSpan, _scope.Span))
-                {
-                    _lastActiveSpan = new OpenTracingSpan(_scope.Span);
-                }
-
-                return _lastActiveSpan;
-            }
-        }
+        public ISpan Span => _span;
 
         /// <inheritdoc />
         public void Dispose()

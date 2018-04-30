@@ -5,15 +5,18 @@ using OpenTracing;
 
 namespace Datadog.Trace
 {
-    internal class OpenTracingSpan : ISpan, IDisposable
+    internal class OpenTracingSpan : ISpan
     {
         private static ILog _log = LogProvider.For<OpenTracingSpan>();
 
+        private Scope _scope;
+
         private Span _span;
 
-        internal OpenTracingSpan(Span span)
+        internal OpenTracingSpan(Scope scope)
         {
-            _span = span;
+            _scope = scope;
+            _span = scope.Span;
         }
 
         public ISpanContext Context => new OpenTracingSpanContext(_span.Context);
@@ -118,16 +121,13 @@ namespace Datadog.Trace
         public void Finish()
         {
             _span.Finish();
+            _scope.Close();
         }
 
         public void Finish(DateTimeOffset finishTimestamp)
         {
             _span.Finish(finishTimestamp);
-        }
-
-        public void Dispose()
-        {
-            _span.Dispose();
+            _scope.Close();
         }
     }
 }

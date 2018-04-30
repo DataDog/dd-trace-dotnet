@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests
         public void SetTag_Tags_TagsAreProperlySet()
         {
             Scope scope = _tracer.StartActive(null, null, null, null);
-            var span = new OpenTracingSpan(scope.Span);
+            var span = new OpenTracingSpan(scope);
 
             span.SetTag("StringKey", "What's tracing");
             span.SetTag("IntKey", 42);
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests
         public void SetOperationName_ValidOperationName_OperationNameIsProperlySet()
         {
             Scope scope = _tracer.StartActive(null, null, null, null);
-            var span = new OpenTracingSpan(scope.Span);
+            var span = new OpenTracingSpan(scope);
 
             span.SetOperationName("Op1");
 
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests
             var startTime = DateTimeOffset.UtcNow.AddMinutes(-1).AddMilliseconds(-10);
 
             Scope scope = _tracer.StartActive(null, null, null, startTime);
-            var span = new OpenTracingSpan(scope.Span);
+            var span = new OpenTracingSpan(scope);
 
             span.Finish();
 
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tests
         public async Task Finish_NoEndTimeProvided_SpanWriten()
         {
             Scope scope = _tracer.StartActive(null);
-            var span = new OpenTracingSpan(scope.Span);
+            var span = new OpenTracingSpan(scope);
 
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
@@ -77,9 +77,9 @@ namespace Datadog.Trace.Tests
         public void Finish_EndTimeProvided_SpanWritenWithCorrectDuration()
         {
             var startTime = DateTimeOffset.UtcNow;
-            var endTime = DateTime.UtcNow.AddMilliseconds(10);
+            var endTime = startTime.AddMilliseconds(10);
             Scope scope = _tracer.StartActive(null, startTime: startTime);
-            var span = new OpenTracingSpan(scope.Span);
+            var span = new OpenTracingSpan(scope);
 
             span.Finish(endTime);
 
@@ -90,10 +90,10 @@ namespace Datadog.Trace.Tests
         public void Finish_EndTimeInThePast_DurationIs0()
         {
             var startTime = DateTimeOffset.UtcNow;
-            var endTime = DateTime.UtcNow.AddMilliseconds(-10);
+            var endTime = startTime.AddMilliseconds(-10);
 
             Scope scope = _tracer.StartActive(null, startTime: startTime);
-            var span = new OpenTracingSpan(scope.Span);
+            var span = new OpenTracingSpan(scope);
 
             span.Finish(endTime);
 
@@ -103,12 +103,10 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Dispose_ExitUsing_SpanWriten()
         {
-            OpenTracingSpan span;
             Scope scope = _tracer.StartActive(null);
 
-            using (span = new OpenTracingSpan(scope.Span))
-            {
-            }
+            var span = new OpenTracingSpan(scope);
+            span.Finish();
 
             Assert.True(span.DDSpan.Duration > TimeSpan.Zero);
         }
@@ -117,7 +115,7 @@ namespace Datadog.Trace.Tests
         public void Context_TwoCalls_ContextStaysEqual()
         {
             Scope scope = _tracer.StartActive(null);
-            var span = new OpenTracingSpan(scope.Span);
+            var span = new OpenTracingSpan(scope);
 
             Assert.Equal(span.Context, span.Context);
         }

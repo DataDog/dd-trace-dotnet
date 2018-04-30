@@ -73,7 +73,7 @@ namespace Datadog.Trace
             lock (_lock)
             {
                 Scope scope = _tracer.StartActive(_operationName, _parent, _serviceName, _start);
-                var span = new OpenTracingSpan(scope.Span);
+                var span = new OpenTracingSpan(scope);
 
                 if (_tags != null)
                 {
