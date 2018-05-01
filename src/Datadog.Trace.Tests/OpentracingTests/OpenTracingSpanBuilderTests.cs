@@ -167,7 +167,7 @@ namespace Datadog.Trace.Tests
                 .WithTag(OpenTracing.Tags.Error, true)
                 .Start();
 
-            Assert.Equal(true, span.DDSpan.Error);
+            Assert.True(span.DDSpan.Error);
         }
 
         [Fact]
