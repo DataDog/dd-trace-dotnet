@@ -13,8 +13,7 @@ Task("Pack")
     Configuration = configuration
   };
   DotNetCorePack("./src/Datadog.Trace", settings);
-  DotNetCorePack("./src/Datadog.Trace.AspNetCore", settings);
-  DotNetCorePack("./src/Datadog.Trace.SqlClient", settings);
+  DotNetCorePack("./src/Datadog.Trace.OpenTracing", settings);
 });
 
 Task("DockerUp")
@@ -79,18 +78,6 @@ Task("Test")
   }
 });
 
-Task("TestNet45")
-  .IsDependentOn("Build")
-  .Does(() =>
-{
-  var testDlls = GetFiles($"./src/**/bin/{configuration}/*Net45.dll");
-  foreach(var testDll in testDlls)
-  {
-    Information(testDll.FullPath);
-    XUnit2(testDll.FullPath);
-  }
-});
-
 Task("Benchmarks")
 .Does(() =>
 {
@@ -103,7 +90,6 @@ Task("Benchmarks")
 });
 
 Task("Default")
-  .IsDependentOn("TestNet45")
   .IsDependentOn("Test")
   .Does(() =>
 {
