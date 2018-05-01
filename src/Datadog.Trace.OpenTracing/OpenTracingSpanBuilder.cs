@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using OpenTracing;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpanBuilder : ISpanBuilder
     {

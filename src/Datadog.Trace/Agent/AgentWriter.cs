@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Agent
 {
     internal class AgentWriter : IAgentWriter
     {

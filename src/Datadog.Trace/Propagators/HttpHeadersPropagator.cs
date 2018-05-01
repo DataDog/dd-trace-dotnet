@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Headers;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Propagators
 {
     /// <summary>
     /// A HTTP Propagator using <see cref="HttpHeaders"/> as carrier

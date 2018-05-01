@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using OpenTracing.Propagation;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.OpenTracing.Tests
 {
     public class MockTextMap : ITextMap
     {

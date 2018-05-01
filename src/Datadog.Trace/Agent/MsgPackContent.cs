@@ -5,7 +5,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using MsgPack.Serialization;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Agent
 {
     internal class MsgPackContent<T> : HttpContent
     {

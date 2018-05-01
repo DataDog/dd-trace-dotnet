@@ -1,9 +1,10 @@
 using System;
+using Datadog.Trace.Agent;
 using Moq;
 using OpenTracing;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.OpenTracing.Tests
 {
     public class OpenTracingSpanBuilderTests
     {
@@ -164,7 +165,7 @@ namespace Datadog.Trace.Tests
         public void Start_SettingError_ErrorIsSet()
         {
             var span = (OpenTracingSpan)_createSpanBuilder()
-                .WithTag(OpenTracing.Tags.Error, true)
+                .WithTag(global::OpenTracing.Tags.Error, true)
                 .Start();
 
             Assert.True(span.DDSpan.Error);

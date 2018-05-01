@@ -2,7 +2,7 @@
 using System.Net.Http;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.OpenTracing.Tests
 {
     public class HttpHeadersCarrierTests
     {

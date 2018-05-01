@@ -3,13 +3,13 @@ using System.Linq;
 using System.Net.Http.Headers;
 using OpenTracing.Propagation;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.OpenTracing
 {
     /// <summary>
     /// This class wraps a <see cref="HttpHeaders"/> to implement the <see cref="ITextMap"/> interface
     /// to enable injecting context propagation headers on outgoing http requests.
     /// </summary>
-    /// <seealso cref="OpenTracing.Propagation.ITextMap" />
+    /// <seealso cref="ITextMap" />
     public class OpenTracingHttpHeadersCarrier : ITextMap
     {
         private HttpHeaders _headers;

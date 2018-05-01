@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Datadog.Trace.Agent;
 using Xunit;
 
 namespace Datadog.Trace.Tests

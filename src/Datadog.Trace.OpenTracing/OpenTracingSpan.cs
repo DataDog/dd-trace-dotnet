@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using OpenTracing;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpan : ISpan
     {
@@ -86,7 +86,7 @@ namespace Datadog.Trace
                 case DatadogTags.ResourceName:
                     _scope.Span.ResourceName = value;
                     return this;
-                case OpenTracing.Tags.Error:
+                case global::OpenTracing.Tags.Error:
                     _scope.Span.Error = value == "True";
                     return this;
                 case DatadogTags.SpanType:

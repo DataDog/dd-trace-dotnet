@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace

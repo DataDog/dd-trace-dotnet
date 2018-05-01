@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Agent
 {
     internal class AgentWriterBuffer<T>
     {

@@ -2,7 +2,7 @@
 using OpenTracing;
 using OpenTracing.Propagation;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.OpenTracing
 {
     internal class HttpHeadersCodec : ICodec
     {

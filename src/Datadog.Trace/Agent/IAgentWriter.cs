@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Agent
 {
     internal interface IAgentWriter
     {

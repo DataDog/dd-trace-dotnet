@@ -1,4 +1,4 @@
-﻿namespace Datadog.Trace
+﻿namespace Datadog.Trace.OpenTracing
 {
     /// <summary>
     /// This set of tags is used by the OpenTracing compatible tracer to set DataDog specific fields.

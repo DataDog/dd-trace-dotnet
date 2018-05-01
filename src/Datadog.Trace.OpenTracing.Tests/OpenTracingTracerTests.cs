@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Moq;
 using OpenTracing.Propagation;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.OpenTracing.Tests
 {
     public class OpenTracingTracerTests
     {
@@ -24,10 +25,8 @@ namespace Datadog.Trace.Tests
             var span = (OpenTracingSpan)builder.Start();
 #if NETCOREAPP2_0
             Assert.Equal("testhost", span.DDSpan.ServiceName);
-#elif NET45_TESTS
-            Assert.Equal("Datadog.Trace.Tests.Net45", span.DDSpan.ServiceName);
 #else
-            Assert.Equal("Datadog.Trace.Tests", span.DDSpan.ServiceName);
+            Assert.Equal("Datadog.Trace.OpenTracing.Tests", span.DDSpan.ServiceName);
 #endif
             Assert.Equal("Op1", span.DDSpan.OperationName);
         }

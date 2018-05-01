@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Moq;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.OpenTracing.Tests
 {
     public class OpenTracingSpanTests
     {

@@ -1,4 +1,4 @@
-﻿namespace Datadog.Trace
+﻿namespace Datadog.Trace.OpenTracing
 {
     internal interface ICodec
     {

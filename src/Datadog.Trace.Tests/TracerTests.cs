@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Moq;
 using Xunit;
 
@@ -129,8 +130,6 @@ namespace Datadog.Trace.Tests
 
 #if NETCOREAPP2_0
             Assert.Equal("testhost", scope.Span.ServiceName);
-#elif NET45_TESTS
-            Assert.Equal("Datadog.Trace.Tests.Net45", scope.Span.ServiceName);
 #else
             Assert.Equal("Datadog.Trace.Tests", scope.Span.ServiceName);
 #endif

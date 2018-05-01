@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Http;
+using Datadog.Trace.Agent;
 using OpenTracing;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.OpenTracing
 {
     /// <summary>
     /// This class contains factory methods to instantiate an OpenTracing compatible tracer that sends data to DataDog

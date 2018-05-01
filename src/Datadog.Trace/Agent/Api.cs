@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using MsgPack.Serialization;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Agent
 {
     internal class Api : IApi
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.OpenTracing.Tests
 {
     public class HttpHeaderCodecTests
     {
