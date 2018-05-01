@@ -1,12 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>false</IsPackable>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
-    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,15 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+    <PackageReference Include="MsgPack.Cli" Version="0.9.2" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.2" />
     <PackageReference Include="xunit" Version="2.3.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
-    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 

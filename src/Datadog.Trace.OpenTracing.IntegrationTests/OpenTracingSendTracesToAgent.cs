@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
-using Datadog.Trace.IntegrationTests;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.OpenTracing.IntegrationTests

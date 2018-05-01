@@ -10,13 +10,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.IntegrationTe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenTracing", "..\lib\opentracing-csharp\src\OpenTracing\OpenTracing.csproj", "{6A48CB37-C924-4DF3-8524-ABD3BB9B04C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.OpenTracing", "Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj", "{188219D1-D123-46C9-B905-A9ED30E6AAA7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.OpenTracing", "Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj", "{188219D1-D123-46C9-B905-A9ED30E6AAA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.OpenTracing.Tests", "Datadog.Trace.OpenTracing.Tests\Datadog.Trace.OpenTracing.Tests.csproj", "{3BCE5D99-147B-4305-9970-AB0F683A6E8D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.OpenTracing.Tests", "Datadog.Trace.OpenTracing.Tests\Datadog.Trace.OpenTracing.Tests.csproj", "{3BCE5D99-147B-4305-9970-AB0F683A6E8D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.OpenTracing.IntegrationTests", "Datadog.Trace.OpenTracing.IntegrationTests\Datadog.Trace.OpenTracing.IntegrationTests.csproj", "{EFBFC324-B459-4D39-8E19-CE4AD0DBF15F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OpenTracing", "OpenTracing", "{C28F72E1-C6C9-453A-8901-844E42B28735}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.TestHelpers", "Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj", "{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -112,6 +114,18 @@ Global
 		{EFBFC324-B459-4D39-8E19-CE4AD0DBF15F}.Release|x64.Build.0 = Release|Any CPU
 		{EFBFC324-B459-4D39-8E19-CE4AD0DBF15F}.Release|x86.ActiveCfg = Release|Any CPU
 		{EFBFC324-B459-4D39-8E19-CE4AD0DBF15F}.Release|x86.Build.0 = Release|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Debug|x64.Build.0 = Debug|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Debug|x86.Build.0 = Debug|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Release|x64.ActiveCfg = Release|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Release|x64.Build.0 = Release|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Release|x86.ActiveCfg = Release|Any CPU
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

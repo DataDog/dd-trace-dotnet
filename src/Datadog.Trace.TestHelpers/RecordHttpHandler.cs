@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MsgPack;
 
-namespace Datadog.Trace.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     /// <summary>
     /// This class implements a handler that can be passed as parameter of a new HttpClient
@@ -66,7 +66,7 @@ namespace Datadog.Trace.IntegrationTests
             }
         }
 
-        protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var requestContent = await request.Content.ReadAsByteArrayAsync();
             var response = await base.SendAsync(request, cancellationToken);

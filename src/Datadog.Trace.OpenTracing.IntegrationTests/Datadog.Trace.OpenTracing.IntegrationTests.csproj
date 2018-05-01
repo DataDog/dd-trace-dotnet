@@ -25,8 +25,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\lib\opentracing-csharp\src\OpenTracing\OpenTracing.csproj" />
-    <ProjectReference Include="..\Datadog.Trace.IntegrationTests\Datadog.Trace.IntegrationTests.csproj" />
     <ProjectReference Include="..\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 

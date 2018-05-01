@@ -3,11 +3,11 @@ using System.Linq;
 using MsgPack;
 using Xunit;
 
-namespace Datadog.Trace.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     /// <summary>
     /// This class provides a bunch of helpers to read Span and ServiceInfo data
-    /// from their serialized MsgPack representation. (It is not straightfoward
+    /// from their serialized MsgPack representation. (It is not straightforward
     /// to create deserializer for them since they are not public and don't provide
     /// setters for all fields)
     /// </summary>
