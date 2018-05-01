@@ -83,13 +83,13 @@ namespace Datadog.Trace
             // TODO:bertrand do we want this behavior on the Span object too ?
             switch (key)
             {
-                case DDTags.ResourceName:
+                case DatadogTags.ResourceName:
                     _scope.Span.ResourceName = value;
                     return this;
                 case OpenTracing.Tags.Error:
                     _scope.Span.Error = value == "True";
                     return this;
-                case DDTags.SpanType:
+                case DatadogTags.SpanType:
                     _scope.Span.Type = value;
                     return this;
             }

@@ -3,7 +3,7 @@
     /// <summary>
     /// This set of tags is used by the OpenTracing compatible tracer to set DataDog specific fields.
     /// </summary>
-    public static class DDTags
+    public static class DatadogTags
     {
         /// <summary>
         /// This tag sets the service name

@@ -114,7 +114,7 @@ namespace Datadog.Trace
         {
             lock (_lock)
             {
-                if (key == DDTags.ServiceName)
+                if (key == DatadogTags.ServiceName)
                 {
                     _serviceName = value;
                     return this;
