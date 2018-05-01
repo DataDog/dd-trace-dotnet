@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.ExtensionMethods
 {
-    internal static class RandomUtils
+    internal static class RandomExtensions
     {
         public static ulong NextUInt63(this Random rnd)
         {

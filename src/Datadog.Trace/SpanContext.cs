@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
