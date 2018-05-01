@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.ExtensionMethods;
 using MsgPack;
 using Xunit;
 

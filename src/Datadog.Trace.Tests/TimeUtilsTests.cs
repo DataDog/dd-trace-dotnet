@@ -1,5 +1,6 @@
 ﻿#if !NET45 && !NET451 && !NET452
 using System;
+using Datadog.Trace.ExtensionMethods;
 using Xunit;
 
 namespace Datadog.Trace.Tests
