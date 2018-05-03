@@ -16,9 +16,38 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.OpenTracing.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.OpenTracing.IntegrationTests", "test\Datadog.Trace.OpenTracing.IntegrationTests\Datadog.Trace.OpenTracing.IntegrationTests.csproj", "{EFBFC324-B459-4D39-8E19-CE4AD0DBF15F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OpenTracing", "OpenTracing", "{C28F72E1-C6C9-453A-8901-844E42B28735}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.TestHelpers", "test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj", "{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.TestHelpers", "test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj", "{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FEBCE7DC-9FD1-48A6-B911-71ABB240A030}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9E5F0022-0A50-40BF-AC6A-C3078585ECAB}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+		src\GlobalSuppressions.cs = src\GlobalSuppressions.cs
+		src\stylecop.json = src\stylecop.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{8CEC2042-F11C-49F5-A674-2355793B600A}"
+	ProjectSection(SolutionItems) = preProject
+		test\Directory.Build.props = test\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{F1EFDD86-0213-4C73-9B38-AEBBDABE984F}"
+	ProjectSection(SolutionItems) = preProject
+		benchmarks\Directory.Build.props = benchmarks\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{7F15C239-301D-42D7-B497-4168134061C4}"
+	ProjectSection(SolutionItems) = preProject
+		samples\Directory.Build.props = samples\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{D71FF06E-81B4-44C9-A1F3-8B2F83F1F07C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Performance", "benchmarks\Datadog.Trace.Performance\Datadog.Trace.Performance.csproj", "{733120FD-2423-491A-8FB1-427867101D8D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -126,15 +155,32 @@ Global
 		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Release|x64.Build.0 = Release|Any CPU
 		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Release|x86.ActiveCfg = Release|Any CPU
 		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01}.Release|x86.Build.0 = Release|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Debug|x64.Build.0 = Debug|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Debug|x86.Build.0 = Debug|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Release|x64.ActiveCfg = Release|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Release|x64.Build.0 = Release|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Release|x86.ActiveCfg = Release|Any CPU
+		{733120FD-2423-491A-8FB1-427867101D8D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{6A48CB37-C924-4DF3-8524-ABD3BB9B04C4} = {C28F72E1-C6C9-453A-8901-844E42B28735}
-		{188219D1-D123-46C9-B905-A9ED30E6AAA7} = {C28F72E1-C6C9-453A-8901-844E42B28735}
-		{3BCE5D99-147B-4305-9970-AB0F683A6E8D} = {C28F72E1-C6C9-453A-8901-844E42B28735}
-		{EFBFC324-B459-4D39-8E19-CE4AD0DBF15F} = {C28F72E1-C6C9-453A-8901-844E42B28735}
+		{5DFDF781-F24C-45B1-82EF-9125875A80A4} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{73A1BE1C-9C8A-43FA-86A8-BF2744B4C1BB} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{0434F813-5F94-4195-8A2C-E2E755513822} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{6A48CB37-C924-4DF3-8524-ABD3BB9B04C4} = {D71FF06E-81B4-44C9-A1F3-8B2F83F1F07C}
+		{188219D1-D123-46C9-B905-A9ED30E6AAA7} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{3BCE5D99-147B-4305-9970-AB0F683A6E8D} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{EFBFC324-B459-4D39-8E19-CE4AD0DBF15F} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{237A1C92-DE9E-4649-961B-BBB7CF0DFE01} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{733120FD-2423-491A-8FB1-427867101D8D} = {F1EFDD86-0213-4C73-9B38-AEBBDABE984F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
