@@ -35,13 +35,13 @@ Task("DockerDown")
 Task("Restore")
   .Does(() =>
 {
-  NuGetRestore("./src/Datadog.Trace.sln");
+  NuGetRestore("./Datadog.Trace.sln");
 });
 
 Task("Clean")
   .Does(() =>
 {
-  DotNetCoreClean("./src",
+  DotNetCoreClean(".",
     new DotNetCoreCleanSettings()
     {
       Configuration = configuration
@@ -52,7 +52,7 @@ Task("Build")
   .IsDependentOn("Restore")
   .Does(() =>
 {
-  DotNetCoreBuild("./src",
+  DotNetCoreBuild(".",
     new DotNetCoreBuildSettings()
        {
            Configuration = configuration,
