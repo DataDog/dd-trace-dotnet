@@ -22,12 +22,12 @@ namespace Datadog.Trace.OpenTracing
             string traceIdHeader = null;
             foreach (var keyVal in map.GetEntries())
             {
-                if (keyVal.Key.Equals(Constants.HttpHeaderParentId, StringComparison.InvariantCultureIgnoreCase))
+                if (keyVal.Key.Equals(HttpHeaderNames.HttpHeaderParentId, StringComparison.InvariantCultureIgnoreCase))
                 {
                     parentIdHeader = keyVal.Value;
                 }
 
-                if (keyVal.Key.Equals(Constants.HttpHeaderTraceId, StringComparison.InvariantCultureIgnoreCase))
+                if (keyVal.Key.Equals(HttpHeaderNames.HttpHeaderTraceId, StringComparison.InvariantCultureIgnoreCase))
                 {
                     traceIdHeader = keyVal.Value;
                 }
@@ -35,12 +35,12 @@ namespace Datadog.Trace.OpenTracing
 
             if (parentIdHeader == null)
             {
-                throw new ArgumentException($"{Constants.HttpHeaderParentId} should be set.");
+                throw new ArgumentException($"{HttpHeaderNames.HttpHeaderParentId} should be set.");
             }
 
             if (traceIdHeader == null)
             {
-                throw new ArgumentException($"{Constants.HttpHeaderTraceId} should be set.");
+                throw new ArgumentException($"{HttpHeaderNames.HttpHeaderTraceId} should be set.");
             }
 
             ulong parentId;
@@ -50,7 +50,7 @@ namespace Datadog.Trace.OpenTracing
             }
             catch (FormatException)
             {
-                throw new FormatException($"{Constants.HttpHeaderParentId} should contain an unsigned integer value");
+                throw new FormatException($"{HttpHeaderNames.HttpHeaderParentId} should contain an unsigned integer value");
             }
 
             ulong traceId;
@@ -60,7 +60,7 @@ namespace Datadog.Trace.OpenTracing
             }
             catch (FormatException)
             {
-                throw new FormatException($"{Constants.HttpHeaderTraceId} should contain an unsigned integer value");
+                throw new FormatException($"{HttpHeaderNames.HttpHeaderTraceId} should contain an unsigned integer value");
             }
 
             return new OpenTracingSpanContext(traceId, parentId);
@@ -74,8 +74,8 @@ namespace Datadog.Trace.OpenTracing
                 throw new UnsupportedFormatException("Carrier should have type ITextMap");
             }
 
-            map.Set(Constants.HttpHeaderParentId, spanContext.SpanId.ToString());
-            map.Set(Constants.HttpHeaderTraceId, spanContext.TraceId.ToString());
+            map.Set(HttpHeaderNames.HttpHeaderParentId, spanContext.SpanId.ToString());
+            map.Set(HttpHeaderNames.HttpHeaderTraceId, spanContext.TraceId.ToString());
         }
     }
 }

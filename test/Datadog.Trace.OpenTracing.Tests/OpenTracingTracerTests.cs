@@ -121,8 +121,8 @@ namespace Datadog.Trace.OpenTracing.Tests
 
             _tracer.Inject(span.Context, Formats.HttpHeaders, headers);
 
-            Assert.Equal(span.DDSpan.Context.TraceId.ToString(), headers.Get(Constants.HttpHeaderTraceId));
-            Assert.Equal(span.DDSpan.Context.SpanId.ToString(), headers.Get(Constants.HttpHeaderParentId));
+            Assert.Equal(span.DDSpan.Context.TraceId.ToString(), headers.Get(HttpHeaderNames.HttpHeaderTraceId));
+            Assert.Equal(span.DDSpan.Context.SpanId.ToString(), headers.Get(HttpHeaderNames.HttpHeaderParentId));
         }
 
         [Fact]
@@ -131,8 +131,8 @@ namespace Datadog.Trace.OpenTracing.Tests
             const ulong parentId = 10;
             const ulong traceId = 42;
             var headers = new MockTextMap();
-            headers.Set(Constants.HttpHeaderParentId, parentId.ToString());
-            headers.Set(Constants.HttpHeaderTraceId, traceId.ToString());
+            headers.Set(HttpHeaderNames.HttpHeaderParentId, parentId.ToString());
+            headers.Set(HttpHeaderNames.HttpHeaderTraceId, traceId.ToString());
 
             var context = (SpanContext)_tracer.Extract(Formats.HttpHeaders, headers);
 

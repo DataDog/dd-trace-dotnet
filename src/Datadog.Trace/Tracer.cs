@@ -11,6 +11,7 @@ namespace Datadog.Trace
     /// </summary>
     public class Tracer : IDatadogTracer
     {
+        private const string UnknownServiceName = "UnknownService";
         private static readonly ILog _log = LogProvider.For<Tracer>();
         private static Uri _defaultUri = new Uri("http://localhost:8126");
 
@@ -28,7 +29,7 @@ namespace Datadog.Trace
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
-            _defaultServiceName = defaultServiceName ?? GetAppDomainFriendlyName() ?? Constants.UnknownService;
+            _defaultServiceName = defaultServiceName ?? GetAppDomainFriendlyName() ?? UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
