@@ -29,22 +29,24 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9E5F0022-0A5
 	ProjectSection(SolutionItems) = preProject
 		src\Directory.Build.props = src\Directory.Build.props
 		src\GlobalSuppressions.cs = src\GlobalSuppressions.cs
-		src\stylecop.json = src\stylecop.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{8CEC2042-F11C-49F5-A674-2355793B600A}"
 	ProjectSection(SolutionItems) = preProject
 		test\Directory.Build.props = test\Directory.Build.props
+		test\GlobalSuppressions.cs = test\GlobalSuppressions.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{F1EFDD86-0213-4C73-9B38-AEBBDABE984F}"
 	ProjectSection(SolutionItems) = preProject
 		benchmarks\Directory.Build.props = benchmarks\Directory.Build.props
+		benchmarks\GlobalSuppressions.cs = benchmarks\GlobalSuppressions.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{7F15C239-301D-42D7-B497-4168134061C4}"
 	ProjectSection(SolutionItems) = preProject
 		samples\Directory.Build.props = samples\Directory.Build.props
+		samples\GlobalSuppressions.cs = samples\GlobalSuppressions.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{D71FF06E-81B4-44C9-A1F3-8B2F83F1F07C}"
