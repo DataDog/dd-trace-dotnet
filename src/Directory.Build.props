@@ -19,4 +19,9 @@
     <RepositoryUrl>https://github.com/DataDog/dd-trace-csharp.git</RepositoryUrl>
     <Copyright>Datadog, Inc. 2017-2018</Copyright>
   </PropertyGroup>
+
+  <!-- StyleCop -->
+  <ItemGroup>
+    <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
+  </ItemGroup>
 </Project>

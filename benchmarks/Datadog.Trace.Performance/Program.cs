@@ -1,7 +1,7 @@
 ﻿using System;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using  Datadog.Trace;
+using Datadog.Trace;
 
 namespace MyBenchmarks
 {

@@ -4,3 +4,5 @@
 // a specific target and scoped to a namespace, type, member, etc.
 
 using System.Diagnostics.CodeAnalysis;
+
+[assembly: SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1652:SA1652EnableXmlDocumentationOutput", Justification = "Reviewed.")]

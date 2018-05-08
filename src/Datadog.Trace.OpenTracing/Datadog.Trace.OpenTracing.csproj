@@ -16,4 +16,5 @@
     <ProjectReference Include="..\..\lib\opentracing-csharp\src\OpenTracing\OpenTracing.csproj" PrivateAssets="All" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
+
 </Project>

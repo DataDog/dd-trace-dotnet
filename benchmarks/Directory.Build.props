@@ -1,3 +1,8 @@
 <Project>
   <Import Project="..\Directory.Build.props" />
+
+  <!-- StyleCop -->
+  <ItemGroup>
+    <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.benchmarks.cs" />
+  </ItemGroup>
 </Project>
