@@ -6,7 +6,11 @@
     },
     "documentationRules": {
       "companyName": "Datadog",
-      "documentExposedElements": true
+      "documentExposedElements": true,
+
+      // TODO: document everything and remove this exclusions
+      "documentInternalElements": false,
+      "documentInterfaces": false
     }
   }
 }
