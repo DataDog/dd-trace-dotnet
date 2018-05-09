@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using Datadog.Trace.Agent;
@@ -48,10 +48,20 @@ namespace Datadog.Trace
         /// </summary>
         public Scope ActiveScope => _scopeManager.Active;
 
+        /// <summary>
+        /// Gets a value indicating whether debugging mode is enabled.
+        /// </summary>
+        /// <value><c>true</c> is debugging is enabled, otherwise <c>false</c>.</value>
         bool IDatadogTracer.IsDebugEnabled => _isDebugEnabled;
 
+        /// <summary>
+        /// Gets the default service name for traces where a service name is not specified.
+        /// </summary>
         string IDatadogTracer.DefaultServiceName => _defaultServiceName;
 
+        /// <summary>
+        /// Gets the tracer's scope manager, which determines which span is currently active, if any.
+        /// </summary>
         AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
         /// <summary>
@@ -115,6 +125,10 @@ namespace Datadog.Trace
             return span;
         }
 
+        /// <summary>
+        /// Writes the specified <see cref="Span"/> collection to the agent writer.
+        /// </summary>
+        /// <param name="trace">The <see cref="Span"/> collection to write.</param>
         void IDatadogTracer.Write(List<Span> trace)
         {
             _agentWriter.WriteTrace(trace);
