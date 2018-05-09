@@ -1,6 +1,6 @@
-﻿namespace Datadog.Trace
+namespace Datadog.Trace
 {
-#if NET452
+#if NET45
     using System;
     using System.Runtime.Remoting.Messaging;
 
