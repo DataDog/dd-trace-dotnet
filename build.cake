@@ -13,8 +13,7 @@ Task("Pack")
     Configuration = configuration
   };
   DotNetCorePack("./src/Datadog.Trace", settings);
-  DotNetCorePack("./src/Datadog.Trace.AspNetCore", settings);
-  DotNetCorePack("./src/Datadog.Trace.SqlClient", settings);
+  DotNetCorePack("./src/Datadog.Trace.OpenTracing", settings);
 });
 
 Task("DockerUp")
@@ -36,13 +35,13 @@ Task("DockerDown")
 Task("Restore")
   .Does(() =>
 {
-  NuGetRestore("./src/Datadog.Trace.sln");
+  NuGetRestore("./Datadog.Trace.sln");
 });
 
 Task("Clean")
   .Does(() =>
 {
-  DotNetCoreClean("./src",
+  DotNetCoreClean(".",
     new DotNetCoreCleanSettings()
     {
       Configuration = configuration
@@ -53,7 +52,7 @@ Task("Build")
   .IsDependentOn("Restore")
   .Does(() =>
 {
-  DotNetCoreBuild("./src",
+  DotNetCoreBuild(".",
     new DotNetCoreBuildSettings()
        {
            Configuration = configuration,
@@ -66,7 +65,7 @@ Task("Test")
   .IsDependentOn("Build")
   .Does(() =>
 {
-  var projects = GetFiles("./src/*Tests/*.csproj");
+  var projects = GetFiles("./test/*Tests/*.csproj");
   foreach(var project in projects)
   {
     DotNetCoreTest(
@@ -76,18 +75,6 @@ Task("Test")
           Configuration = configuration,
           NoBuild = true
       });
-  }
-});
-
-Task("TestNet45")
-  .IsDependentOn("Build")
-  .Does(() =>
-{
-  var testDlls = GetFiles($"./src/**/bin/{configuration}/*Net45.dll");
-  foreach(var testDll in testDlls)
-  {
-    Information(testDll.FullPath);
-    XUnit2(testDll.FullPath);
   }
 });
 
@@ -103,7 +90,6 @@ Task("Benchmarks")
 });
 
 Task("Default")
-  .IsDependentOn("TestNet45")
   .IsDependentOn("Test")
   .Does(() =>
 {
