@@ -90,7 +90,7 @@ namespace Datadog.Trace.OpenTracing
 
         public ISpanBuilder WithTag(string key, double value)
         {
-            return WithTag(key, value.ToString());
+            return WithTag(key, value.ToString(CultureInfo.InvariantCulture));
         }
 
         public ISpanBuilder WithTag(string key, int value)

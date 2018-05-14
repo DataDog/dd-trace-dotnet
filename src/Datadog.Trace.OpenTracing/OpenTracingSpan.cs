@@ -75,7 +75,7 @@ namespace Datadog.Trace.OpenTracing
 
         public ISpan SetTag(string key, double value)
         {
-            return SetTag(key, value.ToString());
+            return SetTag(key, value.ToString(CultureInfo.InvariantCulture));
         }
 
         public ISpan SetTag(string key, int value)
