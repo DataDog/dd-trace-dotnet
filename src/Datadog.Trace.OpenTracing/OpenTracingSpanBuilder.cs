@@ -56,18 +56,6 @@ namespace Datadog.Trace.OpenTracing
             }
         }
 
-        public ISpanBuilder FollowsFrom(ISpan parent)
-        {
-            _log.Debug("ISpanBuilder.FollowsFrom is not implemented by Datadog.Trace");
-            return this;
-        }
-
-        public ISpanBuilder FollowsFrom(ISpanContext parent)
-        {
-            _log.Debug("ISpanBuilder.FollowsFrom is not implemented by Datadog.Trace");
-            return this;
-        }
-
         public ISpan Start()
         {
             lock (_lock)
