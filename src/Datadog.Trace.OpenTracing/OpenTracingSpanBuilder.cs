@@ -68,7 +68,13 @@ namespace Datadog.Trace.OpenTracing
         {
             lock (_lock)
             {
-                Span ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, _parent.Context, _serviceName, _start, _ignoreActiveSpan);
+                SpanContext parentContext = GetParentContext();
+
+                // if service name was not set, inherit parent's service name;
+                // if there is no parent, fallback to default service name
+                string serviceName = _serviceName ?? parentContext?.ServiceName ?? _tracer.DefaultServiceName;
+
+                Span ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, serviceName, _start, _ignoreActiveSpan);
                 var otSpan = new OpenTracingSpan(ddSpan);
 
                 if (_tags != null)
@@ -131,6 +137,19 @@ namespace Datadog.Trace.OpenTracing
                 _tags[key] = value;
                 return this;
             }
+        }
+
+        private SpanContext GetParentContext()
+        {
+            SpanContext parentContext = _parent?.Context;
+
+            if (parentContext == null && !_ignoreActiveSpan)
+            {
+                // if parent was not set explicitly, default to active span as parent (unless disabled)
+                return _tracer.ActiveSpan?.Span.Context;
+            }
+
+            return parentContext;
         }
     }
 }
