@@ -128,11 +128,7 @@ namespace Datadog.Trace.Tests
         {
             var scope = _tracer.StartActive("Operation");
 
-#if NETCOREAPP2_0
             Assert.Equal("testhost", scope.Span.ServiceName);
-#else
-            Assert.Equal("Datadog.Trace.Tests", scope.Span.ServiceName);
-#endif
         }
 
         [Fact]

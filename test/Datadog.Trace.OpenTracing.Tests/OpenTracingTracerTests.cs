@@ -23,11 +23,8 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             var builder = _tracer.BuildSpan("Op1");
             var span = (OpenTracingSpan)builder.Start();
-#if NETCOREAPP2_0
+
             Assert.Equal("testhost", span.DDSpan.ServiceName);
-#else
-            Assert.Equal("Datadog.Trace.OpenTracing.Tests", span.DDSpan.ServiceName);
-#endif
             Assert.Equal("Op1", span.DDSpan.OperationName);
         }
 
