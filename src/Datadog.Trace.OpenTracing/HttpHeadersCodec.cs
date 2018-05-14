@@ -15,7 +15,7 @@ namespace Datadog.Trace.OpenTracing
             ITextMap map = carrier as ITextMap;
             if (map == null)
             {
-                throw new UnsupportedFormatException("Carrier should have type ITextMap");
+                throw new NotSupportedException("Carrier should have type ITextMap");
             }
 
             string parentIdHeader = null;
@@ -71,7 +71,7 @@ namespace Datadog.Trace.OpenTracing
             ITextMap map = carrier as ITextMap;
             if (map == null)
             {
-                throw new UnsupportedFormatException("Carrier should have type ITextMap");
+                throw new NotSupportedException("Carrier should have type ITextMap");
             }
 
             map.Set(HttpHeaderNames.HttpHeaderParentId, spanContext.SpanId.ToString());
