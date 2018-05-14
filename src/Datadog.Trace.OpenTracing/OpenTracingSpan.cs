@@ -63,6 +63,11 @@ namespace Datadog.Trace.OpenTracing
             return this;
         }
 
+        public string GetTag(string key)
+        {
+            return Span.GetTag(key);
+        }
+
         public ISpan SetTag(string key, bool value)
         {
             return SetTag(key, value.ToString());
