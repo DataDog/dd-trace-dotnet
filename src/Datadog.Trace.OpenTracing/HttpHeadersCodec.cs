@@ -20,7 +20,7 @@ namespace Datadog.Trace.OpenTracing
 
             string parentIdHeader = null;
             string traceIdHeader = null;
-            foreach (var keyVal in map.GetEntries())
+            foreach (var keyVal in map)
             {
                 if (keyVal.Key.Equals(HttpHeaderNames.HttpHeaderParentId, StringComparison.InvariantCultureIgnoreCase))
                 {
