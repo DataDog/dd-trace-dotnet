@@ -12,7 +12,7 @@ namespace Datadog.Trace.OpenTracing
         private readonly Tracer _tracer;
         private readonly object _lock = new object();
         private readonly string _operationName;
-        private SpanContext _parent;
+        private OpenTracingSpanContext _parent;
         private DateTimeOffset? _start;
         private Dictionary<string, string> _tags;
         private string _serviceName;

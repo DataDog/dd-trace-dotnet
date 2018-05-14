@@ -67,8 +67,8 @@ namespace Datadog.Trace.OpenTracing.Tests
             var spanContext = _codec.Extract(headers);
 
             Assert.NotNull(spanContext);
-            Assert.Equal(traceId, spanContext.TraceId);
-            Assert.Equal(parentId, spanContext.SpanId);
+            Assert.Equal(traceId, spanContext.Context.TraceId);
+            Assert.Equal(parentId, spanContext.Context.SpanId);
         }
 
         [Fact]
@@ -82,8 +82,8 @@ namespace Datadog.Trace.OpenTracing.Tests
             var spanContext = _codec.Extract(headers);
 
             Assert.NotNull(spanContext);
-            Assert.Equal(traceId, spanContext.TraceId);
-            Assert.Equal(parentId, spanContext.SpanId);
+            Assert.Equal(traceId, spanContext.Context.TraceId);
+            Assert.Equal(parentId, spanContext.Context.SpanId);
         }
 
         [Fact]
@@ -91,7 +91,9 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             const ulong spanId = 10;
             const ulong traceId = 7;
-            var spanContext = new OpenTracingSpanContext(traceId, spanId);
+
+            var ddSpanContext = new SpanContext(traceId, spanId);
+            var spanContext = new OpenTracingSpanContext(ddSpanContext);
             var headers = new MockTextMap();
 
             _codec.Inject(spanContext, headers);

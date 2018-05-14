@@ -63,7 +63,8 @@ namespace Datadog.Trace.OpenTracing
                 throw new FormatException($"{HttpHeaderNames.HttpHeaderTraceId} should contain an unsigned integer value");
             }
 
-            return new OpenTracingSpanContext(traceId, parentId);
+            SpanContext ddSpanContext = new SpanContext(traceId, parentId);
+            return new OpenTracingSpanContext(ddSpanContext);
         }
 
         public void Inject(OpenTracingSpanContext spanContext, object carrier)
@@ -74,8 +75,8 @@ namespace Datadog.Trace.OpenTracing
                 throw new NotSupportedException("Carrier should have type ITextMap");
             }
 
-            map.Set(HttpHeaderNames.HttpHeaderParentId, spanContext.SpanId.ToString());
-            map.Set(HttpHeaderNames.HttpHeaderTraceId, spanContext.TraceId.ToString());
+            map.Set(HttpHeaderNames.HttpHeaderParentId, spanContext.Context.SpanId.ToString());
+            map.Set(HttpHeaderNames.HttpHeaderTraceId, spanContext.Context.TraceId.ToString());
         }
     }
 }
