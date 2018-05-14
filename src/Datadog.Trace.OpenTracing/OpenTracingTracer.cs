@@ -31,9 +31,9 @@ namespace Datadog.Trace.OpenTracing
             return new OpenTracingSpanBuilder(_tracer, operationName);
         }
 
-        public ISpanContext Extract<TCarrier>(Format<TCarrier> format, TCarrier carrier)
+        public ISpanContext Extract<TCarrier>(IFormat<TCarrier> format, TCarrier carrier)
         {
-            _codecs.TryGetValue(format.Name, out ICodec codec);
+            _codecs.TryGetValue(format.ToString(), out ICodec codec);
             if (codec != null)
             {
                 return codec.Extract(carrier);
@@ -46,9 +46,9 @@ namespace Datadog.Trace.OpenTracing
             }
         }
 
-        public void Inject<TCarrier>(ISpanContext spanContext, Format<TCarrier> format, TCarrier carrier)
+        public void Inject<TCarrier>(ISpanContext spanContext, IFormat<TCarrier> format, TCarrier carrier)
         {
-            _codecs.TryGetValue(format.Name, out ICodec codec);
+            _codecs.TryGetValue(format.ToString(), out ICodec codec);
             if (codec != null)
             {
                 var ddSpanContext = spanContext as OpenTracingSpanContext;
