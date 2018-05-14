@@ -148,6 +148,13 @@ namespace Datadog.Trace
         {
             try
             {
+#if !NETSTANDARD2_0
+                if (System.Web.Hosting.HostingEnvironment.IsHosted)
+                {
+                    // if we are hosted as an ASP.NET application, return the site name
+                    return System.Web.Hosting.HostingEnvironment.SiteName;
+                }
+#endif
                 return Assembly.GetEntryAssembly()?.GetName().Name ??
                        Process.GetCurrentProcess().ProcessName;
             }
