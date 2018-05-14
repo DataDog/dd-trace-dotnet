@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using Datadog.Trace.Agent;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 
@@ -13,8 +14,13 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
 
         public OpenTracingSendTracesToAgent()
         {
+            var uri = new Uri("http://localhost:8126");
             _httpRecorder = new RecordHttpHandler();
-            _tracer = OpenTracingTracerFactory.CreateTracer(new Uri("http://localhost:8126"), null, _httpRecorder);
+            var api = new Api(uri, _httpRecorder);
+            var agentWriter = new AgentWriter(api);
+            var datadogTracer = new Tracer(agentWriter, $"{nameof(OpenTracingSendTracesToAgent)}");
+            var scopeManager = new global::OpenTracing.Util.AsyncLocalScopeManager();
+            _tracer = new OpenTracingTracer(datadogTracer, scopeManager);
         }
 
         [Fact]
@@ -38,8 +44,6 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
         public async void CustomServiceName()
         {
             const string ServiceName = "MyService";
-            _httpRecorder = new RecordHttpHandler();
-            _tracer = OpenTracingTracerFactory.CreateTracer(new Uri("http://localhost:8126"), null, _httpRecorder);
 
             var span = (OpenTracingSpan)_tracer.BuildSpan("Operation")
                 .WithTag(DatadogTags.ResourceName, "This is a resource")
@@ -81,8 +85,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
         public void WithDefaultFactory()
         {
             // This test does not check anything it validates that this codepath runs without exceptions
-            var tracer = OpenTracingTracerFactory.CreateTracer();
-            tracer.BuildSpan("Operation")
+            _tracer.BuildSpan("Operation")
                 .Start()
                 .Finish();
         }
