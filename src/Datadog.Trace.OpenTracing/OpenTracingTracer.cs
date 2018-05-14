@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 using OpenTracing;
 using OpenTracing.Propagation;
@@ -11,24 +10,34 @@ namespace Datadog.Trace.OpenTracing
     {
         private static readonly ILog _log = LogProvider.For<OpenTracingTracer>();
 
-        private readonly Tracer _tracer;
         private readonly Dictionary<string, ICodec> _codecs;
 
-        public OpenTracingTracer(Tracer tracer)
+        public OpenTracingTracer(IDatadogTracer datadogTracer)
+            : this(datadogTracer, new global::OpenTracing.Util.AsyncLocalScopeManager())
         {
-            _tracer = tracer;
-            _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec() } };
         }
 
-        public OpenTracingTracer(IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
+        public OpenTracingTracer(IDatadogTracer datadogTracer, IScopeManager scopeManager)
         {
-            _tracer = new Tracer(agentWriter, defaultServiceName, isDebugEnabled);
-            _codecs = new Dictionary<string, ICodec> { { Formats.HttpHeaders.Name, new HttpHeadersCodec() } };
+            DatadogTracer = datadogTracer;
+            DefaultServiceName = datadogTracer.DefaultServiceName;
+            ScopeManager = scopeManager;
+            _codecs = new Dictionary<string, ICodec> { { BuiltinFormats.HttpHeaders.ToString(), new HttpHeadersCodec() } };
         }
+
+        public IDatadogTracer DatadogTracer { get; }
+
+        public string DefaultServiceName { get; }
+
+        public IScopeManager ScopeManager { get; }
+
+        public OpenTracingSpan ActiveSpan => (OpenTracingSpan)ScopeManager.Active?.Span;
+
+        ISpan ITracer.ActiveSpan => ScopeManager.Active?.Span;
 
         public ISpanBuilder BuildSpan(string operationName)
         {
-            return new OpenTracingSpanBuilder(_tracer, operationName);
+            return new OpenTracingSpanBuilder(this, operationName);
         }
 
         public ISpanContext Extract<TCarrier>(IFormat<TCarrier> format, TCarrier carrier)

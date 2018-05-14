@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Logging;
 using OpenTracing;
 
@@ -9,15 +10,16 @@ namespace Datadog.Trace.OpenTracing
     {
         private static ILog _log = LogProvider.For<OpenTracingSpanBuilder>();
 
-        private readonly Tracer _tracer;
+        private readonly OpenTracingTracer _tracer;
         private readonly object _lock = new object();
         private readonly string _operationName;
         private OpenTracingSpanContext _parent;
         private DateTimeOffset? _start;
         private Dictionary<string, string> _tags;
         private string _serviceName;
+        private bool _ignoreActiveSpan;
 
-        internal OpenTracingSpanBuilder(Tracer tracer, string operationName)
+        internal OpenTracingSpanBuilder(OpenTracingTracer tracer, string operationName)
         {
             _tracer = tracer;
             _operationName = operationName;
@@ -29,7 +31,7 @@ namespace Datadog.Trace.OpenTracing
             {
                 if (referenceType == References.ChildOf)
                 {
-                    _parent = referencedContext as SpanContext;
+                    _parent = (OpenTracingSpanContext)referencedContext;
                     return this;
                 }
             }
@@ -42,7 +44,7 @@ namespace Datadog.Trace.OpenTracing
         {
             lock (_lock)
             {
-                _parent = parent.Context as SpanContext;
+                _parent = (OpenTracingSpanContext)parent.Context;
                 return this;
             }
         }
@@ -51,27 +53,40 @@ namespace Datadog.Trace.OpenTracing
         {
             lock (_lock)
             {
-                _parent = parent as SpanContext;
+                _parent = (OpenTracingSpanContext)parent;
                 return this;
             }
+        }
+
+        public ISpanBuilder IgnoreActiveSpan()
+        {
+            _ignoreActiveSpan = true;
+            return this;
         }
 
         public ISpan Start()
         {
             lock (_lock)
             {
-                var span = new OpenTracingSpan(_tracer.StartActive(_operationName, _parent, _serviceName, _start));
+                Span ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, _parent.Context, _serviceName, _start, _ignoreActiveSpan);
+                var otSpan = new OpenTracingSpan(ddSpan);
 
                 if (_tags != null)
                 {
                     foreach (var pair in _tags)
                     {
-                        span.SetTag(pair.Key, pair.Value);
+                        otSpan.SetTag(pair.Key, pair.Value);
                     }
                 }
 
-                return span;
+                return otSpan;
             }
+        }
+
+        public IScope StartActive(bool finishSpanOnDispose)
+        {
+            var span = Start();
+            return _tracer.ScopeManager.Activate(span, finishSpanOnDispose);
         }
 
         public ISpanBuilder WithStartTimestamp(DateTimeOffset startTimestamp)
