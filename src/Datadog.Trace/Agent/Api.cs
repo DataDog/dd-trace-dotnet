@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using MsgPack.Serialization;
@@ -45,7 +46,7 @@ namespace Datadog.Trace.Agent
 
             // TODO:bertrand add header for os version
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang", ".NET");
-            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Interpreter", RuntimeInformation.GetFrameworkVersion());
+            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Interpreter", RuntimeInformation.FrameworkDescription);
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", this.GetType().Assembly.GetName().Version.ToString());
         }
 
