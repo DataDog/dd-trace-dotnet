@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
+using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 
@@ -29,7 +31,7 @@ namespace Datadog.Trace
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
-            _defaultServiceName = defaultServiceName ?? GetAppDomainFriendlyName() ?? UnknownServiceName;
+            _defaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
@@ -142,6 +144,27 @@ namespace Datadog.Trace
             return tracer;
         }
 
+        private static string CreateDefaultServiceName()
+        {
+            try
+            {
+#if !NETSTANDARD2_0
+                if (System.Web.Hosting.HostingEnvironment.IsHosted)
+                {
+                    // if we are hosted as an ASP.NET application, return the site name
+                    return System.Web.Hosting.HostingEnvironment.SiteName;
+                }
+#endif
+                return Assembly.GetEntryAssembly()?.GetName().Name ??
+                       Process.GetCurrentProcess().ProcessName;
+            }
+            catch (Exception ex)
+            {
+                _log.ErrorException("Error creating default service name.", ex);
+                return null;
+            }
+        }
+
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
             _agentWriter.FlushAndCloseAsync().Wait();
@@ -155,18 +178,6 @@ namespace Datadog.Trace
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             _agentWriter.FlushAndCloseAsync().Wait();
-        }
-
-        private string GetAppDomainFriendlyName()
-        {
-            try
-            {
-                return AppDomain.CurrentDomain.FriendlyName;
-            }
-            catch
-            {
-                return null;
-            }
         }
     }
 }
