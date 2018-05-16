@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -12,10 +11,6 @@ namespace Datadog.Trace.Agent
     internal class Api : IApi
     {
         private const string TracesPath = "/v0.3/traces";
-
-#if !NETSTANDARD2_0
-        private static readonly string _frameworkDescription = string.Format(".NET Framework {0}", typeof(object).GetTypeInfo().Assembly.GetName().Version);
-#endif
 
         private static ILog _log = LogProvider.For<Api>();
         private static SerializationContext _serializationContext;
@@ -51,12 +46,8 @@ namespace Datadog.Trace.Agent
 
             // TODO:bertrand add header for os version
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang", ".NET");
-#if NETSTANDARD2_0
             _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Interpreter", RuntimeInformation.FrameworkDescription);
-#else
-            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Interpreter", _frameworkDescription);
-#endif
-            _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", Assembly.GetAssembly(typeof(Api)).GetName().Version.ToString());
+            _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", this.GetType().Assembly.GetName().Version.ToString());
         }
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
