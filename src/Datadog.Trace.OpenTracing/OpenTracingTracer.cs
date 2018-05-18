@@ -49,9 +49,7 @@ namespace Datadog.Trace.OpenTracing
             }
             else
             {
-                string message = $"Tracer.Extract is not implemented for {format} by Datadog.Trace";
-                _log.Error(message);
-                throw new NotSupportedException(message);
+                throw new NotSupportedException($"Tracer.Extract is not implemented for {format} by Datadog.Trace");
             }
         }
 
@@ -70,9 +68,7 @@ namespace Datadog.Trace.OpenTracing
             }
             else
             {
-                string message = $"Tracer.Inject is not implemented for {format} by Datadog.Trace";
-                _log.Error(message);
-                throw new NotSupportedException(message);
+                throw new NotSupportedException($"Tracer.Inject is not implemented for {format} by Datadog.Trace");
             }
         }
     }
