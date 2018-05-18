@@ -61,7 +61,7 @@ namespace Datadog.Trace.OpenTracing
                 var ddSpanContext = spanContext as OpenTracingSpanContext;
                 if (ddSpanContext == null)
                 {
-                    throw new ArgumentException("Inject should be called with a Datadog.Trace.SpanContext argument");
+                    throw new ArgumentException("Inject should be called with a Datadog.Trace.OpenTracing.OpenTracingSpanContext argument");
                 }
 
                 codec.Inject(ddSpanContext, carrier);
