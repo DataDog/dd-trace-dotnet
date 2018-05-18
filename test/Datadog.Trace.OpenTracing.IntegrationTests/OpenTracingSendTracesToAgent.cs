@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Net;
 using Datadog.Trace.Agent;
@@ -16,11 +16,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
         {
             var uri = new Uri("http://localhost:8126");
             _httpRecorder = new RecordHttpHandler();
-            var api = new Api(uri, _httpRecorder);
-            var agentWriter = new AgentWriter(api);
-            var datadogTracer = new Tracer(agentWriter, $"{nameof(OpenTracingSendTracesToAgent)}");
-            var scopeManager = new global::OpenTracing.Util.AsyncLocalScopeManager();
-            _tracer = new OpenTracingTracer(datadogTracer, scopeManager);
+            _tracer = OpenTracingTracerFactory.CreateTracer(uri, null, _httpRecorder);
         }
 
         [Fact]
