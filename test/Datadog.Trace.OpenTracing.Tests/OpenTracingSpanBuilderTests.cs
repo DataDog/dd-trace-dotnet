@@ -113,7 +113,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         }
 
         [Fact]
-        public void Start_SettingServiceInParent_ChildInheritServiceName()
+        public void Start_SettingServiceInParent_ImplicitChildInheritServiceName()
         {
             IScope root = _tracer.BuildSpan(null)
                  .WithTag(DatadogTags.ServiceName, "MyService")
@@ -123,6 +123,33 @@ namespace Datadog.Trace.OpenTracing.Tests
 
             Assert.Equal("MyService", ((OpenTracingSpan)root.Span).Span.ServiceName);
             Assert.Equal("MyService", ((OpenTracingSpan)child.Span).Span.ServiceName);
+        }
+
+        [Fact]
+        public void Start_SettingServiceInParent_ExplicitChildInheritServiceName()
+        {
+            IScope root = _tracer.BuildSpan(null)
+                .WithTag(DatadogTags.ServiceName, "MyService")
+                .StartActive(finishSpanOnDispose: true);
+            IScope child = _tracer.BuildSpan(null)
+                .AsChildOf(root.Span)
+                .StartActive(finishSpanOnDispose: true);
+
+            Assert.Equal("MyService", ((OpenTracingSpan)root.Span).Span.ServiceName);
+            Assert.Equal("MyService", ((OpenTracingSpan)child.Span).Span.ServiceName);
+        }
+
+        [Fact]
+        public void Start_SettingServiceInParent_NotChildDontInheritServiceName()
+        {
+            ISpan span1 = _tracer.BuildSpan(null)
+                .WithTag(DatadogTags.ServiceName, "MyService")
+                .Start();
+            IScope root = _tracer.BuildSpan(null)
+                .StartActive(finishSpanOnDispose: true);
+
+            Assert.Equal("MyService", ((OpenTracingSpan)span1).Span.ServiceName);
+            Assert.Equal("OpenTracingSpanBuilderTests", ((OpenTracingSpan)root.Span).Span.ServiceName);
         }
 
         [Fact]
