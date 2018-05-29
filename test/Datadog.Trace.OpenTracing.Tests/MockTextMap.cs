@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using OpenTracing.Propagation;
 
 namespace Datadog.Trace.OpenTracing.Tests
@@ -13,9 +14,14 @@ namespace Datadog.Trace.OpenTracing.Tests
             return value;
         }
 
-        public IEnumerable<KeyValuePair<string, string>> GetEntries()
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
         {
-            return _dictionary;
+            return _dictionary.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _dictionary.GetEnumerator();
         }
 
         public void Set(string key, string value)

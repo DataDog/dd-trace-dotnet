@@ -8,43 +8,41 @@ namespace Datadog.Trace.OpenTracing.Tests
 {
     public class OpenTracingSpanBuilderTests
     {
-        private const string _defaultServiceName = "DefaultServiceName";
+        private static readonly string DefaultServiceName = $"{nameof(OpenTracingSpanBuilderTests)}";
 
-        private Mock<IAgentWriter> _writerMock;
-        private Tracer _tracer;
-        private Func<OpenTracingSpanBuilder> _createSpanBuilder;
+        private OpenTracingTracer _tracer;
 
         public OpenTracingSpanBuilderTests()
         {
-            _writerMock = new Mock<IAgentWriter>(MockBehavior.Strict);
-            _tracer = new Tracer(_writerMock.Object, defaultServiceName: _defaultServiceName);
-            _createSpanBuilder = () => new OpenTracingSpanBuilder(_tracer, null);
+            var writerMock = new Mock<IAgentWriter>(MockBehavior.Strict);
+            var datadogTracer = new Tracer(writerMock.Object, defaultServiceName: DefaultServiceName);
+            _tracer = new OpenTracingTracer(datadogTracer);
         }
 
         [Fact]
         public void Start_NoServiceName_DefaultServiceNameIsSet()
         {
-            var span = (OpenTracingSpan)_createSpanBuilder().Start();
+            var span = (OpenTracingSpan)_tracer.BuildSpan(null).Start();
 
-            Assert.Equal(_defaultServiceName, span.DDSpan.ServiceName);
+            Assert.Equal(DefaultServiceName, span.DDSpan.ServiceName);
         }
 
         [Fact]
         public void Start_NoParentProvided_RootSpan()
         {
-            var span = _createSpanBuilder().Start();
-            var spanContext = (SpanContext)span.Context;
+            var span = (OpenTracingSpan)_tracer.BuildSpan(null).Start();
+            SpanContext ddSpanContext = span.Context.Context;
 
-            Assert.Null(spanContext.ParentId);
-            Assert.NotEqual<ulong>(0, spanContext.SpanId);
-            Assert.NotEqual<ulong>(0, spanContext.TraceId);
+            Assert.Null(ddSpanContext.ParentId);
+            Assert.NotEqual<ulong>(0, ddSpanContext.SpanId);
+            Assert.NotEqual<ulong>(0, ddSpanContext.TraceId);
         }
 
         [Fact]
         public void Start_AsChildOfSpan_ChildReferencesParent()
         {
-            var root = (OpenTracingSpan)_createSpanBuilder().Start();
-            var child = (OpenTracingSpan)_createSpanBuilder()
+            var root = (OpenTracingSpan)_tracer.BuildSpan(null).Start();
+            var child = (OpenTracingSpan)_tracer.BuildSpan(null)
                 .AsChildOf(root)
                 .Start();
 
@@ -59,8 +57,8 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_AsChildOfSpanContext_ChildReferencesParent()
         {
-            var root = (OpenTracingSpan)_createSpanBuilder().Start();
-            var child = (OpenTracingSpan)_createSpanBuilder()
+            var root = (OpenTracingSpan)_tracer.BuildSpan(null).Start();
+            var child = (OpenTracingSpan)_tracer.BuildSpan(null)
                 .AsChildOf(root.Context)
                 .Start();
 
@@ -75,8 +73,8 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_ReferenceAsChildOf_ChildReferencesParent()
         {
-            var root = (OpenTracingSpan)_createSpanBuilder().Start();
-            var child = (OpenTracingSpan)_createSpanBuilder()
+            var root = (OpenTracingSpan)_tracer.BuildSpan(null).Start();
+            var child = (OpenTracingSpan)_tracer.BuildSpan(null)
                 .AddReference(References.ChildOf, root.Context)
                 .Start();
 
@@ -91,7 +89,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_WithTags_TagsAreProperlySet()
         {
-            var span = (OpenTracingSpan)_createSpanBuilder()
+            var span = (OpenTracingSpan)_tracer.BuildSpan(null)
                 .WithTag("StringKey", "What's tracing")
                 .WithTag("IntKey", 42)
                 .WithTag("DoubleKey", 1.618)
@@ -107,34 +105,61 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_SettingService_ServiceIsSet()
         {
-            var span = (OpenTracingSpan)_createSpanBuilder()
-                 .WithTag("service.name", "MyService")
+            var span = (OpenTracingSpan)_tracer.BuildSpan(null)
+                 .WithTag(DatadogTags.ServiceName, "MyService")
                  .Start();
 
             Assert.Equal("MyService", span.DDSpan.ServiceName);
         }
 
         [Fact]
-        public void Start_SettingServiceInParent_ChildInheritServiceName()
+        public void Start_SettingServiceInParent_ImplicitChildInheritServiceName()
         {
-            var root = (OpenTracingSpan)_createSpanBuilder()
-                 .WithTag("service.name", "MyService")
-                 .Start();
-            var child = (OpenTracingSpan)_createSpanBuilder()
-                 .Start();
+            IScope root = _tracer.BuildSpan(null)
+                 .WithTag(DatadogTags.ServiceName, "MyService")
+                 .StartActive(finishSpanOnDispose: true);
+            IScope child = _tracer.BuildSpan(null)
+                 .StartActive(finishSpanOnDispose: true);
 
-            Assert.Equal("MyService", root.DDSpan.ServiceName);
-            Assert.Equal("MyService", child.DDSpan.ServiceName);
+            Assert.Equal("MyService", ((OpenTracingSpan)root.Span).Span.ServiceName);
+            Assert.Equal("MyService", ((OpenTracingSpan)child.Span).Span.ServiceName);
+        }
+
+        [Fact]
+        public void Start_SettingServiceInParent_ExplicitChildInheritServiceName()
+        {
+            IScope root = _tracer.BuildSpan(null)
+                .WithTag(DatadogTags.ServiceName, "MyService")
+                .StartActive(finishSpanOnDispose: true);
+            IScope child = _tracer.BuildSpan(null)
+                .AsChildOf(root.Span)
+                .StartActive(finishSpanOnDispose: true);
+
+            Assert.Equal("MyService", ((OpenTracingSpan)root.Span).Span.ServiceName);
+            Assert.Equal("MyService", ((OpenTracingSpan)child.Span).Span.ServiceName);
+        }
+
+        [Fact]
+        public void Start_SettingServiceInParent_NotChildDontInheritServiceName()
+        {
+            ISpan span1 = _tracer.BuildSpan(null)
+                .WithTag(DatadogTags.ServiceName, "MyService")
+                .Start();
+            IScope root = _tracer.BuildSpan(null)
+                .StartActive(finishSpanOnDispose: true);
+
+            Assert.Equal("MyService", ((OpenTracingSpan)span1).Span.ServiceName);
+            Assert.Equal("OpenTracingSpanBuilderTests", ((OpenTracingSpan)root.Span).Span.ServiceName);
         }
 
         [Fact]
         public void Start_SettingServiceInChild_ServiceNameOverrideParent()
         {
-            var root = (OpenTracingSpan)_createSpanBuilder()
-                 .WithTag("service.name", "MyService")
+            var root = (OpenTracingSpan)_tracer.BuildSpan(null)
+                 .WithTag(DatadogTags.ServiceName, "MyService")
                  .Start();
-            var child = (OpenTracingSpan)_createSpanBuilder()
-                 .WithTag("service.name", "AnotherService")
+            var child = (OpenTracingSpan)_tracer.BuildSpan(null)
+                 .WithTag(DatadogTags.ServiceName, "AnotherService")
                  .Start();
 
             Assert.Equal("MyService", root.DDSpan.ServiceName);
@@ -144,7 +169,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_SettingResource_ResourceIsSet()
         {
-            var span = (OpenTracingSpan)_createSpanBuilder()
+            var span = (OpenTracingSpan)_tracer.BuildSpan(null)
                 .WithTag("resource.name", "MyResource")
                 .Start();
 
@@ -154,7 +179,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_SettingType_TypeIsSet()
         {
-            var span = (OpenTracingSpan)_createSpanBuilder()
+            var span = (OpenTracingSpan)_tracer.BuildSpan(null)
                 .WithTag("span.type", "web")
                 .Start();
 
@@ -164,8 +189,8 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_SettingError_ErrorIsSet()
         {
-            var span = (OpenTracingSpan)_createSpanBuilder()
-                .WithTag(global::OpenTracing.Tags.Error, true)
+            var span = (OpenTracingSpan)_tracer.BuildSpan(null)
+                .WithTag(global::OpenTracing.Tag.Tags.Error.Key, true)
                 .Start();
 
             Assert.True(span.DDSpan.Error);
@@ -175,7 +200,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         public void Start_WithStartTimeStamp_TimeStampProperlySet()
         {
             var startTime = new DateTimeOffset(2017, 01, 01, 0, 0, 0, TimeSpan.Zero);
-            var span = (OpenTracingSpan)_createSpanBuilder()
+            var span = (OpenTracingSpan)_tracer.BuildSpan(null)
                 .WithStartTimestamp(startTime)
                 .Start();
 

@@ -1,27 +1,19 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using OpenTracing;
 
 namespace Datadog.Trace.OpenTracing
 {
-    internal class OpenTracingSpanContext : SpanContext, ISpanContext
+    internal class OpenTracingSpanContext : ISpanContext
     {
         private static ILog _log = LogProvider.For<OpenTracingSpanContext>();
 
-        internal OpenTracingSpanContext(IDatadogTracer tracer, SpanContext parent, string serviceName)
-            : base(tracer, parent, serviceName)
+        public OpenTracingSpanContext(SpanContext context)
         {
+            Context = context;
         }
 
-        internal OpenTracingSpanContext(ulong traceId, ulong spanId)
-            : base(traceId, spanId)
-        {
-        }
-
-        internal OpenTracingSpanContext(SpanContext spanContext)
-            : base(spanContext)
-        {
-        }
+        internal SpanContext Context { get; }
 
         public override bool Equals(object obj)
         {
@@ -31,12 +23,16 @@ namespace Datadog.Trace.OpenTracing
                 return false;
             }
 
-            return this.ParentId == spanContext.ParentId && this.SpanId == spanContext.SpanId && this.ServiceName == spanContext.ServiceName;
+            return Context.ParentId == spanContext.Context.ParentId &&
+                   Context.SpanId == spanContext.Context.SpanId &&
+                   Context.ServiceName == spanContext.Context.ServiceName;
         }
 
         public override int GetHashCode()
         {
-            return this.ParentId.GetHashCode() ^ this.SpanId.GetHashCode() ^ this.ServiceName.GetHashCode();
+            return Context.ParentId.GetHashCode() ^
+                   Context.SpanId.GetHashCode() ^
+                   Context.ServiceName.GetHashCode();
         }
 
         public IEnumerable<KeyValuePair<string, string>> GetBaggageItems()

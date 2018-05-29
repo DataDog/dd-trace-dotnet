@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 using OpenTracing.Propagation;
 
@@ -47,9 +47,21 @@ namespace Datadog.Trace.OpenTracing
         /// were never injected by a Tracer implementation (e.g., unrelated HTTP headers).</para>
         /// </summary>
         /// <returns>All key value pairs</returns>
-        public IEnumerable<KeyValuePair<string, string>> GetEntries()
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
         {
-            return _headers.Select(x => new KeyValuePair<string, string>(x.Key, x.Value == null ? null : string.Join(",", x.Value)));
+            foreach (KeyValuePair<string, IEnumerable<string>> header in _headers)
+            {
+                yield return new KeyValuePair<string, string>(header.Key, header.Value == null ? null : string.Join(",", header.Value));
+            }
+        }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the header collection.
+        /// </summary>
+        /// <returns>An System.Collections.IEnumerator object that can be used to iterate through the header collection.</returns>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         /// <summary>
