@@ -69,12 +69,7 @@ namespace Datadog.Trace.OpenTracing
             lock (_lock)
             {
                 SpanContext parentContext = GetParentContext();
-
-                // if service name was not set, inherit parent's service name;
-                // if there is no parent, fallback to default service name
-                string serviceName = _serviceName ?? parentContext?.ServiceName ?? _tracer.DefaultServiceName;
-
-                Span ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, serviceName, _start, _ignoreActiveSpan);
+                Span ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, _serviceName, _start, _ignoreActiveSpan);
                 var otSpan = new OpenTracingSpan(ddSpan);
 
                 if (_tags != null)
