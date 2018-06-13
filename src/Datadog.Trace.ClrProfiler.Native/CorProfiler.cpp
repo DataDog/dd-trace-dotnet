@@ -233,10 +233,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
                                     moduleInfo.m_MemberRefLookup);
     }
 
-    // now find or create references to types and methods needed by each enabled integration
+    // find or create references to types and methods needed by each enabled integration
     for (const IntegrationBase* const enabledIntegration : enabledIntegrations)
     {
-        const std::vector<TypeReference> typeReferences = enabledIntegration->GetTypeReferences();
+        const std::vector<TypeReference>& typeReferences = enabledIntegration->GetTypeReferences();
 
         // find or create mdTypeRef tokens and save them for later
         for (const TypeReference& typeReference : typeReferences)
@@ -250,7 +250,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
                                       moduleInfo.m_TypeRefLookup);
         }
 
-        const std::vector<MemberReference> memberReferences = enabledIntegration->GetMemberReferences();
+        const std::vector<MemberReference>& memberReferences = enabledIntegration->GetMemberReferences();
 
         // find or create mdMemberRef tokens and save them for later
         for (const MemberReference& memberReference : memberReferences)
