@@ -1,21 +1,11 @@
 #include "CustomIntegration.h"
-#include "GlobalTypeReferences.h"
 
 CustomIntegration::CustomIntegration()
 {
-    // TODO: for CustomIntegration, load these from configuration
-    m_InstrumentedMethods = {
-        ConsoleApp_Program_DoStuff,
-        ConsoleApp_Program_DoStuffWithArguments,
-    };
-
-    m_TypeReferences = {
-        // ConsoleApp_Program,
-    };
-
-    m_MemberReferences = {
-        // ConsoleApp_Program_DoStuff,
-    };
+    // TODO: for CustomIntegration, load these values from configuration
+    // m_InstrumentedMethods
+    // m_TypeReferences
+    // m_MemberReferences
 }
 
 bool CustomIntegration::IsEnabled() const
