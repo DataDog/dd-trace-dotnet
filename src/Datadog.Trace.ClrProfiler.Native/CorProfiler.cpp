@@ -314,6 +314,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     {
         for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
         {
+            // TODO: match by complete signature, not just name
             if (typeName == instrumentedMethod.ContainingType.TypeName && methodName == instrumentedMethod.MethodName)
             {
                 const MemberReference& exitProbe = instrumentedMethod.ReturnType == GlobalTypeReferences.System_Void

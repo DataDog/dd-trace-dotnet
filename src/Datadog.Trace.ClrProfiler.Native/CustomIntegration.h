@@ -29,7 +29,7 @@ private:
         {},
     };
 
-    // call void ConsoleApp.Program::DoStuff()
+    // call void ConsoleApp.Program::DoStuffWithArguments(string, int32)
     const MemberReference ConsoleApp_Program_DoStuffWithArguments =
     {
         ConsoleApp_Program,
