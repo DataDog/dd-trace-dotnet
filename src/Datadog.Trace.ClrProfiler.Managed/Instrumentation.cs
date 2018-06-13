@@ -163,41 +163,5 @@ namespace Datadog.Trace.ClrProfiler
 
             return values;
         }
-
-        /*
-        [System.Security.SecuritySafeCritical]
-        public static void ManagedEnteredFunction32(IDictionary<string, object> values)
-        {
-            OnMethodEntered(values);
-        }
-
-        [System.Security.SecuritySafeCritical]
-        public static void ManagedEnteredFunction64(IDictionary<string, object> values)
-        {
-            OnMethodEntered(values);
-        }
-
-        [System.Security.SecuritySafeCritical]
-        public static void ManagedExitedFunction32(IDictionary<string, object> values)
-        {
-            OnMethodExit(values);
-        }
-
-        [System.Security.SecuritySafeCritical]
-        public static void ManagedExitedFunction64(IDictionary<string, object> values)
-        {
-            OnMethodExit(values);
-        }
-        */
-
-        private static T SafeCast<T>(object value)
-        {
-            if (value is T)
-            {
-                return (T)value;
-            }
-
-            return default(T);
-        }
     }
 }
