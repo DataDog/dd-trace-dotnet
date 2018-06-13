@@ -33,6 +33,7 @@ public:
     void LoadArgument(UINT16 index) const;
     void Cast(const TypeReference& type) const;
     void Box(const TypeReference& type) const;
+    void UnboxAny(const TypeReference& type) const;
     void CreateArray(const TypeReference& type, const INT32 size) const;
     void CallMember(const MemberReference& member) const;
     void Duplicate() const;

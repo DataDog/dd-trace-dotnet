@@ -38,6 +38,7 @@ public:
                           const MemberReference& entryProbe) const;
 
     void InjectExitProbe(const ILRewriterWrapper& pilr,
+                         const MemberReference& instrumentedMethod,
                          const MemberReference& exitProbe) const;
 
 protected:
@@ -46,5 +47,6 @@ protected:
     std::vector<TypeReference> m_TypeReferences = {};
     std::vector<MemberReference> m_MemberReferences = {};
 
-    virtual void InjectEntryArguments(const ILRewriterWrapper& pilr, const MemberReference& instrumentedMethod) const;
+private :
+    static bool NeedsBoxing(const TypeReference& type);
 };

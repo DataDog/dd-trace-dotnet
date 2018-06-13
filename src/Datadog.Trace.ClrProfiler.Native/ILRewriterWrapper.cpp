@@ -111,6 +111,14 @@ void ILRewriterWrapper::Box(const TypeReference& type) const
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
+void ILRewriterWrapper::UnboxAny(const TypeReference& type) const
+{
+    ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+    pNewInstr->m_opcode = CEE_UNBOX_ANY;
+    pNewInstr->m_Arg32 = m_typeRefLookup[type];
+    m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+}
+
 void ILRewriterWrapper::CreateArray(const TypeReference& type, const INT32 size) const
 {
     LoadInt32(size);

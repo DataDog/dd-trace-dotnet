@@ -395,7 +395,7 @@ HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
 
             // And now insert the epilog before the new RET
             ilRewriterWrapper.SetILPosition(pNewRet);
-            integration->InjectExitProbe(ilRewriterWrapper, exitProbe);
+            integration->InjectExitProbe(ilRewriterWrapper, instrumentedMethod, exitProbe);
 
             // Advance pInstr after all this gunk so the for loop continues properly
             pInstr = pNewRet;

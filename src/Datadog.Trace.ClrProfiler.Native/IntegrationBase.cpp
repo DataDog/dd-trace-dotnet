@@ -13,24 +13,14 @@ void IntegrationBase::InjectEntryProbe(const ILRewriterWrapper& pilr,
     pilr.LoadInt64(moduleID);
     pilr.LoadInt32(methodDef);
 
-    // allow inheritors to create an object[] with additional arguments
-    InjectEntryArguments(pilr, instrumentedMethod);
-
-    // note: the entry probe returns a Datadog.Trace.Scope instance,
-    // which we will leave on the stack for the exit probe to pick up
-    pilr.CallMember(entryProbe);
-}
-
-void IntegrationBase::InjectEntryArguments(const ILRewriterWrapper& pilr,
-                                           const MemberReference& instrumentedMethod) const
-{
-    // instance methods has an implicit first "this" parameter
+    // instance methods have an implicit first "this" parameter that we need to skip
     const bool hasThis = instrumentedMethod.CorCallingConvention == IMAGE_CEE_CS_CALLCONV_HASTHIS ||
                          instrumentedMethod.CorCallingConvention == IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS;
 
     const auto argumentCount = static_cast<INT32>(instrumentedMethod.ArgumentTypes.size());
     pilr.CreateArray(GlobalTypeReferences.System_Object, argumentCount);
 
+    // store each of the intrumented method's arguments into an object[]
     for (UINT16 i = 0; i < argumentCount; ++i)
     {
         const TypeReference& argumentType = instrumentedMethod.ArgumentTypes[i];
@@ -38,11 +28,7 @@ void IntegrationBase::InjectEntryArguments(const ILRewriterWrapper& pilr,
         pilr.BeginLoadValueIntoArray(i);
         pilr.LoadArgument(hasThis ? i + 1 : i);
 
-        if (argumentType.CorElementType != ELEMENT_TYPE_CLASS &&
-            argumentType.CorElementType != ELEMENT_TYPE_OBJECT &&
-            argumentType.CorElementType != ELEMENT_TYPE_STRING &&
-            argumentType.CorElementType != ELEMENT_TYPE_ARRAY &&
-            argumentType.CorElementType != ELEMENT_TYPE_SZARRAY)
+        if (NeedsBoxing(argumentType))
         {
             // values types need to be boxed before they are stored in an object[]
             pilr.Box(argumentType);
@@ -50,13 +36,42 @@ void IntegrationBase::InjectEntryArguments(const ILRewriterWrapper& pilr,
 
         pilr.EndLoadValueIntoArray();
     }
+
+    // note: the entry probe returns a Datadog.Trace.Scope instance,
+    // which we will leave on the stack for the exit probe to pick up
+    pilr.CallMember(entryProbe);
 }
 
 void IntegrationBase::InjectExitProbe(const ILRewriterWrapper& pilr,
+                                      const MemberReference& instrumentedMethod,
                                       const MemberReference& exitProbe) const
 {
-    // note: the entry probe returned a Datadog.Trace.Scope instance
+    // if instrumented method's return value it a value type,
+    // we need to box it before calling the exit probe
+    if (NeedsBoxing(instrumentedMethod.ReturnType))
+    {
+        pilr.Box(instrumentedMethod.ReturnType);
+    }
+
+    // the entry probe returned a Datadog.Trace.Scope instance
     // and we left if on the stack, the exit probe will pop it
     // and leave a balanced stack
     pilr.CallMember(exitProbe);
+
+    // if instrumented method's return value it a value type,
+    // we need to unbox back into the stack before leaving
+    if (NeedsBoxing(instrumentedMethod.ReturnType))
+    {
+        pilr.UnboxAny(instrumentedMethod.ReturnType);
+    }
+}
+
+bool IntegrationBase::NeedsBoxing(const TypeReference& type)
+{
+    return type.CorElementType != ELEMENT_TYPE_VOID &&
+           type.CorElementType != ELEMENT_TYPE_CLASS &&
+           type.CorElementType != ELEMENT_TYPE_OBJECT &&
+           type.CorElementType != ELEMENT_TYPE_STRING &&
+           type.CorElementType != ELEMENT_TYPE_ARRAY &&
+           type.CorElementType != ELEMENT_TYPE_SZARRAY;
 }
