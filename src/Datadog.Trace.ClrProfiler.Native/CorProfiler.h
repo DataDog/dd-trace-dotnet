@@ -15,6 +15,7 @@ private:
     static HRESULT RewriteIL(ICorProfilerInfo* pICorProfilerInfo,
                              ICorProfilerFunctionControl* pICorProfilerFunctionControl,
                              const IntegrationBase* integration,
+                             const MemberReference& instrumentedMethod,
                              ModuleID moduleID,
                              mdToken functionToken,
                              const TypeRefLookup& typeDefLookup,

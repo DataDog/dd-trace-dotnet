@@ -6,6 +6,7 @@ CustomIntegration::CustomIntegration()
     // TODO: for CustomIntegration, load these from configuration
     m_InstrumentedMethods = {
         ConsoleApp_Program_DoStuff,
+        ConsoleApp_Program_DoStuffWithArguments,
     };
 
     m_TypeReferences = {

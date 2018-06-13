@@ -69,50 +69,36 @@ namespace Datadog.Trace.ClrProfiler
 
                     break;
                 case IntegrationType.AspNetMvc5:
-                    span.OperationName = "web.request";
-                    span.Type = "web";
-
-                    if (args == null)
+                    if (args == null || args.Length != 2)
                     {
                         break;
                     }
 
-                    /*
-                     *  additional OnMethodEntered() arguments:
-                     *  0: HttpContextBase              controllerContext.HttpContext
-                     *  1: string                       ((Route)controllerContext.RouteData.Route).Url (mvc route template)
-                     *  2: IDictionary<string, object>  controllerContext.RouteData.Values (mvc route values)
-                     */
+                    // [System.Web.Mvc]System.Web.Mvc.ControllerContext
+                    dynamic controllerContext = args[0];
 
-                    string httpMethod = null;
+                    HttpContextBase httpContext = controllerContext.HttpContext;
+                    string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
 
-                    if (args.Length > 0 && args[0] is HttpContextBase httpContext)
+                    string routeTemplate = controllerContext.RouteData.Route.Url;
+                    IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
+                    var resourceName = new StringBuilder(routeTemplate);
+
+                    // replace all route values except "id"
+                    // TODO: make this filter configurable
+                    foreach (var routeValue in routeValues.Where(p => !string.Equals(p.Key, "id", StringComparison.InvariantCultureIgnoreCase)))
                     {
-                        httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                        span.SetTag("http.method", httpMethod);
-                        span.SetTag("http.url", httpContext.Request.RawUrl.ToLowerInvariant());
+                        string key = $"{{{routeValue.Key.ToLowerInvariant()}}}";
+                        string value = routeValue.Value.ToString().ToLowerInvariant();
+                        resourceName.Replace(key, value);
                     }
 
-                    if (args.Length > 1 && args[1] is string routeTemplate)
-                    {
-                        routeTemplate = routeTemplate.ToLowerInvariant();
-                        span.SetTag("http.route", routeTemplate);
-                        var resourceName = new StringBuilder(routeTemplate);
-
-                        if (args.Length > 2 && args[2] is IDictionary<string, object> routeValues)
-                        {
-                            // replace all route values except "id"
-                            // TODO: make this filter configurable
-                            foreach (var routeValue in routeValues.Where(p => !string.Equals(p.Key, "id", StringComparison.InvariantCultureIgnoreCase)))
-                            {
-                                string key = $"{{{routeValue.Key.ToLowerInvariant()}}}";
-                                string value = routeValue.Value.ToString().ToLowerInvariant();
-                                resourceName.Replace(key, value);
-                            }
-                        }
-
-                        span.ResourceName = string.Join(" ", httpMethod, resourceName.ToString());
-                    }
+                    span.ResourceName = string.Join(" ", httpMethod, resourceName.ToString());
+                    span.OperationName = "web.request";
+                    span.Type = "web";
+                    span.SetTag("http.method", httpMethod);
+                    span.SetTag("http.url", httpContext.Request.RawUrl.ToLowerInvariant());
+                    span.SetTag("http.route", routeTemplate);
 
                     // TODO: get response code from httpContext.Response.StatusCode
                     break;

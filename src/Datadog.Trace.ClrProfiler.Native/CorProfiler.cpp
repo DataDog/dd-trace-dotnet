@@ -323,6 +323,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                 hr = RewriteIL(this->corProfilerInfo,
                                nullptr,
                                integration,
+                               instrumentedMethod,
                                moduleId,
                                functiontoken,
                                moduleInfo.m_TypeRefLookup,
@@ -351,6 +352,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
                                ICorProfilerFunctionControl* const pICorProfilerFunctionControl,
                                const IntegrationBase* integration,
+                               const MemberReference& instrumentedMethod,
                                const ModuleID moduleID,
                                const mdToken functionToken,
                                const TypeRefLookup& typeDefLookup,
@@ -367,7 +369,7 @@ HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
 
     // insert a call to the entry probe before the first IL instruction
     ilRewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
-    integration->InjectEntryProbe(ilRewriterWrapper, moduleID, functionToken, entryProbe);
+    integration->InjectEntryProbe(ilRewriterWrapper, moduleID, functionToken, instrumentedMethod, entryProbe);
 
     // Find all RETs, and insert a call to the exit probe before each one
     for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;

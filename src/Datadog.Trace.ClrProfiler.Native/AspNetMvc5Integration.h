@@ -1,7 +1,6 @@
 #pragma once
 
 #include "IntegrationBase.h"
-#include "ILRewriter.h"
 #include "TypeReference.h"
 #include "MemberReference.h"
 #include "GlobalTypeReferences.h"
@@ -17,9 +16,6 @@ public:
     {
         return IntegrationType_AspNetMvc5;
     }
-
-protected:
-    void InjectEntryArguments(const ILRewriterWrapper& pilr) const override;
 
 private:
     const TypeReference System_Web_Mvc_ControllerActionInvoker = { ELEMENT_TYPE_OBJECT, L"System.Web.Mvc", L"System.Web.Mvc.ControllerActionInvoker" };

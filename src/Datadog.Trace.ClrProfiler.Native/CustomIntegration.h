@@ -29,6 +29,20 @@ private:
         {},
     };
 
+    // call void ConsoleApp.Program::DoStuff()
+    const MemberReference ConsoleApp_Program_DoStuffWithArguments =
+    {
+        ConsoleApp_Program,
+        L"DoStuffWithArguments",
+        false,
+        IMAGE_CEE_CS_CALLCONV_DEFAULT,
+        GlobalTypeReferences.System_Void,
+        {
+            GlobalTypeReferences.System_String,
+            GlobalTypeReferences.System_Int32
+        },
+    };
+
     // TODO
     // { L"ConsoleApp.exe", L"ConsoleApp.Program", L"DoStuffAndReturnValue", GlobalTypeReferences.System_Int32 },
     // { L"ConsoleApp.exe", L"ConsoleApp.Program", L"DoStuffWithTryBlock", GlobalTypeReferences.System_Void },

@@ -111,7 +111,7 @@ void ILRewriterWrapper::Box(const TypeReference& type) const
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
-void ILRewriterWrapper::CreateArray(const TypeReference& type, INT32 size) const
+void ILRewriterWrapper::CreateArray(const TypeReference& type, const INT32 size) const
 {
     LoadInt32(size);
 
