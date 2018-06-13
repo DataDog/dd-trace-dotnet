@@ -3,12 +3,17 @@
 
 CustomIntegration::CustomIntegration()
 {
-    // TODO: load these from configuration
+    // TODO: for CustomIntegration, load these from configuration
     m_InstrumentedMethods = {
-        { L"ConsoleApp.exe", L"ConsoleApp.Program", L"DoStuff", GlobalTypeReferences.System_Void },
-        { L"ConsoleApp.exe", L"ConsoleApp.Program", L"DoStuffAndReturnValue", GlobalTypeReferences.System_Int32 },
-        { L"ConsoleApp.exe", L"ConsoleApp.Work1", L"DoStuff1", GlobalTypeReferences.System_Void },
-        { L"ConsoleApp.exe", L"ConsoleApp.Work2", L"DoStuff2", GlobalTypeReferences.System_Void },
+        ConsoleApp_Program_DoStuff,
+    };
+
+    m_TypeReferences = {
+        // ConsoleApp_Program,
+    };
+
+    m_MemberReferences = {
+        // ConsoleApp_Program_DoStuff,
     };
 }
 

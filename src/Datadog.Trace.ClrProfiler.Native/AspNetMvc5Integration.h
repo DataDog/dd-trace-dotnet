@@ -22,10 +22,7 @@ protected:
     void InjectEntryArguments(const ILRewriterWrapper& pilr) const override;
 
 private:
-    // std::wstring AssemblyName = L"";
-    // std::wstring TypeName = L"";
-    // CorElementType CorElementType;
-
+    const TypeReference System_Web_Mvc_ControllerActionInvoker = { ELEMENT_TYPE_OBJECT, L"System.Web.Mvc", L"System.Web.Mvc.ControllerActionInvoker" };
     const TypeReference System_Web_Mvc_ControllerContext = { ELEMENT_TYPE_CLASS, L"System.Web.Mvc", L"System.Web.Mvc.ControllerContext" };
     const TypeReference System_Web_HttpContextBase = { ELEMENT_TYPE_CLASS, L"System.Web", L"System.Web.HttpContextBase" };
     const TypeReference System_Web_Routing_RouteData = { ELEMENT_TYPE_CLASS, L"System.Web", L"System.Web.Routing.RouteData" };
@@ -33,12 +30,19 @@ private:
     const TypeReference System_Web_Routing_Route = { ELEMENT_TYPE_CLASS, L"System.Web", L"System.Web.Routing.Route" };
     const TypeReference System_Web_Routing_RouteValueDictionary = { ELEMENT_TYPE_CLASS, L"System.Web", L"System.Web.Routing.RouteValueDictionary" };
 
-    // TypeReference Type{};
-    // std::wstring MethodName = L"";
-    // bool IsVirtual;
-    // CorCallingConvention CorCallingConvention;
-    // TypeReference ReturnType;
-    // std::vector<TypeReference> ArgumentTypes;
+    // callvirt instance bool [System.Web.Mvc]System.Web.Mvc.ControllerActionInvoker::InvokeAction(class [System.Web.Mvc]System.Web.Mvc.ControllerContext, string)
+    const MemberReference System_Web_Mvc_ControllerActionInvoker_InvokeAction
+    {
+        System_Web_Mvc_ControllerActionInvoker,
+        L"InvokeActionMethod",
+        true,
+        IMAGE_CEE_CS_CALLCONV_HASTHIS,
+        GlobalTypeReferences.System_Boolean,
+        {
+            System_Web_Mvc_ControllerContext,
+            GlobalTypeReferences.System_String,
+        },
+    };
 
     const MemberReference System_Web_Mvc_ControllerContext_get_HttpContext = {
         System_Web_Mvc_ControllerContext,

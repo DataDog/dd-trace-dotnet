@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <corhlpr.h>
-#include "InstrumentedMethod.h"
 #include "TypeReference.h"
 #include "MemberReference.h"
 #include "IntegrationType.h"
@@ -17,7 +16,7 @@ public:
 
     virtual IntegrationType GetIntegrationType() const = 0;
 
-    const std::vector<InstrumentedMethod>& GetInstrumentedMethods() const
+    const std::vector<MemberReference>& GetInstrumentedMethods() const
     {
         return m_InstrumentedMethods;
     }
@@ -42,7 +41,7 @@ public:
 
 protected:
     virtual ~IntegrationBase() = default;
-    std::vector<InstrumentedMethod> m_InstrumentedMethods = {};
+    std::vector<MemberReference> m_InstrumentedMethods = {};
     std::vector<TypeReference> m_TypeReferences = {};
     std::vector<MemberReference> m_MemberReferences = {};
 

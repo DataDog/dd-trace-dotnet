@@ -41,8 +41,6 @@ private:
 
     static HRESULT EmitAssemblyRef(IMetaDataAssemblyEmit* pAssemblyEmit, mdAssemblyRef* assemblyRef);
 
-    static bool StringsEndsWith(std::wstring const& fullString, std::wstring const& ending);
-
     static HRESULT ResolveTypeReference(const TypeReference& type,
                                         const std::wstring& assemblyName,
                                         IMetaDataImport* metadataImport,

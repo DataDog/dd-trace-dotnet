@@ -9,7 +9,6 @@
 #include "CComPtr.h"
 #include "TypeReference.h"
 #include "MemberReference.h"
-#include "InstrumentedMethod.h"
 #include "GlobalIntegrations.h"
 
 // Note: Generally you should not have a single, global callback implementation, as that
@@ -136,6 +135,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
         return S_OK;
     }
 
+    WCHAR assemblyName[512];
+    ULONG assemblyNameLength;
+    hr = this->corProfilerInfo->GetAssemblyInfo(assemblyId, _countof(assemblyName), &assemblyNameLength, assemblyName, nullptr, nullptr);
+    LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
+
     std::vector<const IntegrationBase*> enabledIntegrations;
 
     // find enabled integrations that need to instrument methods in this module
@@ -143,9 +147,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     {
         if (integration->IsEnabled())
         {
-            for (const InstrumentedMethod& instrumentedMethod : integration->GetInstrumentedMethods())
+            for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
             {
-                if (StringsEndsWith(wszModulePath, L"\\" + instrumentedMethod.ModuleName))
+                // TODO: research module name vs assembly name, always the same in C#?
+                if (instrumentedMethod.ContainingType.AssemblyName == assemblyName)
                 {
                     enabledIntegrations.push_back(integration);
                     break;
@@ -160,7 +165,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
         return S_OK;
     }
 
-    LOG_APPEND(L"ModuleLoadFinished for " << wszModulePath << ". Emitting instrumentation metadata.");
+    LOG_APPEND(L"ModuleLoadFinished for " << assemblyName << ". Emitting instrumentation metadata.");
 
     // get metadata interfaces
     CComPtr<IMetaDataImport> metadataImport;
@@ -191,11 +196,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     {
         LOG_APPEND(L"Failed to store module path '" << wszModulePath << L"'");
     }
-
-    WCHAR assemblyName[512];
-    ULONG assemblyNameLength;
-    hr = this->corProfilerInfo->GetAssemblyInfo(assemblyId, _countof(assemblyName), &assemblyNameLength, assemblyName, nullptr, nullptr);
-    LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
 
     mdModule module;
     hr = metadataImport->GetModuleFromScope(&module);
@@ -312,9 +312,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // so first integration wins
     for (const IntegrationBase* const integration : moduleInfo.m_Integrations)
     {
-        for (const InstrumentedMethod& instrumentedMethod : integration->GetInstrumentedMethods())
+        for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
         {
-            if (typeName == instrumentedMethod.TypeName && methodName == instrumentedMethod.MethodName)
+            if (typeName == instrumentedMethod.ContainingType.TypeName && methodName == instrumentedMethod.MethodName)
             {
                 const MemberReference& exitProbe = instrumentedMethod.ReturnType == GlobalTypeReferences.System_Void
                                                        ? Datadog_Trace_ClrProfiler_Instrumentation_OnMethodExit_ReturnVoid
@@ -478,16 +478,6 @@ HRESULT CorProfiler::FindAssemblyRefIterator(const std::wstring& assemblyName,
     }
 
     return E_FAIL;
-}
-
-bool CorProfiler::StringsEndsWith(std::wstring const& fullString, std::wstring const& ending)
-{
-    if (fullString.length() >= ending.length())
-    {
-        return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
-    }
-
-    return false;
 }
 
 /**

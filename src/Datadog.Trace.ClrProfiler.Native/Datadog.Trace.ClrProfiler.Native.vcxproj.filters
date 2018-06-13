@@ -21,7 +21,6 @@
     <ClInclude Include="CSHolder.h" />
     <ClInclude Include="IDToInfoMap.h" />
     <ClInclude Include="ILRewriter.h" />
-    <ClInclude Include="InstrumentedMethod.h" />
     <ClInclude Include="ModuleInfo.h" />
     <ClInclude Include="IntegrationBase.h" />
     <ClInclude Include="AspNetMvc5Integration.h" />

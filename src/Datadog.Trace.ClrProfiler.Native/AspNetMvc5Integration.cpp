@@ -1,19 +1,11 @@
 #include "AspNetMvc5Integration.h"
 #include "GlobalTypeReferences.h"
 
+// TODO: look into defining integrations in an external configuration file (JSON?) instead of compiled code
 AspNetMvc5Integration::AspNetMvc5Integration()
 {
     m_InstrumentedMethods = {
-        // async
-        // System.Web.Mvc, Version=5.2.6.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
-        // System.Web.Mvc.Async.AsyncControllerActionInvoker.BeginInvokeAsynchronousActionMethod()
-        // ControllerContext controllerContext, AsyncActionDescriptor actionDescriptor, IDictionary<string, object> parameters, AsyncCallback callback, object state
-
-        // non-async
-        // System.Web.Mvc, Version=5.2.6.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
-        // System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()
-        // ControllerContext controllerContext, ActionDescriptor actionDescriptor, IDictionary<string, object> parameters
-        { L"System.Web.Mvc.dll", L"System.Web.Mvc.ControllerActionInvoker", L"InvokeActionMethod", GlobalTypeReferences.System_Object },
+        System_Web_Mvc_ControllerActionInvoker_InvokeAction,
     };
 
     m_TypeReferences = {

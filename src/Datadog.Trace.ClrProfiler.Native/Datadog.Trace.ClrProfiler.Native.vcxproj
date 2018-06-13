@@ -160,7 +160,6 @@
     <ClInclude Include="ILRewriter.h" />
     <ClInclude Include="ILRewriterWrapper.h" />
     <ClInclude Include="IntegrationBase.h" />
-    <ClInclude Include="InstrumentedMethod.h" />
     <ClInclude Include="IntegrationType.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="MemberReference.h" />
