@@ -48,12 +48,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", 
 		benchmarks\GlobalSuppressions.cs = benchmarks\GlobalSuppressions.cs
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{7F15C239-301D-42D7-B497-4168134061C4}"
-	ProjectSection(SolutionItems) = preProject
-		samples\Directory.Build.props = samples\Directory.Build.props
-		samples\GlobalSuppressions.cs = samples\GlobalSuppressions.cs
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Performance", "benchmarks\Datadog.Trace.Performance\Datadog.Trace.Performance.csproj", "{733120FD-2423-491A-8FB1-427867101D8D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed", "src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj", "{85F35AAF-D102-4960-8B41-3BD9CBD0E77F}"
