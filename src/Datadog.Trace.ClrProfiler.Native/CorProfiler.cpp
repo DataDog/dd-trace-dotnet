@@ -497,8 +497,8 @@ HRESULT CorProfiler::EmitAssemblyRef(IMetaDataAssemblyEmit* pAssemblyEmit, mdAss
     assemblyMetaData.szLocale = wszLocale;
     assemblyMetaData.cbLocale = _countof(wszLocale);
 
-    const HRESULT hr = pAssemblyEmit->DefineAssemblyRef(static_cast<void *>(rgbPublicKeyToken),
-                                                        sizeof(rgbPublicKeyToken),
+    const HRESULT hr = pAssemblyEmit->DefineAssemblyRef(nullptr, // static_cast<void *>(rgbPublicKeyToken),
+                                                        0, // sizeof(rgbPublicKeyToken),
                                                         L"Datadog.Trace.ClrProfiler.Managed",
                                                         &assemblyMetaData,
                                                         // hash blob
