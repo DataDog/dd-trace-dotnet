@@ -233,33 +233,31 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
                                     moduleInfo.m_MemberRefLookup);
     }
 
-    // find or create references to types and methods needed by each enabled integration
+    // find or create mdTypeRef tokens used in instrumented methods and save them for later
     for (const IntegrationBase* const enabledIntegration : enabledIntegrations)
     {
-        const std::vector<TypeReference>& typeReferences = enabledIntegration->GetTypeReferences();
+        const std::vector<MemberReference>& memberReferences = enabledIntegration->GetInstrumentedMethods();
 
-        // find or create mdTypeRef tokens and save them for later
-        for (const TypeReference& typeReference : typeReferences)
+        for (const MemberReference& memberReference : memberReferences)
         {
-            hr = ResolveTypeReference(typeReference,
+            hr = ResolveTypeReference(memberReference.ReturnType,
                                       assemblyName,
                                       metadataImport,
                                       metadataEmit,
                                       assemblyImport,
                                       module,
                                       moduleInfo.m_TypeRefLookup);
-        }
 
-        const std::vector<MemberReference>& memberReferences = enabledIntegration->GetMemberReferences();
-
-        // find or create mdMemberRef tokens and save them for later
-        for (const MemberReference& memberReference : memberReferences)
-        {
-            hr = RevolveMemberReference(memberReference,
-                                        metadataImport,
-                                        metadataEmit,
-                                        moduleInfo.m_TypeRefLookup,
-                                        moduleInfo.m_MemberRefLookup);
+            for (const TypeReference& typeReference : memberReference.ArgumentTypes)
+            {
+                hr = ResolveTypeReference(typeReference,
+                                          assemblyName,
+                                          metadataImport,
+                                          metadataEmit,
+                                          assemblyImport,
+                                          module,
+                                          moduleInfo.m_TypeRefLookup);
+            }
         }
     }
 

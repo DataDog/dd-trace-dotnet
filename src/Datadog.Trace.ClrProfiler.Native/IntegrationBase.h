@@ -21,16 +21,6 @@ public:
         return m_InstrumentedMethods;
     }
 
-    const std::vector<TypeReference>& GetTypeReferences() const
-    {
-        return m_TypeReferences;
-    }
-
-    const std::vector<MemberReference>& GetMemberReferences() const
-    {
-        return m_MemberReferences;
-    }
-
     void InjectEntryProbe(const ILRewriterWrapper& pilr,
                           ModuleID moduleID,
                           mdMethodDef methodDef,
@@ -44,8 +34,6 @@ public:
 protected:
     virtual ~IntegrationBase() = default;
     std::vector<MemberReference> m_InstrumentedMethods = {};
-    std::vector<TypeReference> m_TypeReferences = {};
-    std::vector<MemberReference> m_MemberReferences = {};
 
 private :
     static bool NeedsBoxing(const TypeReference& type);
