@@ -2,10 +2,13 @@
 
 #include <vector>
 #include <corhlpr.h>
+#include <corprof.h>
 #include "TypeReference.h"
 #include "MemberReference.h"
 #include "IntegrationType.h"
-#include "ILRewriterWrapper.h"
+
+// forwards declarations
+class ILRewriterWrapper;
 
 class IntegrationBase
 {

@@ -10,6 +10,9 @@
 #include "TypeReference.h"
 #include "MemberReference.h"
 #include "GlobalIntegrations.h"
+#include "ModuleMetadata.h"
+#include "ILRewriter.h"
+#include "ILRewriterWrapper.h"
 
 // Note: Generally you should not have a single, global callback implementation, as that
 // prevents your profiler from analyzing multiply loaded in-process side-by-side CLRs.
@@ -186,23 +189,38 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     hr = metadataImport->QueryInterface(IID_IMetaDataAssemblyImport, reinterpret_cast<void **>(&assemblyImport));
     RETURN_IF_FAILED(hr);
 
-    ModuleInfo moduleInfo{};
-    moduleInfo.m_pImport = metadataImport;
-    moduleInfo.m_pImport->AddRef();
-    moduleInfo.m_Integrations = enabledIntegrations;
-
-    if (wcscpy_s(moduleInfo.m_wszModulePath, _countof(moduleInfo.m_wszModulePath), wszModulePath) != 0)
-    {
-        LOG_APPEND(L"Failed to store module path '" << wszModulePath << L"'");
-    }
-
     mdModule module;
     hr = metadataImport->GetModuleFromScope(&module);
     LOG_IFFAILEDRET(hr, L"Failed to get module token.");
 
+    ModuleMetadata moduleMetadata(assemblyName,
+                                  enabledIntegrations,
+                                  module,
+                                  metadataImport,
+                                  metadataEmit,
+                                  assemblyImport,
+                                  assemblyEmit);
+
     // emit a metadata reference to our assembly, Datadog.Trace.ClrProfiler.Managed
+    BYTE rgbPublicKeyToken[] = { 0xde, 0xf8, 0x6d, 0x06, 0x1d, 0x0d, 0x2e, 0xeb };
+    WCHAR wszLocale[] = L"neutral";
+
+    ASSEMBLYMETADATA assemblyMetaData{};
+    assemblyMetaData.usMajorVersion = 1;
+    assemblyMetaData.usMinorVersion = 0;
+    assemblyMetaData.usBuildNumber = 0;
+    assemblyMetaData.usRevisionNumber = 0;
+    assemblyMetaData.szLocale = wszLocale;
+    assemblyMetaData.cbLocale = _countof(wszLocale);
+
     mdAssemblyRef assemblyRef;
-    hr = EmitAssemblyRef(assemblyEmit, &assemblyRef);
+    hr = moduleMetadata.EmitAssemblyRef(L"Datadog.Trace.ClrProfiler.Managed",
+                                        assemblyMetaData,
+                                        nullptr,
+                                        0,
+                                        assemblyRef);
+
+    RETURN_IF_FAILED(hr);
 
     static const std::vector<MemberReference> instrumentationProbes = {
         Datadog_Trace_ClrProfiler_Instrumentation_OnMethodEntered,
@@ -211,58 +229,26 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     };
 
     // for each instrumentation probe...
-    for (const MemberReference& memberReference : instrumentationProbes)
+    for (const MemberReference& instrumentationProbe : instrumentationProbes)
     {
-        // add a reference to its containing type,
-        hr = ResolveTypeReference(memberReference.ContainingType,
-                                  assemblyName,
-                                  metadataImport,
-                                  metadataEmit,
-                                  assemblyImport,
-                                  module,
-                                  moduleInfo.m_TypeRefLookup);
-
-        RETURN_IF_FAILED(hr);
-
-        // add a reference to its return type,
-        hr = ResolveTypeReference(memberReference.ReturnType,
-                                  assemblyName,
-                                  metadataImport,
-                                  metadataEmit,
-                                  assemblyImport,
-                                  module,
-                                  moduleInfo.m_TypeRefLookup);
-
-        RETURN_IF_FAILED(hr);
-
-        // add references to its argument types,
-        for (const TypeReference& typeReference : memberReference.ArgumentTypes)
-        {
-            hr = ResolveTypeReference(typeReference,
-                                      assemblyName,
-                                      metadataImport,
-                                      metadataEmit,
-                                      assemblyImport,
-                                      module,
-                                      moduleInfo.m_TypeRefLookup);
-        }
-
-        RETURN_IF_FAILED(hr);
-
-        // and add a reference to the method itself
-        hr = ResolveMemberReference(memberReference,
-                                    metadataImport,
-                                    metadataEmit,
-                                    moduleInfo.m_TypeRefLookup,
-                                    moduleInfo.m_MemberRefLookup);
-
+        // find or create any typeRefs and memberRefs needed
+        hr = moduleMetadata.ResolveMember(instrumentationProbe);
         RETURN_IF_FAILED(hr);
     }
 
-    RETURN_IF_FAILED(hr);
+    // for each enabled integration's instrumented method...
+    for (const IntegrationBase* integration : enabledIntegrations)
+    {
+        for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
+        {
+            // find or create any typeRefs and memberRefs needed
+            hr = moduleMetadata.ResolveMember(instrumentedMethod);
+            RETURN_IF_FAILED(hr);
+        }
+    }
 
     // store module info for later lookup
-    m_moduleIDToInfoMap.Update(moduleId, moduleInfo);
+    m_moduleIDToInfoMap.Update(moduleId, moduleMetadata);
     return S_OK;
 }
 
@@ -282,9 +268,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     HRESULT hr = this->corProfilerInfo->GetFunctionInfo(functionId, &classId, &moduleId, &functiontoken);
     RETURN_IF_FAILED(hr);
 
-    ModuleInfo moduleInfo{};
+    ModuleMetadata moduleMetadata;
 
-    if (!m_moduleIDToInfoMap.LookupIfExists(moduleId, &moduleInfo))
+    if (!m_moduleIDToInfoMap.LookupIfExists(moduleId, &moduleMetadata))
     {
         // we haven't stored a ModuleInfo for this module, so we can't modify its IL
         return S_OK;
@@ -293,12 +279,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     WCHAR wszTypeDefName[256];
     WCHAR wszMethodDefName[256];
 
-    GetClassAndFunctionNamesFromMethodDef(moduleInfo.m_pImport,
-                                          functiontoken,
-                                          wszTypeDefName,
-                                          _countof(wszTypeDefName),
-                                          wszMethodDefName,
-                                          _countof(wszMethodDefName));
+    moduleMetadata.GetClassAndFunctionNamesFromMethodDef(functiontoken,
+                                                         wszTypeDefName,
+                                                         _countof(wszTypeDefName),
+                                                         wszMethodDefName,
+                                                         _countof(wszMethodDefName));
 
     const auto typeName = std::wstring(wszTypeDefName);
     const auto methodName = std::wstring(wszMethodDefName);
@@ -306,7 +291,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // check if this method should be instrumented
     // NOTE: for now we only allow one integration to instrument a method,
     // so first integration wins
-    for (const IntegrationBase* const integration : moduleInfo.m_Integrations)
+    for (const IntegrationBase* const integration : moduleMetadata.m_Integrations)
     {
         for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
         {
@@ -323,8 +308,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                                instrumentedMethod,
                                moduleId,
                                functiontoken,
-                               moduleInfo.m_TypeRefLookup,
-                               moduleInfo.m_MemberRefLookup,
+                               moduleMetadata,
                                Datadog_Trace_ClrProfiler_Instrumentation_OnMethodEntered,
                                exitProbe);
 
@@ -348,17 +332,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 // IL, rewrite it, and send the result to the CLR
 HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
                                ICorProfilerFunctionControl* const pICorProfilerFunctionControl,
-                               const IntegrationBase* integration,
+                               const IntegrationBase* const integration,
                                const MemberReference& instrumentedMethod,
                                const ModuleID moduleID,
                                const mdToken functionToken,
-                               const TypeRefLookup& typeDefLookup,
-                               const MemberRefLookup& memberRefLookup,
+                               const ModuleMetadata& moduleMetadata,
                                const MemberReference& entryProbe,
                                const MemberReference& exitProbe)
 {
     ILRewriter rewriter(pICorProfilerInfo, pICorProfilerFunctionControl, moduleID, functionToken);
-    ILRewriterWrapper ilRewriterWrapper(&rewriter, typeDefLookup, memberRefLookup);
+    ILRewriterWrapper ilRewriterWrapper(&rewriter, moduleMetadata);
 
     // hr = rewriter.Initialize();
     HRESULT hr = rewriter.Import();
@@ -404,113 +387,6 @@ HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
     return S_OK;
 }
 
-HRESULT CorProfiler::FindAssemblyRef(const std::wstring& assemblyName,
-                                     IMetaDataAssemblyImport* pAssemblyImport,
-                                     mdAssemblyRef* assemblyRef)
-{
-    HCORENUM hEnum = nullptr;
-    mdAssemblyRef rgAssemblyRefs[20];
-    ULONG cAssemblyRefsReturned;
-
-    do
-    {
-        const HRESULT hr = pAssemblyImport->EnumAssemblyRefs(&hEnum,
-                                                             rgAssemblyRefs,
-                                                             _countof(rgAssemblyRefs),
-                                                             &cAssemblyRefsReturned);
-
-        LOG_IFFAILEDRET(hr, L"EnumAssemblyRefs failed, hr = " << HEX(hr));
-
-        if (cAssemblyRefsReturned == 0)
-        {
-            pAssemblyImport->CloseEnum(hEnum);
-            LOG_APPEND(L"Could not find an AssemblyRef to " << assemblyName);
-            return E_FAIL;
-        }
-    }
-    while (FindAssemblyRefIterator(assemblyName,
-                                   pAssemblyImport,
-                                   rgAssemblyRefs,
-                                   cAssemblyRefsReturned,
-                                   assemblyRef) < S_OK);
-
-    pAssemblyImport->CloseEnum(hEnum);
-    return S_OK;
-}
-
-HRESULT CorProfiler::FindAssemblyRefIterator(const std::wstring& assemblyName,
-                                             IMetaDataAssemblyImport* pAssemblyImport,
-                                             mdAssemblyRef* rgAssemblyRefs,
-                                             ULONG cAssemblyRefs,
-                                             mdAssemblyRef* assemblyRef)
-{
-    for (ULONG i = 0; i < cAssemblyRefs; i++)
-    {
-        const void* pvPublicKeyOrToken;
-        ULONG cbPublicKeyOrToken;
-        WCHAR wszName[512];
-        ULONG cchNameReturned;
-        ASSEMBLYMETADATA asmMetaData{};
-        //ZeroMemory(&asmMetaData, sizeof(asmMetaData));
-        const void* pbHashValue;
-        ULONG cbHashValue;
-        DWORD asmRefFlags;
-
-        const HRESULT hr = pAssemblyImport->GetAssemblyRefProps(rgAssemblyRefs[i],
-                                                                &pvPublicKeyOrToken,
-                                                                &cbPublicKeyOrToken,
-                                                                wszName,
-                                                                _countof(wszName),
-                                                                &cchNameReturned,
-                                                                &asmMetaData,
-                                                                &pbHashValue,
-                                                                &cbHashValue,
-                                                                &asmRefFlags);
-
-        LOG_IFFAILEDRET(hr,L"GetAssemblyRefProps failed, hr = " << HEX(hr));
-
-        if (assemblyName == wszName)
-        {
-            *assemblyRef = rgAssemblyRefs[i];
-            return S_OK;
-        }
-    }
-
-    return E_FAIL;
-}
-
-/**
- * \brief Generate assemblyRef for Datadog.Trace.ClrProfiler.Managed, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb
- */
-HRESULT CorProfiler::EmitAssemblyRef(IMetaDataAssemblyEmit* pAssemblyEmit, mdAssemblyRef* assemblyRef)
-{
-    BYTE rgbPublicKeyToken[] = { 0xde, 0xf8, 0x6d, 0x06, 0x1d, 0x0d, 0x2e, 0xeb };
-    WCHAR wszLocale[] = L"neutral";
-
-    ASSEMBLYMETADATA assemblyMetaData{};
-    assemblyMetaData.usMajorVersion = 1;
-    assemblyMetaData.usMinorVersion = 0;
-    assemblyMetaData.usBuildNumber = 0;
-    assemblyMetaData.usRevisionNumber = 0;
-    assemblyMetaData.szLocale = wszLocale;
-    assemblyMetaData.cbLocale = _countof(wszLocale);
-
-    const HRESULT hr = pAssemblyEmit->DefineAssemblyRef(nullptr, // static_cast<void *>(rgbPublicKeyToken),
-                                                        0, // sizeof(rgbPublicKeyToken),
-                                                        L"Datadog.Trace.ClrProfiler.Managed",
-                                                        &assemblyMetaData,
-                                                        // hash blob
-                                                        nullptr,
-                                                        // cb of hash blob
-                                                        0,
-                                                        // flags
-                                                        0,
-                                                        assemblyRef);
-
-    LOG_IFFAILEDRET(hr, L"DefineAssemblyRef failed");
-    return S_OK;
-}
-
 bool CorProfiler::IsAttached() const
 {
     return bIsAttached;
@@ -525,161 +401,20 @@ bool CorProfiler::GetMetadataNames(ModuleID moduleId,
                                    LPWSTR wszMethodDefName,
                                    ULONG cchMethodDefName)
 {
-    ModuleInfo moduleInfo{};
+    ModuleMetadata moduleMetadata{};
 
-    if (m_moduleIDToInfoMap.LookupIfExists(moduleId, &moduleInfo))
+    if (m_moduleIDToInfoMap.LookupIfExists(moduleId, &moduleMetadata))
     {
-        wcscpy_s(wszModulePath, cchModulePath, moduleInfo.m_wszModulePath);
+        wcscpy_s(wszModulePath, cchModulePath, moduleMetadata.assemblyName.c_str());
 
-        GetClassAndFunctionNamesFromMethodDef(moduleInfo.m_pImport,
-                                              methodToken,
-                                              wszTypeDefName,
-                                              cchTypeDefName,
-                                              wszMethodDefName,
-                                              cchMethodDefName);
+        moduleMetadata.GetClassAndFunctionNamesFromMethodDef(methodToken,
+                                                             wszTypeDefName,
+                                                             cchTypeDefName,
+                                                             wszMethodDefName,
+                                                             cchMethodDefName);
 
         return true;
     }
 
     return false;
-}
-
-// [private] Gets the text names from a method def.
-void CorProfiler::GetClassAndFunctionNamesFromMethodDef(IMetaDataImport* pImport,
-                                                        mdMethodDef methodDef,
-                                                        LPWSTR wszTypeDefName,
-                                                        ULONG cchTypeDefName,
-                                                        LPWSTR wszMethodDefName,
-                                                        ULONG cchMethodDefName)
-{
-    mdTypeDef typeDef;
-    ULONG cchMethodDefActual;
-    DWORD dwMethodAttr;
-    ULONG cchTypeDefActual;
-    DWORD dwTypeDefFlags;
-    mdTypeDef typeDefBase;
-
-    HRESULT hr = pImport->GetMethodProps(methodDef,
-                                         &typeDef,
-                                         wszMethodDefName,
-                                         cchMethodDefName,
-                                         &cchMethodDefActual,
-                                         &dwMethodAttr,
-                                         // [OUT] point to the blob value of meta data
-                                         nullptr,
-                                         // [OUT] actual size of signature blob
-                                         nullptr,
-                                         // [OUT] codeRVA
-                                         nullptr,
-                                         // [OUT] Impl. Flags
-                                         nullptr);
-
-    if (FAILED(hr))
-    {
-        LOG_APPEND(L"GetMethodProps failed for methodDef = " << HEX(methodDef) << L", hr = " << HEX(hr));
-    }
-
-    hr = pImport->GetTypeDefProps(typeDef,
-                                  wszTypeDefName,
-                                  cchTypeDefName,
-                                  &cchTypeDefActual,
-                                  &dwTypeDefFlags,
-                                  &typeDefBase);
-
-    if (FAILED(hr))
-    {
-        LOG_APPEND(L"GetTypeDefProps failed for typeDef = " << HEX(typeDef) << L", hr = " << HEX(hr));
-    }
-}
-
-HRESULT CorProfiler::ResolveTypeReference(const TypeReference& type,
-                                          const std::wstring& assemblyName,
-                                          IMetaDataImport* metadataImport,
-                                          IMetaDataEmit* metadataEmit,
-                                          IMetaDataAssemblyImport* assemblyImport,
-                                          const mdModule module,
-                                          TypeRefLookup& typeRefLookup)
-{
-    HRESULT hr;
-
-    if (typeRefLookup.Contains(type))
-    {
-        // this type was already resolved
-        return S_OK;
-    }
-
-    if (assemblyName == type.AssemblyName)
-    {
-        // type is defined in this assembly
-        mdTypeRef typeRef = mdTypeRefNil;
-        hr = metadataEmit->DefineTypeRefByName(module, type.TypeName.c_str(), &typeRef);
-
-        if (SUCCEEDED(hr))
-        {
-            typeRefLookup[type] = typeRef;
-        }
-    }
-    else
-    {
-        // type is defined in another assembly,
-        // find a reference to the assembly where type lives
-        mdAssemblyRef assemblyRef = mdAssemblyRefNil;
-        hr = FindAssemblyRef(type.AssemblyName, assemblyImport, &assemblyRef);
-
-        // TODO: emit assembly reference if not found
-
-        if (SUCCEEDED(hr))
-        {
-            // search for an existing reference to the type
-            mdTypeRef typeRef = mdTypeRefNil;
-            hr = metadataImport->FindTypeRef(assemblyRef, type.TypeName.c_str(), &typeRef);
-
-            if (hr == HRESULT(0x80131130) /* record not found on lookup */)
-            {
-                // if typeRef not found, create a new one by emiting a metadata token
-                hr = metadataEmit->DefineTypeRefByName(assemblyRef, type.TypeName.c_str(), &typeRef);
-            }
-
-            if (SUCCEEDED(hr))
-            {
-                typeRefLookup[type] = typeRef;
-            }
-        }
-    }
-
-    return S_OK;
-}
-
-HRESULT CorProfiler::ResolveMemberReference(const MemberReference& member,
-                                            IMetaDataImport* metadataImport,
-                                            IMetaDataEmit* metadataEmit,
-                                            const TypeRefLookup& typeRefLookup,
-                                            MemberRefLookup& memberRefLookup)
-{
-    if (memberRefLookup.Contains(member))
-    {
-        // this member was already resolved
-        return S_OK;
-    }
-
-    const mdTypeRef typeRef = typeRefLookup[member.ContainingType];
-    mdMemberRef memberRef = mdMemberRefNil;
-
-    COR_SIGNATURE pSignature[128]{};
-    const ULONG signatureLength = member.CreateSignature(typeRefLookup, pSignature);
-
-    HRESULT hr = metadataImport->FindMemberRef(typeRef, member.MethodName.c_str(), pSignature, signatureLength, &memberRef);
-
-    if (hr == HRESULT(0x80131130) /* record not found on lookup */)
-    {
-        // if memberRef not found, create it by emiting a metadata token
-        hr = metadataEmit->DefineMemberRef(typeRef, member.MethodName.c_str(), pSignature, signatureLength, &memberRef);
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        memberRefLookup[member] = memberRef;
-    }
-
-    return S_OK;
 }

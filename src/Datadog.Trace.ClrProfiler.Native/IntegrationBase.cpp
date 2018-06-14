@@ -1,5 +1,6 @@
 #include "IntegrationBase.h"
 #include "GlobalTypeReferences.h"
+#include "ILRewriterWrapper.h"
 
 void IntegrationBase::InjectEntryProbe(const ILRewriterWrapper& pilr,
                                        const ModuleID moduleID,

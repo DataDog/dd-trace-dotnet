@@ -3,24 +3,21 @@
 #include "ILRewriter.h"
 #include "TypeReference.h"
 #include "MemberReference.h"
-#include "MetadataReferenceLookups.h"
+#include "ModuleMetadata.h"
 
 class ILRewriterWrapper
 {
 private:
     ILRewriter* const m_ILRewriter;
     ILInstr* m_ILInstr;
-    const TypeRefLookup& m_typeRefLookup;
-    const MemberRefLookup& m_memberRefLookup;
+    const ModuleMetadata& m_metadataHelper;
 
 public:
-    ILRewriterWrapper(ILRewriter* const ilRewriter,
-                      const TypeRefLookup& typeRefLookup,
-                      const MemberRefLookup& memberRefLookup)
-        : m_ILRewriter(ilRewriter),
+
+    ILRewriterWrapper(ILRewriter* const il_rewriter, const ModuleMetadata& metadata_helper)
+        : m_ILRewriter(il_rewriter),
           m_ILInstr(nullptr),
-          m_typeRefLookup(typeRefLookup),
-          m_memberRefLookup(memberRefLookup)
+          m_metadataHelper(metadata_helper)
     {
     }
 

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <corhlpr.h>
+#include <corprof.h>
+#include "ModuleMetadata.h"
 #include "IDToInfoMap.h"
-#include "ModuleInfo.h"
 #include "CorProfilerBase.h"
 #include "GlobalTypeReferences.h"
 
@@ -10,7 +11,7 @@ class CorProfiler : public CorProfilerBase
 {
 private:
     bool bIsAttached = false;
-    IDToInfoMap<ModuleID, ModuleInfo> m_moduleIDToInfoMap;
+    IDToInfoMap<ModuleID, ModuleMetadata> m_moduleIDToInfoMap;
 
     static HRESULT RewriteIL(ICorProfilerInfo* pICorProfilerInfo,
                              ICorProfilerFunctionControl* pICorProfilerFunctionControl,
@@ -18,43 +19,9 @@ private:
                              const MemberReference& instrumentedMethod,
                              ModuleID moduleID,
                              mdToken functionToken,
-                             const TypeRefLookup& typeDefLookup,
-                             const MemberRefLookup& memberRefLookup,
+                             const ModuleMetadata& metadataHelper,
                              const MemberReference& entryProbe,
                              const MemberReference& exitProbe);
-
-    static void GetClassAndFunctionNamesFromMethodDef(IMetaDataImport* pImport,
-                                                      mdMethodDef methodDef,
-                                                      LPWSTR wszTypeDefName,
-                                                      ULONG cchTypeDefName,
-                                                      LPWSTR wszMethodDefName,
-                                                      ULONG cchMethodDefName);
-
-    static HRESULT FindAssemblyRef(const std::wstring& assemblyName,
-                                   IMetaDataAssemblyImport* pAssemblyImport,
-                                   mdAssemblyRef* assemblyRef);
-
-    static HRESULT FindAssemblyRefIterator(const std::wstring& assemblyName,
-                                           IMetaDataAssemblyImport* pAssemblyImport,
-                                           mdAssemblyRef* rgAssemblyRefs,
-                                           ULONG cAssemblyRefs,
-                                           mdAssemblyRef* assemblyRef);
-
-    static HRESULT EmitAssemblyRef(IMetaDataAssemblyEmit* pAssemblyEmit, mdAssemblyRef* assemblyRef);
-
-    static HRESULT ResolveTypeReference(const TypeReference& type,
-                                        const std::wstring& assemblyName,
-                                        IMetaDataImport* metadataImport,
-                                        IMetaDataEmit* metadataEmit,
-                                        IMetaDataAssemblyImport* assemblyImport,
-                                        mdModule module,
-                                        TypeRefLookup& typeRefLookup);
-
-    static HRESULT ResolveMemberReference(const MemberReference& method,
-                                          IMetaDataImport* metadataImport,
-                                          IMetaDataEmit* metadataEmit,
-                                          const TypeRefLookup& typeRefLookup,
-                                          MemberRefLookup& memberRefLookup);
 
     const TypeReference Datadog_Trace_ClrProfiler_Instrumentation = { ELEMENT_TYPE_CLASS, L"Datadog.Trace.ClrProfiler.Managed", L"Datadog.Trace.ClrProfiler.Instrumentation" };
 
