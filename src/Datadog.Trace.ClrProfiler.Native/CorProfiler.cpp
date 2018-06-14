@@ -149,7 +149,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
         {
             for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
             {
-                // TODO: research module name vs assembly name, always the same in C#?
                 if (instrumentedMethod.ContainingType.AssemblyName == assemblyName)
                 {
                     enabledIntegrations.push_back(integration);
@@ -205,60 +204,59 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     mdAssemblyRef assemblyRef;
     hr = EmitAssemblyRef(assemblyEmit, &assemblyRef);
 
-    // find or create mdTypeRef tokens and save them for later
-    for (const TypeReference& typeReference : GlobalTypeReferences.All)
-    {
-        hr = ResolveTypeReference(typeReference,
-                                  assemblyName,
-                                  metadataImport,
-                                  metadataEmit,
-                                  assemblyImport,
-                                  module,
-                                  moduleInfo.m_TypeRefLookup);
-    }
-
     static const std::vector<MemberReference> instrumentationProbes = {
         Datadog_Trace_ClrProfiler_Instrumentation_OnMethodEntered,
         Datadog_Trace_ClrProfiler_Instrumentation_OnMethodExit_ReturnVoid,
         Datadog_Trace_ClrProfiler_Instrumentation_OnMethodExit_ReturnObject
     };
 
-    // add the references to our helper methods
+    // for each instrumentation probe...
     for (const MemberReference& memberReference : instrumentationProbes)
     {
-        hr = ResolveMemberReference(memberReference,
-                                    metadataImport,
-                                    metadataEmit,
-                                    moduleInfo.m_TypeRefLookup,
-                                    moduleInfo.m_MemberRefLookup);
-    }
+        // add a reference to its containing type,
+        hr = ResolveTypeReference(memberReference.ContainingType,
+                                  assemblyName,
+                                  metadataImport,
+                                  metadataEmit,
+                                  assemblyImport,
+                                  module,
+                                  moduleInfo.m_TypeRefLookup);
 
-    // find or create mdTypeRef tokens used in instrumented methods and save them for later
-    for (const IntegrationBase* const enabledIntegration : enabledIntegrations)
-    {
-        const std::vector<MemberReference>& memberReferences = enabledIntegration->GetInstrumentedMethods();
+        RETURN_IF_FAILED(hr);
 
-        for (const MemberReference& memberReference : memberReferences)
+        // add a reference to its return type,
+        hr = ResolveTypeReference(memberReference.ReturnType,
+                                  assemblyName,
+                                  metadataImport,
+                                  metadataEmit,
+                                  assemblyImport,
+                                  module,
+                                  moduleInfo.m_TypeRefLookup);
+
+        RETURN_IF_FAILED(hr);
+
+        // add references to its argument types,
+        for (const TypeReference& typeReference : memberReference.ArgumentTypes)
         {
-            hr = ResolveTypeReference(memberReference.ReturnType,
+            hr = ResolveTypeReference(typeReference,
                                       assemblyName,
                                       metadataImport,
                                       metadataEmit,
                                       assemblyImport,
                                       module,
                                       moduleInfo.m_TypeRefLookup);
-
-            for (const TypeReference& typeReference : memberReference.ArgumentTypes)
-            {
-                hr = ResolveTypeReference(typeReference,
-                                          assemblyName,
-                                          metadataImport,
-                                          metadataEmit,
-                                          assemblyImport,
-                                          module,
-                                          moduleInfo.m_TypeRefLookup);
-            }
         }
+
+        RETURN_IF_FAILED(hr);
+
+        // and add a reference to the method itself
+        hr = ResolveMemberReference(memberReference,
+                                    metadataImport,
+                                    metadataEmit,
+                                    moduleInfo.m_TypeRefLookup,
+                                    moduleInfo.m_MemberRefLookup);
+
+        RETURN_IF_FAILED(hr);
     }
 
     RETURN_IF_FAILED(hr);
