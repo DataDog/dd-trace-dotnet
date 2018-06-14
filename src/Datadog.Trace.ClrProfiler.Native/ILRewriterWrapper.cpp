@@ -160,23 +160,3 @@ void ILRewriterWrapper::EndLoadValueIntoArray() const
     pNewInstr->m_opcode = CEE_STELEM_REF;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
-
-void ILRewriterWrapper::ReplaceMethodCalls(const MemberReference& fromMethod,
-                                           const MemberReference& toMethod) const
-{
-    const mdMemberRef fromMethodRef = m_memberRefLookup[fromMethod];
-    const mdMemberRef toMethodRef = m_memberRefLookup[toMethod];
-
-    // Find all RETs, and insert a call to the exit probe before each one
-    for (ILInstr* pInstr = m_ILRewriter->GetILList()->m_pNext;
-         pInstr != m_ILRewriter->GetILList();
-         pInstr = pInstr->m_pNext)
-    {
-        if ((pInstr->m_opcode == CEE_CALL || pInstr->m_opcode == CEE_CALLVIRT) &&
-            static_cast<mdMemberRef>(pInstr->m_Arg32) == fromMethodRef)
-        {
-            // replace methodRef
-            pInstr->m_Arg32 = toMethodRef;
-        }
-    }
-}

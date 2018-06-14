@@ -39,5 +39,4 @@ public:
     void Duplicate() const;
     void BeginLoadValueIntoArray(INT32 arrayIndex) const;
     void EndLoadValueIntoArray() const;
-    void ReplaceMethodCalls(const MemberReference& fromMethod, const MemberReference& toMethod) const;
 };

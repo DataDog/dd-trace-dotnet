@@ -139,29 +139,5 @@ namespace Datadog.Trace.ClrProfiler
         {
             return NativeMethods.IsProfilerAttached();
         }
-
-        public static Dictionary<string, string> GetProfilerSettings()
-        {
-            var values = new Dictionary<string, string>();
-            string[] environmentVariables =
-            {
-                "COR_ENABLE_PROFILING",
-                "COR_PROFILER",
-                "COR_PROFILER_PATH",
-                "DATADOG_PROFILE_PROCESSES"
-            };
-
-            foreach (string name in environmentVariables)
-            {
-                values[name] = Environment.GetEnvironmentVariable(name);
-            }
-
-            values["Module"] = Process.GetCurrentProcess().MainModule.ModuleName;
-            values["Is64BitProcess"] = Environment.Is64BitProcess.ToString();
-            values["Datadog.Tracing:Enabled"] = IsProfilingEnabled().ToString();
-            // values["IsProfilerAttached"] = IsProfilerAttached().ToString();
-
-            return values;
-        }
     }
 }
