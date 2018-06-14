@@ -13,8 +13,8 @@ const struct
     const TypeReference System_Int64 = { ELEMENT_TYPE_I4, L"mscorlib", L"System.Int64" };
     const TypeReference System_UInt32 = { ELEMENT_TYPE_U4, L"mscorlib", L"System.UInt32" };
     const TypeReference System_UInt64 = { ELEMENT_TYPE_U8, L"mscorlib", L"System.UInt64" };
-    const TypeReference System_Boolean = { ELEMENT_TYPE_U8, L"mscorlib", L"System.Boolean" };
-    const TypeReference System_DateTime = { ELEMENT_TYPE_U8, L"mscorlib", L"System.DateTime" };
+    const TypeReference System_Boolean = { ELEMENT_TYPE_VALUETYPE, L"mscorlib", L"System.Boolean" };
+    const TypeReference System_DateTime = { ELEMENT_TYPE_VALUETYPE, L"mscorlib", L"System.DateTime" };
     const TypeReference Datadog_Trace_ClrProfiler_Instrumentation = { ELEMENT_TYPE_CLASS, L"Datadog.Trace.ClrProfiler.Managed", L"Datadog.Trace.ClrProfiler.Instrumentation" };
 
     const std::vector<TypeReference> All = {
