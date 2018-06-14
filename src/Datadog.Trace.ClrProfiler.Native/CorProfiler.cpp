@@ -604,6 +604,12 @@ HRESULT CorProfiler::ResolveTypeReference(const TypeReference& type,
 {
     HRESULT hr;
 
+    if (typeRefLookup.Contains(type))
+    {
+        // this type was already resolved
+        return S_OK;
+    }
+
     if (assemblyName == type.AssemblyName)
     {
         // type is defined in this assembly
@@ -652,6 +658,12 @@ HRESULT CorProfiler::ResolveMemberReference(const MemberReference& member,
                                             const TypeRefLookup& typeRefLookup,
                                             MemberRefLookup& memberRefLookup)
 {
+    if (memberRefLookup.Contains(member))
+    {
+        // this member was already resolved
+        return S_OK;
+    }
+
     const mdTypeRef typeRef = typeRefLookup[member.ContainingType];
     mdMemberRef memberRef = mdMemberRefNil;
 

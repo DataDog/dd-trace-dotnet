@@ -31,6 +31,11 @@ public:
     {
         return m_map[key];
     }
+
+    bool Contains(const TKey& key) const
+    {
+        return m_map.find(key) != m_map.end();
+    }
 };
 
 typedef Lookup<TypeReference, mdTypeRef> TypeRefLookup;
