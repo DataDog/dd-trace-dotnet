@@ -15,16 +15,4 @@ const struct
     const TypeReference System_UInt64 = { ELEMENT_TYPE_U8, L"mscorlib", L"System.UInt64" };
     const TypeReference System_Boolean = { ELEMENT_TYPE_VALUETYPE, L"mscorlib", L"System.Boolean" };
     const TypeReference System_DateTime = { ELEMENT_TYPE_VALUETYPE, L"mscorlib", L"System.DateTime" };
-
-    const std::vector<TypeReference> All = {
-        System_Void,
-        System_Object,
-        System_String,
-        System_Int32,
-        System_Int64,
-        System_UInt32,
-        System_UInt64,
-        System_Boolean,
-        System_DateTime,
-    };
 } GlobalTypeReferences;
