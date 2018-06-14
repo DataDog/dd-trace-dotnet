@@ -69,13 +69,13 @@ namespace Datadog.Trace.ClrProfiler
 
                     break;
                 case IntegrationType.AspNetMvc5:
-                    if (args == null || args.Length != 2)
+                    if (args == null || args.Length != 3)
                     {
                         break;
                     }
 
                     // [System.Web.Mvc]System.Web.Mvc.ControllerContext
-                    dynamic controllerContext = args[0];
+                    dynamic controllerContext = args[1];
 
                     HttpContextBase httpContext = controllerContext.HttpContext;
                     string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
