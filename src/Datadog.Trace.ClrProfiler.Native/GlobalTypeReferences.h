@@ -15,7 +15,6 @@ const struct
     const TypeReference System_UInt64 = { ELEMENT_TYPE_U8, L"mscorlib", L"System.UInt64" };
     const TypeReference System_Boolean = { ELEMENT_TYPE_VALUETYPE, L"mscorlib", L"System.Boolean" };
     const TypeReference System_DateTime = { ELEMENT_TYPE_VALUETYPE, L"mscorlib", L"System.DateTime" };
-    const TypeReference Datadog_Trace_ClrProfiler_Instrumentation = { ELEMENT_TYPE_CLASS, L"Datadog.Trace.ClrProfiler.Managed", L"Datadog.Trace.ClrProfiler.Instrumentation" };
 
     const std::vector<TypeReference> All = {
         System_Void,
@@ -27,6 +26,5 @@ const struct
         System_UInt64,
         System_Boolean,
         System_DateTime,
-        Datadog_Trace_ClrProfiler_Instrumentation
     };
 } GlobalTypeReferences;
