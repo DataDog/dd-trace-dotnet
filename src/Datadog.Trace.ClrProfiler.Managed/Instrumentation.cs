@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Web;
@@ -129,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler
             return originalReturnValue;
         }
 
-        private static bool IsProfilingEnabled()
+        public static bool IsProfilingEnabled()
         {
             string setting = ConfigurationManager.AppSettings["Datadog.Tracing:Enabled"];
             return !string.Equals(setting, bool.FalseString, StringComparison.InvariantCultureIgnoreCase);
