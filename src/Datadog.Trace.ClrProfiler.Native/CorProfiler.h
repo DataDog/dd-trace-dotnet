@@ -50,7 +50,7 @@ private:
                                         mdModule module,
                                         TypeRefLookup& typeRefLookup);
 
-    static HRESULT RevolveMemberReference(const MemberReference& method,
+    static HRESULT ResolveMemberReference(const MemberReference& method,
                                           IMetaDataImport* metadataImport,
                                           IMetaDataEmit* metadataEmit,
                                           const TypeRefLookup& typeRefLookup,

@@ -226,7 +226,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     // add the references to our helper methods
     for (const MemberReference& memberReference : instrumentationProbes)
     {
-        hr = RevolveMemberReference(memberReference,
+        hr = ResolveMemberReference(memberReference,
                                     metadataImport,
                                     metadataEmit,
                                     moduleInfo.m_TypeRefLookup,
@@ -646,29 +646,29 @@ HRESULT CorProfiler::ResolveTypeReference(const TypeReference& type,
     return S_OK;
 }
 
-HRESULT CorProfiler::RevolveMemberReference(const MemberReference& method,
+HRESULT CorProfiler::ResolveMemberReference(const MemberReference& member,
                                             IMetaDataImport* metadataImport,
                                             IMetaDataEmit* metadataEmit,
                                             const TypeRefLookup& typeRefLookup,
                                             MemberRefLookup& memberRefLookup)
 {
-    const mdTypeRef typeRef = typeRefLookup[method.ContainingType];
+    const mdTypeRef typeRef = typeRefLookup[member.ContainingType];
     mdMemberRef memberRef = mdMemberRefNil;
 
     COR_SIGNATURE pSignature[128]{};
-    const ULONG signatureLength = method.CreateSignature(typeRefLookup, pSignature);
+    const ULONG signatureLength = member.CreateSignature(typeRefLookup, pSignature);
 
-    HRESULT hr = metadataImport->FindMemberRef(typeRef, method.MethodName.c_str(), pSignature, signatureLength, &memberRef);
+    HRESULT hr = metadataImport->FindMemberRef(typeRef, member.MethodName.c_str(), pSignature, signatureLength, &memberRef);
 
     if (hr == HRESULT(0x80131130) /* record not found on lookup */)
     {
         // if memberRef not found, create it by emiting a metadata token
-        hr = metadataEmit->DefineMemberRef(typeRef, method.MethodName.c_str(), pSignature, signatureLength, &memberRef);
+        hr = metadataEmit->DefineMemberRef(typeRef, member.MethodName.c_str(), pSignature, signatureLength, &memberRef);
     }
 
     if (SUCCEEDED(hr))
     {
-        memberRefLookup[method] = memberRef;
+        memberRefLookup[member] = memberRef;
     }
 
     return S_OK;
