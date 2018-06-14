@@ -1,13 +1,13 @@
 ﻿#pragma once
 
-#include <map>
+#include <unordered_map>
 #include "CSHolder.h"
 
 template <class _ID, class _Info>
 class IDToInfoMap
 {
 public:
-    typedef std::map<_ID, _Info> Map;
+    typedef std::unordered_map<_ID, _Info> Map;
     typedef typename Map::const_iterator Const_Iterator;
     typedef typename Map::size_type Size_type;
 
