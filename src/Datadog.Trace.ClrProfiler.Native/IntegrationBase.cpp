@@ -13,14 +13,25 @@ void IntegrationBase::InjectEntryProbe(const ILRewriterWrapper& pilr,
     pilr.LoadInt64(moduleID);
     pilr.LoadInt32(methodDef);
 
-    const auto argumentCount = static_cast<INT32>(instrumentedMethod.ArgumentTypes.size());
+    std::vector<TypeReference> argumentTypes = instrumentedMethod.ArgumentTypes;
+
+    const bool hasThis = instrumentedMethod.CorCallingConvention == IMAGE_CEE_CS_CALLCONV_HASTHIS ||
+                         instrumentedMethod.CorCallingConvention == IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS;
+
+    if (hasThis)
+    {
+        // instance methods have an implicit first "this" parameter
+        argumentTypes.insert(argumentTypes.begin(), instrumentedMethod.ContainingType);
+    }
+
+    const auto argumentCount = static_cast<INT32>(argumentTypes.size());
     pilr.CreateArray(GlobalTypeReferences.System_Object, argumentCount);
 
     // store each of the intrumented method's arguments into an object[],
     // if this is an instance method, the first argument will be "this"
     for (UINT16 i = 0; i < argumentCount; ++i)
     {
-        const TypeReference& argumentType = instrumentedMethod.ArgumentTypes[i];
+        const TypeReference& argumentType = argumentTypes[i];
 
         pilr.BeginLoadValueIntoArray(i);
         pilr.LoadArgument(i);
