@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler
                                                                   key => GetMetadataNames((IntPtr)moduleId, methodToken));
 
             // TODO: explicitly set upstream Scope as parent for this new Scope, but Span.Context is currently internal
-            Scope scope = Tracer.Instance.StartActive("");
+            Scope scope = Tracer.Instance.StartActive(string.Empty);
             Span span = scope.Span;
 
             // TODO: make integrations more modular in the C# side
@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler
                 case IntegrationType.Custom:
                     string operationName = $"{metadataNames.TypeName}.{metadataNames.MethodName}";
                     span.OperationName = operationName;
-                    span.ResourceName = "";
+                    span.ResourceName = string.Empty;
                     Console.WriteLine($"Entering {operationName}()");
 
                     break;
