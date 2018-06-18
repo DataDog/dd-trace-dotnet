@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ClassFactory.cpp" />
+    <ClCompile Include="CorProfilerBase.cpp" />
+    <ClCompile Include="CSHolder.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="CorProfiler.cpp" />
+    <ClCompile Include="ILRewriter.cpp" />
+    <ClCompile Include="Interop.cpp" />
+    <ClCompile Include="IntegrationBase.cpp" />
+    <ClCompile Include="AspNetMvc5Integration.cpp" />
+    <ClCompile Include="CustomIntegration.cpp" />
+    <ClCompile Include="ILRewriterWrapper.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CComPtr.h" />
+    <ClInclude Include="ClassFactory.h" />
+    <ClInclude Include="CorProfiler.h" />
+    <ClInclude Include="CorProfilerBase.h" />
+    <ClInclude Include="CSHolder.h" />
+    <ClInclude Include="IDToInfoMap.h" />
+    <ClInclude Include="ILRewriter.h" />
+    <ClInclude Include="ModuleInfo.h" />
+    <ClInclude Include="IntegrationBase.h" />
+    <ClInclude Include="AspNetMvc5Integration.h" />
+    <ClInclude Include="TypeReference.h" />
+    <ClInclude Include="CustomIntegration.h" />
+    <ClInclude Include="MetadataReferenceLookups.h" />
+    <ClInclude Include="Macros.h" />
+    <ClInclude Include="IntegrationType.h" />
+    <ClInclude Include="GlobalIntegrations.h" />
+    <ClInclude Include="GlobalTypeReferences.h" />
+    <ClInclude Include="MemberReference.h" />
+    <ClInclude Include="ILRewriterWrapper.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Datadog.Trace.ClrProfiler.Native.def" />
+  </ItemGroup>
+</Project>

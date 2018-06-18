@@ -1,0 +1,7 @@
+LIBRARY "Datadog.Trace.ClrProfiler.Native.dll"
+
+EXPORTS
+    DllCanUnloadNow PRIVATE
+    DllGetClassObject PRIVATE
+    IsProfilerAttached
+    GetMetadataNames
