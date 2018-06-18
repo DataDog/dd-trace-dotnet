@@ -3,9 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net45</TargetFramework>
     <RootNamespace>Datadog.Trace.ClrProfiler</RootNamespace>
-    <SignAssembly>false</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>false</DelaySign>
   </PropertyGroup>
 
   <ItemGroup>
