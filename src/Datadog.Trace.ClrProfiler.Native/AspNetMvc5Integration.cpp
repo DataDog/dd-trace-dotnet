@@ -5,7 +5,7 @@
 AspNetMvc5Integration::AspNetMvc5Integration()
 {
     m_InstrumentedMethods = {
-        System_Web_Mvc_ControllerActionInvoker_InvokeAction,
+        System_Web_Mvc_ControllerActionInvoker_InvokeActionMethod,
     };
 }
 

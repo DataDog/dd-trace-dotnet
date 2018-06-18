@@ -19,20 +19,20 @@ public:
 
 private:
     // types used by the instrumented method defined below
-    const TypeReference System_Web_Mvc_ControllerActionInvoker = { ELEMENT_TYPE_OBJECT, L"System.Web.Mvc", L"System.Web.Mvc.ControllerActionInvoker" };
-    const TypeReference System_Web_Mvc_ControllerContext = { ELEMENT_TYPE_CLASS, L"System.Web.Mvc", L"System.Web.Mvc.ControllerContext" };
+    const TypeReference System_Web_Mvc_ControllerActionInvoker = { ELEMENT_TYPE_CLASS, L"System.Web.Mvc", L"System.Web.Mvc.ControllerActionInvoker" };
 
-    // callvirt instance bool [System.Web.Mvc]System.Web.Mvc.ControllerActionInvoker::InvokeAction(class [System.Web.Mvc]System.Web.Mvc.ControllerContext, string)
-    const MemberReference System_Web_Mvc_ControllerActionInvoker_InvokeAction
+    const MemberReference System_Web_Mvc_ControllerActionInvoker_InvokeActionMethod
     {
         System_Web_Mvc_ControllerActionInvoker,
         L"InvokeActionMethod",
+        // IsVirtual
         true,
         IMAGE_CEE_CS_CALLCONV_HASTHIS,
-        GlobalTypeReferences.System_Boolean,
+        GlobalTypeReferences.System_Object,
         {
-            System_Web_Mvc_ControllerContext,
-            GlobalTypeReferences.System_String,
+            GlobalTypeReferences.System_Object,
+            GlobalTypeReferences.System_Object,
+            GlobalTypeReferences.System_Object,
         },
     };
 };
