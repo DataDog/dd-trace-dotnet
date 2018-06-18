@@ -27,10 +27,11 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="args">An array with all the argumetns that were passed into the instrumented method. If it is an instance method, the first arguments is <c>this</c>.</param>
         /// <returns>A <see cref="Scope"/> created to instrument the method.</returns>
         [System.Security.SecuritySafeCritical]
-        public static object OnMethodEntered(int integrationTypeValue,
-                                             ulong moduleId,
-                                             uint methodToken,
-                                             object[] args)
+        public static object OnMethodEntered(
+            int integrationTypeValue,
+            ulong moduleId,
+            uint methodToken,
+            object[] args)
         {
             if (!IsProfilingEnabled())
             {
@@ -40,8 +41,9 @@ namespace Datadog.Trace.ClrProfiler
             // TODO: check if this integration type is enabled
             var integrationType = (IntegrationType)integrationTypeValue;
 
-            MetadataNames metadataNames = MetadataLookup.GetOrAdd($"{moduleId}:{methodToken}",
-                                                                  key => GetMetadataNames((IntPtr)moduleId, methodToken));
+            MetadataNames metadataNames = MetadataLookup.GetOrAdd(
+                $"{moduleId}:{methodToken}",
+                key => GetMetadataNames((IntPtr)moduleId, methodToken));
 
             // TODO: explicitly set upstream Scope as parent for this new Scope, but Span.Context is currently internal
             Scope scope = Tracer.Instance.StartActive(string.Empty);
@@ -152,14 +154,15 @@ namespace Datadog.Trace.ClrProfiler
             var typeNameBuffer = new StringBuilder(256);
             var methodNameBuffer = new StringBuilder(256);
 
-            NativeMethods.GetMetadataNames(moduleId,
-                                           methodToken,
-                                           modulePathBuffer,
-                                           (ulong)modulePathBuffer.Capacity,
-                                           typeNameBuffer,
-                                           (ulong)typeNameBuffer.Capacity,
-                                           methodNameBuffer,
-                                           (ulong)methodNameBuffer.Capacity);
+            NativeMethods.GetMetadataNames(
+                moduleId,
+                methodToken,
+                modulePathBuffer,
+                (ulong)modulePathBuffer.Capacity,
+                typeNameBuffer,
+                (ulong)typeNameBuffer.Capacity,
+                methodNameBuffer,
+                (ulong)methodNameBuffer.Capacity);
 
             string module = System.IO.Path.GetFileName(modulePathBuffer.ToString());
             string type = typeNameBuffer.ToString();
