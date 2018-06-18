@@ -270,7 +270,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    // TODO: release COM pointers, low priority
+    // TODO: release COM pointers
     m_moduleIDToInfoMap.Erase(moduleId);
     return S_OK;
 }

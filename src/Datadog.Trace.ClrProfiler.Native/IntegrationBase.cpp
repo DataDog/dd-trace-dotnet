@@ -54,7 +54,7 @@ void IntegrationBase::InjectExitProbe(const ILRewriterWrapper& pilr,
                                       const MemberReference& instrumentedMethod,
                                       const MemberReference& exitProbe) const
 {
-    // if instrumented method's return value it a value type,
+    // if instrumented method's return value is a value type,
     // we need to box it before calling the exit probe
     if (NeedsBoxing(instrumentedMethod.ReturnType))
     {
@@ -66,7 +66,7 @@ void IntegrationBase::InjectExitProbe(const ILRewriterWrapper& pilr,
     // and leave a balanced stack
     pilr.CallMember(exitProbe);
 
-    // if instrumented method's return value it a value type,
+    // if instrumented method's return value is a value type,
     // we need to unbox back into the stack before leaving
     if (NeedsBoxing(instrumentedMethod.ReturnType))
     {
