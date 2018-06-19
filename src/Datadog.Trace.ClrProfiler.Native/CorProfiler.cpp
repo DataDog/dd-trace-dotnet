@@ -272,7 +272,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     HRESULT hr = this->corProfilerInfo->GetFunctionInfo(functionId, &classId, &moduleId, &functiontoken);
     RETURN_IF_FAILED(hr);
 
-    ModuleMetadata moduleMetadata;
+    ModuleMetadata moduleMetadata{};
 
     if (!m_moduleIDToInfoMap.LookupIfExists(moduleId, &moduleMetadata))
     {
@@ -280,8 +280,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    WCHAR wszTypeDefName[256];
-    WCHAR wszMethodDefName[256];
+    WCHAR wszTypeDefName[256] = {};
+    WCHAR wszMethodDefName[256] = {};
 
     moduleMetadata.GetClassAndFunctionNamesFromMethodDef(functiontoken,
                                                          wszTypeDefName,
