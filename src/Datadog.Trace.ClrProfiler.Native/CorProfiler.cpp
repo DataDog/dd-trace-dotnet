@@ -6,7 +6,7 @@
 #include <vector>
 #include "CorProfiler.h"
 #include "Macros.h"
-#include "CComPtr.h"
+#include "ComPtr.h"
 #include "TypeReference.h"
 #include "MemberReference.h"
 #include "GlobalIntegrations.h"
@@ -170,25 +170,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
 
     LOG_APPEND(L"ModuleLoadFinished for " << assemblyName << ". Emitting instrumentation metadata.");
 
-    // get metadata interfaces
-    CComPtr<IMetaDataImport> metadataImport;
+    ComPtr<IUnknown> metadataInterfaces;
+
     hr = this->corProfilerInfo->GetModuleMetaData(moduleId,
                                                   ofRead | ofWrite,
                                                   IID_IMetaDataImport,
-                                                  reinterpret_cast<IUnknown **>(&metadataImport));
-    RETURN_IF_FAILED(hr);
+                                                  metadataInterfaces.GetAddressOf());
 
-    CComPtr<IMetaDataEmit> metadataEmit;
-    hr = metadataImport->QueryInterface(IID_IMetaDataEmit, reinterpret_cast<void **>(&metadataEmit));
-    RETURN_IF_FAILED(hr);
+    LOG_IFFAILEDRET(hr, L"Failed to get metadata interface.");
 
-    CComPtr<IMetaDataAssemblyEmit> assemblyEmit;
-    hr = metadataImport->QueryInterface(IID_IMetaDataAssemblyEmit, reinterpret_cast<void **>(&assemblyEmit));
-    RETURN_IF_FAILED(hr);
-
-    CComPtr<IMetaDataAssemblyImport> assemblyImport;
-    hr = metadataImport->QueryInterface(IID_IMetaDataAssemblyImport, reinterpret_cast<void **>(&assemblyImport));
-    RETURN_IF_FAILED(hr);
+    const auto metadataImport = metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport);
+    const auto metadataEmit = metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
+    const auto assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+    const auto assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
     mdModule module;
     hr = metadataImport->GetModuleFromScope(&module);

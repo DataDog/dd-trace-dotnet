@@ -16,7 +16,6 @@
     <ClCompile Include="MetadataBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CComPtr.h" />
     <ClInclude Include="ClassFactory.h" />
     <ClInclude Include="CorProfiler.h" />
     <ClInclude Include="CorProfilerBase.h" />
@@ -35,6 +34,7 @@
     <ClInclude Include="ILRewriterWrapper.h" />
     <ClInclude Include="ModuleMetadata.h" />
     <ClInclude Include="MetadataBuilder.h" />
+    <ClInclude Include="ComPtr.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Trace.ClrProfiler.Native.def" />

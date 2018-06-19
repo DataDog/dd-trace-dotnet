@@ -148,8 +148,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AspNetMvc5Integration.h" />
-    <ClInclude Include="CComPtr.h" />
     <ClInclude Include="ClassFactory.h" />
+    <ClInclude Include="ComPtr.h" />
     <ClInclude Include="CustomIntegration.h" />
     <ClInclude Include="CorProfiler.h" />
     <ClInclude Include="CorProfilerBase.h" />

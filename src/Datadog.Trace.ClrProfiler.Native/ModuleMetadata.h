@@ -4,6 +4,7 @@
 #include <corhlpr.h>
 #include "TypeReference.h"
 #include "MemberReference.h"
+#include "ComPtr.h"
 
 // forwards declarations
 class IntegrationBase;
@@ -13,7 +14,7 @@ class ModuleMetadata
 private:
     std::map<TypeReference, mdTypeRef> m_TypeMap{};
     std::map<MemberReference, mdMemberRef> m_MemberMap{};
-    IMetaDataImport* metadataImport{};
+    ComPtr<IMetaDataImport> metadataImport{};
 
 public:
     std::wstring assemblyName = L"";
@@ -21,10 +22,10 @@ public:
 
     ModuleMetadata() = default;
 
-    ModuleMetadata(IMetaDataImport* const metadata_import,
+    ModuleMetadata(ComPtr<IMetaDataImport> metadata_import,
                    std::wstring assembly_name,
                    std::vector<const IntegrationBase*> integration_bases)
-        : metadataImport(metadata_import),
+        : metadataImport(std::move(metadata_import)),
           assemblyName(std::move(assembly_name)),
           m_Integrations(std::move(integration_bases))
     {

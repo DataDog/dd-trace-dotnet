@@ -10,10 +10,10 @@ class MetadataBuilder
 private:
     ModuleMetadata& metadata;
     mdModule module = mdModuleNil;
-    IMetaDataImport* metadataImport = nullptr;
-    IMetaDataEmit* metadataEmit = nullptr;
-    IMetaDataAssemblyImport* assemblyImport = nullptr;
-    IMetaDataAssemblyEmit* assemblyEmit = nullptr;
+    const ComPtr<IMetaDataImport> metadataImport{};
+    const ComPtr<IMetaDataEmit> metadataEmit{};
+    const ComPtr<IMetaDataAssemblyImport> assemblyImport{};
+    const ComPtr<IMetaDataAssemblyEmit> assemblyEmit{};
 
     HRESULT FindAssemblyRef(const std::wstring& assemblyName, mdAssemblyRef* assemblyRef);
 
@@ -35,16 +35,16 @@ private:
 public:
     MetadataBuilder(ModuleMetadata& metadata,
                     const mdModule module,
-                    IMetaDataImport* const metadata_import,
-                    IMetaDataEmit* const metadata_emit,
-                    IMetaDataAssemblyImport* const assembly_import,
-                    IMetaDataAssemblyEmit* const assembly_emit)
+                    ComPtr<IMetaDataImport> metadata_import,
+                    ComPtr<IMetaDataEmit> metadata_emit,
+                    ComPtr<IMetaDataAssemblyImport> assembly_import,
+                    ComPtr<IMetaDataAssemblyEmit> assembly_emit)
         : metadata(metadata),
           module(module),
-          metadataImport(metadata_import),
-          metadataEmit(metadata_emit),
-          assemblyImport(assembly_import),
-          assemblyEmit(assembly_emit)
+          metadataImport(std::move(metadata_import)),
+          metadataEmit(std::move(metadata_emit)),
+          assemblyImport(std::move(assembly_import)),
+          assemblyEmit(std::move(assembly_emit))
     {
     }
 
