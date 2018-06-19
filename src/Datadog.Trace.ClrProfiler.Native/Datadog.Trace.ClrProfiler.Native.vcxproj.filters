@@ -13,6 +13,7 @@
     <ClCompile Include="CustomIntegration.cpp" />
     <ClCompile Include="ILRewriterWrapper.cpp" />
     <ClCompile Include="ModuleMetadata.cpp" />
+    <ClCompile Include="MetadataBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CComPtr.h" />
@@ -33,6 +34,7 @@
     <ClInclude Include="MemberReference.h" />
     <ClInclude Include="ILRewriterWrapper.h" />
     <ClInclude Include="ModuleMetadata.h" />
+    <ClInclude Include="MetadataBuilder.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Trace.ClrProfiler.Native.def" />

@@ -13,6 +13,7 @@
 #include "ModuleMetadata.h"
 #include "ILRewriter.h"
 #include "ILRewriterWrapper.h"
+#include "MetadataBuilder.h"
 
 // Note: Generally you should not have a single, global callback implementation, as that
 // prevents your profiler from analyzing multiply loaded in-process side-by-side CLRs.
@@ -193,13 +194,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     hr = metadataImport->GetModuleFromScope(&module);
     LOG_IFFAILEDRET(hr, L"Failed to get module token.");
 
-    ModuleMetadata moduleMetadata(assemblyName,
-                                  enabledIntegrations,
-                                  module,
-                                  metadataImport,
-                                  metadataEmit,
-                                  assemblyImport,
-                                  assemblyEmit);
+    ModuleMetadata moduleMetadata(metadataImport,
+                                  assemblyName,
+                                  enabledIntegrations);
+
+    MetadataBuilder metadataBuilder(moduleMetadata,
+                                    module,
+                                    metadataImport,
+                                    metadataEmit,
+                                    assemblyImport,
+                                    assemblyEmit);
 
     // emit a metadata reference to our assembly, Datadog.Trace.ClrProfiler.Managed
     BYTE rgbPublicKeyToken[] = { 0xde, 0xf8, 0x6d, 0x06, 0x1d, 0x0d, 0x2e, 0xeb };
@@ -214,11 +218,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     assemblyMetaData.cbLocale = _countof(wszLocale);
 
     mdAssemblyRef assemblyRef;
-    hr = moduleMetadata.EmitAssemblyRef(L"Datadog.Trace.ClrProfiler.Managed",
-                                        assemblyMetaData,
-                                        nullptr,
-                                        0,
-                                        assemblyRef);
+    hr = metadataBuilder.EmitAssemblyRef(L"Datadog.Trace.ClrProfiler.Managed",
+                                         assemblyMetaData,
+                                         nullptr,
+                                         0,
+                                         assemblyRef);
 
     RETURN_IF_FAILED(hr);
 
@@ -232,7 +236,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     for (const MemberReference& instrumentationProbe : instrumentationProbes)
     {
         // find or create any typeRefs and memberRefs needed
-        hr = moduleMetadata.ResolveMember(instrumentationProbe);
+        hr = metadataBuilder.ResolveMember(instrumentationProbe);
         RETURN_IF_FAILED(hr);
     }
 
@@ -242,7 +246,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
         for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
         {
             // find or create any typeRefs and memberRefs needed
-            hr = moduleMetadata.ResolveMember(instrumentedMethod);
+            hr = metadataBuilder.ResolveMember(instrumentedMethod);
             RETURN_IF_FAILED(hr);
         }
     }

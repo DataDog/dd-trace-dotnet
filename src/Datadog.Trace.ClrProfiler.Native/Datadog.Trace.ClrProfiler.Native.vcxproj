@@ -163,6 +163,7 @@
     <ClInclude Include="IntegrationType.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="MemberReference.h" />
+    <ClInclude Include="MetadataBuilder.h" />
     <ClInclude Include="TypeReference.h" />
     <ClInclude Include="ModuleMetadata.h" />
   </ItemGroup>
@@ -178,6 +179,7 @@
     <ClCompile Include="ILRewriterWrapper.cpp" />
     <ClCompile Include="IntegrationBase.cpp" />
     <ClCompile Include="Interop.cpp" />
+    <ClCompile Include="MetadataBuilder.cpp" />
     <ClCompile Include="ModuleMetadata.cpp" />
   </ItemGroup>
   <ItemGroup>
