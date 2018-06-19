@@ -201,14 +201,13 @@ HRESULT MetadataBuilder::AddElementTypeToSignature(PCOR_SIGNATURE pSignature,
                                                   ULONG& signatureLength,
                                                   const TypeReference& type)
 {
+    if (type.IsArray)
+    {
+        pSignature[signatureLength++] = ELEMENT_TYPE_SZARRAY;
+    }
+
     // TODO: check bounds limit on pSignature[]
     pSignature[signatureLength++] = type.CorElementType;
-
-    if (type.CorElementType == ELEMENT_TYPE_SZARRAY)
-    {
-        // recursive call to add the array type
-        return AddElementTypeToSignature(pSignature, maxSignatureLength, signatureLength, *type.ArrayType);
-    }
 
     if (type.CorElementType == ELEMENT_TYPE_CLASS ||
         type.CorElementType == ELEMENT_TYPE_VALUETYPE)
