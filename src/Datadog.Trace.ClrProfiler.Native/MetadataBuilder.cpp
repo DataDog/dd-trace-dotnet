@@ -112,10 +112,10 @@ HRESULT MetadataBuilder::ResolveMember(const MemberReference& member, mdMemberRe
 }
 
 HRESULT MetadataBuilder::EmitAssemblyRef(const std::wstring& assemblyName,
-                                        const ASSEMBLYMETADATA& assemblyMetadata,
-                                        BYTE publicKeyToken[],
-                                        ULONG publicKeyTokenLength,
-                                        mdAssemblyRef& assemblyRef) const
+                                         const ASSEMBLYMETADATA& assemblyMetadata,
+                                         BYTE publicKeyToken[],
+                                         ULONG publicKeyTokenLength,
+                                         mdAssemblyRef& assemblyRef) const
 {
     const HRESULT hr = assemblyEmit->DefineAssemblyRef(static_cast<void *>(publicKeyToken),
                                                        publicKeyTokenLength,
@@ -134,7 +134,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(const std::wstring& assemblyName,
 }
 
 HRESULT MetadataBuilder::FindAssemblyRef(const std::wstring& assemblyName,
-                                        mdAssemblyRef* assemblyRef)
+                                         mdAssemblyRef* assemblyRef)
 {
     HCORENUM hEnum = nullptr;
     mdAssemblyRef rgAssemblyRefs[20];
@@ -167,9 +167,9 @@ HRESULT MetadataBuilder::FindAssemblyRef(const std::wstring& assemblyName,
 
 
 HRESULT MetadataBuilder::CreateSignature(const MemberReference& member,
-                                        PCOR_SIGNATURE const pSignature,
-                                        const ULONG maxSignatureLength,
-                                        ULONG& signatureLength)
+                                         PCOR_SIGNATURE const pSignature,
+                                         const ULONG maxSignatureLength,
+                                         ULONG& signatureLength)
 {
     // member signature:
     //   calling convention
@@ -197,9 +197,9 @@ HRESULT MetadataBuilder::CreateSignature(const MemberReference& member,
 }
 
 HRESULT MetadataBuilder::AddElementTypeToSignature(PCOR_SIGNATURE pSignature,
-                                                  const ULONG maxSignatureLength,
-                                                  ULONG& signatureLength,
-                                                  const TypeReference& type)
+                                                   const ULONG maxSignatureLength,
+                                                   ULONG& signatureLength,
+                                                   const TypeReference& type)
 {
     if (type.IsArray)
     {
@@ -225,9 +225,9 @@ HRESULT MetadataBuilder::AddElementTypeToSignature(PCOR_SIGNATURE pSignature,
 }
 
 HRESULT MetadataBuilder::FindAssemblyRefIterator(const std::wstring& assemblyName,
-                                                mdAssemblyRef* rgAssemblyRefs,
-                                                ULONG cAssemblyRefs,
-                                                mdAssemblyRef* assemblyRef) const
+                                                 mdAssemblyRef* rgAssemblyRefs,
+                                                 ULONG cAssemblyRefs,
+                                                 mdAssemblyRef* assemblyRef) const
 {
     for (ULONG i = 0; i < cAssemblyRefs; i++)
     {
