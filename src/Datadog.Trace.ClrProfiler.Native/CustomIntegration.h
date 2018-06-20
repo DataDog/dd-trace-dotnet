@@ -1,16 +1,13 @@
 #pragma once
 
-#include "IntegrationBase.h"
+#include "Integration.h"
+#include "TypeReference.h"
+#include "MemberReference.h"
+#include "GlobalTypeReferences.h"
 
-class CustomIntegration : public IntegrationBase
-{
-public:
-    CustomIntegration();
-
-    bool IsEnabled() const override;
-
-    IntegrationType GetIntegrationType() const override
-    {
-        return IntegrationType_Custom;
-    }
-};
+Integration CustomIntegration( /* IsEnabled */
+                                  false,
+                                  IntegrationType_Custom,
+                                  std::vector<MemberReference>{
+                                      // TODO: read from configuration
+                                  });

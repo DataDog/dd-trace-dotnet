@@ -9,11 +9,12 @@
 #include "ComPtr.h"
 #include "TypeReference.h"
 #include "MemberReference.h"
-#include "GlobalIntegrations.h"
 #include "ModuleMetadata.h"
 #include "ILRewriter.h"
 #include "ILRewriterWrapper.h"
 #include "MetadataBuilder.h"
+#include "AspNetMvc5Integration.h"
+#include "CustomIntegration.h"
 
 // Note: Generally you should not have a single, global callback implementation, as that
 // prevents your profiler from analyzing multiply loaded in-process side-by-side CLRs.
@@ -144,14 +145,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     hr = this->corProfilerInfo->GetAssemblyInfo(assemblyId, _countof(assemblyName), &assemblyNameLength, assemblyName, nullptr, nullptr);
     LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
 
-    std::vector<const IntegrationBase*> enabledIntegrations;
+    std::vector<IntegrationBase> allIntegrations = {
+        &AspNetMvc5Integration,
+        &CustomIntegration,
+    };
+
+    std::vector<IntegrationBase> enabledIntegrations;
 
     // find enabled integrations that need to instrument methods in this module
-    for (const IntegrationBase* integration : GlobalIntegrations.All)
+    for (const IntegrationBase& integration : allIntegrations)
     {
-        if (integration->IsEnabled())
+        if (integration.IsEnabled())
         {
-            for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
+            for (const MemberReference& instrumentedMethod : integration.GetInstrumentedMethods())
             {
                 if (instrumentedMethod.ContainingType.AssemblyName == assemblyName)
                 {
@@ -214,8 +220,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     mdAssemblyRef assemblyRef;
     hr = metadataBuilder.EmitAssemblyRef(L"Datadog.Trace.ClrProfiler.Managed",
                                          assemblyMetaData,
-                                         nullptr,
-                                         0,
+                                         rgbPublicKeyToken,
+                                         _countof(rgbPublicKeyToken),
                                          assemblyRef);
 
     RETURN_IF_FAILED(hr);
@@ -235,9 +241,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     }
 
     // for each enabled integration's instrumented method...
-    for (const IntegrationBase* integration : enabledIntegrations)
+    for (const IntegrationBase& integration : enabledIntegrations)
     {
-        for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
+        for (const MemberReference& instrumentedMethod : integration.GetInstrumentedMethods())
         {
             // find or create any typeRefs and memberRefs needed
             hr = metadataBuilder.ResolveMember(instrumentedMethod);
@@ -289,9 +295,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // check if this method should be instrumented
     // NOTE: for now we only allow one integration to instrument a method,
     // so first integration wins
-    for (const IntegrationBase* const integration : moduleMetadata.m_Integrations)
+    for (const IntegrationBase& integration : moduleMetadata.m_Integrations)
     {
-        for (const MemberReference& instrumentedMethod : integration->GetInstrumentedMethods())
+        for (const MemberReference& instrumentedMethod : integration.GetInstrumentedMethods())
         {
             // TODO: match by complete signature, not just name
             if (typeName == instrumentedMethod.ContainingType.TypeName && methodName == instrumentedMethod.MethodName)
@@ -330,7 +336,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 // IL, rewrite it, and send the result to the CLR
 HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
                                ICorProfilerFunctionControl* const pICorProfilerFunctionControl,
-                               const IntegrationBase* const integration,
+                               const IntegrationBase& integration,
                                const MemberReference& instrumentedMethod,
                                const ModuleID moduleID,
                                const mdToken functionToken,
@@ -347,7 +353,7 @@ HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
 
     // insert a call to the entry probe before the first IL instruction
     ilRewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
-    integration->InjectEntryProbe(ilRewriterWrapper, moduleID, functionToken, instrumentedMethod, entryProbe);
+    integration.InjectEntryProbe(ilRewriterWrapper, moduleID, functionToken, instrumentedMethod, entryProbe);
 
     // Find all RETs, and insert a call to the exit probe before each one
     for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
@@ -372,7 +378,7 @@ HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
 
             // And now insert the epilog before the new RET
             ilRewriterWrapper.SetILPosition(pNewRet);
-            integration->InjectExitProbe(ilRewriterWrapper, instrumentedMethod, exitProbe);
+            integration.InjectExitProbe(ilRewriterWrapper, instrumentedMethod, exitProbe);
 
             // Advance pInstr after all this gunk so the for loop continues properly
             pInstr = pNewRet;

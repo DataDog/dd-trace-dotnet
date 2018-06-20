@@ -154,7 +154,6 @@
     <ClInclude Include="CorProfiler.h" />
     <ClInclude Include="CorProfilerBase.h" />
     <ClInclude Include="CSHolder.h" />
-    <ClInclude Include="GlobalIntegrations.h" />
     <ClInclude Include="GlobalTypeReferences.h" />
     <ClInclude Include="IDToInfoMap.h" />
     <ClInclude Include="ILRewriter.h" />
@@ -168,9 +167,7 @@
     <ClInclude Include="ModuleMetadata.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AspNetMvc5Integration.cpp" />
     <ClCompile Include="ClassFactory.cpp" />
-    <ClCompile Include="CustomIntegration.cpp" />
     <ClCompile Include="CorProfilerBase.cpp" />
     <ClCompile Include="CSHolder.cpp" />
     <ClCompile Include="dllmain.cpp" />
