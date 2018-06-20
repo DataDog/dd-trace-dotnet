@@ -46,7 +46,8 @@ void Integration::InjectEntryProbe(const ILRewriterWrapper& pilr,
         pilr.EndLoadValueIntoArray();
     }
 
-    // note: the entry probe returns a Datadog.Trace.Scope instance,
+    // note: the entry probe returns a
+    // Datadog.Trace.ClrProfiler.Integrations.Integration instance,
     // which we will leave on the stack for the exit probe to pick up
     pilr.CallMember(entryProbe);
 }
@@ -62,8 +63,9 @@ void Integration::InjectExitProbe(const ILRewriterWrapper& pilr,
         pilr.Box(instrumentedMethod.ReturnType);
     }
 
-    // the entry probe returned a Datadog.Trace.Scope instance
-    // and we left if on the stack, the exit probe will pop it
+    // the entry probe returned a
+    // Datadog.Trace.ClrProfiler.Integrations.Integration instance
+    // earlier and we left if on the stack, the exit probe will pop it
     // and leave a balanced stack
     pilr.CallMember(exitProbe);
 
@@ -79,8 +81,8 @@ bool Integration::NeedsBoxing(const TypeReference& type)
 {
     return type.CorElementType != ELEMENT_TYPE_VOID &&
            type.CorElementType != ELEMENT_TYPE_CLASS &&
-           type.CorElementType != ELEMENT_TYPE_OBJECT &&
            type.CorElementType != ELEMENT_TYPE_STRING &&
-           type.CorElementType != ELEMENT_TYPE_ARRAY &&
-           type.CorElementType != ELEMENT_TYPE_SZARRAY;
+           type.CorElementType != ELEMENT_TYPE_OBJECT &&
+           type.CorElementType != ELEMENT_TYPE_SZARRAY &&
+           type.CorElementType != ELEMENT_TYPE_ARRAY;
 }
