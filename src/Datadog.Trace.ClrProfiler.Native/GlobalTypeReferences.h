@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "TypeReference.h"
-#include "IntegrationBase.h"
 
 const struct
 {

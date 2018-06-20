@@ -5,7 +5,7 @@
 #include "ComPtr.h"
 #include "TypeReference.h"
 #include "MemberReference.h"
-#include "IntegrationBase.h"
+#include "Integration.h"
 
 class ModuleMetadata
 {
@@ -16,13 +16,13 @@ private:
 
 public:
     std::wstring assemblyName = L"";
-    std::vector<IntegrationBase> m_Integrations = {};
+    std::vector<Integration> m_Integrations = {};
 
     ModuleMetadata() = default;
 
     ModuleMetadata(ComPtr<IMetaDataImport> metadata_import,
                    std::wstring assembly_name,
-                   std::vector<IntegrationBase> integration_bases)
+                   std::vector<Integration> integration_bases)
         : metadataImport(std::move(metadata_import)),
           assemblyName(std::move(assembly_name)),
           m_Integrations(std::move(integration_bases))

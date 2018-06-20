@@ -10,10 +10,10 @@
 // forwards declarations
 class ILRewriterWrapper;
 
-class IntegrationBase
+class Integration
 {
 public:
-    IntegrationBase(const bool is_enabled,
+    Integration(const bool is_enabled,
                     const IntegrationType integration,
                     std::vector<MemberReference> member_references)
         : m_isEnabled(is_enabled),

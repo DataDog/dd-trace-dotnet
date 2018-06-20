@@ -145,15 +145,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     hr = this->corProfilerInfo->GetAssemblyInfo(assemblyId, _countof(assemblyName), &assemblyNameLength, assemblyName, nullptr, nullptr);
     LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
 
-    std::vector<IntegrationBase> allIntegrations = {
+    std::vector<Integration> allIntegrations = {
         &AspNetMvc5Integration,
         &CustomIntegration,
     };
 
-    std::vector<IntegrationBase> enabledIntegrations;
+    std::vector<Integration> enabledIntegrations;
 
     // find enabled integrations that need to instrument methods in this module
-    for (const IntegrationBase& integration : allIntegrations)
+    for (const Integration& integration : allIntegrations)
     {
         if (integration.IsEnabled())
         {
@@ -241,7 +241,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     }
 
     // for each enabled integration's instrumented method...
-    for (const IntegrationBase& integration : enabledIntegrations)
+    for (const Integration& integration : enabledIntegrations)
     {
         for (const MemberReference& instrumentedMethod : integration.GetInstrumentedMethods())
         {
@@ -295,7 +295,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // check if this method should be instrumented
     // NOTE: for now we only allow one integration to instrument a method,
     // so first integration wins
-    for (const IntegrationBase& integration : moduleMetadata.m_Integrations)
+    for (const Integration& integration : moduleMetadata.m_Integrations)
     {
         for (const MemberReference& instrumentedMethod : integration.GetInstrumentedMethods())
         {
@@ -336,7 +336,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 // IL, rewrite it, and send the result to the CLR
 HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
                                ICorProfilerFunctionControl* const pICorProfilerFunctionControl,
-                               const IntegrationBase& integration,
+                               const Integration& integration,
                                const MemberReference& instrumentedMethod,
                                const ModuleID moduleID,
                                const mdToken functionToken,

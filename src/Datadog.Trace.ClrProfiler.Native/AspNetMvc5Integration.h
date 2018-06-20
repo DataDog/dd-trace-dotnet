@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IntegrationBase.h"
+#include "Integration.h"
 #include "TypeReference.h"
 #include "MemberReference.h"
 #include "GlobalTypeReferences.h"
@@ -26,7 +26,7 @@ const MemberReference System_Web_Mvc_ControllerActionInvoker_InvokeActionMethod
     },
 };
 
-IntegrationBase AspNetMvc5Integration( /* IsEnabled */
+Integration AspNetMvc5Integration( /* IsEnabled */
                                       true,
                                       IntegrationType_AspNetMvc5,
                                       std::vector<MemberReference>{
