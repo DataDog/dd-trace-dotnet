@@ -146,8 +146,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
 
     std::vector<Integration> allIntegrations = {
-        &AspNetMvc5Integration,
-        &CustomIntegration,
+        AspNetMvc5Integration,
+        CustomIntegration,
     };
 
     std::vector<Integration> enabledIntegrations;
