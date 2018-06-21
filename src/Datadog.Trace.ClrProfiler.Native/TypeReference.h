@@ -10,9 +10,6 @@ struct TypeReference
     std::wstring TypeName = L"";
     bool IsArray = false;
 
-    // used if CorElementType is ELEMENT_TYPE_SZARRAY
-    const TypeReference* ArrayType = nullptr;
-
     friend bool operator==(const TypeReference& lhs, const TypeReference& rhs)
     {
         return lhs.CorElementType == rhs.CorElementType
