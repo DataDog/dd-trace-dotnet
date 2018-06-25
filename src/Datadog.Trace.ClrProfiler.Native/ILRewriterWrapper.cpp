@@ -97,43 +97,52 @@ void ILRewriterWrapper::LoadArgument(const UINT16 index) const
 
 void ILRewriterWrapper::Cast(const TypeReference& type) const
 {
+    mdTypeRef typeRef = mdTypeRefNil;
+
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_CASTCLASS;
-    pNewInstr->m_Arg32 = m_typeRefLookup[type];
+    pNewInstr->m_Arg32 = m_metadataHelper.TryGetRef(type, typeRef) ? typeRef : throw;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
 void ILRewriterWrapper::Box(const TypeReference& type) const
 {
+    mdTypeRef typeRef = mdTypeRefNil;
+
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_BOX;
-    pNewInstr->m_Arg32 = m_typeRefLookup[type];
+    pNewInstr->m_Arg32 = m_metadataHelper.TryGetRef(type, typeRef) ? typeRef : throw;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
 void ILRewriterWrapper::UnboxAny(const TypeReference& type) const
 {
+    mdTypeRef typeRef = mdTypeRefNil;
+
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_UNBOX_ANY;
-    pNewInstr->m_Arg32 = m_typeRefLookup[type];
+    pNewInstr->m_Arg32 = m_metadataHelper.TryGetRef(type, typeRef) ? typeRef : throw;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
 void ILRewriterWrapper::CreateArray(const TypeReference& type, const INT32 size) const
 {
+    mdTypeRef typeRef = mdTypeRefNil;
     LoadInt32(size);
 
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_NEWARR;
-    pNewInstr->m_Arg32 = m_typeRefLookup[type];
+    pNewInstr->m_Arg32 = m_metadataHelper.TryGetRef(type, typeRef) ? typeRef : throw;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
 void ILRewriterWrapper::CallMember(const MemberReference& member) const
 {
+    mdMemberRef memberRef = mdMemberRefNil;
+
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = member.IsVirtual ? CEE_CALLVIRT : CEE_CALL;
-    pNewInstr->m_Arg32 = m_memberRefLookup[member];
+    pNewInstr->m_Arg32 = m_metadataHelper.TryGetRef(member, memberRef) ? memberRef : throw;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 

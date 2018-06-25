@@ -2,8 +2,8 @@
 
 #include <string>
 #include <vector>
+#include <corhdr.h>
 #include "TypeReference.h"
-#include "MetadataReferenceLookups.h"
 
 struct MemberReference
 {
@@ -13,60 +13,6 @@ struct MemberReference
     CorCallingConvention CorCallingConvention = IMAGE_CEE_CS_CALLCONV_DEFAULT;
     TypeReference ReturnType{};
     std::vector<TypeReference> ArgumentTypes{};
-
-private:
-    static void AddElementTypeToSignature(PCOR_SIGNATURE pSignature,
-                                          ULONG& signatureLength,
-                                          const TypeReference& type,
-                                          const TypeRefLookup& typeRefLookup)
-    {
-        // TODO: check bounds limit on pSignature[]
-        pSignature[signatureLength++] = type.CorElementType;
-
-        if (type.CorElementType == ELEMENT_TYPE_SZARRAY)
-        {
-            // recursive call to add the array type
-            AddElementTypeToSignature(pSignature, signatureLength, *type.ArrayType, typeRefLookup);
-        }
-        else if (type.CorElementType == ELEMENT_TYPE_CLASS ||
-                 type.CorElementType == ELEMENT_TYPE_VALUETYPE)
-        {
-            const mdTypeRef typeRef = typeRefLookup[type];
-            COR_SIGNATURE compressedToken[8];
-            const ULONG compressedTokenSize = CorSigCompressToken(typeRef, compressedToken);
-
-            for (ULONG i = 0; i < compressedTokenSize; ++i)
-            {
-                pSignature[signatureLength++] = compressedToken[i];
-            }
-        }
-    }
-
-public:
-    ULONG CreateSignature(const TypeRefLookup& typeRefLookup, PCOR_SIGNATURE pSignature) const
-    {
-        // member signature:
-        //   calling convention
-        //   argument count
-        //   return type
-        //   argument types
-
-        // TODO: check bounds limit on pSignature[]
-        ULONG signatureLength = 0;
-        pSignature[signatureLength++] = CorCallingConvention;
-        pSignature[signatureLength++] = static_cast<COR_SIGNATURE>(ArgumentTypes.size());
-
-        // add return type to signature
-        AddElementTypeToSignature(pSignature, signatureLength, ReturnType, typeRefLookup);
-
-        // add arguments types to signature
-        for (const TypeReference& argumentType : ArgumentTypes)
-        {
-            AddElementTypeToSignature(pSignature, signatureLength, argumentType, typeRefLookup);
-        }
-
-        return signatureLength;
-    }
 
     // seems like relational operators are required because
     // this type is used as the key type for a std::map
