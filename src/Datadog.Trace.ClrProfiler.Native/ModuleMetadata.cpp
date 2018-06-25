@@ -2,7 +2,7 @@
 #include <utility>
 #include "ModuleMetadata.h"
 #include "Macros.h"
-#include "IntegrationBase.h"
+#include "Integration.h"
 
 bool ModuleMetadata::TryGetRef(const TypeReference& keyIn, mdTypeRef& valueOut) const
 {

@@ -10,14 +10,27 @@
 // forwards declarations
 class ILRewriterWrapper;
 
-class IntegrationBase
+class Integration
 {
 public:
-    IntegrationBase() = default;
+    Integration(const bool is_enabled,
+                    const IntegrationType integration,
+                    std::vector<MemberReference> member_references)
+        : m_isEnabled(is_enabled),
+          m_integrationType(integration),
+          m_InstrumentedMethods(std::move(member_references))
+    {
+    }
 
-    virtual bool IsEnabled() const = 0;
+    bool IsEnabled() const
+    {
+        return m_isEnabled;
+    }
 
-    virtual IntegrationType GetIntegrationType() const = 0;
+    IntegrationType GetIntegrationType() const
+    {
+        return m_integrationType;
+    }
 
     const std::vector<MemberReference>& GetInstrumentedMethods() const
     {
@@ -34,10 +47,10 @@ public:
                          const MemberReference& instrumentedMethod,
                          const MemberReference& exitProbe) const;
 
-protected:
-    virtual ~IntegrationBase() = default;
-    std::vector<MemberReference> m_InstrumentedMethods = {};
-
 private :
+    bool m_isEnabled;
+    IntegrationType m_integrationType;
+    std::vector<MemberReference> m_InstrumentedMethods;
+
     static bool NeedsBoxing(const TypeReference& type);
 };

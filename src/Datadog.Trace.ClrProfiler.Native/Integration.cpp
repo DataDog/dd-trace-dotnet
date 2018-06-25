@@ -1,8 +1,8 @@
-#include "IntegrationBase.h"
+#include "Integration.h"
 #include "GlobalTypeReferences.h"
 #include "ILRewriterWrapper.h"
 
-void IntegrationBase::InjectEntryProbe(const ILRewriterWrapper& pilr,
+void Integration::InjectEntryProbe(const ILRewriterWrapper& pilr,
                                        const ModuleID moduleID,
                                        const mdMethodDef methodDef,
                                        const MemberReference& instrumentedMethod,
@@ -51,7 +51,7 @@ void IntegrationBase::InjectEntryProbe(const ILRewriterWrapper& pilr,
     pilr.CallMember(entryProbe);
 }
 
-void IntegrationBase::InjectExitProbe(const ILRewriterWrapper& pilr,
+void Integration::InjectExitProbe(const ILRewriterWrapper& pilr,
                                       const MemberReference& instrumentedMethod,
                                       const MemberReference& exitProbe) const
 {
@@ -75,7 +75,7 @@ void IntegrationBase::InjectExitProbe(const ILRewriterWrapper& pilr,
     }
 }
 
-bool IntegrationBase::NeedsBoxing(const TypeReference& type)
+bool Integration::NeedsBoxing(const TypeReference& type)
 {
     return type.CorElementType != ELEMENT_TYPE_VOID &&
            type.CorElementType != ELEMENT_TYPE_CLASS &&
