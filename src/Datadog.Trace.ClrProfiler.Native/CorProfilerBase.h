@@ -10,7 +10,8 @@ private:
     std::atomic<int> refCount;
 
 protected:
-    ICorProfilerInfo8* corProfilerInfo;
+    // we need at least ICorProfilerInfo3 to call GetModuleInfo2()
+    ICorProfilerInfo3* corProfilerInfo;
 
 public:
     CorProfilerBase();
