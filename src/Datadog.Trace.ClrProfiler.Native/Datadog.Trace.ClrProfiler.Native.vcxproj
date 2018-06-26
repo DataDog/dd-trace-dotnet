@@ -147,23 +147,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AspNetMvc5Integration.h" />
     <ClInclude Include="ClassFactory.h" />
     <ClInclude Include="ComPtr.h" />
-    <ClInclude Include="CustomIntegration.h" />
     <ClInclude Include="CorProfiler.h" />
     <ClInclude Include="CorProfilerBase.h" />
     <ClInclude Include="CSHolder.h" />
-    <ClInclude Include="GlobalTypeReferences.h" />
     <ClInclude Include="IDToInfoMap.h" />
     <ClInclude Include="ILRewriter.h" />
     <ClInclude Include="ILRewriterWrapper.h" />
     <ClInclude Include="Integration.h" />
     <ClInclude Include="IntegrationType.h" />
     <ClInclude Include="Macros.h" />
-    <ClInclude Include="MemberReference.h" />
     <ClInclude Include="MetadataBuilder.h" />
-    <ClInclude Include="TypeReference.h" />
     <ClInclude Include="ModuleMetadata.h" />
   </ItemGroup>
   <ItemGroup>
@@ -174,10 +169,8 @@
     <ClCompile Include="CorProfiler.cpp" />
     <ClCompile Include="ILRewriter.cpp" />
     <ClCompile Include="ILRewriterWrapper.cpp" />
-    <ClCompile Include="Integration.cpp" />
     <ClCompile Include="Interop.cpp" />
     <ClCompile Include="MetadataBuilder.cpp" />
-    <ClCompile Include="ModuleMetadata.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Trace.ClrProfiler.Native.def" />

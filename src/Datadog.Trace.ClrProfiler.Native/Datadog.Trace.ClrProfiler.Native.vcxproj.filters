@@ -9,9 +9,7 @@
     <ClCompile Include="ILRewriter.cpp" />
     <ClCompile Include="Interop.cpp" />
     <ClCompile Include="ILRewriterWrapper.cpp" />
-    <ClCompile Include="ModuleMetadata.cpp" />
     <ClCompile Include="MetadataBuilder.cpp" />
-    <ClCompile Include="Integration.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClassFactory.h" />
@@ -20,13 +18,8 @@
     <ClInclude Include="CSHolder.h" />
     <ClInclude Include="IDToInfoMap.h" />
     <ClInclude Include="ILRewriter.h" />
-    <ClInclude Include="AspNetMvc5Integration.h" />
-    <ClInclude Include="TypeReference.h" />
-    <ClInclude Include="CustomIntegration.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="IntegrationType.h" />
-    <ClInclude Include="GlobalTypeReferences.h" />
-    <ClInclude Include="MemberReference.h" />
     <ClInclude Include="ILRewriterWrapper.h" />
     <ClInclude Include="ModuleMetadata.h" />
     <ClInclude Include="MetadataBuilder.h" />

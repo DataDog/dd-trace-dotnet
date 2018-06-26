@@ -5,7 +5,6 @@
 #include "ModuleMetadata.h"
 #include "IDToInfoMap.h"
 #include "CorProfilerBase.h"
-#include "GlobalTypeReferences.h"
 
 class CorProfiler : public CorProfilerBase
 {

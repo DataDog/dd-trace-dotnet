@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include <corhlpr.h>
-#include "TypeReference.h"
-#include "MemberReference.h"
 #include "ModuleMetadata.h"
 
 class MetadataBuilder

@@ -7,8 +7,6 @@
 #include "CorProfiler.h"
 #include "Macros.h"
 #include "ComPtr.h"
-#include "TypeReference.h"
-#include "MemberReference.h"
 #include "ModuleMetadata.h"
 #include "ILRewriter.h"
 #include "ILRewriterWrapper.h"

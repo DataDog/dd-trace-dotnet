@@ -3,8 +3,6 @@
 #include <map>
 #include <corhlpr.h>
 #include "ComPtr.h"
-#include "TypeReference.h"
-#include "MemberReference.h"
 #include "Integration.h"
 
 class ModuleMetadata
