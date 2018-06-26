@@ -9,64 +9,132 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// The ASP.NET MVC 5 integration.
     /// </summary>
-    public sealed class AspNetMvc5Integration : Integration
+    public sealed class AspNetMvc5Integration : IDisposable
     {
-        private readonly dynamic _controllerContext;
+        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
+        private readonly HttpContextBase _httpContext;
+        private readonly Scope _scope;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetMvc5Integration"/> class.
         /// </summary>
-        /// <param name="args">An array with all the arguments that were passed into the instrumented method. If it is an instance method, the first arguments is <c>this</c>.</param>
-        public AspNetMvc5Integration(object[] args)
+        /// <param name="controllerContextObj">An array with all the arguments that were passed into the instrumented method. If it is an instance method, the first arguments is <c>this</c>.</param>
+        public AspNetMvc5Integration(object controllerContextObj)
         {
-            if (args.Length < 2 || args[1].GetType().FullName != "System.Web.Mvc.ControllerContext")
+            if (!Instrumentation.Enabled)
             {
                 return;
             }
 
-            // [System.Web.Mvc]System.Web.Mvc.ControllerContext
-            _controllerContext = args[1];
-
-            HttpContextBase httpContext = _controllerContext.HttpContext;
-            string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-
-            string routeTemplate = _controllerContext.RouteData.Route.Url;
-            IDictionary<string, object> routeValues = _controllerContext.RouteData.Values;
-            var resourceName = new StringBuilder(routeTemplate);
-
-            // replace all route values except "id"
-            // TODO: make this filter configurable
-            foreach (var routeValue in routeValues.Where(p => !string.Equals(p.Key, "id", StringComparison.InvariantCultureIgnoreCase)))
+            try
             {
-                string key = $"{{{routeValue.Key.ToLowerInvariant()}}}";
-                string value = routeValue.Value.ToString().ToLowerInvariant();
-                resourceName.Replace(key, value);
-            }
+                if (controllerContextObj?.GetType().FullName != "System.Web.Mvc.ControllerContext")
+                {
+                    return;
+                }
 
-            // TODO: define constants elsewhere instead of using magic strings
-            Span span = Scope.Span;
-            span.Type = "web";
-            span.OperationName = "web.request";
-            span.ResourceName = string.Join(" ", httpMethod, resourceName.ToString());
-            span.SetTag("http.method", httpMethod);
-            span.SetTag("http.url", httpContext.Request.RawUrl.ToLowerInvariant());
-            span.SetTag("http.route", routeTemplate);
+                // access the controller context without referencing System.Web.Mvc directly
+                dynamic controllerContext = controllerContextObj;
+
+                _httpContext = controllerContext.HttpContext;
+                string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
+
+                string routeTemplate = controllerContext.RouteData.Route.Url;
+                IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
+                var resourceName = new StringBuilder(routeTemplate);
+
+                // replace all route values except "id"
+                // TODO: make this filter configurable
+                foreach (var routeValue in routeValues.Where(p => !string.Equals(p.Key, "id", StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    string key = $"{{{routeValue.Key.ToLowerInvariant()}}}";
+                    string value = routeValue.Value.ToString().ToLowerInvariant();
+                    resourceName.Replace(key, value);
+                }
+
+                // TODO: define constants elsewhere instead of using magic strings
+                Span span = Tracer.Instance.StartSpan("web.request");
+                span.Type = "web";
+                span.ResourceName = string.Join(" ", httpMethod, resourceName.ToString());
+                span.SetTag("http.method", httpMethod);
+                span.SetTag("http.url", _httpContext.Request.RawUrl.ToLowerInvariant());
+                span.SetTag("http.route", routeTemplate);
+
+                _httpContext.Items[HttpContextKey] = this;
+                _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
+            }
+            catch
+            {
+                // TODO: logging
+            }
         }
 
-        /// <inheritdoc />
-        protected override void Dispose(bool disposing)
+        public void RegisterException(Exception ex)
         {
-            if (disposing)
-            {
-                HttpContextBase httpContext = _controllerContext?.HttpContext;
+            Span span = _scope?.Span;
 
-                if (httpContext != null)
+            if (span != null)
+            {
+                span.Error = true;
+                span.SetTag("exception.message", ex.Message);
+                // TODO: log the exception
+            }
+        }
+
+        public static object BeginInvokeAction(
+            dynamic asyncControllerActionInvoker,
+            dynamic controllerContext,
+            dynamic actionName,
+            dynamic callback,
+            dynamic state)
+        {
+            var integration = new AspNetMvc5Integration((object)controllerContext);
+
+            try
+            {
+                // call the original method, catching and rethrowing any unhandled exceptions
+                return asyncControllerActionInvoker.BeginInvokeAction(controllerContext, actionName, callback, state);
+            }
+            catch (Exception ex)
+            {
+                integration.RegisterException(ex);
+                throw;
+            }
+        }
+
+        public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
+        {
+            var integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvc5Integration;
+
+            try
+            {
+                // call the original method, catching and rethrowing any unhandled exceptions
+                return asyncControllerActionInvoker.EndInvokeAction(asyncResult);
+            }
+            catch (Exception ex)
+            {
+                integration?.RegisterException(ex);
+                throw;
+            }
+            finally
+            {
+                integration?.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                if (_httpContext != null)
                 {
-                    Scope.Span.SetTag("http.status_code", httpContext.Response.StatusCode.ToString());
+                    _scope?.Span?.SetTag("http.status_code", _httpContext.Response.StatusCode.ToString());
                 }
             }
-
-            base.Dispose(disposing);
+            finally
+            {
+                _scope?.Dispose();
+            }
         }
     }
 }
