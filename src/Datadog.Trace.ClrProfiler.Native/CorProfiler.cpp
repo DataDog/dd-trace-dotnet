@@ -60,13 +60,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     WCHAR wszProcessNames[MAX_PATH] = { L'\0' };
     WCHAR wszCurrentProcessPath[MAX_PATH] = { L'\0' };
 
-    if (FAILED(GetEnvironmentVariable(L"DATADOG_PROFILE_PROCESSES", wszProcessNames, _countof(wszProcessNames))))
+    if (FAILED(GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES", wszProcessNames, _countof(wszProcessNames))))
     {
-        LOG_APPEND(L"Failed to attach profiler: could not get DATADOG_PROFILE_PROCESSES environment variable.");
+        LOG_APPEND(L"Failed to attach profiler: could not get DATADOG_PROFILER_PROCESSES environment variable.");
         return E_FAIL;
     }
 
-    LOG_APPEND(L"DATADOG_PROFILE_PROCESSES = " << wszProcessNames);
+    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << wszProcessNames);
 
     if (FAILED(GetModuleFileName(NULL, wszCurrentProcessPath, _countof(wszCurrentProcessPath))))
     {
