@@ -32,4 +32,5 @@ public:
     void Duplicate() const;
     void BeginLoadValueIntoArray(INT32 arrayIndex) const;
     void EndLoadValueIntoArray() const;
+    bool ReplaceMethodCalls(mdMemberRef old_method_ref, mdMemberRef new_method_ref) const;
 };

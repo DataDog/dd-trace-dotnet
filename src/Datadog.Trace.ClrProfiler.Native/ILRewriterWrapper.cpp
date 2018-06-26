@@ -161,3 +161,25 @@ void ILRewriterWrapper::EndLoadValueIntoArray() const
     pNewInstr->m_opcode = CEE_STELEM_REF;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
+
+bool ILRewriterWrapper::ReplaceMethodCalls(const mdMemberRef old_method_ref,
+                                           const mdMemberRef new_method_ref) const
+{
+    bool modified = false;
+
+    for (ILInstr* pInstr = m_ILRewriter->GetILList()->m_pNext;
+         pInstr != m_ILRewriter->GetILList();
+         pInstr = pInstr->m_pNext)
+    {
+        if ((pInstr->m_opcode == CEE_CALL || pInstr->m_opcode == CEE_CALLVIRT) &&
+            pInstr->m_Arg32 == static_cast<INT32>(old_method_ref))
+        {
+            pInstr->m_opcode = CEE_CALL;
+            pInstr->m_Arg32 = new_method_ref;
+
+            modified = true;
+        }
+    }
+
+    return modified;
+}
