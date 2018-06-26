@@ -11,8 +11,7 @@
 #include "ILRewriter.h"
 #include "ILRewriterWrapper.h"
 #include "MetadataBuilder.h"
-#include "AspNetMvc5Integration.h"
-#include "CustomIntegration.h"
+#include "Configuration.h"
 
 // Note: Generally you should not have a single, global callback implementation, as that
 // prevents your profiler from analyzing multiply loaded in-process side-by-side CLRs.
@@ -55,40 +54,56 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     }
     */
 
-    WCHAR wszProcessNames[MAX_PATH] = { L'\0' };
-    WCHAR wszCurrentProcessPath[MAX_PATH] = { L'\0' };
+    WCHAR processNames[MAX_PATH]{};
+    const DWORD processNamesLength = GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES", processNames, _countof(processNames));
 
-    if (FAILED(GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES", wszProcessNames, _countof(wszProcessNames))))
+    if (processNamesLength == 0)
     {
         LOG_APPEND(L"Failed to attach profiler: could not get DATADOG_PROFILER_PROCESSES environment variable.");
         return E_FAIL;
     }
 
-    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << wszProcessNames);
+    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << processNames);
 
-    if (FAILED(GetModuleFileName(NULL, wszCurrentProcessPath, _countof(wszCurrentProcessPath))))
+    WCHAR currentProcessPath[MAX_PATH]{};
+    const DWORD currentProcessPathLength = GetModuleFileName(nullptr, currentProcessPath, _countof(currentProcessPath));
+
+    if (currentProcessPathLength == 0)
     {
         LOG_APPEND(L"Failed to attach profiler: could not get current module filename.");
         return E_FAIL;
     }
 
-    LOG_APPEND(L"Module file name = " << wszCurrentProcessPath);
+    LOG_APPEND(L"Module file name = " << currentProcessPath);
 
-    WCHAR* lastSeparator = wcsrchr(wszCurrentProcessPath, L'\\');
-    WCHAR* processName = lastSeparator == nullptr ? wszCurrentProcessPath : lastSeparator + 1;
+    WCHAR* lastSeparator = wcsrchr(currentProcessPath, L'\\');
+    WCHAR* processName = lastSeparator == nullptr ? currentProcessPath : lastSeparator + 1;
 
-    if (wcsstr(wszProcessNames, processName) == nullptr)
+    if (wcsstr(processNames, processName) == nullptr)
     {
-        LOG_APPEND(L"Profiler disabled: module name \"" << processName << "\" does not match DATADOG_PROFILE_PROCESSES environment variable.");
+        LOG_APPEND(L"Profiler disabled: module name \"" << processName << "\" does not match DATADOG_PROFILER_PROCESSES environment variable.");
         return E_FAIL;
     }
 
-    if (FAILED(pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo3), reinterpret_cast<void **>(&this->corProfilerInfo))))
+    WCHAR configPath[MAX_PATH]{};
+    const DWORD configPathLength = GetEnvironmentVariable(L"DATADOG_PROFILER_CONFIG_PATH", configPath, _countof(configPath));
+
+    if (configPathLength == 0)
     {
-        // we need at least ICorProfilerInfo3 to call GetModuleInfo2()
-        LOG_APPEND(L"Profiler disabled: interface ICorProfilerInfo3 or higher not found.");
-        return E_FAIL;
+        LOG_APPEND(L"Failed to get current directory.");
+        return S_OK;
     }
+
+    GlobalConfiguration.Load(configPath);
+
+    if (!GlobalConfiguration.IsTracingEnabled())
+    {
+        LOG_APPEND(L"Tracing disabled in configuration.");
+        return S_OK;
+    }
+
+    HRESULT hr = pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(&this->corProfilerInfo);
+    LOG_IFFAILEDRET(hr, L"Profiler disabled: interface ICorProfilerInfo3 or higher not found.");
 
     const DWORD eventMask = COR_PRF_MONITOR_JIT_COMPILATION |
                             COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST | /* helps the case where this profiler is used on Full CLR */
@@ -99,14 +114,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
                             // COR_PRF_ENABLE_REJIT |
                             COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
-    if (FAILED(this->corProfilerInfo->SetEventMask(eventMask)))
-    {
-        LOG_APPEND(L"Failed to attach profiler: unable to set event mask.");
-        return E_FAIL;
-    }
+    hr = this->corProfilerInfo->SetEventMask(eventMask);
+    LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
 
     // we're in!
-    LOG_APPEND(L"Profiler attached to " << processName);
+    LOG_APPEND(L"Profiler attached to process " << processName);
+    this->corProfilerInfo->AddRef();
     bIsAttached = true;
     g_pCallbackObject = this;
     return S_OK;
@@ -115,15 +128,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
     LPCBYTE pbBaseLoadAddr;
-    WCHAR wszModulePath[300];
-    ULONG cchNameIn = _countof(wszModulePath);
+    WCHAR wszModulePath[MAX_PATH];
     ULONG cchNameOut;
     AssemblyID assemblyId;
     DWORD dwModuleFlags;
 
     HRESULT hr = this->corProfilerInfo->GetModuleInfo2(moduleId,
                                                        &pbBaseLoadAddr,
-                                                       cchNameIn,
+                                                       _countof(wszModulePath),
                                                        &cchNameOut,
                                                        wszModulePath,
                                                        &assemblyId,
@@ -138,37 +150,27 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
         return S_OK;
     }
 
-    WCHAR assemblyName[512];
-    ULONG assemblyNameLength;
+    WCHAR assemblyName[512]{};
+    ULONG assemblyNameLength = 0;
     hr = this->corProfilerInfo->GetAssemblyInfo(assemblyId, _countof(assemblyName), &assemblyNameLength, assemblyName, nullptr, nullptr);
     LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
 
-    std::vector<Integration> allIntegrations = {
-        AspNetMvc5Integration,
-        CustomIntegration,
-    };
+    std::vector<integration> enabledIntegrations;
 
-    std::vector<Integration> enabledIntegrations;
-
-    // find enabled integrations that need to instrument methods in this module
-    for (const Integration& integration : allIntegrations)
+    // check if we need to instrument anything in this assembly,
+    // for each integration...
+    for (auto& integration : all_integrations)
     {
-        if (integration.IsEnabled())
+        // TODO: check if integration is enabled in config
+        if (integration.target_assembly_name == std::wstring(assemblyName))
         {
-            for (const MemberReference& instrumentedMethod : integration.GetInstrumentedMethods())
-            {
-                if (instrumentedMethod.ContainingType.AssemblyName == assemblyName)
-                {
-                    enabledIntegrations.push_back(integration);
-                    break;
-                }
-            }
+            enabledIntegrations.push_back(integration);
         }
     }
 
     if (enabledIntegrations.empty())
     {
-        // we don't need to instrument anything in this module
+        // we don't need to instrument anything in this module, skip it
         return S_OK;
     }
 
@@ -192,11 +194,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     hr = metadataImport->GetModuleFromScope(&module);
     LOG_IFFAILEDRET(hr, L"Failed to get module token.");
 
-    ModuleMetadata moduleMetadata(metadataImport,
-                                  assemblyName,
-                                  enabledIntegrations);
+    ModuleMetadata* moduleMetadata = new ModuleMetadata(metadataImport,
+                                                        assemblyName,
+                                                        enabledIntegrations);
 
-    MetadataBuilder metadataBuilder(moduleMetadata,
+    MetadataBuilder metadataBuilder(*moduleMetadata,
                                     module,
                                     metadataImport,
                                     metadataEmit,
@@ -216,35 +218,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     assemblyMetaData.cbLocale = _countof(wszLocale);
 
     mdAssemblyRef assemblyRef;
-    hr = metadataBuilder.EmitAssemblyRef(L"Datadog.Trace.ClrProfiler.Managed",
-                                         assemblyMetaData,
-                                         rgbPublicKeyToken,
-                                         _countof(rgbPublicKeyToken),
-                                         assemblyRef);
+    hr = metadataBuilder.emit_assembly_ref(L"Datadog.Trace.ClrProfiler.Managed",
+                                           assemblyMetaData,
+                                           rgbPublicKeyToken,
+                                           _countof(rgbPublicKeyToken),
+                                           assemblyRef);
 
     RETURN_IF_FAILED(hr);
 
-    static const std::vector<MemberReference> instrumentationProbes = {
-        Datadog_Trace_ClrProfiler_Instrumentation_OnMethodEntered,
-        Datadog_Trace_ClrProfiler_Instrumentation_OnMethodExit_ReturnVoid,
-        Datadog_Trace_ClrProfiler_Instrumentation_OnMethodExit_ReturnObject
-    };
-
-    // for each instrumentation probe...
-    for (const MemberReference& instrumentationProbe : instrumentationProbes)
+    for (const auto& integration : enabledIntegrations)
     {
-        // find or create any typeRefs and memberRefs needed
-        hr = metadataBuilder.ResolveMember(instrumentationProbe);
-        RETURN_IF_FAILED(hr);
-    }
-
-    // for each enabled integration's instrumented method...
-    for (const Integration& integration : enabledIntegrations)
-    {
-        for (const MemberReference& instrumentedMethod : integration.GetInstrumentedMethods())
+        for (const auto& method_replacement : integration.method_replacements)
         {
-            // find or create any typeRefs and memberRefs needed
-            hr = metadataBuilder.ResolveMember(instrumentedMethod);
+            // for each method replacement in each enabled integration,
+            // emit a reference to the instrumentation wrapper methods
+            hr = metadataBuilder.resolve_wrapper_method_ref(integration, method_replacement);
             RETURN_IF_FAILED(hr);
         }
     }
@@ -256,8 +244,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    // TODO: release COM pointers
-    m_moduleIDToInfoMap.Erase(moduleId);
+    ModuleMetadata* metadata;
+
+    if (m_moduleIDToInfoMap.LookupIfExists(moduleId, &metadata))
+    {
+        m_moduleIDToInfoMap.Erase(moduleId);
+        delete metadata;
+    }
+
     return S_OK;
 }
 
@@ -265,12 +259,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 {
     ClassID classId;
     ModuleID moduleId;
-    mdToken functiontoken;
+    mdToken functionToken;
 
-    HRESULT hr = this->corProfilerInfo->GetFunctionInfo(functionId, &classId, &moduleId, &functiontoken);
+    HRESULT hr = this->corProfilerInfo->GetFunctionInfo(functionId, &classId, &moduleId, &functionToken);
     RETURN_IF_FAILED(hr);
 
-    ModuleMetadata moduleMetadata{};
+    ModuleMetadata* moduleMetadata = nullptr;
 
     if (!m_moduleIDToInfoMap.LookupIfExists(moduleId, &moduleMetadata))
     {
@@ -278,114 +272,58 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    WCHAR wszTypeDefName[256] = {};
-    WCHAR wszMethodDefName[256] = {};
-
-    moduleMetadata.GetClassAndFunctionNamesFromMethodDef(functiontoken,
-                                                         wszTypeDefName,
-                                                         _countof(wszTypeDefName),
-                                                         wszMethodDefName,
-                                                         _countof(wszMethodDefName));
-
-    const auto typeName = std::wstring(wszTypeDefName);
-    const auto methodName = std::wstring(wszMethodDefName);
-
     // check if this method should be instrumented
     // NOTE: for now we only allow one integration to instrument a method,
     // so first integration wins
-    for (const Integration& integration : moduleMetadata.m_Integrations)
+    for (const auto& integration : moduleMetadata->m_Integrations)
     {
-        for (const MemberReference& instrumentedMethod : integration.GetInstrumentedMethods())
+        for (const auto& method_replacement : integration.method_replacements)
         {
-            // TODO: match by complete signature, not just name
-            if (typeName == instrumentedMethod.ContainingType.TypeName && methodName == instrumentedMethod.MethodName)
+            // check known callers (caller_method_token) for IL opcodes that call
+            // into the target method (target_method_token) and replace them
+            // with called to the instrumentation wrapper (wrapper_method_ref)
+            if (functionToken == method_replacement.caller_method_token)
             {
-                const MemberReference& exitProbe = instrumentedMethod.ReturnType == GlobalTypeReferences.System_Void
-                                                       ? Datadog_Trace_ClrProfiler_Instrumentation_OnMethodExit_ReturnVoid
-                                                       : Datadog_Trace_ClrProfiler_Instrumentation_OnMethodExit_ReturnObject;
+                const std::wstring wrapper_method_key = integration.get_wrapper_method_key(method_replacement);
+                mdMemberRef wrapper_method_ref = mdMemberRefNil;
 
-                hr = RewriteIL(this->corProfilerInfo,
-                               nullptr,
-                               integration,
-                               instrumentedMethod,
-                               moduleId,
-                               functiontoken,
-                               moduleMetadata,
-                               Datadog_Trace_ClrProfiler_Instrumentation_OnMethodEntered,
-                               exitProbe);
-
-                if (SUCCEEDED(hr))
+                if (moduleMetadata->TryGetWrapperMemberRef(wrapper_method_key, wrapper_method_ref))
                 {
-                    LOG_APPEND("Finished rewriting IL for " << wszTypeDefName << "." << wszMethodDefName << "()");
-                    return S_OK;
-                }
+                    // replace calls to method instrumented_method from method instrumented_method_caller with calls to instrumented_method_wrapper
+                    // instrumented_method_caller()
+                    // {
+                    //     instrumented_method() -> instrumented_method_wrapper()
+                    // }
+                    ILRewriter rewriter(this->corProfilerInfo, nullptr, moduleId, functionToken);
+                    ILRewriterWrapper ilRewriterWrapper(&rewriter);
 
-                LOG_APPEND("Failed rewriting IL for " << wszTypeDefName << "." << wszMethodDefName << "(). HR = " << HEX(hr));
-                return hr;
+                    // hr = rewriter.Initialize();
+                    hr = rewriter.Import();
+                    RETURN_IF_FAILED(hr);
+
+                    if (ilRewriterWrapper.ReplaceMethodCalls(method_replacement.target_method_token, wrapper_method_ref))
+                    {
+                        hr = rewriter.Export();
+                        RETURN_IF_FAILED(hr);
+
+                        // method IL modified, don't try any other replacements
+                        return S_OK;
+                    }
+
+                    // method IL was not modified
+                    // TODO: log this
+                }
+                else
+                {
+                    // no method ref token found for wrapper method, we can't do the replacement,
+                    // this should never happen because we always try to add the method ref in  ModuleLoadFinished()
+                    // TODO: log this
+                }
             }
         }
     }
 
     // method IL was not modified
-    return S_OK;
-}
-
-// Uses the general-purpose ILRewriter class to import original
-// IL, rewrite it, and send the result to the CLR
-HRESULT CorProfiler::RewriteIL(ICorProfilerInfo* const pICorProfilerInfo,
-                               ICorProfilerFunctionControl* const pICorProfilerFunctionControl,
-                               const Integration& integration,
-                               const MemberReference& instrumentedMethod,
-                               const ModuleID moduleID,
-                               const mdToken functionToken,
-                               const ModuleMetadata& moduleMetadata,
-                               const MemberReference& entryProbe,
-                               const MemberReference& exitProbe)
-{
-    ILRewriter rewriter(pICorProfilerInfo, pICorProfilerFunctionControl, moduleID, functionToken);
-    ILRewriterWrapper ilRewriterWrapper(&rewriter, moduleMetadata);
-
-    // hr = rewriter.Initialize();
-    HRESULT hr = rewriter.Import();
-    RETURN_IF_FAILED(hr);
-
-    // insert a call to the entry probe before the first IL instruction
-    ilRewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
-    integration.InjectEntryProbe(ilRewriterWrapper, moduleID, functionToken, instrumentedMethod, entryProbe);
-
-    // Find all RETs, and insert a call to the exit probe before each one
-    for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
-         pInstr != rewriter.GetILList();
-         pInstr = pInstr->m_pNext)
-    {
-        if (pInstr->m_opcode == CEE_RET)
-        {
-            // We want any branches or leaves that targeted the RET instruction to
-            // actually target the epilog instructions we're adding. So turn the "RET"
-            // into ["NOP", "RET"], and THEN add the epilog between the NOP & RET. That
-            // ensures that any branches that went to the RET will now go to the NOP and
-            // then execute our epilog.
-
-            // RET->NOP
-            pInstr->m_opcode = CEE_NOP;
-
-            // Add the new RET after
-            ILInstr* pNewRet = rewriter.NewILInstr();
-            pNewRet->m_opcode = CEE_RET;
-            rewriter.InsertAfter(pInstr, pNewRet);
-
-            // And now insert the epilog before the new RET
-            ilRewriterWrapper.SetILPosition(pNewRet);
-            integration.InjectExitProbe(ilRewriterWrapper, instrumentedMethod, exitProbe);
-
-            // Advance pInstr after all this gunk so the for loop continues properly
-            pInstr = pNewRet;
-        }
-    }
-
-    hr = rewriter.Export();
-    RETURN_IF_FAILED(hr);
-
     return S_OK;
 }
 

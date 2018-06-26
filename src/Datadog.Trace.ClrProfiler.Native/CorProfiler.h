@@ -10,68 +10,8 @@ class CorProfiler : public CorProfilerBase
 {
 private:
     bool bIsAttached = false;
-    IDToInfoMap<ModuleID, ModuleMetadata> m_moduleIDToInfoMap;
+    IDToInfoMap<ModuleID, ModuleMetadata*> m_moduleIDToInfoMap;
 
-    static HRESULT RewriteIL(ICorProfilerInfo* pICorProfilerInfo,
-                             ICorProfilerFunctionControl* pICorProfilerFunctionControl,
-                             const Integration& integration,
-                             const MemberReference& instrumentedMethod,
-                             ModuleID moduleID,
-                             mdToken functionToken,
-                             const ModuleMetadata& moduleMetadata,
-                             const MemberReference& entryProbe,
-                             const MemberReference& exitProbe);
-
-    const TypeReference Datadog_Trace_ClrProfiler_Instrumentation = { ELEMENT_TYPE_CLASS, L"Datadog.Trace.ClrProfiler.Managed", L"Datadog.Trace.ClrProfiler.Instrumentation" };
-
-    // static object
-    // Datadog.Trace.ClrProfiler.Instrumentation.OnMethodEntered(int integrationTypeValue,
-    //                                                           ulong moduleId,
-    //                                                           uint methodToken,
-    //                                                           object[] args)
-    const MemberReference Datadog_Trace_ClrProfiler_Instrumentation_OnMethodEntered = {
-        Datadog_Trace_ClrProfiler_Instrumentation,
-        L"OnMethodEntered",
-        // IsVirtual
-        false,
-        IMAGE_CEE_CS_CALLCONV_DEFAULT,
-        GlobalTypeReferences.System_Object,
-        {
-            GlobalTypeReferences.System_Int32,
-            GlobalTypeReferences.System_UInt64,
-            GlobalTypeReferences.System_UInt32,
-            GlobalTypeReferences.System_Object_Array
-        }
-    };
-
-    // static void
-    // Datadog.Trace.ClrProfiler.Instrumentation.OnMethodExit(object args)
-    const MemberReference Datadog_Trace_ClrProfiler_Instrumentation_OnMethodExit_ReturnVoid = {
-        Datadog_Trace_ClrProfiler_Instrumentation,
-        L"OnMethodExit",
-        // IsVirtual
-        false,
-        IMAGE_CEE_CS_CALLCONV_DEFAULT,
-        GlobalTypeReferences.System_Void,
-        {
-            GlobalTypeReferences.System_Object,
-        }
-    };
-
-    // static object
-    // Datadog.Trace.ClrProfiler.Instrumentation.OnMethodExit(object args, object originalReturnValue)
-    const MemberReference Datadog_Trace_ClrProfiler_Instrumentation_OnMethodExit_ReturnObject = {
-        Datadog_Trace_ClrProfiler_Instrumentation,
-        L"OnMethodExit",
-        // IsVirtual
-        false,
-        IMAGE_CEE_CS_CALLCONV_DEFAULT,
-        GlobalTypeReferences.System_Object,
-        {
-            GlobalTypeReferences.System_Object,
-            GlobalTypeReferences.System_Object,
-        }
-    };
 public:
     bool IsAttached() const;
 
