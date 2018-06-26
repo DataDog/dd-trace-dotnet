@@ -7,28 +7,19 @@ class MetadataBuilder
 {
 private:
     ModuleMetadata& metadata;
-    mdModule module = mdModuleNil;
+    const mdModule module = mdModuleNil;
     const ComPtr<IMetaDataImport> metadataImport{};
     const ComPtr<IMetaDataEmit> metadataEmit{};
     const ComPtr<IMetaDataAssemblyImport> assemblyImport{};
     const ComPtr<IMetaDataAssemblyEmit> assemblyEmit{};
 
-    HRESULT FindAssemblyRef(const std::wstring& assemblyName, mdAssemblyRef* assemblyRef);
+    HRESULT find_assembly_ref(const std::wstring& assembly_name,
+                              mdAssemblyRef* assembly_ref_out) const;
 
-    HRESULT FindAssemblyRefIterator(const std::wstring& assemblyName,
-                                    mdAssemblyRef* rgAssemblyRefs,
-                                    ULONG cAssemblyRefs,
-                                    mdAssemblyRef* assemblyRef) const;
-
-    HRESULT CreateSignature(const MemberReference& member,
-                            PCOR_SIGNATURE pSignature,
-                            ULONG maxSignatureLength,
-                            ULONG& signatureLength);
-
-    HRESULT AddElementTypeToSignature(PCOR_SIGNATURE pSignature,
-                                      ULONG maxSignatureLength,
-                                      ULONG& signatureLength,
-                                      const TypeReference& type);
+    HRESULT find_assembly_ref_iterator(const std::wstring& assembly_name,
+                                       mdAssemblyRef assembly_refs[],
+                                       ULONG assembly_ref_count,
+                                       mdAssemblyRef* assembly_ref_out) const;
 
 public:
     MetadataBuilder(ModuleMetadata& metadata,
@@ -46,17 +37,13 @@ public:
     {
     }
 
-    HRESULT ResolveType(const TypeReference& type);
+    HRESULT resolve_wrapper_type_ref(const integration& integration, mdTypeRef& type_ref_out) const;
 
-    HRESULT ResolveType(const TypeReference& type, mdTypeRef& typeRefOut);
+    HRESULT resolve_wrapper_method_ref(const integration& integration, const method_replacement& method) const;
 
-    HRESULT ResolveMember(const MemberReference& member);
-
-    HRESULT ResolveMember(const MemberReference& member, mdMemberRef& memberRefOut);
-
-    HRESULT EmitAssemblyRef(const std::wstring& assemblyName,
-                            const ASSEMBLYMETADATA& assemblyMetadata,
-                            BYTE publicKeyToken[],
-                            ULONG publicKeyTokenLength,
-                            mdAssemblyRef& assemblyRef) const;
+    HRESULT emit_assembly_ref(const std::wstring& assembly_name,
+                              const ASSEMBLYMETADATA& assembly_metadata,
+                              BYTE public_key_token[],
+                              ULONG public_key_token_length,
+                              mdAssemblyRef& assembly_ref_out) const;
 };

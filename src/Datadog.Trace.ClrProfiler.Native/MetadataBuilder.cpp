@@ -1,140 +1,32 @@
-﻿#include <fstream>
+﻿#include <string>
+#include <fstream>
 #include "MetadataBuilder.h"
 #include "Macros.h"
 
-HRESULT MetadataBuilder::ResolveType(const TypeReference& type)
+HRESULT MetadataBuilder::emit_assembly_ref(const std::wstring& assembly_name,
+                                           const ASSEMBLYMETADATA& assembly_metadata,
+                                           BYTE public_key_token[],
+                                           const ULONG public_key_token_length,
+                                           mdAssemblyRef& assembly_ref_out) const
 {
-    mdTypeRef typeRef = mdTypeRefNil;
-    return ResolveType(type, typeRef);
-}
-
-HRESULT MetadataBuilder::ResolveType(const TypeReference& type, mdTypeRef& typeRefOut)
-{
-    HRESULT hr;
-
-    if (metadata.TryGetRef(type, typeRefOut))
-    {
-        // this type was already resolved
-        return S_OK;
-    }
-
-    if (metadata.assemblyName == type.AssemblyName)
-    {
-        // type is defined in this assembly
-        mdTypeRef typeRef = mdTypeRefNil;
-        hr = metadataEmit->DefineTypeRefByName(module, type.TypeName.c_str(), &typeRef);
-
-        if (SUCCEEDED(hr))
-        {
-            metadata.SetRef(type, typeRef);
-        }
-    }
-    else
-    {
-        // type is defined in another assembly,
-        // find a reference to the assembly where type lives
-        mdAssemblyRef assemblyRef = mdAssemblyRefNil;
-        hr = FindAssemblyRef(type.AssemblyName, &assemblyRef);
-
-        // TODO: emit assembly reference if not found
-
-        if (SUCCEEDED(hr))
-        {
-            // search for an existing reference to the type
-            mdTypeRef typeRef = mdTypeRefNil;
-            hr = metadataImport->FindTypeRef(assemblyRef, type.TypeName.c_str(), &typeRef);
-
-            if (hr == HRESULT(0x80131130) /* record not found on lookup */)
-            {
-                // if typeRef not found, create a new one by emiting a metadata token
-                hr = metadataEmit->DefineTypeRefByName(assemblyRef, type.TypeName.c_str(), &typeRef);
-            }
-
-            if (SUCCEEDED(hr))
-            {
-                metadata.SetRef(type, typeRef);
-                typeRefOut = typeRef;
-            }
-        }
-    }
-
-    return S_OK;
-}
-
-HRESULT MetadataBuilder::ResolveMember(const MemberReference& member)
-{
-    mdMemberRef memberRef = mdMemberRefNil;
-    return ResolveMember(member, memberRef);
-}
-
-HRESULT MetadataBuilder::ResolveMember(const MemberReference& member, mdMemberRef& memberRefOut)
-{
-    if (metadata.TryGetRef(member, memberRefOut))
-    {
-        // this member was already resolved
-        return S_OK;
-    }
-
-    mdTypeRef containingTypeRef;
-    HRESULT hr = ResolveType(member.ContainingType, containingTypeRef);
-    RETURN_IF_FAILED(hr);
-
-    hr = ResolveType(member.ReturnType);
-    RETURN_IF_FAILED(hr);
-
-    for (const TypeReference& argumentType : member.ArgumentTypes)
-    {
-        hr = ResolveType(argumentType);
-        RETURN_IF_FAILED(hr);
-    }
-
-    COR_SIGNATURE pSignature[128]{};
-    ULONG signatureLength;
-    hr = CreateSignature(member, pSignature, _countof(pSignature), signatureLength);
-    RETURN_IF_FAILED(hr);
-
-    mdMemberRef memberRef = mdMemberRefNil;
-    hr = metadataImport->FindMemberRef(containingTypeRef, member.MethodName.c_str(), pSignature, signatureLength, &memberRef);
-
-    if (hr == HRESULT(0x80131130) /* record not found on lookup */)
-    {
-        // if memberRef not found, create it by emiting a metadata token
-        hr = metadataEmit->DefineMemberRef(containingTypeRef, member.MethodName.c_str(), pSignature, signatureLength, &memberRef);
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        metadata.SetRef(member, memberRef);
-        memberRefOut = memberRef;
-    }
-
-    return S_OK;
-}
-
-HRESULT MetadataBuilder::EmitAssemblyRef(const std::wstring& assemblyName,
-                                         const ASSEMBLYMETADATA& assemblyMetadata,
-                                         BYTE publicKeyToken[],
-                                         ULONG publicKeyTokenLength,
-                                         mdAssemblyRef& assemblyRef) const
-{
-    const HRESULT hr = assemblyEmit->DefineAssemblyRef(static_cast<void *>(publicKeyToken),
-                                                       publicKeyTokenLength,
-                                                       assemblyName.c_str(),
-                                                       &assemblyMetadata,
+    const HRESULT hr = assemblyEmit->DefineAssemblyRef(static_cast<void *>(public_key_token),
+                                                       public_key_token_length,
+                                                       assembly_name.c_str(),
+                                                       &assembly_metadata,
                                                        // hash blob
                                                        nullptr,
                                                        // cb of hash blob
                                                        0,
                                                        // flags
                                                        0,
-                                                       &assemblyRef);
+                                                       &assembly_ref_out);
 
     LOG_IFFAILEDRET(hr, L"DefineAssemblyRef failed");
     return S_OK;
 }
 
-HRESULT MetadataBuilder::FindAssemblyRef(const std::wstring& assemblyName,
-                                         mdAssemblyRef* assemblyRef)
+HRESULT MetadataBuilder::find_assembly_ref(const std::wstring& assembly_name,
+                                           mdAssemblyRef* assembly_ref_out) const
 {
     HCORENUM hEnum = nullptr;
     mdAssemblyRef rgAssemblyRefs[20];
@@ -152,84 +44,25 @@ HRESULT MetadataBuilder::FindAssemblyRef(const std::wstring& assemblyName,
         if (cAssemblyRefsReturned == 0)
         {
             assemblyImport->CloseEnum(hEnum);
-            LOG_APPEND(L"Could not find an AssemblyRef to " << assemblyName);
+            LOG_APPEND(L"Could not find an AssemblyRef to " << assembly_name);
             return E_FAIL;
         }
     }
-    while (FindAssemblyRefIterator(assemblyName,
-                                   rgAssemblyRefs,
-                                   cAssemblyRefsReturned,
-                                   assemblyRef) < S_OK);
+    while (find_assembly_ref_iterator(assembly_name,
+                                      rgAssemblyRefs,
+                                      cAssemblyRefsReturned,
+                                      assembly_ref_out) < S_OK);
 
     assemblyImport->CloseEnum(hEnum);
     return S_OK;
 }
 
-
-HRESULT MetadataBuilder::CreateSignature(const MemberReference& member,
-                                         PCOR_SIGNATURE const pSignature,
-                                         const ULONG maxSignatureLength,
-                                         ULONG& signatureLength)
+HRESULT MetadataBuilder::find_assembly_ref_iterator(const std::wstring& assembly_name,
+                                                    mdAssemblyRef assembly_refs[],
+                                                    ULONG assembly_ref_count,
+                                                    mdAssemblyRef* assembly_ref_out) const
 {
-    // member signature:
-    //   calling convention
-    //   argument count
-    //   return type
-    //   argument types
-
-    // TODO: check bounds limit on pSignature[]
-    signatureLength = 0;
-    pSignature[signatureLength++] = member.CorCallingConvention;
-    pSignature[signatureLength++] = static_cast<COR_SIGNATURE>(member.ArgumentTypes.size());
-
-    // add return type to signature
-    HRESULT hr = AddElementTypeToSignature(pSignature, maxSignatureLength, signatureLength, member.ReturnType);
-    RETURN_IF_FAILED(hr);
-
-    // add arguments types to signature
-    for (const TypeReference& argumentType : member.ArgumentTypes)
-    {
-        hr = AddElementTypeToSignature(pSignature, maxSignatureLength, signatureLength, argumentType);
-        RETURN_IF_FAILED(hr);
-    }
-
-    return S_OK;
-}
-
-HRESULT MetadataBuilder::AddElementTypeToSignature(PCOR_SIGNATURE pSignature,
-                                                   const ULONG maxSignatureLength,
-                                                   ULONG& signatureLength,
-                                                   const TypeReference& type)
-{
-    if (type.IsArray)
-    {
-        pSignature[signatureLength++] = ELEMENT_TYPE_SZARRAY;
-    }
-
-    // TODO: check bounds limit on pSignature[]
-    pSignature[signatureLength++] = type.CorElementType;
-
-    if (type.CorElementType == ELEMENT_TYPE_CLASS ||
-        type.CorElementType == ELEMENT_TYPE_VALUETYPE)
-    {
-        mdTypeRef typeRef = mdTypeRefNil;
-        HRESULT hr = ResolveType(type, typeRef);
-        RETURN_IF_FAILED(hr);
-
-        COR_SIGNATURE compressedToken[8];
-        const ULONG compressedTokenSize = CorSigCompressToken(typeRef, compressedToken);
-        memcpy_s(&pSignature[signatureLength], maxSignatureLength - signatureLength, &compressedToken, _countof(compressedToken));
-    }
-
-    return S_OK;
-}
-
-HRESULT MetadataBuilder::FindAssemblyRefIterator(const std::wstring& assemblyName,
-                                                 mdAssemblyRef* rgAssemblyRefs,
-                                                 ULONG cAssemblyRefs,
-                                                 mdAssemblyRef* assemblyRef) const
-{
-    for (ULONG i = 0; i < cAssemblyRefs; i++)
+    for (ULONG i = 0; i < assembly_ref_count; i++)
     {
         const void* pvPublicKeyOrToken;
         ULONG cbPublicKeyOrToken;
@@ -241,7 +74,7 @@ HRESULT MetadataBuilder::FindAssemblyRefIterator(const std::wstring& assemblyNam
         ULONG cbHashValue;
         DWORD asmRefFlags;
 
-        const HRESULT hr = assemblyImport->GetAssemblyRefProps(rgAssemblyRefs[i],
+        const HRESULT hr = assemblyImport->GetAssemblyRefProps(assembly_refs[i],
                                                                &pvPublicKeyOrToken,
                                                                &cbPublicKeyOrToken,
                                                                wszName,
@@ -254,12 +87,97 @@ HRESULT MetadataBuilder::FindAssemblyRefIterator(const std::wstring& assemblyNam
 
         LOG_IFFAILEDRET(hr,L"GetAssemblyRefProps failed, hr = " << HEX(hr));
 
-        if (assemblyName == wszName)
+        if (assembly_name == wszName)
         {
-            *assemblyRef = rgAssemblyRefs[i];
+            *assembly_ref_out = assembly_refs[i];
             return S_OK;
         }
     }
 
     return E_FAIL;
+}
+
+HRESULT MetadataBuilder::resolve_wrapper_type_ref(const integration& integration, mdTypeRef& type_ref_out) const
+{
+    const auto cache_key = integration.get_wrapper_type_key();
+    mdTypeRef type_ref = mdTypeRefNil;
+
+    if (metadata.TryGetWrapperParentTypeRef(cache_key, type_ref))
+    {
+        // this type was already resolved
+        type_ref_out = type_ref;
+        return S_OK;
+    }
+
+    HRESULT hr;
+    type_ref = mdTypeRefNil;
+
+    if (metadata.assemblyName == integration.wrapper_assembly_name)
+    {
+        // type is defined in this assembly
+        hr = metadataEmit->DefineTypeRefByName(module, integration.wrapper_type_name.c_str(), &type_ref);
+    }
+    else
+    {
+        // type is defined in another assembly,
+        // find a reference to the assembly where type lives
+        mdAssemblyRef assembly_ref = mdAssemblyRefNil;
+        hr = find_assembly_ref(integration.wrapper_assembly_name, &assembly_ref);
+        RETURN_IF_FAILED(hr);
+
+        // TODO: emit assembly reference if not found?
+
+        // search for an existing reference to the type
+        hr = metadataImport->FindTypeRef(assembly_ref, integration.wrapper_type_name.c_str(), &type_ref);
+
+        if (hr == HRESULT(0x80131130) /* record not found on lookup */)
+        {
+            // if typeRef not found, create a new one by emiting a metadata token
+            hr = metadataEmit->DefineTypeRefByName(assembly_ref, integration.wrapper_type_name.c_str(), &type_ref);
+        }
+    }
+
+    RETURN_IF_FAILED(hr);
+
+    metadata.SetWrapperParentTypeRef(cache_key, type_ref);
+    type_ref_out = type_ref;
+    return S_OK;
+}
+
+HRESULT MetadataBuilder::resolve_wrapper_method_ref(const integration& integration, const method_replacement& method) const
+{
+    const auto cache_key = integration.get_wrapper_method_key(method);
+    mdMemberRef member_ref = mdMemberRefNil;
+
+    if (metadata.TryGetWrapperMemberRef(cache_key, member_ref))
+    {
+        // this member was already resolved
+        return S_OK;
+    }
+
+    mdTypeRef type_ref = mdTypeRefNil;
+    HRESULT hr = resolve_wrapper_type_ref(integration, type_ref);
+    RETURN_IF_FAILED(hr);
+
+    member_ref = mdMemberRefNil;
+    hr = metadataImport->FindMemberRef(type_ref,
+                                       method.wrapper_method_name.c_str(),
+                                       method.wrapper_method_signature.data(),
+                                       static_cast<ULONG>(method.wrapper_method_signature.size()),
+                                       &member_ref);
+
+    if (hr == HRESULT(0x80131130) /* record not found on lookup */)
+    {
+        // if memberRef not found, create it by emiting a metadata token
+        hr = metadataEmit->DefineMemberRef(type_ref,
+                                           method.wrapper_method_name.c_str(),
+                                           method.wrapper_method_signature.data(),
+                                           static_cast<ULONG>(method.wrapper_method_signature.size()),
+                                           &member_ref);
+    }
+
+    RETURN_IF_FAILED(hr);
+
+    metadata.SetWrapperMemberRef(cache_key, member_ref);
+    return S_OK;
 }
