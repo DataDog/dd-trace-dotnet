@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <map>
+#include <unordered_map>
 #include <corhlpr.h>
 #include "ComPtr.h"
 #include "Integration.h"
@@ -8,36 +8,56 @@
 class ModuleMetadata
 {
 private:
-    std::map<TypeReference, mdTypeRef> m_TypeMap{};
-    std::map<MemberReference, mdMemberRef> m_MemberMap{};
-    ComPtr<IMetaDataImport> metadataImport{};
+    std::unordered_map<std::wstring, mdMemberRef> wrapper_refs{};
+    std::unordered_map<std::wstring, mdTypeRef> wrapper_parent_type{};
 
 public:
+    ComPtr<IMetaDataImport> metadataImport{};
     std::wstring assemblyName = L"";
-    std::vector<Integration> m_Integrations = {};
-
-    ModuleMetadata() = default;
+    std::vector<integration> m_Integrations = {};
 
     ModuleMetadata(ComPtr<IMetaDataImport> metadata_import,
                    std::wstring assembly_name,
-                   std::vector<Integration> integration_bases)
+                   std::vector<integration> integration_bases)
         : metadataImport(std::move(metadata_import)),
           assemblyName(std::move(assembly_name)),
           m_Integrations(std::move(integration_bases))
     {
     }
 
-    bool TryGetRef(const TypeReference& keyIn, mdTypeRef& valueOut) const;
+    bool TryGetWrapperMemberRef(const std::wstring& keyIn, mdMemberRef& valueOut) const
+    {
+        const auto search = wrapper_refs.find(keyIn);
 
-    bool TryGetRef(const MemberReference& keyIn, mdMemberRef& valueOut) const;
+        if (search != wrapper_refs.end())
+        {
+            valueOut = search->second;
+            return true;
+        }
 
-    void SetRef(const TypeReference& keyIn, const mdTypeRef& valueIn);
+        return false;
+    }
 
-    void SetRef(const MemberReference& keyIn, const mdMemberRef& valueIn);
+    bool TryGetWrapperParentTypeRef(const std::wstring& keyIn, mdTypeRef& valueOut) const
+    {
+        const auto search = wrapper_parent_type.find(keyIn);
 
-    void GetClassAndFunctionNamesFromMethodDef(mdMethodDef methodDef,
-                                               LPWSTR wszTypeDefName,
-                                               ULONG cchTypeDefName,
-                                               LPWSTR wszMethodDefName,
-                                               ULONG cchMethodDefName) const;
+        if (search != wrapper_parent_type.end())
+        {
+            valueOut = search->second;
+            return true;
+        }
+
+        return false;
+    }
+
+    void SetWrapperMemberRef(const std::wstring& keyIn, const mdMemberRef valueIn)
+    {
+        wrapper_refs[keyIn] = valueIn;
+    }
+
+    void SetWrapperParentTypeRef(const std::wstring& keyIn, const mdTypeRef valueIn)
+    {
+        wrapper_parent_type[keyIn] = valueIn;
+    }
 };
