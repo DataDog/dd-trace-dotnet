@@ -6,13 +6,18 @@ namespace Datadog.Trace.ClrProfiler
     public enum IntegrationType
     {
         /// <summary>
+        /// Default value that indicates that integration type was not specified.
+        /// </summary>
+        None = 0,
+
+        /// <summary>
         /// A custom integration that instruments methods indicated through configuration.
         /// </summary>
-        Custom = 0,
+        Custom = 1,
 
         /// <summary>
         /// Automatic instrumentation for ASP.NET MVC 5.
         /// </summary>
-        AspNetMvc5 = 1,
+        AspNetMvc5 = 2,
     }
 }
