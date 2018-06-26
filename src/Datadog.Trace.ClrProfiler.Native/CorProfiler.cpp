@@ -393,30 +393,3 @@ bool CorProfiler::IsAttached() const
 {
     return bIsAttached;
 }
-
-bool CorProfiler::GetMetadataNames(ModuleID moduleId,
-                                   mdMethodDef methodToken,
-                                   LPWSTR wszModulePath,
-                                   ULONG cchModulePath,
-                                   LPWSTR wszTypeDefName,
-                                   ULONG cchTypeDefName,
-                                   LPWSTR wszMethodDefName,
-                                   ULONG cchMethodDefName)
-{
-    ModuleMetadata moduleMetadata{};
-
-    if (m_moduleIDToInfoMap.LookupIfExists(moduleId, &moduleMetadata))
-    {
-        wcscpy_s(wszModulePath, cchModulePath, moduleMetadata.assemblyName.c_str());
-
-        moduleMetadata.GetClassAndFunctionNamesFromMethodDef(methodToken,
-                                                             wszTypeDefName,
-                                                             cchTypeDefName,
-                                                             wszMethodDefName,
-                                                             cchMethodDefName);
-
-        return true;
-    }
-
-    return false;
-}

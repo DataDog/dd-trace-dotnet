@@ -75,15 +75,6 @@ private:
 public:
     bool IsAttached() const;
 
-    bool GetMetadataNames(ModuleID moduleId,
-                          mdMethodDef methodToken,
-                          LPWSTR wszModulePath,
-                          ULONG cchModulePath,
-                          LPWSTR wszTypeDefName,
-                          ULONG cchTypeDefName,
-                          LPWSTR wszMethodDefName,
-                          ULONG cchMethodDefName);
-
     HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
     HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) override;
     HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus) override;

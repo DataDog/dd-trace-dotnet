@@ -4,4 +4,3 @@ EXPORTS
     DllCanUnloadNow PRIVATE
     DllGetClassObject PRIVATE
     IsProfilerAttached
-    GetMetadataNames
