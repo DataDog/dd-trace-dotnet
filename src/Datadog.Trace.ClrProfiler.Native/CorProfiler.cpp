@@ -11,7 +11,6 @@
 #include "ILRewriter.h"
 #include "ILRewriterWrapper.h"
 #include "MetadataBuilder.h"
-#include "Configuration.h"
 
 // Note: Generally you should not have a single, global callback implementation, as that
 // prevents your profiler from analyzing multiply loaded in-process side-by-side CLRs.
@@ -91,14 +90,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     if (configPathLength == 0)
     {
         LOG_APPEND(L"Failed to get current directory.");
-        return S_OK;
-    }
-
-    GlobalConfiguration.Load(configPath);
-
-    if (!GlobalConfiguration.IsTracingEnabled())
-    {
-        LOG_APPEND(L"Tracing disabled in configuration.");
         return S_OK;
     }
 
