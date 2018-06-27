@@ -1,6 +1,5 @@
 using System;
 using System.Configuration;
-using System.Text;
 
 // [assembly: System.Security.SecurityCritical]
 // [assembly: System.Security.AllowPartiallyTrustedCallers]
@@ -15,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler
         private static bool? _profilerAttached;
 
         /// <summary>
-        /// Determines whether tracing with Datadog's profiler is enabled.
+        /// Gets a value indicating whether tracing with Datadog's profiler is enabled.
         /// </summary>
         /// <value>
         ///   <c>true</c> if profiling is enabled; <c>false</c> otherwise.
@@ -35,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
-        /// Determines whether Datadog's profiler is currently attached.
+        /// Gets a value indicating whether Datadog's profiler is currently attached.
         /// </summary>
         /// <value>
         ///   <c>true</c> if the profiler is currentl attached; <c>false</c> otherwise.

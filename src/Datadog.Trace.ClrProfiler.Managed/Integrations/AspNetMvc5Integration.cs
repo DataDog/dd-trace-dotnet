@@ -69,6 +69,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        /// <summary>
+        /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
+        /// </summary>
+        /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
         public void RegisterException(Exception ex)
         {
             Span span = _scope?.Span;
@@ -77,10 +81,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 span.Error = true;
                 span.SetTag("exception.message", ex.Message);
+
                 // TODO: log the exception
             }
         }
 
+        /// <summary>
+        /// Wrapper method used to instrument System.Web.Mvc.Async.AsyncControllerActionInvoker.BeginInvokeAction().
+        /// </summary>
+        /// <param name="asyncControllerActionInvoker">The AsyncControllerActionInvoker instance.</param>
+        /// <param name="controllerContext">The ControllerContext for the current request.</param>
+        /// <param name="actionName">The name of the controller action.</param>
+        /// <param name="callback">An <see cref="AsyncCallback"/> delegate.</param>
+        /// <param name="state">An object that holds the state of the async operation.</param>
+        /// <returns>Returns the <see cref="IAsyncResult "/> returned by the original BeginInvokeAction() that is later passed to <see cref="EndInvokeAction"/>.</returns>
         public static object BeginInvokeAction(
             dynamic asyncControllerActionInvoker,
             dynamic controllerContext,
@@ -102,6 +116,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        /// <summary>
+        /// Wrapper method used to instrument System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeAction().
+        /// </summary>
+        /// <param name="asyncControllerActionInvoker">The AsyncControllerActionInvoker instance.</param>
+        /// <param name="asyncResult">The <see cref="IAsyncResult"/> returned by <see cref="BeginInvokeAction"/>.</param>
+        /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
         public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
         {
             var integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvc5Integration;
@@ -122,6 +142,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             try
