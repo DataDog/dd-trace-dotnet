@@ -70,23 +70,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
-        /// </summary>
-        /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
-        public void RegisterException(Exception ex)
-        {
-            Span span = _scope?.Span;
-
-            if (span != null)
-            {
-                span.Error = true;
-                span.SetTag("exception.message", ex.Message);
-
-                // TODO: log the exception
-            }
-        }
-
-        /// <summary>
         /// Wrapper method used to instrument System.Web.Mvc.Async.AsyncControllerActionInvoker.BeginInvokeAction().
         /// </summary>
         /// <param name="asyncControllerActionInvoker">The AsyncControllerActionInvoker instance.</param>
@@ -139,6 +122,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             finally
             {
                 integration?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
+        /// </summary>
+        /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
+        public void RegisterException(Exception ex)
+        {
+            Span span = _scope?.Span;
+
+            if (span != null)
+            {
+                span.Error = true;
+                span.SetTag("exception.message", ex.Message);
+
+                // TODO: log the exception
             }
         }
 
