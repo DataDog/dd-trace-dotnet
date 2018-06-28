@@ -84,15 +84,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
         return E_FAIL;
     }
 
-    WCHAR configPath[MAX_PATH]{};
-    const DWORD configPathLength = GetEnvironmentVariable(L"DATADOG_PROFILER_CONFIG_PATH", configPath, _countof(configPath));
-
-    if (configPathLength == 0)
-    {
-        LOG_APPEND(L"Failed to get current directory.");
-        return S_OK;
-    }
-
     HRESULT hr = pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(&this->corProfilerInfo);
     LOG_IFFAILEDRET(hr, L"Profiler disabled: interface ICorProfilerInfo3 or higher not found.");
 
