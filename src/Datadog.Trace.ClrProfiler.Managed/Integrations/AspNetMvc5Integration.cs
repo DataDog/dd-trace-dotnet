@@ -76,7 +76,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag("http.url", _httpContext.Request.RawUrl.ToLowerInvariant());
                 span.SetTag("http.route", (string)controllerContext.RouteData.Route.Url);
 
-                _httpContext.Items[HttpContextKey] = this;
                 _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
             }
             catch
@@ -103,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             AspNetMvc5Integration integration = null;
 
-            if (HttpContext.Current != null)
+            if (Instrumentation.Enabled && HttpContext.Current != null)
             {
                 integration = new AspNetMvc5Integration((object)controllerContext);
                 HttpContext.Current.Items[HttpContextKey] = integration;
