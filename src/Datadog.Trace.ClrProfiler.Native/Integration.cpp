@@ -3,7 +3,7 @@
 const integration asp_net_mvc5_integration
     = ::integration(
                     // integration_type
-                    IntegrationType_AspNetMvc5,
+                    IntegrationType_AspNet_Mvc5,
                     // integration_name
                     L"aspNetMvc5",
                     // target_assembly_name
