@@ -254,9 +254,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    // check if this method should be instrumented
-    // NOTE: for now we only allow one integration to instrument a method,
-    // so first integration wins
+    // check if we need to replace any methods called from this method
     for (const auto& integration : moduleMetadata->m_Integrations)
     {
         for (const auto& method_replacement : integration.method_replacements)
@@ -271,11 +269,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
                 if (moduleMetadata->TryGetWrapperMemberRef(wrapper_method_key, wrapper_method_ref))
                 {
-                    // replace calls to method instrumented_method from method instrumented_method_caller with calls to instrumented_method_wrapper
-                    // instrumented_method_caller()
-                    // {
-                    //     instrumented_method() -> instrumented_method_wrapper()
-                    // }
                     ILRewriter rewriter(this->corProfilerInfo, nullptr, moduleId, functionToken);
                     ILRewriterWrapper ilRewriterWrapper(&rewriter);
 
@@ -287,18 +280,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                     {
                         hr = rewriter.Export();
                         RETURN_IF_FAILED(hr);
-
-                        // method IL modified, don't try any other replacements
-                        return S_OK;
                     }
-
-                    // method IL was not modified
-                    // TODO: log this
+                    else
+                    {
+                        // method IL was not modified: expected method call not found, intergration definition might be wrong
+                        // TODO: log this
+                    }
                 }
                 else
                 {
                     // no method ref token found for wrapper method, we can't do the replacement,
-                    // this should never happen because we always try to add the method ref in  ModuleLoadFinished()
+                    // this should never happen because we always try to add the method ref in ModuleLoadFinished()
                     // TODO: log this
                 }
             }
