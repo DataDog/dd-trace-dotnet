@@ -14,8 +14,13 @@ namespace Datadog.Trace.ClrProfiler
         private static readonly Lazy<bool> _enabled = new Lazy<bool>(
             () =>
             {
+#if NETSTANDARD2_0
+                // TODO: figure out configuration in .NET Standard 2.0
+                return true;
+#else
                 string setting = ConfigurationManager.AppSettings["Datadog.Tracing:Enabled"];
                 return !string.Equals(setting, bool.FalseString, StringComparison.InvariantCultureIgnoreCase);
+#endif
             },
             LazyThreadSafetyMode.PublicationOnly);
 

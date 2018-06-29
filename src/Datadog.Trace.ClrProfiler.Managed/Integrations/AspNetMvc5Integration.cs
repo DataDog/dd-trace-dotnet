@@ -1,3 +1,5 @@
+#if NET45
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -173,3 +175,5 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
     }
 }
+
+#endif
