@@ -19,6 +19,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetCoreMvc2Integration"/> class.
         /// </summary>
+        /// <param name="actionDescriptorObj">An ActionDescriptor with information about the current action.</param>
+        /// <param name="httpContextObj">The HttpContext for the current request.</param>
         public AspNetCoreMvc2Integration(object actionDescriptorObj, object httpContextObj)
         {
             try
@@ -51,6 +53,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Wrapper method used to instrument Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.BeforeAction()
         /// </summary>
+        /// <param name="diagnosticSource">The DiagnosticSource that this extension method was called on.</param>
+        /// <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
+        /// <param name="httpContext">The HttpContext for the current request.</param>
+        /// <param name="routeData">A RouteData with information about the current route.</param>
         public static void BeforeAction(
             object diagnosticSource,
             object actionDescriptor,
@@ -87,6 +93,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Wrapper method used to instrument Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.AfterAction()
         /// </summary>
+        /// <param name="diagnosticSource">The DiagnosticSource that this extension method was called on.</param>
+        /// <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
+        /// <param name="httpContext">The HttpContext for the current request.</param>
+        /// <param name="routeData">A RouteData with information about the current route.</param>
         public static void AfterAction(
             object diagnosticSource,
             object actionDescriptor,

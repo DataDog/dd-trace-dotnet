@@ -4,8 +4,22 @@ using System.Reflection.Emit;
 
 namespace Datadog.Trace.ClrProfiler
 {
+    /// <summary>
+    /// Helper class to instances of <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/>.
+    /// </summary>
     public static class DynamicMethodBuilder
     {
+        /// <summary>
+        /// Creates a simple <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/> that
+        /// calls a method with the specified name and and parameter types.
+        /// </summary>
+        /// <typeparam name="TDelegate">A <see cref="Delegate"/> type with the signature of the method to call.</typeparam>
+        /// <param name="type">The <see cref="Type"/> that contains the method.</param>
+        /// <param name="methodName">The name of the method.</param>
+        /// <param name="returnType">The return <see cref="Type"/> of the method.</param>
+        /// <param name="parameterTypes">An array with the <see cref="Type"/> of each of the method's parameters, in order.</param>
+        /// <param name="isVirtual"><c>true</c> if the dyanmic method should use a virtual method call, <c>false</c> otherwise.</param>
+        /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
         public static Delegate CreateMethodCallDelegate<TDelegate>(
             Type type,
             string methodName,
