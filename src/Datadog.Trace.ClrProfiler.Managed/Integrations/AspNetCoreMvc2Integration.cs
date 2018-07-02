@@ -128,26 +128,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Action<object, object, object, object> CreateDelegate(Type type, string methodName)
-        {
-            Type returnType = typeof(void);
-
-            Type[] parameterTypes =
-            {
-                typeof(object),
-                typeof(object),
-                typeof(object),
-                typeof(object),
-            };
-
-            return (Action<object, object, object, object>)DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
-                type,
-                methodName,
-                returnType,
-                parameterTypes,
-                false);
-        }
-
         /// <summary>
         /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
         /// </summary>
@@ -173,6 +153,26 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 _scope?.Dispose();
             }
+        }
+
+        private static Action<object, object, object, object> CreateDelegate(Type type, string methodName)
+        {
+            Type returnType = typeof(void);
+
+            Type[] parameterTypes =
+            {
+                typeof(object),
+                typeof(object),
+                typeof(object),
+                typeof(object),
+            };
+
+            return (Action<object, object, object, object>)DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
+                type,
+                methodName,
+                returnType,
+                parameterTypes,
+                false);
         }
     }
 }
