@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="Datadog APM for .NET"
+           Language="1033"
+           Version="0.2.0.0"
+           Manufacturer="Datadog, Inc."
+           UpgradeCode="fc228e86-eae2-4c2a-ae82-135b718c269e">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+    <!--
+        <Property Id="ARPCOMMENTS">any comments</Property>
+        <Property Id="ARPCONTACT">contact info</Property>
+        <Property Id="ARPHELPLINK">URL for technical support</Property>
+        <Property Id="ARPURLINFOABOUT">URL for general info about the product</Property>
+        <Property Id="ARPURLUPDATEINFO">URL for product updates</Property>
+        <Property Id="ARPHELPTELEPHONE">URL for technical support</Property>
+        <Property Id="ARPREADME">path</Property>
+        <Property Id="ARPNOREMOVE">1</Property>
+        <Property Id="ARPNOREPAIR">1</Property>
+        <Property Id="ARPNOMODIFY">1</Property>
+        <Property Id="ARPSIZE">32</Property>
+        -->
+    <Property Id="ARPPRODUCTICON">datadog.ico</Property>
+
+    <Icon Id="datadog.ico" SourceFile="datadog-icon.ico" />
+
+    <UIRef Id="WixUI_Minimal" />
+    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate />
+
+    <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="Datadog" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component>
+        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\Datadog.Trace.ClrProfiler.Managed.dll" KeyPath="yes" Checksum="yes"/>
+        <!--
+        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\Datadog.Trace.dll" />
+        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\MsgPack.dll" />
+        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\System.Runtime.InteropServices.RuntimeInformation.dll" />
+        -->
+      </Component>
+      <Component>
+        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\Datadog.Trace.dll" Checksum="yes"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
