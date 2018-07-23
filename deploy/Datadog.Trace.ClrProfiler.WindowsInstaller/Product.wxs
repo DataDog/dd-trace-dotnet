@@ -7,7 +7,7 @@
            Version="0.2.0.0"
            Manufacturer="Datadog, Inc."
            UpgradeCode="fc228e86-eae2-4c2a-ae82-135b718c269e">
-    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine"/>
 
     <!--
         <Property Id="ARPCOMMENTS">any comments</Property>
@@ -26,38 +26,87 @@
 
     <Icon Id="datadog.ico" SourceFile="datadog-icon.ico"/>
 
-    <UIRef Id="WixUI_Minimal" />
-    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
-    <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp" />
+    <UIRef Id="WixUI_Minimal"/>
+    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp"/>
+    <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp"/>
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-    <MediaTemplate />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."/>
+    <MediaTemplate/>
 
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
-      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="ProductComponents"/>
+      <ComponentGroupRef Id="ProductComponents64"/>
+      <ComponentGroupRef Id="ProductComponents32"/>
     </Feature>
   </Product>
 
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
-        <Directory Id="INSTALLFOLDER" Name="Datadog" />
+        <Directory Id="ProgramFiles64Folder.Datadog" Name="Datadog">
+          <Directory Id="INSTALLFOLDER64" Name="APM for .NET"/>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="ProgramFilesFolder.Datadog" Name="Datadog">
+          <Directory Id="INSTALLFOLDER32" Name="APM for .NET"/>
+        </Directory>
       </Directory>
     </Directory>
   </Fragment>
 
   <Fragment>
-    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER64">
       <Component>
-        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\Datadog.Trace.ClrProfiler.Managed.dll" KeyPath="yes" Checksum="yes"/>
-        <!--
-        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\Datadog.Trace.dll" />
-        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\MsgPack.dll" />
-        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\System.Runtime.InteropServices.RuntimeInformation.dll" />
-        -->
+        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\Datadog.Trace.ClrProfiler.Managed.dll"
+              KeyPath="yes"
+              Checksum="yes"/>
       </Component>
       <Component>
-        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\Datadog.Trace.dll" Checksum="yes"/>
+        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\Datadog.Trace.dll"
+              Checksum="yes"/>
+      </Component>
+      <Component>
+        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\MsgPack.dll"
+              Checksum="yes"/>
+      </Component>
+      <Component>
+        <File Source="..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\Debug\net45\System.Runtime.InteropServices.RuntimeInformation.dll"
+              Checksum="yes"/>
+      </Component>
+      <Component Id="EnvironmentVariables" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}">
+        <CreateFolder/>
+        <Environment Id="COR_ENABLE_PROFILING" Name="COR_ENABLE_PROFILING" Action="set" Permanent="no" Part="all" System="yes" Value="1"/>
+        <Environment Id="COR_PROFILER" Name="COR_PROFILER" Action="set" Permanent="no" Part="all" System="yes" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"/>
+        <Environment Id="CORECLR_ENABLE_PROFILING" Name="CORECLR_ENABLE_PROFILING" Action="set" Permanent="no" Part="all" System="yes" Value="1"/>
+        <Environment Id="CORECLR_PROFILER" Name="CORECLR_PROFILER" Action="set" Permanent="no" Part="all" System="yes" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"/>
+        <Environment Id="COR_PROFILER_PATH" Name="COR_PROFILER_PATH" Action="set" Permanent="no" Part="all" System="yes" Value="TODO"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="ProductComponents64" Directory="INSTALLFOLDER64">
+      <Component Win64="yes">
+        <File Id="Datadog.Trace.ClrProfiler.Native.x64"
+              Source="..\..\src\Datadog.Trace.ClrProfiler.Native\x64\Debug\Datadog.Trace.ClrProfiler.Native.dll"
+              Checksum="yes"/>
+      </Component>
+      <Component Id="EnvironmentVariables64" Win64="yes" Guid="{D52A5BBD-FCA1-46D6-BFD5-AF5A883D5878}">
+        <CreateFolder/>
+        <Environment Id="COR_PROFILER_PATH_64" Name="COR_PROFILER_PATH_64" Action="set" Permanent="no" Part="all" System="yes" Value="TODO"/>
+        <Environment Id="CORECLR_PROFILER_PATH_64" Name="CORECLR_PROFILER_PATH_64" Action="set" Permanent="no" Part="all" System="yes" Value="TODO"/>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="ProductComponents32" Directory="INSTALLFOLDER32">
+      <Component Win64="no">
+        <File Id="Datadog.Trace.ClrProfiler.Native.x86"
+              Source="..\..\src\Datadog.Trace.ClrProfiler.Native\Win32\Debug\Datadog.Trace.ClrProfiler.Native.dll"
+              Checksum="yes"/>
+      </Component>
+      <Component Id="EnvironmentVariables32" Win64="no" Guid="{5206971B-1BCA-412A-BD1C-33EE76799399}">
+        <CreateFolder/>
+        <Environment Id="COR_PROFILER_PATH_32" Name="COR_PROFILER_PATH_32" Action="set" Permanent="no" Part="all" System="yes" Value="TODO"/>
+        <Environment Id="CORECLR_PROFILER_PATH_32" Name="CORECLR_PROFILER_PATH_32" Action="set" Permanent="no" Part="all" System="yes" Value="TODO"/>
       </Component>
     </ComponentGroup>
   </Fragment>
