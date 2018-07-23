@@ -12,8 +12,6 @@
     <!--
         <Property Id="ARPCOMMENTS">any comments</Property>
         <Property Id="ARPCONTACT">contact info</Property>
-        <Property Id="ARPHELPLINK">URL for technical support</Property>
-        <Property Id="ARPURLINFOABOUT">URL for general info about the product</Property>
         <Property Id="ARPURLUPDATEINFO">URL for product updates</Property>
         <Property Id="ARPHELPTELEPHONE">URL for technical support</Property>
         <Property Id="ARPREADME">path</Property>
@@ -23,8 +21,10 @@
         <Property Id="ARPSIZE">32</Property>
         -->
     <Property Id="ARPPRODUCTICON">datadog.ico</Property>
+    <Property Id="ARPURLINFOABOUT">https://datadoghq.com/</Property>
+    <Property Id="ARPHELPLINK">https://datadoghq.com/support/</Property>
 
-    <Icon Id="datadog.ico" SourceFile="datadog-icon.ico" />
+    <Icon Id="datadog.ico" SourceFile="datadog-icon.ico"/>
 
     <UIRef Id="WixUI_Minimal" />
     <WixVariable Id="WixUIBannerBmp" Value="banner.bmp" />
