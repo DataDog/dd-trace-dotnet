@@ -1,5 +1,6 @@
 using System;
 using System.Configuration;
+using System.Threading;
 
 // [assembly: System.Security.SecurityCritical]
 // [assembly: System.Security.AllowPartiallyTrustedCallers]
@@ -10,8 +11,27 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     public static class Instrumentation
     {
-        private static bool? _enabled;
-        private static bool? _profilerAttached;
+        private static readonly Lazy<bool> _enabled = new Lazy<bool>(
+            () =>
+            {
+                string setting = ConfigurationManager.AppSettings["Datadog.Tracing:Enabled"];
+                return !string.Equals(setting, bool.FalseString, StringComparison.InvariantCultureIgnoreCase);
+            },
+            LazyThreadSafetyMode.PublicationOnly);
+
+        private static readonly Lazy<bool> _profilerAttached = new Lazy<bool>(
+            () =>
+            {
+                try
+                {
+                    return NativeMethods.IsProfilerAttached();
+                }
+                catch
+                {
+                    return false;
+                }
+            },
+            LazyThreadSafetyMode.PublicationOnly);
 
         /// <summary>
         /// Gets a value indicating whether tracing with Datadog's profiler is enabled.
@@ -19,19 +39,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <value>
         ///   <c>true</c> if profiling is enabled; <c>false</c> otherwise.
         /// </value>
-        public static bool Enabled
-        {
-            get
-            {
-                if (_enabled == null)
-                {
-                    string setting = ConfigurationManager.AppSettings["Datadog.Tracing:Enabled"];
-                    _enabled = !string.Equals(setting, bool.FalseString, StringComparison.InvariantCultureIgnoreCase);
-                }
-
-                return _enabled.Value;
-            }
-        }
+        public static bool Enabled => _enabled.Value;
 
         /// <summary>
         /// Gets a value indicating whether Datadog's profiler is currently attached.
@@ -39,24 +47,6 @@ namespace Datadog.Trace.ClrProfiler
         /// <value>
         ///   <c>true</c> if the profiler is currentl attached; <c>false</c> otherwise.
         /// </value>
-        public static bool ProfilerAttached
-        {
-            get
-            {
-                if (_profilerAttached == null)
-                {
-                    try
-                    {
-                        _profilerAttached = NativeMethods.IsProfilerAttached();
-                    }
-                    catch
-                    {
-                        _profilerAttached = false;
-                    }
-                }
-
-                return _profilerAttached.Value;
-            }
-        }
+        public static bool ProfilerAttached => _profilerAttached.Value;
     }
 }
