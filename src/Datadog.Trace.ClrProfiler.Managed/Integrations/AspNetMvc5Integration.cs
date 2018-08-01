@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Web;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -23,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="controllerContextObj">An array with all the arguments that were passed into the instrumented method. If it is an instance method, the first arguments is <c>this</c>.</param>
         public AspNetMvc5Integration(object controllerContextObj)
         {
-            if (!Instrumentation.Enabled || controllerContextObj == null  || ContollerContextType == null)
+            if (!Instrumentation.Enabled || controllerContextObj == null || ContollerContextType == null)
             {
                 // bail out early
                 return;
@@ -42,26 +41,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 _httpContext = controllerContext.HttpContext;
                 string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
 
-                string routeTemplate = controllerContext.RouteData.Route.Url;
                 IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
-                var resourceName = new StringBuilder(routeTemplate);
-
-                // replace all route values except "id"
-                // TODO: make this filter configurable
-                foreach (var routeValue in routeValues.Where(p => !string.Equals(p.Key, "id", StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    string key = $"{{{routeValue.Key.ToLowerInvariant()}}}";
-                    string value = routeValue.Value.ToString().ToLowerInvariant();
-                    resourceName.Replace(key, value);
-                }
+                string controllerName = routeValues.GetValueOrDefault("controller") as string;
+                string actionName = routeValues.GetValueOrDefault("action") as string;
+                string resourceName = $"{controllerName}.{actionName}()";
 
                 // TODO: define constants elsewhere instead of using magic strings
                 Span span = Tracer.Instance.StartSpan("aspnetmvc.request");
                 span.Type = "web";
-                span.ResourceName = string.Join(" ", httpMethod, resourceName.ToString());
+                span.ResourceName = resourceName;
                 span.SetTag("http.method", httpMethod);
                 span.SetTag("http.url", _httpContext.Request.RawUrl.ToLowerInvariant());
-                span.SetTag("http.route", routeTemplate);
+                span.SetTag("http.route", (string)controllerContext.RouteData.Route.Url);
 
                 _httpContext.Items[HttpContextKey] = this;
                 _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
