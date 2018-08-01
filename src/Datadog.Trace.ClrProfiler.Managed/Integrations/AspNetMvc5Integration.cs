@@ -12,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public sealed class AspNetMvc5Integration : IDisposable
     {
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
+        private static readonly Type ContollerContextType = Type.GetType("System.Web.Mvc.ControllerContext", throwOnError: false);
+
         private readonly HttpContextBase _httpContext;
         private readonly Scope _scope;
 
@@ -21,14 +23,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="controllerContextObj">An array with all the arguments that were passed into the instrumented method. If it is an instance method, the first arguments is <c>this</c>.</param>
         public AspNetMvc5Integration(object controllerContextObj)
         {
-            if (!Instrumentation.Enabled)
+            if (!Instrumentation.Enabled || controllerContextObj == null  || ContollerContextType == null)
             {
+                // bail out early
                 return;
             }
 
             try
             {
-                if (controllerContextObj?.GetType().FullName != "System.Web.Mvc.ControllerContext")
+                if (controllerContextObj.GetType() != ContollerContextType)
                 {
                     return;
                 }
