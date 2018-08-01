@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// The ASP.NET MVC 5 integration.
     /// </summary>
-    public sealed class AspNetMvc5Integration : IDisposable
+    internal sealed class AspNetMvc5Integration : IDisposable
     {
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
         private static readonly Type ContollerContextType = Type.GetType("System.Web.Mvc.ControllerContext", throwOnError: false);
