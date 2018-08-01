@@ -39,6 +39,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 dynamic controllerContext = controllerContextObj;
 
                 _httpContext = controllerContext.HttpContext;
+
+                if (_httpContext == null)
+                {
+                    return;
+                }
+
                 string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
 
                 IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
@@ -79,7 +85,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             dynamic callback,
             dynamic state)
         {
-            var integration = new AspNetMvc5Integration((object)controllerContext);
+            AspNetMvc5Integration integration = null;
+
+            if (HttpContext.Current != null)
+            {
+                integration = new AspNetMvc5Integration((object)controllerContext);
+                HttpContext.Current.Items[HttpContextKey] = integration;
+            }
 
             try
             {
@@ -88,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                integration.RegisterException(ex);
+                integration?.RegisterException(ex);
                 throw;
             }
         }
