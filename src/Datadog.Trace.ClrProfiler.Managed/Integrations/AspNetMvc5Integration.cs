@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Web;
 using Datadog.Trace.ExtensionMethods;
 
@@ -11,10 +12,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     internal sealed class AspNetMvc5Integration : IDisposable
     {
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
-        private static readonly Type ContollerContextType = Type.GetType("System.Web.Mvc.ControllerContext", throwOnError: false);
+        private static readonly Type ContollerContextType;
 
         private readonly HttpContextBase _httpContext;
         private readonly Scope _scope;
+
+        static AspNetMvc5Integration()
+        {
+            try
+            {
+                Assembly assembly = Assembly.Load("System.Web.Mvc");
+                ContollerContextType = assembly.GetType("System.Web.Mvc.ControllerContext", throwOnError: false);
+            }
+            catch
+            {
+                ContollerContextType = null;
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetMvc5Integration"/> class.
