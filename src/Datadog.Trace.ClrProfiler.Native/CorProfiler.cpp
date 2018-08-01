@@ -214,7 +214,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
         {
             // for each method replacement in each enabled integration,
             // emit a reference to the instrumentation wrapper methods
-            hr = metadataBuilder.resolve_wrapper_method_ref(integration, method_replacement);
+            hr = metadataBuilder.store_wrapper_method_ref(integration, method_replacement);
             RETURN_IF_FAILED(hr);
         }
     }

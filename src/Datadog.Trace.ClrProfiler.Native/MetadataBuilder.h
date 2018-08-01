@@ -37,9 +37,9 @@ public:
     {
     }
 
-    HRESULT resolve_wrapper_type_ref(const integration& integration, mdTypeRef& type_ref_out) const;
+    HRESULT store_wrapper_type_ref(const integration& integration, mdTypeRef& type_ref_out) const;
 
-    HRESULT resolve_wrapper_method_ref(const integration& integration, const method_replacement& method) const;
+    HRESULT store_wrapper_method_ref(const integration& integration, const method_replacement& method) const;
 
     HRESULT emit_assembly_ref(const std::wstring& assembly_name,
                               const ASSEMBLYMETADATA& assembly_metadata,

@@ -97,7 +97,7 @@ HRESULT MetadataBuilder::find_assembly_ref_iterator(const std::wstring& assembly
     return E_FAIL;
 }
 
-HRESULT MetadataBuilder::resolve_wrapper_type_ref(const integration& integration, mdTypeRef& type_ref_out) const
+HRESULT MetadataBuilder::store_wrapper_type_ref(const integration& integration, mdTypeRef& type_ref_out) const
 {
     const auto cache_key = integration.get_wrapper_type_key();
     mdTypeRef type_ref = mdTypeRefNil;
@@ -144,7 +144,7 @@ HRESULT MetadataBuilder::resolve_wrapper_type_ref(const integration& integration
     return S_OK;
 }
 
-HRESULT MetadataBuilder::resolve_wrapper_method_ref(const integration& integration, const method_replacement& method) const
+HRESULT MetadataBuilder::store_wrapper_method_ref(const integration& integration, const method_replacement& method) const
 {
     const auto cache_key = integration.get_wrapper_method_key(method);
     mdMemberRef member_ref = mdMemberRefNil;
@@ -156,7 +156,7 @@ HRESULT MetadataBuilder::resolve_wrapper_method_ref(const integration& integrati
     }
 
     mdTypeRef type_ref = mdTypeRefNil;
-    HRESULT hr = resolve_wrapper_type_ref(integration, type_ref);
+    HRESULT hr = store_wrapper_type_ref(integration, type_ref);
     RETURN_IF_FAILED(hr);
 
     member_ref = mdMemberRefNil;
