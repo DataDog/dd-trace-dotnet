@@ -10,6 +10,7 @@
     <ClCompile Include="Interop.cpp" />
     <ClCompile Include="ILRewriterWrapper.cpp" />
     <ClCompile Include="MetadataBuilder.cpp" />
+    <ClCompile Include="Integration.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClassFactory.h" />
