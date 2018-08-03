@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                integration?.RegisterException(ex);
+                integration?.SetException(ex);
                 throw;
             }
         }
@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                integration?.RegisterException(ex);
+                integration?.SetException(ex);
                 throw;
             }
             finally
@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
         /// </summary>
         /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
-        public void RegisterException(Exception ex)
+        public void SetException(Exception ex)
         {
             _scope?.Span?.SetException(ex);
         }

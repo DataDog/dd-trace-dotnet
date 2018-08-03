@@ -58,6 +58,6 @@ struct integration
     }
 };
 
-extern const integration asp_net_mvc5_integration;
-
+extern const integration aspnet_mvc5_integration;
+extern const integration aspnetcore_mvc2_integration;
 extern const std::vector<integration> all_integrations;
