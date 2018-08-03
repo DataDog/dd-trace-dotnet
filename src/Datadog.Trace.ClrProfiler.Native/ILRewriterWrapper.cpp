@@ -95,45 +95,46 @@ void ILRewriterWrapper::LoadArgument(const UINT16 index) const
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
-void ILRewriterWrapper::Cast(const TypeReference& type) const
+void ILRewriterWrapper::Cast(const mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_CASTCLASS;
-    pNewInstr->m_Arg32 = m_typeRefLookup[type];
+    pNewInstr->m_Arg32 = type_ref;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
-void ILRewriterWrapper::Box(const TypeReference& type) const
+void ILRewriterWrapper::Box(const mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_BOX;
-    pNewInstr->m_Arg32 = m_typeRefLookup[type];
+    pNewInstr->m_Arg32 = type_ref;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
-void ILRewriterWrapper::UnboxAny(const TypeReference& type) const
+void ILRewriterWrapper::UnboxAny(const mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_UNBOX_ANY;
-    pNewInstr->m_Arg32 = m_typeRefLookup[type];
+    pNewInstr->m_Arg32 = type_ref;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
-void ILRewriterWrapper::CreateArray(const TypeReference& type, const INT32 size) const
+void ILRewriterWrapper::CreateArray(const mdTypeRef type_ref, const INT32 size) const
 {
+    mdTypeRef typeRef = mdTypeRefNil;
     LoadInt32(size);
 
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_NEWARR;
-    pNewInstr->m_Arg32 = m_typeRefLookup[type];
+    pNewInstr->m_Arg32 = type_ref;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
-void ILRewriterWrapper::CallMember(const MemberReference& member) const
+void ILRewriterWrapper::CallMember(const mdMemberRef& member_ref, const bool is_virtual) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
-    pNewInstr->m_opcode = member.IsVirtual ? CEE_CALLVIRT : CEE_CALL;
-    pNewInstr->m_Arg32 = m_memberRefLookup[member];
+    pNewInstr->m_opcode = is_virtual ? CEE_CALLVIRT : CEE_CALL;
+    pNewInstr->m_Arg32 = member_ref;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
@@ -159,4 +160,26 @@ void ILRewriterWrapper::EndLoadValueIntoArray() const
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
     pNewInstr->m_opcode = CEE_STELEM_REF;
     m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+}
+
+bool ILRewriterWrapper::ReplaceMethodCalls(const mdMemberRef old_method_ref,
+                                           const mdMemberRef new_method_ref) const
+{
+    bool modified = false;
+
+    for (ILInstr* pInstr = m_ILRewriter->GetILList()->m_pNext;
+         pInstr != m_ILRewriter->GetILList();
+         pInstr = pInstr->m_pNext)
+    {
+        if ((pInstr->m_opcode == CEE_CALL || pInstr->m_opcode == CEE_CALLVIRT) &&
+            pInstr->m_Arg32 == static_cast<INT32>(old_method_ref))
+        {
+            pInstr->m_opcode = CEE_CALL;
+            pInstr->m_Arg32 = new_method_ref;
+
+            modified = true;
+        }
+    }
+
+    return modified;
 }

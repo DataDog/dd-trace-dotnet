@@ -2,6 +2,7 @@
 
 enum IntegrationType
 {
-    IntegrationType_Custom = 0,
-    IntegrationType_AspNetMvc5 = 1,
+    IntegrationType_None = 0,
+    IntegrationType_Custom = 1,
+    IntegrationType_AspNetMvc5 = 2,
 };
