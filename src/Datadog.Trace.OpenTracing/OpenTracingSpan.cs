@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Logging;
 using OpenTracing;
+using OpenTracing.Tag;
 
 namespace Datadog.Trace.OpenTracing
 {
@@ -36,6 +37,11 @@ namespace Datadog.Trace.OpenTracing
             return null;
         }
 
+        public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields)
+        {
+            throw new NotImplementedException();
+        }
+
         public ISpan Log(string eventName)
         {
             _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
@@ -48,13 +54,7 @@ namespace Datadog.Trace.OpenTracing
             return this;
         }
 
-        public ISpan Log(DateTimeOffset timestamp, IDictionary<string, object> fields)
-        {
-            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
-            return this;
-        }
-
-        public ISpan Log(IDictionary<string, object> fields)
+        public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields)
         {
             _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
             return this;
@@ -89,7 +89,27 @@ namespace Datadog.Trace.OpenTracing
 
         public ISpan SetTag(string key, int value)
         {
-            return SetTag(key, value.ToString());
+            return SetTag(key, value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        public ISpan SetTag(BooleanTag tag, bool value)
+        {
+            return SetTag(tag.Key, value);
+        }
+
+        public ISpan SetTag(IntOrStringTag tag, string value)
+        {
+            return SetTag(tag.Key, value);
+        }
+
+        public ISpan SetTag(IntTag tag, int value)
+        {
+            return SetTag(tag.Key, value);
+        }
+
+        public ISpan SetTag(StringTag tag, string value)
+        {
+            return SetTag(tag.Key, value);
         }
 
         public ISpan SetTag(string key, string value)
