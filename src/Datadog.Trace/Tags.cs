@@ -1,4 +1,4 @@
-﻿namespace Datadog.Trace
+namespace Datadog.Trace
 {
     /// <summary>
     /// This class contains a set of standard tags that can be used by integrations
@@ -49,5 +49,20 @@
         /// The name of the database
         /// </summary>
         public const string SqlDatabase = "sql.db";
+
+        /// <summary>
+        /// The ASP.NET routing template.
+        /// </summary>
+        public const string AspNetRoute = "aspnet.route";
+
+        /// <summary>
+        /// The MVC or Web API controller name.
+        /// </summary>
+        public const string AspNetController = "aspnet.controller";
+
+        /// <summary>
+        /// The MVC or Web API action name.
+        /// </summary>
+        public const string AspNetAction = "aspnet.action";
     }
 }
