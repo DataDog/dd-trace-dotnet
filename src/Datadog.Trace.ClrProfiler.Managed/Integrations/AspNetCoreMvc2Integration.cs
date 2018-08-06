@@ -67,12 +67,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (Instrumentation.Enabled)
-                {
-                    integration = new AspNetCoreMvc2Integration(actionDescriptor, httpContext);
-                    IDictionary<object, object> contextItems = httpContext.Items;
-                    contextItems[HttpContextKey] = integration;
-                }
+                integration = new AspNetCoreMvc2Integration(actionDescriptor, httpContext);
+                IDictionary<object, object> contextItems = httpContext.Items;
+                contextItems[HttpContextKey] = integration;
             }
             catch
             {
@@ -123,11 +120,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (Instrumentation.Enabled)
-                {
-                    IDictionary<object, object> contextItems = httpContext?.Items;
-                    integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
-                }
+                IDictionary<object, object> contextItems = httpContext?.Items;
+                integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
             }
             catch
             {

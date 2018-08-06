@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (Instrumentation.Enabled && HttpContext.Current != null)
+                if (HttpContext.Current != null)
                 {
                     integration = new AspNetMvc5Integration((object)controllerContext);
                     HttpContext.Current.Items[HttpContextKey] = integration;
@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (Instrumentation.Enabled && HttpContext.Current != null)
+                if (HttpContext.Current != null)
                 {
                     integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvc5Integration;
                 }
