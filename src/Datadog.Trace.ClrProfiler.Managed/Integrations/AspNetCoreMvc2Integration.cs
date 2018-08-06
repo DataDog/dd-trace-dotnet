@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -65,23 +66,39 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             AspNetCoreMvc2Integration integration = null;
 
-            if (Instrumentation.Enabled)
+            try
             {
-                integration = new AspNetCoreMvc2Integration(actionDescriptor, httpContext);
-                IDictionary<object, object> contextItems = httpContext.Items;
-                contextItems[HttpContextKey] = integration;
+                if (Instrumentation.Enabled)
+                {
+                    integration = new AspNetCoreMvc2Integration(actionDescriptor, httpContext);
+                    IDictionary<object, object> contextItems = httpContext.Items;
+                    contextItems[HttpContextKey] = integration;
+                }
+            }
+            catch
+            {
+                // TODO: log this as an instrumentation error, but continue calling instrumented method
             }
 
-            if (_beforeAction == null)
+            try
             {
-                Type type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
-                _beforeAction = CreateDelegate(type, "BeforeAction");
+                if (_beforeAction == null)
+                {
+                    Assembly assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
+                    Type type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
+                    _beforeAction = CreateDelegate(type, "BeforeAction");
+                }
+            }
+            catch
+            {
+                // TODO: log this as an instrumentation error, we cannot call instrumented method,
+                // profiled app will continue working without DiagnosticSource
             }
 
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                _beforeAction(diagnosticSource, actionDescriptor, httpContext, routeData);
+                _beforeAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
             catch (Exception ex)
             {
@@ -103,19 +120,39 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             dynamic httpContext,
             object routeData)
         {
-            IDictionary<object, object> contextItems = httpContext.Items;
-            var integration = contextItems[HttpContextKey] as AspNetCoreMvc2Integration;
+            AspNetCoreMvc2Integration integration = null;
 
-            if (_afterAction == null)
+            try
             {
-                Type type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
-                _afterAction = CreateDelegate(type, "AfterAction");
+                if (Instrumentation.Enabled)
+                {
+                    IDictionary<object, object> contextItems = httpContext?.Items;
+                    integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                }
+            }
+            catch
+            {
+                // TODO: log this as an instrumentation error, but continue calling instrumented method
+            }
+
+            try
+            {
+                if (_afterAction == null)
+                {
+                    Type type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
+                    _afterAction = CreateDelegate(type, "AfterAction");
+                }
+            }
+            catch
+            {
+                // TODO: log this as an instrumentation error, we cannot call instrumented method,
+                // profiled app will continue working without DiagnosticSource
             }
 
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                _afterAction(diagnosticSource, actionDescriptor, httpContext, routeData);
+                _afterAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
             catch (Exception ex)
             {

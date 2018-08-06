@@ -102,10 +102,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             AspNetMvc5Integration integration = null;
 
-            if (Instrumentation.Enabled && HttpContext.Current != null)
+            try
             {
-                integration = new AspNetMvc5Integration((object)controllerContext);
-                HttpContext.Current.Items[HttpContextKey] = integration;
+                if (Instrumentation.Enabled && HttpContext.Current != null)
+                {
+                    integration = new AspNetMvc5Integration((object)controllerContext);
+                    HttpContext.Current.Items[HttpContextKey] = integration;
+                }
+            }
+            catch
+            {
+                // TODO: log this as an instrumentation error, but continue calling instrumented method
             }
 
             try
@@ -128,7 +135,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
         public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
         {
-            var integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvc5Integration;
+            AspNetMvc5Integration integration = null;
+
+            try
+            {
+                if (Instrumentation.Enabled && HttpContext.Current != null)
+                {
+                    integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvc5Integration;
+                }
+            }
+            catch
+            {
+                // TODO: log this as an instrumentation error, but continue calling instrumented method
+            }
 
             try
             {
