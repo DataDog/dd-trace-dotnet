@@ -39,7 +39,8 @@ namespace Datadog.Trace.OpenTracing
 
         public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields)
         {
-            throw new NotImplementedException();
+            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
+            return this;
         }
 
         public ISpan Log(string eventName)
