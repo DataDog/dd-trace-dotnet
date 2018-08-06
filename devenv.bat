@@ -14,4 +14,5 @@ SET CORECLR_PROFILER_PATH_32=%USERPROFILE%\source\repos\dd-trace-csharp\src\Data
 
 SET DATADOG_PROFILER_PROCESSES=ConsoleApp.exe;w3wp.exe;iisexpress.exe;AspNetCoreMvc2.exe;dotnet.exe
 
-START "Visual Studio" "C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" "C:\Users\lucas\source\repos\dd-trace-csharp\Datadog.Trace.sln"
+START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" "%UserProfile%\source\repos\dd-trace-csharp\Datadog.Trace.sln"
+
