@@ -68,7 +68,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string actionName = routeValues.GetValueOrDefault("action") as string;
                 string resourceName = $"{controllerName}.{actionName}()";
 
-                Span span = Tracer.Instance.StartSpan(OperationNames.AspNetMvcRequest);
+                _scope = Tracer.Instance.StartActive(OperationNames.AspNetMvcRequest);
+                Span span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
                 span.SetTag(Tags.HttpMethod, httpMethod);

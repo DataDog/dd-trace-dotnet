@@ -35,15 +35,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
                 string url = _httpContext.Request.GetDisplayUrl().ToLowerInvariant();
 
-                Span span = Tracer.Instance.StartSpan(OperationNames.AspNetCoreMvcRequest);
+                _scope = Tracer.Instance.StartActive(OperationNames.AspNetCoreMvcRequest);
+                Span span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
-
-                _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
             }
             catch
             {
