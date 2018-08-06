@@ -34,14 +34,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
                 string url = _httpContext.Request.GetDisplayUrl().ToLowerInvariant();
 
-                // TODO: define constants elsewhere instead of using magic strings
-                Span span = Tracer.Instance.StartSpan("aspnet_core_mvc.request");
-                span.Type = "web";
+                Span span = Tracer.Instance.StartSpan(OperationNames.AspNetCoreMvcRequest);
+                span.Type = SpanTypes.Web;
                 span.ResourceName = string.Join(" ", httpMethod, url);
-                span.SetTag("http.method", httpMethod);
-                span.SetTag("http.url", url);
-                span.SetTag("mvc.controller", controllerName);
-                span.SetTag("mvc.action", actionName);
+                span.SetTag(Tags.HttpMethod, httpMethod);
+                span.SetTag(Tags.HttpUrl, url);
+                span.SetTag(Tags.AspNetController, controllerName);
+                span.SetTag(Tags.AspNetAction, actionName);
 
                 _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
             }

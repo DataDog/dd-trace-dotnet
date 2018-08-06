@@ -68,13 +68,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string actionName = routeValues.GetValueOrDefault("action") as string;
                 string resourceName = $"{controllerName}.{actionName}()";
 
-                // TODO: define constants elsewhere instead of using magic strings
-                Span span = Tracer.Instance.StartSpan("aspnet_mvc.request");
-                span.Type = "web";
+                Span span = Tracer.Instance.StartSpan(OperationNames.AspNetMvcRequest);
+                span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
-                span.SetTag("http.method", httpMethod);
-                span.SetTag("http.url", _httpContext.Request.RawUrl.ToLowerInvariant());
-                span.SetTag("http.route", (string)controllerContext.RouteData.Route.Url);
+                span.SetTag(Tags.HttpMethod, httpMethod);
+                span.SetTag(Tags.HttpUrl, _httpContext.Request.RawUrl.ToLowerInvariant());
+                span.SetTag(Tags.AspNetRoute, (string)controllerContext.RouteData.Route.Url);
+                span.SetTag(Tags.AspNetController, controllerName);
+                span.SetTag(Tags.AspNetAction, actionName);
 
                 _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
             }
