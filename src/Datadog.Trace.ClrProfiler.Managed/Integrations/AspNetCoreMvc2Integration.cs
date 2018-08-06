@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 dynamic actionDescriptor = actionDescriptorObj;
                 string controllerName = actionDescriptor.ControllerName;
                 string actionName = actionDescriptor.ActionName;
+                string resourceName = $"{controllerName}.{actionName}()";
 
                 _httpContext = httpContextObj;
                 string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
@@ -36,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 Span span = Tracer.Instance.StartSpan(OperationNames.AspNetCoreMvcRequest);
                 span.Type = SpanTypes.Web;
-                span.ResourceName = string.Join(" ", httpMethod, url);
+                span.ResourceName = resourceName;
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, url);
                 span.SetTag(Tags.AspNetController, controllerName);
