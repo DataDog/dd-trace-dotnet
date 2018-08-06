@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string url = _httpContext.Request.GetDisplayUrl().ToLowerInvariant();
 
                 // TODO: define constants elsewhere instead of using magic strings
-                Span span = Tracer.Instance.StartSpan("web.request");
+                Span span = Tracer.Instance.StartSpan("aspnet_core_mvc.request");
                 span.Type = "web";
                 span.ResourceName = string.Join(" ", httpMethod, url);
                 span.SetTag("http.method", httpMethod);
