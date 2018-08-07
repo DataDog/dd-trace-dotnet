@@ -19,5 +19,10 @@ namespace Datadog.Trace.ClrProfiler
         /// Automatic instrumentation for ASP.NET MVC 5.
         /// </summary>
         AspNetMvc5 = 2,
+
+        /// <summary>
+        /// Automatic instrumentation for ASP.NET Core MVC 2.
+        /// </summary>
+        AspNetCoreMvc2 = 3,
     }
 }

@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     internal sealed class AspNetMvc5Integration : IDisposable
     {
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
+        private const string RequestOperationName = "aspnet_mvc.request";
+
         private static readonly Type ContollerContextType;
 
         private readonly HttpContextBase _httpContext;
@@ -66,17 +68,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
                 string controllerName = routeValues.GetValueOrDefault("controller") as string;
                 string actionName = routeValues.GetValueOrDefault("action") as string;
-                string resourceName = $"{controllerName}.{actionName}()";
+                string resourceName = $"{controllerName}.{actionName}";
 
-                // TODO: define constants elsewhere instead of using magic strings
-                Span span = Tracer.Instance.StartSpan("aspnetmvc.request");
-                span.Type = "web";
+                _scope = Tracer.Instance.StartActive(RequestOperationName);
+                Span span = _scope.Span;
+                span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
-                span.SetTag("http.method", httpMethod);
-                span.SetTag("http.url", _httpContext.Request.RawUrl.ToLowerInvariant());
-                span.SetTag("http.route", (string)controllerContext.RouteData.Route.Url);
+                span.SetTag(Tags.HttpMethod, httpMethod);
+                span.SetTag(Tags.HttpUrl, _httpContext.Request.RawUrl.ToLowerInvariant());
+                span.SetTag(Tags.AspNetRoute, (string)controllerContext.RouteData.Route.Url);
+                span.SetTag(Tags.AspNetController, controllerName);
+                span.SetTag(Tags.AspNetAction, actionName);
 
-                _httpContext.Items[HttpContextKey] = this;
                 _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
             }
             catch
@@ -103,10 +106,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             AspNetMvc5Integration integration = null;
 
-            if (HttpContext.Current != null)
+            try
             {
-                integration = new AspNetMvc5Integration((object)controllerContext);
-                HttpContext.Current.Items[HttpContextKey] = integration;
+                if (HttpContext.Current != null)
+                {
+                    integration = new AspNetMvc5Integration((object)controllerContext);
+                    HttpContext.Current.Items[HttpContextKey] = integration;
+                }
+            }
+            catch
+            {
+                // TODO: log this as an instrumentation error, but continue calling instrumented method
             }
 
             try
@@ -116,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                integration?.RegisterException(ex);
+                integration?.SetException(ex);
                 throw;
             }
         }
@@ -129,7 +139,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
         public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
         {
-            var integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvc5Integration;
+            AspNetMvc5Integration integration = null;
+
+            try
+            {
+                if (HttpContext.Current != null)
+                {
+                    integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvc5Integration;
+                }
+            }
+            catch
+            {
+                // TODO: log this as an instrumentation error, but continue calling instrumented method
+            }
 
             try
             {
@@ -138,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                integration?.RegisterException(ex);
+                integration?.SetException(ex);
                 throw;
             }
             finally
@@ -151,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
         /// </summary>
         /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
-        public void RegisterException(Exception ex)
+        public void SetException(Exception ex)
         {
             _scope?.Span?.SetException(ex);
         }
