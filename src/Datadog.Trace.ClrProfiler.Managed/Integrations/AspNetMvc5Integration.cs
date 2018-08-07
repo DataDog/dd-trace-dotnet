@@ -1,3 +1,5 @@
+#if NET45
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -36,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="controllerContextObj">An array with all the arguments that were passed into the instrumented method. If it is an instance method, the first arguments is <c>this</c>.</param>
         public AspNetMvc5Integration(object controllerContextObj)
         {
-            if (!Instrumentation.Enabled || controllerContextObj == null || ContollerContextType == null)
+            if (controllerContextObj == null || ContollerContextType == null)
             {
                 // bail out early
                 return;
@@ -173,3 +175,5 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
     }
 }
+
+#endif
