@@ -16,6 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="OpenTracing" Version="0.11.0" />
+    <PackageReference Include="OpenTracing" Version="0.12.0" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Logging;
 using OpenTracing;
+using OpenTracing.Tag;
 
 namespace Datadog.Trace.OpenTracing
 {
@@ -84,6 +85,11 @@ namespace Datadog.Trace.OpenTracing
             }
         }
 
+        public IScope StartActive()
+        {
+            return StartActive(finishSpanOnDispose: true);
+        }
+
         public IScope StartActive(bool finishSpanOnDispose)
         {
             var span = Start();
@@ -111,7 +117,27 @@ namespace Datadog.Trace.OpenTracing
 
         public ISpanBuilder WithTag(string key, int value)
         {
-            return WithTag(key, value.ToString());
+            return WithTag(key, value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        public ISpanBuilder WithTag(BooleanTag tag, bool value)
+        {
+            return WithTag(tag.Key, value);
+        }
+
+        public ISpanBuilder WithTag(IntOrStringTag tag, string value)
+        {
+            return WithTag(tag.Key, value);
+        }
+
+        public ISpanBuilder WithTag(IntTag tag, int value)
+        {
+            return WithTag(tag.Key, value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        public ISpanBuilder WithTag(StringTag tag, string value)
+        {
+            return WithTag(tag.Key, value);
         }
 
         public ISpanBuilder WithTag(string key, string value)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Logging;
 using OpenTracing;
 
@@ -12,6 +13,10 @@ namespace Datadog.Trace.OpenTracing
         {
             Context = context;
         }
+
+        public string TraceId => Context.TraceId.ToString(CultureInfo.InvariantCulture);
+
+        public string SpanId => Context.SpanId.ToString(CultureInfo.InvariantCulture);
 
         internal SpanContext Context { get; }
 
