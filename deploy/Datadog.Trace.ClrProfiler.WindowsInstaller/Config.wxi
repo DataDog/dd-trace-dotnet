@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Include>
+  <?if $(var.Platform) = x64 ?>
+  <?define ProductName = "Datadog APM for .NET (64-bit installer)" ?>
+  <?define Win64 = "yes" ?>
+  <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+  <?else ?>
+  <?define ProductName = "Datadog APM for .NET (32-bit installer)" ?>
+  <?define Win64 = "no" ?>
+  <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+  <?endif ?>
+
+  <?define NativeDllName = "Datadog.Trace.ClrProfiler.Native.dll" ?>
+</Include>

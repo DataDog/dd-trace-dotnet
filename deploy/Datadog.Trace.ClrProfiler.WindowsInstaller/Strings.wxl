@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <!-- add the product version to the UI -->
+  <String Id="WelcomeDlg_Title">[ProductName] [ProductVersion] Setup</String>
+  <String Id="WelcomeDlgTitle">{\WixUI_Font_Bigger}[ProductName] [ProductVersion] Setup Wizard</String>
+
+  <!-- make font white -->
+  <String Id="LicenseAgreementDlgTitle">{\WixUI_Font_Title_White}End-User License Agreement</String>
+  <String Id="LicenseAgreementDlgDescription">{\WixUI_Font_Normal_White}Please read the following license agreement carefully</String>
+</WixLocalization>

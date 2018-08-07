@@ -24,17 +24,23 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />
+    <Compile Include="WixUI_InstallDir_Custom.wxs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="banner.bmp" />
     <Content Include="datadog-icon.ico" />
     <Content Include="dialog.bmp" />
+    <Content Include="Config.wxi" />
+    <Content Include="license.rtf" />
   </ItemGroup>
   <ItemGroup>
     <WixExtension Include="WixUIExtension">
       <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
       <Name>WixUIExtension</Name>
     </WixExtension>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Strings.wxl" />
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets" Condition=" '$(WixTargetsPath)' == '' AND Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets') " />
