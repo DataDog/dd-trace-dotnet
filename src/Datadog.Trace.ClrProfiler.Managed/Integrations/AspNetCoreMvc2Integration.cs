@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 dynamic actionDescriptor = actionDescriptorObj;
                 string controllerName = actionDescriptor.ControllerName;
                 string actionName = actionDescriptor.ActionName;
-                string resourceName = $"{controllerName}.{actionName}()";
+                string resourceName = $"{controllerName}.{actionName}";
 
                 _httpContext = httpContextObj;
                 string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
