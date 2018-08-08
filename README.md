@@ -1,12 +1,15 @@
 # dd-trace-csharp
 
+**Datadog .NET APM is currently in Alpha**
+
+Tracing for .NET is Alpha and it is not recommended to be used in production. Please [check our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for more details.
+
 ## What is Datadog APM?
 
 Datadog APM traces the path of each request through your application stack, recording the latency of each step along the way. It sends all tracing data to Datadog, where you can easily identify which services or calls are slowing down your application the most.
 
 This repository contains what you need to trace .NET applications. Some quick notes up front:
 
-- **Datadog .NET APM is currently in Alpha**
 - Supports .NET Framework 4.5 or newer
 - Supports .NET Core 2.0 or newer
 - Multiple AppDomains are not supported
