@@ -4,228 +4,23 @@
 
 Datadog APM traces the path of each request through your application stack, recording the latency of each step along the way. It sends all tracing data to Datadog, where you can easily identify which services or calls are slowing down your application the most.
 
-This repository contains what you need to trace C# applications. Some quick notes up front:
+This repository contains what you need to trace .NET applications. Some quick notes up front:
 
-- **Datadog C# APM is currently in Alpha**
-- It supports .Net Framework version above 4.5 and .Net Core 2.0.
-- Multiple AppDomains are not supported.
+- **Datadog .NET APM is currently in Alpha**
+- Supports .NET Framework 4.5 or newer
+- Supports .NET Core 2.0 or newer
+- Multiple AppDomains are not supported
 
 ## The Components
 
 
-**[Datadog Tracer](https://github.com/DataDog/dd-trace-csharp)**: an OpenTracing-compatible library that lets you trace any piece of your C# code.
+**[Datadog Tracer](https://github.com/DataDog/dd-trace-csharp)**: an OpenTracing-compatible .NET library that lets you trace any piece of your .NET code.
 
 **[Datadog APM Agent](https://github.com/DataDog/datadog-trace-agent)**: a service that runs on your application servers, accepting trace data from the Datadog Tracer and sending it to Datadog. (The APM Agent is not part of this repo; it's the same Agent to which all Datadog tracers—Go, Python, etc—send data)
 
 ## Getting Started
 
-Before instrumenting your code, [install the Datadog Agent](https://app.datadoghq.com/account/settings#agent) on your application servers (or locally, if you're just trying out C# APM) and enable the APM Agent. On Windows, please see the instructions below. See special instructions for [Docker](https://github.com/DataDog/docker-dd-agent#tracing--apm) if you're using it.
-
-### Windows
-
-On Windows, the trace agent is shipped together with the Datadog Agent only since version 5.19.0, so users must update to 5.19.0 or above. However the Windows trace agent is in beta and some manual steps are required.
-
-Update your config file to include:
-
-```
-[Main]
-apm_enabled: yes
-[trace.config]
-log_file = C:\ProgramData\Datadog\logs\trace-agent.log
-```
-
-Restart the datadogagent service:
-
-```
-net stop datadogagent
-net start datadogagent
-```
-
-For this beta the trace agent status and logs are not displayed in the Agent Manager GUI.
-
-To see the trace agent status either use the Service tab of the Task Manager or run:
-
-```
-sc.exe query datadog-trace-agent
-```
-
-And check that the status is "running".
-
-The logs are available at the path you configured in `trace.config` `log_file` above.
-
-### Automatic Instrumentation
-
-#### ASP.NET Core
-
-To instrument you ASP.NET Core application install the
-`Datadog.Trace.AspNetCore` NuGet package and the following line to your
-`ConfigureServices` method:
-
-```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    services
-        .AddDatadogTrace()
-}
-```
-
-Once your application is configured this way all the requests to your
-application will be traced and the active span will automatically be set to the
-currently executing request.
-
-#### Ado.Net / System.Data.SqlClient
-
-To instrument Ado.Net to trace all the SQL queries made by your application
-install the `Datadog.Trace.SqlClient` NugGet package and execute the
-following code at application startup:
-
-```csharp
-SqlClientIntegration.Enable()
-```
-
-### Manual Instrumentation
-
-#### Introduction
-
-Before instrumenting your application, have a look at the [Datadog APM Terminology](https://docs.datadoghq.com/tracing/terminology/) to get familiar with the core concepts of Datadog APM.
-
-#### Setup
-
-In order to instrument your code you need to add the `Datadog.Trace` NuGet
-package to your project.
-
-Your tracing adventure starts with the `Tracer` class that will be used to
-instrument your code and should be accessed exclusively through the
-`Tracer.Instance` singleton. `Trace.Instance` is statically initialized with a
-`Tracer` created with the default settings but you may instantiate a new one
-with customized values with the `Tracer.Create` method.
-
-`Tracer.Create` takes a number of optional parameters that can be used to
-customize the returned `Tracer`:
-
-- agentEndpoint: the agent endpoint where the traces will be sent (default is http://localhost:8126)
-- defaultServiceName: default name of the service (default is the name of the executing assembly)
-- isDebugEnabled: turns on all debug logging, this may have an impact on application performance (default is false)
-
-For example to set a custom service name:
-
-```csharp
-Tracer.Instance = Tracer.Create(defaultServiceName: "YourServiceName")
-```
-
-#### In process propagation
-
-We want to keep track of the dependencies between spans created inside a
-process. This is done automatically by the tracer when using the `StartActive`
-method that returns a Scope representing the scope in which the created Span is
-considered active. All Spans created without `ignoreActiveScope = true` are
-automatically parented to the current active Span and become themselves active
-(unless the `StartSpan` method is used).
-
-If not created with `finishOnClose = false` closing a Scope will also close the
-Span it is enclosing.
-
-Examples:
-
-```csharp
-// The second span will be a child of the first one.
-using (Scope scope = Tracer.Instance.StartActive("Parent")){
-    using(Scope scope = Tracer.Instance.StartActive("Child")){
-    }
-}
-```
-
-```csharp
-// Since it is created with the StartSpan method the first span is not made
-// active and the second span will not be parented to it.
-using (Span span = Tracer.Instance.StartSpan("Span1")){
-    using(Scope scope = Tracer.Instance.StartActive("Span2")){
-    }
-}
-```
-
-#### Code instrumentation
-
-Use the shared `Tracer` object you created to create spans, instrument any
-section of your code, and get detailed metrics on it.
-
-Set the ServiceName to recognize which service this trace belongs to; if you
-don't, the parent span's service name or in case of a root span the
-defaultServiceName stated above is used.
-
-Set the ResourceName to scope this trace to a specific endpoint or SQL Query; For instance:
-- "GET /users/:id"
-- "SELECT * FROM ..."
-if you don't the OperationName will be used.
-
-A minimal example is:
-
-```csharp
-using (Scope scope = Tracer.Instance.StartActive("OperationName", serviceName: "ServiceName"))
-{
-    scope.Span.ResourceName = "ResourceName";
-
-    // Instrumented code
-    Thread.Sleep(1000);
-}
-```
-
-You may also choose, not to use the `using` construct and close the `Scope` object explictly:
-
-```csharp
-Scope scope = Tracer.Instance.StartActive("OperationName", serviceName: "ServiceName");
-scope.Span = "ResourceName";
-
-// Instrumented code
-Thread.Sleep(1000);
-
-
-// Close closes the underlying span, this sets its duration and sends it to the agent (if you don't call Close the data will never be sent to Datadog)
-scope.Close();
-```
-
-You may add custom tags by calling `Span.SetTag`:
-
-```csharp
-Scope scope = Tracer.Instance.StartActive("SqlQuery");
-scope.Span.SetTag("db.rows", 10);
-```
-
-You should not have to explicitly declare parent/children relationship between your spans, but to override the default behavior - a new span is considered a child of the active Span - use:
-
-```csharp
-Span parent = tracer.StartSpan("Parent");
-Span child = tracer.StartSpan("Child", childOf: parent.Context);
-```
-
-#### Cross-Process context propagation
-
-##### Outgoing HttpClient requests
-
-To inject the relevant headers in your request use the `Datadog.Trace` `Inject` extension method of `HttpHeaders`.
-
-For example:
-
-```csharp
-using (var scope = Tracer.Instance.StartActive("OutgoingRequest"))
-{
-    var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com");
-    request.Headers.Inject(scope.Span.Context);
-    var response = await _client.SendAsync(request);
-}
-```
-
-##### Incoming requests
-
-For Asp.Net Core, HTTP context propagation is done automatically as part of the framework instrumentation.
-
-To manually add HTTP context propagation to other frameworks you will need to
-write a wrapper around the headers representation used by your framework to
-implement `Datadog.Trace.IHeaderCollection`and you will then be able to use the
-`Inject` and `Extract` methods on this wrapper.
-
-For an example of this see [HeaderDictionnaryWrapper.cs](./src/Datadog.Trace.AspNetCore/HeaderDictionaryWrapper.cs)
-and [HeaderDictionaryPropagator]((./src/Datadog.Trace.AspNetCore/HeaderDictionaryPropagator.cs)
+Before instrumenting your code, [install the Datadog APM Agent](https://docs.datadoghq.com/tracing/setup/) on your application servers (or locally, if you're just trying out .NET APM).
 
 ## Development
 
@@ -233,22 +28,22 @@ and [HeaderDictionaryPropagator]((./src/Datadog.Trace.AspNetCore/HeaderDictionar
 
 #### Windows
 
-In order to build and run all the projects and test included in this repo you need to have Visual Studio 2017 as well as the .Net Core 2.+ SDK installed on your machine.
+In order to build and run all the projects and tests included in this repo you need to have [Visual Studio 2017](https://visualstudio.microsoft.com/downloads/) and the [.NET Core 2.0 SDK](https://www.microsoft.com/net/download) or newer installed on your machine.
 
-Some tests require you to have enable docker support on your machine or to manually install the required dependencies.
+Some tests require you to have [Docker for Windows](https://docs.docker.com/docker-for-windows/) on your machine or to manually install the required dependencies.
 
 #### Unix
 
 Make sure you have installed:
-- The .Net Core 2 SDK 
-- Mono
-- Docker
+- [.NET Core SDK](https://www.microsoft.com/net/download) (2.0 or newer)
+- [Mono](https://www.mono-project.com/download/stable/)
+- [Docker](https://www.docker.com/)
 
 Because some projects target the desktop framework and of [this bug](https://github.com/dotnet/sdk/issues/335), you'll need [this workaround](https://github.com/dotnet/netcorecli-fsc/wiki/.NET-Core-SDK-rc4#using-net-framework-as-targets-framework-the-osxunix-build-fails) to make the build work.
 
 ### Setup
 
-This project makes use of git submodules. This means that in order to start developping on this project, you should either clone this repository with the `--recurse-submodules` option or run the following commands in the cloned repository:
+This project makes use of git submodules. This means that in order to start developing on this project, you should either clone this repository with the `--recurse-submodules` option or run the following commands in the cloned repository:
 
 ```
 git submodule init
@@ -275,11 +70,11 @@ Or on Unix systems:
 
 ## Further Reading
 
-- [OpenTracing's documentation](https://github.com/opentracing/opentracing-csharp); feel free to use the Trace C# API to customize your instrumentation.
-- [Datadog APM Terminology](https://docs.datadoghq.com/tracing/terminology/)
-- [Datadog APM FAQ](https://docs.datadoghq.com/tracing/faq/)
+- [Datadog APM documentation](https://docs.datadoghq.com/tracing/)
+- [Datadog - Tracing .NET Applications](https://docs.datadoghq.com/tracing/setup/dotnet/)
+- [OpenTracing documentation](https://github.com/opentracing/opentracing-csharp)
 - [OpenTracing terminology](https://github.com/opentracing/specification/blob/master/specification.md)
 
 ## Get in touch
 
-If you have questions or feedback, email us at tracehelp@datadoghq.com or chat with us in the datadoghq slack channel #apm-csharp.
+If you have questions or feedback, email us at tracehelp@datadoghq.com or chat with us in Slack channel `#apm-csharp` in [Datadog's public Slack](http://chat.datadoghq.com/).
