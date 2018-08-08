@@ -1,8 +1,8 @@
 # dd-trace-csharp
 
-**Datadog .NET APM is currently in Alpha**
+**Datadog .NET APM is currently in Alpha and is not recommended for use in production.**
 
-Tracing for .NET is Alpha and it is not recommended to be used in production. Please [check our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for more details.
+Please [check our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for more details.
 
 ## What is Datadog APM?
 
@@ -80,4 +80,4 @@ Or on Unix systems:
 
 ## Get in touch
 
-If you have questions or feedback, email us at tracehelp@datadoghq.com or chat with us in Slack channel `#apm-csharp` in [Datadog's public Slack](http://chat.datadoghq.com/).
+If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
