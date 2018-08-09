@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace
 {
     internal interface ISpanWriter
     {
