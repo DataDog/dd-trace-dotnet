@@ -132,10 +132,14 @@
 
         <Environment Id="COR_ENABLE_PROFILING" Name="COR_ENABLE_PROFILING" Action="create" Permanent="no" System="yes" Value="0"/>
         <Environment Id="COR_PROFILER" Name="COR_PROFILER" Action="create" Permanent="no" System="yes" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"/>
+
+        <!-- TODO: use the Windows Registry instead of COR_PROFILER_PATH so we can support both 32 and 64-bit applications -->
         <Environment Id="COR_PROFILER_PATH" Name="COR_PROFILER_PATH" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
 
         <Environment Id="CORECLR_ENABLE_PROFILING" Name="CORECLR_ENABLE_PROFILING" Action="create" Permanent="no" System="yes" Value="0"/>
         <Environment Id="CORECLR_PROFILER" Name="CORECLR_PROFILER" Action="create" Permanent="no" System="yes" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"/>
+
+        <!-- TODO: use the Windows Registry instead of COR_PROFILER_PATH so we can support both 32 and 64-bit applications -->
         <Environment Id="CORECLR_PROFILER_PATH" Name="COR_PROFILER_PATH" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
       </Component>
 
