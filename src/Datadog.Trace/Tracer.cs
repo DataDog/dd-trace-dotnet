@@ -19,7 +19,7 @@ namespace Datadog.Trace
 
         private AsyncLocalScopeManager _scopeManager;
         private string _defaultServiceName;
-        private ISpanWriter _agentWriter;
+        private ISpanWriter _spanWriter;
         private bool _isDebugEnabled;
 
         static Tracer()
@@ -27,10 +27,10 @@ namespace Datadog.Trace
             Instance = Create();
         }
 
-        internal Tracer(ISpanWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
+        internal Tracer(ISpanWriter spanWriter, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             _isDebugEnabled = isDebugEnabled;
-            _agentWriter = agentWriter;
+            _spanWriter = spanWriter;
             _defaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
@@ -133,7 +133,7 @@ namespace Datadog.Trace
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
         void IDatadogTracer.Write(List<Span> trace)
         {
-            _agentWriter.WriteTrace(trace);
+            _spanWriter.WriteTrace(trace);
         }
 
         internal static Tracer Create(Uri agentEndpoint, string serviceName, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
@@ -169,17 +169,17 @@ namespace Datadog.Trace
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
-            _agentWriter.FlushAndCloseAsync().Wait();
+            _spanWriter.FlushAndCloseAsync().Wait();
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            _agentWriter.FlushAndCloseAsync().Wait();
+            _spanWriter.FlushAndCloseAsync().Wait();
         }
 
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-            _agentWriter.FlushAndCloseAsync().Wait();
+            _spanWriter.FlushAndCloseAsync().Wait();
         }
     }
 }
