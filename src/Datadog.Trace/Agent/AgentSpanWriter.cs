@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,16 +6,16 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent
 {
-    internal class AgentWriter : IAgentWriter
+    internal class AgentSpanWriter : ISpanWriter
     {
-        private static ILog _log = LogProvider.For<AgentWriter>();
+        private static ILog _log = LogProvider.For<AgentSpanWriter>();
 
         private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(1000);
         private readonly IApi _api;
         private readonly Task _flushTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
-        public AgentWriter(IApi api)
+        public AgentSpanWriter(IApi api)
         {
             _api = api;
             _flushTask = Task.Run(FlushTracesTaskLoop);

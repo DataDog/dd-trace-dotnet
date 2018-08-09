@@ -9,12 +9,12 @@ namespace Datadog.Trace.Tests
 {
     public class SpanTests
     {
-        private Mock<IAgentWriter> _writerMock;
+        private Mock<ISpanWriter> _writerMock;
         private Tracer _tracer;
 
         public SpanTests()
         {
-            _writerMock = new Mock<IAgentWriter>();
+            _writerMock = new Mock<ISpanWriter>();
             _tracer = new Tracer(_writerMock.Object);
         }
 

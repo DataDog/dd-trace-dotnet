@@ -19,7 +19,7 @@ namespace Datadog.Trace
 
         private AsyncLocalScopeManager _scopeManager;
         private string _defaultServiceName;
-        private IAgentWriter _agentWriter;
+        private ISpanWriter _agentWriter;
         private bool _isDebugEnabled;
 
         static Tracer()
@@ -27,7 +27,7 @@ namespace Datadog.Trace
             Instance = Create();
         }
 
-        internal Tracer(IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
+        internal Tracer(ISpanWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
@@ -139,7 +139,7 @@ namespace Datadog.Trace
         internal static Tracer Create(Uri agentEndpoint, string serviceName, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
         {
             var api = new Api(agentEndpoint, delegatingHandler);
-            var agentWriter = new AgentWriter(api);
+            var agentWriter = new AgentSpanWriter(api);
             var tracer = new Tracer(agentWriter, serviceName, isDebugEnabled);
             return tracer;
         }

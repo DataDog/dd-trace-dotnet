@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ namespace Datadog.Trace.Tests
 {
     public class AgentWriterTests
     {
-        private AgentWriter _agentWriter;
+        private AgentSpanWriter _agentSpanWriter;
         private Mock<IApi> _api;
         private Mock<IDatadogTracer> _tracer;
 
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests
             _tracer.Setup(x => x.DefaultServiceName).Returns("Default");
             var context = new Mock<ITraceContext>();
             _api = new Mock<IApi>();
-            _agentWriter = new AgentWriter(_api.Object);
+            _agentSpanWriter = new AgentSpanWriter(_api.Object);
         }
 
         [Fact]
@@ -28,12 +28,12 @@ namespace Datadog.Trace.Tests
         {
             // TODO:bertrand it is too complicated to setup such a simple test
             var trace = new List<Span> { new Span(_tracer.Object, null, "Operation", "Service", null) };
-            _agentWriter.WriteTrace(trace);
+            _agentSpanWriter.WriteTrace(trace);
             await Task.Delay(TimeSpan.FromSeconds(1.5));
             _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
 
             trace = new List<Span> { new Span(_tracer.Object, null, "Operation2", "AnotherService", null) };
-            _agentWriter.WriteTrace(trace);
+            _agentSpanWriter.WriteTrace(trace);
             await Task.Delay(TimeSpan.FromSeconds(1.5));
             _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
         }
