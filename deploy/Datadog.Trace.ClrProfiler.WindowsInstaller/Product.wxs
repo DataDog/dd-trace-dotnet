@@ -166,7 +166,7 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="string" Name="COR_PROFILER_PATH" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+          <RegistryValue Type="string" Name="COR_PROFILER" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
         </RegistryKey>
       </Component>
 
@@ -177,7 +177,7 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="string" Name="COR_PROFILER_PATH" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+          <RegistryValue Type="string" Name="COR_PROFILER" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
         </RegistryKey>
       </Component>
 
@@ -188,7 +188,7 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="string" Name="CORECLR_PROFILER_PATH" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+          <RegistryValue Type="string" Name="CORECLR_PROFILER" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
         </RegistryKey>
       </Component>
 
@@ -199,12 +199,18 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="string" Name="CORECLR_PROFILER_PATH" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+          <RegistryValue Type="string" Name="CORECLR_PROFILER" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
 
     <ComponentGroup Id="Registry.COM" Directory="INSTALLFOLDER">
+      <Component Id="Registry.COM" Guid="">
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\WAS">
+          <RegistryValue Type="string" Name="CORECLR_ENABLE_PROFILING" Value="1" Action="write"/>
+        </RegistryKey>
+      </Component>
     </ComponentGroup>
   </Fragment>
 </Wix>
