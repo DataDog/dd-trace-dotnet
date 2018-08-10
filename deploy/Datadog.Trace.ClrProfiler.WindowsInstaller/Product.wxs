@@ -132,13 +132,13 @@
         <Environment Id="DATADOG_APM_DOTNET_HOME" Name="DATADOG_APM_DOTNET_HOME" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]" Part="all"/>
 
         <Environment Id="COR_ENABLE_PROFILING" Name="COR_ENABLE_PROFILING" Action="create" Permanent="no" System="yes" Value="0"/>
-        <Environment Id="COR_PROFILER" Name="COR_PROFILER" Action="create" Permanent="no" System="yes" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"/>
+        <Environment Id="COR_PROFILER" Name="COR_PROFILER" Action="create" Permanent="no" System="yes" Value="$(var.ProfilerCLSID)"/>
 
         <!-- TODO: use the Windows Registry instead of COR_PROFILER_PATH so we can support both 32 and 64-bit applications -->
         <Environment Id="COR_PROFILER_PATH" Name="COR_PROFILER_PATH" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
 
         <Environment Id="CORECLR_ENABLE_PROFILING" Name="CORECLR_ENABLE_PROFILING" Action="create" Permanent="no" System="yes" Value="0"/>
-        <Environment Id="CORECLR_PROFILER" Name="CORECLR_PROFILER" Action="create" Permanent="no" System="yes" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"/>
+        <Environment Id="CORECLR_PROFILER" Name="CORECLR_PROFILER" Action="create" Permanent="no" System="yes" Value="$(var.ProfilerCLSID)"/>
 
         <!-- TODO: use the Windows Registry instead of COR_PROFILER_PATH so we can support both 32 and 64-bit applications -->
         <Environment Id="CORECLR_PROFILER_PATH" Name="COR_PROFILER_PATH" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
@@ -166,7 +166,7 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="string" Name="COR_PROFILER" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+          <RegistryValue Type="string" Name="COR_PROFILER" Value="$(var.ProfilerCLSID)" Action="write"/>
         </RegistryKey>
       </Component>
 
@@ -177,7 +177,7 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="string" Name="COR_PROFILER" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+          <RegistryValue Type="string" Name="COR_PROFILER" Value="$(var.ProfilerCLSID)" Action="write"/>
         </RegistryKey>
       </Component>
 
@@ -188,7 +188,7 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="string" Name="CORECLR_PROFILER" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+          <RegistryValue Type="string" Name="CORECLR_PROFILER" Value="$(var.ProfilerCLSID)" Action="write"/>
         </RegistryKey>
       </Component>
 
@@ -199,7 +199,7 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="string" Name="CORECLR_PROFILER" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+          <RegistryValue Type="string" Name="CORECLR_PROFILER" Value="$(var.ProfilerCLSID)" Action="write"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
