@@ -6,7 +6,6 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>3054de0e-f140-4758-b2da-0b9470c6ede1</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>DatadogNetProfiler</OutputName>
     <OutputType>Package</OutputType>
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
@@ -14,13 +13,17 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>Debug</DefineConstants>
+    <OutputName>DatadogDotNetTracing-x86-debug</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputName>DatadogDotNetTracing-x86-release</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DefineConstants>Debug</DefineConstants>
+    <OutputName>DatadogDotNetTracing-x64-debug</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputName>DatadogDotNetTracing-x64-release</OutputName>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />
