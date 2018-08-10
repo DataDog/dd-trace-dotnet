@@ -110,7 +110,7 @@
     </ComponentGroup>
 
     <ComponentGroup Id="NativeComponents_64" Directory="INSTALLFOLDER_64">
-      <Component Win64="no">
+      <Component Win64="$(var.Win64)">
         <File Id="Datadog.Trace.ClrProfiler.Native.x64"
               Source="..\..\src\Datadog.Trace.ClrProfiler.Native\x64\$(var.Configuration)\$(var.NativeDllName)"
               Checksum="yes"/>
@@ -118,7 +118,7 @@
     </ComponentGroup>
 
     <ComponentGroup Id="NativeComponents_32" Directory="INSTALLFOLDER_32">
-      <Component Win64="no">
+      <Component Win64="$(var.Win64)">
         <File Id="Datadog.Trace.ClrProfiler.Native.x86"
               Source="..\..\src\Datadog.Trace.ClrProfiler.Native\Win32\$(var.Configuration)\$(var.NativeDllName)"
               Checksum="yes"/>
