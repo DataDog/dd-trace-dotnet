@@ -49,6 +49,7 @@
       <ComponentGroupRef Id="NativeComponents_64"/>
       <ComponentGroupRef Id="NativeComponents_32"/>
       <ComponentGroupRef Id="EnvironmentVariables"/>
+      <ComponentGroupRef Id="Registry.EnvironmentVariables"/>
     </Feature>
   </Product>
 
@@ -154,6 +155,56 @@
         <Environment Id="COR_PROFILER_PATH_64" Name="COR_PROFILER_PATH_64" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
         <Environment Id="CORECLR_PROFILER_PATH_64" Name="CORECLR_PROFILER_PATH_64" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
       </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="Registry.EnvironmentVariables" Directory="INSTALLFOLDER">
+      <Component Id="Registry.EnvironmentVariables.W3SVC.NetFramework" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}">
+        <CreateFolder/>
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\W3SVC">
+          <RegistryValue Type="string" Name="COR_ENABLE_PROFILING" Value="1" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\W3SVC">
+          <RegistryValue Type="string" Name="COR_PROFILER_PATH" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+        </RegistryKey>
+      </Component>
+
+      <Component Id="Registry.EnvironmentVariables.WAS.NetFramework" Guid="{6CF8AB88-240E-4A0A-B630-43119C064AD4}">
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\WAS">
+          <RegistryValue Type="string" Name="COR_ENABLE_PROFILING" Value="1" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\WAS">
+          <RegistryValue Type="string" Name="COR_PROFILER_PATH" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+        </RegistryKey>
+      </Component>
+
+      <Component Id="Registry.EnvironmentVariables.W3SVC.NetCore" Guid="{8CFFD574-E886-477F-9CCD-27E1975D3431}">
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\W3SVC">
+          <RegistryValue Type="string" Name="CORECLR_ENABLE_PROFILING" Value="1" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\W3SVC">
+          <RegistryValue Type="string" Name="CORECLR_PROFILER_PATH" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+        </RegistryKey>
+      </Component>
+
+      <Component Id="Registry.EnvironmentVariables.WAS.NetCore" Guid="{8B6195F9-D2F1-4B57-BC2D-51D1D03760D6}">
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\WAS">
+          <RegistryValue Type="string" Name="CORECLR_ENABLE_PROFILING" Value="1" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\WAS">
+          <RegistryValue Type="string" Name="CORECLR_PROFILER_PATH" Value="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" Action="write"/>
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="Registry.COM" Directory="INSTALLFOLDER">
     </ComponentGroup>
   </Fragment>
 </Wix>
