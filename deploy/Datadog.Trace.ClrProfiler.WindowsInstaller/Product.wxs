@@ -61,14 +61,28 @@
 
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="$(var.PlatformProgramFilesFolder)">
-        <Directory Id="ProgramFilesFolder.Datadog" Name="Datadog">
+      <?if $(var.Platform) = x64 ?>
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="ProgramFiles64Folder.Datadog" Name="Datadog">
           <Directory Id="INSTALLFOLDER" Name="APM for .NET">
             <Directory Id="INSTALLFOLDER_32" Name="x86"/>
             <Directory Id="INSTALLFOLDER_64" Name="x64"/>
             <Directory Id="INSTALLFOLDER_NET45" Name="net45"/>
             <Directory Id="INSTALLFOLDER_NETCOREAPP20" Name="netcoreapp2.0"/>
           </Directory>
+        </Directory>
+      </Directory>
+      <?endif ?>
+
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="ProgramFilesFolder.Datadog" Name="Datadog">
+          <?if $(var.Platform) != x64 ?>
+          <Directory Id="INSTALLFOLDER" Name="APM for .NET">
+            <Directory Id="INSTALLFOLDER_32" Name="x86"/>
+            <Directory Id="INSTALLFOLDER_NET45" Name="net45"/>
+            <Directory Id="INSTALLFOLDER_NETCOREAPP20" Name="netcoreapp2.0"/>
+          </Directory>
+          <?endif ?>
         </Directory>
       </Directory>
     </Directory>
@@ -118,7 +132,7 @@
 
     <?if $(var.Platform) = x64 ?>
     <ComponentGroup Id="Files.Native.x64" Directory="INSTALLFOLDER_64">
-      <Component Win64="$(var.Win64)">
+      <Component Win64="yes">
         <File Id="Datadog.Trace.ClrProfiler.Native.x64"
               Source="..\..\src\Datadog.Trace.ClrProfiler.Native\x64\$(var.Configuration)\$(var.NativeDllName)"
               Checksum="yes"/>
@@ -208,7 +222,7 @@
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="Registry.COM.x86" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="Registry.COM.x86" Directory="ProgramFilesFolder.Datadog">
       <Component Id="Registry.COM.x86" Guid="{7CED191A-1F6A-4121-9561-049F45A245AA}" Win64="no">
         <RegistryKey Root="HKLM"
                      Key="CLSID\$(var.ProfilerCLSID)">
@@ -230,7 +244,7 @@
     </ComponentGroup>
 
     <?if $(var.Platform) = x64 ?>
-    <ComponentGroup Id="Registry.COM.x64" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="Registry.COM.x64" Directory="ProgramFiles64Folder.Datadog">
       <Component Id="Registry.COM.x64" Guid="{D5EFAF4C-CD9E-42D7-8068-B564539B1146}" Win64="yes">
         <RegistryKey Root="HKLM"
                      Key="CLSID\$(var.ProfilerCLSID)">
