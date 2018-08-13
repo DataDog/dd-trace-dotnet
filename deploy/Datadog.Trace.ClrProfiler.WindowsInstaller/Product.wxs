@@ -50,9 +50,11 @@
       <ComponentGroupRef Id="Registry.EnvironmentVariables"/>
 
       <ComponentGroupRef Id="Files.Native.x86"/>
+      <ComponentGroupRef Id="Registry.COM.x86"/>
 
       <?if $(var.Platform) = x64 ?>
       <ComponentGroupRef Id="Files.Native.x64"/>
+      <ComponentGroupRef Id="Registry.COM.x64"/>
       <?endif ?>
     </Feature>
   </Product>
@@ -140,14 +142,8 @@
         <Environment Id="COR_ENABLE_PROFILING" Name="COR_ENABLE_PROFILING" Action="create" Permanent="no" System="yes" Value="0"/>
         <Environment Id="COR_PROFILER" Name="COR_PROFILER" Action="create" Permanent="no" System="yes" Value="$(var.ProfilerCLSID)"/>
 
-        <!-- TODO: use the Windows Registry instead of COR_PROFILER_PATH so we can support both 32 and 64-bit applications -->
-        <Environment Id="COR_PROFILER_PATH" Name="COR_PROFILER_PATH" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
-
         <Environment Id="CORECLR_ENABLE_PROFILING" Name="CORECLR_ENABLE_PROFILING" Action="create" Permanent="no" System="yes" Value="0"/>
         <Environment Id="CORECLR_PROFILER" Name="CORECLR_PROFILER" Action="create" Permanent="no" System="yes" Value="$(var.ProfilerCLSID)"/>
-
-        <!-- TODO: use the Windows Registry instead of COR_PROFILER_PATH so we can support both 32 and 64-bit applications -->
-        <Environment Id="CORECLR_PROFILER_PATH" Name="COR_PROFILER_PATH" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
       </Component>
 
       <Component Id="EnvironmentVariables32" Guid="{5206971B-1BCA-412A-BD1C-33EE76799399}">
@@ -212,13 +208,48 @@
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="Registry.COM" Directory="INSTALLFOLDER">
-      <Component Id="Registry.COM" Guid="">
+    <ComponentGroup Id="Registry.COM.x86" Directory="INSTALLFOLDER">
+      <Component Id="Registry.COM.x86" Guid="{7CED191A-1F6A-4121-9561-049F45A245AA}" Win64="no">
         <RegistryKey Root="HKLM"
-                     Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="string" Name="CORECLR_ENABLE_PROFILING" Value="1" Action="write"/>
+                     Key="CLSID\$(var.ProfilerCLSID)">
+          <RegistryValue Type="string" Value="$(var.ProductName)" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="CLSID\$(var.ProfilerCLSID)\InprocServer32">
+          <RegistryValue Type="string" Value="[INSTALLFOLDER_32]$(var.NativeDllName)" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="CLSID\$(var.ProfilerCLSID)\ThreadingModel">
+          <RegistryValue Type="string" Value="Both" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="CLSID\$(var.ProfilerCLSID)\Version">
+          <RegistryValue Type="string" Value="$(var.Version)" Action="write"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
+
+    <?if $(var.Platform) = x64 ?>
+    <ComponentGroup Id="Registry.COM.x64" Directory="INSTALLFOLDER">
+      <Component Id="Registry.COM.x64" Guid="{D5EFAF4C-CD9E-42D7-8068-B564539B1146}" Win64="yes">
+        <RegistryKey Root="HKLM"
+                     Key="CLSID\$(var.ProfilerCLSID)">
+          <RegistryValue Type="string" Value="$(var.ProductName)" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="CLSID\$(var.ProfilerCLSID)\InprocServer32">
+          <RegistryValue Type="string" Value="[INSTALLFOLDER_64]$(var.NativeDllName)" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="CLSID\$(var.ProfilerCLSID)\ThreadingModel">
+          <RegistryValue Type="string" Value="Both" Action="write"/>
+        </RegistryKey>
+        <RegistryKey Root="HKLM"
+                     Key="CLSID\$(var.ProfilerCLSID)\Version">
+          <RegistryValue Type="string" Value="$(var.Version)" Action="write"/>
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+    <?endif ?>
   </Fragment>
 </Wix>
