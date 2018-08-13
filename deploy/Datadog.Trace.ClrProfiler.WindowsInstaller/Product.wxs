@@ -46,10 +46,14 @@
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
       <ComponentGroupRef Id="Files.Managed.Net45"/>
       <ComponentGroupRef Id="Files.Managed.NetCoreApp20"/>
-      <ComponentGroupRef Id="Files.Native.x64"/>
-      <ComponentGroupRef Id="Files.Native.x86"/>
       <ComponentGroupRef Id="EnvironmentVariables"/>
       <ComponentGroupRef Id="Registry.EnvironmentVariables"/>
+
+      <ComponentGroupRef Id="Files.Native.x86"/>
+
+      <?if $(var.Platform) = x64 ?>
+      <ComponentGroupRef Id="Files.Native.x64"/>
+      <?endif ?>
     </Feature>
   </Product>
 
@@ -110,6 +114,7 @@
       </Component>
     </ComponentGroup>
 
+    <?if $(var.Platform) = x64 ?>
     <ComponentGroup Id="Files.Native.x64" Directory="INSTALLFOLDER_64">
       <Component Win64="$(var.Win64)">
         <File Id="Datadog.Trace.ClrProfiler.Native.x64"
@@ -117,6 +122,7 @@
               Checksum="yes"/>
       </Component>
     </ComponentGroup>
+    <?endif ?>
 
     <ComponentGroup Id="Files.Native.x86" Directory="INSTALLFOLDER_32">
       <Component Win64="$(var.Win64)">
@@ -150,11 +156,13 @@
         <Environment Id="CORECLR_PROFILER_PATH_32" Name="CORECLR_PROFILER_PATH_32" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_32]$(var.NativeDllName)"/>
       </Component>
 
+      <?if $(var.Platform) = x64 ?>
       <Component Id="EnvironmentVariables64" Guid="{D52A5BBD-FCA1-46D6-BFD5-AF5A883D5878}">
         <CreateFolder/>
         <Environment Id="COR_PROFILER_PATH_64" Name="COR_PROFILER_PATH_64" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
         <Environment Id="CORECLR_PROFILER_PATH_64" Name="CORECLR_PROFILER_PATH_64" Action="create" Permanent="no" System="yes" Value="[INSTALLFOLDER_64]$(var.NativeDllName)"/>
       </Component>
+      <?endif ?>
     </ComponentGroup>
 
     <ComponentGroup Id="Registry.EnvironmentVariables" Directory="INSTALLFOLDER">
