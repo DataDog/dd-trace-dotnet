@@ -5,7 +5,7 @@
   <Product Id="*"
            Name="Datadog APM for .NET"
            Language="1033"
-           Version="0.2"
+           Version="$(var.Version)"
            Manufacturer="Datadog, Inc."
            UpgradeCode="fc228e86-eae2-4c2a-ae82-135b718c269e">
     <Package InstallerVersion="200"
