@@ -10,20 +10,18 @@
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
+    <Version>0.2.0</Version>
+    <OutputName>DatadogDotNetTracing-$(Version)-$(Platform)-$(Configuration)</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>Debug</DefineConstants>
-    <OutputName>DatadogDotNetTracing-x86-debug</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputName>DatadogDotNetTracing-x86-release</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DefineConstants>Debug</DefineConstants>
-    <OutputName>DatadogDotNetTracing-x64-debug</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <OutputName>DatadogDotNetTracing-x64-release</OutputName>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />
