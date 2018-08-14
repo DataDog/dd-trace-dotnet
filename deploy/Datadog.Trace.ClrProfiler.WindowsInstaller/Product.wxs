@@ -224,19 +224,19 @@
 
     <ComponentGroup Id="Registry.COM.x86" Directory="ProgramFilesFolder.Datadog">
       <Component Id="Registry.COM.x86" Guid="{7CED191A-1F6A-4121-9561-049F45A245AA}" Win64="no">
-        <RegistryKey Root="HKLM"
+        <RegistryKey Root="HKCR"
                      Key="CLSID\$(var.ProfilerCLSID)">
           <RegistryValue Type="string" Value="$(var.ProductName)" Action="write"/>
         </RegistryKey>
-        <RegistryKey Root="HKLM"
+        <RegistryKey Root="HKCR"
                      Key="CLSID\$(var.ProfilerCLSID)\InprocServer32">
           <RegistryValue Type="string" Value="[INSTALLFOLDER_32]$(var.NativeDllName)" Action="write"/>
         </RegistryKey>
-        <RegistryKey Root="HKLM"
+        <RegistryKey Root="HKCR"
                      Key="CLSID\$(var.ProfilerCLSID)\ThreadingModel">
           <RegistryValue Type="string" Value="Both" Action="write"/>
         </RegistryKey>
-        <RegistryKey Root="HKLM"
+        <RegistryKey Root="HKCR"
                      Key="CLSID\$(var.ProfilerCLSID)\Version">
           <RegistryValue Type="string" Value="$(var.ProductVersion)" Action="write"/>
         </RegistryKey>
@@ -246,19 +246,19 @@
     <?if $(var.Platform) = x64 ?>
     <ComponentGroup Id="Registry.COM.x64" Directory="ProgramFiles64Folder.Datadog">
       <Component Id="Registry.COM.x64" Guid="{D5EFAF4C-CD9E-42D7-8068-B564539B1146}" Win64="yes">
-        <RegistryKey Root="HKLM"
+        <RegistryKey Root="HKCR"
                      Key="CLSID\$(var.ProfilerCLSID)">
           <RegistryValue Type="string" Value="$(var.ProductName)" Action="write"/>
         </RegistryKey>
-        <RegistryKey Root="HKLM"
+        <RegistryKey Root="HKCR"
                      Key="CLSID\$(var.ProfilerCLSID)\InprocServer32">
           <RegistryValue Type="string" Value="[INSTALLFOLDER_64]$(var.NativeDllName)" Action="write"/>
         </RegistryKey>
-        <RegistryKey Root="HKLM"
+        <RegistryKey Root="HKCR"
                      Key="CLSID\$(var.ProfilerCLSID)\ThreadingModel">
           <RegistryValue Type="string" Value="Both" Action="write"/>
         </RegistryKey>
-        <RegistryKey Root="HKLM"
+        <RegistryKey Root="HKCR"
                      Key="CLSID\$(var.ProfilerCLSID)\Version">
           <RegistryValue Type="string" Value="$(var.ProductVersion)" Action="write"/>
         </RegistryKey>
