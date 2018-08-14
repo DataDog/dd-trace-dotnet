@@ -48,13 +48,10 @@
       <ComponentGroupRef Id="Files.Managed.NetCoreApp20"/>
       <ComponentGroupRef Id="EnvironmentVariables"/>
       <ComponentGroupRef Id="Registry.EnvironmentVariables"/>
-
       <ComponentGroupRef Id="Files.Native.x86"/>
-      <ComponentGroupRef Id="Registry.COM.x86"/>
 
       <?if $(var.Platform) = x64 ?>
       <ComponentGroupRef Id="Files.Native.x64"/>
-      <ComponentGroupRef Id="Registry.COM.x64"/>
       <?endif ?>
     </Feature>
   </Product>
@@ -135,7 +132,9 @@
       <Component Win64="yes">
         <File Id="Datadog.Trace.ClrProfiler.Native.x64"
               Source="..\..\src\Datadog.Trace.ClrProfiler.Native\x64\$(var.Configuration)\$(var.NativeDllName)"
-              Checksum="yes"/>
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="apartment" Description="$(var.ProductName)"/>
+        </File>
       </Component>
     </ComponentGroup>
     <?endif ?>
@@ -144,7 +143,11 @@
       <Component Win64="$(var.Win64)">
         <File Id="Datadog.Trace.ClrProfiler.Native.x86"
               Source="..\..\src\Datadog.Trace.ClrProfiler.Native\Win32\$(var.Configuration)\$(var.NativeDllName)"
-              Checksum="yes"/>
+              Checksum="yes">
+          <?if $(var.Platform) = x86 ?>
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="apartment" Description="$(var.ProductName)"/>
+          <?endif ?>
+        </File>
       </Component>
     </ComponentGroup>
 
@@ -180,60 +183,16 @@
         <CreateFolder/>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSID)[~]" Action="prepend"/>
+          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSID)" Action="append"/>
         </RegistryKey>
       </Component>
 
       <Component Id="Registry.EnvironmentVariables.WAS" Guid="{6CF8AB88-240E-4A0A-B630-43119C064AD4}">
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSID)[~]" Action="prepend"/>
+          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSID)" Action="append"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
-
-    <ComponentGroup Id="Registry.COM.x86" Directory="ProgramFilesFolder.Datadog">
-      <Component Id="Registry.COM.x86" Guid="{7CED191A-1F6A-4121-9561-049F45A245AA}" Win64="no">
-        <RegistryKey Root="HKCR"
-                     Key="CLSID\$(var.ProfilerCLSID)">
-          <RegistryValue Type="string" Value="$(var.ProductName)" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKCR"
-                     Key="CLSID\$(var.ProfilerCLSID)\InprocServer32">
-          <RegistryValue Type="string" Value="[INSTALLFOLDER_32]$(var.NativeDllName)" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKCR"
-                     Key="CLSID\$(var.ProfilerCLSID)\ThreadingModel">
-          <RegistryValue Type="string" Value="Both" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKCR"
-                     Key="CLSID\$(var.ProfilerCLSID)\Version">
-          <RegistryValue Type="string" Value="$(var.ProductVersion)" Action="write"/>
-        </RegistryKey>
-      </Component>
-    </ComponentGroup>
-
-    <?if $(var.Platform) = x64 ?>
-    <ComponentGroup Id="Registry.COM.x64" Directory="ProgramFiles64Folder.Datadog">
-      <Component Id="Registry.COM.x64" Guid="{D5EFAF4C-CD9E-42D7-8068-B564539B1146}" Win64="yes">
-        <RegistryKey Root="HKCR"
-                     Key="CLSID\$(var.ProfilerCLSID)">
-          <RegistryValue Type="string" Value="$(var.ProductName)" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKCR"
-                     Key="CLSID\$(var.ProfilerCLSID)\InprocServer32">
-          <RegistryValue Type="string" Value="[INSTALLFOLDER_64]$(var.NativeDllName)" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKCR"
-                     Key="CLSID\$(var.ProfilerCLSID)\ThreadingModel">
-          <RegistryValue Type="string" Value="Both" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKCR"
-                     Key="CLSID\$(var.ProfilerCLSID)\Version">
-          <RegistryValue Type="string" Value="$(var.ProductVersion)" Action="write"/>
-        </RegistryKey>
-      </Component>
-    </ComponentGroup>
-    <?endif ?>
   </Fragment>
 </Wix>
