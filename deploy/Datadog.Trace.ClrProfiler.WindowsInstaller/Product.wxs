@@ -176,48 +176,18 @@
     </ComponentGroup>
 
     <ComponentGroup Id="Registry.EnvironmentVariables" Directory="INSTALLFOLDER">
-      <Component Id="Registry.EnvironmentVariables.W3SVC.NetFramework" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}">
+      <Component Id="Registry.EnvironmentVariables.W3SVC" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}">
         <CreateFolder/>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="string" Name="COR_ENABLE_PROFILING" Value="1" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKLM"
-                     Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="string" Name="COR_PROFILER" Value="$(var.ProfilerCLSID)" Action="write"/>
+          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSID)[~]" Action="prepend"/>
         </RegistryKey>
       </Component>
 
-      <Component Id="Registry.EnvironmentVariables.WAS.NetFramework" Guid="{6CF8AB88-240E-4A0A-B630-43119C064AD4}">
+      <Component Id="Registry.EnvironmentVariables.WAS" Guid="{6CF8AB88-240E-4A0A-B630-43119C064AD4}">
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="string" Name="COR_ENABLE_PROFILING" Value="1" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKLM"
-                     Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="string" Name="COR_PROFILER" Value="$(var.ProfilerCLSID)" Action="write"/>
-        </RegistryKey>
-      </Component>
-
-      <Component Id="Registry.EnvironmentVariables.W3SVC.NetCore" Guid="{8CFFD574-E886-477F-9CCD-27E1975D3431}">
-        <RegistryKey Root="HKLM"
-                     Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="string" Name="CORECLR_ENABLE_PROFILING" Value="1" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKLM"
-                     Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="string" Name="CORECLR_PROFILER" Value="$(var.ProfilerCLSID)" Action="write"/>
-        </RegistryKey>
-      </Component>
-
-      <Component Id="Registry.EnvironmentVariables.WAS.NetCore" Guid="{8B6195F9-D2F1-4B57-BC2D-51D1D03760D6}">
-        <RegistryKey Root="HKLM"
-                     Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="string" Name="CORECLR_ENABLE_PROFILING" Value="1" Action="write"/>
-        </RegistryKey>
-        <RegistryKey Root="HKLM"
-                     Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="string" Name="CORECLR_PROFILER" Value="$(var.ProfilerCLSID)" Action="write"/>
+          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSID)[~]" Action="prepend"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
