@@ -4,11 +4,15 @@
   <?define BaseProductName = "APM Tracing for .NET" ?>
 
   <?if $(var.Platform) = x64 ?>
-  <?define ProductName = "Datadog $(var.BaseProductName) (64-bit)" ?>
+  <?define ProductName = "Datadog $(var.BaseProductName) 64-bit" ?>
   <?define Win64 = "yes" ?>
+  <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+  <?define PlatformSourceFolder = "x64" ?>
   <?else ?>
-  <?define ProductName = "Datadog $(var.BaseProductName) (32-bit)" ?>
+  <?define ProductName = "Datadog $(var.BaseProductName) 32-bit" ?>
   <?define Win64 = "no" ?>
+  <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+  <?define PlatformSourceFolder = "Win32" ?>
   <?endif ?>
 
   <?define NativeDllName = "Datadog.Trace.ClrProfiler.Native.dll" ?>
