@@ -3,7 +3,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Product Id="*"
-           Name="Datadog APM for .NET"
+           Name="Datadog $(var.BaseProductName)"
            Language="1033"
            Version="$(var.ProductVersion)"
            Manufacturer="Datadog, Inc."
@@ -64,7 +64,7 @@
       <?if $(var.Platform) = x64 ?>
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="ProgramFiles64Folder.Datadog" Name="Datadog">
-          <Directory Id="INSTALLFOLDER" Name="APM for .NET">
+          <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
             <Directory Id="INSTALLFOLDER_32" Name="x86"/>
             <Directory Id="INSTALLFOLDER_64" Name="x64"/>
             <Directory Id="INSTALLFOLDER_NET45" Name="net45"/>
@@ -77,7 +77,7 @@
       <Directory Id="ProgramFilesFolder">
         <Directory Id="ProgramFilesFolder.Datadog" Name="Datadog">
           <?if $(var.Platform) != x64 ?>
-          <Directory Id="INSTALLFOLDER" Name="APM for .NET">
+          <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
             <Directory Id="INSTALLFOLDER_32" Name="x86"/>
             <Directory Id="INSTALLFOLDER_NET45" Name="net45"/>
             <Directory Id="INSTALLFOLDER_NETCOREAPP20" Name="netcoreapp2.0"/>

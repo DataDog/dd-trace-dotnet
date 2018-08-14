@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <Include>
+  <?define BaseProductName = "APM Tracing for .NET" ?>
+
   <?if $(var.Platform) = x64 ?>
-  <?define ProductName = "Datadog APM for .NET (64-bit)" ?>
+  <?define ProductName = "Datadog $(var.BaseProductName) (64-bit)" ?>
   <?define Win64 = "yes" ?>
   <?else ?>
-  <?define ProductName = "Datadog APM for .NET (32-bit)" ?>
+  <?define ProductName = "Datadog $(var.BaseProductName) (32-bit)" ?>
   <?define Win64 = "no" ?>
   <?endif ?>
 
