@@ -5,7 +5,7 @@
   <Product Id="*"
            Name="Datadog APM for .NET"
            Language="1033"
-           Version="$(var.Version)"
+           Version="$(var.ProductVersion)"
            Manufacturer="Datadog, Inc."
            UpgradeCode="fc228e86-eae2-4c2a-ae82-135b718c269e">
     <Package InstallerVersion="200"
@@ -238,7 +238,7 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="CLSID\$(var.ProfilerCLSID)\Version">
-          <RegistryValue Type="string" Value="$(var.Version)" Action="write"/>
+          <RegistryValue Type="string" Value="$(var.ProductVersion)" Action="write"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
@@ -260,7 +260,7 @@
         </RegistryKey>
         <RegistryKey Root="HKLM"
                      Key="CLSID\$(var.ProfilerCLSID)\Version">
-          <RegistryValue Type="string" Value="$(var.Version)" Action="write"/>
+          <RegistryValue Type="string" Value="$(var.ProductVersion)" Action="write"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>

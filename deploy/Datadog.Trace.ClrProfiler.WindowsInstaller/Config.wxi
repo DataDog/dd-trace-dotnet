@@ -9,7 +9,6 @@
   <?define Win64 = "no" ?>
   <?endif ?>
 
-  <?define Version = "0.2" ?>
   <?define NativeDllName = "Datadog.Trace.ClrProfiler.Native.dll" ?>
   <?define ProfilerCLSID = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" ?>
 </Include>
