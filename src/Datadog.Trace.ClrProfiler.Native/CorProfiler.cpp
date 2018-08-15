@@ -141,12 +141,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
 
     // check if we need to instrument anything in this assembly,
     // for each integration...
-    for (auto& integration : all_integrations)
+    for (const auto& integration : all_integrations)
     {
         // TODO: check if integration is enabled in config
-        if (integration.target_assembly_name == std::wstring(assemblyName))
+        for (const auto& method_replacement : integration.method_replacements)
         {
-            enabledIntegrations.push_back(integration);
+            if (method_replacement.target_method.assembly_name == std::wstring(assemblyName))
+            {
+                enabledIntegrations.push_back(integration);
+            }
         }
     }
 
@@ -214,7 +217,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
         {
             // for each method replacement in each enabled integration,
             // emit a reference to the instrumentation wrapper methods
-            hr = metadataBuilder.store_wrapper_method_ref(integration, method_replacement);
+            hr = metadataBuilder.store_wrapper_method_ref(method_replacement);
             RETURN_IF_FAILED(hr);
         }
     }
@@ -262,9 +265,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
             // check known callers (caller_method_token) for IL opcodes that call
             // into the target method (target_method_token) and replace them
             // with called to the instrumentation wrapper (wrapper_method_ref)
-            if (functionToken == method_replacement.caller_method_token)
+
+            // TODO: find caller_method_token
+            mdMemberRef caller_method_token = mdMemberRefNil;
+
+            if (functionToken == caller_method_token)
             {
-                const std::wstring wrapper_method_key = integration.get_wrapper_method_key(method_replacement);
+                const auto& wrapper_method_key = method_replacement.wrapper_method.get_method_cache_key();
                 mdMemberRef wrapper_method_ref = mdMemberRefNil;
 
                 if (moduleMetadata->TryGetWrapperMemberRef(wrapper_method_key, wrapper_method_ref))
@@ -276,7 +283,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                     hr = rewriter.Import();
                     RETURN_IF_FAILED(hr);
 
-                    if (ilRewriterWrapper.ReplaceMethodCalls(method_replacement.target_method_token, wrapper_method_ref))
+                    // TODO: find target_method_token
+                    mdMemberRef target_method_token = mdMemberRefNil;
+
+                    if (ilRewriterWrapper.ReplaceMethodCalls(target_method_token, wrapper_method_ref))
                     {
                         hr = rewriter.Export();
                         RETURN_IF_FAILED(hr);
