@@ -115,7 +115,23 @@ const integration aspnetcore_mvc2_integration
                                            })
                     });
 
+const integration console_integration
+= ::integration(
+    // integration_type
+    IntegrationType_Custom,
+    // integration_name
+    L"NewtonsoftJson",
+    // target_assembly_name
+    L"Newtonsoft.Json",
+    // wrapper_assembly_name
+    L"Datadog.Trace.ClrProfiler.Managed",
+    // wrapper_type_name
+    L"Datadog.Trace.ClrProfiler.Integrations.NewtonsoftJsonIntegration",
+    // method_replacements
+    {});
+
 const std::vector<integration> all_integrations = {
     aspnet_mvc5_integration,
     aspnetcore_mvc2_integration,
+    console_integration,
 };

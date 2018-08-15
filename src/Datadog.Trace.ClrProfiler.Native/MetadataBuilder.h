@@ -46,4 +46,6 @@ public:
                               BYTE public_key_token[],
                               ULONG public_key_token_length,
                               mdAssemblyRef& assembly_ref_out) const;
+
+    HRESULT find_methods(const integration& integration) const;
 };

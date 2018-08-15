@@ -152,6 +152,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
 
     if (enabledIntegrations.empty())
     {
+        LOG_APPEND(L"SKIPPING " << assemblyName);
         // we don't need to instrument anything in this module, skip it
         return S_OK;
     }
@@ -210,6 +211,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
 
     for (const auto& integration : enabledIntegrations)
     {
+        hr = metadataBuilder.find_methods(integration);
+        LOG_IFFAILEDRET(hr, L"Failed to find methods.");
+
         for (const auto& method_replacement : integration.method_replacements)
         {
             // for each method replacement in each enabled integration,

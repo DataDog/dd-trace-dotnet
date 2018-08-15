@@ -181,3 +181,50 @@ HRESULT MetadataBuilder::store_wrapper_method_ref(const integration& integration
     metadata.SetWrapperMemberRef(cache_key, member_ref);
     return S_OK;
 }
+
+HRESULT MetadataBuilder::find_methods(const integration& integration) const
+{
+    HRESULT hr;
+
+    mdAssemblyRef assembly_ref = mdAssemblyRefNil;
+    hr = find_assembly_ref(integration.wrapper_assembly_name, &assembly_ref);
+    RETURN_IF_FAILED(hr);
+    
+    mdTypeRef type_ref = mdTypeRefNil;
+    hr = metadataImport->FindTypeRef(assembly_ref, integration.wrapper_type_name.c_str(), &type_ref);
+    if (hr == HRESULT(0x80131130) /* record not found on lookup */)
+    {
+        // if typeRef not found, create a new one by emiting a metadata token
+        hr = metadataEmit->DefineTypeRefByName(assembly_ref, integration.wrapper_type_name.c_str(), &type_ref);
+    }
+    RETURN_IF_FAILED(hr);
+
+    mdToken scope;
+    WCHAR type_name[256];
+    ULONG type_name_size;
+    hr = metadataImport->GetTypeRefProps(type_ref, &scope, type_name, _countof(type_name), &type_name_size);
+    RETURN_IF_FAILED(hr);
+
+    mdTypeDef type_def;
+    hr = metadataImport->FindTypeDefByName(type_name, NULL, &type_def);
+    RETURN_IF_FAILED(hr);
+
+    HCORENUM enm = nullptr;
+    mdMethodDef method_defs[256];
+    ULONG sz;
+    while (true)
+    {
+        hr = metadataImport->EnumMethods(&enm, type_def, method_defs, _countof(method_defs), &sz);
+        if (hr != S_OK || sz == 0)
+        {
+            break;
+        }
+        
+        for (ULONG i = 0; i < sz; i++)
+        {
+            LOG_APPEND("METHOD DEF: " << method_defs[i]);
+        }
+    }
+
+    return S_OK;
+}
