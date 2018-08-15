@@ -192,8 +192,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     WCHAR wszLocale[] = L"neutral";
 
     ASSEMBLYMETADATA assemblyMetaData{};
-    assemblyMetaData.usMajorVersion = 1;
-    assemblyMetaData.usMinorVersion = 0;
+    assemblyMetaData.usMajorVersion = 0;
+    assemblyMetaData.usMinorVersion = 2;
     assemblyMetaData.usBuildNumber = 0;
     assemblyMetaData.usRevisionNumber = 0;
     assemblyMetaData.szLocale = wszLocale;
