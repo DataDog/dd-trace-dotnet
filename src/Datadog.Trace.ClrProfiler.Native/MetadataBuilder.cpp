@@ -97,7 +97,7 @@ HRESULT MetadataBuilder::find_assembly_ref_iterator(const std::wstring& assembly
     return E_FAIL;
 }
 
-HRESULT MetadataBuilder::store_wrapper_type_ref(const method_replacement& method_replacement, mdTypeRef& type_ref_out) const
+HRESULT MetadataBuilder::find_wrapper_type_ref(const method_replacement& method_replacement, mdTypeRef& type_ref_out) const
 {
     const auto& cache_key = method_replacement.wrapper_method.get_type_cache_key();
     mdTypeRef type_ref = mdTypeRefNil;
@@ -141,6 +141,7 @@ HRESULT MetadataBuilder::store_wrapper_type_ref(const method_replacement& method
 
     RETURN_IF_FAILED(hr);
 
+    // cache the typeRef in case we need it again
     metadata.SetWrapperParentTypeRef(cache_key, type_ref);
     type_ref_out = type_ref;
     return S_OK;
@@ -158,7 +159,7 @@ HRESULT MetadataBuilder::store_wrapper_method_ref(const method_replacement& meth
     }
 
     mdTypeRef type_ref = mdTypeRefNil;
-    HRESULT hr = store_wrapper_type_ref(method_replacement, type_ref);
+    HRESULT hr = find_wrapper_type_ref(method_replacement, type_ref);
     RETURN_IF_FAILED(hr);
 
     const auto wrapper_method_name = method_replacement.wrapper_method.method_name.c_str();

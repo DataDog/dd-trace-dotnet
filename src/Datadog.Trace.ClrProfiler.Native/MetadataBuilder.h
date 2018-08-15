@@ -38,7 +38,7 @@ public:
     {
     }
 
-    HRESULT store_wrapper_type_ref(const method_replacement& method_replacement, mdTypeRef& type_ref_out) const;
+    HRESULT find_wrapper_type_ref(const method_replacement& method_replacement, mdTypeRef& type_ref_out) const;
 
     HRESULT store_wrapper_method_ref(const method_replacement& method_replacement) const;
 
