@@ -3,6 +3,9 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <!-- This ProductVersion property refers to the version of the WiX Toolset,
+         not the installer this project generates.
+         DO NOT CHANGE this one. Change <Version> below. -->
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>3054de0e-f140-4758-b2da-0b9470c6ede1</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
@@ -10,6 +13,10 @@
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
+    <!-- Custom Version property for the generated installer,
+         value is set to constant ProductVersion below and
+         accessed as $(var.ProductVersion) from WiX files.
+         CHANGE THIS ONE when bumping the library version. -->
     <Version>0.2.0</Version>
     <OutputName>DatadogDotNetTracing-$(Version)-$(Platform)-$(Configuration)</OutputName>
   </PropertyGroup>
