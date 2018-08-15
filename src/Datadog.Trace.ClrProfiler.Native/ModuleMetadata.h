@@ -2,7 +2,6 @@
 
 #include <unordered_map>
 #include <corhlpr.h>
-#include "ComPtr.h"
 #include "Integration.h"
 
 class ModuleMetadata
@@ -12,15 +11,12 @@ private:
     std::unordered_map<std::wstring, mdTypeRef> wrapper_parent_type{};
 
 public:
-    ComPtr<IMetaDataImport> metadataImport{};
     std::wstring assemblyName = L"";
     std::vector<integration> m_Integrations = {};
 
-    ModuleMetadata(ComPtr<IMetaDataImport> metadata_import,
-                   std::wstring assembly_name,
+    ModuleMetadata(std::wstring assembly_name,
                    std::vector<integration> integration_bases)
-        : metadataImport(std::move(metadata_import)),
-          assemblyName(std::move(assembly_name)),
+        : assemblyName(std::move(assembly_name)),
           m_Integrations(std::move(integration_bases))
     {
     }

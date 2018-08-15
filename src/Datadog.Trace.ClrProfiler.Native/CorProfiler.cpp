@@ -179,8 +179,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     hr = metadataImport->GetModuleFromScope(&module);
     LOG_IFFAILEDRET(hr, L"Failed to get module token.");
 
-    ModuleMetadata* moduleMetadata = new ModuleMetadata(metadataImport,
-                                                        assemblyName,
+    ModuleMetadata* moduleMetadata = new ModuleMetadata(assemblyName,
                                                         enabledIntegrations);
 
     MetadataBuilder metadataBuilder(*moduleMetadata,
