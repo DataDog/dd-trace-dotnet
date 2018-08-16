@@ -3,7 +3,7 @@
 #include <corhlpr.h>
 
 extern std::wofstream g_wLogFile;
-extern WCHAR g_wszLogFilePath[MAX_PATH];
+extern std::string g_wszLogFilePath;
 
 #define HEX(HR) L"0x" << std::hex << std::uppercase << HR << std::dec
 #define LOG_APPEND(EXPR) do { g_wLogFile.open(g_wszLogFilePath, std::ios::app); g_wLogFile << EXPR << L"\n"; g_wLogFile.close(); } while(0)

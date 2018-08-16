@@ -193,7 +193,7 @@ const integration aspnetcore_mvc2_integration
                                           )
                     });
 
-const std::vector<integration> all_integrations = {
+std::vector<integration> all_integrations = {
     aspnet_mvc5_integration,
     aspnetcore_mvc2_integration,
 };

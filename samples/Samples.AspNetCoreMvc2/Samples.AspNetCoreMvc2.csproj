@@ -5,6 +5,10 @@
         <MvcRazorCompileOnPublish>true</MvcRazorCompileOnPublish>
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
+      <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
     <ItemGroup>
       <Folder Include="Models\" />
       <Folder Include="wwwroot\" />

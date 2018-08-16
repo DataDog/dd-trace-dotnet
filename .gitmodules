@@ -1,3 +1,6 @@
 [submodule "lib/coreclr"]
 	path = lib/coreclr
 	url = https://github.com/dotnet/coreclr.git
+[submodule "json"]
+	path = json
+	url = https://github.com/nlohmann/json.git

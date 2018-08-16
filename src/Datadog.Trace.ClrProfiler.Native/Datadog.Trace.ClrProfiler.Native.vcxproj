@@ -156,7 +156,9 @@
     <ClInclude Include="ILRewriter.h" />
     <ClInclude Include="ILRewriterWrapper.h" />
     <ClInclude Include="Integration.h" />
+    <ClInclude Include="IntegrationLoader.h" />
     <ClInclude Include="IntegrationType.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="MetadataBuilder.h" />
     <ClInclude Include="ModuleMetadata.h" />
@@ -170,6 +172,7 @@
     <ClCompile Include="ILRewriter.cpp" />
     <ClCompile Include="ILRewriterWrapper.cpp" />
     <ClCompile Include="Integration.cpp" />
+    <ClCompile Include="IntegrationLoader.cpp" />
     <ClCompile Include="Interop.cpp" />
     <ClCompile Include="MetadataBuilder.cpp" />
   </ItemGroup>

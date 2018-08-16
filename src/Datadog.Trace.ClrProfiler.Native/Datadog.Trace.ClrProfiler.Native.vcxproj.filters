@@ -11,6 +11,7 @@
     <ClCompile Include="ILRewriterWrapper.cpp" />
     <ClCompile Include="MetadataBuilder.cpp" />
     <ClCompile Include="Integration.cpp" />
+    <ClCompile Include="IntegrationLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClassFactory.h" />
@@ -26,6 +27,8 @@
     <ClInclude Include="MetadataBuilder.h" />
     <ClInclude Include="ComPtr.h" />
     <ClInclude Include="Integration.h" />
+    <ClInclude Include="json.hpp" />
+    <ClInclude Include="IntegrationLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Trace.ClrProfiler.Native.def" />

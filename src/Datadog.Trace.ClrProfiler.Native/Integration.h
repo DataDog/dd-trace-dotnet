@@ -11,6 +11,11 @@ struct method_reference
     const std::wstring method_name;
     const std::vector<BYTE> method_signature;
 
+    method_reference()
+    {
+
+    }
+
     method_reference(std::wstring assembly_name,
                      std::wstring type_name,
                      std::wstring method_name,
@@ -39,6 +44,10 @@ struct method_replacement
     const method_reference target_method;
     const method_reference wrapper_method;
 
+    method_replacement()
+    {
+    }
+
     method_replacement(method_reference caller_method,
                        method_reference target_method,
                        method_reference wrapper_method)
@@ -55,6 +64,11 @@ struct integration
     const std::wstring integration_name;
     std::vector<method_replacement> method_replacements;
 
+    integration()
+        : integration_type(IntegrationType_Custom)
+    {
+    }
+
     integration(const IntegrationType integration_type,
                 std::wstring integration_name,
                 std::vector<method_replacement> method_replacements)
@@ -67,4 +81,4 @@ struct integration
 
 extern const integration aspnet_mvc5_integration;
 extern const integration aspnetcore_mvc2_integration;
-extern const std::vector<integration> all_integrations;
+extern std::vector<integration> all_integrations;
