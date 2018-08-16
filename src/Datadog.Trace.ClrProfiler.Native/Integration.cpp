@@ -13,7 +13,7 @@ const integration aspnet_mvc5_integration
                                                             // assembly
                                                             L"System.Web.Mvc",
                                                             // type
-                                                            L"System.Web.Mvc.Controller",
+                                                            L"",
                                                             // method name
                                                             L"",
                                                             // method signature

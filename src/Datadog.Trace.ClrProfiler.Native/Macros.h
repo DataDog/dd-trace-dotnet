@@ -10,3 +10,4 @@ extern WCHAR g_wszLogFilePath[MAX_PATH];
 #define LOG_IFFAILED(HR, EXPR) do { if (FAILED(HR)) { LOG_APPEND(EXPR << L", hr = " << HEX(HR)); } } while(0)
 #define LOG_IFFAILEDRET(HR, EXPR) do { if (FAILED(HR)) { LOG_APPEND(EXPR << L", hr = " << HEX(HR)); return E_FAIL; } } while(0)
 #define RETURN_IF_FAILED(EXPR) do { hr = (EXPR); if(FAILED(hr)) { return (hr); } } while (0)
+#define RETURN_OK_IF_FAILED(EXPR) do { hr = (EXPR); if(FAILED(hr)) { return S_OK; } } while (0)

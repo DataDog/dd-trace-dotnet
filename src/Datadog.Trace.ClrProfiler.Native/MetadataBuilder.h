@@ -22,6 +22,9 @@ private:
                                        ULONG assembly_ref_count,
                                        mdAssemblyRef* assembly_ref_out) const;
 
+    HRESULT find_wrapper_type_ref(const method_replacement& method_replacement,
+                                  mdTypeRef& type_ref_out) const;
+
 public:
     MetadataBuilder(ModuleMetadata& metadata,
                     const mdModule module,
@@ -37,8 +40,6 @@ public:
           assemblyEmit(std::move(assembly_emit))
     {
     }
-
-    HRESULT find_wrapper_type_ref(const method_replacement& method_replacement, mdTypeRef& type_ref_out) const;
 
     HRESULT store_wrapper_method_ref(const method_replacement& method_replacement) const;
 
