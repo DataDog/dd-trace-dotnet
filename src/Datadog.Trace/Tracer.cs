@@ -151,8 +151,10 @@ namespace Datadog.Trace
 #if !NETSTANDARD2_0
                 if (System.Web.Hosting.HostingEnvironment.IsHosted)
                 {
-                    // if we are hosted as an ASP.NET application, return the site name
-                    return System.Web.Hosting.HostingEnvironment.SiteName;
+                    // if we are hosted as an ASP.NET application, return SiteName/Path.
+                    // note that ApplicationVirtualPath includes a leading slash,
+                    // and is just a slash if this application is not a subapplication.
+                    return System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath;
                 }
 #endif
                 return Assembly.GetEntryAssembly()?.GetName().Name ??
