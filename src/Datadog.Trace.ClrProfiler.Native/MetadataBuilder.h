@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <corhlpr.h>
+#include "ComPtr.h"
 #include "ModuleMetadata.h"
 
 class MetadataBuilder
@@ -21,6 +22,9 @@ private:
                                        ULONG assembly_ref_count,
                                        mdAssemblyRef* assembly_ref_out) const;
 
+    HRESULT find_wrapper_type_ref(const method_replacement& method_replacement,
+                                  mdTypeRef& type_ref_out) const;
+
 public:
     MetadataBuilder(ModuleMetadata& metadata,
                     const mdModule module,
@@ -37,9 +41,7 @@ public:
     {
     }
 
-    HRESULT store_wrapper_type_ref(const integration& integration, mdTypeRef& type_ref_out) const;
-
-    HRESULT store_wrapper_method_ref(const integration& integration, const method_replacement& method) const;
+    HRESULT store_wrapper_method_ref(const method_replacement& method_replacement) const;
 
     HRESULT emit_assembly_ref(const std::wstring& assembly_name,
                               const ASSEMBLYMETADATA& assembly_metadata,

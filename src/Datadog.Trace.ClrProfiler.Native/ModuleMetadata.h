@@ -12,16 +12,17 @@ private:
     std::unordered_map<std::wstring, mdTypeRef> wrapper_parent_type{};
 
 public:
-    ComPtr<IMetaDataImport> metadataImport{};
+    const ComPtr<IMetaDataImport> metadata_import{};
     std::wstring assemblyName = L"";
-    std::vector<integration> m_Integrations = {};
+    std::vector<integration> integrations = {};
+
 
     ModuleMetadata(ComPtr<IMetaDataImport> metadata_import,
                    std::wstring assembly_name,
-                   std::vector<integration> integration_bases)
-        : metadataImport(std::move(metadata_import)),
+                   std::vector<integration> integrations)
+        : metadata_import(std::move(metadata_import)),
           assemblyName(std::move(assembly_name)),
-          m_Integrations(std::move(integration_bases))
+          integrations(std::move(integrations))
     {
     }
 

@@ -4,21 +4,47 @@
 #include <corhlpr.h>
 #include "IntegrationType.h"
 
+struct method_reference
+{
+    const std::wstring assembly_name;
+    const std::wstring type_name;
+    const std::wstring method_name;
+    const std::vector<BYTE> method_signature;
+
+    method_reference(std::wstring assembly_name,
+                     std::wstring type_name,
+                     std::wstring method_name,
+                     std::vector<BYTE> method_signature)
+        : assembly_name(std::move(assembly_name)),
+          type_name(std::move(type_name)),
+          method_name(std::move(method_name)),
+          method_signature(std::move(method_signature))
+    {
+    }
+
+    std::wstring get_type_cache_key() const
+    {
+        return L"[" + assembly_name + L"]" + type_name;
+    }
+
+    std::wstring get_method_cache_key() const
+    {
+        return L"[" + assembly_name + L"]" + type_name + L"." + method_name;
+    }
+};
+
 struct method_replacement
 {
-    const mdMethodDef caller_method_token = mdMethodDefNil;
-    const mdMethodDef target_method_token = mdMethodDefNil;
-    const std::wstring wrapper_method_name;
-    const std::vector<BYTE> wrapper_method_signature;
+    const method_reference caller_method;
+    const method_reference target_method;
+    const method_reference wrapper_method;
 
-    method_replacement(const mdMethodDef caller_method_token,
-                       const mdMethodDef target_method_token,
-                       std::wstring wrapper_method_name,
-                       std::vector<BYTE> wrapper_method_signature)
-        : caller_method_token(caller_method_token),
-          target_method_token(target_method_token),
-          wrapper_method_name(std::move(wrapper_method_name)),
-          wrapper_method_signature(std::move(wrapper_method_signature))
+    method_replacement(method_reference caller_method,
+                       method_reference target_method,
+                       method_reference wrapper_method)
+        : caller_method(std::move(caller_method)),
+          target_method(std::move(target_method)),
+          wrapper_method(std::move(wrapper_method))
     {
     }
 };
@@ -27,34 +53,15 @@ struct integration
 {
     const IntegrationType integration_type;
     const std::wstring integration_name;
-    const std::wstring target_assembly_name;
-    const std::wstring wrapper_assembly_name;
-    const std::wstring wrapper_type_name;
     std::vector<method_replacement> method_replacements;
 
     integration(const IntegrationType integration_type,
                 std::wstring integration_name,
-                std::wstring target_assembly_name,
-                std::wstring wrapper_assembly_name,
-                std::wstring wrapper_type_name,
                 std::vector<method_replacement> method_replacements)
         : integration_type(integration_type),
           integration_name(std::move(integration_name)),
-          target_assembly_name(std::move(target_assembly_name)),
-          wrapper_assembly_name(std::move(wrapper_assembly_name)),
-          wrapper_type_name(std::move(wrapper_type_name)),
           method_replacements(std::move(method_replacements))
     {
-    }
-
-    std::wstring get_wrapper_type_key() const
-    {
-        return L"[" + wrapper_assembly_name + L"]" + wrapper_type_name;
-    }
-
-    std::wstring get_wrapper_method_key(const method_replacement& method) const
-    {
-        return L"[" + wrapper_assembly_name + L"]" + wrapper_type_name + L"." + method.wrapper_method_name;
     }
 };
 

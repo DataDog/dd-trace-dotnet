@@ -97,9 +97,9 @@ HRESULT MetadataBuilder::find_assembly_ref_iterator(const std::wstring& assembly
     return E_FAIL;
 }
 
-HRESULT MetadataBuilder::store_wrapper_type_ref(const integration& integration, mdTypeRef& type_ref_out) const
+HRESULT MetadataBuilder::find_wrapper_type_ref(const method_replacement& method_replacement, mdTypeRef& type_ref_out) const
 {
-    const auto cache_key = integration.get_wrapper_type_key();
+    const auto& cache_key = method_replacement.wrapper_method.get_type_cache_key();
     mdTypeRef type_ref = mdTypeRefNil;
 
     if (metadata.TryGetWrapperParentTypeRef(cache_key, type_ref))
@@ -112,41 +112,44 @@ HRESULT MetadataBuilder::store_wrapper_type_ref(const integration& integration, 
     HRESULT hr;
     type_ref = mdTypeRefNil;
 
-    if (metadata.assemblyName == integration.wrapper_assembly_name)
+    const LPCWSTR wrapper_type_name = method_replacement.wrapper_method.type_name.c_str();
+
+    if (metadata.assemblyName == method_replacement.wrapper_method.assembly_name)
     {
         // type is defined in this assembly
-        hr = metadataEmit->DefineTypeRefByName(module, integration.wrapper_type_name.c_str(), &type_ref);
+        hr = metadataEmit->DefineTypeRefByName(module, wrapper_type_name, &type_ref);
     }
     else
     {
         // type is defined in another assembly,
         // find a reference to the assembly where type lives
         mdAssemblyRef assembly_ref = mdAssemblyRefNil;
-        hr = find_assembly_ref(integration.wrapper_assembly_name, &assembly_ref);
+        hr = find_assembly_ref(method_replacement.wrapper_method.assembly_name, &assembly_ref);
         RETURN_IF_FAILED(hr);
 
         // TODO: emit assembly reference if not found?
 
         // search for an existing reference to the type
-        hr = metadataImport->FindTypeRef(assembly_ref, integration.wrapper_type_name.c_str(), &type_ref);
+        hr = metadataImport->FindTypeRef(assembly_ref, wrapper_type_name, &type_ref);
 
         if (hr == HRESULT(0x80131130) /* record not found on lookup */)
         {
             // if typeRef not found, create a new one by emiting a metadata token
-            hr = metadataEmit->DefineTypeRefByName(assembly_ref, integration.wrapper_type_name.c_str(), &type_ref);
+            hr = metadataEmit->DefineTypeRefByName(assembly_ref, wrapper_type_name, &type_ref);
         }
     }
 
     RETURN_IF_FAILED(hr);
 
+    // cache the typeRef in case we need it again
     metadata.SetWrapperParentTypeRef(cache_key, type_ref);
     type_ref_out = type_ref;
     return S_OK;
 }
 
-HRESULT MetadataBuilder::store_wrapper_method_ref(const integration& integration, const method_replacement& method) const
+HRESULT MetadataBuilder::store_wrapper_method_ref(const method_replacement& method_replacement) const
 {
-    const auto cache_key = integration.get_wrapper_method_key(method);
+    const auto& cache_key = method_replacement.wrapper_method.get_method_cache_key();
     mdMemberRef member_ref = mdMemberRefNil;
 
     if (metadata.TryGetWrapperMemberRef(cache_key, member_ref))
@@ -156,23 +159,27 @@ HRESULT MetadataBuilder::store_wrapper_method_ref(const integration& integration
     }
 
     mdTypeRef type_ref = mdTypeRefNil;
-    HRESULT hr = store_wrapper_type_ref(integration, type_ref);
+    HRESULT hr = find_wrapper_type_ref(method_replacement, type_ref);
     RETURN_IF_FAILED(hr);
 
+    const auto wrapper_method_name = method_replacement.wrapper_method.method_name.c_str();
+    const auto wrapper_method_signature_data = method_replacement.wrapper_method.method_signature.data();
+    const auto wrapper_method_signature_size = static_cast<ULONG>(method_replacement.wrapper_method.method_signature.size());
     member_ref = mdMemberRefNil;
+
     hr = metadataImport->FindMemberRef(type_ref,
-                                       method.wrapper_method_name.c_str(),
-                                       method.wrapper_method_signature.data(),
-                                       static_cast<ULONG>(method.wrapper_method_signature.size()),
+                                       wrapper_method_name,
+                                       wrapper_method_signature_data,
+                                       wrapper_method_signature_size,
                                        &member_ref);
 
     if (hr == HRESULT(0x80131130) /* record not found on lookup */)
     {
         // if memberRef not found, create it by emiting a metadata token
         hr = metadataEmit->DefineMemberRef(type_ref,
-                                           method.wrapper_method_name.c_str(),
-                                           method.wrapper_method_signature.data(),
-                                           static_cast<ULONG>(method.wrapper_method_signature.size()),
+                                           wrapper_method_name,
+                                           wrapper_method_signature_data,
+                                           wrapper_method_signature_size,
                                            &member_ref);
     }
 
