@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetMvc5Integration"/> class.
         /// </summary>
-        /// <param name="controllerContextObj">An array with all the arguments that were passed into the instrumented method. If it is an instance method, the first arguments is <c>this</c>.</param>
+        /// <param name="controllerContextObj">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
         public AspNetMvc5Integration(object controllerContextObj)
         {
             if (controllerContextObj == null || ContollerContextType == null)
