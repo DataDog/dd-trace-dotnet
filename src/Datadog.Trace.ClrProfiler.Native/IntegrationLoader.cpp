@@ -2,19 +2,34 @@
 
 using json = nlohmann::json;
 
-std::vector<integration> IntegrationLoader::load_integrations_from_file(const std::wstring file_path)
+std::vector<integration> IntegrationLoader::load_integrations_from_file(const std::wstring& file_path)
+{
+    std::vector<integration> integrations;
+
+    try
+    {
+        std::ifstream stream;
+        stream.open(file_path);
+        integrations = load_integrations_from_stream(stream);
+        stream.close();
+    }
+    catch (...)
+    {
+        LOG_APPEND(L"failed to load integrations");
+    }
+
+    return integrations;
+}
+
+std::vector<integration> IntegrationLoader::load_integrations_from_stream(std::istream& stream)
 {
     std::vector<integration> integrations;
 
     try
     {
         json j;
-
-        // pipe in the file path
-        std::ifstream i;
-        i.open(file_path);
-        i >> j;
-        i.close();
+        // parse the stream
+        stream >> j;
 
         for (auto& el : j)
         {
@@ -25,19 +40,19 @@ std::vector<integration> IntegrationLoader::load_integrations_from_file(const st
             }
         }
 
-        LOG_APPEND(L"loaded integrations (" << file_path.c_str() << L"): " << j.dump().c_str());
+        LOG_APPEND(L"loaded integrations: " << j.dump().c_str());
     }
     catch (const json::parse_error& e)
     {
-        LOG_APPEND(L"invalid integration file (" << file_path.c_str() << L"): " << e.what());
+        LOG_APPEND(L"invalid integrations: " << e.what());
     }
     catch (const json::type_error& e)
     {
-        LOG_APPEND(L"invalid integration file (" << file_path.c_str() << L"): " << e.what());
+        LOG_APPEND(L"invalid integrations: " << e.what());
     }
     catch (...)
     {
-        LOG_APPEND(L"failed to load integration file (" << file_path.c_str() << L")");
+        LOG_APPEND(L"failed to load integrations");
     }
 
     return integrations;
@@ -50,10 +65,20 @@ std::pair<integration, bool> IntegrationLoader::integration_from_json(const json
         return { {}, false };
     }
 
-    std::vector<method_replacement> replacements;
-    if (src["method_replacements"].is_array())
+    // first get the name, which is required
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring name = converter.from_bytes(src.value("name", ""));
+    if (name.empty())
     {
-        for (auto& el : src["method_replacements"])
+        LOG_APPEND(L"integration name is missing for integration: " << src.dump().c_str());
+        return { {}, false };
+    }
+
+    std::vector<method_replacement> replacements;
+    auto arr = src.value("method_replacements", json::array());
+    if (arr.is_array())
+    {
+        for (auto& el : arr)
         {
             auto mr = method_replacement_from_json(el);
             if (mr.second)
@@ -62,8 +87,6 @@ std::pair<integration, bool> IntegrationLoader::integration_from_json(const json
             }
         }
     }
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::wstring name = converter.from_bytes(src.value("name", ""));
     return { integration(IntegrationType_Custom, name, replacements), true };
 }
 

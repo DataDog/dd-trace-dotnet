@@ -15,7 +15,8 @@ using json = nlohmann::json;
 class IntegrationLoader
 {
 public:
-    static std::vector<integration> load_integrations_from_file(const std::wstring file_path);
+    static std::vector<integration> load_integrations_from_file(const std::wstring& file_path);
+    static std::vector<integration> load_integrations_from_stream(std::istream& stream);
 
 private:
     static std::pair<integration, bool> integration_from_json(const json::value_type& src);
