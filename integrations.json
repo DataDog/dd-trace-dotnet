@@ -1,0 +1,74 @@
+[
+  {
+    "name": "aspNetCoreMvc2",
+    "method_replacements": [
+      {
+        "caller": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core",
+          "type": "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker"
+        },
+        "target": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core",
+          "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
+          "method": "BeforeAction"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
+          "method": "BeforeAction"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core",
+          "type": "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker"
+        },
+        "target": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core",
+          "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
+          "method": "AfterAction"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
+          "method": "AfterAction"
+        }
+      }
+    ]
+  },
+  {
+    "name": "aspNetMvc5",
+    "method_replacements": [
+      {
+        "caller": {
+          "assembly": "System.Web.Mvc"
+        },
+        "target": {
+          "assembly": "System.Web.Mvc",
+          "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
+          "method": "BeginInvokeAction"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration",
+          "method": "BeginInvokeAction"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "System.Web.Mvc"
+        },
+        "target": {
+          "assembly": "System.Web.Mvc",
+          "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
+          "method": "EndInvokeAction"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration",
+          "method": "EndInvokeAction"
+        }
+      }
+    ]
+  }
+]

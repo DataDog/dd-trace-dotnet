@@ -10,6 +10,7 @@
 #include "ModuleMetadata.h"
 #include "ILRewriter.h"
 #include "MetadataBuilder.h"
+#include "IntegrationLoader.h"
 
 // Note: Generally you should not have a single, global callback implementation, as that
 // prevents your profiler from analyzing multiply loaded in-process side-by-side CLRs.
@@ -21,7 +22,7 @@ CorProfiler* g_pCallbackObject = nullptr;
 
 // TODO: fix log path, read from config?
 std::wofstream g_wLogFile;
-WCHAR g_wszLogFilePath[MAX_PATH] = L"C:\\temp\\CorProfiler.log";
+std::string g_wszLogFilePath = "C:\\temp\\CorProfiler.log";
 
 HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
 {
@@ -51,6 +52,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
         return E_FAIL;
     }
     */
+
+    WCHAR integration_file_path[MAX_PATH]{};
+    const DWORD integration_file_path_length = GetEnvironmentVariable(L"DATADOG_INTEGRATIONS", integration_file_path, _countof(integration_file_path));
+
+    if (integration_file_path_length > 0)
+    {
+        LOG_APPEND(L"loading integrations from " << integration_file_path);
+        all_integrations = IntegrationLoader::load_integrations_from_file(integration_file_path);
+    }
 
     WCHAR processNames[MAX_PATH]{};
     const DWORD processNamesLength = GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES", processNames, _countof(processNames));

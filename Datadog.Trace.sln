@@ -62,7 +62,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AA6F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5", "samples\Samples.AspNetMvc5\Samples.AspNetMvc5.csproj", "{3C6DD42E-9214-4747-92BA-78DE29AACE59}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreMvc2", "samples\Samples.AspNetCoreMvc2\Samples.AspNetCoreMvc2.csproj", "{9951A03A-AD1B-48D8-A96D-B85532BEDADD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc2", "samples\Samples.AspNetCoreMvc2\Samples.AspNetCoreMvc2.csproj", "{9951A03A-AD1B-48D8-A96D-B85532BEDADD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{91B6272F-5780-4C94-8071-DBBA7B4F67F3} = {91B6272F-5780-4C94-8071-DBBA7B4F67F3}
+		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{C1B5EA8C-C190-4EAE-871B-A7E95B5EC482}"
 EndProject
