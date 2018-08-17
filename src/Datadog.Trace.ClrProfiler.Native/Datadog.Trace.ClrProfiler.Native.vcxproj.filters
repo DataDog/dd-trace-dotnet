@@ -29,6 +29,7 @@
     <ClInclude Include="Integration.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="IntegrationLoader.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.Trace.ClrProfiler.Native.def" />

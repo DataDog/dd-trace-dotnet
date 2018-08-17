@@ -4,6 +4,8 @@
 #include <string>
 #include <fstream>
 #include <vector>
+
+#include "util.h"
 #include "CorProfiler.h"
 #include "Macros.h"
 #include "ComPtr.h"
@@ -31,22 +33,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     /*
     WCHAR wszTempDir[MAX_PATH] = { L'\0' };
 
-    if (FAILED(GetEnvironmentVariable(L"ProgramData", wszTempDir, _countof(wszTempDir))))
+    if (FAILED(GetEnvironmentVariable(L"ProgramData", wszTempDir, std::size(wszTempDir))))
     {
         return E_FAIL;
     }
 
-    if (wcscpy_s(g_wszLogFilePath, _countof(g_wszLogFilePath), wszTempDir) != 0)
+    if (wcscpy_s(g_wszLogFilePath, std::size(g_wszLogFilePath), wszTempDir) != 0)
     {
         return E_FAIL;
     }
 
-    if (wcscat_s(g_wszLogFilePath, _countof(g_wszLogFilePath), L"\\Datadog\\logs\\CorProfiler.log"))
+    if (wcscat_s(g_wszLogFilePath, std::size(g_wszLogFilePath), L"\\Datadog\\logs\\CorProfiler.log"))
     {
         return E_FAIL;
     }
 
-    if (wcscpy_s(g_wszLogFilePath, _countof(g_wszLogFilePath), L"C:\\temp\\CorProfiler.log") != 0)
+    if (wcscpy_s(g_wszLogFilePath, std::size(g_wszLogFilePath), L"C:\\temp\\CorProfiler.log") != 0)
     {
         LOG_APPEND(L"Failed to attach profiler: could not copy log file path.");
         return E_FAIL;
@@ -54,7 +56,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     */
 
     WCHAR integration_file_path[MAX_PATH]{};
-    const DWORD integration_file_path_length = GetEnvironmentVariable(L"DATADOG_INTEGRATIONS", integration_file_path, _countof(integration_file_path));
+    const DWORD integration_file_path_length = GetEnvironmentVariable(L"DATADOG_INTEGRATIONS", integration_file_path, std::size(integration_file_path));
 
     if (integration_file_path_length > 0)
     {
@@ -63,7 +65,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     }
 
     WCHAR processNames[MAX_PATH]{};
-    const DWORD processNamesLength = GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES", processNames, _countof(processNames));
+    const DWORD processNamesLength = GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES", processNames, std::size(processNames));
 
     if (processNamesLength == 0)
     {
@@ -74,7 +76,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << processNames);
 
     WCHAR currentProcessPath[MAX_PATH]{};
-    const DWORD currentProcessPathLength = GetModuleFileName(nullptr, currentProcessPath, _countof(currentProcessPath));
+    const DWORD currentProcessPathLength = GetModuleFileName(nullptr, currentProcessPath, std::size(currentProcessPath));
 
     if (currentProcessPathLength == 0)
     {
@@ -126,7 +128,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
 
     HRESULT hr = this->corProfilerInfo->GetModuleInfo2(moduleId,
                                                        &pbBaseLoadAddr,
-                                                       _countof(wszModulePath),
+                                                       std::size(wszModulePath),
                                                        &cchNameOut,
                                                        wszModulePath,
                                                        &assemblyId,
@@ -143,7 +145,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
 
     WCHAR assemblyName[512]{};
     ULONG assemblyNameLength = 0;
-    hr = this->corProfilerInfo->GetAssemblyInfo(assemblyId, _countof(assemblyName), &assemblyNameLength, assemblyName, nullptr, nullptr);
+    hr = this->corProfilerInfo->GetAssemblyInfo(assemblyId, std::size(assemblyName), &assemblyNameLength, assemblyName, nullptr, nullptr);
     LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
 
     std::vector<integration> enabledIntegrations;
@@ -209,13 +211,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     assemblyMetaData.usBuildNumber = 0;
     assemblyMetaData.usRevisionNumber = 0;
     assemblyMetaData.szLocale = wszLocale;
-    assemblyMetaData.cbLocale = _countof(wszLocale);
+    assemblyMetaData.cbLocale = std::size(wszLocale);
 
     mdAssemblyRef assemblyRef;
     hr = metadataBuilder.emit_assembly_ref(L"Datadog.Trace.ClrProfiler.Managed",
                                            assemblyMetaData,
                                            rgbPublicKeyToken,
-                                           _countof(rgbPublicKeyToken),
+                                           std::size(rgbPublicKeyToken),
                                            assemblyRef);
 
     RETURN_OK_IF_FAILED(hr);

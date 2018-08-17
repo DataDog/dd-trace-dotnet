@@ -3,6 +3,9 @@
 
 #include <cassert>
 #include <corhlpr.cpp>
+#include <iterator>
+
+#include "util.h"
 #include "ILRewriter.h"
 
 #undef IfFailRet
@@ -414,7 +417,7 @@ again:
             m_pOutputBuffer[offset++] = (opcode & 0xFF);
         }
 
-        assert(pInstr->m_opcode < _countof(s_OpCodeFlags));
+        assert(pInstr->m_opcode < std::size(s_OpCodeFlags));
         BYTE flags = s_OpCodeFlags[pInstr->m_opcode];
         switch (flags)
         {

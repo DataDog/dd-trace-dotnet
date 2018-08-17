@@ -1,5 +1,7 @@
 ﻿#include <string>
 #include <fstream>
+
+#include "util.h"
 #include "MetadataBuilder.h"
 #include "Macros.h"
 
@@ -36,7 +38,7 @@ HRESULT MetadataBuilder::find_assembly_ref(const std::wstring& assembly_name,
     {
         const HRESULT hr = assemblyImport->EnumAssemblyRefs(&hEnum,
                                                             rgAssemblyRefs,
-                                                            _countof(rgAssemblyRefs),
+                                                            static_cast<ULONG>(std::size(rgAssemblyRefs)),
                                                             &cAssemblyRefsReturned);
 
         LOG_IFFAILEDRET(hr, L"EnumAssemblyRefs failed, hr = " << HEX(hr));
@@ -78,7 +80,7 @@ HRESULT MetadataBuilder::find_assembly_ref_iterator(const std::wstring& assembly
                                                                &pvPublicKeyOrToken,
                                                                &cbPublicKeyOrToken,
                                                                wszName,
-                                                               _countof(wszName),
+                                                               static_cast<ULONG>(std::size(wszName)),
                                                                &cchNameReturned,
                                                                &asmMetaData,
                                                                &pbHashValue,
