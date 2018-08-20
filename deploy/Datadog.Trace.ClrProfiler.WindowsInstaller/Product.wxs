@@ -11,8 +11,7 @@
     <Package InstallerVersion="200"
              Compressed="yes"
              InstallScope="perMachine"
-             Description="$(var.ProductName)"
-             Platform="$(var.Platform)" />
+             Description="$(var.ProductName)" />
 
     <!--
         <Property Id="ARPCOMMENTS">any comments</Property>
