@@ -1,4 +1,5 @@
 #include "IntegrationLoader.h"
+#include "util.h"
 
 using json = nlohmann::json;
 
@@ -66,8 +67,7 @@ std::pair<integration, bool> IntegrationLoader::integration_from_json(const json
     }
 
     // first get the name, which is required
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::wstring name = converter.from_bytes(src.value("name", ""));
+    std::wstring name = ToWString(src.value("name", ""));
     if (name.empty())
     {
         LOG_APPEND(L"integration name is missing for integration: " << src.dump().c_str());
@@ -111,9 +111,8 @@ method_reference IntegrationLoader::method_reference_from_json(const json::value
         return {};
     }
 
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::wstring assembly = converter.from_bytes(src.value("assembly", ""));
-    std::wstring type = converter.from_bytes(src.value("type", ""));
-    std::wstring method = converter.from_bytes(src.value("method", ""));
+    std::wstring assembly = ToWString(src.value("assembly", ""));
+    std::wstring type = ToWString(src.value("type", ""));
+    std::wstring method = ToWString(src.value("method", ""));
     return method_reference(assembly, type, method, {});
 }
