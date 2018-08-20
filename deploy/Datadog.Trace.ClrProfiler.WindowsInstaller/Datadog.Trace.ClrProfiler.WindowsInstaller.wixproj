@@ -38,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="banner.bmp" />
+    <Content Include="build.ps1" />
     <Content Include="datadog-icon.ico" />
     <Content Include="dialog.bmp" />
     <Content Include="Config.wxi" />

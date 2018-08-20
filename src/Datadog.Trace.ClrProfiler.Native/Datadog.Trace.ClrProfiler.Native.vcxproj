@@ -111,6 +111,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -122,6 +123,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -133,7 +135,7 @@
     <ClInclude Include="IDToInfoMap.h" />
     <ClInclude Include="ILRewriter.h" />
     <ClInclude Include="ILRewriterWrapper.h" />
-    <ClInclude Include="Integration.h" />
+    <ClInclude Include="integration.h" />
     <ClInclude Include="integration_loader.h" />
     <ClInclude Include="IntegrationType.h" />
     <ClInclude Include="json.hpp" />
@@ -148,7 +150,6 @@
     <ClCompile Include="CorProfiler.cpp" />
     <ClCompile Include="ILRewriter.cpp" />
     <ClCompile Include="ILRewriterWrapper.cpp" />
-    <ClCompile Include="Integration.cpp" />
     <ClCompile Include="integration_loader.cpp" />
     <ClCompile Include="Interop.cpp" />
     <ClCompile Include="MetadataBuilder.cpp" />
