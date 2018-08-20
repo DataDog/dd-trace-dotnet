@@ -88,6 +88,8 @@
       <Optimization>Disabled</Optimization>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -96,6 +98,8 @@
       <Optimization>Disabled</Optimization>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -106,6 +110,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -116,6 +121,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -128,7 +134,7 @@
     <ClInclude Include="ILRewriter.h" />
     <ClInclude Include="ILRewriterWrapper.h" />
     <ClInclude Include="Integration.h" />
-    <ClInclude Include="IntegrationLoader.h" />
+    <ClInclude Include="integration_loader.h" />
     <ClInclude Include="IntegrationType.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="Macros.h" />
@@ -143,7 +149,7 @@
     <ClCompile Include="ILRewriter.cpp" />
     <ClCompile Include="ILRewriterWrapper.cpp" />
     <ClCompile Include="Integration.cpp" />
-    <ClCompile Include="IntegrationLoader.cpp" />
+    <ClCompile Include="integration_loader.cpp" />
     <ClCompile Include="Interop.cpp" />
     <ClCompile Include="MetadataBuilder.cpp" />
   </ItemGroup>
