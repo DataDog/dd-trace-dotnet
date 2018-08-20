@@ -10,7 +10,7 @@
 #include "ModuleMetadata.h"
 #include "ILRewriter.h"
 #include "MetadataBuilder.h"
-#include "IntegrationLoader.h"
+#include "integration_loader.h"
 
 // Note: Generally you should not have a single, global callback implementation, as that
 // prevents your profiler from analyzing multiply loaded in-process side-by-side CLRs.
@@ -59,7 +59,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     if (integration_file_path_length > 0)
     {
         LOG_APPEND(L"loading integrations from " << integration_file_path);
-        all_integrations = IntegrationLoader::load_integrations_from_file(integration_file_path);
+        trace::IntegrationLoader loader;
+        all_integrations = loader.LoadIntegrationsFromFile(integration_file_path);
     }
 
     WCHAR processNames[MAX_PATH]{};
