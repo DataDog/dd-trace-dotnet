@@ -26,7 +26,7 @@ std::string g_wszLogFilePath = "C:\\temp\\CorProfiler.log";
 
 HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
 {
-    bIsAttached = FALSE;
+    is_attached_ = FALSE;
 
     /*
     WCHAR wszTempDir[MAX_PATH] = { L'\0' };
@@ -60,7 +60,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     {
         LOG_APPEND(L"loading integrations from " << integration_file_path);
         trace::IntegrationLoader loader;
-        all_integrations = loader.LoadIntegrationsFromFile(integration_file_path);
+        integrations_ = loader.LoadIntegrationsFromFile(integration_file_path);
     }
 
     WCHAR processNames[MAX_PATH]{};
@@ -112,7 +112,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
     // we're in!
     LOG_APPEND(L"Profiler attached to process " << processName);
     this->corProfilerInfo->AddRef();
-    bIsAttached = true;
+    is_attached_ = true;
     g_pCallbackObject = this;
     return S_OK;
 }
@@ -151,7 +151,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
 
     // check if we need to instrument anything in this assembly,
     // for each integration...
-    for (const auto& integration : all_integrations)
+    for (const auto& integration : this->integrations_)
     {
         // TODO: check if integration is enabled in config
         for (const auto& method_replacement : integration.method_replacements)
@@ -233,7 +233,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRE
     }
 
     // store module info for later lookup
-    m_moduleIDToInfoMap.Update(moduleId, moduleMetadata);
+    module_id_to_info_map_.Update(moduleId, moduleMetadata);
     return S_OK;
 }
 
@@ -241,9 +241,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId, H
 {
     ModuleMetadata* metadata;
 
-    if (m_moduleIDToInfoMap.LookupIfExists(moduleId, &metadata))
+    if (module_id_to_info_map_.LookupIfExists(moduleId, &metadata))
     {
-        m_moduleIDToInfoMap.Erase(moduleId);
+      module_id_to_info_map_.Erase(moduleId);
         delete metadata;
     }
 
@@ -261,7 +261,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     ModuleMetadata* moduleMetadata = nullptr;
 
-    if (!m_moduleIDToInfoMap.LookupIfExists(moduleId, &moduleMetadata))
+    if (!module_id_to_info_map_.LookupIfExists(moduleId, &moduleMetadata))
     {
         // we haven't stored a ModuleInfo for this module, so we can't modify its IL
         return S_OK;
@@ -412,7 +412,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     return S_OK;
 }
 
-bool CorProfiler::IsAttached() const
-{
-    return bIsAttached;
+bool CorProfiler::IsAttached() const {
+    return is_attached_;
 }
