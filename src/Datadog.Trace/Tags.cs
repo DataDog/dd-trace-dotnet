@@ -16,6 +16,11 @@ namespace Datadog.Trace
         public const string HttpMethod = "http.method";
 
         /// <summary>
+        /// The host of an HTTP request
+        /// </summary>
+        public const string HttpRequestHeadersHost = "http.request.headers.host";
+
+        /// <summary>
         /// The status code of an HTTP response
         /// </summary>
         public const string HttpStatusCode = "http.status_code";
