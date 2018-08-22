@@ -63,7 +63,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return;
                 }
 
+                string host = _httpContext.Request.Headers.Get("Host");
                 string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
+                string url = _httpContext.Request.RawUrl.ToLowerInvariant();
 
                 IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
                 string controllerName = routeValues.GetValueOrDefault("controller") as string;
@@ -74,8 +76,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Span span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
+                span.SetTag(Tags.HttpRequestHeadersHost, host);
                 span.SetTag(Tags.HttpMethod, httpMethod);
-                span.SetTag(Tags.HttpUrl, _httpContext.Request.RawUrl.ToLowerInvariant());
+                span.SetTag(Tags.HttpUrl, url);
                 span.SetTag(Tags.AspNetRoute, (string)controllerContext.RouteData.Route.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
