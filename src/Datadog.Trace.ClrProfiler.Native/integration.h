@@ -57,3 +57,5 @@ struct integration {
         integration_name(std::move(integration_name)),
         method_replacements(std::move(method_replacements)) {}
 };
+
+extern std::vector<integration> default_integrations;
