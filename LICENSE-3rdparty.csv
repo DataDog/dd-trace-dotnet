@@ -5,3 +5,4 @@ liblog,https://github.com/damianh/LibLog,MIT,Copyright (C) 2011-2017 Damian Hick
 coreclr,https://github.com/dotnet/coreclr,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 clr-samples,https://github.com/Microsoft/clr-samples,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 clrprofiler,https://github.com/MicrosoftArchive/clrprofiler,MIT,Copyright (c) Microsoft Corporation.  All rights reserved.
+JSON for Modern C++,https://github.com/nlohmann/json,MIT,Copyright (c) 2013-2018 Niels Lohmann
