@@ -1,0 +1,36 @@
+<Project DefaultTarget="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- default property values -->
+    <IncludeCsharp Condition="$(IncludeCsharp) == '' ">true</IncludeCsharp>
+    <IncludeCpp Condition="$(IncludeCpp) == '' ">true</IncludeCpp>
+    <IncludeSamples Condition="$(IncludeSamples) == '' ">false</IncludeSamples>
+    <IncludeBenchmarks Condition="$(IncludeBenchmarks) == '' ">false</IncludeBenchmarks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CsharpProject Include="src\**\*.csproj;test\**\*.csproj" Condition="$(IncludeCsharp) == 'true'"/>
+    <CppProject Include="src\**\*.vcxproj;test\**\*.vcxproj" Condition="$(IncludeCpp) == 'true'"/>
+    <SampleProject Include="samples\**\*.csproj" Condition="$(IncludeSamples) == 'true'"/>
+    <BenchmarkProject Include="benchmarks\**\*.csproj" Condition="$(IncludeBenchmarks) == 'true'"/>
+  </ItemGroup>
+
+  <Target Name="Restore">
+    <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CppProject);@(SampleProject);@(BenchmarkProject)"/>
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Targets="Clean" Projects="@(CsharpProject);@(CppProject);@(SampleProject);@(BenchmarkProject)"/>
+  </Target>
+
+  <Target Name="Build">
+    <MSBuild Targets="Build" Projects="@(CsharpProject);@(CppProject);@(SampleProject);@(BenchmarkProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="Rebuild">
+    <MSBuild Targets="Rebuild" Projects="@(CsharpProject);@(CppProject);@(SampleProject);@(BenchmarkProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+</Project>
