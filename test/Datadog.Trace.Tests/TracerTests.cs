@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.TestHelpers;
 using Moq;
 using Xunit;
 
@@ -128,7 +129,7 @@ namespace Datadog.Trace.Tests
         {
             var scope = _tracer.StartActive("Operation");
 
-            Assert.Equal("testhost", scope.Span.ServiceName);
+            Assert.Contains(scope.Span.ServiceName, TestRunners.ValidNames);
         }
 
         [Fact]

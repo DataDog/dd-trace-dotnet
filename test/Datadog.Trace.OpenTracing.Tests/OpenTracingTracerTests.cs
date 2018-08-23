@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.TestHelpers;
 using Moq;
 using OpenTracing;
 using OpenTracing.Propagation;
@@ -26,7 +27,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             var builder = _tracer.BuildSpan("Op1");
             var span = (OpenTracingSpan)builder.Start();
 
-            Assert.Equal("testhost", span.DDSpan.ServiceName);
+            Assert.Contains(span.DDSpan.ServiceName, TestRunners.ValidNames);
             Assert.Equal("Op1", span.DDSpan.OperationName);
         }
 
