@@ -3,13 +3,16 @@
     <!-- default property values -->
     <IncludeCsharp Condition="$(IncludeCsharp) == '' ">true</IncludeCsharp>
     <IncludeCpp Condition="$(IncludeCpp) == '' ">true</IncludeCpp>
+    <IncludeTests Condition="$(IncludeTests) == '' ">true</IncludeTests>
     <IncludeSamples Condition="$(IncludeSamples) == '' ">false</IncludeSamples>
     <IncludeBenchmarks Condition="$(IncludeBenchmarks) == '' ">false</IncludeBenchmarks>
   </PropertyGroup>
 
   <ItemGroup>
-    <CsharpProject Include="src\**\*.csproj;test\**\*.csproj" Condition="$(IncludeCsharp) == 'true'"/>
-    <CppProject Include="src\**\*.vcxproj;test\**\*.vcxproj" Condition="$(IncludeCpp) == 'true'"/>
+    <CsharpProject Include="src\**\*.csproj" Condition="$(IncludeCsharp) == 'true'"/>
+    <CsharpProject Include="test\**\*.csproj" Condition="$(IncludeCsharp) == 'true' AND $(IncludeTests) == 'true'"/>
+    <CppProject Include="src\**\*.vcxproj" Condition="$(IncludeCpp) == 'true'"/>
+    <CppProject Include="test\**\*.vcxproj" Condition="$(IncludeCpp) == 'true' AND $(IncludeTests) == 'true'"/>
     <SampleProject Include="samples\**\*.csproj" Condition="$(IncludeSamples) == 'true'"/>
     <BenchmarkProject Include="benchmarks\**\*.csproj" Condition="$(IncludeBenchmarks) == 'true'"/>
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
