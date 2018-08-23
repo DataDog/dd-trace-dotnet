@@ -12,6 +12,7 @@
     <CppProject Include="src\**\*.vcxproj;test\**\*.vcxproj" Condition="$(IncludeCpp) == 'true'"/>
     <SampleProject Include="samples\**\*.csproj" Condition="$(IncludeSamples) == 'true'"/>
     <BenchmarkProject Include="benchmarks\**\*.csproj" Condition="$(IncludeBenchmarks) == 'true'"/>
+    <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
   </ItemGroup>
 
   <Target Name="Restore">
@@ -30,6 +31,12 @@
 
   <Target Name="Rebuild">
     <MSBuild Targets="Rebuild" Projects="@(CsharpProject);@(CppProject);@(SampleProject);@(BenchmarkProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="Msi" DependsOnTargets="Build">
+    <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
