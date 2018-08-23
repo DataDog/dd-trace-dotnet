@@ -22,6 +22,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		build.cake = build.cake
+		Datadog.Trace.proj = Datadog.Trace.proj
 		Datadog.Trace.snk = Datadog.Trace.snk
 		Directory.Build.props = Directory.Build.props
 		GlobalSuppressions.cs = GlobalSuppressions.cs

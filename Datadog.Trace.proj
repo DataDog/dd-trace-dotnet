@@ -1,0 +1,61 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CsharpProject Include="src\**\*.csproj"/>
+    <CsharpTestProject Include="test\**\*.csproj"/>
+    <CppProject Include="src\**\*.vcxproj"/>
+    <CppTestProject Include="test\**\*.vcxproj"/>
+    <SampleProject Include="samples\**\*.csproj"/>
+    <BenchmarkProject Include="benchmarks\**\*.csproj"/>
+    <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
+  </ItemGroup>
+
+  <Target Name="Restore">
+    <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject);@(BenchmarkProject)"/>
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Targets="Clean" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject);@(BenchmarkProject);@(WindowsInstallerProject)"/>
+  </Target>
+
+  <Target Name="BuildCsharp">
+    <MSBuild Targets="Build" Projects="@(CsharpProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCsharpTests">
+    <MSBuild Targets="Build" Projects="@(CsharpTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCpp">
+    <MSBuild Targets="Build" Projects="@(CppProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildCppTests">
+    <MSBuild Targets="Build" Projects="@(CppTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildSamples">
+    <MSBuild Targets="Build" Projects="@(SampleProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildBenchmarks">
+    <MSBuild Targets="Build" Projects="@(BenchmarkProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="Msi" DependsOnTargets="BuildCsharp;BuildCpp">
+    <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+</Project>
