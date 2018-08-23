@@ -17,6 +17,13 @@
     <MSBuild Targets="Clean" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject);@(BenchmarkProject);@(WindowsInstallerProject)"/>
   </Target>
 
+  <!-- default target -->
+  <Target Name="Build">
+    <MSBuild Targets="Build" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
   <Target Name="BuildCsharp">
     <MSBuild Targets="Build" Projects="@(CsharpProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
