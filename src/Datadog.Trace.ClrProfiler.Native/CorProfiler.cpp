@@ -61,6 +61,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
         LOG_APPEND(L"loading integrations from " << integration_file_path);
         trace::IntegrationLoader loader;
         integrations_ = loader.LoadIntegrationsFromFile(integration_file_path);
+    } else {
+        LOG_APPEND(L"using default integrations");
+
+        for (auto && integration : default_integrations)
+        {
+            integrations_.push_back(integration);
+        }
     }
 
     WCHAR processNames[MAX_PATH]{};
