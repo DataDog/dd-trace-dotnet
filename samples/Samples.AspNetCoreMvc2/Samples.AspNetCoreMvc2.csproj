@@ -5,6 +5,10 @@
         <MvcRazorCompileOnPublish>true</MvcRazorCompileOnPublish>
     </PropertyGroup>
 
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
+  </PropertyGroup>
+
     <ItemGroup>
       <Folder Include="Models\" />
       <Folder Include="wwwroot\" />
