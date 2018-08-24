@@ -118,7 +118,7 @@
     <ComponentGroup Id="Files.Native" Directory="INSTALLFOLDER">
       <Component Win64="$(var.Win64)">
         <File Id="Datadog.Trace.ClrProfiler.Native"
-              Source="..\..\src\Datadog.Trace.ClrProfiler.Native\$(var.PlatformSourceFolder)\$(var.Configuration)\$(var.NativeDllName)"
+              Source="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(var.Configuration)\$(var.Platform)\$(var.NativeDllName)"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductName)"/>
         </File>

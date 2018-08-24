@@ -70,26 +70,26 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(ProjectDir)\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\dynamic\</IntDir>
+    <OutDir>bin\$(Configuration)\x86\</OutDir>
+    <IntDir>obj\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(ProjectDir)\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\dynamic\</IntDir>
+    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(ProjectDir)\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\dynamic\</IntDir>
+    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(ProjectDir)\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\dynamic\</IntDir>
+    <OutDir>bin\$(Configuration)\x86\</OutDir>
+    <IntDir>obj\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>

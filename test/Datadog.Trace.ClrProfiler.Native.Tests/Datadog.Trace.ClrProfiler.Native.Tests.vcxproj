@@ -33,13 +33,22 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>bin\$(Configuration)\x86\</OutDir>
+    <IntDir>obj\$(Configuration)\x86\</IntDir>
     <LibraryPath>$(SolutionDir)src\Datadog.Trace.ClrProfiler.Native\$(Platform)$(Configuration);$(LibraryPath)</LibraryPath>
     <IncludePath>$(SolutionDir)src\Datadog.Trace.ClrProfiler.Native;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>bin\$(Configuration)\x86\</OutDir>
+    <IntDir>obj\$(Configuration)\x86\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
