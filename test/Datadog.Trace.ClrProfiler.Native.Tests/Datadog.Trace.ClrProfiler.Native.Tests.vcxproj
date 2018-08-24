@@ -41,6 +41,13 @@
     <LibraryPath>$(SolutionDir)src\Datadog.Trace.ClrProfiler.Native\$(Platform)$(Configuration);$(LibraryPath)</LibraryPath>
     <IncludePath>$(SolutionDir)src\Datadog.Trace.ClrProfiler.Native;$(IncludePath)</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
   </ItemGroup>
