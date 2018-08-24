@@ -3,7 +3,6 @@
     <PropertyGroup>
         <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
         <MvcRazorCompileOnPublish>true</MvcRazorCompileOnPublish>
-        <Platforms>x64;x86</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
