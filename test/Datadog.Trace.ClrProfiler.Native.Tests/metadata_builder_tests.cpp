@@ -83,8 +83,7 @@ class MetadataBuilderTest : public ::testing::Test {
     const void* public_key = nullptr;
     ULONG public_key_size = 0;
     ULONG simple_name_size = 0;
-    ASSEMBLYMETADATA assembly_metadata;
-    ::ZeroMemory(&assembly_metadata, sizeof(ASSEMBLYMETADATA));
+    ASSEMBLYMETADATA assembly_metadata{};
     DWORD assembly_flags = 0;
     hr = tracer_assembly_import->GetAssemblyProps(
         assembly, &public_key, &public_key_size, nullptr, nullptr, 0, &simple_name_size,
