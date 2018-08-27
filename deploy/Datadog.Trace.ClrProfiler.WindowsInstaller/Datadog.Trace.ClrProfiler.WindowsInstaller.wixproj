@@ -18,7 +18,7 @@
          value is set to constant ProductVersion below and
          accessed as $(var.ProductVersion) from WiX files.
          This is the default value is one is not specified when building. -->
-    <Version Condition="'$(Version)'==''">0.2.3</Version>
+    <Version Condition="'$(Version)'==''">0.2.0</Version>
     <OutputName>DatadogDotNetTracing-$(Version)-$(Platform)-$(Configuration)</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
