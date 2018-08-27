@@ -82,9 +82,12 @@ std::optional<method_replacement> IntegrationLoader::MethodReplacementFromJson(
     return {};
   }
 
-  auto caller = IntegrationLoader::MethodReferenceFromJson(src.value("caller", json::object()));
-  auto target = IntegrationLoader::MethodReferenceFromJson(src.value("target", json::object()));
-  auto wrapper = IntegrationLoader::MethodReferenceFromJson(src.value("wrapper", json::object()));
+  auto caller = IntegrationLoader::MethodReferenceFromJson(
+      src.value("caller", json::object()));
+  auto target = IntegrationLoader::MethodReferenceFromJson(
+      src.value("target", json::object()));
+  auto wrapper = IntegrationLoader::MethodReferenceFromJson(
+      src.value("wrapper", json::object()));
   return method_replacement(caller, target, wrapper);
 }
 
