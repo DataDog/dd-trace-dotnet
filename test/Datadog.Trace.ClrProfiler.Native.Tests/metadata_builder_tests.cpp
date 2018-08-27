@@ -11,18 +11,18 @@ class MetadataBuilderTest : public ::testing::Test {
   IMetaDataDispenser* metadata_dispenser_;
 
   void SetUp() override {
-    ICLRMetaHost* metahost = NULL;
+    ICLRMetaHost* metahost = nullptr;
     HRESULT hr;
     hr = CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost,
-                           (VOID**)&metahost);
+                           (void**)&metahost);
     ASSERT_TRUE(SUCCEEDED(hr));
 
-    IEnumUnknown* runtimes = NULL;
+    IEnumUnknown* runtimes = nullptr;
     hr = metahost->EnumerateInstalledRuntimes(&runtimes);
     ASSERT_TRUE(SUCCEEDED(hr));
 
-    ICLRRuntimeInfo* latest = NULL;
-    ICLRRuntimeInfo* runtime = NULL;
+    ICLRRuntimeInfo* latest = nullptr;
+    ICLRRuntimeInfo* runtime = nullptr;
     ULONG fetched = 0;
     while ((hr = runtimes->Next(1, (IUnknown**)&runtime, &fetched)) == S_OK &&
            fetched > 0) {
@@ -31,11 +31,11 @@ class MetadataBuilderTest : public ::testing::Test {
 
     hr =
         latest->GetInterface(CLSID_CorMetaDataDispenser, IID_IMetaDataDispenser,
-                             (VOID**)&metadata_dispenser_);
+                             (void**)&metadata_dispenser_);
     ASSERT_TRUE(SUCCEEDED(hr));
 
     hr = latest->GetInterface(CLSID_CLRStrongName, IID_ICLRStrongName,
-                              (VOID**)&strong_name_);
+                              (void**)&strong_name_);
     ASSERT_TRUE(SUCCEEDED(hr));
 
     ComPtr<IUnknown> metadataInterfaces;
