@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <Include>
-  <?define BaseProductName = "APM Tracing for .NET" ?>
+  <?define BaseProductName = ".NET Tracing" ?>
+  <?define ArpManufacturer = "Datadog, Inc." ?>
+  <?define Company = "Datadog" ?>
+  <?define ManagedDllPath = "$(sys.CURRENTDIR)..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\$(var.Configuration)\net45" ?>
+  <?define NativeDllPath = "$(sys.CURRENTDIR)..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(var.Configuration)\$(var.Platform)" ?>
+  <?define ProfilerCLSID = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" ?>
 
   <?if $(var.Platform) = x64 ?>
   <?define ProductName = "Datadog $(var.BaseProductName) 64-bit" ?>
@@ -12,7 +17,4 @@
   <?define Win64 = "no" ?>
   <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
   <?endif ?>
-
-  <?define NativeDllName = "Datadog.Trace.ClrProfiler.Native.dll" ?>
-  <?define ProfilerCLSID = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" ?>
 </Include>
