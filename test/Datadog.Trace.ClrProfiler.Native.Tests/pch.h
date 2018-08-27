@@ -10,4 +10,8 @@
 
 #include "gtest/gtest.h"
 
+#include <corhlpr.h>
+#include <metahost.h>
+#pragma comment(lib, "mscoree.lib")
+
 #endif
