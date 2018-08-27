@@ -5,19 +5,21 @@
 
 class MetadataBuilderTest : public ::testing::Test {
  protected:
-  ModuleMetadata* moduleMetadata_;
-  MetadataBuilder* metadataBuilder_;
+  ModuleMetadata* module_metadata_;
+  MetadataBuilder* metadata_builder_;
+  ICLRStrongName* strong_name_;
+  IMetaDataDispenser* metadata_dispenser_;
 
   void SetUp() override {
     ICLRMetaHost* metahost = NULL;
     HRESULT hr;
     hr = CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost,
                            (VOID**)&metahost);
-    ASSERT_FALSE(FAILED(hr));
+    ASSERT_TRUE(SUCCEEDED(hr));
 
     IEnumUnknown* runtimes = NULL;
     hr = metahost->EnumerateInstalledRuntimes(&runtimes);
-    ASSERT_FALSE(FAILED(hr));
+    ASSERT_TRUE(SUCCEEDED(hr));
 
     ICLRRuntimeInfo* latest = NULL;
     ICLRRuntimeInfo* runtime = NULL;
@@ -27,17 +29,20 @@ class MetadataBuilderTest : public ::testing::Test {
       latest = runtime;
     }
 
-    IMetaDataDispenser* metadataDispenser = NULL;
     hr =
         latest->GetInterface(CLSID_CorMetaDataDispenser, IID_IMetaDataDispenser,
-                             (VOID**)&metadataDispenser);
-    ASSERT_FALSE(FAILED(hr));
+                             (VOID**)&metadata_dispenser_);
+    ASSERT_TRUE(SUCCEEDED(hr));
+
+    hr = latest->GetInterface(CLSID_CLRStrongName, IID_ICLRStrongName,
+                              (VOID**)&strong_name_);
+    ASSERT_TRUE(SUCCEEDED(hr));
 
     ComPtr<IUnknown> metadataInterfaces;
-    hr = metadataDispenser->OpenScope(L"Samples.ExampleLibrary.dll",
-                                      ofRead | ofWrite, IID_IMetaDataImport,
-                                      metadataInterfaces.GetAddressOf());
-    ASSERT_FALSE(FAILED(hr));
+    hr = metadata_dispenser_->OpenScope(L"Samples.ExampleLibrary.dll",
+                                        ofReadWriteMask, IID_IMetaDataImport,
+                                        metadataInterfaces.GetAddressOf());
+    ASSERT_TRUE(SUCCEEDED(hr));
 
     const auto metadataImport =
         metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport);
@@ -50,21 +55,52 @@ class MetadataBuilderTest : public ::testing::Test {
 
     const std::wstring assemblyName = L"Samples.ExampleLibrary";
     std::vector<integration> integrations;
-    moduleMetadata_ =
+    module_metadata_ =
         new ModuleMetadata(metadataImport, assemblyName, integrations);
 
     mdModule module;
     hr = metadataImport->GetModuleFromScope(&module);
-    ASSERT_FALSE(FAILED(hr));
+    ASSERT_TRUE(SUCCEEDED(hr));
 
-    metadataBuilder_ =
-        new MetadataBuilder(*moduleMetadata_, module, metadataImport,
+    metadata_builder_ =
+        new MetadataBuilder(*module_metadata_, module, metadataImport,
                             metadataEmit, assemblyImport, assemblyEmit);
+
+    ComPtr<IUnknown> tracer_interfacecs;
+    hr = metadata_dispenser_->OpenScope(L"Samples.ExampleLibraryTracer.dll",
+                                        ofRead, IID_IMetaDataImport,
+                                        tracer_interfacecs.GetAddressOf());
+    ASSERT_TRUE(SUCCEEDED(hr));
+
+    const auto tracer_assembly_import =
+        tracer_interfacecs.As<IMetaDataAssemblyImport>(
+            IID_IMetaDataAssemblyImport);
+
+    mdAssembly assembly;
+    hr = tracer_assembly_import->GetAssemblyFromScope(&assembly);
+    ASSERT_TRUE(SUCCEEDED(hr));
+
+    const void* public_key = nullptr;
+    ULONG public_key_size = 0;
+    ULONG simple_name_size = 0;
+    ASSEMBLYMETADATA assembly_metadata;
+    ::ZeroMemory(&assembly_metadata, sizeof(ASSEMBLYMETADATA));
+    DWORD assembly_flags = 0;
+    hr = tracer_assembly_import->GetAssemblyProps(
+        assembly, &public_key, &public_key_size, nullptr, nullptr, 0, &simple_name_size,
+        &assembly_metadata, &assembly_flags);
+    ASSERT_TRUE(SUCCEEDED(hr));
+
+    mdAssemblyRef assembly_ref;
+    hr = metadata_builder_->emit_assembly_ref(
+        L"Samples.ExampleLibraryTracer", assembly_metadata,
+        (byte*)(public_key), public_key_size, assembly_ref);
+    ASSERT_TRUE(SUCCEEDED(hr));
   }
 
   void TearDown() override {
-    delete this->moduleMetadata_;
-    delete this->metadataBuilder_;
+    delete this->module_metadata_;
+    delete this->metadata_builder_;
   }
 };
 
@@ -73,18 +109,33 @@ TEST_F(MetadataBuilderTest, StoresWrapperMemberRef) {
   method_reference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
   method_reference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
   method_replacement mr1(ref1, ref2, ref3);
-  auto hr = metadataBuilder_->store_wrapper_method_ref(mr1);
+  auto hr = metadata_builder_->store_wrapper_method_ref(mr1);
   ASSERT_EQ(S_OK, hr);
 
   mdMemberRef tmp;
-  auto ok = moduleMetadata_->TryGetWrapperMemberRef(
+  auto ok = module_metadata_->TryGetWrapperMemberRef(
       L"[Samples.ExampleLibrary]Class1.Add", tmp);
   EXPECT_TRUE(ok);
   EXPECT_NE(tmp, 0);
 
   tmp = 0;
-  ok = moduleMetadata_->TryGetWrapperMemberRef(
+  ok = module_metadata_->TryGetWrapperMemberRef(
       L"[Samples.ExampleLibrary]Class2.Add", tmp);
   EXPECT_FALSE(ok);
   EXPECT_EQ(tmp, 0);
+}
+
+TEST_F(MetadataBuilderTest, StoresWrapperMemberRefForSeparateAssembly) {
+  method_reference ref1(L"", L"", L"", {});
+  method_reference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
+  method_reference ref3(L"Samples.ExampleLibraryTracer", L"Class1", L"Add", {});
+  method_replacement mr1(ref1, ref2, ref3);
+  auto hr = metadata_builder_->store_wrapper_method_ref(mr1);
+  ASSERT_EQ(S_OK, hr);
+
+  mdMemberRef tmp;
+  auto ok = module_metadata_->TryGetWrapperMemberRef(
+      L"[Samples.ExampleLibraryTracer]Class1.Add", tmp);
+  EXPECT_TRUE(ok);
+  EXPECT_NE(tmp, 0);
 }
