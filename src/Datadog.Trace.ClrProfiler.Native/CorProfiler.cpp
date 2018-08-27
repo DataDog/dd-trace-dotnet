@@ -70,35 +70,35 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk
         }
     }
 
+    WCHAR* processName = nullptr;
     WCHAR processNames[MAX_PATH]{};
     const DWORD processNamesLength = GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES", processNames, _countof(processNames));
 
     if (processNamesLength == 0)
     {
-        LOG_APPEND(L"Failed to attach profiler: could not get DATADOG_PROFILER_PROCESSES environment variable.");
-        return E_FAIL;
-    }
+        LOG_APPEND(L"DATADOG_PROFILER_PROCESSES environment variable not set. Attaching to any .NET process.");
+    } else {
+        LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << processNames);
 
-    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << processNames);
+        WCHAR currentProcessPath[MAX_PATH]{};
+        const DWORD currentProcessPathLength = GetModuleFileName(nullptr, currentProcessPath, _countof(currentProcessPath));
 
-    WCHAR currentProcessPath[MAX_PATH]{};
-    const DWORD currentProcessPathLength = GetModuleFileName(nullptr, currentProcessPath, _countof(currentProcessPath));
+        if (currentProcessPathLength == 0)
+        {
+            LOG_APPEND(L"Failed to attach profiler: could not get current module filename.");
+            return E_FAIL;
+        }
 
-    if (currentProcessPathLength == 0)
-    {
-        LOG_APPEND(L"Failed to attach profiler: could not get current module filename.");
-        return E_FAIL;
-    }
+        LOG_APPEND(L"Module file name = " << currentProcessPath);
 
-    LOG_APPEND(L"Module file name = " << currentProcessPath);
+        WCHAR* lastSeparator = wcsrchr(currentProcessPath, L'\\');
+        processName = lastSeparator == nullptr ? currentProcessPath : lastSeparator + 1;
 
-    WCHAR* lastSeparator = wcsrchr(currentProcessPath, L'\\');
-    WCHAR* processName = lastSeparator == nullptr ? currentProcessPath : lastSeparator + 1;
-
-    if (wcsstr(processNames, processName) == nullptr)
-    {
-        LOG_APPEND(L"Profiler disabled: module name \"" << processName << "\" does not match DATADOG_PROFILER_PROCESSES environment variable.");
-        return E_FAIL;
+        if (wcsstr(processNames, processName) == nullptr)
+        {
+            LOG_APPEND(L"Profiler disabled: module name \"" << processName << "\" does not match DATADOG_PROFILER_PROCESSES environment variable.");
+            return E_FAIL;
+        }
     }
 
     HRESULT hr = pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(&this->corProfilerInfo);
