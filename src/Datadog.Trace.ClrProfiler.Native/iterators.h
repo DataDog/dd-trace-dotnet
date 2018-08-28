@@ -5,7 +5,6 @@
 #include <functional>
 
 #include "ComPtr.h"
-#include "Macros.h"
 
 namespace trace {
 

@@ -12,6 +12,7 @@
 #include "ModuleMetadata.h"
 #include "integration_loader.h"
 #include "metadata_builder.h"
+#include "util.h"
 
 // Note: Generally you should not have a single, global callback implementation,
 // as that prevents your profiler from analyzing multiply loaded in-process
@@ -65,7 +66,12 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   if (integration_file_path_length > 0) {
     LOG_APPEND(L"loading integrations from " << integration_file_path);
     trace::IntegrationLoader loader;
-    integrations_ = loader.LoadIntegrationsFromFile(integration_file_path);
+    for (const auto& f : split(integration_file_path, L';')) {
+      auto is = loader.LoadIntegrationsFromFile(f);
+      for (auto&& i : is) {
+        integrations_.push_back(i);
+      }
+    }
   } else {
     LOG_APPEND(L"using default integrations");
 
