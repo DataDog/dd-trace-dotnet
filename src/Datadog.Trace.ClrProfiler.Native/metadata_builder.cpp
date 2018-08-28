@@ -11,7 +11,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   assembly_metadata.usMinorVersion = assembly_ref.version.minor;
   assembly_metadata.usBuildNumber = assembly_ref.version.build;
   assembly_metadata.usRevisionNumber = assembly_ref.version.revision;
-  assembly_metadata.szLocale = const_cast<wchar_t*>(&assembly_ref.locale[0]);
+  assembly_metadata.szLocale = const_cast<wchar_t*>(assembly_ref.locale.data());
   assembly_metadata.cbLocale = (unsigned long)(assembly_ref.locale.size());
 
   LOG_APPEND("EmitAssemblyRef " << assembly_ref.str());
@@ -25,25 +25,6 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   const HRESULT hr = assembly_emit_->DefineAssemblyRef(
       &assembly_ref.public_key.data[0], public_key_size,
       assembly_ref.name.c_str(), &assembly_metadata,
-      // hash blob
-      nullptr,
-      // cb of hash blob
-      0,
-      // flags
-      0, &assembly_ref_out);
-
-  LOG_IFFAILEDRET(hr, L"DefineAssemblyRef failed");
-  return S_OK;
-}
-
-HRESULT MetadataBuilder::EmitAssemblyRef(
-    const std::wstring& assembly_name,
-    const ASSEMBLYMETADATA& assembly_metadata, BYTE public_key_token[],
-    const ULONG public_key_token_length,
-    mdAssemblyRef& assembly_ref_out) const {
-  const HRESULT hr = assembly_emit_->DefineAssemblyRef(
-      static_cast<void*>(public_key_token), public_key_token_length,
-      assembly_name.c_str(), &assembly_metadata,
       // hash blob
       nullptr,
       // cb of hash blob
@@ -75,7 +56,7 @@ std::wstring MetadataBuilder::GetAssemblyName(
   ASSEMBLYMETADATA assembly_metadata{};
   DWORD assembly_flags = 0;
   auto hr = assembly_import_->GetAssemblyRefProps(
-      assembly_ref, nullptr, nullptr, &str[0], str_max, &str_len,
+      assembly_ref, nullptr, nullptr, str.data(), str_max, &str_len,
       &assembly_metadata, nullptr, nullptr, &assembly_flags);
   if (FAILED(hr)) {
     return L"";
@@ -158,7 +139,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
 
   hr = metadata_import_->FindMemberRef(
       type_ref, wrapper_method_name,
-      &method_replacement.wrapper_method.method_signature.data[0],
+      method_replacement.wrapper_method.method_signature.data.data(),
       (unsigned long)(method_replacement.wrapper_method.method_signature.data
                           .size()),
       &member_ref);
@@ -167,7 +148,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
     // if memberRef not found, create it by emiting a metadata token
     hr = metadata_emit_->DefineMemberRef(
         type_ref, wrapper_method_name,
-        &method_replacement.wrapper_method.method_signature.data[0],
+        method_replacement.wrapper_method.method_signature.data.data(),
         (unsigned long)(method_replacement.wrapper_method.method_signature.data
                             .size()),
         &member_ref);

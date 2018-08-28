@@ -66,34 +66,8 @@ class MetadataBuilderTest : public ::testing::Test {
         new MetadataBuilder(*module_metadata_, module, metadataImport,
                             metadataEmit, assemblyImport, assemblyEmit);
 
-    ComPtr<IUnknown> tracer_interfacecs;
-    hr = metadata_dispenser_->OpenScope(L"Samples.ExampleLibraryTracer.dll",
-                                        ofRead, IID_IMetaDataImport,
-                                        tracer_interfacecs.GetAddressOf());
-    ASSERT_TRUE(SUCCEEDED(hr));
-
-    const auto tracer_assembly_import =
-        tracer_interfacecs.As<IMetaDataAssemblyImport>(
-            IID_IMetaDataAssemblyImport);
-
-    mdAssembly assembly;
-    hr = tracer_assembly_import->GetAssemblyFromScope(&assembly);
-    ASSERT_TRUE(SUCCEEDED(hr));
-
-    const void* public_key = nullptr;
-    ULONG public_key_size = 0;
-    ULONG simple_name_size = 0;
-    ASSEMBLYMETADATA assembly_metadata{};
-    DWORD assembly_flags = 0;
-    hr = tracer_assembly_import->GetAssemblyProps(
-        assembly, &public_key, &public_key_size, nullptr, nullptr, 0, &simple_name_size,
-        &assembly_metadata, &assembly_flags);
-    ASSERT_TRUE(SUCCEEDED(hr));
-
-    mdAssemblyRef assembly_ref;
-    hr = metadata_builder_->EmitAssemblyRef(
-        L"Samples.ExampleLibraryTracer", assembly_metadata,
-        (byte*)(public_key), public_key_size, assembly_ref);
+    hr = metadata_builder_->EmitAssemblyRef(trace::AssemblyReference(
+        L"Samples.ExampleLibraryTracer, Version=1.0.0.0"));
     ASSERT_TRUE(SUCCEEDED(hr));
   }
 
