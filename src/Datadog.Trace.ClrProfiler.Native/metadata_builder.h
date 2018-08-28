@@ -6,23 +6,20 @@
 
 class MetadataBuilder {
  private:
-  ModuleMetadata& metadata;
-  const mdModule module = mdModuleNil;
-  const ComPtr<IMetaDataImport> metadataImport{};
-  const ComPtr<IMetaDataEmit> metadataEmit{};
-  const ComPtr<IMetaDataAssemblyImport> assemblyImport{};
-  const ComPtr<IMetaDataAssemblyEmit> assemblyEmit{};
+  ModuleMetadata& metadata_;
+  const mdModule module_ = mdModuleNil;
+  const ComPtr<IMetaDataImport> metadata_import_{};
+  const ComPtr<IMetaDataEmit> metadata_emit_{};
+  const ComPtr<IMetaDataAssemblyImport> assembly_import_{};
+  const ComPtr<IMetaDataAssemblyEmit> assembly_emit_{};
 
-  HRESULT find_assembly_ref(const std::wstring& assembly_name,
-                            mdAssemblyRef* assembly_ref_out) const;
+  HRESULT FindAssemblyRef(const std::wstring& assembly_name,
+                          mdAssemblyRef& assembly_ref_out) const;
 
-  HRESULT find_assembly_ref_iterator(const std::wstring& assembly_name,
-                                     mdAssemblyRef assembly_refs[],
-                                     ULONG assembly_ref_count,
-                                     mdAssemblyRef* assembly_ref_out) const;
+  std::wstring GetAssemblyName(const mdAssemblyRef& assembly_ref) const;
 
-  HRESULT find_wrapper_type_ref(const method_replacement& method_replacement,
-                                mdTypeRef& type_ref_out) const;
+  HRESULT FindWrapperTypeRef(const method_replacement& method_replacement,
+                             mdTypeRef& type_ref_out) const;
 
  public:
   MetadataBuilder(ModuleMetadata& metadata, const mdModule module,
@@ -30,19 +27,19 @@ class MetadataBuilder {
                   ComPtr<IMetaDataEmit> metadata_emit,
                   ComPtr<IMetaDataAssemblyImport> assembly_import,
                   ComPtr<IMetaDataAssemblyEmit> assembly_emit)
-      : metadata(metadata),
-        module(module),
-        metadataImport(std::move(metadata_import)),
-        metadataEmit(std::move(metadata_emit)),
-        assemblyImport(std::move(assembly_import)),
-        assemblyEmit(std::move(assembly_emit)) {}
+      : metadata_(metadata),
+        module_(module),
+        metadata_import_(std::move(metadata_import)),
+        metadata_emit_(std::move(metadata_emit)),
+        assembly_import_(std::move(assembly_import)),
+        assembly_emit_(std::move(assembly_emit)) {}
 
-  HRESULT store_wrapper_method_ref(
+  HRESULT StoreWrapperMethodRef(
       const method_replacement& method_replacement) const;
 
-  HRESULT emit_assembly_ref(const std::wstring& assembly_name,
-                            const ASSEMBLYMETADATA& assembly_metadata,
-                            BYTE public_key_token[],
-                            ULONG public_key_token_length,
-                            mdAssemblyRef& assembly_ref_out) const;
+  HRESULT EmitAssemblyRef(const std::wstring& assembly_name,
+                          const ASSEMBLYMETADATA& assembly_metadata,
+                          BYTE public_key_token[],
+                          ULONG public_key_token_length,
+                          mdAssemblyRef& assembly_ref_out) const;
 };

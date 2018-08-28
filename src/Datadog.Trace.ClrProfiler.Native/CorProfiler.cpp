@@ -2,16 +2,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include "CorProfiler.h"
 #include <fstream>
 #include <string>
 #include <vector>
 #include "ComPtr.h"
+#include "CorProfiler.h"
 #include "ILRewriter.h"
 #include "Macros.h"
-#include "metadata_builder.h"
 #include "ModuleMetadata.h"
 #include "integration_loader.h"
+#include "metadata_builder.h"
 
 // Note: Generally you should not have a single, global callback implementation,
 // as that prevents your profiler from analyzing multiply loaded in-process
@@ -232,7 +232,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
   assemblyMetaData.cbLocale = _countof(wszLocale);
 
   mdAssemblyRef assemblyRef;
-  hr = metadataBuilder.emit_assembly_ref(
+  hr = metadataBuilder.EmitAssemblyRef(
       L"Datadog.Trace.ClrProfiler.Managed", assemblyMetaData, rgbPublicKeyToken,
       _countof(rgbPublicKeyToken), assemblyRef);
 
@@ -242,7 +242,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
     for (const auto& method_replacement : integration.method_replacements) {
       // for each method replacement in each enabled integration,
       // emit a reference to the instrumentation wrapper methods
-      hr = metadataBuilder.store_wrapper_method_ref(method_replacement);
+      hr = metadataBuilder.StoreWrapperMethodRef(method_replacement);
       RETURN_OK_IF_FAILED(hr);
     }
   }

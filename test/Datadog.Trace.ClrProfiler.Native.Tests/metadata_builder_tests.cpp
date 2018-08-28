@@ -91,7 +91,7 @@ class MetadataBuilderTest : public ::testing::Test {
     ASSERT_TRUE(SUCCEEDED(hr));
 
     mdAssemblyRef assembly_ref;
-    hr = metadata_builder_->emit_assembly_ref(
+    hr = metadata_builder_->EmitAssemblyRef(
         L"Samples.ExampleLibraryTracer", assembly_metadata,
         (byte*)(public_key), public_key_size, assembly_ref);
     ASSERT_TRUE(SUCCEEDED(hr));
@@ -108,7 +108,7 @@ TEST_F(MetadataBuilderTest, StoresWrapperMemberRef) {
   method_reference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
   method_reference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
   method_replacement mr1(ref1, ref2, ref3);
-  auto hr = metadata_builder_->store_wrapper_method_ref(mr1);
+  auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);
 
   mdMemberRef tmp;
@@ -129,7 +129,7 @@ TEST_F(MetadataBuilderTest, StoresWrapperMemberRefForSeparateAssembly) {
   method_reference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
   method_reference ref3(L"Samples.ExampleLibraryTracer", L"Class1", L"Add", {});
   method_replacement mr1(ref1, ref2, ref3);
-  auto hr = metadata_builder_->store_wrapper_method_ref(mr1);
+  auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);
 
   mdMemberRef tmp;
