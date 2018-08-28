@@ -1,8 +1,35 @@
-﻿#include <fstream>
+﻿#include "metadata_builder.h"
+#include <fstream>
 #include <string>
 #include "Macros.h"
 #include "iterators.h"
-#include "metadata_builder.h"
+
+HRESULT MetadataBuilder::EmitAssemblyRef(
+    const trace::AssemblyReference& assembly_ref) const {
+  ASSEMBLYMETADATA assembly_metadata{};
+  assembly_metadata.usMajorVersion = assembly_ref.version.major;
+  assembly_metadata.usMinorVersion = assembly_ref.version.minor;
+  assembly_metadata.usBuildNumber = assembly_ref.version.build;
+  assembly_metadata.usRevisionNumber = assembly_ref.version.revision;
+  assembly_metadata.szLocale = const_cast<wchar_t*>(&assembly_ref.locale[0]);
+  assembly_metadata.cbLocale = (unsigned long)(assembly_ref.locale.size());
+
+  LOG_APPEND("EmitAssemblyRef " << assembly_ref.str());
+
+  mdAssemblyRef assembly_ref_out;
+  const HRESULT hr = assembly_emit_->DefineAssemblyRef(
+      &assembly_ref.public_key.data[0], 8, assembly_ref.name.c_str(),
+      &assembly_metadata,
+      // hash blob
+      nullptr,
+      // cb of hash blob
+      0,
+      // flags
+      0, &assembly_ref_out);
+
+  LOG_IFFAILEDRET(hr, L"DefineAssemblyRef failed");
+  return S_OK;
+}
 
 HRESULT MetadataBuilder::EmitAssemblyRef(
     const std::wstring& assembly_name,
@@ -48,7 +75,7 @@ std::wstring MetadataBuilder::GetAssemblyName(
   if (FAILED(hr)) {
     return L"";
   }
-  str = str.substr(0, str_len);
+  str = str.substr(0, str_len - 1);
   return str;
 }
 
@@ -72,7 +99,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
       method_replacement.wrapper_method.type_name.c_str();
 
   if (metadata_.assemblyName ==
-      method_replacement.wrapper_method.assembly_name) {
+      method_replacement.wrapper_method.assembly.name) {
     // type is defined in this assembly
     hr = metadata_emit_->DefineTypeRefByName(module_, wrapper_type_name,
                                              &type_ref);
@@ -80,7 +107,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
     // type is defined in another assembly,
     // find a reference to the assembly where type lives
     mdAssemblyRef assembly_ref = mdAssemblyRefNil;
-    hr = FindAssemblyRef(method_replacement.wrapper_method.assembly_name,
+    hr = FindAssemblyRef(method_replacement.wrapper_method.assembly.name,
                          assembly_ref);
     RETURN_IF_FAILED(hr);
 
@@ -122,21 +149,23 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
 
   const auto wrapper_method_name =
       method_replacement.wrapper_method.method_name.c_str();
-  const auto wrapper_method_signature_data =
-      method_replacement.wrapper_method.method_signature.data();
-  const auto wrapper_method_signature_size = static_cast<ULONG>(
-      method_replacement.wrapper_method.method_signature.size());
   member_ref = mdMemberRefNil;
 
   hr = metadata_import_->FindMemberRef(
-      type_ref, wrapper_method_name, wrapper_method_signature_data,
-      wrapper_method_signature_size, &member_ref);
+      type_ref, wrapper_method_name,
+      &method_replacement.wrapper_method.method_signature.data[0],
+      (unsigned long)(method_replacement.wrapper_method.method_signature.data
+                          .size()),
+      &member_ref);
 
   if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
     // if memberRef not found, create it by emiting a metadata token
     hr = metadata_emit_->DefineMemberRef(
-        type_ref, wrapper_method_name, wrapper_method_signature_data,
-        wrapper_method_signature_size, &member_ref);
+        type_ref, wrapper_method_name,
+        &method_replacement.wrapper_method.method_signature.data[0],
+        (unsigned long)(method_replacement.wrapper_method.method_signature.data
+                            .size()),
+        &member_ref);
   }
 
   RETURN_IF_FAILED(hr);

@@ -1,30 +1,127 @@
 #pragma once
 
 #include <corhlpr.h>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <vector>
 #include "IntegrationType.h"
 
+namespace trace {
+
+struct PublicKey {
+  const uint8_t data[8];
+
+  PublicKey() : data{0} {}
+  PublicKey(const uint8_t (&arr)[8])
+      : data{arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7]} {}
+
+  bool operator==(const PublicKey& other) const {
+    for (int i = 0; i < 8; i++) {
+      if (data[i] != other.data[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  std::wstring str() const {
+    std::wostringstream ss;
+    for (int i = 0; i < 8; i++) {
+      ss << std::setfill(L'0') << std::setw(2) << std::hex << data[i];
+    }
+    return ss.str();
+  }
+};
+
+struct Version {
+  const unsigned short major;
+  const unsigned short minor;
+  const unsigned short build;
+  const unsigned short revision;
+
+  Version() : major(0), minor(0), build(0), revision(0) {}
+  Version(const unsigned short major, const unsigned short minor,
+          const unsigned short build, const unsigned short revision)
+      : major(major), minor(minor), build(build), revision(revision) {}
+
+  bool operator==(const Version& other) const {
+    return major == other.major && minor == other.minor &&
+           build == other.build && revision == other.revision;
+  }
+
+  std::wstring str() const {
+    std::wostringstream ss;
+    ss << major << L"." << minor << L"." << build << L"." << revision;
+    return ss.str();
+  }
+};
+
+struct AssemblyReference {
+ private:
+  static std::wstring GetNameFromString(const std::wstring& wstr);
+  static Version GetVersionFromString(const std::wstring& wstr);
+  static std::wstring GetLocaleFromString(const std::wstring& wstr);
+  static PublicKey GetPublicKeyFromString(const std::wstring& wstr);
+
+ public:
+  const std::wstring name;
+  const Version version;
+  const std::wstring locale;
+  const PublicKey public_key;
+
+  AssemblyReference() {}
+  AssemblyReference(const std::wstring& str)
+      : name(GetNameFromString(str)),
+        version(GetVersionFromString(str)),
+        locale(GetLocaleFromString(str)),
+        public_key(GetPublicKeyFromString(str)) {}
+
+  bool operator==(const AssemblyReference& other) const {
+    return name == other.name && version == other.version &&
+           locale == other.locale && public_key == other.public_key;
+  }
+
+  std::wstring str() const {
+    std::wostringstream ss;
+    ss << name << L", Version=" << version.str() << L", Culture=" << locale
+       << L", PublicKeyToken=" << public_key.str();
+    return ss.str();
+  }
+};
+
+struct MethodSignature {
+ public:
+  const std::vector<uint8_t> data;
+
+  MethodSignature() {}
+  MethodSignature(const std::vector<uint8_t>& data) : data(data) {}
+};
+
+}  // namespace trace
+
 struct method_reference {
-  const std::wstring assembly_name;
+  const trace::AssemblyReference assembly;
   const std::wstring type_name;
   const std::wstring method_name;
-  const std::vector<BYTE> method_signature;
+  const trace::MethodSignature method_signature;
 
   method_reference() {}
 
-  method_reference(std::wstring assembly_name, std::wstring type_name,
-                   std::wstring method_name, std::vector<BYTE> method_signature)
-      : assembly_name(std::move(assembly_name)),
+  method_reference(const std::wstring& assembly_name, std::wstring type_name,
+                   std::wstring method_name,
+                   const std::vector<uint8_t>& method_signature)
+      : assembly(assembly_name),
         type_name(std::move(type_name)),
         method_name(std::move(method_name)),
-        method_signature(std::move(method_signature)) {}
+        method_signature(method_signature) {}
 
   std::wstring get_type_cache_key() const {
-    return L"[" + assembly_name + L"]" + type_name;
+    return L"[" + assembly.name + L"]" + type_name;
   }
 
   std::wstring get_method_cache_key() const {
-    return L"[" + assembly_name + L"]" + type_name + L"." + method_name;
+    return L"[" + assembly.name + L"]" + type_name + L"." + method_name;
   }
 };
 

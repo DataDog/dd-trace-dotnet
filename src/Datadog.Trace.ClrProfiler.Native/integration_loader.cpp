@@ -101,7 +101,16 @@ method_reference IntegrationLoader::MethodReferenceFromJson(
   std::wstring assembly = converter.from_bytes(src.value("assembly", ""));
   std::wstring type = converter.from_bytes(src.value("type", ""));
   std::wstring method = converter.from_bytes(src.value("method", ""));
-  return method_reference(assembly, type, method, {});
+  auto arr = src.value("signature", json::array());
+  std::vector<uint8_t> signature;
+  if (arr.is_array()) {
+    for (auto& el : arr) {
+      if (el.is_number_unsigned()) {
+        signature.push_back(uint8_t(el.get<uint64_t>()));
+      }
+    }
+  }
+  return method_reference(assembly, type, method, signature);
 }
 
 }  // namespace trace

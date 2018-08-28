@@ -10,12 +10,14 @@
         "target": {
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-          "method": "BeforeAction"
+          "method": "BeforeAction",
+          "signature":  [0, 4, 28, 28, 28, 28, 28]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
-          "method": "BeforeAction"
+          "method": "BeforeAction",
+          "signature": [ 0, 4, 28, 28, 28, 28, 28 ]
         }
       },
       {
@@ -26,12 +28,14 @@
         "target": {
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-          "method": "AfterAction"
+          "method": "AfterAction",
+          "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
-          "method": "AfterAction"
+          "method": "AfterAction",
+          "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
         }
       }
     ]
@@ -46,12 +50,14 @@
         "target": {
           "assembly": "System.Web.Mvc",
           "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
-          "method": "BeginInvokeAction"
+          "method": "BeginInvokeAction",
+          "signature": [ 0, 5, 28, 28, 28, 28, 28, 28 ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration",
-          "method": "BeginInvokeAction"
+          "method": "BeginInvokeAction",
+          "signature": [ 0, 5, 28, 28, 28, 28, 28, 28 ]
         }
       },
       {
@@ -61,12 +67,33 @@
         "target": {
           "assembly": "System.Web.Mvc",
           "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
-          "method": "EndInvokeAction"
+          "method": "EndInvokeAction",
+          "signature": [ 0, 2, 2, 28, 28 ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration",
-          "method": "EndInvokeAction"
+          "method": "EndInvokeAction",
+          "signature": [ 0, 2, 2, 28, 28 ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "example",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Samples.ExampleLibrary",
+          "type": "ExampleLibrary.Class1",
+          "method": "Add"
+        },
+        "wrapper": {
+          "assembly": "Samples.ExampleLibraryTracer, Version=1.0.0.0",
+          "type": "ExampleLibrary.Class1",
+          "method": "Add",
+          "signature":  [0, 2, 8, 8, 8]
         }
       }
     ]

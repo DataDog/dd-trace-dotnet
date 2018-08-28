@@ -1,4 +1,79 @@
 #include "integration.h"
+#include <regex>
+#include <sstream>
+
+namespace trace {
+
+::std::wstring AssemblyReference::GetNameFromString(
+    const ::std::wstring& wstr) {
+  ::std::wstring name;
+
+  size_t pos;
+  if ((pos = wstr.find(L',')) != ::std::wstring::npos) {
+    name = wstr.substr(0, pos);
+  } else {
+    name = wstr;
+  }
+
+  // strip spaces
+  if ((pos = wstr.rfind(L' ')) != ::std::wstring::npos) {
+    name = name.substr(0, pos);
+  }
+
+  return name;
+}
+
+Version AssemblyReference::GetVersionFromString(const ::std::wstring& str) {
+  unsigned short major = 0;
+  unsigned short minor = 0;
+  unsigned short build = 0;
+  unsigned short revision = 0;
+
+  static auto re =
+      std::wregex(L"Version=([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)");
+
+  std::wsmatch match;
+  if (std::regex_search(str, match, re) && match.size() == 5) {
+    std::wstringstream(match.str(1)) >> major;
+    std::wstringstream(match.str(2)) >> minor;
+    std::wstringstream(match.str(3)) >> build;
+    std::wstringstream(match.str(4)) >> revision;
+  }
+
+  return {major, minor, build, revision};
+}
+
+std::wstring AssemblyReference::GetLocaleFromString(const std::wstring& str) {
+  std::wstring locale = L"neutral";
+
+  static auto re = std::wregex(L"Culture=([a-zA-Z0-9]+)");
+  std::wsmatch match;
+  if (std::regex_search(str, match, re) && match.size() == 2) {
+    locale = match.str(1);
+  }
+
+  return locale;
+}
+
+PublicKey AssemblyReference::GetPublicKeyFromString(const std::wstring& str) {
+  uint8_t data[8] = {0};
+
+  static auto re = std::wregex(L"PublicKeyToken=([a-zA-Z0-9]+)");
+  std::wsmatch match;
+  if (std::regex_search(str, match, re) && match.size() == 2 &&
+      match.str(1).size() == 8 * 2) {
+    for (int i = 0; i < 8; i++) {
+      auto s = match.str(1).substr(i * 2, 2);
+      unsigned long x;
+      std::wstringstream(s) >> std::hex >> x;
+      data[i] = uint8_t(x);
+    }
+  }
+
+  return PublicKey(data);
+}
+
+}  // namespace trace
 
 const integration aspnet_mvc5_integration = ::integration(
     // integration_type
