@@ -1,7 +1,8 @@
-﻿#include "MetadataBuilder.h"
+﻿#include "metadata_builder.h"
 #include <fstream>
 #include <string>
 #include "Macros.h"
+#include "iterators.h"
 
 HRESULT MetadataBuilder::emit_assembly_ref(
     const std::wstring& assembly_name,
@@ -24,27 +25,14 @@ HRESULT MetadataBuilder::emit_assembly_ref(
 
 HRESULT MetadataBuilder::find_assembly_ref(
     const std::wstring& assembly_name, mdAssemblyRef* assembly_ref_out) const {
-  HCORENUM hEnum = nullptr;
-  mdAssemblyRef rgAssemblyRefs[20];
-  ULONG cAssemblyRefsReturned;
-
-  do {
-    const HRESULT hr = assemblyImport->EnumAssemblyRefs(
-        &hEnum, rgAssemblyRefs, _countof(rgAssemblyRefs),
-        &cAssemblyRefsReturned);
-
-    LOG_IFFAILEDRET(hr, L"EnumAssemblyRefs failed, hr = " << HEX(hr));
-
-    if (cAssemblyRefsReturned == 0) {
-      assemblyImport->CloseEnum(hEnum);
-      LOG_APPEND(L"Could not find an AssemblyRef to " << assembly_name);
-      return E_FAIL;
+  for (mdAssemblyRef assembly_ref : trace::EnumAssemblyRefs(assemblyImport)) {
+    auto hr = find_assembly_ref_iterator(assembly_name, &assembly_ref, 1,
+                                         assembly_ref_out);
+    if (SUCCEEDED(hr)) {
+      return hr;
     }
-  } while (find_assembly_ref_iterator(assembly_name, rgAssemblyRefs,
-                                      cAssemblyRefsReturned,
-                                      assembly_ref_out) < S_OK);
+  }
 
-  assemblyImport->CloseEnum(hEnum);
   return S_OK;
 }
 

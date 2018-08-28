@@ -9,7 +9,7 @@
 #include "ComPtr.h"
 #include "ILRewriter.h"
 #include "Macros.h"
-#include "MetadataBuilder.h"
+#include "metadata_builder.h"
 #include "ModuleMetadata.h"
 #include "integration_loader.h"
 

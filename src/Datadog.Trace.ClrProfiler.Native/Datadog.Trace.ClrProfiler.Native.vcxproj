@@ -138,9 +138,10 @@
     <ClInclude Include="integration.h" />
     <ClInclude Include="integration_loader.h" />
     <ClInclude Include="IntegrationType.h" />
+    <ClInclude Include="iterators.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="Macros.h" />
-    <ClInclude Include="MetadataBuilder.h" />
+    <ClInclude Include="metadata_builder.h" />
     <ClInclude Include="ModuleMetadata.h" />
   </ItemGroup>
   <ItemGroup>
@@ -153,7 +154,7 @@
     <ClCompile Include="integration.cpp" />
     <ClCompile Include="integration_loader.cpp" />
     <ClCompile Include="Interop.cpp" />
-    <ClCompile Include="MetadataBuilder.cpp" />
+    <ClCompile Include="metadata_builder.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
