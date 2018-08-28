@@ -16,20 +16,8 @@ namespace Samples.ConsoleFramework
 
         void Run()
         {
-            Console.WriteLine(GetType().AssemblyQualifiedName);
-            Console.WriteLine(GetMemberName());
-
-            Console.WriteLine(typeof(ExampleLibrary.Class1).GetMethod("Add").ToString());
-
-            Console.WriteLine(ExampleLibrary.Class1.Add(1, 2));
+            Console.WriteLine(new ExampleLibrary.Class1().Add(1, 2));
             Console.ReadLine();
-
-        }
-
-
-        static string GetMemberName([CallerMemberName] string memberName = "")
-        {
-            return memberName;
         }
     }
 }

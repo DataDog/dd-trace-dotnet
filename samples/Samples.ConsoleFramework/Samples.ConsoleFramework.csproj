@@ -50,6 +50,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj">
+      <Project>{4b243cf1-4269-45c6-a238-1a9bfa58b8cc}</Project>
+      <Name>Samples.ExampleLibraryTracer</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj">
       <Project>{fdb5c8d0-018d-4ff9-9680-c6a5078f819b}</Project>
       <Name>Samples.ExampleLibrary</Name>

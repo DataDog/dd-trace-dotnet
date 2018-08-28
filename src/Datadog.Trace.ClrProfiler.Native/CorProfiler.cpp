@@ -176,8 +176,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
   for (const auto& integration : this->integrations_) {
     // TODO: check if integration is enabled in config
     for (const auto& method_replacement : integration.method_replacements) {
-      if (method_replacement.target_method.assembly.name ==
-          std::wstring(assemblyName)) {
+      if (method_replacement.caller_method.assembly.name.empty() ||
+          method_replacement.caller_method.assembly.name ==
+              std::wstring(assemblyName)) {
         enabledIntegrations.push_back(integration);
       }
     }

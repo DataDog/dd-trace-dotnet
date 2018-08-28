@@ -86,14 +86,14 @@
         "caller": {},
         "target": {
           "assembly": "Samples.ExampleLibrary",
-          "type": "ExampleLibrary.Class1",
+          "type": "Samples.ExampleLibrary.Class1",
           "method": "Add"
         },
         "wrapper": {
           "assembly": "Samples.ExampleLibraryTracer, Version=1.0.0.0",
-          "type": "ExampleLibrary.Class1",
+          "type": "Samples.ExampleLibraryTracer.Class1",
           "method": "Add",
-          "signature":  [0, 2, 8, 8, 8]
+          "signature": [ 32, 2, 8, 8, 8 ]
         }
       }
     ]

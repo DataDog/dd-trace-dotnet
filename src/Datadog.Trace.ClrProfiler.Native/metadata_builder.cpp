@@ -16,10 +16,15 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
 
   LOG_APPEND("EmitAssemblyRef " << assembly_ref.str());
 
+  unsigned long public_key_size = 8;
+  if (assembly_ref.public_key == trace::PublicKey()) {
+    public_key_size = 0;
+  }
+
   mdAssemblyRef assembly_ref_out;
   const HRESULT hr = assembly_emit_->DefineAssemblyRef(
-      &assembly_ref.public_key.data[0], 8, assembly_ref.name.c_str(),
-      &assembly_metadata,
+      &assembly_ref.public_key.data[0], public_key_size,
+      assembly_ref.name.c_str(), &assembly_metadata,
       // hash blob
       nullptr,
       // cb of hash blob
