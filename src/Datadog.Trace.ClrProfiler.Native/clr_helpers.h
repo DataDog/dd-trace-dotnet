@@ -1,5 +1,5 @@
-#ifndef DD_CLR_PROFILER_ITERATORS_H_
-#define DD_CLR_PROFILER_ITERATORS_H_
+#ifndef DD_CLR_PROFILER_CLR_HELPERS_H_
+#define DD_CLR_PROFILER_CLR_HELPERS_H_
 
 #include <corhlpr.h>
 #include <functional>
@@ -8,7 +8,7 @@
 
 namespace trace {
 
-const ULONG ENUMERATOR_MAX = 256;
+const ULONG kEnumeratorMax = 256;
 
 template <typename T>
 class EnumeratorIterator;
@@ -46,7 +46,7 @@ class EnumeratorIterator {
  private:
   const Enumerator<T>* enumerator_;
   HRESULT status_;
-  T arr_[ENUMERATOR_MAX];
+  T arr_[kEnumeratorMax];
   ULONG idx_;
   ULONG sz_;
 
@@ -66,7 +66,7 @@ class EnumeratorIterator {
       idx_++;
     } else {
       idx_ = 0;
-      status_ = enumerator_->Next(arr_, ENUMERATOR_MAX, &sz_);
+      status_ = enumerator_->Next(arr_, kEnumeratorMax, &sz_);
       if (status_ == S_OK && sz_ == 0) {
         status_ = S_FALSE;
       }
@@ -99,6 +99,14 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
       });
 }
 
+std::wstring GetAssemblyName(
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+    const mdAssemblyRef& assembly_ref);
+
+mdAssemblyRef FindAssemblyRef(
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+    const std::wstring& name);
+
 }  // namespace trace
 
-#endif  // DD_CLR_PROFILER_ITERATORS_H_
+#endif  // DD_CLR_PROFILER_CLR_HELPERS_H_

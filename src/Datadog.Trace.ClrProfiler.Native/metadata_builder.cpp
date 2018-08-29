@@ -2,7 +2,9 @@
 #include <fstream>
 #include <string>
 #include "Macros.h"
-#include "iterators.h"
+#include "clr_helpers.h"
+
+namespace trace {
 
 HRESULT MetadataBuilder::EmitAssemblyRef(
     const trace::AssemblyReference& assembly_ref) const {
@@ -36,35 +38,6 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   return S_OK;
 }
 
-HRESULT MetadataBuilder::FindAssemblyRef(
-    const std::wstring& assembly_name, mdAssemblyRef& assembly_ref_out) const {
-  for (mdAssemblyRef assembly_ref : trace::EnumAssemblyRefs(assembly_import_)) {
-    if (GetAssemblyName(assembly_ref) == assembly_name) {
-      assembly_ref_out = assembly_ref;
-      return S_OK;
-    }
-  }
-
-  return S_OK;
-}
-
-std::wstring MetadataBuilder::GetAssemblyName(
-    const mdAssemblyRef& assembly_ref) const {
-  const unsigned long str_max = 512;
-  std::wstring str(str_max, 0);
-  unsigned long str_len = 0;
-  ASSEMBLYMETADATA assembly_metadata{};
-  DWORD assembly_flags = 0;
-  auto hr = assembly_import_->GetAssemblyRefProps(
-      assembly_ref, nullptr, nullptr, str.data(), str_max, &str_len,
-      &assembly_metadata, nullptr, nullptr, &assembly_flags);
-  if (FAILED(hr)) {
-    return L"";
-  }
-  str = str.substr(0, str_len - 1);
-  return str;
-}
-
 HRESULT MetadataBuilder::FindWrapperTypeRef(
     const method_replacement& method_replacement,
     mdTypeRef& type_ref_out) const {
@@ -92,12 +65,12 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
   } else {
     // type is defined in another assembly,
     // find a reference to the assembly where type lives
-    mdAssemblyRef assembly_ref = mdAssemblyRefNil;
-    hr = FindAssemblyRef(method_replacement.wrapper_method.assembly.name,
-                         assembly_ref);
-    RETURN_IF_FAILED(hr);
-
-    // TODO: emit assembly reference if not found?
+    auto assembly_ref = FindAssemblyRef(
+        assembly_import_, method_replacement.wrapper_method.assembly.name);
+    if (assembly_ref == mdAssemblyRefNil) {
+      // TODO: emit assembly reference if not found?
+      return S_FALSE;
+    }
 
     // search for an existing reference to the type
     hr = metadata_import_->FindTypeRef(assembly_ref, wrapper_type_name,
@@ -159,3 +132,5 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
   metadata_.SetWrapperMemberRef(cache_key, member_ref);
   return S_OK;
 }
+
+}  // namespace trace

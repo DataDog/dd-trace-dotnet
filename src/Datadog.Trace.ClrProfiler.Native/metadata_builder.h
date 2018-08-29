@@ -4,6 +4,8 @@
 #include "ComPtr.h"
 #include "ModuleMetadata.h"
 
+namespace trace {
+
 class MetadataBuilder {
  private:
   ModuleMetadata& metadata_;
@@ -12,11 +14,6 @@ class MetadataBuilder {
   const ComPtr<IMetaDataEmit> metadata_emit_{};
   const ComPtr<IMetaDataAssemblyImport> assembly_import_{};
   const ComPtr<IMetaDataAssemblyEmit> assembly_emit_{};
-
-  HRESULT FindAssemblyRef(const std::wstring& assembly_name,
-                          mdAssemblyRef& assembly_ref_out) const;
-
-  std::wstring GetAssemblyName(const mdAssemblyRef& assembly_ref) const;
 
   HRESULT FindWrapperTypeRef(const method_replacement& method_replacement,
                              mdTypeRef& type_ref_out) const;
@@ -39,3 +36,5 @@ class MetadataBuilder {
 
   HRESULT EmitAssemblyRef(const trace::AssemblyReference& assembly_ref) const;
 };
+
+}  // namespace trace

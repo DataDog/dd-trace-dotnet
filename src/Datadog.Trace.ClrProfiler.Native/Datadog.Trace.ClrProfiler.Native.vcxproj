@@ -138,7 +138,7 @@
     <ClInclude Include="integration.h" />
     <ClInclude Include="integration_loader.h" />
     <ClInclude Include="IntegrationType.h" />
-    <ClInclude Include="iterators.h" />
+    <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="metadata_builder.h" />
@@ -147,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClassFactory.cpp" />
+    <ClCompile Include="clr_helpers.cpp" />
     <ClCompile Include="CorProfilerBase.cpp" />
     <ClCompile Include="CSHolder.cpp" />
     <ClCompile Include="CorProfiler.cpp" />
