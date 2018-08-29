@@ -75,16 +75,28 @@ class EnumeratorIterator {
   }
 };
 
+static Enumerator<mdTypeDef> EnumTypeDefs(
+    ComPtr<IMetaDataImport> metadata_import) {
+  return Enumerator<mdTypeDef>(
+      [metadata_import](HCORENUM* ptr, mdTypeDef arr[], ULONG max,
+                        ULONG* cnt) -> HRESULT {
+        return metadata_import->EnumTypeDefs(ptr, arr, max, cnt);
+      },
+      [metadata_import](HCORENUM ptr) -> void {
+        metadata_import->CloseEnum(ptr);
+      });
+}
+
 static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
-    ComPtr<IMetaDataAssemblyImport> assemblyImport) {
-  auto callback = [assemblyImport](HCORENUM* ptr, mdAssemblyRef arr[],
-                                   ULONG max, ULONG* cnt) -> HRESULT {
-    return assemblyImport->EnumAssemblyRefs(ptr, arr, max, cnt);
-  };
-  auto close = [assemblyImport](HCORENUM ptr) -> void {
-    assemblyImport->CloseEnum(ptr);
-  };
-  return Enumerator<mdAssemblyRef>(callback, close);
+    ComPtr<IMetaDataAssemblyImport> assembly_import) {
+  return Enumerator<mdAssemblyRef>(
+      [assembly_import](HCORENUM* ptr, mdAssemblyRef arr[], ULONG max,
+                        ULONG* cnt) -> HRESULT {
+        return assembly_import->EnumAssemblyRefs(ptr, arr, max, cnt);
+      },
+      [assembly_import](HCORENUM ptr) -> void {
+        assembly_import->CloseEnum(ptr);
+      });
 }
 
 }  // namespace trace

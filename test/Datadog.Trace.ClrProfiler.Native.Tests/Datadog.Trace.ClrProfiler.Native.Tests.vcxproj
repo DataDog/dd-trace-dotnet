@@ -57,6 +57,7 @@
   <ItemGroup>
     <ClCompile Include="integration_loader_tests.cpp" />
     <ClCompile Include="integration_tests.cpp" />
+    <ClCompile Include="iterator_tests.cpp" />
     <ClCompile Include="metadata_builder_tests.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
