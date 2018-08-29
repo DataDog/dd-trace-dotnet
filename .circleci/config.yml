@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: datadog/docker-library:ddtrace_csharp_0_1_0
+      - image: datadog/docker-library:ddtrace_csharp_0_1_1
       - image: datadog/docker-dd-agent
         env:
           - DD_APM_ENABLED=true
