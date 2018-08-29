@@ -62,10 +62,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AA6F
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5", "samples\Samples.AspNetMvc5\Samples.AspNetMvc5.csproj", "{3C6DD42E-9214-4747-92BA-78DE29AACE59}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc2", "samples\Samples.AspNetCoreMvc2\Samples.AspNetCoreMvc2.csproj", "{9951A03A-AD1B-48D8-A96D-B85532BEDADD}"
 	ProjectSection(ProjectDependencies) = postProject
-		{91B6272F-5780-4C94-8071-DBBA7B4F67F3} = {91B6272F-5780-4C94-8071-DBBA7B4F67F3}
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
 	EndProjectSection
 EndProject
@@ -90,11 +93,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibraryTrace
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.ConsoleFramework", "samples\Samples.ConsoleFramework\Samples.ConsoleFramework.csproj", "{F40F73F0-95CA-43B5-9881-DC58F0AE8BC3}"
 	ProjectSection(ProjectDependencies) = postProject
-		{91B6272F-5780-4C94-8071-DBBA7B4F67F3} = {91B6272F-5780-4C94-8071-DBBA7B4F67F3}
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ConsoleCore", "samples\Samples.ConsoleCore\Samples.ConsoleCore.csproj", "{BC7B3216-9C37-4570-8A4A-5D716AB98E9C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.IntegrationTests", "test\Datadog.Trace.ClrProfiler.IntegrationTests\Datadog.Trace.ClrProfiler.IntegrationTests.csproj", "{0D546118-B70A-44D0-B675-39EDB99FCEEE}"
 EndProject
