@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 
@@ -21,8 +22,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string appPath = Path.GetFullPath(BuildParameters.CoreClr ? "Samples.ConsoleCore.dll" : "Samples.ConsoleCore.exe");
             Assert.True(File.Exists(appPath), $"Application not found at {appPath}");
 
-            // get path to integration definitions
-            IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*.json");
+            // get full paths to integration definitions
+            IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*.json").Select(Path.GetFullPath);
 
             string output;
             int exitCode;
