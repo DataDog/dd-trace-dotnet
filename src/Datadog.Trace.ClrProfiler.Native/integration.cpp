@@ -5,17 +5,16 @@
 namespace trace {
 
 std::wstring AssemblyReference::GetNameFromString(const std::wstring& wstr) {
-  std::wstring name;
+  std::wstring name = wstr;
 
-  size_t pos;
-  if ((pos = wstr.find(L',')) != std::wstring::npos) {
-    name = wstr.substr(0, pos);
-  } else {
-    name = wstr;
+  auto pos = name.find(L',');
+  if (pos != std::wstring::npos) {
+    name = name.substr(0, pos);
   }
 
   // strip spaces
-  if ((pos = wstr.rfind(L' ')) != std::wstring::npos) {
+  pos = name.rfind(L' ');
+  if (pos != std::wstring::npos) {
     name = name.substr(0, pos);
   }
 
