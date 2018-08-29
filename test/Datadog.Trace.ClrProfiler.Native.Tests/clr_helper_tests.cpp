@@ -2,6 +2,8 @@
 
 #include "../../src/Datadog.Trace.ClrProfiler.Native/clr_helpers.h"
 
+using namespace trace;
+
 class CLRHelperTest : public ::testing::Test {
  protected:
   IMetaDataDispenser* metadata_dispenser_;
@@ -49,7 +51,7 @@ TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
   std::vector<std::wstring> expected_types = {L"Samples.ExampleLibrary.Class1"};
   std::vector<std::wstring> actual_types;
 
-  for (auto& def : trace::EnumTypeDefs(metadata_import_)) {
+  for (auto& def : EnumTypeDefs(metadata_import_)) {
     std::wstring name(256, 0);
     unsigned long name_sz = 0;
     DWORD flags = 0;
@@ -70,8 +72,8 @@ TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
 TEST_F(CLRHelperTest, EnumeratesAssemblyRefs) {
   std::vector<std::wstring> expected_assemblies = {L"System.Runtime"};
   std::vector<std::wstring> actual_assemblies;
-  for (auto& ref : trace::EnumAssemblyRefs(assembly_import_)) {
-    auto name = trace::GetAssemblyName(assembly_import_, ref);
+  for (auto& ref : EnumAssemblyRefs(assembly_import_)) {
+    auto name = GetAssemblyName(assembly_import_, ref);
     if (!name.empty()) {
       actual_assemblies.push_back(name);
     }
