@@ -1,8 +1,10 @@
 #include "pch.h"
 
-#include "../../src/Datadog.Trace.ClrProfiler.Native/iterators.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/clr_helpers.h"
 
-class IteratorTest : public ::testing::Test {
+using namespace trace;
+
+class CLRHelperTest : public ::testing::Test {
  protected:
   IMetaDataDispenser* metadata_dispenser_;
   ComPtr<IMetaDataImport> metadata_import_;
@@ -45,11 +47,11 @@ class IteratorTest : public ::testing::Test {
   }
 };
 
-TEST_F(IteratorTest, EnumeratesTypeDefs) {
+TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
   std::vector<std::wstring> expected_types = {L"Samples.ExampleLibrary.Class1"};
   std::vector<std::wstring> actual_types;
 
-  for (auto& def : trace::EnumTypeDefs(metadata_import_)) {
+  for (auto& def : EnumTypeDefs(metadata_import_)) {
     std::wstring name(256, 0);
     unsigned long name_sz = 0;
     DWORD flags = 0;
@@ -67,20 +69,12 @@ TEST_F(IteratorTest, EnumeratesTypeDefs) {
   EXPECT_EQ(expected_types, actual_types);
 }
 
-TEST_F(IteratorTest, EnumeratesAssemblyRefs) {
+TEST_F(CLRHelperTest, EnumeratesAssemblyRefs) {
   std::vector<std::wstring> expected_assemblies = {L"System.Runtime"};
   std::vector<std::wstring> actual_assemblies;
-  for (auto& ref : trace::EnumAssemblyRefs(assembly_import_)) {
-    const unsigned long name_max = 512;
-    std::wstring name(name_max, 0);
-    unsigned long name_sz = 0;
-    ASSEMBLYMETADATA assembly_metadata{};
-    DWORD flags = 0;
-    auto hr = assembly_import_->GetAssemblyRefProps(
-        ref, nullptr, nullptr, name.data(), name_max, &name_sz,
-        &assembly_metadata, nullptr, nullptr, &flags);
-    if (SUCCEEDED(hr)) {
-      name = name.substr(0, name_sz - 1);
+  for (auto& ref : EnumAssemblyRefs(assembly_import_)) {
+    auto name = GetAssemblyName(assembly_import_, ref);
+    if (!name.empty()) {
       actual_assemblies.push_back(name);
     }
   }

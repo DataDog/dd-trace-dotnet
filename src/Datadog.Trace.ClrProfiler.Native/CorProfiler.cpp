@@ -218,8 +218,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
   ModuleMetadata* moduleMetadata =
       new ModuleMetadata(metadataImport, assemblyName, enabledIntegrations);
 
-  MetadataBuilder metadataBuilder(*moduleMetadata, module, metadataImport,
-                                  metadataEmit, assemblyImport, assemblyEmit);
+  trace::MetadataBuilder metadataBuilder(*moduleMetadata, module,
+                                         metadataImport, metadataEmit,
+                                         assemblyImport, assemblyEmit);
 
   for (const auto& integration : enabledIntegrations) {
     for (const auto& method_replacement : integration.method_replacements) {

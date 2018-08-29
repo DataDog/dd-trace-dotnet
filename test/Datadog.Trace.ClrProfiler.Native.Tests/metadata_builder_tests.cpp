@@ -1,7 +1,9 @@
 #include "pch.h"
 
-#include "../../src/Datadog.Trace.ClrProfiler.Native/iterators.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/clr_helpers.h"
 #include "../../src/Datadog.Trace.ClrProfiler.Native/metadata_builder.h"
+
+using namespace trace;
 
 class MetadataBuilderTest : public ::testing::Test {
  protected:
