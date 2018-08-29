@@ -102,6 +102,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ConsoleCore", "samp
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.IntegrationTests", "test\Datadog.Trace.ClrProfiler.IntegrationTests\Datadog.Trace.ClrProfiler.IntegrationTests.csproj", "{0D546118-B70A-44D0-B675-39EDB99FCEEE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
