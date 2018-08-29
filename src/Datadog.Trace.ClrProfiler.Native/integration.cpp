@@ -4,7 +4,15 @@
 
 namespace trace {
 
-std::wstring AssemblyReference::GetNameFromString(const std::wstring& wstr) {
+AssemblyReference::AssemblyReference(const std::wstring& str)
+    : name(GetNameFromAssemblyReferenceString(str)),
+      version(GetVersionFromAssemblyReferenceString(str)),
+      locale(GetLocaleFromAssemblyReferenceString(str)),
+      public_key(GetPublicKeyFromAssemblyReferenceString(str)) {}
+
+namespace {
+
+std::wstring GetNameFromAssemblyReferenceString(const std::wstring& wstr) {
   std::wstring name = wstr;
 
   auto pos = name.find(L',');
@@ -21,7 +29,7 @@ std::wstring AssemblyReference::GetNameFromString(const std::wstring& wstr) {
   return name;
 }
 
-Version AssemblyReference::GetVersionFromString(const std::wstring& str) {
+Version GetVersionFromAssemblyReferenceString(const std::wstring& str) {
   unsigned short major = 0;
   unsigned short minor = 0;
   unsigned short build = 0;
@@ -41,7 +49,7 @@ Version AssemblyReference::GetVersionFromString(const std::wstring& str) {
   return {major, minor, build, revision};
 }
 
-std::wstring AssemblyReference::GetLocaleFromString(const std::wstring& str) {
+std::wstring GetLocaleFromAssemblyReferenceString(const std::wstring& str) {
   std::wstring locale = L"neutral";
 
   static auto re = std::wregex(L"Culture=([a-zA-Z0-9]+)");
@@ -53,13 +61,12 @@ std::wstring AssemblyReference::GetLocaleFromString(const std::wstring& str) {
   return locale;
 }
 
-PublicKey AssemblyReference::GetPublicKeyFromString(const std::wstring& str) {
+PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& str) {
   uint8_t data[8] = {0};
 
-  static auto re = std::wregex(L"PublicKeyToken=([a-zA-Z0-9]+)");
+  static auto re = std::wregex(L"PublicKeyToken=([a-fA-F0-9]{16})");
   std::wsmatch match;
-  if (std::regex_search(str, match, re) && match.size() == 2 &&
-      match.str(1).size() == 8 * 2) {
+  if (std::regex_search(str, match, re) && match.size() == 2) {
     for (int i = 0; i < 8; i++) {
       auto s = match.str(1).substr(i * 2, 2);
       unsigned long x;
@@ -70,6 +77,8 @@ PublicKey AssemblyReference::GetPublicKeyFromString(const std::wstring& str) {
 
   return PublicKey(data);
 }
+
+}  // namespace
 
 }  // namespace trace
 

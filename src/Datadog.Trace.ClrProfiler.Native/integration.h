@@ -68,24 +68,13 @@ struct Version {
 //     Some.Assembly.Name, Version=1.0.0.0, Culture=neutral,
 //     PublicKeyToken=abcdef0123456789
 struct AssemblyReference {
- private:
-  static std::wstring GetNameFromString(const std::wstring& wstr);
-  static Version GetVersionFromString(const std::wstring& wstr);
-  static std::wstring GetLocaleFromString(const std::wstring& wstr);
-  static PublicKey GetPublicKeyFromString(const std::wstring& wstr);
-
- public:
   const std::wstring name;
   const Version version;
   const std::wstring locale;
   const PublicKey public_key;
 
   AssemblyReference() {}
-  AssemblyReference(const std::wstring& str)
-      : name(GetNameFromString(str)),
-        version(GetVersionFromString(str)),
-        locale(GetLocaleFromString(str)),
-        public_key(GetPublicKeyFromString(str)) {}
+  AssemblyReference(const std::wstring& str);
 
   bool operator==(const AssemblyReference& other) const {
     return name == other.name && version == other.version &&
@@ -109,6 +98,15 @@ struct MethodSignature {
   MethodSignature() {}
   MethodSignature(const std::vector<uint8_t>& data) : data(data) {}
 };
+
+namespace {
+
+std::wstring GetNameFromAssemblyReferenceString(const std::wstring& wstr);
+Version GetVersionFromAssemblyReferenceString(const std::wstring& wstr);
+std::wstring GetLocaleFromAssemblyReferenceString(const std::wstring& wstr);
+PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& wstr);
+
+}  // namespace
 
 }  // namespace trace
 
