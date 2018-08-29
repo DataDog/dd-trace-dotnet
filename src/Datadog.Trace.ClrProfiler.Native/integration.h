@@ -169,5 +169,3 @@ struct integration {
                        other.method_replacements);
   }
 };
-
-extern std::vector<integration> default_integrations;

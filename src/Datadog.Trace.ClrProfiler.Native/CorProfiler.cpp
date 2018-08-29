@@ -12,7 +12,6 @@
 #include "ModuleMetadata.h"
 #include "integration_loader.h"
 #include "metadata_builder.h"
-#include "util.h"
 
 // Note: Generally you should not have a single, global callback implementation,
 // as that prevents your profiler from analyzing multiply loaded in-process
@@ -26,55 +25,12 @@ CorProfiler* g_pCallbackObject = nullptr;
 std::wofstream g_wLogFile;
 std::string g_wszLogFilePath = "C:\\temp\\CorProfiler.log";
 
+CorProfiler::CorProfiler()
+    : integrations_(trace::LoadIntegrationsFromEnvironment()) {}
+
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   is_attached_ = FALSE;
-
-  /*
-  WCHAR wszTempDir[MAX_PATH] = { L'\0' };
-
-  if (FAILED(GetEnvironmentVariable(L"ProgramData", wszTempDir,
-  _countof(wszTempDir))))
-  {
-      return E_FAIL;
-  }
-
-  if (wcscpy_s(g_wszLogFilePath, _countof(g_wszLogFilePath), wszTempDir) != 0)
-  {
-      return E_FAIL;
-  }
-
-  if (wcscat_s(g_wszLogFilePath, _countof(g_wszLogFilePath),
-  L"\\Datadog\\logs\\CorProfiler.log"))
-  {
-      return E_FAIL;
-  }
-
-  if (wcscpy_s(g_wszLogFilePath, _countof(g_wszLogFilePath),
-  L"C:\\temp\\CorProfiler.log") != 0)
-  {
-      LOG_APPEND(L"Failed to attach profiler: could not copy log file path.");
-      return E_FAIL;
-  }
-  */
-
-  WCHAR integration_file_path[MAX_PATH]{};
-  const DWORD integration_file_path_length =
-      GetEnvironmentVariable(L"DATADOG_INTEGRATIONS", integration_file_path,
-                             _countof(integration_file_path));
-
-  if (integration_file_path_length > 0) {
-    LOG_APPEND(L"loading integrations from " << integration_file_path);
-    trace::IntegrationLoader loader;
-    for (const auto& f : split(integration_file_path, L';')) {
-      auto is = loader.LoadIntegrationsFromFile(f);
-      integrations_.insert(integrations_.end(), is.begin(), is.end());
-    }
-  } else {
-    LOG_APPEND(L"using default integrations");
-    integrations_.insert(integrations_.end(), default_integrations.begin(),
-                         default_integrations.end());
-  }
 
   WCHAR* processName = nullptr;
   WCHAR processNames[MAX_PATH]{};

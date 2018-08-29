@@ -14,9 +14,11 @@ class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
   IDToInfoMap<ModuleID, ModuleMetadata*> module_id_to_info_map_;
-  std::vector<integration> integrations_;
+  const std::vector<integration> integrations_;
 
  public:
+  CorProfiler();
+
   bool IsAttached() const;
 
   HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;

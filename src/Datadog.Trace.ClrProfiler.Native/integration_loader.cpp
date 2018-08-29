@@ -1,10 +1,27 @@
 #include "integration_loader.h"
+#include "util.h"
 
 namespace trace {
 
 using json = nlohmann::json;
 
-std::vector<integration> IntegrationLoader::LoadIntegrationsFromFile(
+std::vector<integration> LoadIntegrationsFromEnvironment() {
+  std::vector<integration> integrations;
+  std::wstring str(1024, 0);
+  auto sz = GetEnvironmentVariableW(kIntegrationsEnvironmentName.data(),
+                                    str.data(), DWORD(str.size()));
+  if (sz > 0) {
+    str = str.substr(0, sz);
+    LOG_APPEND(L"loading integrations from " << str);
+    for (const auto& f : split(str, L';')) {
+      auto is = LoadIntegrationsFromFile(f);
+      integrations.insert(integrations.end(), is.begin(), is.end());
+    }
+  }
+  return integrations;
+}
+
+std::vector<integration> LoadIntegrationsFromFile(
     const std::wstring& file_path) {
   std::vector<integration> integrations;
 
@@ -20,8 +37,7 @@ std::vector<integration> IntegrationLoader::LoadIntegrationsFromFile(
   return integrations;
 }
 
-std::vector<integration> IntegrationLoader::LoadIntegrationsFromStream(
-    std::istream& stream) {
+std::vector<integration> LoadIntegrationsFromStream(std::istream& stream) {
   std::vector<integration> integrations;
 
   try {
@@ -30,7 +46,7 @@ std::vector<integration> IntegrationLoader::LoadIntegrationsFromStream(
     stream >> j;
 
     for (auto& el : j) {
-      auto i = IntegrationLoader::IntegrationFromJson(el);
+      auto i = IntegrationFromJson(el);
       if (i.has_value()) {
         integrations.push_back(i.value());
       }
@@ -48,8 +64,9 @@ std::vector<integration> IntegrationLoader::LoadIntegrationsFromStream(
   return integrations;
 }
 
-std::optional<integration> IntegrationLoader::IntegrationFromJson(
-    const json::value_type& src) {
+namespace {
+
+std::optional<integration> IntegrationFromJson(const json::value_type& src) {
   if (!src.is_object()) {
     return {};
   }
@@ -76,23 +93,19 @@ std::optional<integration> IntegrationLoader::IntegrationFromJson(
   return integration(IntegrationType_Custom, name, replacements);
 }
 
-std::optional<method_replacement> IntegrationLoader::MethodReplacementFromJson(
+std::optional<method_replacement> MethodReplacementFromJson(
     const json::value_type& src) {
   if (!src.is_object()) {
     return {};
   }
 
-  auto caller = IntegrationLoader::MethodReferenceFromJson(
-      src.value("caller", json::object()));
-  auto target = IntegrationLoader::MethodReferenceFromJson(
-      src.value("target", json::object()));
-  auto wrapper = IntegrationLoader::MethodReferenceFromJson(
-      src.value("wrapper", json::object()));
+  auto caller = MethodReferenceFromJson(src.value("caller", json::object()));
+  auto target = MethodReferenceFromJson(src.value("target", json::object()));
+  auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
   return method_replacement(caller, target, wrapper);
 }
 
-method_reference IntegrationLoader::MethodReferenceFromJson(
-    const json::value_type& src) {
+method_reference MethodReferenceFromJson(const json::value_type& src) {
   if (!src.is_object()) {
     return {};
   }
@@ -112,5 +125,7 @@ method_reference IntegrationLoader::MethodReferenceFromJson(
   }
   return method_reference(assembly, type, method, signature);
 }
+
+}  // namespace
 
 }  // namespace trace
