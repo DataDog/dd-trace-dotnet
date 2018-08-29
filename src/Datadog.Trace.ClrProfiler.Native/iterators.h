@@ -99,30 +99,6 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
       });
 }
 
-static Enumerator<mdExportedType> EnumExportedTypes(
-    ComPtr<IMetaDataAssemblyImport> assembly_import) {
-  return Enumerator<mdExportedType>(
-      [assembly_import](HCORENUM* ptr, mdExportedType arr[], ULONG max,
-                        ULONG* cnt) -> HRESULT {
-        return assembly_import->EnumExportedTypes(ptr, arr, max, cnt);
-      },
-      [assembly_import](HCORENUM ptr) -> void {
-        assembly_import->CloseEnum(ptr);
-      });
-}
-
-static Enumerator<mdFile> EnumFiles(
-    ComPtr<IMetaDataAssemblyImport> assembly_import) {
-  return Enumerator<mdFile>(
-      [assembly_import](HCORENUM* ptr, mdFile arr[], ULONG max,
-                        ULONG* cnt) -> HRESULT {
-        return assembly_import->EnumFiles(ptr, arr, max, cnt);
-      },
-      [assembly_import](HCORENUM ptr) -> void {
-        assembly_import->CloseEnum(ptr);
-      });
-}
-
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_ITERATORS_H_
