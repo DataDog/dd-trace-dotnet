@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+  </ItemGroup>
+
 </Project>
