@@ -163,9 +163,4 @@ struct integration {
       : integration_type(integration_type),
         integration_name(std::move(integration_name)),
         method_replacements(std::move(method_replacements)) {}
-
-  integration& operator=(integration other) const {
-    return integration(other.integration_type, other.integration_name,
-                       other.method_replacements);
-  }
 };

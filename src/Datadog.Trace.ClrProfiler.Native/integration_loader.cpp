@@ -15,7 +15,9 @@ std::vector<integration> LoadIntegrationsFromEnvironment() {
     LOG_APPEND(L"loading integrations from " << str);
     for (const auto& f : split(str, L';')) {
       auto is = LoadIntegrationsFromFile(f);
-      integrations.insert(integrations.end(), is.begin(), is.end());
+      for (auto& i : is) {
+        integrations.push_back(i);
+      }
     }
   }
   return integrations;
