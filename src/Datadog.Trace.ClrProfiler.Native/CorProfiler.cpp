@@ -68,16 +68,12 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
     trace::IntegrationLoader loader;
     for (const auto& f : split(integration_file_path, L';')) {
       auto is = loader.LoadIntegrationsFromFile(f);
-      for (auto&& i : is) {
-        integrations_.push_back(i);
-      }
+      integrations_.insert(integrations_.end(), is.begin(), is.end());
     }
   } else {
     LOG_APPEND(L"using default integrations");
-
-    for (auto&& integration : default_integrations) {
-      integrations_.push_back(integration);
-    }
+    integrations_.insert(integrations_.end(), default_integrations.begin(),
+                         default_integrations.end());
   }
 
   WCHAR* processName = nullptr;
