@@ -2,16 +2,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
+#include "CorProfiler.h"
 #include <fstream>
 #include <string>
 #include <vector>
 #include "ComPtr.h"
-#include "CorProfiler.h"
 #include "ILRewriter.h"
 #include "Macros.h"
 #include "ModuleMetadata.h"
 #include "integration_loader.h"
 #include "metadata_builder.h"
+#include "util.h"
 
 // Note: Generally you should not have a single, global callback implementation,
 // as that prevents your profiler from analyzing multiply loaded in-process
@@ -65,13 +66,14 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   if (integration_file_path_length > 0) {
     LOG_APPEND(L"loading integrations from " << integration_file_path);
     trace::IntegrationLoader loader;
-    integrations_ = loader.LoadIntegrationsFromFile(integration_file_path);
+    for (const auto& f : split(integration_file_path, L';')) {
+      auto is = loader.LoadIntegrationsFromFile(f);
+      integrations_.insert(integrations_.end(), is.begin(), is.end());
+    }
   } else {
     LOG_APPEND(L"using default integrations");
-
-    for (auto&& integration : default_integrations) {
-      integrations_.push_back(integration);
-    }
+    integrations_.insert(integrations_.end(), default_integrations.begin(),
+                         default_integrations.end());
   }
 
   WCHAR* processName = nullptr;
@@ -176,20 +178,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
   for (const auto& integration : this->integrations_) {
     // TODO: check if integration is enabled in config
     for (const auto& method_replacement : integration.method_replacements) {
-      if (method_replacement.target_method.assembly_name ==
-          std::wstring(assemblyName)) {
+      if (method_replacement.caller_method.assembly.name.empty() ||
+          method_replacement.caller_method.assembly.name ==
+              std::wstring(assemblyName)) {
         enabledIntegrations.push_back(integration);
       }
     }
   }
 
+  LOG_APPEND(L"ModuleLoadFinished for "
+             << assemblyName << ". Emitting instrumentation metadata.");
+
   if (enabledIntegrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     return S_OK;
   }
-
-  LOG_APPEND(L"ModuleLoadFinished for "
-             << assemblyName << ". Emitting instrumentation metadata.");
 
   ComPtr<IUnknown> metadataInterfaces;
 
@@ -218,28 +221,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
   MetadataBuilder metadataBuilder(*moduleMetadata, module, metadataImport,
                                   metadataEmit, assemblyImport, assemblyEmit);
 
-  // emit a metadata reference to our assembly,
-  // Datadog.Trace.ClrProfiler.Managed
-  BYTE rgbPublicKeyToken[] = {0xde, 0xf8, 0x6d, 0x06, 0x1d, 0x0d, 0x2e, 0xeb};
-  WCHAR wszLocale[] = L"neutral";
-
-  ASSEMBLYMETADATA assemblyMetaData{};
-  assemblyMetaData.usMajorVersion = 0;
-  assemblyMetaData.usMinorVersion = 2;
-  assemblyMetaData.usBuildNumber = 0;
-  assemblyMetaData.usRevisionNumber = 0;
-  assemblyMetaData.szLocale = wszLocale;
-  assemblyMetaData.cbLocale = _countof(wszLocale);
-
-  mdAssemblyRef assemblyRef;
-  hr = metadataBuilder.EmitAssemblyRef(
-      L"Datadog.Trace.ClrProfiler.Managed", assemblyMetaData, rgbPublicKeyToken,
-      _countof(rgbPublicKeyToken), assemblyRef);
-
-  RETURN_OK_IF_FAILED(hr);
-
   for (const auto& integration : enabledIntegrations) {
     for (const auto& method_replacement : integration.method_replacements) {
+      // for each wrapper assembly, emit an assembly reference
+      hr = metadataBuilder.EmitAssemblyRef(
+          method_replacement.wrapper_method.assembly);
+      RETURN_OK_IF_FAILED(hr);
+
       // for each method replacement in each enabled integration,
       // emit a reference to the instrumentation wrapper methods
       hr = metadataBuilder.StoreWrapperMethodRef(method_replacement);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <corhlpr.h>
+#include <fstream>
 
 extern std::wofstream g_wLogFile;
 extern std::string g_wszLogFilePath;

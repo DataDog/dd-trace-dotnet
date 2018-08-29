@@ -2,11 +2,11 @@
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-namespace ExampleLibrary
+namespace Samples.ExampleLibrary
 {
     public class Class1
     {
-        public static int Add(int x, int y)
+        public int Add(int x, int y)
         {
             return x + y;
         }

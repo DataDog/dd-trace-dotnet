@@ -19,8 +19,8 @@ SET CORECLR_PROFILER_PATH_64=%~dp0\src\Datadog.Trace.ClrProfiler.Native\bin\Debu
 SET CORECLR_PROFILER_PATH_32=%~dp0\src\Datadog.Trace.ClrProfiler.Native\bin\Debug\x86\Datadog.Trace.ClrProfiler.Native.dll
 
 rem Limit profiling to these processes only
-SET DATADOG_PROFILER_PROCESSES=ConsoleApp.exe;w3wp.exe;iisexpress.exe;Samples.AspNetCoreMvc2.exe;dotnet.exe;Samples.ConsoleFramework.exe
-rem SET DATADOG_INTEGRATIONS=%~dp0\integrations.json
+SET DATADOG_PROFILER_PROCESSES=ConsoleApp.exe;w3wp.exe;iisexpress.exe;Samples.AspNetCoreMvc2.exe;dotnet.exe;Samples.ConsoleFramework.exe;Samples.ConsoleCore.exe
+SET DATADOG_INTEGRATIONS=%~dp0\integrations.json;%~dp0\test-integrations.json
 
 rem Open solution in Visual Studio
 IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" (

@@ -143,6 +143,7 @@
     <ClInclude Include="Macros.h" />
     <ClInclude Include="metadata_builder.h" />
     <ClInclude Include="ModuleMetadata.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClassFactory.cpp" />
