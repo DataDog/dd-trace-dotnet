@@ -4,26 +4,25 @@
 
 namespace trace {
 
-::std::wstring AssemblyReference::GetNameFromString(
-    const ::std::wstring& wstr) {
-  ::std::wstring name;
+std::wstring AssemblyReference::GetNameFromString(const std::wstring& wstr) {
+  std::wstring name;
 
   size_t pos;
-  if ((pos = wstr.find(L',')) != ::std::wstring::npos) {
+  if ((pos = wstr.find(L',')) != std::wstring::npos) {
     name = wstr.substr(0, pos);
   } else {
     name = wstr;
   }
 
   // strip spaces
-  if ((pos = wstr.rfind(L' ')) != ::std::wstring::npos) {
+  if ((pos = wstr.rfind(L' ')) != std::wstring::npos) {
     name = name.substr(0, pos);
   }
 
   return name;
 }
 
-Version AssemblyReference::GetVersionFromString(const ::std::wstring& str) {
+Version AssemblyReference::GetVersionFromString(const std::wstring& str) {
   unsigned short major = 0;
   unsigned short minor = 0;
   unsigned short build = 0;
