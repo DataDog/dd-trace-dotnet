@@ -37,9 +37,5 @@ class MetadataBuilder {
   HRESULT StoreWrapperMethodRef(
       const method_replacement& method_replacement) const;
 
-  HRESULT EmitAssemblyRef(const std::wstring& assembly_name,
-                          const ASSEMBLYMETADATA& assembly_metadata,
-                          BYTE public_key_token[],
-                          ULONG public_key_token_length,
-                          mdAssemblyRef& assembly_ref_out) const;
+  HRESULT EmitAssemblyRef(const trace::AssemblyReference& assembly_ref) const;
 };

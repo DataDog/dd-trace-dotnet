@@ -52,11 +52,11 @@ class EnumeratorIterator {
 
  public:
   EnumeratorIterator(const Enumerator<T>* enumerator, HRESULT status)
-      : enumerator_(enumerator), status_(status) {}
+      : enumerator_(enumerator), status_(status), idx_(0), sz_(0) {}
 
   bool operator!=(EnumeratorIterator const& other) const {
     return enumerator_ != other.enumerator_ ||
-           FAILED(status_) != FAILED(other.status_);
+           (status_ == S_OK) != (other.status_ == S_OK);
   }
 
   T const& operator*() const { return arr_[idx_]; }
