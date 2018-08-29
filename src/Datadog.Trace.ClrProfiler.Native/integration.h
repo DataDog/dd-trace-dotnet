@@ -9,15 +9,19 @@
 
 namespace trace {
 
+const size_t kPublicKeySize = 8;
+
+// PublicKey represents an Assembly Public Key token, which is an 8 byte binary
+// RSA key.
 struct PublicKey {
-  const uint8_t data[8];
+  const uint8_t data[kPublicKeySize];
 
   PublicKey() : data{0} {}
-  PublicKey(const uint8_t (&arr)[8])
+  PublicKey(const uint8_t (&arr)[kPublicKeySize])
       : data{arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7]} {}
 
   bool operator==(const PublicKey& other) const {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < kPublicKeySize; i++) {
       if (data[i] != other.data[i]) {
         return false;
       }
@@ -27,13 +31,15 @@ struct PublicKey {
 
   std::wstring str() const {
     std::wostringstream ss;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < kPublicKeySize; i++) {
       ss << std::setfill(L'0') << std::setw(2) << std::hex << data[i];
     }
     return ss.str();
   }
 };
 
+// Version is an Assembly version in the form Major.Minor.Build.Revision
+// (1.0.0.0)
 struct Version {
   const unsigned short major;
   const unsigned short minor;
@@ -57,6 +63,10 @@ struct Version {
   }
 };
 
+// An AssemblyReference is a reference to a .Net assembly. In general it will
+// look like:
+//     Some.Assembly.Name, Version=1.0.0.0, Culture=neutral,
+//     PublicKeyToken=abcdef0123456789
 struct AssemblyReference {
  private:
   static std::wstring GetNameFromString(const std::wstring& wstr);
@@ -90,6 +100,8 @@ struct AssemblyReference {
   }
 };
 
+// A MethodSignature is a byte array. The format is:
+// [calling convention, number of parameters, return type, parameter type...]
 struct MethodSignature {
  public:
   const std::vector<uint8_t> data;
