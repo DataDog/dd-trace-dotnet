@@ -58,10 +58,12 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   }
   */
 
-  WCHAR integration_file_path[MAX_PATH]{};
+  const int max_environment_variable_length = 2048;
+
+  WCHAR integration_file_path[max_environment_variable_length]{};
   const DWORD integration_file_path_length =
       GetEnvironmentVariable(L"DATADOG_INTEGRATIONS", integration_file_path,
-                             _countof(integration_file_path));
+                             max_environment_variable_length);
 
   if (integration_file_path_length > 0) {
     LOG_APPEND(L"loading integrations from " << integration_file_path);
@@ -76,41 +78,35 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
                          default_integrations.end());
   }
 
-  WCHAR* processName = nullptr;
-  WCHAR processNames[MAX_PATH]{};
-  const DWORD processNamesLength = GetEnvironmentVariable(
-      L"DATADOG_PROFILER_PROCESSES", processNames, _countof(processNames));
+  WCHAR processNames[max_environment_variable_length]{};
+  const DWORD processNamesLength =
+      GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES", processNames,
+                             max_environment_variable_length);
 
-  if (processNamesLength == 0) {
+  LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << processNames);
+
+  WCHAR currentProcessPath[MAX_PATH]{};
+  const DWORD currentProcessPathLength = GetModuleFileName(
+      nullptr, currentProcessPath, _countof(currentProcessPath));
+
+  if (currentProcessPathLength == 0) {
     LOG_APPEND(
-        L"DATADOG_PROFILER_PROCESSES environment variable not set. Attaching "
-        L"to any .NET process.");
-  } else {
-    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << processNames);
+        L"Failed to attach profiler: could not get current module filename.");
+    return E_FAIL;
+  }
 
-    WCHAR currentProcessPath[MAX_PATH]{};
-    const DWORD currentProcessPathLength = GetModuleFileName(
-        nullptr, currentProcessPath, _countof(currentProcessPath));
+  LOG_APPEND(L"Module file name = " << currentProcessPath);
 
-    if (currentProcessPathLength == 0) {
-      LOG_APPEND(
-          L"Failed to attach profiler: could not get current module filename.");
-      return E_FAIL;
-    }
+  WCHAR* lastSeparator = wcsrchr(currentProcessPath, L'\\');
+  WCHAR* processName =
+      lastSeparator == nullptr ? currentProcessPath : lastSeparator + 1;
 
-    LOG_APPEND(L"Module file name = " << currentProcessPath);
-
-    WCHAR* lastSeparator = wcsrchr(currentProcessPath, L'\\');
-    processName =
-        lastSeparator == nullptr ? currentProcessPath : lastSeparator + 1;
-
-    if (wcsstr(processNames, processName) == nullptr) {
-      LOG_APPEND(L"Profiler disabled: module name \""
-                 << processName
-                 << "\" does not match DATADOG_PROFILER_PROCESSES environment "
-                    "variable.");
-      return E_FAIL;
-    }
+  if (processNamesLength > 0 && wcsstr(processNames, processName) == nullptr) {
+    LOG_APPEND(L"Profiler disabled: module name \""
+               << processName
+               << "\" does not match DATADOG_PROFILER_PROCESSES environment "
+                  "variable.");
+    return E_FAIL;
   }
 
   HRESULT hr = pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(
