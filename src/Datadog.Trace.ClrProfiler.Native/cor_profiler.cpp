@@ -27,20 +27,20 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   is_attached_ = FALSE;
 
   auto process_name = GetCurrentProcessName();
-  auto process_names = GetEnvironmentValues(kProcessesEnvironmentName);
+  auto allowed_process_names = GetEnvironmentValues(kProcessesEnvironmentName);
 
-  if (process_names.size() == 0) {
+  if (allowed_process_names.size() == 0) {
     LOG_APPEND(
         L"DATADOG_PROFILER_PROCESSES environment variable not set. Attaching "
         L"to any .NET process.");
   } else {
     LOG_APPEND(L"DATADOG_PROFILER_PROCESSES:");
-    for (auto& name : process_names) {
+    for (auto& name : allowed_process_names) {
       LOG_APPEND(L"  " + name);
     }
 
-    if (std::find(process_names.begin(), process_names.end(), process_name) ==
-        process_names.end()) {
+    if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
+                  process_name) == allowed_process_names.end()) {
       LOG_APPEND(L"CorProfiler disabled: module name \""
                  << process_name
                  << "\" does not match DATADOG_PROFILER_PROCESSES environment "
@@ -58,9 +58,10 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   const DWORD eventMask =
       COR_PRF_MONITOR_JIT_COMPILATION |
       COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST | /* helps the case
-                                                                where this
-                                                                profiler is used
-                                                                on Full CLR */
+                                                                  where this
+                                                                  profiler is
+                                                                  used on Full
+                                                                  CLR */
       // COR_PRF_DISABLE_INLINING |
       COR_PRF_MONITOR_MODULE_LOADS |
       // COR_PRF_MONITOR_ASSEMBLY_LOADS |
@@ -95,8 +96,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
                   L"GetModuleInfo2 failed for ModuleID = " << HEX(moduleId));
 
   if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0) {
-    // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata
-    // interfaces on them or instrument their IL
+    // Ignore any Windows Runtime modules.  We cannot obtain writeable
+    // metadata interfaces on them or instrument their IL
     return S_OK;
   }
 
@@ -196,7 +197,8 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
   ModuleMetadata* moduleMetadata = nullptr;
 
   if (!module_id_to_info_map_.LookupIfExists(moduleId, &moduleMetadata)) {
-    // we haven't stored a ModuleInfo for this module, so we can't modify its IL
+    // we haven't stored a ModuleInfo for this module, so we can't modify its
+    // IL
     return S_OK;
   }
 
@@ -227,8 +229,8 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
         if (!moduleMetadata->TryGetWrapperMemberRef(wrapper_method_key,
                                                     wrapper_method_ref)) {
           // no method ref token found for wrapper method, we can't do the
-          // replacement, this should never happen because we always try to add
-          // the method ref in ModuleLoadFinished()
+          // replacement, this should never happen because we always try to
+          // add the method ref in ModuleLoadFinished()
           // TODO: log this
           return S_OK;
         }
