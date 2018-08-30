@@ -58,6 +58,7 @@ namespace Datadog.Trace.TestHelpers
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
 
             return Process.Start(startInfo);
         }

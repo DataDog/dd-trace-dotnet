@@ -4,12 +4,21 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
+using Newtonsoft.Json;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class ConsoleCoreTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public ConsoleCoreTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         [Fact]
         public void ProfilerAttached()
         {
@@ -24,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*.json").Select(Path.GetFullPath);
 
-            string output;
+            string standardOutput;
+            string standardError;
             int exitCode;
 
             using (Process process = ProfilerHelper.StartProcessWithProfiler(
@@ -34,9 +44,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Instrumentation.ProfilerClsid,
                 profilerDllPath))
             {
-                output = process.StandardOutput.ReadToEnd();
+                standardOutput = process.StandardOutput.ReadToEnd();
+                standardError = process.StandardError.ReadToEnd();
                 process.WaitForExit();
                 exitCode = process.ExitCode;
+            }
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                _output.WriteLine(standardError);
             }
 
             Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
