@@ -22,12 +22,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         public void ProfilerAttached()
         {
+            var platform = Environment.Is64BitProcess ? "x64" : "x86";
+            string basePath = Path.GetFullPath(@"..\..\..\..\..\..");
+
             // get path to native profiler dll
-            string profilerDllPath = Path.GetFullPath("Datadog.Trace.ClrProfiler.Native.dll");
+            string profilerDllPath = $@"{basePath}\src\Datadog.Trace.ClrProfiler.Native\bin\{BuildParameters.Configuration}\{platform}\Datadog.Trace.ClrProfiler.Native.dll";
             Assert.True(File.Exists(profilerDllPath), $"Profiler DLL not found at {profilerDllPath}");
 
             // get path to sample app that the profiler will attach to
-            string appPath = Path.GetFullPath(BuildParameters.CoreClr ? "Samples.ConsoleCore.dll" : "Samples.ConsoleCore.exe");
+            string appBasePath = $@"{basePath}\samples\Samples.ConsoleCore\bin\{platform}\{BuildParameters.Configuration}\{BuildParameters.TargetFramework}";
+            string appFileName = BuildParameters.CoreClr ? $@"{appBasePath}\Samples.ConsoleCore.dll" : $@"{appBasePath}\Samples.ConsoleCore.exe";
+            string appPath = Path.Combine(appBasePath, appFileName);
             Assert.True(File.Exists(appPath), $"Application not found at {appPath}");
 
             // get full paths to integration definitions
