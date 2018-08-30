@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include "CorProfiler.h"
+#include "profiler.h"
 #include <fstream>
 #include <string>
 #include <vector>
@@ -13,23 +13,14 @@
 #include "integration_loader.h"
 #include "metadata_builder.h"
 
-// Note: Generally you should not have a single, global callback implementation,
-// as that prevents your profiler from analyzing multiply loaded in-process
-// side-by-side CLRs. However, this profiler implements the "profile-first"
-// alternative of dealing with multiple in-process side-by-side CLR instances.
-// First CLR to try to load us into this process wins; so there can only be one
-// callback implementation created. (See ProfilerCallback::CreateObject.)
-CorProfiler* g_pCallbackObject = nullptr;
+namespace trace {
 
-// TODO: fix log path, read from config?
-std::wofstream g_wLogFile;
-std::string g_wszLogFilePath = "C:\\temp\\CorProfiler.log";
+Profiler* profiler = nullptr;
 
-CorProfiler::CorProfiler()
+Profiler::Profiler()
     : integrations_(trace::LoadIntegrationsFromEnvironment()) {}
 
-HRESULT STDMETHODCALLTYPE
-CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
+HRESULT STDMETHODCALLTYPE Profiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   is_attached_ = FALSE;
 
   WCHAR* processName = nullptr;
@@ -69,8 +60,8 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
     }
   }
 
-  HRESULT hr = pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(
-      &this->corProfilerInfo);
+  HRESULT hr =
+      pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(&this->info_);
   LOG_IFFAILEDRET(
       hr,
       L"Profiler disabled: interface ICorProfilerInfo3 or higher not found.");
@@ -88,26 +79,26 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
       // COR_PRF_ENABLE_REJIT |
       COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
-  hr = this->corProfilerInfo->SetEventMask(eventMask);
+  hr = this->info_->SetEventMask(eventMask);
   LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
 
   // we're in!
   LOG_APPEND(L"Profiler attached to process " << processName);
-  this->corProfilerInfo->AddRef();
+  this->info_->AddRef();
   is_attached_ = true;
-  g_pCallbackObject = this;
+  profiler = this;
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
-                                                          HRESULT hrStatus) {
+HRESULT STDMETHODCALLTYPE Profiler::ModuleLoadFinished(ModuleID moduleId,
+                                                       HRESULT hrStatus) {
   LPCBYTE pbBaseLoadAddr;
   WCHAR wszModulePath[MAX_PATH];
   ULONG cchNameOut;
   AssemblyID assemblyId;
   DWORD dwModuleFlags;
 
-  HRESULT hr = this->corProfilerInfo->GetModuleInfo2(
+  HRESULT hr = this->info_->GetModuleInfo2(
       moduleId, &pbBaseLoadAddr, _countof(wszModulePath), &cchNameOut,
       wszModulePath, &assemblyId, &dwModuleFlags);
 
@@ -122,9 +113,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
 
   WCHAR assemblyName[512]{};
   ULONG assemblyNameLength = 0;
-  hr = this->corProfilerInfo->GetAssemblyInfo(
-      assemblyId, _countof(assemblyName), &assemblyNameLength, assemblyName,
-      nullptr, nullptr);
+  hr = this->info_->GetAssemblyInfo(assemblyId, _countof(assemblyName),
+                                    &assemblyNameLength, assemblyName, nullptr,
+                                    nullptr);
   LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
 
   std::vector<integration> enabledIntegrations;
@@ -152,9 +143,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
 
   ComPtr<IUnknown> metadataInterfaces;
 
-  hr = this->corProfilerInfo->GetModuleMetaData(
-      moduleId, ofRead | ofWrite, IID_IMetaDataImport,
-      metadataInterfaces.GetAddressOf());
+  hr = this->info_->GetModuleMetaData(moduleId, ofRead | ofWrite,
+                                      IID_IMetaDataImport,
+                                      metadataInterfaces.GetAddressOf());
 
   LOG_IFFAILEDRET(hr, L"Failed to get metadata interface.");
 
@@ -197,8 +188,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId,
-                                                            HRESULT hrStatus) {
+HRESULT STDMETHODCALLTYPE Profiler::ModuleUnloadFinished(ModuleID moduleId,
+                                                         HRESULT hrStatus) {
   ModuleMetadata* metadata;
 
   if (module_id_to_info_map_.LookupIfExists(moduleId, &metadata)) {
@@ -209,14 +200,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId,
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE
-CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
+HRESULT STDMETHODCALLTYPE Profiler::JITCompilationStarted(FunctionID functionId,
+                                                          BOOL fIsSafeToBlock) {
   ClassID classId;
   ModuleID moduleId;
   mdToken functionToken = mdTokenNil;
 
-  HRESULT hr = this->corProfilerInfo->GetFunctionInfo(
-      functionId, &classId, &moduleId, &functionToken);
+  HRESULT hr = this->info_->GetFunctionInfo(functionId, &classId, &moduleId,
+                                            &functionToken);
   RETURN_OK_IF_FAILED(hr);
 
   ModuleMetadata* moduleMetadata = nullptr;
@@ -270,8 +261,7 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
           return S_OK;
         }
 
-        ILRewriter rewriter(this->corProfilerInfo, nullptr, moduleId,
-                            functionToken);
+        ILRewriter rewriter(this->info_, nullptr, moduleId, functionToken);
 
         // hr = rewriter.Initialize();
         hr = rewriter.Import();
@@ -388,4 +378,6 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
   return S_OK;
 }
 
-bool CorProfiler::IsAttached() const { return is_attached_; }
+bool Profiler::IsAttached() const { return is_attached_; }
+
+}  // namespace trace

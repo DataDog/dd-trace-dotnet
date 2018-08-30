@@ -1,20 +1,23 @@
-﻿#pragma once
+﻿#ifndef DD_CLR_PROFILER_PROFILER_BASE_H_
+#define DD_CLR_PROFILER_PROFILER_BASE_H_
 
 #include <corhlpr.h>
 #include <corprof.h>
 #include <atomic>
 
-class CorProfilerBase : public ICorProfilerCallback8 {
+namespace trace {
+
+class ProfilerBase : public ICorProfilerCallback8 {
  private:
   std::atomic<int> refCount;
 
  protected:
   // we need at least ICorProfilerInfo3 to call GetModuleInfo2()
-  ICorProfilerInfo3* corProfilerInfo;
+  ICorProfilerInfo3* info_;
 
  public:
-  CorProfilerBase();
-  virtual ~CorProfilerBase();
+  ProfilerBase();
+  virtual ~ProfilerBase();
 
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid,
                                            void** ppvObject) override;
@@ -360,3 +363,7 @@ class CorProfilerBase : public ICorProfilerCallback8 {
     return S_OK;
   }
 };
+
+}  // namespace trace
+
+#endif  // DD_CLR_PROFILER_PROFILER_BASE_H_

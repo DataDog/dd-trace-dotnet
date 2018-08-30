@@ -1,15 +1,17 @@
-﻿#include "CorProfilerBase.h"
+﻿#include "profiler_base.h"
 
-CorProfilerBase::CorProfilerBase() : refCount(0), corProfilerInfo(nullptr) {}
+namespace trace {
 
-CorProfilerBase::~CorProfilerBase() {
-  if (this->corProfilerInfo != nullptr) {
-    this->corProfilerInfo->Release();
-    this->corProfilerInfo = nullptr;
+ProfilerBase::ProfilerBase() : refCount(0), info_(nullptr) {}
+
+ProfilerBase::~ProfilerBase() {
+  if (this->info_ != nullptr) {
+    this->info_->Release();
+    this->info_ = nullptr;
   }
 }
 
-HRESULT CorProfilerBase::QueryInterface(REFIID riid, void** ppvObject) {
+HRESULT ProfilerBase::QueryInterface(REFIID riid, void** ppvObject) {
   if (riid == __uuidof(ICorProfilerCallback8) ||
       riid == __uuidof(ICorProfilerCallback7) ||
       riid == __uuidof(ICorProfilerCallback6) ||
@@ -27,11 +29,11 @@ HRESULT CorProfilerBase::QueryInterface(REFIID riid, void** ppvObject) {
   return E_NOINTERFACE;
 }
 
-ULONG CorProfilerBase::AddRef() {
+ULONG ProfilerBase::AddRef() {
   return std::atomic_fetch_add(&this->refCount, 1) + 1;
 }
 
-ULONG CorProfilerBase::Release() {
+ULONG ProfilerBase::Release() {
   const int count = std::atomic_fetch_sub(&this->refCount, 1) - 1;
 
   if (count <= 0) {
@@ -41,11 +43,13 @@ ULONG CorProfilerBase::Release() {
   return count;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::Shutdown() {
-  if (this->corProfilerInfo != nullptr) {
-    this->corProfilerInfo->Release();
-    this->corProfilerInfo = nullptr;
+HRESULT STDMETHODCALLTYPE ProfilerBase::Shutdown() {
+  if (this->info_ != nullptr) {
+    this->info_->Release();
+    this->info_ = nullptr;
   }
 
   return S_OK;
 }
+
+}  // namespace trace

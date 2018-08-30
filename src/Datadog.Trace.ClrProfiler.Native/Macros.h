@@ -1,17 +1,18 @@
-#pragma once
+#ifndef DD_CLR_PROFILER_MACROS_H_
+#define DD_CLR_PROFILER_MACROS_H_
 
 #include <corhlpr.h>
 #include <fstream>
 
-extern std::wofstream g_wLogFile;
-extern std::string g_wszLogFilePath;
+const std::string kLogFilePath = "C:\\temp\\Profiler.log";
 
 #define HEX(HR) L"0x" << std::hex << std::uppercase << HR << std::dec
-#define LOG_APPEND(EXPR)                              \
-  do {                                                \
-    g_wLogFile.open(g_wszLogFilePath, std::ios::app); \
-    g_wLogFile << EXPR << L"\n";                      \
-    g_wLogFile.close();                               \
+#define LOG_APPEND(EXPR)                        \
+  do {                                          \
+    std::wofstream log_file;                    \
+    log_file.open(kLogFilePath, std::ios::app); \
+    log_file << EXPR << L"\n";                  \
+    log_file.close();                           \
   } while (0)
 #define LOG_IFFAILED(HR, EXPR)                   \
   do {                                           \
@@ -40,3 +41,5 @@ extern std::string g_wszLogFilePath;
       return S_OK;                \
     }                             \
   } while (0)
+
+#endif  // DD_CLR_PROFILER_MACROS_H_
