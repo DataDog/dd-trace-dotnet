@@ -7,11 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+    <ProjectReference Include="..\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj" />
+    <ProjectReference Include="..\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj" />
   </ItemGroup>
 
 </Project>
