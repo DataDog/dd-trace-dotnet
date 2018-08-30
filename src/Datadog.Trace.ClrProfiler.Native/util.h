@@ -15,7 +15,7 @@ void split(const std::wstring &s, wchar_t delim, Out result) {
   }
 }
 
-std::vector<std::wstring> split(const std::wstring &s, wchar_t delim) {
+inline std::vector<std::wstring> split(const std::wstring &s, wchar_t delim) {
   std::vector<std::wstring> elems;
   split(s, delim, std::back_inserter(elems));
   return elems;

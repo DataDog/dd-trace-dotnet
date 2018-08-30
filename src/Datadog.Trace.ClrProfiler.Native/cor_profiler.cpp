@@ -12,6 +12,7 @@
 #include "ModuleMetadata.h"
 #include "integration_loader.h"
 #include "metadata_builder.h"
+#include "util.h"
 
 namespace trace {
 
@@ -24,39 +25,46 @@ HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   is_attached_ = FALSE;
 
-  WCHAR* processName = nullptr;
-  WCHAR processNames[MAX_PATH]{};
-  const DWORD processNamesLength = GetEnvironmentVariable(
-      L"DATADOG_PROFILER_PROCESSES", processNames, _countof(processNames));
+  std::wstring current_process_name(1024, 0);
+  const DWORD current_process_path_length = GetModuleFileName(
+      nullptr, current_process_name.data(), DWORD(current_process_name.size()));
 
-  if (processNamesLength == 0) {
+  if (current_process_path_length == 0) {
     LOG_APPEND(
-        L"DATADOG_PROFILER_PROCESSES environment variable not set. Attaching "
-        L"to any .NET process.");
+        L"Failed to attach profiler: could not get current module filename.");
+    return E_FAIL;
+  }
+
+  current_process_name =
+      current_process_name.substr(0, current_process_path_length);
+
+  LOG_APPEND(L"Initialize() called for " << current_process_name);
+
+  const auto last_delimiter_index = current_process_name.find_last_of(L"/\\");
+  if (last_delimiter_index != std::wstring::npos) {
+    // remove path from executable name
+    current_process_name =
+        current_process_name.substr(last_delimiter_index + 1);
+  }
+
+  std::wstring process_names(4096, 0);
+  const DWORD process_names_length =
+      GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES",
+                             process_names.data(), DWORD(process_names.size()));
+
+  if (process_names_length == 0) {
+    // if environment variable was not set, don't check for matching process
+    // name, always attach the profiler
+    LOG_APPEND(
+        L"DATADOG_PROFILER_PROCESSES not set. Will try to attach CorProfiler.");
   } else {
-    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << processNames);
+    process_names = process_names.substr(0, process_names_length);
+    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES=" << process_names);
+    auto allowed_process_names = split(process_names, L';');
 
-    WCHAR currentProcessPath[MAX_PATH]{};
-    const DWORD currentProcessPathLength = GetModuleFileName(
-        nullptr, currentProcessPath, _countof(currentProcessPath));
-
-    if (currentProcessPathLength == 0) {
-      LOG_APPEND(
-          L"Failed to attach profiler: could not get current module filename.");
-      return E_FAIL;
-    }
-
-    LOG_APPEND(L"Module file name = " << currentProcessPath);
-
-    WCHAR* lastSeparator = wcsrchr(currentProcessPath, L'\\');
-    processName =
-        lastSeparator == nullptr ? currentProcessPath : lastSeparator + 1;
-
-    if (wcsstr(processNames, processName) == nullptr) {
-      LOG_APPEND(L"CorProfiler disabled: module name \""
-                 << processName
-                 << "\" does not match DATADOG_PROFILER_PROCESSES environment "
-                    "variable.");
+    if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
+                  current_process_name) == allowed_process_names.end()) {
+      LOG_APPEND(L"CorProfiler disabled for " << current_process_name);
       return E_FAIL;
     }
   }
@@ -70,9 +78,10 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   const DWORD eventMask =
       COR_PRF_MONITOR_JIT_COMPILATION |
       COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST | /* helps the case
-                                                                where this
-                                                                profiler is used
-                                                                on Full CLR */
+                                                                  where this
+                                                                  profiler is
+                                                                  used on Full
+                                                                  CLR */
       // COR_PRF_DISABLE_INLINING |
       COR_PRF_MONITOR_MODULE_LOADS |
       // COR_PRF_MONITOR_ASSEMBLY_LOADS |
@@ -84,7 +93,7 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
 
   // we're in!
-  LOG_APPEND(L"CorProfiler attached to process " << processName);
+  LOG_APPEND(L"CorProfiler attached to process " << current_process_name);
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;
@@ -107,8 +116,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
                   L"GetModuleInfo2 failed for ModuleID = " << HEX(moduleId));
 
   if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0) {
-    // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata
-    // interfaces on them or instrument their IL
+    // Ignore any Windows Runtime modules.  We cannot obtain writeable
+    // metadata interfaces on them or instrument their IL
     return S_OK;
   }
 
@@ -214,7 +223,8 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
   ModuleMetadata* moduleMetadata = nullptr;
 
   if (!module_id_to_info_map_.LookupIfExists(moduleId, &moduleMetadata)) {
-    // we haven't stored a ModuleInfo for this module, so we can't modify its IL
+    // we haven't stored a ModuleInfo for this module, so we can't modify its
+    // IL
     return S_OK;
   }
 
@@ -256,8 +266,8 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
         if (!moduleMetadata->TryGetWrapperMemberRef(wrapper_method_key,
                                                     wrapper_method_ref)) {
           // no method ref token found for wrapper method, we can't do the
-          // replacement, this should never happen because we always try to add
-          // the method ref in ModuleLoadFinished()
+          // replacement, this should never happen because we always try to
+          // add the method ref in ModuleLoadFinished()
           // TODO: log this
           return S_OK;
         }
