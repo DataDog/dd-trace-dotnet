@@ -203,8 +203,7 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
   }
 
   // get function info
-  auto caller =
-      GetFunctionInfo(moduleMetadata->metadata_import, functionToken);
+  auto caller = GetFunctionInfo(moduleMetadata->metadata_import, functionToken);
   if (!caller.isvalid()) {
     return S_OK;
   }
@@ -220,8 +219,7 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
       if ((method_replacement.caller_method.type_name.empty() ||
            method_replacement.caller_method.type_name == caller.type.name) &&
           (method_replacement.caller_method.method_name.empty() ||
-           method_replacement.caller_method.method_name ==
-               caller.name)) {
+           method_replacement.caller_method.method_name == caller.name)) {
         const auto& wrapper_method_key =
             method_replacement.wrapper_method.get_method_cache_key();
         mdMemberRef wrapper_method_ref = mdMemberRefNil;
