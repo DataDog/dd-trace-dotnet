@@ -1,5 +1,5 @@
-﻿#ifndef DD_CLR_PROFILER_PROFILER_BASE_H_
-#define DD_CLR_PROFILER_PROFILER_BASE_H_
+﻿#ifndef DD_CLR_PROFILER_COR_PROFILER_BASE_H_
+#define DD_CLR_PROFILER_COR_PROFILER_BASE_H_
 
 #include <corhlpr.h>
 #include <corprof.h>
@@ -7,7 +7,7 @@
 
 namespace trace {
 
-class ProfilerBase : public ICorProfilerCallback8 {
+class CorProfilerBase : public ICorProfilerCallback8 {
  private:
   std::atomic<int> refCount;
 
@@ -16,8 +16,8 @@ class ProfilerBase : public ICorProfilerCallback8 {
   ICorProfilerInfo3* info_;
 
  public:
-  ProfilerBase();
-  virtual ~ProfilerBase();
+  CorProfilerBase();
+  virtual ~CorProfilerBase();
 
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid,
                                            void** ppvObject) override;

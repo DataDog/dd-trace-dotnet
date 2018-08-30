@@ -7,19 +7,19 @@
 #include <corprof.h>
 #include "IDToInfoMap.h"
 #include "ModuleMetadata.h"
+#include "cor_profiler_base.h"
 #include "integration.h"
-#include "profiler_base.h"
 
 namespace trace {
 
-class Profiler : public ProfilerBase {
+class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
   IDToInfoMap<ModuleID, ModuleMetadata*> module_id_to_info_map_;
   const std::vector<integration> integrations_;
 
  public:
-  Profiler();
+  CorProfiler();
 
   bool IsAttached() const;
 
@@ -38,7 +38,7 @@ class Profiler : public ProfilerBase {
 // alternative of dealing with multiple in-process side-by-side CLR instances.
 // First CLR to try to load us into this process wins; so there can only be one
 // callback implementation created. (See ProfilerCallback::CreateObject.)
-extern Profiler* profiler;  // global reference to callback object
+extern CorProfiler* profiler;  // global reference to callback object
 
 }  // namespace trace
 

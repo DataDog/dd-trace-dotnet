@@ -129,8 +129,8 @@
   <ItemGroup>
     <ClInclude Include="ClassFactory.h" />
     <ClInclude Include="ComPtr.h" />
-    <ClInclude Include="profiler.h" />
-    <ClInclude Include="profiler_base.h" />
+    <ClInclude Include="cor_profiler.h" />
+    <ClInclude Include="cor_profiler_base.h" />
     <ClInclude Include="CSHolder.h" />
     <ClInclude Include="IDToInfoMap.h" />
     <ClInclude Include="ILRewriter.h" />
@@ -148,9 +148,9 @@
   <ItemGroup>
     <ClCompile Include="ClassFactory.cpp" />
     <ClCompile Include="clr_helpers.cpp" />
-    <ClCompile Include="profiler_base.cpp" />
+    <ClCompile Include="cor_profiler_base.cpp" />
     <ClCompile Include="CSHolder.cpp" />
-    <ClCompile Include="profiler.cpp" />
+    <ClCompile Include="cor_profiler.cpp" />
     <ClCompile Include="ILRewriter.cpp" />
     <ClCompile Include="ILRewriterWrapper.cpp" />
     <ClCompile Include="integration.cpp" />

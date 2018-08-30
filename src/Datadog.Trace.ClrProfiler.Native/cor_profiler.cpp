@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include "profiler.h"
+#include "cor_profiler.h"
 #include <fstream>
 #include <string>
 #include <vector>
@@ -15,12 +15,13 @@
 
 namespace trace {
 
-Profiler* profiler = nullptr;
+CorProfiler* profiler = nullptr;
 
-Profiler::Profiler()
+CorProfiler::CorProfiler()
     : integrations_(trace::LoadIntegrationsFromEnvironment()) {}
 
-HRESULT STDMETHODCALLTYPE Profiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
+HRESULT STDMETHODCALLTYPE
+CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   is_attached_ = FALSE;
 
   WCHAR* processName = nullptr;
@@ -52,7 +53,7 @@ HRESULT STDMETHODCALLTYPE Profiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
         lastSeparator == nullptr ? currentProcessPath : lastSeparator + 1;
 
     if (wcsstr(processNames, processName) == nullptr) {
-      LOG_APPEND(L"Profiler disabled: module name \""
+      LOG_APPEND(L"CorProfiler disabled: module name \""
                  << processName
                  << "\" does not match DATADOG_PROFILER_PROCESSES environment "
                     "variable.");
@@ -62,9 +63,9 @@ HRESULT STDMETHODCALLTYPE Profiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
 
   HRESULT hr =
       pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(&this->info_);
-  LOG_IFFAILEDRET(
-      hr,
-      L"Profiler disabled: interface ICorProfilerInfo3 or higher not found.");
+  LOG_IFFAILEDRET(hr,
+                  L"CorProfiler disabled: interface ICorProfilerInfo3 or "
+                  L"higher not found.");
 
   const DWORD eventMask =
       COR_PRF_MONITOR_JIT_COMPILATION |
@@ -83,15 +84,15 @@ HRESULT STDMETHODCALLTYPE Profiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
 
   // we're in!
-  LOG_APPEND(L"Profiler attached to process " << processName);
+  LOG_APPEND(L"CorProfiler attached to process " << processName);
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE Profiler::ModuleLoadFinished(ModuleID moduleId,
-                                                       HRESULT hrStatus) {
+HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
+                                                          HRESULT hrStatus) {
   LPCBYTE pbBaseLoadAddr;
   WCHAR wszModulePath[MAX_PATH];
   ULONG cchNameOut;
@@ -188,8 +189,8 @@ HRESULT STDMETHODCALLTYPE Profiler::ModuleLoadFinished(ModuleID moduleId,
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE Profiler::ModuleUnloadFinished(ModuleID moduleId,
-                                                         HRESULT hrStatus) {
+HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId,
+                                                            HRESULT hrStatus) {
   ModuleMetadata* metadata;
 
   if (module_id_to_info_map_.LookupIfExists(moduleId, &metadata)) {
@@ -200,8 +201,8 @@ HRESULT STDMETHODCALLTYPE Profiler::ModuleUnloadFinished(ModuleID moduleId,
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE Profiler::JITCompilationStarted(FunctionID functionId,
-                                                          BOOL fIsSafeToBlock) {
+HRESULT STDMETHODCALLTYPE
+CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
   ClassID classId;
   ModuleID moduleId;
   mdToken functionToken = mdTokenNil;
@@ -378,6 +379,7 @@ HRESULT STDMETHODCALLTYPE Profiler::JITCompilationStarted(FunctionID functionId,
   return S_OK;
 }
 
-bool Profiler::IsAttached() const { return is_attached_; }
+bool CorProfiler::IsAttached() const { return is_attached_; }
 
 }  // namespace trace
+
