@@ -31,33 +31,75 @@ std::wstring GetAssemblyName(
 }
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
-                             const mdToken& function_id) {
-  mdTypeDef type_def = mdTypeDefNil;
+                             const mdToken& token) {
+  mdToken parent_token = mdTokenNil;
   std::wstring function_name(kNameMaxSize, 0);
   unsigned long function_name_len = 0;
-  auto hr = metadata_import->GetMemberProps(
-      function_id, &type_def, function_name.data(),
-      (unsigned long)(function_name.size()), &function_name_len, nullptr,
-      nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+
+  HRESULT hr = -1;
+  switch (TypeFromToken(token)) {
+    case mdtMemberRef:
+      hr = metadata_import->GetMemberRefProps(
+          token, &parent_token, function_name.data(),
+          (unsigned long)(function_name.size()), &function_name_len, nullptr,
+          nullptr);
+      break;
+    case mdtMethodDef:
+      hr = metadata_import->GetMemberProps(
+          token, &parent_token, function_name.data(),
+          (unsigned long)(function_name.size()), &function_name_len, nullptr,
+          nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+      break;
+  }
   if (FAILED(hr) || function_name_len == 0) {
     return {};
   }
   function_name = function_name.substr(0, function_name_len - 1);
-  return {function_id, function_name, GetTypeInfo(metadata_import, type_def)};
+
+  // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
+
+  return {token, function_name, GetTypeInfo(metadata_import, parent_token)};
 }
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
-                     const mdToken& type_id) {
+                     const mdToken& token) {
+  mdToken parent_token = mdTokenNil;
   std::wstring type_name(kNameMaxSize, 0);
   unsigned long type_name_len = 0;
-  auto hr = metadata_import->GetTypeDefProps(type_id, type_name.data(),
-                                             (unsigned long)(type_name.size()),
-                                             &type_name_len, nullptr, nullptr);
+
+  HRESULT hr = -1;
+  switch (TypeFromToken(token)) {
+    case mdtTypeDef:
+      hr = metadata_import->GetTypeDefProps(token, type_name.data(),
+                                            (unsigned long)(type_name.size()),
+                                            &type_name_len, nullptr, nullptr);
+      break;
+    case mdtTypeRef:
+      hr = metadata_import->GetTypeRefProps(
+          token, &parent_token, type_name.data(),
+          (unsigned long)(type_name.size()), &type_name_len);
+      break;
+    case mdtTypeSpec:
+      // do we need to handle this case?
+      break;
+    case mdtModuleRef:
+      metadata_import->GetModuleRefProps(token, type_name.data(),
+                                         (unsigned long)(type_name.size()),
+                                         &type_name_len);
+      break;
+    case mdtMemberRef:
+      return GetFunctionInfo(metadata_import, token).type;
+      break;
+    case mdtMethodDef:
+      return GetFunctionInfo(metadata_import, token).type;
+      break;
+  }
   if (FAILED(hr) || type_name_len == 0) {
     return {};
   }
   type_name = type_name.substr(0, type_name_len - 1);
-  return {type_id, type_name};
+
+  return {token, type_name};
 }
 
 mdAssemblyRef FindAssemblyRef(

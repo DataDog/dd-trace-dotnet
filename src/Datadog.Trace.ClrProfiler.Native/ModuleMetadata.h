@@ -3,7 +3,8 @@
 #include <corhlpr.h>
 #include <unordered_map>
 #include "ComPtr.h"
-#include "Integration.h"
+#include "clr_helpers.h"
+#include "integration.h"
 
 class ModuleMetadata {
  private:
@@ -54,5 +55,21 @@ class ModuleMetadata {
   void SetWrapperParentTypeRef(const std::wstring& keyIn,
                                const mdTypeRef valueIn) {
     wrapper_parent_type[keyIn] = valueIn;
+  }
+
+  inline std::vector<method_replacement> GetMethodReplacementsForCaller(
+      const trace::FunctionInfo& caller) {
+    std::vector<method_replacement> enabled;
+    for (auto& i : integrations) {
+      for (auto& mr : i.method_replacements) {
+        if ((mr.caller_method.type_name.empty() ||
+             mr.caller_method.type_name == caller.type.name) &&
+            (mr.caller_method.method_name.empty() ||
+             mr.caller_method.method_name == caller.name)) {
+          enabled.push_back(mr);
+        }
+      }
+    }
+    return enabled;
   }
 };

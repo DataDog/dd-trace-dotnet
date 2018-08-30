@@ -184,169 +184,90 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId,
 
 HRESULT STDMETHODCALLTYPE
 CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
-  ClassID classId;
-  ModuleID moduleId;
+  ClassID class_id;
+  ModuleID module_id;
   mdToken functionToken = mdTokenNil;
 
-  HRESULT hr = this->info_->GetFunctionInfo(functionId, &classId, &moduleId,
+  HRESULT hr = this->info_->GetFunctionInfo(functionId, &class_id, &module_id,
                                             &functionToken);
   RETURN_OK_IF_FAILED(hr);
 
-  ModuleMetadata* moduleMetadata = nullptr;
+  ModuleMetadata* module_metadata = nullptr;
 
-  if (!module_id_to_info_map_.LookupIfExists(moduleId, &moduleMetadata)) {
+  if (!module_id_to_info_map_.LookupIfExists(module_id, &module_metadata)) {
     // we haven't stored a ModuleInfo for this module, so we can't modify its
     // IL
     return S_OK;
   }
 
   // get function info
-  auto caller = GetFunctionInfo(moduleMetadata->metadata_import, functionToken);
+  auto caller =
+      GetFunctionInfo(module_metadata->metadata_import, functionToken);
   if (!caller.isvalid()) {
     return S_OK;
   }
 
-  const int string_size = 1024;
+  auto method_replacements =
+      module_metadata->GetMethodReplacementsForCaller(caller);
+  if (method_replacements.empty()) {
+    return S_OK;
+  }
 
-  // check if we need to replace any methods called from this method
-  for (const auto& integration : moduleMetadata->integrations) {
-    for (const auto& method_replacement : integration.method_replacements) {
-      // check known callers for IL opcodes that call into the target method.
-      // if found, replace with calls to the instrumentation wrapper
-      // (wrapper_method_ref)
-      if ((method_replacement.caller_method.type_name.empty() ||
-           method_replacement.caller_method.type_name == caller.type.name) &&
-          (method_replacement.caller_method.method_name.empty() ||
-           method_replacement.caller_method.method_name == caller.name)) {
-        const auto& wrapper_method_key =
-            method_replacement.wrapper_method.get_method_cache_key();
-        mdMemberRef wrapper_method_ref = mdMemberRefNil;
+  ILRewriter rewriter(this->info_, nullptr, module_id, functionToken);
+  bool modified = false;
 
-        if (!moduleMetadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                    wrapper_method_ref)) {
-          // no method ref token found for wrapper method, we can't do the
-          // replacement, this should never happen because we always try to
-          // add the method ref in ModuleLoadFinished()
-          // TODO: log this
-          return S_OK;
-        }
+  for (auto& method_replacement : method_replacements) {
+    const auto& wrapper_method_key =
+        method_replacement.wrapper_method.get_method_cache_key();
+    mdMemberRef wrapper_method_ref = mdMemberRefNil;
 
-        ILRewriter rewriter(this->info_, nullptr, moduleId, functionToken);
+    if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
+                                                 wrapper_method_ref)) {
+      // no method ref token found for wrapper method, we can't do the
+      // replacement, this should never happen because we always try to
+      // add the method ref in ModuleLoadFinished()
+      // TODO: log this
+      return S_OK;
+    }
 
-        // hr = rewriter.Initialize();
-        hr = rewriter.Import();
-        RETURN_OK_IF_FAILED(hr);
+    // hr = rewriter.Initialize();
+    hr = rewriter.Import();
+    RETURN_OK_IF_FAILED(hr);
 
-        bool modified = false;
+    // for each IL instruction
+    for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
+         pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
+      // only CALL or CALLVIRT
+      if (pInstr->m_opcode != CEE_CALL && pInstr->m_opcode != CEE_CALLVIRT) {
+        continue;
+      }
 
-        // for each IL instruction
-        for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
-             pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
-          // if its opcode is CALL or CALLVIRT
-          if ((pInstr->m_opcode == CEE_CALL ||
-               pInstr->m_opcode == CEE_CALLVIRT) &&
-              (TypeFromToken(pInstr->m_Arg32) == mdtMemberRef ||
-               TypeFromToken(pInstr->m_Arg32) == mdtMethodDef)) {
-            WCHAR target_method_name[string_size]{};
-            ULONG target_method_name_length = 0;
+      // get the target function info, continue if its invalid
+      auto target =
+          GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
+      if (!target.isvalid()) {
+        continue;
+      }
 
-            WCHAR target_type_name[string_size]{};
-            ULONG target_type_name_length = 0;
+      // if the target matches by type name and method name
+      if (method_replacement.target_method.type_name == target.type.name &&
+          method_replacement.target_method.method_name == target.name) {
+        // replace with a call to the instrumentation wrapper
+        pInstr->m_opcode = CEE_CALL;
+        pInstr->m_Arg32 = wrapper_method_ref;
 
-            mdMethodDef target_method_def = mdMethodDefNil;
-            mdTypeDef target_type_def = mdTypeDefNil;
-
-            if (TypeFromToken(pInstr->m_Arg32) == mdtMemberRef) {
-              // get function name from mdMemberRef
-              mdToken token = mdTokenNil;
-              hr = moduleMetadata->metadata_import->GetMemberRefProps(
-                  pInstr->m_Arg32, &token, target_method_name, string_size,
-                  &target_method_name_length, nullptr, nullptr);
-              RETURN_OK_IF_FAILED(hr);
-
-              if (method_replacement.target_method.method_name !=
-                  target_method_name) {
-                // method name doesn't match, skip to next instruction
-                continue;
-              }
-
-              // determine how to get type name from token, depending on the
-              // token type
-              if (TypeFromToken(token) == mdtTypeRef) {
-                hr = moduleMetadata->metadata_import->GetTypeRefProps(
-                    token, nullptr, target_type_name, string_size,
-                    &target_type_name_length);
-                RETURN_OK_IF_FAILED(hr);
-                goto compare_type_and_method_names;
-              }
-
-              if (TypeFromToken(token) == mdtTypeDef) {
-                target_type_def = token;
-                goto use_type_def;
-              }
-
-              if (TypeFromToken(token) == mdtMethodDef) {
-                // we got an mdMethodDef back, so jump to where we use a
-                // methodDef instead of a methodRef
-                target_method_def = token;
-                goto use_method_def;
-              }
-
-              // value of token is not a supported token type, skip to next
-              // instruction
-              continue;
-            }
-
-            // if pInstr->m_Arg32 wasn't an mdtMemberRef, it must be an
-            // mdtMethodDef
-            target_method_def = pInstr->m_Arg32;
-
-          use_method_def:
-            // get function name from mdMethodDef
-            hr = moduleMetadata->metadata_import->GetMethodProps(
-                target_method_def, &target_type_def, target_method_name,
-                string_size, &target_method_name_length, nullptr, nullptr,
-                nullptr, nullptr, nullptr);
-            RETURN_OK_IF_FAILED(hr);
-
-            if (method_replacement.target_method.method_name !=
-                target_method_name) {
-              // method name doesn't match, skip to next instruction
-              continue;
-            }
-
-          use_type_def:
-            // get type name from mdTypeDef
-            hr = moduleMetadata->metadata_import->GetTypeDefProps(
-                target_type_def, target_type_name, string_size,
-                &target_type_name_length, nullptr, nullptr);
-            RETURN_OK_IF_FAILED(hr);
-
-          compare_type_and_method_names:
-            // if the target matches by type name and method name
-            if (method_replacement.target_method.type_name ==
-                    target_type_name &&
-                method_replacement.target_method.method_name ==
-                    target_method_name) {
-              // replace with a call to the instrumentation wrapper
-              pInstr->m_opcode = CEE_CALL;
-              pInstr->m_Arg32 = wrapper_method_ref;
-
-              modified = true;
-            }
-          }
-        }
-
-        if (modified) {
-          hr = rewriter.Export();
-          return S_OK;
-        }
+        modified = true;
       }
     }
   }
 
+  if (modified) {
+    hr = rewriter.Export();
+    RETURN_OK_IF_FAILED(hr);
+  }
+
   return S_OK;
-}
+}  // namespace trace
 
 bool CorProfiler::IsAttached() const { return is_attached_; }
 
