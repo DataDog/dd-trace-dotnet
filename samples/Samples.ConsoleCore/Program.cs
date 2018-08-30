@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Samples.ConsoleCore
 {
@@ -9,29 +9,36 @@ namespace Samples.ConsoleCore
     {
         private static void Main(string[] args)
         {
-            new Program().Run();
+            object output = new Program().Run();
+
+            var serializer = JsonSerializer.CreateDefault();
+            serializer.Formatting = Formatting.Indented;
+            serializer.Serialize(Console.Out, output);
+
+            Console.WriteLine();
         }
 
-        private void Run()
+        private object Run()
         {
             var prefixes = new[] { "COR_", "CORECLR_", "DATADOG_" };
 
             var environmentVariables = from entry in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
                                        from prefix in prefixes
-                                       let pair = new KeyValuePair<string, string>(
-                                           ((string)entry.Key).ToUpperInvariant(),
-                                           (string)entry.Value)
-                                       where pair.Key.StartsWith(prefix)
-                                       orderby pair.Key
-                                       select pair;
+                                       let key = ((string)entry.Key).ToUpperInvariant()
+                                       where key.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase)
+                                       select new
+                                              {
+                                                  Key = key,
+                                                  entry.Value
+                                              };
 
-            foreach (var envVar in environmentVariables)
-            {
-                Console.WriteLine($"{envVar.Key}={envVar.Value}");
-            }
+            var dictionary = environmentVariables.ToDictionary(v => v.Key, v => v.Value);
+            int addResult = new ExampleLibrary.Class1().Add(1, 2);
 
-            Console.WriteLine($"ProfilerAttached={Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached}");
-            Console.WriteLine($"Add(1,2)={new ExampleLibrary.Class1().Add(1, 2)}");
+            dictionary.Add("ProfilerAttached", Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached);
+            dictionary.Add("AddResult", addResult);
+
+            return dictionary;
         }
     }
 }

@@ -57,9 +57,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
 
-            string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-            Assert.Contains("ProfilerAttached=True", lines);
-            Assert.DoesNotContain("Add(1,2)=3", lines);
+            dynamic output = JsonConvert.DeserializeObject(standardOutput);
+            Assert.True((bool)output.ProfilerAttached);
+            Assert.Equal(6, (int)output.AddResult);
         }
     }
 }
