@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string output;
             int exitCode;
 
-            using (Process process = ProfilerHelper.StartProfiledProcess(
+            using (Process process = ProfilerHelper.StartProcessWithProfiler(
                 appPath,
                 BuildParameters.CoreClr,
                 integrationPaths,

@@ -6,7 +6,7 @@ namespace Datadog.Trace.TestHelpers
 {
     public class ProfilerHelper
     {
-        public static Process StartProfiledProcess(
+        public static Process StartProcessWithProfiler(
             string appPath,
             bool coreClr,
             IEnumerable<string> integrationPaths,
