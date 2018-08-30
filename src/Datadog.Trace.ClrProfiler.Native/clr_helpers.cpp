@@ -2,16 +2,17 @@
 
 namespace trace {
 
-std::wstring GetAssemblyName(ICorProfilerInfo3* info,
+AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id) {
   std::wstring name(kNameMaxSize, 0);
   unsigned long name_len = 0;
   auto hr = info->GetAssemblyInfo(assembly_id, (unsigned long)(name.size()),
                                   &name_len, name.data(), nullptr, nullptr);
   if (FAILED(hr) || name_len == 0) {
-    return L"";
+    return {};
   }
-  return name.substr(0, name_len - 1);
+  name = name.substr(0, name_len - 1);
+  return {assembly_id, name};
 }
 
 std::wstring GetAssemblyName(
@@ -59,6 +60,22 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
   // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
 
   return {token, function_name, GetTypeInfo(metadata_import, parent_token)};
+}
+
+ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
+  std::wstring module_path(260, 0);
+  unsigned long module_path_len = 0;
+  LPCBYTE base_load_address;
+  AssemblyID assembly_id = 0;
+  unsigned long module_flags = 0;
+  HRESULT hr = info->GetModuleInfo2(
+      module_id, &base_load_address, (unsigned long)(module_path.size()),
+      &module_path_len, module_path.data(), &assembly_id, &module_flags);
+  if (FAILED(hr) || module_path_len == 0) {
+    return {};
+  }
+  return {module_id, module_path, GetAssemblyInfo(info, assembly_id),
+          module_flags};
 }
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,

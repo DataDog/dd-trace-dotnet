@@ -22,7 +22,7 @@ CorProfiler* profiler = nullptr;
 CorProfiler::CorProfiler() : integrations_(LoadIntegrationsFromEnvironment()) {}
 
 HRESULT STDMETHODCALLTYPE
-CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
+CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
 
   auto process_name = GetCurrentProcessName();
@@ -48,27 +48,13 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
     }
   }
 
-  HRESULT hr =
-      pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(&this->info_);
+  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
+      &this->info_);
   LOG_IFFAILEDRET(hr,
                   L"CorProfiler disabled: interface ICorProfilerInfo3 or "
                   L"higher not found.");
 
-  const DWORD eventMask =
-      COR_PRF_MONITOR_JIT_COMPILATION |
-      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST | /* helps the case
-                                                                  where this
-                                                                  profiler is
-                                                                  used on Full
-                                                                  CLR */
-      // COR_PRF_DISABLE_INLINING |
-      COR_PRF_MONITOR_MODULE_LOADS |
-      // COR_PRF_MONITOR_ASSEMBLY_LOADS |
-      // COR_PRF_MONITOR_APPDOMAIN_LOADS |
-      // COR_PRF_ENABLE_REJIT |
-      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
-
-  hr = this->info_->SetEventMask(eventMask);
+  hr = this->info_->SetEventMask(kEventMask);
   LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
 
   // we're in!
@@ -79,30 +65,20 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
+HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hrStatus) {
-  LPCBYTE pbBaseLoadAddr;
-  WCHAR wszModulePath[MAX_PATH];
-  ULONG cchNameOut;
-  AssemblyID assembly_id = 0;
-  DWORD dwModuleFlags;
+  auto module_info = GetModuleInfo(this->info_, module_id);
+  if (!module_info.is_valid()) {
+    return S_OK;
+  }
 
-  HRESULT hr = this->info_->GetModuleInfo2(
-      moduleId, &pbBaseLoadAddr, _countof(wszModulePath), &cchNameOut,
-      wszModulePath, &assembly_id, &dwModuleFlags);
-
-  LOG_IFFAILEDRET(hr,
-                  L"GetModuleInfo2 failed for ModuleID = " << HEX(moduleId));
-
-  if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0) {
+  if (module_info.is_windows_runtime()) {
     // Ignore any Windows Runtime modules.  We cannot obtain writeable
     // metadata interfaces on them or instrument their IL
     return S_OK;
   }
 
-  auto assembly_name = GetAssemblyName(this->info_, assembly_id);
-
-  std::vector<integration> enabledIntegrations;
+  std::vector<integration> enabled_integrations;
 
   // check if we need to instrument anything in this assembly,
   // for each integration...
@@ -110,63 +86,64 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
     // TODO: check if integration is enabled in config
     for (const auto& method_replacement : integration.method_replacements) {
       if (method_replacement.caller_method.assembly.name.empty() ||
-          method_replacement.caller_method.assembly.name == assembly_name) {
-        enabledIntegrations.push_back(integration);
+          method_replacement.caller_method.assembly.name ==
+              module_info.assembly.name) {
+        enabled_integrations.push_back(integration);
       }
     }
   }
 
-  LOG_APPEND(L"ModuleLoadFinished for "
-             << assembly_name << ". Emitting instrumentation metadata.");
+  LOG_APPEND(L"ModuleLoadFinished for " + module_info.assembly.name +
+             L". Emitting instrumentation metadata.");
 
-  if (enabledIntegrations.empty()) {
+  if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     return S_OK;
   }
 
-  ComPtr<IUnknown> metadataInterfaces;
+  ComPtr<IUnknown> metadata_interfaces;
 
-  hr = this->info_->GetModuleMetaData(moduleId, ofRead | ofWrite,
-                                      IID_IMetaDataImport,
-                                      metadataInterfaces.GetAddressOf());
+  auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
+                                           IID_IMetaDataImport,
+                                           metadata_interfaces.GetAddressOf());
 
   LOG_IFFAILEDRET(hr, L"Failed to get metadata interface.");
 
   const auto metadataImport =
-      metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport);
+      metadata_interfaces.As<IMetaDataImport>(IID_IMetaDataImport);
   const auto metadataEmit =
-      metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
-  const auto assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(
+      metadata_interfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
+  const auto assemblyImport = metadata_interfaces.As<IMetaDataAssemblyImport>(
       IID_IMetaDataAssemblyImport);
   const auto assemblyEmit =
-      metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+      metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
   mdModule module;
   hr = metadataImport->GetModuleFromScope(&module);
   LOG_IFFAILEDRET(hr, L"Failed to get module token.");
 
-  ModuleMetadata* moduleMetadata =
-      new ModuleMetadata(metadataImport, assembly_name, enabledIntegrations);
+  ModuleMetadata* module_metadata = new ModuleMetadata(
+      metadataImport, module_info.assembly.name, enabled_integrations);
 
-  MetadataBuilder metadataBuilder(*moduleMetadata, module, metadataImport,
-                                  metadataEmit, assemblyImport, assemblyEmit);
+  MetadataBuilder metadata_builder(*module_metadata, module, metadataImport,
+                                   metadataEmit, assemblyImport, assemblyEmit);
 
-  for (const auto& integration : enabledIntegrations) {
+  for (const auto& integration : enabled_integrations) {
     for (const auto& method_replacement : integration.method_replacements) {
       // for each wrapper assembly, emit an assembly reference
-      hr = metadataBuilder.EmitAssemblyRef(
+      hr = metadata_builder.EmitAssemblyRef(
           method_replacement.wrapper_method.assembly);
       RETURN_OK_IF_FAILED(hr);
 
       // for each method replacement in each enabled integration,
       // emit a reference to the instrumentation wrapper methods
-      hr = metadataBuilder.StoreWrapperMethodRef(method_replacement);
+      hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
       RETURN_OK_IF_FAILED(hr);
     }
   }
 
   // store module info for later lookup
-  module_id_to_info_map_.Update(moduleId, moduleMetadata);
+  module_id_to_info_map_.Update(module_id, module_metadata);
   return S_OK;
 }
 
@@ -182,14 +159,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId,
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE
-CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
+HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
+    FunctionID function_id, BOOL is_safe_to_block) {
   ClassID class_id;
   ModuleID module_id;
-  mdToken functionToken = mdTokenNil;
+  mdToken function_token = mdTokenNil;
 
-  HRESULT hr = this->info_->GetFunctionInfo(functionId, &class_id, &module_id,
-                                            &functionToken);
+  HRESULT hr = this->info_->GetFunctionInfo(function_id, &class_id, &module_id,
+                                            &function_token);
   RETURN_OK_IF_FAILED(hr);
 
   ModuleMetadata* module_metadata = nullptr;
@@ -202,8 +179,8 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
 
   // get function info
   auto caller =
-      GetFunctionInfo(module_metadata->metadata_import, functionToken);
-  if (!caller.isvalid()) {
+      GetFunctionInfo(module_metadata->metadata_import, function_token);
+  if (!caller.is_valid()) {
     return S_OK;
   }
 
@@ -213,7 +190,7 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
     return S_OK;
   }
 
-  ILRewriter rewriter(this->info_, nullptr, module_id, functionToken);
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
 
   for (auto& method_replacement : method_replacements) {
@@ -245,7 +222,7 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
       // get the target function info, continue if its invalid
       auto target =
           GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
-      if (!target.isvalid()) {
+      if (!target.is_valid()) {
         continue;
       }
 

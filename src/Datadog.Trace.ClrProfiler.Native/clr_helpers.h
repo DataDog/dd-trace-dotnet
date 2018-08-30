@@ -101,6 +101,33 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
       });
 }
 
+struct AssemblyInfo {
+  AssemblyID id;
+  std::wstring name;
+
+  AssemblyInfo() : id(0), name(L"") {}
+  AssemblyInfo(AssemblyID id, std::wstring name) : id(id), name(name) {}
+
+  inline bool is_valid() const { return id != 0; }
+};
+
+struct ModuleInfo {
+  ModuleID id;
+  std::wstring path;
+  AssemblyInfo assembly;
+  unsigned long flags;
+
+  ModuleInfo() : id(0), path(L""), assembly({}), flags(0) {}
+  ModuleInfo(ModuleID id, std::wstring path, AssemblyInfo assembly,
+             unsigned long flags)
+      : id(id), path(path), assembly(assembly), flags(flags) {}
+
+  inline bool is_valid() const { return id != 0; }
+  inline bool is_windows_runtime() const {
+    return ((flags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0);
+  }
+};
+
 struct TypeInfo {
   mdToken id;
   std::wstring name;
@@ -108,7 +135,7 @@ struct TypeInfo {
   TypeInfo() : id(0), name(L"") {}
   TypeInfo(mdToken id, std::wstring name) : id(id), name(name) {}
 
-  inline bool isvalid() const { return id != 0; }
+  inline bool is_valid() const { return id != 0; }
 };
 
 struct FunctionInfo {
@@ -120,10 +147,10 @@ struct FunctionInfo {
   FunctionInfo(mdToken id, std::wstring name, TypeInfo type)
       : id(id), name(name), type(type) {}
 
-  inline bool isvalid() const { return id != 0; }
+  inline bool is_valid() const { return id != 0; }
 };
 
-std::wstring GetAssemblyName(ICorProfilerInfo3* info,
+AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id);
 
 std::wstring GetAssemblyName(
@@ -132,6 +159,8 @@ std::wstring GetAssemblyName(
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
                              const mdToken& function_id);
+
+ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id);
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
                      const mdToken& type_id);
