@@ -1,36 +1,37 @@
 #include "pch.h"
 
+#include <codecvt>
+#include <filesystem>
+#include <fstream>
+#include <locale>
 #include <sstream>
+#include <string>
 
 #include "../../src/Datadog.Trace.ClrProfiler.Native/integration_loader.h"
 
 using namespace trace;
 
 TEST(IntegrationLoaderTest, HandlesMissingFile) {
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromFile(L"missing-file");
+  auto integrations = LoadIntegrationsFromFile(L"missing-file");
   EXPECT_EQ(0, integrations.size());
 }
 
 TEST(IntegrationLoaderTest, HandlesInvalidIntegrationNoName) {
   std::stringstream str("[{}]");
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromStream(str);
+  auto integrations = LoadIntegrationsFromStream(str);
   // 0 because name is required
   EXPECT_EQ(0, integrations.size());
 }
 
 TEST(IntegrationLoaderTest, HandlesInvalidIntegrationBadJson) {
   std::stringstream str("[");
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromStream(str);
+  auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(0, integrations.size());
 }
 
 TEST(IntegrationLoaderTest, HandlesInvalidIntegrationNotAnObject) {
   std::stringstream str("[1,2,3]");
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromStream(str);
+  auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(0, integrations.size());
 }
 
@@ -38,8 +39,7 @@ TEST(IntegrationLoaderTest, HandlesInvalidIntegrationNotAnArray) {
   std::stringstream str(R"TEXT(
         {"name": "test-integration"}
     )TEXT");
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromStream(str);
+  auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(0, integrations.size());
 }
 
@@ -47,8 +47,8 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithNoMethods) {
   std::stringstream str(R"TEXT(
         [{ "name": "test-integration" }]
     )TEXT");
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromStream(str);
+
+  auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
   EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
   EXPECT_EQ(0, integrations[0].method_replacements.size());
@@ -59,8 +59,8 @@ TEST(IntegrationLoaderTest,
   std::stringstream str(R"TEXT(
         [{ "name": "test-integration", "method_replacements": 1234 }]
     )TEXT");
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromStream(str);
+
+  auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
   EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
   EXPECT_EQ(0, integrations[0].method_replacements.size());
@@ -77,8 +77,8 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMethodReplacements) {
             }] 
         }]
     )TEXT");
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromStream(str);
+
+  auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
   EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
 
@@ -107,8 +107,8 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMissingCaller) {
             }] 
         }]
     )TEXT");
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromStream(str);
+
+  auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
   EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
 
@@ -137,8 +137,8 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithInvalidTarget) {
             }] 
         }]
     )TEXT");
-  IntegrationLoader loader;
-  auto integrations = loader.LoadIntegrationsFromStream(str);
+
+  auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
   EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
 
@@ -147,4 +147,35 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithInvalidTarget) {
   EXPECT_STREQ(L"", mr.target_method.assembly.name.c_str());
   EXPECT_STREQ(L"", mr.target_method.type_name.c_str());
   EXPECT_STREQ(L"", mr.target_method.method_name.c_str());
+}
+
+TEST(IntegrationLoaderTest, LoadsFromEnvironment) {
+  auto tmpname1 = std::filesystem::temp_directory_path() / "test-1.json";
+  auto tmpname2 = std::filesystem::temp_directory_path() / "test-2.json";
+  std::ofstream f;
+  f.open(tmpname1);
+  f << R"TEXT(
+        [{ "name": "test-integration-1" }]
+    )TEXT";
+  f.close();
+  f.open(tmpname2);
+  f << R"TEXT(
+        [{ "name": "test-integration-2" }]
+    )TEXT";
+  f.close();
+
+  auto name = tmpname1.wstring() + L";" + tmpname2.wstring();
+
+  SetEnvironmentVariableW(kIntegrationsEnvironmentName.data(), name.data());
+
+  std::vector<std::wstring> expected_names = {L"test-integration-1",
+                                              L"test-integration-2"};
+  std::vector<std::wstring> actual_names;
+  for (auto& integration : LoadIntegrationsFromEnvironment()) {
+    actual_names.push_back(integration.integration_name);
+  }
+  EXPECT_EQ(expected_names, actual_names);
+
+  std::filesystem::remove(tmpname1);
+  std::filesystem::remove(tmpname2);
 }
