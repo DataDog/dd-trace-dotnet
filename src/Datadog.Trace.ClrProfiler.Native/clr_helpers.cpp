@@ -2,6 +2,18 @@
 
 namespace trace {
 
+std::wstring GetAssemblyName(ICorProfilerInfo3* info,
+                             const AssemblyID& assembly_id) {
+  std::wstring str(512, 0);
+  DWORD str_len = 0;
+  auto hr = info->GetAssemblyInfo(assembly_id, DWORD(str.size()), &str_len,
+                                  str.data(), nullptr, nullptr);
+  if (FAILED(hr) || str_len == 0) {
+    return L"";
+  }
+  return str.substr(0, str_len - 1);
+}
+
 std::wstring GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const mdAssemblyRef& assembly_ref) {

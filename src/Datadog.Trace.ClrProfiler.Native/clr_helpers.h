@@ -2,6 +2,7 @@
 #define DD_CLR_PROFILER_CLR_HELPERS_H_
 
 #include <corhlpr.h>
+#include <corprof.h>
 #include <functional>
 
 #include "ComPtr.h"
@@ -98,6 +99,9 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
         assembly_import->CloseEnum(ptr);
       });
 }
+
+std::wstring GetAssemblyName(ICorProfilerInfo3* info,
+                             const AssemblyID& assembly_id);
 
 std::wstring GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,

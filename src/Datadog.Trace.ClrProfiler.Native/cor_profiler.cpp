@@ -13,6 +13,7 @@
 #include "integration_loader.h"
 #include "metadata_builder.h"
 #include "util.h"
+#include "clr_helpers.h"
 
 namespace trace {
 
@@ -83,12 +84,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
   LPCBYTE pbBaseLoadAddr;
   WCHAR wszModulePath[MAX_PATH];
   ULONG cchNameOut;
-  AssemblyID assemblyId;
+  AssemblyID assembly_id = 0;
   DWORD dwModuleFlags;
 
   HRESULT hr = this->info_->GetModuleInfo2(
       moduleId, &pbBaseLoadAddr, _countof(wszModulePath), &cchNameOut,
-      wszModulePath, &assemblyId, &dwModuleFlags);
+      wszModulePath, &assembly_id, &dwModuleFlags);
 
   LOG_IFFAILEDRET(hr,
                   L"GetModuleInfo2 failed for ModuleID = " << HEX(moduleId));
@@ -99,12 +100,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
     return S_OK;
   }
 
-  WCHAR assemblyName[512]{};
-  ULONG assemblyNameLength = 0;
-  hr = this->info_->GetAssemblyInfo(assemblyId, _countof(assemblyName),
-                                    &assemblyNameLength, assemblyName, nullptr,
-                                    nullptr);
-  LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
+  auto assembly_name = GetAssemblyName(this->info_, assembly_id);
 
   std::vector<integration> enabledIntegrations;
 
@@ -115,14 +111,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
     for (const auto& method_replacement : integration.method_replacements) {
       if (method_replacement.caller_method.assembly.name.empty() ||
           method_replacement.caller_method.assembly.name ==
-              std::wstring(assemblyName)) {
+              assembly_name) {
         enabledIntegrations.push_back(integration);
       }
     }
   }
 
   LOG_APPEND(L"ModuleLoadFinished for "
-             << assemblyName << ". Emitting instrumentation metadata.");
+             << assembly_name << ". Emitting instrumentation metadata.");
 
   if (enabledIntegrations.empty()) {
     // we don't need to instrument anything in this module, skip it
@@ -151,7 +147,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
   LOG_IFFAILEDRET(hr, L"Failed to get module token.");
 
   ModuleMetadata* moduleMetadata =
-      new ModuleMetadata(metadataImport, assemblyName, enabledIntegrations);
+      new ModuleMetadata(metadataImport, assembly_name, enabledIntegrations);
 
   trace::MetadataBuilder metadataBuilder(*moduleMetadata, module,
                                          metadataImport, metadataEmit,
