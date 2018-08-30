@@ -12,6 +12,7 @@
 #include "ModuleMetadata.h"
 #include "integration_loader.h"
 #include "metadata_builder.h"
+#include "util.h"
 
 namespace trace {
 
@@ -24,37 +25,23 @@ HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   is_attached_ = FALSE;
 
-  WCHAR* processName = nullptr;
-  WCHAR processNames[MAX_PATH]{};
-  const DWORD processNamesLength = GetEnvironmentVariable(
-      L"DATADOG_PROFILER_PROCESSES", processNames, _countof(processNames));
+  auto process_name = GetCurrentProcessName();
+  auto process_names = GetEnvironmentValues(kProcessesEnvironmentName);
 
-  if (processNamesLength == 0) {
+  if (process_names.size() == 0) {
     LOG_APPEND(
         L"DATADOG_PROFILER_PROCESSES environment variable not set. Attaching "
         L"to any .NET process.");
   } else {
-    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES = " << processNames);
-
-    WCHAR currentProcessPath[MAX_PATH]{};
-    const DWORD currentProcessPathLength = GetModuleFileName(
-        nullptr, currentProcessPath, _countof(currentProcessPath));
-
-    if (currentProcessPathLength == 0) {
-      LOG_APPEND(
-          L"Failed to attach profiler: could not get current module filename.");
-      return E_FAIL;
+    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES:");
+    for (auto& name : process_names) {
+      LOG_APPEND(L"  " + name);
     }
 
-    LOG_APPEND(L"Module file name = " << currentProcessPath);
-
-    WCHAR* lastSeparator = wcsrchr(currentProcessPath, L'\\');
-    processName =
-        lastSeparator == nullptr ? currentProcessPath : lastSeparator + 1;
-
-    if (wcsstr(processNames, processName) == nullptr) {
+    if (std::find(process_names.begin(), process_names.end(), process_name) ==
+        process_names.end()) {
       LOG_APPEND(L"CorProfiler disabled: module name \""
-                 << processName
+                 << process_name
                  << "\" does not match DATADOG_PROFILER_PROCESSES environment "
                     "variable.");
       return E_FAIL;
@@ -84,7 +71,7 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
   LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
 
   // we're in!
-  LOG_APPEND(L"CorProfiler attached to process " << processName);
+  LOG_APPEND(L"CorProfiler attached to process " << process_name);
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;

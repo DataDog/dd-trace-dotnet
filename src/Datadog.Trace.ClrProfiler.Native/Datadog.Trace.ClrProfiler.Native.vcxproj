@@ -157,6 +157,7 @@
     <ClCompile Include="integration_loader.cpp" />
     <ClCompile Include="Interop.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
+    <ClCompile Include="util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

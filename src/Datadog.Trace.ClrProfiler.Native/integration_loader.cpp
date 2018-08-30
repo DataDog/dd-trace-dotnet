@@ -7,17 +7,11 @@ using json = nlohmann::json;
 
 std::vector<integration> LoadIntegrationsFromEnvironment() {
   std::vector<integration> integrations;
-  std::wstring str(1024, 0);
-  auto sz = GetEnvironmentVariableW(kIntegrationsEnvironmentName.data(),
-                                    str.data(), DWORD(str.size()));
-  if (sz > 0) {
-    str = str.substr(0, sz);
-    LOG_APPEND(L"loading integrations from " << str);
-    for (const auto& f : split(str, L';')) {
-      auto is = LoadIntegrationsFromFile(f);
-      for (auto& i : is) {
-        integrations.push_back(i);
-      }
+  for (const auto& f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
+    LOG_APPEND(L"loading integrations from " << f);
+    auto is = LoadIntegrationsFromFile(f);
+    for (auto& i : is) {
+      integrations.push_back(i);
     }
   }
   return integrations;

@@ -12,6 +12,8 @@
 
 namespace trace {
 
+const std::wstring kProcessesEnvironmentName = L"DATADOG_PROFILER_PROCESSES";
+
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
