@@ -1,5 +1,5 @@
-#ifndef DD_CLR_PROFILER_PROFILER_H_
-#define DD_CLR_PROFILER_PROFILER_H_
+#ifndef DD_CLR_PROFILER_COR_PROFILER_H_
+#define DD_CLR_PROFILER_COR_PROFILER_H_
 
 #include <vector>
 
@@ -42,4 +42,4 @@ extern CorProfiler* profiler;  // global reference to callback object
 
 }  // namespace trace
 
-#endif  // DD_CLR_PROFILER_PROFILER_H_
+#endif  // DD_CLR_PROFILER_COR_PROFILER_H_

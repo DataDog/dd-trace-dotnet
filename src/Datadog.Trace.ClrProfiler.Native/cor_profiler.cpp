@@ -382,4 +382,3 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
 bool CorProfiler::IsAttached() const { return is_attached_; }
 
 }  // namespace trace
-
