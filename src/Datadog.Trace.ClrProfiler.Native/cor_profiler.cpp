@@ -10,10 +10,10 @@
 #include "ILRewriter.h"
 #include "Macros.h"
 #include "ModuleMetadata.h"
+#include "clr_helpers.h"
 #include "integration_loader.h"
 #include "metadata_builder.h"
 #include "util.h"
-#include "clr_helpers.h"
 
 namespace trace {
 
@@ -110,8 +110,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
     // TODO: check if integration is enabled in config
     for (const auto& method_replacement : integration.method_replacements) {
       if (method_replacement.caller_method.assembly.name.empty() ||
-          method_replacement.caller_method.assembly.name ==
-              assembly_name) {
+          method_replacement.caller_method.assembly.name == assembly_name) {
         enabledIntegrations.push_back(integration);
       }
     }
@@ -201,25 +200,14 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
     return S_OK;
   }
 
+  // get function info
+  auto caller =
+      GetFunctionInfo(moduleMetadata->metadata_import, functionToken);
+  if (!caller.isvalid()) {
+    return S_OK;
+  }
+
   const int string_size = 1024;
-
-  // get function name
-  mdTypeDef caller_type_def = mdTypeDefNil;
-  WCHAR caller_method_name[string_size]{};
-  ULONG caller_method_name_length = 0;
-  hr = moduleMetadata->metadata_import->GetMemberProps(
-      functionToken, &caller_type_def, caller_method_name, string_size,
-      &caller_method_name_length, nullptr, nullptr, nullptr, nullptr, nullptr,
-      nullptr, nullptr, nullptr);
-  RETURN_OK_IF_FAILED(hr);
-
-  // get type name
-  WCHAR caller_type_name[string_size]{};
-  ULONG caller_type_name_length = 0;
-  hr = moduleMetadata->metadata_import->GetTypeDefProps(
-      caller_type_def, caller_type_name, string_size, &caller_type_name_length,
-      nullptr, nullptr);
-  RETURN_OK_IF_FAILED(hr);
 
   // check if we need to replace any methods called from this method
   for (const auto& integration : moduleMetadata->integrations) {
@@ -228,10 +216,10 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
       // if found, replace with calls to the instrumentation wrapper
       // (wrapper_method_ref)
       if ((method_replacement.caller_method.type_name.empty() ||
-           method_replacement.caller_method.type_name == caller_type_name) &&
+           method_replacement.caller_method.type_name == caller.type.name) &&
           (method_replacement.caller_method.method_name.empty() ||
            method_replacement.caller_method.method_name ==
-               caller_method_name)) {
+               caller.name)) {
         const auto& wrapper_method_key =
             method_replacement.wrapper_method.get_method_cache_key();
         mdMemberRef wrapper_method_ref = mdMemberRefNil;

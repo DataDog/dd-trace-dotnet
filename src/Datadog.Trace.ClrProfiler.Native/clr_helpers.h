@@ -9,6 +9,7 @@
 
 namespace trace {
 
+const size_t kNameMaxSize = 1024;
 const ULONG kEnumeratorMax = 256;
 
 template <typename T>
@@ -100,12 +101,40 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
       });
 }
 
+struct TypeInfo {
+  mdToken id;
+  std::wstring name;
+
+  TypeInfo() : id(0), name(L"") {}
+  TypeInfo(mdToken id, std::wstring name) : id(id), name(name) {}
+
+  inline bool isvalid() const { return id != 0; }
+};
+
+struct FunctionInfo {
+  mdToken id;
+  std::wstring name;
+  TypeInfo type;
+
+  FunctionInfo() : id(0), name(L""), type({}) {}
+  FunctionInfo(mdToken id, std::wstring name, TypeInfo type)
+      : id(id), name(name), type(type) {}
+
+  inline bool isvalid() const { return id != 0; }
+};
+
 std::wstring GetAssemblyName(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id);
 
 std::wstring GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const mdAssemblyRef& assembly_ref);
+
+FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
+                             const mdToken& function_id);
+
+TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
+                     const mdToken& type_id);
 
 mdAssemblyRef FindAssemblyRef(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
