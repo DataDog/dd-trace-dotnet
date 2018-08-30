@@ -1,27 +1,32 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-    <PropertyGroup>
-        <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
-        <MvcRazorCompileOnPublish>true</MvcRazorCompileOnPublish>
-        <Platforms>AnyCPU;x64;x86</Platforms>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
+    <MvcRazorCompileOnPublish>true</MvcRazorCompileOnPublish>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+    <RuntimeIdentifiers>win-x64;win-x86;ubuntu.16.10-x64</RuntimeIdentifiers>
+  </PropertyGroup>
 
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
   </PropertyGroup>
 
-    <ItemGroup>
-      <Folder Include="Models\" />
-      <Folder Include="wwwroot\" />
-    </ItemGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' != 'netcoreapp2.0'">
+    <RuntimeIdentifier>win-$(Platform)</RuntimeIdentifier>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore" Version="2.0.4" />
-      <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.4" />
-    </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+  </ItemGroup>
 
 </Project>
