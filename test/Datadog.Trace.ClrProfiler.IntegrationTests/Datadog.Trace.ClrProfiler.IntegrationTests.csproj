@@ -21,7 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\Datadog.Trace.ClrProfiler.Native.dll" Link="Datadog.Trace.ClrProfiler.Native.$(Configuration)-$(Platform).dll" />
+    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\Datadog.Trace.ClrProfiler.Native.dll" Link="Datadog.Trace.ClrProfiler.Native.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
   <ItemGroup>

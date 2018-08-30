@@ -14,8 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void ProfilerAttached()
         {
             // get path to native profiler dll
-            var platform = Environment.Is64BitProcess ? "x64" : "x86";
-            string profilerDllPath = Path.GetFullPath($"Datadog.Trace.ClrProfiler.Native.{BuildParameters.Configuration}-{platform}.dll");
+            string profilerDllPath = Path.GetFullPath("Datadog.Trace.ClrProfiler.Native.dll");
             Assert.True(File.Exists(profilerDllPath), $"Profiler DLL not found at {profilerDllPath}");
 
             // get path to sample app that the profiler will attach to
