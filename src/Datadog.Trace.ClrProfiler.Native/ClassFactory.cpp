@@ -3,7 +3,7 @@
 // license information.
 
 #include "ClassFactory.h"
-#include "CorProfiler.h"
+#include "cor_profiler.h"
 
 ClassFactory::ClassFactory() : refCount(0) {}
 
@@ -42,7 +42,7 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
     return CLASS_E_NOAGGREGATION;
   }
 
-  CorProfiler* profiler = new CorProfiler();
+  trace::CorProfiler* profiler = new trace::CorProfiler();
   if (profiler == NULL) {
     return E_FAIL;
   }

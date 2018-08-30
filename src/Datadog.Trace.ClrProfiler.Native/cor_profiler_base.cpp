@@ -1,11 +1,13 @@
-﻿#include "CorProfilerBase.h"
+﻿#include "cor_profiler_base.h"
 
-CorProfilerBase::CorProfilerBase() : refCount(0), corProfilerInfo(nullptr) {}
+namespace trace {
+
+CorProfilerBase::CorProfilerBase() : refCount(0), info_(nullptr) {}
 
 CorProfilerBase::~CorProfilerBase() {
-  if (this->corProfilerInfo != nullptr) {
-    this->corProfilerInfo->Release();
-    this->corProfilerInfo = nullptr;
+  if (this->info_ != nullptr) {
+    this->info_->Release();
+    this->info_ = nullptr;
   }
 }
 
@@ -42,10 +44,12 @@ ULONG CorProfilerBase::Release() {
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::Shutdown() {
-  if (this->corProfilerInfo != nullptr) {
-    this->corProfilerInfo->Release();
-    this->corProfilerInfo = nullptr;
+  if (this->info_ != nullptr) {
+    this->info_->Release();
+    this->info_ = nullptr;
   }
 
   return S_OK;
 }
+
+}  // namespace trace

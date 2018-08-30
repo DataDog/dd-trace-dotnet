@@ -5,10 +5,12 @@
 
 #include <corhlpr.h>
 #include <corprof.h>
-#include "CorProfilerBase.h"
 #include "IDToInfoMap.h"
 #include "ModuleMetadata.h"
+#include "cor_profiler_base.h"
 #include "integration.h"
+
+namespace trace {
 
 class CorProfiler : public CorProfilerBase {
  private:
@@ -36,6 +38,8 @@ class CorProfiler : public CorProfilerBase {
 // alternative of dealing with multiple in-process side-by-side CLR instances.
 // First CLR to try to load us into this process wins; so there can only be one
 // callback implementation created. (See ProfilerCallback::CreateObject.)
-extern CorProfiler* g_pCallbackObject;  // global reference to callback object
+extern CorProfiler* profiler;  // global reference to callback object
 
-#endif DD_CLR_PROFILER_COR_PROFILER_H_
+}  // namespace trace
+
+#endif  // DD_CLR_PROFILER_COR_PROFILER_H_

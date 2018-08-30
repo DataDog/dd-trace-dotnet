@@ -6,8 +6,8 @@
 // NativeMethods.cs!
 //---------------------------------------------------------------------------------------
 
-#include "CorProfiler.h"
+#include "cor_profiler.h"
 
 EXTERN_C BOOL STDAPICALLTYPE IsProfilerAttached() {
-  return g_pCallbackObject->IsAttached();
+  return trace::profiler->IsAttached();
 }

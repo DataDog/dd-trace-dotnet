@@ -1,8 +1,11 @@
-﻿#pragma once
+﻿#ifndef DD_CLR_PROFILER_COR_PROFILER_BASE_H_
+#define DD_CLR_PROFILER_COR_PROFILER_BASE_H_
 
 #include <corhlpr.h>
 #include <corprof.h>
 #include <atomic>
+
+namespace trace {
 
 class CorProfilerBase : public ICorProfilerCallback8 {
  private:
@@ -10,7 +13,7 @@ class CorProfilerBase : public ICorProfilerCallback8 {
 
  protected:
   // we need at least ICorProfilerInfo3 to call GetModuleInfo2()
-  ICorProfilerInfo3* corProfilerInfo;
+  ICorProfilerInfo3* info_;
 
  public:
   CorProfilerBase();
@@ -360,3 +363,7 @@ class CorProfilerBase : public ICorProfilerCallback8 {
     return S_OK;
   }
 };
+
+}  // namespace trace
+
+#endif  // DD_CLR_PROFILER_PROFILER_BASE_H_

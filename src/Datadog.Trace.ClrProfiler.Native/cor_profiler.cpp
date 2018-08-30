@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include "CorProfiler.h"
+#include "cor_profiler.h"
 #include <fstream>
 #include <string>
 #include <vector>
@@ -13,17 +13,9 @@
 #include "integration_loader.h"
 #include "metadata_builder.h"
 
-// Note: Generally you should not have a single, global callback implementation,
-// as that prevents your profiler from analyzing multiply loaded in-process
-// side-by-side CLRs. However, this profiler implements the "profile-first"
-// alternative of dealing with multiple in-process side-by-side CLR instances.
-// First CLR to try to load us into this process wins; so there can only be one
-// callback implementation created. (See ProfilerCallback::CreateObject.)
-CorProfiler* g_pCallbackObject = nullptr;
+namespace trace {
 
-// TODO: fix log path, read from config?
-std::wofstream g_wLogFile;
-std::string g_wszLogFilePath = "C:\\temp\\CorProfiler.log";
+CorProfiler* profiler = nullptr;
 
 CorProfiler::CorProfiler()
     : integrations_(trace::LoadIntegrationsFromEnvironment()) {}
@@ -61,7 +53,7 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
         lastSeparator == nullptr ? currentProcessPath : lastSeparator + 1;
 
     if (wcsstr(processNames, processName) == nullptr) {
-      LOG_APPEND(L"Profiler disabled: module name \""
+      LOG_APPEND(L"CorProfiler disabled: module name \""
                  << processName
                  << "\" does not match DATADOG_PROFILER_PROCESSES environment "
                     "variable.");
@@ -69,11 +61,11 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
     }
   }
 
-  HRESULT hr = pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(
-      &this->corProfilerInfo);
-  LOG_IFFAILEDRET(
-      hr,
-      L"Profiler disabled: interface ICorProfilerInfo3 or higher not found.");
+  HRESULT hr =
+      pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(&this->info_);
+  LOG_IFFAILEDRET(hr,
+                  L"CorProfiler disabled: interface ICorProfilerInfo3 or "
+                  L"higher not found.");
 
   const DWORD eventMask =
       COR_PRF_MONITOR_JIT_COMPILATION |
@@ -88,14 +80,14 @@ CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
       // COR_PRF_ENABLE_REJIT |
       COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
-  hr = this->corProfilerInfo->SetEventMask(eventMask);
+  hr = this->info_->SetEventMask(eventMask);
   LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
 
   // we're in!
-  LOG_APPEND(L"Profiler attached to process " << processName);
-  this->corProfilerInfo->AddRef();
+  LOG_APPEND(L"CorProfiler attached to process " << processName);
+  this->info_->AddRef();
   is_attached_ = true;
-  g_pCallbackObject = this;
+  profiler = this;
   return S_OK;
 }
 
@@ -107,7 +99,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
   AssemblyID assemblyId;
   DWORD dwModuleFlags;
 
-  HRESULT hr = this->corProfilerInfo->GetModuleInfo2(
+  HRESULT hr = this->info_->GetModuleInfo2(
       moduleId, &pbBaseLoadAddr, _countof(wszModulePath), &cchNameOut,
       wszModulePath, &assemblyId, &dwModuleFlags);
 
@@ -122,9 +114,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
 
   WCHAR assemblyName[512]{};
   ULONG assemblyNameLength = 0;
-  hr = this->corProfilerInfo->GetAssemblyInfo(
-      assemblyId, _countof(assemblyName), &assemblyNameLength, assemblyName,
-      nullptr, nullptr);
+  hr = this->info_->GetAssemblyInfo(assemblyId, _countof(assemblyName),
+                                    &assemblyNameLength, assemblyName, nullptr,
+                                    nullptr);
   LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
 
   std::vector<integration> enabledIntegrations;
@@ -152,9 +144,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
 
   ComPtr<IUnknown> metadataInterfaces;
 
-  hr = this->corProfilerInfo->GetModuleMetaData(
-      moduleId, ofRead | ofWrite, IID_IMetaDataImport,
-      metadataInterfaces.GetAddressOf());
+  hr = this->info_->GetModuleMetaData(moduleId, ofRead | ofWrite,
+                                      IID_IMetaDataImport,
+                                      metadataInterfaces.GetAddressOf());
 
   LOG_IFFAILEDRET(hr, L"Failed to get metadata interface.");
 
@@ -215,8 +207,8 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
   ModuleID moduleId;
   mdToken functionToken = mdTokenNil;
 
-  HRESULT hr = this->corProfilerInfo->GetFunctionInfo(
-      functionId, &classId, &moduleId, &functionToken);
+  HRESULT hr = this->info_->GetFunctionInfo(functionId, &classId, &moduleId,
+                                            &functionToken);
   RETURN_OK_IF_FAILED(hr);
 
   ModuleMetadata* moduleMetadata = nullptr;
@@ -270,8 +262,7 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
           return S_OK;
         }
 
-        ILRewriter rewriter(this->corProfilerInfo, nullptr, moduleId,
-                            functionToken);
+        ILRewriter rewriter(this->info_, nullptr, moduleId, functionToken);
 
         // hr = rewriter.Initialize();
         hr = rewriter.Import();
@@ -389,3 +380,5 @@ CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
 }
 
 bool CorProfiler::IsAttached() const { return is_attached_; }
+
+}  // namespace trace
