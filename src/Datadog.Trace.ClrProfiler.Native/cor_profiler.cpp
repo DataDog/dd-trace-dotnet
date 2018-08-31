@@ -81,8 +81,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   LOG_APPEND(L"ModuleLoadFinished for " + module_info.assembly.name +
              L". Emitting instrumentation metadata.");
 
-  std::vector<integration> enabled_integrations =
-      FilterIntegrationsByCaller(integrations_, module_info);
+  std::vector<Integration> enabled_integrations =
+      FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     return S_OK;
@@ -245,16 +245,16 @@ bool CorProfiler::IsAttached() const { return is_attached_; }
 
 namespace {
 
-std::vector<integration> FilterIntegrationsByCaller(
-    const std::vector<integration>& integrations,
-    const ModuleInfo& module_info) {
-  std::vector<integration> enabled;
+std::vector<Integration> FilterIntegrationsByCaller(
+    const std::vector<Integration>& integrations,
+    const std::wstring& assembly_name) {
+  std::vector<Integration> enabled;
 
   for (auto& i : integrations) {
     bool found = false;
     for (auto& mr : i.method_replacements) {
       if (mr.caller_method.assembly.name.empty() ||
-          mr.caller_method.assembly.name == module_info.assembly.name) {
+          mr.caller_method.assembly.name == assembly_name) {
         found = true;
       }
     }
@@ -266,10 +266,10 @@ std::vector<integration> FilterIntegrationsByCaller(
   return enabled;
 }
 
-std::vector<integration> FilterIntegrationsByTarget(
-    const std::vector<integration>& integrations,
+std::vector<Integration> FilterIntegrationsByTarget(
+    const std::vector<Integration>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
-  std::vector<integration> enabled;
+  std::vector<Integration> enabled;
 
   for (auto& i : integrations) {
     bool found = false;

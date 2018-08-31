@@ -137,7 +137,6 @@
     <ClInclude Include="ILRewriterWrapper.h" />
     <ClInclude Include="integration.h" />
     <ClInclude Include="integration_loader.h" />
-    <ClInclude Include="IntegrationType.h" />
     <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="Macros.h" />

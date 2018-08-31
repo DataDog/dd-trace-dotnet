@@ -5,7 +5,6 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include "IntegrationType.h"
 
 namespace trace {
 
@@ -99,28 +98,17 @@ struct MethodSignature {
   MethodSignature(const std::vector<uint8_t>& data) : data(data) {}
 };
 
-namespace {
-
-std::wstring GetNameFromAssemblyReferenceString(const std::wstring& wstr);
-Version GetVersionFromAssemblyReferenceString(const std::wstring& wstr);
-std::wstring GetLocaleFromAssemblyReferenceString(const std::wstring& wstr);
-PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& wstr);
-
-}  // namespace
-
-}  // namespace trace
-
-struct method_reference {
-  const trace::AssemblyReference assembly;
+struct MethodReference {
+  const AssemblyReference assembly;
   const std::wstring type_name;
   const std::wstring method_name;
-  const trace::MethodSignature method_signature;
+  const MethodSignature method_signature;
 
-  method_reference() {}
+  MethodReference() {}
 
-  method_reference(const std::wstring& assembly_name, std::wstring type_name,
-                   std::wstring method_name,
-                   const std::vector<uint8_t>& method_signature)
+  MethodReference(const std::wstring& assembly_name, std::wstring type_name,
+                  std::wstring method_name,
+                  const std::vector<uint8_t>& method_signature)
       : assembly(assembly_name),
         type_name(std::move(type_name)),
         method_name(std::move(method_name)),
@@ -135,32 +123,40 @@ struct method_reference {
   }
 };
 
-struct method_replacement {
-  const method_reference caller_method;
-  const method_reference target_method;
-  const method_reference wrapper_method;
+struct MethodReplacement {
+  const MethodReference caller_method;
+  const MethodReference target_method;
+  const MethodReference wrapper_method;
 
-  method_replacement() {}
+  MethodReplacement() {}
 
-  method_replacement(method_reference caller_method,
-                     method_reference target_method,
-                     method_reference wrapper_method)
+  MethodReplacement(MethodReference caller_method,
+                    MethodReference target_method,
+                    MethodReference wrapper_method)
       : caller_method(std::move(caller_method)),
         target_method(std::move(target_method)),
         wrapper_method(std::move(wrapper_method)) {}
 };
 
-struct integration {
-  const IntegrationType integration_type;
+struct Integration {
   const std::wstring integration_name;
-  std::vector<method_replacement> method_replacements;
+  std::vector<MethodReplacement> method_replacements;
 
-  integration() : integration_type(IntegrationType_Custom) {}
+  Integration() : integration_name(L""), method_replacements({}) {}
 
-  integration(const IntegrationType integration_type,
-              std::wstring integration_name,
-              std::vector<method_replacement> method_replacements)
-      : integration_type(integration_type),
-        integration_name(std::move(integration_name)),
+  Integration(std::wstring integration_name,
+              std::vector<MethodReplacement> method_replacements)
+      : integration_name(std::move(integration_name)),
         method_replacements(std::move(method_replacements)) {}
 };
+
+namespace {
+
+std::wstring GetNameFromAssemblyReferenceString(const std::wstring& wstr);
+Version GetVersionFromAssemblyReferenceString(const std::wstring& wstr);
+std::wstring GetLocaleFromAssemblyReferenceString(const std::wstring& wstr);
+PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& wstr);
+
+}  // namespace
+
+}  // namespace trace

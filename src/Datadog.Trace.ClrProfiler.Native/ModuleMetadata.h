@@ -6,6 +6,8 @@
 #include "clr_helpers.h"
 #include "integration.h"
 
+namespace trace {
+
 class ModuleMetadata {
  private:
   std::unordered_map<std::wstring, mdMemberRef> wrapper_refs{};
@@ -14,11 +16,11 @@ class ModuleMetadata {
  public:
   const ComPtr<IMetaDataImport> metadata_import{};
   std::wstring assemblyName = L"";
-  std::vector<integration> integrations = {};
+  std::vector<Integration> integrations = {};
 
   ModuleMetadata(ComPtr<IMetaDataImport> metadata_import,
                  std::wstring assembly_name,
-                 std::vector<integration> integrations)
+                 std::vector<Integration> integrations)
       : metadata_import(std::move(metadata_import)),
         assemblyName(std::move(assembly_name)),
         integrations(std::move(integrations)) {}
@@ -57,9 +59,9 @@ class ModuleMetadata {
     wrapper_parent_type[keyIn] = valueIn;
   }
 
-  inline std::vector<method_replacement> GetMethodReplacementsForCaller(
+  inline std::vector<MethodReplacement> GetMethodReplacementsForCaller(
       const trace::FunctionInfo& caller) {
-    std::vector<method_replacement> enabled;
+    std::vector<MethodReplacement> enabled;
     for (auto& i : integrations) {
       for (auto& mr : i.method_replacements) {
         if ((mr.caller_method.type_name.empty() ||
@@ -73,3 +75,5 @@ class ModuleMetadata {
     return enabled;
   }
 };
+
+}  // namespace trace

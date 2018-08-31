@@ -31,7 +31,7 @@ class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
   IDToInfoMap<ModuleID, ModuleMetadata*> module_id_to_info_map_;
-  const std::vector<integration> integrations_;
+  const std::vector<Integration> integrations_;
 
  public:
   CorProfiler();
@@ -59,14 +59,14 @@ namespace {
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
-std::vector<integration> FilterIntegrationsByCaller(
-    const std::vector<integration>& integrations,
-    const ModuleInfo& module_info);
+std::vector<Integration> FilterIntegrationsByCaller(
+    const std::vector<Integration>& integrations,
+    const std::wstring& assembly_name);
 
 // FilterIntegrationsByTarget removes any integrations which have a target not
 // referenced by the module's assembly import
-std::vector<integration> FilterIntegrationsByTarget(
-    const std::vector<integration>& integrations,
+std::vector<Integration> FilterIntegrationsByTarget(
+    const std::vector<Integration>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
 }  // namespace

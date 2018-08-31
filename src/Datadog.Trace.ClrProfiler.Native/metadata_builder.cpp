@@ -39,7 +39,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
 }
 
 HRESULT MetadataBuilder::FindWrapperTypeRef(
-    const method_replacement& method_replacement,
+    const MethodReplacement& method_replacement,
     mdTypeRef& type_ref_out) const {
   const auto& cache_key =
       method_replacement.wrapper_method.get_type_cache_key();
@@ -92,7 +92,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
 }
 
 HRESULT MetadataBuilder::StoreWrapperMethodRef(
-    const method_replacement& method_replacement) const {
+    const MethodReplacement& method_replacement) const {
   const auto& cache_key =
       method_replacement.wrapper_method.get_method_cache_key();
   mdMemberRef member_ref = mdMemberRefNil;

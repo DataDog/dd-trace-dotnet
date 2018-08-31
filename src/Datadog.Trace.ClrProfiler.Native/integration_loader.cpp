@@ -5,8 +5,8 @@ namespace trace {
 
 using json = nlohmann::json;
 
-std::vector<integration> LoadIntegrationsFromEnvironment() {
-  std::vector<integration> integrations;
+std::vector<Integration> LoadIntegrationsFromEnvironment() {
+  std::vector<Integration> integrations;
   for (const auto& f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
     LOG_APPEND(L"loading integrations from " << f);
     auto is = LoadIntegrationsFromFile(f);
@@ -17,9 +17,9 @@ std::vector<integration> LoadIntegrationsFromEnvironment() {
   return integrations;
 }
 
-std::vector<integration> LoadIntegrationsFromFile(
+std::vector<Integration> LoadIntegrationsFromFile(
     const std::wstring& file_path) {
-  std::vector<integration> integrations;
+  std::vector<Integration> integrations;
 
   try {
     std::ifstream stream;
@@ -33,8 +33,8 @@ std::vector<integration> LoadIntegrationsFromFile(
   return integrations;
 }
 
-std::vector<integration> LoadIntegrationsFromStream(std::istream& stream) {
-  std::vector<integration> integrations;
+std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
+  std::vector<Integration> integrations;
 
   try {
     json j;
@@ -62,7 +62,7 @@ std::vector<integration> LoadIntegrationsFromStream(std::istream& stream) {
 
 namespace {
 
-std::optional<integration> IntegrationFromJson(const json::value_type& src) {
+std::optional<Integration> IntegrationFromJson(const json::value_type& src) {
   if (!src.is_object()) {
     return {};
   }
@@ -76,7 +76,7 @@ std::optional<integration> IntegrationFromJson(const json::value_type& src) {
     return {};
   }
 
-  std::vector<method_replacement> replacements;
+  std::vector<MethodReplacement> replacements;
   auto arr = src.value("method_replacements", json::array());
   if (arr.is_array()) {
     for (auto& el : arr) {
@@ -86,10 +86,10 @@ std::optional<integration> IntegrationFromJson(const json::value_type& src) {
       }
     }
   }
-  return integration(IntegrationType_Custom, name, replacements);
+  return Integration(name, replacements);
 }
 
-std::optional<method_replacement> MethodReplacementFromJson(
+std::optional<MethodReplacement> MethodReplacementFromJson(
     const json::value_type& src) {
   if (!src.is_object()) {
     return {};
@@ -98,10 +98,10 @@ std::optional<method_replacement> MethodReplacementFromJson(
   auto caller = MethodReferenceFromJson(src.value("caller", json::object()));
   auto target = MethodReferenceFromJson(src.value("target", json::object()));
   auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
-  return method_replacement(caller, target, wrapper);
+  return MethodReplacement(caller, target, wrapper);
 }
 
-method_reference MethodReferenceFromJson(const json::value_type& src) {
+MethodReference MethodReferenceFromJson(const json::value_type& src) {
   if (!src.is_object()) {
     return {};
   }
@@ -119,7 +119,7 @@ method_reference MethodReferenceFromJson(const json::value_type& src) {
       }
     }
   }
-  return method_reference(assembly, type, method, signature);
+  return MethodReference(assembly, type, method, signature);
 }
 
 }  // namespace
