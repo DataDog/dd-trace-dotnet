@@ -72,9 +72,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  if (module_info.IsWindowsRuntime()) {
-    // Ignore any Windows Runtime modules.  We cannot obtain writeable
-    // metadata interfaces on them or instrument their IL
+  if (module_info.IsWindowsRuntime() ||
+      module_info.assembly.name == L"mscorlib") {
+    // We cannot obtain writeable metadata interfaces on Windows Runtime modules
+    // or instrument their IL. We must never try to add assembly references to
+    // mscorlib.
+    LOG_APPEND(L"ModuleLoadFinished() called for "
+               << module_info.assembly.name << ". Skipping instrumentation.");
     return S_OK;
   }
 
@@ -83,7 +87,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     LOG_APPEND(L"ModuleLoadFinished() called for "
-               << module_info.assembly.name << ". Skipping instrumentation.");
+               << module_info.assembly.name << ". Nothing to instrument.");
     return S_OK;
   }
 
@@ -234,18 +238,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         modified = true;
       }
     }
+
+    if (modified) {
+      LOG_APPEND(L"JITCompilationStarted(): Replaced calls from "
+                 << caller.type.name << "." << caller.name << "() to "
+                 << method_replacement.target_method.type_name << "."
+                 << method_replacement.target_method.method_name
+                 << "() with calls to "
+                 << method_replacement.wrapper_method.type_name << "."
+                 << method_replacement.wrapper_method.method_name << "().");
+    }
   }
 
   if (modified) {
-    for (auto& method_replacement : method_replacements) {
-      LOG_APPEND(
-          L"JITCompilationStarted() called for "
-          << caller.type.name << "." << caller.name << "(). Replacing calls to "
-          << method_replacement.target_method.type_name << "."
-          << method_replacement.target_method.method_name << "() with calls to "
-          << method_replacement.wrapper_method.type_name << "."
-          << method_replacement.wrapper_method.method_name << "().");
-    }
     hr = rewriter.Export();
     RETURN_OK_IF_FAILED(hr);
   }
