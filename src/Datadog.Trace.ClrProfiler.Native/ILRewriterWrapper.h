@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DD_CLR_PROFILER_IL_REWRITER_WRAPPER_H_
+#define DD_CLR_PROFILER_IL_REWRITER_WRAPPER_H_
 
 #include "ILRewriter.h"
 #include "ModuleMetadata.h"
@@ -30,3 +31,5 @@ class ILRewriterWrapper {
   bool ReplaceMethodCalls(mdMemberRef old_method_ref,
                           mdMemberRef new_method_ref) const;
 };
+
+#endif  // DD_CLR_PROFILER_IL_REWRITER_WRAPPER_H_

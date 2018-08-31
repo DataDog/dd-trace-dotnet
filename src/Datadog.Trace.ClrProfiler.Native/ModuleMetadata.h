@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿#ifndef DD_CLR_PROFILER_MODULE_METADATA_H_
+#define DD_CLR_PROFILER_MODULE_METADATA_H_
 
 #include <corhlpr.h>
 #include <unordered_map>
@@ -77,3 +78,5 @@ class ModuleMetadata {
 };
 
 }  // namespace trace
+
+#endif  // DD_CLR_PROFILER_MODULE_METADATA_H_

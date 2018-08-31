@@ -1,8 +1,6 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full
-// license information.
+#ifndef DD_CLR_PROFILER_IL_REWRITER_H_
+#define DD_CLR_PROFILER_IL_REWRITER_H_
 
-#pragma once
 #include <corhlpr.h>
 #include <corprof.h>
 
@@ -120,3 +118,5 @@ class ILRewriter {
 
   void DeallocateILMemory(LPBYTE pBody);
 };
+
+#endif  // DD_CLR_PROFILER_IL_REWRITER_H_

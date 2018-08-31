@@ -1,7 +1,3 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full
-// license information.
-
 #include "ILRewriter.h"
 #include <cassert>
 #include <corhlpr.cpp>
@@ -458,8 +454,6 @@ again:
         switch (flags) {
           case 1 | OPCODEFLAGS_BranchTarget:
             // Check if delta is too big to fit into an INT8.
-            //
-            // (see #pragma at top of file)
             if ((INT8)delta != delta) {
               if (opcode == CEE_LEAVE_S) {
                 pInstr->m_opcode = CEE_LEAVE;

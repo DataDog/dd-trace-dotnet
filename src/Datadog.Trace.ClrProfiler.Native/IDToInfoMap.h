@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿#ifndef DD_CLR_PROFILER_ID_TO_INFO_MAP_H_
+#define DD_CLR_PROFILER_ID_TO_INFO_MAP_H_
 
 #include <unordered_map>
 #include "CSHolder.h"
@@ -77,3 +78,5 @@ class IDToInfoMap {
   Map m_map;
   CRITICAL_SECTION m_cs;
 };
+
+#endif  // DD_CLR_PROFILER_ID_TO_INFO_MAP_H_
