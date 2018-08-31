@@ -50,6 +50,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+      <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
+      <Name>Datadog.Trace.ClrProfiler.Managed</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj">
       <Project>{4b243cf1-4269-45c6-a238-1a9bfa58b8cc}</Project>
       <Name>Samples.ExampleLibraryTracer</Name>

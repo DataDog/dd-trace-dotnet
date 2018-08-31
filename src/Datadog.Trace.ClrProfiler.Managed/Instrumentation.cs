@@ -1,5 +1,4 @@
 using System;
-using System.Configuration;
 using System.Threading;
 
 // [assembly: System.Security.SecurityCritical]
@@ -11,6 +10,11 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     public static class Instrumentation
     {
+        /// <summary>
+        /// Gets the CLSID for the Datadog .NET profiler
+        /// </summary>
+        public static readonly string ProfilerClsid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+
         private static readonly Lazy<bool> _profilerAttached = new Lazy<bool>(
             () =>
             {
@@ -29,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets a value indicating whether Datadog's profiler is currently attached.
         /// </summary>
         /// <value>
-        ///   <c>true</c> if the profiler is currentl attached; <c>false</c> otherwise.
+        ///   <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.
         /// </value>
         public static bool ProfilerAttached => _profilerAttached.Value;
     }
