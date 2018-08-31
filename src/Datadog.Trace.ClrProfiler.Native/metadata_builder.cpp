@@ -14,11 +14,11 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   assembly_metadata.usBuildNumber = assembly_ref.version.build;
   assembly_metadata.usRevisionNumber = assembly_ref.version.revision;
   assembly_metadata.szLocale = const_cast<wchar_t*>(assembly_ref.locale.data());
-  assembly_metadata.cbLocale = (unsigned long)(assembly_ref.locale.size());
+  assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
 
   LOG_APPEND("EmitAssemblyRef " << assembly_ref.str());
 
-  unsigned long public_key_size = 8;
+  DWORD public_key_size = 8;
   if (assembly_ref.public_key == trace::PublicKey()) {
     public_key_size = 0;
   }
@@ -113,8 +113,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
   hr = metadata_import_->FindMemberRef(
       type_ref, wrapper_method_name,
       method_replacement.wrapper_method.method_signature.data.data(),
-      (unsigned long)(method_replacement.wrapper_method.method_signature.data
-                          .size()),
+      (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
       &member_ref);
 
   if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
@@ -122,8 +121,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
     hr = metadata_emit_->DefineMemberRef(
         type_ref, wrapper_method_name,
         method_replacement.wrapper_method.method_signature.data.data(),
-        (unsigned long)(method_replacement.wrapper_method.method_signature.data
-                            .size()),
+        (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
         &member_ref);
   }
 

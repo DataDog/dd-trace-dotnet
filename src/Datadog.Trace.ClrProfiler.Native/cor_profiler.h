@@ -12,7 +12,7 @@
 namespace trace {
 
 const std::wstring kProcessesEnvironmentName = L"DATADOG_PROFILER_PROCESSES";
-const unsigned long kEventMask =
+const DWORD kEventMask =
     COR_PRF_MONITOR_JIT_COMPILATION |
     COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST | /* helps the case
                                                                 where this

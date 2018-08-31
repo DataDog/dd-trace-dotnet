@@ -116,11 +116,10 @@ struct ModuleInfo {
   ModuleID id;
   std::wstring path;
   AssemblyInfo assembly;
-  unsigned long flags;
+  DWORD flags;
 
   ModuleInfo() : id(0), path(L""), assembly({}), flags(0) {}
-  ModuleInfo(ModuleID id, std::wstring path, AssemblyInfo assembly,
-             unsigned long flags)
+  ModuleInfo(ModuleID id, std::wstring path, AssemblyInfo assembly, DWORD flags)
       : id(id), path(path), assembly(assembly), flags(flags) {}
 
   inline bool IsValid() const { return id != 0; }

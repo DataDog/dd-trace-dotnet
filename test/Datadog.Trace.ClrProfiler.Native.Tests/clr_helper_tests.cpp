@@ -53,11 +53,11 @@ TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
 
   for (auto& def : EnumTypeDefs(metadata_import_)) {
     std::wstring name(256, 0);
-    unsigned long name_sz = 0;
+    DWORD name_sz = 0;
     DWORD flags = 0;
     mdToken extends = 0;
-    auto hr = metadata_import_->GetTypeDefProps(def, name.data(), 256, &name_sz,
-                                                &flags, &extends);
+    auto hr = metadata_import_->GetTypeDefProps(
+        def, name.data(), (DWORD)(name.size()), &name_sz, &flags, &extends);
     ASSERT_TRUE(SUCCEEDED(hr));
 
     if (name_sz > 0) {
@@ -103,9 +103,8 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
   Integration i2 = {
       L"integration-2",
       {{{}, {L"Assembly.Two", L"SomeType", L"SomeMethod", {}}, {}}}};
-  Integration i3 = {
-      L"integration-3",
-      {{{}, {L"System.Runtime", L"", L"", {}}, {}}}};
+  Integration i3 = {L"integration-3",
+                    {{{}, {L"System.Runtime", L"", L"", {}}, {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
   std::vector<Integration> actual =
