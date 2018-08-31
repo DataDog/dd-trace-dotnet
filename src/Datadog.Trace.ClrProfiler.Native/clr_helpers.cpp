@@ -160,6 +160,7 @@ std::vector<Integration> FilterIntegrationsByCaller(
       if (mr.caller_method.assembly.name.empty() ||
           mr.caller_method.assembly.name == assembly_name) {
         found = true;
+        break;
       }
     }
     if (found) {
@@ -182,11 +183,13 @@ std::vector<Integration> FilterIntegrationsByTarget(
     for (auto& mr : i.method_replacements) {
       if (mr.target_method.assembly.name == assembly_name) {
         found = true;
+        break;
       }
       for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
         auto ref_name = GetAssemblyName(assembly_import, assembly_ref);
         if (mr.target_method.assembly.name == ref_name) {
           found = true;
+          break;
         }
       }
     }
