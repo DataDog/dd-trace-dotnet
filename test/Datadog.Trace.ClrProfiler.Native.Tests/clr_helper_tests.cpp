@@ -80,3 +80,18 @@ TEST_F(CLRHelperTest, EnumeratesAssemblyRefs) {
   }
   EXPECT_EQ(expected_assemblies, actual_assemblies);
 }
+
+TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
+  Integration i1 = {
+      L"integration-1",
+      {{{L"Assembly.One", L"SomeType", L"SomeMethod", {}}, {}, {}}}};
+  Integration i2 = {
+      L"integration-2",
+      {{{L"Assembly.Two", L"SomeType", L"SomeMethod", {}}, {}, {}}}};
+  Integration i3 = {L"integration-3", {{{}, {}, {}}}};
+  std::vector<Integration> all = {i1, i2, i3};
+  std::vector<Integration> expected = {i1, i3};
+  std::vector<Integration> actual =
+      FilterIntegrationsByCaller(all, L"Assembly.One");
+  EXPECT_EQ(expected, actual);
+}

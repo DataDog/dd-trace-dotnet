@@ -19,7 +19,7 @@ struct PublicKey {
   PublicKey(const uint8_t (&arr)[kPublicKeySize])
       : data{arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7]} {}
 
-  bool operator==(const PublicKey& other) const {
+  inline bool operator==(const PublicKey& other) const {
     for (int i = 0; i < kPublicKeySize; i++) {
       if (data[i] != other.data[i]) {
         return false;
@@ -28,7 +28,7 @@ struct PublicKey {
     return true;
   }
 
-  std::wstring str() const {
+  inline std::wstring str() const {
     std::wostringstream ss;
     for (int i = 0; i < kPublicKeySize; i++) {
       ss << std::setfill(L'0') << std::setw(2) << std::hex << data[i];
@@ -50,12 +50,12 @@ struct Version {
           const unsigned short build, const unsigned short revision)
       : major(major), minor(minor), build(build), revision(revision) {}
 
-  bool operator==(const Version& other) const {
+  inline bool operator==(const Version& other) const {
     return major == other.major && minor == other.minor &&
            build == other.build && revision == other.revision;
   }
 
-  std::wstring str() const {
+  inline std::wstring str() const {
     std::wostringstream ss;
     ss << major << L"." << minor << L"." << build << L"." << revision;
     return ss.str();
@@ -75,12 +75,12 @@ struct AssemblyReference {
   AssemblyReference() {}
   AssemblyReference(const std::wstring& str);
 
-  bool operator==(const AssemblyReference& other) const {
+  inline bool operator==(const AssemblyReference& other) const {
     return name == other.name && version == other.version &&
            locale == other.locale && public_key == other.public_key;
   }
 
-  std::wstring str() const {
+  inline std::wstring str() const {
     std::wostringstream ss;
     ss << name << L", Version=" << version.str() << L", Culture=" << locale
        << L", PublicKeyToken=" << public_key.str();
@@ -96,6 +96,10 @@ struct MethodSignature {
 
   MethodSignature() {}
   MethodSignature(const std::vector<uint8_t>& data) : data(data) {}
+
+  inline bool operator==(const MethodSignature& other) const {
+    return data == other.data;
+  }
 };
 
 struct MethodReference {
@@ -114,12 +118,18 @@ struct MethodReference {
         method_name(std::move(method_name)),
         method_signature(method_signature) {}
 
-  std::wstring get_type_cache_key() const {
+  inline std::wstring get_type_cache_key() const {
     return L"[" + assembly.name + L"]" + type_name;
   }
 
-  std::wstring get_method_cache_key() const {
+  inline std::wstring get_method_cache_key() const {
     return L"[" + assembly.name + L"]" + type_name + L"." + method_name;
+  }
+
+  inline bool operator==(const MethodReference& other) const {
+    return assembly == other.assembly && type_name == other.type_name &&
+           method_name == other.method_name &&
+           method_signature == other.method_signature;
   }
 };
 
@@ -136,6 +146,12 @@ struct MethodReplacement {
       : caller_method(std::move(caller_method)),
         target_method(std::move(target_method)),
         wrapper_method(std::move(wrapper_method)) {}
+
+  inline bool operator==(const MethodReplacement& other) const {
+    return caller_method == other.caller_method &&
+           target_method == other.target_method &&
+           wrapper_method == other.wrapper_method;
+  }
 };
 
 struct Integration {
@@ -148,6 +164,11 @@ struct Integration {
               std::vector<MethodReplacement> method_replacements)
       : integration_name(std::move(integration_name)),
         method_replacements(std::move(method_replacements)) {}
+
+  inline bool operator==(const Integration& other) const {
+    return integration_name == other.integration_name &&
+           method_replacements == other.method_replacements;
+  }
 };
 
 namespace {

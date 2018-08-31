@@ -8,7 +8,6 @@
 #include "IDToInfoMap.h"
 #include "ModuleMetadata.h"
 #include "cor_profiler_base.h"
-#include "integration.h"
 
 namespace trace {
 
@@ -54,22 +53,6 @@ class CorProfiler : public CorProfilerBase {
 // First CLR to try to load us into this process wins; so there can only be one
 // callback implementation created. (See ProfilerCallback::CreateObject.)
 extern CorProfiler* profiler;  // global reference to callback object
-
-namespace {
-
-// FilterIntegrationsByCaller removes any integrations which have a caller and
-// its not set to the module
-std::vector<Integration> FilterIntegrationsByCaller(
-    const std::vector<Integration>& integrations,
-    const std::wstring& assembly_name);
-
-// FilterIntegrationsByTarget removes any integrations which have a target not
-// referenced by the module's assembly import
-std::vector<Integration> FilterIntegrationsByTarget(
-    const std::vector<Integration>& integrations,
-    const ComPtr<IMetaDataAssemblyImport>& assembly_import);
-
-}  // namespace
 
 }  // namespace trace
 
