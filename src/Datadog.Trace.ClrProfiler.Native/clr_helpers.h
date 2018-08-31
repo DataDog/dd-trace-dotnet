@@ -155,6 +155,9 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id);
 
 std::wstring GetAssemblyName(
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import);
+
+std::wstring GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const mdAssemblyRef& assembly_ref);
 

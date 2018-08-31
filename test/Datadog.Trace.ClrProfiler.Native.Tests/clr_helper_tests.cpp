@@ -95,3 +95,20 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
       FilterIntegrationsByCaller(all, L"Assembly.One");
   EXPECT_EQ(expected, actual);
 }
+
+TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
+  Integration i1 = {
+      L"integration-1",
+      {{{}, {L"Samples.ExampleLibrary", L"SomeType", L"SomeMethod", {}}, {}}}};
+  Integration i2 = {
+      L"integration-2",
+      {{{}, {L"Assembly.Two", L"SomeType", L"SomeMethod", {}}, {}}}};
+  Integration i3 = {
+      L"integration-3",
+      {{{}, {L"System.Runtime", L"", L"", {}}, {}}}};
+  std::vector<Integration> all = {i1, i2, i3};
+  std::vector<Integration> expected = {i1, i3};
+  std::vector<Integration> actual =
+      FilterIntegrationsByTarget(all, assembly_import_);
+  EXPECT_EQ(expected, actual);
+}

@@ -16,6 +16,25 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
 }
 
 std::wstring GetAssemblyName(
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
+  mdAssembly current = mdAssemblyNil;
+  auto hr = assembly_import->GetAssemblyFromScope(&current);
+  if (FAILED(hr)) {
+    return L"";
+  }
+  std::wstring name(kNameMaxSize, 0);
+  unsigned long name_len = 0;
+  ASSEMBLYMETADATA assembly_metadata{};
+  unsigned long assembly_flags = 0;
+  hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr, name.data(), (unsigned long)(name.size()),
+      &name_len, &assembly_metadata, &assembly_flags);
+  if (FAILED(hr) || name_len == 0) {
+    return L"";
+  }
+  return name.substr(0, name_len - 1);
+}
+
+std::wstring GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const mdAssemblyRef& assembly_ref) {
   std::wstring name(kNameMaxSize, 0);
@@ -156,12 +175,17 @@ std::vector<Integration> FilterIntegrationsByTarget(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   std::vector<Integration> enabled;
 
+  auto assembly_name = GetAssemblyName(assembly_import);
+
   for (auto& i : integrations) {
     bool found = false;
     for (auto& mr : i.method_replacements) {
+      if (mr.target_method.assembly.name == assembly_name) {
+        found = true;
+      }
       for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
-        auto name = GetAssemblyName(assembly_import, assembly_ref);
-        if (mr.target_method.assembly.name == name) {
+        auto ref_name = GetAssemblyName(assembly_import, assembly_ref);
+        if (mr.target_method.assembly.name == ref_name) {
           found = true;
         }
       }
