@@ -83,12 +83,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     LOG_APPEND(L"ModuleLoadFinished() called for "
-               << assemblyName << ". Skipping instrumentation.");
+               << module_info.assembly.name << ". Skipping instrumentation.");
     return S_OK;
   }
 
   LOG_APPEND(L"ModuleLoadFinished() called for "
-             << assemblyName << ". Emitting instrumentation metadata.");
+             << module_info.assembly.name
+             << ". Emitting instrumentation metadata.");
 
   ComPtr<IUnknown> metadata_interfaces;
 
@@ -236,15 +237,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   }
 
   if (modified) {
-          LOG_APPEND(L"JITCompilationStarted() called for "
-                     << caller_type_name << "." << caller_method_name
-                     << "(). Replacing calls to "
-                     << method_replacement.target_method.type_name << "."
-                     << method_replacement.target_method.method_name
-                     << "() with calls to "
-                     << method_replacement.wrapper_method.type_name << "."
-                     << method_replacement.wrapper_method.method_name << "().");
-
+    for (auto& method_replacement : method_replacements) {
+      LOG_APPEND(
+          L"JITCompilationStarted() called for "
+          << caller.type.name << "." << caller.name << "(). Replacing calls to "
+          << method_replacement.target_method.type_name << "."
+          << method_replacement.target_method.method_name << "() with calls to "
+          << method_replacement.wrapper_method.type_name << "."
+          << method_replacement.wrapper_method.method_name << "().");
+    }
     hr = rewriter.Export();
     RETURN_OK_IF_FAILED(hr);
   }

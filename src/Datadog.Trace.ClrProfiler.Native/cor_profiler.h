@@ -8,6 +8,7 @@
 #include "IDToInfoMap.h"
 #include "ModuleMetadata.h"
 #include "cor_profiler_base.h"
+#include "integration.h"
 
 namespace trace {
 
