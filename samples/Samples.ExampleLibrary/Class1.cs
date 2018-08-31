@@ -2,6 +2,8 @@
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
+using System;
+
 namespace Samples.ExampleLibrary
 {
     public class Class1
@@ -15,5 +17,7 @@ namespace Samples.ExampleLibrary
         {
             return x * y;
         }
+
+        public Func<int, int, int> Divide = (int x, int y) => x / y;
     }
 }

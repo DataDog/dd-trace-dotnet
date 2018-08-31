@@ -55,16 +55,23 @@ class EnumeratorIterator {
 
  public:
   EnumeratorIterator(const Enumerator<T>* enumerator, HRESULT status)
-      : enumerator_(enumerator), status_(status), idx_(0), sz_(0) {}
+      : enumerator_(enumerator), idx_(0) {
+    if (status == S_OK) {
+      status_ = enumerator_->Next(arr_, kEnumeratorMax, &sz_);
+      if (status_ == S_OK && sz_ == 0) {
+        status_ = S_FALSE;
+      }
+    }
+  }
 
-  bool operator!=(EnumeratorIterator const& other) const {
+  inline bool operator!=(EnumeratorIterator const& other) const {
     return enumerator_ != other.enumerator_ ||
            (status_ == S_OK) != (other.status_ == S_OK);
   }
 
-  T const& operator*() const { return arr_[idx_]; }
+  inline T const& operator*() const { return arr_[idx_]; }
 
-  EnumeratorIterator<T>& operator++() {
+  inline EnumeratorIterator<T>& operator++() {
     if (idx_ < sz_) {
       idx_++;
     } else {
@@ -84,6 +91,57 @@ static Enumerator<mdTypeDef> EnumTypeDefs(
       [metadata_import](HCORENUM* ptr, mdTypeDef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
         return metadata_import->EnumTypeDefs(ptr, arr, max, cnt);
+      },
+      [metadata_import](HCORENUM ptr) -> void {
+        metadata_import->CloseEnum(ptr);
+      });
+}
+
+static Enumerator<mdTypeRef> EnumTypeRefs(
+    ComPtr<IMetaDataImport> metadata_import) {
+  return Enumerator<mdTypeRef>(
+      [metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max,
+                        ULONG* cnt) -> HRESULT {
+        return metadata_import->EnumTypeRefs(ptr, arr, max, cnt);
+      },
+      [metadata_import](HCORENUM ptr) -> void {
+        metadata_import->CloseEnum(ptr);
+      });
+}
+
+static Enumerator<mdMethodDef> EnumMethods(
+    const ComPtr<IMetaDataImport>& metadata_import,
+    const mdToken& parent_token) {
+  return Enumerator<mdMethodDef>(
+      [metadata_import, parent_token](HCORENUM* ptr, mdMethodDef arr[],
+                                      ULONG max, ULONG* cnt) -> HRESULT {
+        return metadata_import->EnumMethods(ptr, parent_token, arr, max, cnt);
+      },
+      [metadata_import](HCORENUM ptr) -> void {
+        metadata_import->CloseEnum(ptr);
+      });
+}
+
+static Enumerator<mdMemberRef> EnumMemberRefs(
+    const ComPtr<IMetaDataImport>& metadata_import,
+    const mdToken& parent_token) {
+  return Enumerator<mdMemberRef>(
+      [metadata_import, parent_token](HCORENUM* ptr, mdMemberRef arr[],
+                                      ULONG max, ULONG* cnt) -> HRESULT {
+        return metadata_import->EnumMemberRefs(ptr, parent_token, arr, max,
+                                               cnt);
+      },
+      [metadata_import](HCORENUM ptr) -> void {
+        metadata_import->CloseEnum(ptr);
+      });
+}
+
+static Enumerator<mdModuleRef> EnumModuleRefs(
+    ComPtr<IMetaDataImport> metadata_import) {
+  return Enumerator<mdModuleRef>(
+      [metadata_import](HCORENUM* ptr, mdModuleRef arr[], ULONG max,
+                        ULONG* cnt) -> HRESULT {
+        return metadata_import->EnumModuleRefs(ptr, arr, max, cnt);
       },
       [metadata_import](HCORENUM ptr) -> void {
         metadata_import->CloseEnum(ptr);

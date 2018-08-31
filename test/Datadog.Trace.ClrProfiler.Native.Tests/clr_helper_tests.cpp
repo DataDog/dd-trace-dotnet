@@ -48,7 +48,8 @@ class CLRHelperTest : public ::testing::Test {
 };
 
 TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
-  std::vector<std::wstring> expected_types = {L"Samples.ExampleLibrary.Class1"};
+  std::vector<std::wstring> expected_types = {L"Samples.ExampleLibrary.Class1",
+                                              L"<>c"};
   std::vector<std::wstring> actual_types;
 
   for (auto& def : EnumTypeDefs(metadata_import_)) {
@@ -109,5 +110,68 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
   std::vector<Integration> expected = {i1, i3};
   std::vector<Integration> actual =
       FilterIntegrationsByTarget(all, assembly_import_);
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
+  std::set<std::wstring> expected = {L"Samples.ExampleLibrary.Class1", L"<>c"};
+  std::set<std::wstring> actual;
+  for (auto& type_def : EnumTypeDefs(metadata_import_)) {
+    auto type_info = GetTypeInfo(metadata_import_, type_def);
+    if (type_info.IsValid()) {
+      actual.insert(type_info.name);
+    }
+  }
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
+  std::set<std::wstring> expected = {
+      L"System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
+      L"System.Runtime.CompilerServices.RuntimeCompatibilityAttribute",
+      L"System.Diagnostics.DebuggableAttribute",
+      L"DebuggingModes",
+      L"System.Runtime.Versioning.TargetFrameworkAttribute",
+      L"System.Reflection.AssemblyCompanyAttribute",
+      L"System.Reflection.AssemblyConfigurationAttribute",
+      L"System.Reflection.AssemblyFileVersionAttribute",
+      L"System.Reflection.AssemblyInformationalVersionAttribute",
+      L"System.Reflection.AssemblyProductAttribute",
+      L"System.Reflection.AssemblyTitleAttribute",
+      L"System.Object",
+      L"System.Func`3",
+      L"System.Runtime.CompilerServices.CompilerGeneratedAttribute"};
+  std::set<std::wstring> actual;
+  for (auto& type_ref : EnumTypeRefs(metadata_import_)) {
+    auto type_info = GetTypeInfo(metadata_import_, type_ref);
+    if (type_info.IsValid()) {
+      actual.insert(type_info.name);
+    }
+  }
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(CLRHelperTest, GetsTypeInfoFromModuleRefs) {
+  // TODO(cbd): figure out how to create a module ref, for now its empty
+  std::set<std::wstring> expected = {};
+  std::set<std::wstring> actual;
+  for (auto& module_ref : EnumModuleRefs(metadata_import_)) {
+    auto type_info = GetTypeInfo(metadata_import_, module_ref);
+    actual.insert(type_info.name);
+  }
+  EXPECT_EQ(expected, actual);
+}
+
+TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
+  std::set<std::wstring> expected = {L"Samples.ExampleLibrary.Class1", L"<>c"};
+  std::set<std::wstring> actual;
+  for (auto& type_def : EnumTypeDefs(metadata_import_)) {
+    for (auto& method_def : EnumMethods(metadata_import_, type_def)) {
+      auto type_info = GetTypeInfo(metadata_import_, method_def);
+      if (type_info.IsValid()) {
+        actual.insert(type_info.name);
+      }
+    }
+  }
   EXPECT_EQ(expected, actual);
 }

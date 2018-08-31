@@ -104,7 +104,8 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
   DWORD type_name_len = 0;
 
   HRESULT hr = -1;
-  switch (TypeFromToken(token)) {
+  auto token_type = TypeFromToken(token);
+  switch (token_type) {
     case mdtTypeDef:
       hr = metadata_import->GetTypeDefProps(token, type_name.data(),
                                             (DWORD)(type_name.size()),
