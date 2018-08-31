@@ -122,8 +122,8 @@ struct ModuleInfo {
              unsigned long flags)
       : id(id), path(path), assembly(assembly), flags(flags) {}
 
-  inline bool is_valid() const { return id != 0; }
-  inline bool is_windows_runtime() const {
+  inline bool IsValid() const { return id != 0; }
+  inline bool IsWindowsRuntime() const {
     return ((flags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0);
   }
 };
@@ -135,7 +135,7 @@ struct TypeInfo {
   TypeInfo() : id(0), name(L"") {}
   TypeInfo(mdToken id, std::wstring name) : id(id), name(name) {}
 
-  inline bool is_valid() const { return id != 0; }
+  inline bool IsValid() const { return id != 0; }
 };
 
 struct FunctionInfo {
@@ -147,7 +147,7 @@ struct FunctionInfo {
   FunctionInfo(mdToken id, std::wstring name, TypeInfo type)
       : id(id), name(name), type(type) {}
 
-  inline bool is_valid() const { return id != 0; }
+  inline bool IsValid() const { return id != 0; }
 };
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,

@@ -68,34 +68,21 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hrStatus) {
   auto module_info = GetModuleInfo(this->info_, module_id);
-  if (!module_info.is_valid()) {
+  if (!module_info.IsValid()) {
     return S_OK;
   }
 
-  if (module_info.is_windows_runtime()) {
+  if (module_info.IsWindowsRuntime()) {
     // Ignore any Windows Runtime modules.  We cannot obtain writeable
     // metadata interfaces on them or instrument their IL
     return S_OK;
   }
 
-  std::vector<integration> enabled_integrations;
-
-  // check if we need to instrument anything in this assembly,
-  // for each integration...
-  for (const auto& integration : this->integrations_) {
-    // TODO: check if integration is enabled in config
-    for (const auto& method_replacement : integration.method_replacements) {
-      if (method_replacement.caller_method.assembly.name.empty() ||
-          method_replacement.caller_method.assembly.name ==
-              module_info.assembly.name) {
-        enabled_integrations.push_back(integration);
-      }
-    }
-  }
-
   LOG_APPEND(L"ModuleLoadFinished for " + module_info.assembly.name +
              L". Emitting instrumentation metadata.");
 
+  std::vector<integration> enabled_integrations =
+      FilterIntegrationsByCaller(integrations_, module_info);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     return S_OK;
@@ -109,24 +96,32 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   LOG_IFFAILEDRET(hr, L"Failed to get metadata interface.");
 
-  const auto metadataImport =
+  const auto metadata_import =
       metadata_interfaces.As<IMetaDataImport>(IID_IMetaDataImport);
-  const auto metadataEmit =
+  const auto metadata_emit =
       metadata_interfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
-  const auto assemblyImport = metadata_interfaces.As<IMetaDataAssemblyImport>(
+  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
       IID_IMetaDataAssemblyImport);
-  const auto assemblyEmit =
+  const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
+  enabled_integrations =
+      FilterIntegrationsByTarget(enabled_integrations, assembly_import);
+  if (enabled_integrations.empty()) {
+    // we don't need to instrument anything in this module, skip it
+    return S_OK;
+  }
+
   mdModule module;
-  hr = metadataImport->GetModuleFromScope(&module);
+  hr = metadata_import->GetModuleFromScope(&module);
   LOG_IFFAILEDRET(hr, L"Failed to get module token.");
 
   ModuleMetadata* module_metadata = new ModuleMetadata(
-      metadataImport, module_info.assembly.name, enabled_integrations);
+      metadata_import, module_info.assembly.name, enabled_integrations);
 
-  MetadataBuilder metadata_builder(*module_metadata, module, metadataImport,
-                                   metadataEmit, assemblyImport, assemblyEmit);
+  MetadataBuilder metadata_builder(*module_metadata, module, metadata_import,
+                                   metadata_emit, assembly_import,
+                                   assembly_emit);
 
   for (const auto& integration : enabled_integrations) {
     for (const auto& method_replacement : integration.method_replacements) {
@@ -180,7 +175,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // get function info
   auto caller =
       GetFunctionInfo(module_metadata->metadata_import, function_token);
-  if (!caller.is_valid()) {
+  if (!caller.IsValid()) {
     return S_OK;
   }
 
@@ -192,6 +187,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
+
+  // hr = rewriter.Initialize();
+  hr = rewriter.Import();
+  RETURN_OK_IF_FAILED(hr);
 
   for (auto& method_replacement : method_replacements) {
     const auto& wrapper_method_key =
@@ -207,10 +206,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       return S_OK;
     }
 
-    // hr = rewriter.Initialize();
-    hr = rewriter.Import();
-    RETURN_OK_IF_FAILED(hr);
-
     // for each IL instruction
     for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
          pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
@@ -222,7 +217,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       // get the target function info, continue if its invalid
       auto target =
           GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
-      if (!target.is_valid()) {
+      if (!target.IsValid()) {
         continue;
       }
 
@@ -247,5 +242,53 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 }  // namespace trace
 
 bool CorProfiler::IsAttached() const { return is_attached_; }
+
+namespace {
+
+std::vector<integration> FilterIntegrationsByCaller(
+    const std::vector<integration>& integrations,
+    const ModuleInfo& module_info) {
+  std::vector<integration> enabled;
+
+  for (auto& i : integrations) {
+    bool found = false;
+    for (auto& mr : i.method_replacements) {
+      if (mr.caller_method.assembly.name.empty() ||
+          mr.caller_method.assembly.name == module_info.assembly.name) {
+        found = true;
+      }
+    }
+    if (found) {
+      enabled.push_back(i);
+    }
+  }
+
+  return enabled;
+}
+
+std::vector<integration> FilterIntegrationsByTarget(
+    const std::vector<integration>& integrations,
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
+  std::vector<integration> enabled;
+
+  for (auto& i : integrations) {
+    bool found = false;
+    for (auto& mr : i.method_replacements) {
+      for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
+        auto name = GetAssemblyName(assembly_import, assembly_ref);
+        if (mr.target_method.assembly.name == name) {
+          found = true;
+        }
+      }
+    }
+    if (found) {
+      enabled.push_back(i);
+    }
+  }
+
+  return enabled;
+}
+
+}  // namespace
 
 }  // namespace trace

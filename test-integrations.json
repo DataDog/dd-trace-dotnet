@@ -15,6 +15,20 @@
           "method": "Add",
           "signature": [ 32, 2, 8, 8, 8 ]
         }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Samples.ExampleLibrary",
+          "type": "Samples.ExampleLibrary.Class1",
+          "method": "Multiply"
+        },
+        "wrapper": {
+          "assembly": "Samples.ExampleLibraryTracer, Version=1.0.0.0",
+          "type": "Samples.ExampleLibraryTracer.Class1",
+          "method": "Multiply",
+          "signature": [ 32, 2, 8, 8, 8 ]
+        }
       }
     ]
   }

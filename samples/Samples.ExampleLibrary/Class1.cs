@@ -10,5 +10,10 @@ namespace Samples.ExampleLibrary
         {
             return x + y;
         }
+
+        public virtual int Multiply(int x, int y)
+        {
+            return x * y;
+        }
     }
 }

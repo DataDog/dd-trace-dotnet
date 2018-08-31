@@ -55,6 +55,22 @@ class CorProfiler : public CorProfilerBase {
 // callback implementation created. (See ProfilerCallback::CreateObject.)
 extern CorProfiler* profiler;  // global reference to callback object
 
+namespace {
+
+// FilterIntegrationsByCaller removes any integrations which have a caller and
+// its not set to the module
+std::vector<integration> FilterIntegrationsByCaller(
+    const std::vector<integration>& integrations,
+    const ModuleInfo& module_info);
+
+// FilterIntegrationsByTarget removes any integrations which have a target not
+// referenced by the module's assembly import
+std::vector<integration> FilterIntegrationsByTarget(
+    const std::vector<integration>& integrations,
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import);
+
+}  // namespace
+
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_COR_PROFILER_H_
