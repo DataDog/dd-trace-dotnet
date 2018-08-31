@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
@@ -20,9 +21,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Fact]
+        [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1025:CodeMustNotContainMultipleWhitespaceInARow", Justification = "Reviewed.")]
         public void ProfilerAttached()
         {
             var platform = Environment.Is64BitProcess ? "x64" : "x86";
+
+            var os = Environment.OSVersion.Platform == PlatformID.Win32NT ? "win" :
+                     Environment.OSVersion.Platform == PlatformID.Unix    ? "linux" :
+                     Environment.OSVersion.Platform == PlatformID.MacOSX  ? "osx" :
+                                                                            string.Empty;
+
+            var runtimeIdentifier = BuildParameters.CoreClr ? string.Empty : $"{os}-{platform}";
+
             string basePath = Path.GetFullPath(@"..\..\..\..\..\..");
 
             // get path to native profiler dll
@@ -30,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Assert.True(File.Exists(profilerDllPath), $"Profiler DLL not found at {profilerDllPath}");
 
             // get path to sample app that the profiler will attach to
-            string appBasePath = $@"{basePath}\samples\Samples.ConsoleCore\bin\{platform}\{BuildParameters.Configuration}\{BuildParameters.TargetFramework}";
+            string appBasePath = $@"{basePath}\samples\Samples.ConsoleCore\bin\{platform}\{BuildParameters.Configuration}\{BuildParameters.TargetFramework}\{runtimeIdentifier}";
             string appFileName = BuildParameters.CoreClr ? $@"{appBasePath}\Samples.ConsoleCore.dll" : $@"{appBasePath}\Samples.ConsoleCore.exe";
             string appPath = Path.Combine(appBasePath, appFileName);
             Assert.True(File.Exists(appPath), $"Application not found at {appPath}");
