@@ -3,7 +3,7 @@
 // license information.
 
 #include "ClassFactory.h"
-#include "cor_profiler.h"
+#include "CorProfiler.h"
 
 ClassFactory::ClassFactory() : refCount(0) {}
 

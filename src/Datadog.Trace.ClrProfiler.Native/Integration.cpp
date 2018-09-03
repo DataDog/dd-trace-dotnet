@@ -1,6 +1,7 @@
-#include "integration.h"
 #include <regex>
 #include <sstream>
+
+#include "Integration.h"
 
 namespace trace {
 

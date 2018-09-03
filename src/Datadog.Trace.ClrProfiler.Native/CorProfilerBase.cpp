@@ -1,4 +1,4 @@
-﻿#include "cor_profiler_base.h"
+﻿#include "CorProfilerBase.h"
 
 namespace trace {
 

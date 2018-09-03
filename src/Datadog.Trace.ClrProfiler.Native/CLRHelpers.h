@@ -1,5 +1,4 @@
-#ifndef DD_CLR_PROFILER_CLR_HELPERS_H_
-#define DD_CLR_PROFILER_CLR_HELPERS_H_
+#pragma once
 
 #include <corhlpr.h>
 #include <functional>
@@ -108,5 +107,3 @@ mdAssemblyRef FindAssemblyRef(
     const std::wstring& name);
 
 }  // namespace trace
-
-#endif  // DD_CLR_PROFILER_CLR_HELPERS_H_

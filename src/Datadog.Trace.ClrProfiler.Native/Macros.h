@@ -1,5 +1,4 @@
-#ifndef DD_CLR_PROFILER_MACROS_H_
-#define DD_CLR_PROFILER_MACROS_H_
+#pragma once
 
 #include <corhlpr.h>
 #include <fstream>
@@ -41,5 +40,3 @@ const std::string kLogFilePath = "C:\\temp\\Profiler.log";
       return S_OK;                \
     }                             \
   } while (0)
-
-#endif  // DD_CLR_PROFILER_MACROS_H_

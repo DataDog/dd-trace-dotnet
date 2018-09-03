@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+
 #include "IntegrationType.h"
 
 namespace trace {

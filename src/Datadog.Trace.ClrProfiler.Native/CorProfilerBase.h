@@ -1,5 +1,4 @@
-﻿#ifndef DD_CLR_PROFILER_COR_PROFILER_BASE_H_
-#define DD_CLR_PROFILER_COR_PROFILER_BASE_H_
+﻿#pragma once
 
 #include <corhlpr.h>
 #include <corprof.h>
@@ -365,5 +364,3 @@ class CorProfilerBase : public ICorProfilerCallback8 {
 };
 
 }  // namespace trace
-
-#endif  // DD_CLR_PROFILER_PROFILER_BASE_H_

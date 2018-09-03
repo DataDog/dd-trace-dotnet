@@ -1,4 +1,4 @@
-#include "clr_helpers.h"
+#include "CLRHelpers.h"
 
 namespace trace {
 

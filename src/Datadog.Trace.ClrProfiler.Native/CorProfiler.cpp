@@ -2,17 +2,18 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include "cor_profiler.h"
 #include <fstream>
 #include <string>
 #include <vector>
+
 #include "ComPtr.h"
+#include "CorProfiler.h"
 #include "ILRewriter.h"
+#include "IntegrationLoader.h"
 #include "Macros.h"
+#include "MetadataBuilder.h"
 #include "ModuleMetadata.h"
-#include "integration_loader.h"
-#include "metadata_builder.h"
-#include "util.h"
+#include "Util.h"
 
 namespace trace {
 

@@ -1,5 +1,4 @@
-#ifndef DD_CLR_PROFILER_UTIL_H_
-#define DD_CLR_PROFILER_UTIL_H_
+#pragma once
 
 #include <iterator>
 #include <sstream>
@@ -20,5 +19,3 @@ inline std::vector<std::wstring> split(const std::wstring &s, wchar_t delim) {
   split(s, delim, std::back_inserter(elems));
   return elems;
 }
-
-#endif  // DD_CLR_PROFILER_UTIL_H_

@@ -1,5 +1,4 @@
-#ifndef DD_CLR_PROFILER_INTEGRATION_LOADER_H_
-#define DD_CLR_PROFILER_INTEGRATION_LOADER_H_
+#pragma once
 
 #include <codecvt>
 #include <fstream>
@@ -37,5 +36,3 @@ method_reference MethodReferenceFromJson(const json::value_type& src);
 }  // namespace
 
 }  // namespace trace
-
-#endif
