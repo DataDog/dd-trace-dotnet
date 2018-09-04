@@ -128,35 +128,35 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ClassFactory.h" />
+    <ClInclude Include="CLRHelpers.h" />
     <ClInclude Include="ComPtr.h" />
-    <ClInclude Include="cor_profiler.h" />
-    <ClInclude Include="cor_profiler_base.h" />
+    <ClInclude Include="CorProfiler.h" />
+    <ClInclude Include="CorProfilerBase.h" />
     <ClInclude Include="CSHolder.h" />
     <ClInclude Include="IDToInfoMap.h" />
     <ClInclude Include="ILRewriter.h" />
     <ClInclude Include="ILRewriterWrapper.h" />
-    <ClInclude Include="integration.h" />
-    <ClInclude Include="integration_loader.h" />
+    <ClInclude Include="Integration.h" />
+    <ClInclude Include="IntegrationLoader.h" />
     <ClInclude Include="IntegrationType.h" />
-    <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="Macros.h" />
-    <ClInclude Include="metadata_builder.h" />
+    <ClInclude Include="MetadataBuilder.h" />
     <ClInclude Include="ModuleMetadata.h" />
-    <ClInclude Include="util.h" />
+    <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClassFactory.cpp" />
-    <ClCompile Include="clr_helpers.cpp" />
-    <ClCompile Include="cor_profiler_base.cpp" />
+    <ClCompile Include="CLRHelpers.cpp" />
+    <ClCompile Include="CorProfiler.cpp" />
+    <ClCompile Include="CorProfilerBase.cpp" />
     <ClCompile Include="CSHolder.cpp" />
-    <ClCompile Include="cor_profiler.cpp" />
     <ClCompile Include="ILRewriter.cpp" />
     <ClCompile Include="ILRewriterWrapper.cpp" />
-    <ClCompile Include="integration.cpp" />
-    <ClCompile Include="integration_loader.cpp" />
+    <ClCompile Include="Integration.cpp" />
+    <ClCompile Include="IntegrationLoader.cpp" />
     <ClCompile Include="Interop.cpp" />
-    <ClCompile Include="metadata_builder.cpp" />
+    <ClCompile Include="MetadataBuilder.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
