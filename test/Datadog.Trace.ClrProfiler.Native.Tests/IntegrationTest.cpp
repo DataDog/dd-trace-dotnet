@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "../../src/Datadog.Trace.ClrProfiler.Native/integration.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/Integration.h"
 
 using namespace trace;
 
