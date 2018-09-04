@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var runtimeIdentifier = BuildParameters.CoreClr ? string.Empty : $"{os}-{platform}";
 
             string[] pathParts = Environment.CurrentDirectory.ToLowerInvariant().Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            int directoryDepth = pathParts.Length - pathParts.ToList().IndexOf("dd-trace-csharp") - 1;
+            int directoryDepth = pathParts.Length - pathParts.ToList().IndexOf("test");
             string relativeBasePath = string.Join("\\", Enumerable.Repeat("..", directoryDepth));
             string absoluteBasePath = Path.GetFullPath(relativeBasePath);
 
