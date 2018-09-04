@@ -87,13 +87,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     LOG_APPEND(L"ModuleLoadFinished() called for "
-               << module_info.assembly.name << ". Nothing to instrument.");
+               << module_info.assembly.name
+               << ". FilterIntegrationsByCaller() returned empty list. Nothing "
+                  "to instrument here.");
     return S_OK;
   }
 
   LOG_APPEND(L"ModuleLoadFinished() called for "
              << module_info.assembly.name
-             << ". Emitting instrumentation metadata.");
+             << ". FilterIntegrationsByCaller() returned "
+             << enabled_integrations.size() << " item(s).");
 
   ComPtr<IUnknown> metadata_interfaces;
 
@@ -116,12 +119,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByTarget(enabled_integrations, assembly_import);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
+    LOG_APPEND(L"ModuleLoadFinished() called for "
+               << module_info.assembly.name
+               << ". FilterIntegrationsByTarget() returned empty list. Nothing "
+                  "to instrument here.");
     return S_OK;
   }
 
+  LOG_APPEND(L"ModuleLoadFinished() called for "
+             << module_info.assembly.name
+             << ". FilterIntegrationsByTarget() returned "
+             << enabled_integrations.size() << " item(s).");
+
+  LOG_APPEND(
+      L"ModuleLoadFinished() will try to emit instrumentation metadata for "
+      << module_info.assembly.name);
+
   mdModule module;
   hr = metadata_import->GetModuleFromScope(&module);
-  LOG_IFFAILEDRET(hr, L"Failed to get module token.");
+  LOG_IFFAILEDRET(hr, L"ModuleLoadFinished() failed to get module token.");
 
   ModuleMetadata* module_metadata = new ModuleMetadata(
       metadata_import, module_info.assembly.name, enabled_integrations);
@@ -146,6 +162,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // store module info for later lookup
   module_id_to_info_map_.Update(module_id, module_metadata);
+
+  LOG_APPEND(L"ModuleLoadFinished() emitted instrumentation metadata for "
+             << module_info.assembly.name);
   return S_OK;
 }
 
@@ -240,7 +259,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     }
 
     if (modified) {
-      LOG_APPEND(L"JITCompilationStarted(): Replaced calls from "
+      LOG_APPEND(L"JITCompilationStarted() replaced calls from "
                  << caller.type.name << "." << caller.name << "() to "
                  << method_replacement.target_method.type_name << "."
                  << method_replacement.target_method.method_name
