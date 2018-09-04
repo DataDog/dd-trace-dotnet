@@ -7,6 +7,7 @@ namespace Datadog.Trace.TestHelpers
         public static readonly IEnumerable<string> ValidNames = new[]
                                                                 {
                                                                     "testhost",
+                                                                    "testhost.x86",
                                                                     "vstest.console",
                                                                     "xunit.console.x86",
                                                                     "xunit.console.x64"
