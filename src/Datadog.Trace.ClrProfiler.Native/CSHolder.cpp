@@ -1,5 +1,6 @@
-﻿#include "CSHolder.h"
-#include <cassert>
+﻿#include <cassert>
+
+#include "CSHolder.h"
 
 CSHolder::CSHolder(CRITICAL_SECTION* pcs) {
   m_pcs = pcs;

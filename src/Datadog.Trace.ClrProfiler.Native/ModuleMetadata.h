@@ -2,6 +2,7 @@
 
 #include <corhlpr.h>
 #include <unordered_map>
+
 #include "ComPtr.h"
 #include "Integration.h"
 

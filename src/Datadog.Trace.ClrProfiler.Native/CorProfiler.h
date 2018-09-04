@@ -1,14 +1,13 @@
-#ifndef DD_CLR_PROFILER_COR_PROFILER_H_
-#define DD_CLR_PROFILER_COR_PROFILER_H_
-
-#include <vector>
+#pragma once
 
 #include <corhlpr.h>
 #include <corprof.h>
+#include <vector>
+
+#include "CorProfilerBase.h"
 #include "IDToInfoMap.h"
+#include "Integration.h"
 #include "ModuleMetadata.h"
-#include "cor_profiler_base.h"
-#include "integration.h"
 
 namespace trace {
 
@@ -41,5 +40,3 @@ class CorProfiler : public CorProfilerBase {
 extern CorProfiler* profiler;  // global reference to callback object
 
 }  // namespace trace
-
-#endif  // DD_CLR_PROFILER_COR_PROFILER_H_

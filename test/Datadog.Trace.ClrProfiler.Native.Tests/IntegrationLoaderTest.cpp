@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-#include "../../src/Datadog.Trace.ClrProfiler.Native/integration_loader.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/IntegrationLoader.h"
 
 using namespace trace;
 

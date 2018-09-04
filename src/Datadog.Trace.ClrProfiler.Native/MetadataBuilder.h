@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <corhlpr.h>
+
 #include "ComPtr.h"
 #include "ModuleMetadata.h"
 
