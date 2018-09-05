@@ -55,6 +55,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string standardError;
             int exitCode;
 
+            _output.WriteLine($"Platform: {platform}");
+            _output.WriteLine($"Configuration: {BuildParameters.Configuration}");
+            _output.WriteLine($"TargetFramework: {BuildParameters.TargetFramework}");
+            _output.WriteLine($".NET Core: {BuildParameters.CoreClr}");
+            _output.WriteLine($"Application: {appPath}");
+            _output.WriteLine($"Profiler DLL: {profilerDllPath}");
+
             using (Process process = ProfilerHelper.StartProcessWithProfiler(
                 appPath,
                 BuildParameters.CoreClr,
@@ -68,10 +75,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 exitCode = process.ExitCode;
             }
 
-            if (!string.IsNullOrWhiteSpace(standardError))
-            {
-                _output.WriteLine(standardError);
-            }
+            _output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            _output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
 
             Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
 
