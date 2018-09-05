@@ -66,7 +66,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
   } else {
     // type is defined in another assembly,
     // find a reference to the assembly where type lives
-    auto assembly_ref = FindAssemblyRef(
+    const auto assembly_ref = FindAssemblyRef(
         assembly_import_, method_replacement.wrapper_method.assembly.name);
     if (assembly_ref == mdAssemblyRefNil) {
       // TODO: emit assembly reference if not found?
@@ -81,7 +81,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
                                        &type_ref);
 
     if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
-      // if typeRef not found, create a new one by emiting a metadata token
+      // if typeRef not found, create a new one by emitting a metadata token
       hr = metadata_emit_->DefineTypeRefByName(assembly_ref, wrapper_type_name,
                                                &type_ref);
     }
@@ -121,7 +121,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
       &member_ref);
 
   if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
-    // if memberRef not found, create it by emiting a metadata token
+    // if memberRef not found, create it by emitting a metadata token
     hr = metadata_emit_->DefineMemberRef(
         type_ref, wrapper_method_name,
         method_replacement.wrapper_method.method_signature.data.data(),
