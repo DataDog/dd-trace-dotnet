@@ -73,14 +73,14 @@ class EnumeratorIterator {
     }
   }
 
-  inline bool operator!=(EnumeratorIterator const& other) const {
+  bool operator!=(EnumeratorIterator const& other) const {
     return enumerator_ != other.enumerator_ ||
            (status_ == S_OK) != (other.status_ == S_OK);
   }
 
-  inline T const& operator*() const { return arr_[idx_]; }
+  T const& operator*() const { return arr_[idx_]; }
 
-  inline EnumeratorIterator<T>& operator++() {
+  EnumeratorIterator<T>& operator++() {
     if (idx_ < sz_ - 1) {
       idx_++;
     } else {
@@ -174,9 +174,10 @@ struct AssemblyInfo {
   const std::wstring name;
 
   AssemblyInfo() : id(0), name(L"") {}
-  AssemblyInfo(AssemblyID id, std::wstring name) : id(id), name(name) {}
+  AssemblyInfo(AssemblyID id, std::wstring name)
+      : id(id), name(std::move(name)) {}
 
-  inline bool is_valid() const { return id != 0; }
+  bool is_valid() const { return id != 0; }
 };
 
 struct ModuleInfo {
@@ -187,10 +188,14 @@ struct ModuleInfo {
 
   ModuleInfo() : id(0), path(L""), assembly({}), flags(0) {}
   ModuleInfo(ModuleID id, std::wstring path, AssemblyInfo assembly, DWORD flags)
-      : id(id), path(path), assembly(assembly), flags(flags) {}
+      : id(id),
+        path(std::move(path)),
+        assembly(std::move(assembly)),
+        flags(flags) {}
 
-  inline bool IsValid() const { return id != 0; }
-  inline bool IsWindowsRuntime() const {
+  bool IsValid() const { return id != 0; }
+
+  bool IsWindowsRuntime() const {
     return ((flags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0);
   }
 };
@@ -200,9 +205,9 @@ struct TypeInfo {
   const std::wstring name;
 
   TypeInfo() : id(0), name(L"") {}
-  TypeInfo(mdToken id, std::wstring name) : id(id), name(name) {}
+  TypeInfo(mdToken id, std::wstring name) : id(id), name(std::move(name)) {}
 
-  inline bool IsValid() const { return id != 0; }
+  bool IsValid() const { return id != 0; }
 };
 
 struct FunctionInfo {
@@ -212,9 +217,9 @@ struct FunctionInfo {
 
   FunctionInfo() : id(0), name(L""), type({}) {}
   FunctionInfo(mdToken id, std::wstring name, TypeInfo type)
-      : id(id), name(name), type(type) {}
+      : id(id), name(std::move(name)), type(std::move(type)) {}
 
-  inline bool IsValid() const { return id != 0; }
+  bool IsValid() const { return id != 0; }
 };
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
