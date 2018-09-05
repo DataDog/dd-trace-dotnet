@@ -45,7 +45,7 @@ std::wstring GetEnvironmentValue(const std::wstring &name) {
   const size_t max_buf_size = 4096;
   std::wstring buf(max_buf_size, 0);
   auto len =
-      GetEnvironmentVariableW(name.data(), buf.data(), (DWORD)(buf.size()));
+      GetEnvironmentVariable(name.data(), buf.data(), (DWORD)(buf.size()));
   return Trim(buf.substr(0, len));
 }
 
