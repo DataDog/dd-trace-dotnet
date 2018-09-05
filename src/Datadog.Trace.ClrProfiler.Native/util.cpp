@@ -1,7 +1,7 @@
 #include "util.h"
 
 #include <cwctype>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <iterator>
 #include <sstream>
 #include <string>
@@ -44,8 +44,8 @@ std::wstring Trim(const std::wstring &str) {
 std::wstring GetEnvironmentValue(const std::wstring &name) {
   const size_t max_buf_size = 4096;
   std::wstring buf(max_buf_size, 0);
-  auto len =
-      GetEnvironmentVariableW(name.data(), buf.data(), (DWORD)(buf.size()));
+  auto len = GetEnvironmentVariableW(name.data(), StringData(buf),
+                                     (DWORD)(buf.size()));
   return Trim(buf.substr(0, len));
 }
 
@@ -67,10 +67,17 @@ std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name) {
 
 std::wstring GetCurrentProcessName() {
   std::wstring current_process_path(260, 0);
-  const DWORD len = GetModuleFileName(nullptr, current_process_path.data(),
+  const DWORD len = GetModuleFileName(nullptr, StringData(current_process_path),
                                       (DWORD)(current_process_path.size()));
   current_process_path = current_process_path.substr(0, len);
-  return std::filesystem::path(current_process_path).filename();
+  return std::experimental::filesystem::path(current_process_path).filename();
+}
+
+wchar_t *StringData(const std::wstring &str) {
+  if (str.size() > 0) {
+    return const_cast<wchar_t *>(&str[0]);
+  }
+  return nullptr;
 }
 
 }  // namespace trace

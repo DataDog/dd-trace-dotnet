@@ -1,4 +1,5 @@
 #include "clr_helpers.h"
+#include "util.h"
 
 namespace trace {
 
@@ -7,7 +8,7 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
   std::wstring name(kNameMaxSize, 0);
   DWORD name_len = 0;
   auto hr = info->GetAssemblyInfo(assembly_id, (DWORD)(name.size()), &name_len,
-                                  name.data(), nullptr, nullptr);
+                                  StringData(name), nullptr, nullptr);
   if (FAILED(hr) || name_len == 0) {
     return {};
   }
@@ -27,8 +28,8 @@ std::wstring GetAssemblyName(
   ASSEMBLYMETADATA assembly_metadata{};
   DWORD assembly_flags = 0;
   hr = assembly_import->GetAssemblyProps(
-      current, nullptr, nullptr, nullptr, name.data(), (DWORD)(name.size()),
-      &name_len, &assembly_metadata, &assembly_flags);
+      current, nullptr, nullptr, nullptr, StringData(name),
+      (DWORD)(name.size()), &name_len, &assembly_metadata, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
     return L"";
   }
@@ -43,7 +44,7 @@ std::wstring GetAssemblyName(
   ASSEMBLYMETADATA assembly_metadata{};
   DWORD assembly_flags = 0;
   auto hr = assembly_import->GetAssemblyRefProps(
-      assembly_ref, nullptr, nullptr, name.data(), (DWORD)(name.size()),
+      assembly_ref, nullptr, nullptr, StringData(name), (DWORD)(name.size()),
       &name_len, &assembly_metadata, nullptr, nullptr, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
     return L"";
@@ -61,12 +62,12 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
   switch (TypeFromToken(token)) {
     case mdtMemberRef:
       hr = metadata_import->GetMemberRefProps(
-          token, &parent_token, function_name.data(),
+          token, &parent_token, StringData(function_name),
           (DWORD)(function_name.size()), &function_name_len, nullptr, nullptr);
       break;
     case mdtMethodDef:
       hr = metadata_import->GetMemberProps(
-          token, &parent_token, function_name.data(),
+          token, &parent_token, StringData(function_name),
           (DWORD)(function_name.size()), &function_name_len, nullptr, nullptr,
           nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
       break;
@@ -89,7 +90,7 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
   DWORD module_flags = 0;
   HRESULT hr = info->GetModuleInfo2(
       module_id, &base_load_address, (DWORD)(module_path.size()),
-      &module_path_len, module_path.data(), &assembly_id, &module_flags);
+      &module_path_len, StringData(module_path), &assembly_id, &module_flags);
   if (FAILED(hr) || module_path_len == 0) {
     return {};
   }
@@ -107,21 +108,22 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
   auto token_type = TypeFromToken(token);
   switch (token_type) {
     case mdtTypeDef:
-      hr = metadata_import->GetTypeDefProps(token, type_name.data(),
+      hr = metadata_import->GetTypeDefProps(token, StringData(type_name),
                                             (DWORD)(type_name.size()),
                                             &type_name_len, nullptr, nullptr);
       break;
     case mdtTypeRef:
       hr = metadata_import->GetTypeRefProps(
-          token, &parent_token, type_name.data(), (DWORD)(type_name.size()),
-          &type_name_len);
+          token, &parent_token, StringData(type_name),
+          (DWORD)(type_name.size()), &type_name_len);
       break;
     case mdtTypeSpec:
       // do we need to handle this case?
       break;
     case mdtModuleRef:
-      metadata_import->GetModuleRefProps(
-          token, type_name.data(), (DWORD)(type_name.size()), &type_name_len);
+      metadata_import->GetModuleRefProps(token, StringData(type_name),
+                                         (DWORD)(type_name.size()),
+                                         &type_name_len);
       break;
     case mdtMemberRef:
       return GetFunctionInfo(metadata_import, token).type;

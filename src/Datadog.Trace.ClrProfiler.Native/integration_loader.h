@@ -4,7 +4,6 @@
 #include <codecvt>
 #include <fstream>
 #include <locale>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -29,8 +28,8 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream);
 
 namespace {
 
-std::optional<Integration> IntegrationFromJson(const json::value_type& src);
-std::optional<MethodReplacement> MethodReplacementFromJson(
+std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src);
+std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     const json::value_type& src);
 MethodReference MethodReferenceFromJson(const json::value_type& src);
 
