@@ -12,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class SqlServer
     {
+        private const string OperationName = "sqlserver.query";
+
         private static object originalExecuteReaderLock = new object();
         private static MethodInfo originalExecuteReader;
 
@@ -25,9 +27,29 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object ExecuteReader(dynamic @this, int behavior, string method)
         {
             var originalMethod = GetOriginalExecuteReader(@this);
-            object result = originalMethod.Invoke(@this, new object[] { behavior, method });
-            Console.WriteLine($"{@this}, {behavior}, {method}, {result}");
-            return result;
+
+            using (var scope = Tracer.Instance.StartActive(OperationName))
+            {
+                // set the scope properties
+                // - row count is not supported so we don't set it
+                scope.Span.ResourceName = @this.CommandText;
+                scope.Span.Type = SpanTypes.Sql;
+                scope.Span.SetTag(Tags.SqlQuery, @this.CommandText);
+                scope.Span.SetTag(Tags.SqlDatabase, @this.Connection.ConnectionString);
+
+                dynamic result;
+                try
+                {
+                    result = originalMethod.Invoke(@this, new object[] { behavior, method });
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
+
+                return result;
+            }
         }
 
         private static MethodInfo GetOriginalExecuteReader(dynamic @this)

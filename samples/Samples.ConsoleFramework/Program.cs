@@ -59,9 +59,6 @@ namespace Samples.ConsoleFramework
                 {
                     Console.WriteLine(item.Name);
                 }
-
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadKey();
             }
 
 
