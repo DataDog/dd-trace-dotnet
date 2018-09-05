@@ -55,14 +55,14 @@ template <typename T>
 class EnumeratorIterator {
  private:
   const Enumerator<T>* enumerator_;
-  HRESULT status_;
-  T arr_[kEnumeratorMax];
-  ULONG idx_;
-  ULONG sz_;
+  HRESULT status_ = S_FALSE;
+  T arr_[kEnumeratorMax]{};
+  ULONG idx_ = 0;
+  ULONG sz_ = 0;
 
  public:
   EnumeratorIterator(const Enumerator<T>* enumerator, HRESULT status)
-      : enumerator_(enumerator), idx_(0) {
+      : enumerator_(enumerator) {
     if (status == S_OK) {
       status_ = enumerator_->Next(arr_, kEnumeratorMax, &sz_);
       if (status_ == S_OK && sz_ == 0) {
