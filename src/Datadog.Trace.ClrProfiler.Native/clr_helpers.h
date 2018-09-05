@@ -5,7 +5,7 @@
 #include <corprof.h>
 #include <functional>
 
-#include "ComPtr.h"
+#include "com_ptr.h"
 #include "integration.h"
 
 namespace trace {

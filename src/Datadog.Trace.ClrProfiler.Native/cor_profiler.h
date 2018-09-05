@@ -1,14 +1,14 @@
 #ifndef DD_CLR_PROFILER_COR_PROFILER_H_
 #define DD_CLR_PROFILER_COR_PROFILER_H_
 
-#include <vector>
-
 #include <corhlpr.h>
 #include <corprof.h>
-#include "IDToInfoMap.h"
-#include "ModuleMetadata.h"
+#include <vector>
+
 #include "cor_profiler_base.h"
+#include "id_to_info_map.h"
 #include "integration.h"
+#include "module_metadata.h"
 
 namespace trace {
 
