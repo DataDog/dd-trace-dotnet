@@ -251,21 +251,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       if (method_replacement.target_method.type_name == target.type.name &&
           method_replacement.target_method.method_name == target.name) {
         // replace with a call to the instrumentation wrapper
+        INT32 original_argument = pInstr->m_Arg32;
         pInstr->m_opcode = CEE_CALL;
         pInstr->m_Arg32 = wrapper_method_ref;
 
         modified = true;
-      }
-    }
 
-    if (modified) {
-      LOG_APPEND(L"JITCompilationStarted() replaced calls from "
-                 << caller.type.name << "." << caller.name << "() to "
-                 << method_replacement.target_method.type_name << "."
-                 << method_replacement.target_method.method_name
-                 << "() with calls to "
-                 << method_replacement.wrapper_method.type_name << "."
-                 << method_replacement.wrapper_method.method_name << "().");
+        LOG_APPEND(L"JITCompilationStarted() replaced calls from "
+                   << caller.type.name << "." << caller.name << "() to "
+                   << method_replacement.target_method.type_name << "."
+                   << method_replacement.target_method.method_name
+                   << "() " << HEX(original_argument) << " with calls to "
+                   << method_replacement.wrapper_method.type_name << "."
+                   << method_replacement.wrapper_method.method_name << "() " << HEX(wrapper_method_ref) << ".");
+      }
     }
   }
 
