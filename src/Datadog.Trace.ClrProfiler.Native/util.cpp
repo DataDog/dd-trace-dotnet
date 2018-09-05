@@ -29,12 +29,12 @@ std::wstring Trim(const std::wstring &str) {
   std::wstring trimmed = str;
 
   // trim space off the front
-  while (trimmed.size() > 0 && std::iswspace(trimmed[0])) {
+  while (!trimmed.empty() && std::iswspace(trimmed[0])) {
     trimmed = trimmed.substr(1);
   }
 
   // trim space off the back
-  while (trimmed.size() > 0 && std::iswspace(trimmed[trimmed.size() - 1])) {
+  while (!trimmed.empty() && std::iswspace(trimmed[trimmed.size() - 1])) {
     trimmed = trimmed.substr(0, trimmed.size() - 1);
   }
 
