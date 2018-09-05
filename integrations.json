@@ -10,14 +10,13 @@
         "target": {
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-          "method": "BeforeAction",
-          "signature": [ 0, 4, 28, 28, 28, 28, 28 ]
+          "method": "BeforeAction"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
           "method": "BeforeAction",
-          "signature": [ 0, 4, 28, 28, 28, 28, 28 ]
+          "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
         }
       },
       {
@@ -28,8 +27,7 @@
         "target": {
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-          "method": "AfterAction",
-          "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
+          "method": "AfterAction"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -50,8 +48,7 @@
         "target": {
           "assembly": "System.Web.Mvc",
           "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
-          "method": "BeginInvokeAction",
-          "signature": [ 0, 5, 28, 28, 28, 28, 28, 28 ]
+          "method": "BeginInvokeAction"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -67,8 +64,7 @@
         "target": {
           "assembly": "System.Web.Mvc",
           "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
-          "method": "EndInvokeAction",
-          "signature": [ 0, 2, 2, 28, 28 ]
+          "method": "EndInvokeAction"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
