@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-#include "Integration.h"
-#include "Macros.h"
+#include "integration.h"
 #include "json.hpp"
+#include "macros.h"
 
 namespace trace {
 

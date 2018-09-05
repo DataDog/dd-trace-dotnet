@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include "ClassFactory.h"
+#include "class_factory.h"
 
 const IID IID_IUnknown = {0x00000000,
                           0x0000,

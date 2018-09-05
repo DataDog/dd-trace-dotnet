@@ -1,8 +1,9 @@
 ﻿#pragma once
 
 #include <corhlpr.h>
-#include "ComPtr.h"
-#include "ModuleMetadata.h"
+
+#include "com_ptr.h"
+#include "module_metadata.h"
 
 namespace trace {
 

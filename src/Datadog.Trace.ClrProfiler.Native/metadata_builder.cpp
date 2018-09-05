@@ -1,8 +1,9 @@
-﻿#include "metadata_builder.h"
-#include <fstream>
+﻿#include <fstream>
 #include <string>
-#include "Macros.h"
+
 #include "clr_helpers.h"
+#include "macros.h"
+#include "metadata_builder.h"
 
 namespace trace {
 

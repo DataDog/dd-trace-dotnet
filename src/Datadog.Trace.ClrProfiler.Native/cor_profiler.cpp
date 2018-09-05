@@ -2,17 +2,18 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include "cor_profiler.h"
 #include <fstream>
 #include <string>
 #include <vector>
-#include "ComPtr.h"
-#include "ILRewriter.h"
-#include "Macros.h"
-#include "ModuleMetadata.h"
+
 #include "clr_helpers.h"
+#include "com_ptr.h"
+#include "cor_profiler.h"
+#include "il_rewriter.h"
 #include "integration_loader.h"
+#include "macros.h"
 #include "metadata_builder.h"
+#include "module_metadata.h"
 #include "util.h"
 
 namespace trace {
@@ -260,10 +261,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         LOG_APPEND(L"JITCompilationStarted() replaced calls from "
                    << caller.type.name << "." << caller.name << "() to "
                    << method_replacement.target_method.type_name << "."
-                   << method_replacement.target_method.method_name
-                   << "() " << HEX(original_argument) << " with calls to "
+                   << method_replacement.target_method.method_name << "() "
+                   << HEX(original_argument) << " with calls to "
                    << method_replacement.wrapper_method.type_name << "."
-                   << method_replacement.wrapper_method.method_name << "() " << HEX(wrapper_method_ref) << ".");
+                   << method_replacement.wrapper_method.method_name << "() "
+                   << HEX(wrapper_method_ref) << ".");
       }
     }
   }

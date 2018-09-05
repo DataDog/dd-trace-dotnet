@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DD_CLR_PROFILER_INTEGRATION_H_
+#define DD_CLR_PROFILER_INTEGRATION_H_
 
 #include <corhlpr.h>
 #include <iomanip>
@@ -181,3 +182,5 @@ PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& wstr);
 }  // namespace
 
 }  // namespace trace
+
+#endif  // DD_CLR_PROFILER_INTEGRATION_H_

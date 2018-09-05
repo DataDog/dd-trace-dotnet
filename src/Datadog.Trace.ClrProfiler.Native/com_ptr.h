@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿#ifndef DD_CLR_PROFILER_COM_PTR_H_
+#define DD_CLR_PROFILER_COM_PTR_H_
 
 #include <windows.h>
 #include <cassert>
@@ -139,3 +140,5 @@ template <typename Interface>
 void swap(ComPtr<Interface>& left, ComPtr<Interface>& right) noexcept {
   left.Swap(right);
 }
+
+#endif  // DD_CLR_PROFILER_COM_PTR_H_
