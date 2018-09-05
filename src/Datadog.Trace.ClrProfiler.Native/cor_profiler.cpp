@@ -94,11 +94,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  LOG_APPEND(L"ModuleLoadFinished() called for "
-             << module_info.assembly.name
-             << ". FilterIntegrationsByCaller() returned "
-             << enabled_integrations.size() << " item(s).");
-
   ComPtr<IUnknown> metadata_interfaces;
 
   auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
@@ -126,11 +121,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                   "to instrument here.");
     return S_OK;
   }
-
-  LOG_APPEND(L"ModuleLoadFinished() called for "
-             << module_info.assembly.name
-             << ". FilterIntegrationsByTarget() returned "
-             << enabled_integrations.size() << " item(s).");
 
   LOG_APPEND(
       L"ModuleLoadFinished() will try to emit instrumentation metadata for "
