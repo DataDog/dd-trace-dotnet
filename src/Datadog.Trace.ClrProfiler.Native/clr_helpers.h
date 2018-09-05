@@ -61,6 +61,8 @@ class EnumeratorIterator {
       if (status_ == S_OK && sz_ == 0) {
         status_ = S_FALSE;
       }
+    } else {
+      status_ = status;
     }
   }
 
