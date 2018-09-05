@@ -12,11 +12,26 @@
 
 namespace trace {
 
+const std::wstring kProcessesEnvironmentName = L"DATADOG_PROFILER_PROCESSES";
+const DWORD kEventMask =
+    COR_PRF_MONITOR_JIT_COMPILATION |
+    COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST | /* helps the case
+                                                                where this
+                                                                profiler is
+                                                                used on Full
+                                                                CLR */
+    // COR_PRF_DISABLE_INLINING |
+    COR_PRF_MONITOR_MODULE_LOADS |
+    // COR_PRF_MONITOR_ASSEMBLY_LOADS |
+    // COR_PRF_MONITOR_APPDOMAIN_LOADS |
+    // COR_PRF_ENABLE_REJIT |
+    COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
   IDToInfoMap<ModuleID, ModuleMetadata*> module_id_to_info_map_;
-  const std::vector<integration> integrations_;
+  const std::vector<Integration> integrations_;
 
  public:
   CorProfiler();

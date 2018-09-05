@@ -8,5 +8,10 @@ namespace Samples.ExampleLibraryTracer
         {
             return 2 * (x + y);
         }
+
+        public virtual int Multiply(int x, int y)
+        {
+            return 2 * (x * y);
+        }
     }
 }

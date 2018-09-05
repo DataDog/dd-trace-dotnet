@@ -10,6 +10,7 @@
 #include "ILRewriter.h"
 #include "Macros.h"
 #include "ModuleMetadata.h"
+#include "clr_helpers.h"
 #include "integration_loader.h"
 #include "metadata_builder.h"
 #include "util.h"
@@ -18,183 +19,152 @@ namespace trace {
 
 CorProfiler* profiler = nullptr;
 
-CorProfiler::CorProfiler()
-    : integrations_(trace::LoadIntegrationsFromEnvironment()) {}
+CorProfiler::CorProfiler() : integrations_(LoadIntegrationsFromEnvironment()) {}
 
 HRESULT STDMETHODCALLTYPE
-CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk) {
+CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
 
-  std::wstring current_process_name(1024, 0);
-  const DWORD current_process_path_length = GetModuleFileName(
-      nullptr, current_process_name.data(), DWORD(current_process_name.size()));
+  auto process_name = GetCurrentProcessName();
+  auto allowed_process_names = GetEnvironmentValues(kProcessesEnvironmentName);
 
-  if (current_process_path_length == 0) {
+  if (allowed_process_names.size() == 0) {
     LOG_APPEND(
-        L"Failed to attach profiler: could not get current module filename.");
-    return E_FAIL;
-  }
-
-  current_process_name =
-      current_process_name.substr(0, current_process_path_length);
-
-  LOG_APPEND(L"Initialize() called for " << current_process_name);
-
-  const auto last_delimiter_index = current_process_name.find_last_of(L"/\\");
-  if (last_delimiter_index != std::wstring::npos) {
-    // remove path from executable name
-    current_process_name =
-        current_process_name.substr(last_delimiter_index + 1);
-  }
-
-  std::wstring process_names(4096, 0);
-  const DWORD process_names_length =
-      GetEnvironmentVariable(L"DATADOG_PROFILER_PROCESSES",
-                             process_names.data(), DWORD(process_names.size()));
-
-  if (process_names_length == 0) {
-    // if environment variable was not set, don't check for matching process
-    // name, always attach the profiler
-    LOG_APPEND(
-        L"DATADOG_PROFILER_PROCESSES not set. Will try to attach CorProfiler.");
+        L"DATADOG_PROFILER_PROCESSES environment variable not set. Attaching "
+        L"to any .NET process.");
   } else {
-    process_names = process_names.substr(0, process_names_length);
-    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES=" << process_names);
-    auto allowed_process_names = split(process_names, L';');
+    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES:");
+    for (auto& name : allowed_process_names) {
+      LOG_APPEND(L"  " + name);
+    }
 
     if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
-                  current_process_name) == allowed_process_names.end()) {
-      LOG_APPEND(L"CorProfiler disabled for " << current_process_name);
+                  process_name) == allowed_process_names.end()) {
+      LOG_APPEND(L"CorProfiler disabled: module name \""
+                 << process_name
+                 << "\" does not match DATADOG_PROFILER_PROCESSES environment "
+                    "variable.");
       return E_FAIL;
     }
   }
 
-  HRESULT hr =
-      pICorProfilerInfoUnk->QueryInterface<ICorProfilerInfo3>(&this->info_);
+  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
+      &this->info_);
   LOG_IFFAILEDRET(hr,
                   L"CorProfiler disabled: interface ICorProfilerInfo3 or "
                   L"higher not found.");
 
-  const DWORD eventMask =
-      COR_PRF_MONITOR_JIT_COMPILATION |
-      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST | /* helps the case
-                                                                  where this
-                                                                  profiler is
-                                                                  used on Full
-                                                                  CLR */
-      // COR_PRF_DISABLE_INLINING |
-      COR_PRF_MONITOR_MODULE_LOADS |
-      // COR_PRF_MONITOR_ASSEMBLY_LOADS |
-      // COR_PRF_MONITOR_APPDOMAIN_LOADS |
-      // COR_PRF_ENABLE_REJIT |
-      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
-
-  hr = this->info_->SetEventMask(eventMask);
+  hr = this->info_->SetEventMask(kEventMask);
   LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
 
   // we're in!
-  LOG_APPEND(L"CorProfiler attached to process " << current_process_name);
+  LOG_APPEND(L"CorProfiler attached to process " << process_name);
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId,
+HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hrStatus) {
-  LPCBYTE pbBaseLoadAddr;
-  WCHAR wszModulePath[MAX_PATH];
-  ULONG cchNameOut;
-  AssemblyID assemblyId;
-  DWORD dwModuleFlags;
-
-  HRESULT hr = this->info_->GetModuleInfo2(
-      moduleId, &pbBaseLoadAddr, _countof(wszModulePath), &cchNameOut,
-      wszModulePath, &assemblyId, &dwModuleFlags);
-
-  LOG_IFFAILEDRET(hr,
-                  L"GetModuleInfo2 failed for ModuleID = " << HEX(moduleId));
-
-  if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0) {
-    // Ignore any Windows Runtime modules.  We cannot obtain writeable
-    // metadata interfaces on them or instrument their IL
+  auto module_info = GetModuleInfo(this->info_, module_id);
+  if (!module_info.IsValid()) {
     return S_OK;
   }
 
-  WCHAR assemblyName[512]{};
-  ULONG assemblyNameLength = 0;
-  hr = this->info_->GetAssemblyInfo(assemblyId, _countof(assemblyName),
-                                    &assemblyNameLength, assemblyName, nullptr,
-                                    nullptr);
-  LOG_IFFAILEDRET(hr, L"Failed to get assembly name.");
-
-  std::vector<integration> enabledIntegrations;
-
-  // check if we need to instrument anything in this assembly,
-  // for each integration...
-  for (const auto& integration : this->integrations_) {
-    // TODO: check if integration is enabled in config
-    for (const auto& method_replacement : integration.method_replacements) {
-      if (method_replacement.caller_method.assembly.name.empty() ||
-          method_replacement.caller_method.assembly.name ==
-              std::wstring(assemblyName)) {
-        enabledIntegrations.push_back(integration);
-      }
-    }
+  if (module_info.IsWindowsRuntime() ||
+      module_info.assembly.name == L"mscorlib") {
+    // We cannot obtain writeable metadata interfaces on Windows Runtime modules
+    // or instrument their IL. We must never try to add assembly references to
+    // mscorlib.
+    LOG_APPEND(L"ModuleLoadFinished() called for "
+               << module_info.assembly.name << ". Skipping instrumentation.");
+    return S_OK;
   }
 
-  LOG_APPEND(L"ModuleLoadFinished for "
-             << assemblyName << ". Emitting instrumentation metadata.");
-
-  if (enabledIntegrations.empty()) {
+  std::vector<Integration> enabled_integrations =
+      FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
+  if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
+    LOG_APPEND(L"ModuleLoadFinished() called for "
+               << module_info.assembly.name
+               << ". FilterIntegrationsByCaller() returned empty list. Nothing "
+                  "to instrument here.");
     return S_OK;
   }
 
-  ComPtr<IUnknown> metadataInterfaces;
+  LOG_APPEND(L"ModuleLoadFinished() called for "
+             << module_info.assembly.name
+             << ". FilterIntegrationsByCaller() returned "
+             << enabled_integrations.size() << " item(s).");
 
-  hr = this->info_->GetModuleMetaData(moduleId, ofRead | ofWrite,
-                                      IID_IMetaDataImport,
-                                      metadataInterfaces.GetAddressOf());
+  ComPtr<IUnknown> metadata_interfaces;
+
+  auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
+                                           IID_IMetaDataImport,
+                                           metadata_interfaces.GetAddressOf());
 
   LOG_IFFAILEDRET(hr, L"Failed to get metadata interface.");
 
-  const auto metadataImport =
-      metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport);
-  const auto metadataEmit =
-      metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
-  const auto assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(
+  const auto metadata_import =
+      metadata_interfaces.As<IMetaDataImport>(IID_IMetaDataImport);
+  const auto metadata_emit =
+      metadata_interfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
+  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
       IID_IMetaDataAssemblyImport);
-  const auto assemblyEmit =
-      metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+  const auto assembly_emit =
+      metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+  enabled_integrations =
+      FilterIntegrationsByTarget(enabled_integrations, assembly_import);
+  if (enabled_integrations.empty()) {
+    // we don't need to instrument anything in this module, skip it
+    LOG_APPEND(L"ModuleLoadFinished() called for "
+               << module_info.assembly.name
+               << ". FilterIntegrationsByTarget() returned empty list. Nothing "
+                  "to instrument here.");
+    return S_OK;
+  }
+
+  LOG_APPEND(L"ModuleLoadFinished() called for "
+             << module_info.assembly.name
+             << ". FilterIntegrationsByTarget() returned "
+             << enabled_integrations.size() << " item(s).");
+
+  LOG_APPEND(
+      L"ModuleLoadFinished() will try to emit instrumentation metadata for "
+      << module_info.assembly.name);
 
   mdModule module;
-  hr = metadataImport->GetModuleFromScope(&module);
-  LOG_IFFAILEDRET(hr, L"Failed to get module token.");
+  hr = metadata_import->GetModuleFromScope(&module);
+  LOG_IFFAILEDRET(hr, L"ModuleLoadFinished() failed to get module token.");
 
-  ModuleMetadata* moduleMetadata =
-      new ModuleMetadata(metadataImport, assemblyName, enabledIntegrations);
+  ModuleMetadata* module_metadata = new ModuleMetadata(
+      metadata_import, module_info.assembly.name, enabled_integrations);
 
-  trace::MetadataBuilder metadataBuilder(*moduleMetadata, module,
-                                         metadataImport, metadataEmit,
-                                         assemblyImport, assemblyEmit);
+  MetadataBuilder metadata_builder(*module_metadata, module, metadata_import,
+                                   metadata_emit, assembly_import,
+                                   assembly_emit);
 
-  for (const auto& integration : enabledIntegrations) {
+  for (const auto& integration : enabled_integrations) {
     for (const auto& method_replacement : integration.method_replacements) {
       // for each wrapper assembly, emit an assembly reference
-      hr = metadataBuilder.EmitAssemblyRef(
+      hr = metadata_builder.EmitAssemblyRef(
           method_replacement.wrapper_method.assembly);
       RETURN_OK_IF_FAILED(hr);
 
       // for each method replacement in each enabled integration,
       // emit a reference to the instrumentation wrapper methods
-      hr = metadataBuilder.StoreWrapperMethodRef(method_replacement);
+      hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
       RETURN_OK_IF_FAILED(hr);
     }
   }
 
   // store module info for later lookup
-  module_id_to_info_map_.Update(moduleId, moduleMetadata);
+  module_id_to_info_map_.Update(module_id, module_metadata);
+
+  LOG_APPEND(L"ModuleLoadFinished() emitted instrumentation metadata for "
+             << module_info.assembly.name);
   return S_OK;
 }
 
@@ -210,184 +180,101 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId,
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE
-CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock) {
-  ClassID classId;
-  ModuleID moduleId;
-  mdToken functionToken = mdTokenNil;
+HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
+    FunctionID function_id, BOOL is_safe_to_block) {
+  ClassID class_id;
+  ModuleID module_id;
+  mdToken function_token = mdTokenNil;
 
-  HRESULT hr = this->info_->GetFunctionInfo(functionId, &classId, &moduleId,
-                                            &functionToken);
+  HRESULT hr = this->info_->GetFunctionInfo(function_id, &class_id, &module_id,
+                                            &function_token);
   RETURN_OK_IF_FAILED(hr);
 
-  ModuleMetadata* moduleMetadata = nullptr;
+  ModuleMetadata* module_metadata = nullptr;
 
-  if (!module_id_to_info_map_.LookupIfExists(moduleId, &moduleMetadata)) {
+  if (!module_id_to_info_map_.LookupIfExists(module_id, &module_metadata)) {
     // we haven't stored a ModuleInfo for this module, so we can't modify its
     // IL
     return S_OK;
   }
 
-  const int string_size = 1024;
+  // get function info
+  auto caller =
+      GetFunctionInfo(module_metadata->metadata_import, function_token);
+  if (!caller.IsValid()) {
+    return S_OK;
+  }
 
-  // get function name
-  mdTypeDef caller_type_def = mdTypeDefNil;
-  WCHAR caller_method_name[string_size]{};
-  ULONG caller_method_name_length = 0;
-  hr = moduleMetadata->metadata_import->GetMemberProps(
-      functionToken, &caller_type_def, caller_method_name, string_size,
-      &caller_method_name_length, nullptr, nullptr, nullptr, nullptr, nullptr,
-      nullptr, nullptr, nullptr);
+  auto method_replacements =
+      module_metadata->GetMethodReplacementsForCaller(caller);
+  if (method_replacements.empty()) {
+    return S_OK;
+  }
+
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  bool modified = false;
+
+  // hr = rewriter.Initialize();
+  hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
-  // get type name
-  WCHAR caller_type_name[string_size]{};
-  ULONG caller_type_name_length = 0;
-  hr = moduleMetadata->metadata_import->GetTypeDefProps(
-      caller_type_def, caller_type_name, string_size, &caller_type_name_length,
-      nullptr, nullptr);
-  RETURN_OK_IF_FAILED(hr);
+  for (auto& method_replacement : method_replacements) {
+    const auto& wrapper_method_key =
+        method_replacement.wrapper_method.get_method_cache_key();
+    mdMemberRef wrapper_method_ref = mdMemberRefNil;
 
-  // check if we need to replace any methods called from this method
-  for (const auto& integration : moduleMetadata->integrations) {
-    for (const auto& method_replacement : integration.method_replacements) {
-      // check known callers for IL opcodes that call into the target method.
-      // if found, replace with calls to the instrumentation wrapper
-      // (wrapper_method_ref)
-      if ((method_replacement.caller_method.type_name.empty() ||
-           method_replacement.caller_method.type_name == caller_type_name) &&
-          (method_replacement.caller_method.method_name.empty() ||
-           method_replacement.caller_method.method_name ==
-               caller_method_name)) {
-        const auto& wrapper_method_key =
-            method_replacement.wrapper_method.get_method_cache_key();
-        mdMemberRef wrapper_method_ref = mdMemberRefNil;
+    if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
+                                                 wrapper_method_ref)) {
+      // no method ref token found for wrapper method, we can't do the
+      // replacement, this should never happen because we always try to
+      // add the method ref in ModuleLoadFinished()
+      // TODO: log this
+      return S_OK;
+    }
 
-        if (!moduleMetadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                    wrapper_method_ref)) {
-          // no method ref token found for wrapper method, we can't do the
-          // replacement, this should never happen because we always try to
-          // add the method ref in ModuleLoadFinished()
-          // TODO: log this
-          return S_OK;
-        }
+    // for each IL instruction
+    for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
+         pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
+      // only CALL or CALLVIRT
+      if (pInstr->m_opcode != CEE_CALL && pInstr->m_opcode != CEE_CALLVIRT) {
+        continue;
+      }
 
-        ILRewriter rewriter(this->info_, nullptr, moduleId, functionToken);
+      // get the target function info, continue if its invalid
+      auto target =
+          GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
+      if (!target.IsValid()) {
+        continue;
+      }
 
-        // hr = rewriter.Initialize();
-        hr = rewriter.Import();
-        RETURN_OK_IF_FAILED(hr);
+      // if the target matches by type name and method name
+      if (method_replacement.target_method.type_name == target.type.name &&
+          method_replacement.target_method.method_name == target.name) {
+        // replace with a call to the instrumentation wrapper
+        INT32 original_argument = pInstr->m_Arg32;
+        pInstr->m_opcode = CEE_CALL;
+        pInstr->m_Arg32 = wrapper_method_ref;
 
-        bool modified = false;
+        modified = true;
 
-        // for each IL instruction
-        for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
-             pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
-          // if its opcode is CALL or CALLVIRT
-          if ((pInstr->m_opcode == CEE_CALL ||
-               pInstr->m_opcode == CEE_CALLVIRT) &&
-              (TypeFromToken(pInstr->m_Arg32) == mdtMemberRef ||
-               TypeFromToken(pInstr->m_Arg32) == mdtMethodDef)) {
-            WCHAR target_method_name[string_size]{};
-            ULONG target_method_name_length = 0;
-
-            WCHAR target_type_name[string_size]{};
-            ULONG target_type_name_length = 0;
-
-            mdMethodDef target_method_def = mdMethodDefNil;
-            mdTypeDef target_type_def = mdTypeDefNil;
-
-            if (TypeFromToken(pInstr->m_Arg32) == mdtMemberRef) {
-              // get function name from mdMemberRef
-              mdToken token = mdTokenNil;
-              hr = moduleMetadata->metadata_import->GetMemberRefProps(
-                  pInstr->m_Arg32, &token, target_method_name, string_size,
-                  &target_method_name_length, nullptr, nullptr);
-              RETURN_OK_IF_FAILED(hr);
-
-              if (method_replacement.target_method.method_name !=
-                  target_method_name) {
-                // method name doesn't match, skip to next instruction
-                continue;
-              }
-
-              // determine how to get type name from token, depending on the
-              // token type
-              if (TypeFromToken(token) == mdtTypeRef) {
-                hr = moduleMetadata->metadata_import->GetTypeRefProps(
-                    token, nullptr, target_type_name, string_size,
-                    &target_type_name_length);
-                RETURN_OK_IF_FAILED(hr);
-                goto compare_type_and_method_names;
-              }
-
-              if (TypeFromToken(token) == mdtTypeDef) {
-                target_type_def = token;
-                goto use_type_def;
-              }
-
-              if (TypeFromToken(token) == mdtMethodDef) {
-                // we got an mdMethodDef back, so jump to where we use a
-                // methodDef instead of a methodRef
-                target_method_def = token;
-                goto use_method_def;
-              }
-
-              // value of token is not a supported token type, skip to next
-              // instruction
-              continue;
-            }
-
-            // if pInstr->m_Arg32 wasn't an mdtMemberRef, it must be an
-            // mdtMethodDef
-            target_method_def = pInstr->m_Arg32;
-
-          use_method_def:
-            // get function name from mdMethodDef
-            hr = moduleMetadata->metadata_import->GetMethodProps(
-                target_method_def, &target_type_def, target_method_name,
-                string_size, &target_method_name_length, nullptr, nullptr,
-                nullptr, nullptr, nullptr);
-            RETURN_OK_IF_FAILED(hr);
-
-            if (method_replacement.target_method.method_name !=
-                target_method_name) {
-              // method name doesn't match, skip to next instruction
-              continue;
-            }
-
-          use_type_def:
-            // get type name from mdTypeDef
-            hr = moduleMetadata->metadata_import->GetTypeDefProps(
-                target_type_def, target_type_name, string_size,
-                &target_type_name_length, nullptr, nullptr);
-            RETURN_OK_IF_FAILED(hr);
-
-          compare_type_and_method_names:
-            // if the target matches by type name and method name
-            if (method_replacement.target_method.type_name ==
-                    target_type_name &&
-                method_replacement.target_method.method_name ==
-                    target_method_name) {
-              // replace with a call to the instrumentation wrapper
-              pInstr->m_opcode = CEE_CALL;
-              pInstr->m_Arg32 = wrapper_method_ref;
-
-              modified = true;
-            }
-          }
-        }
-
-        if (modified) {
-          hr = rewriter.Export();
-          return S_OK;
-        }
+        LOG_APPEND(L"JITCompilationStarted() replaced calls from "
+                   << caller.type.name << "." << caller.name << "() to "
+                   << method_replacement.target_method.type_name << "."
+                   << method_replacement.target_method.method_name
+                   << "() " << HEX(original_argument) << " with calls to "
+                   << method_replacement.wrapper_method.type_name << "."
+                   << method_replacement.wrapper_method.method_name << "() " << HEX(wrapper_method_ref) << ".");
       }
     }
   }
 
+  if (modified) {
+    hr = rewriter.Export();
+    RETURN_OK_IF_FAILED(hr);
+  }
+
   return S_OK;
-}
+}  // namespace trace
 
 bool CorProfiler::IsAttached() const { return is_attached_; }
 

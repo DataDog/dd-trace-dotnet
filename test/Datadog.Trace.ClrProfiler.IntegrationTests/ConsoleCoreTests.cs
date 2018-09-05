@@ -33,14 +33,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var runtimeIdentifier = BuildParameters.CoreClr ? string.Empty : $"{os}-{platform}";
 
-            string basePath = Path.GetFullPath(@"..\..\..\..\..\..");
+            string[] pathParts = Environment.CurrentDirectory.ToLowerInvariant().Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            int directoryDepth = pathParts.Length - pathParts.ToList().IndexOf("test");
+            string relativeBasePath = string.Join("\\", Enumerable.Repeat("..", directoryDepth));
+            string absoluteBasePath = Path.GetFullPath(relativeBasePath);
 
             // get path to native profiler dll
-            string profilerDllPath = $@"{basePath}\src\Datadog.Trace.ClrProfiler.Native\bin\{BuildParameters.Configuration}\{platform}\Datadog.Trace.ClrProfiler.Native.dll";
+            string profilerDllPath = $@"{absoluteBasePath}\src\Datadog.Trace.ClrProfiler.Native\bin\{BuildParameters.Configuration}\{platform}\Datadog.Trace.ClrProfiler.Native.dll";
             Assert.True(File.Exists(profilerDllPath), $"Profiler DLL not found at {profilerDllPath}");
 
             // get path to sample app that the profiler will attach to
-            string appBasePath = $@"{basePath}\samples\Samples.ConsoleCore\bin\{platform}\{BuildParameters.Configuration}\{BuildParameters.TargetFramework}\{runtimeIdentifier}";
+            string appBasePath = $@"{absoluteBasePath}\samples\Samples.ConsoleCore\bin\{platform}\{BuildParameters.Configuration}\{BuildParameters.TargetFramework}\{runtimeIdentifier}";
             string appFileName = BuildParameters.CoreClr ? $@"{appBasePath}\Samples.ConsoleCore.dll" : $@"{appBasePath}\Samples.ConsoleCore.exe";
             string appPath = Path.Combine(appBasePath, appFileName);
             Assert.True(File.Exists(appPath), $"Application not found at {appPath}");
@@ -51,6 +54,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string standardOutput;
             string standardError;
             int exitCode;
+
+            _output.WriteLine($"Platform: {platform}");
+            _output.WriteLine($"Configuration: {BuildParameters.Configuration}");
+            _output.WriteLine($"TargetFramework: {BuildParameters.TargetFramework}");
+            _output.WriteLine($".NET Core: {BuildParameters.CoreClr}");
+            _output.WriteLine($"Application: {appPath}");
+            _output.WriteLine($"Profiler DLL: {profilerDllPath}");
 
             using (Process process = ProfilerHelper.StartProcessWithProfiler(
                 appPath,
@@ -65,10 +75,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 exitCode = process.ExitCode;
             }
 
-            if (!string.IsNullOrWhiteSpace(standardError))
-            {
-                _output.WriteLine(standardError);
-            }
+            _output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            _output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
 
             Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
 

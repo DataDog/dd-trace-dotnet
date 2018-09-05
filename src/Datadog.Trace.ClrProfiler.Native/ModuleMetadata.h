@@ -3,7 +3,10 @@
 #include <corhlpr.h>
 #include <unordered_map>
 #include "ComPtr.h"
-#include "Integration.h"
+#include "clr_helpers.h"
+#include "integration.h"
+
+namespace trace {
 
 class ModuleMetadata {
  private:
@@ -13,11 +16,11 @@ class ModuleMetadata {
  public:
   const ComPtr<IMetaDataImport> metadata_import{};
   std::wstring assemblyName = L"";
-  std::vector<integration> integrations = {};
+  std::vector<Integration> integrations = {};
 
   ModuleMetadata(ComPtr<IMetaDataImport> metadata_import,
                  std::wstring assembly_name,
-                 std::vector<integration> integrations)
+                 std::vector<Integration> integrations)
       : metadata_import(std::move(metadata_import)),
         assemblyName(std::move(assembly_name)),
         integrations(std::move(integrations)) {}
@@ -55,4 +58,22 @@ class ModuleMetadata {
                                const mdTypeRef valueIn) {
     wrapper_parent_type[keyIn] = valueIn;
   }
+
+  inline std::vector<MethodReplacement> GetMethodReplacementsForCaller(
+      const trace::FunctionInfo& caller) {
+    std::vector<MethodReplacement> enabled;
+    for (auto& i : integrations) {
+      for (auto& mr : i.method_replacements) {
+        if ((mr.caller_method.type_name.empty() ||
+             mr.caller_method.type_name == caller.type.name) &&
+            (mr.caller_method.method_name.empty() ||
+             mr.caller_method.method_name == caller.name)) {
+          enabled.push_back(mr);
+        }
+      }
+    }
+    return enabled;
+  }
 };
+
+}  // namespace trace
