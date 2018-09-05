@@ -61,6 +61,8 @@ class EnumeratorIterator {
       if (status_ == S_OK && sz_ == 0) {
         status_ = S_FALSE;
       }
+    } else {
+      status_ = status;
     }
   }
 
@@ -72,7 +74,7 @@ class EnumeratorIterator {
   inline T const& operator*() const { return arr_[idx_]; }
 
   inline EnumeratorIterator<T>& operator++() {
-    if (idx_ < sz_) {
+    if (idx_ < sz_ - 1) {
       idx_++;
     } else {
       idx_ = 0;
