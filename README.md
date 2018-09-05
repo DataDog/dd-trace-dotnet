@@ -14,6 +14,13 @@ This repository contains what you need to trace .NET applications. Some quick no
 - Supports .NET Core 2.0 or newer
 - Multiple AppDomains are not supported
 
+## Build Status
+
+OS|Features|Status
+--|--|--
+Windows|manual instrumentation (NuGet), automatic instrumentation (MSI)|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=1)
+Linux|manual instrumentation (NuGet)|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=2)
+
 ## The Components
 
 
@@ -35,7 +42,7 @@ In order to build and run all the projects and tests included in this repo you n
 
 Some tests require you to have [Docker for Windows](https://docs.docker.com/docker-for-windows/) on your machine or to manually install the required dependencies.
 
-#### Unix
+#### Linux
 
 Make sure you have installed:
 - [.NET Core SDK](https://www.microsoft.com/net/download) (2.0 or newer)
