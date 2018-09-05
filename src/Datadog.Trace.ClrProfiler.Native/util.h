@@ -30,6 +30,9 @@ std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name);
 // GetCurrentProcessName gets the current process file name.
 std::wstring GetCurrentProcessName();
 
+// StringData returns a pointer to the underlying string data.
+wchar_t *StringData(const std::wstring &str);
+
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_UTIL_H_

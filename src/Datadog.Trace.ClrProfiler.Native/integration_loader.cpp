@@ -43,8 +43,8 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
 
     for (auto& el : j) {
       auto i = IntegrationFromJson(el);
-      if (i.has_value()) {
-        integrations.push_back(i.value());
+      if (i.second) {
+        integrations.push_back(i.first);
       }
     }
 
@@ -62,7 +62,7 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
 
 namespace {
 
-std::optional<Integration> IntegrationFromJson(const json::value_type& src) {
+std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src) {
   if (!src.is_object()) {
     return {};
   }
@@ -81,15 +81,15 @@ std::optional<Integration> IntegrationFromJson(const json::value_type& src) {
   if (arr.is_array()) {
     for (auto& el : arr) {
       auto mr = MethodReplacementFromJson(el);
-      if (mr.has_value()) {
-        replacements.push_back(mr.value());
+      if (mr.second) {
+        replacements.push_back(mr.first);
       }
     }
   }
-  return Integration(name, replacements);
+  return {Integration(name, replacements), true};
 }
 
-std::optional<MethodReplacement> MethodReplacementFromJson(
+std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     const json::value_type& src) {
   if (!src.is_object()) {
     return {};
@@ -98,7 +98,7 @@ std::optional<MethodReplacement> MethodReplacementFromJson(
   auto caller = MethodReferenceFromJson(src.value("caller", json::object()));
   auto target = MethodReferenceFromJson(src.value("target", json::object()));
   auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
-  return MethodReplacement(caller, target, wrapper);
+  return {MethodReplacement(caller, target, wrapper), true};
 }
 
 MethodReference MethodReferenceFromJson(const json::value_type& src) {
