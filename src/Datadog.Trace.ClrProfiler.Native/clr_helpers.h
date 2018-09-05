@@ -74,7 +74,7 @@ class EnumeratorIterator {
   inline T const& operator*() const { return arr_[idx_]; }
 
   inline EnumeratorIterator<T>& operator++() {
-    if (idx_ < sz_) {
+    if (idx_ < sz_ - 1) {
       idx_++;
     } else {
       idx_ = 0;
