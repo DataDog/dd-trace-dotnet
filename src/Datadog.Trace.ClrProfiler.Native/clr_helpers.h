@@ -233,16 +233,16 @@ std::wstring GetAssemblyName(
     const mdAssemblyRef& assembly_ref);
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
-                             const mdToken& function_id);
+                             const mdToken& token);
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id);
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
-                     const mdToken& type_id);
+                     const mdToken& token);
 
 mdAssemblyRef FindAssemblyRef(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-    const std::wstring& name);
+    const std::wstring& assembly_name);
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
