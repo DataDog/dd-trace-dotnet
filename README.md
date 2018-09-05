@@ -16,10 +16,10 @@ This repository contains what you need to trace .NET applications. Some quick no
 
 ## Build Status
 
-Platform|Status
+OS|Status
 --------|------
-Windows (manual and automatic instrumentation)|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=1)
-Linux (manual instrumentation only for now)|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=2)
+Windows|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=1)
+Linux|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=2)
 
 ## The Components
 
