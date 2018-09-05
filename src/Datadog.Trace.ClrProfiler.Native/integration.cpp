@@ -62,7 +62,7 @@ std::wstring GetLocaleFromAssemblyReferenceString(const std::wstring& str) {
 }
 
 PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& str) {
-  uint8_t data[8] = {0};
+  BYTE data[8] = {0};
 
   static auto re = std::wregex(L"PublicKeyToken=([a-fA-F0-9]{16})");
   std::wsmatch match;
@@ -71,7 +71,7 @@ PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& str) {
       auto s = match.str(1).substr(i * 2, 2);
       unsigned long x;
       std::wstringstream(s) >> std::hex >> x;
-      data[i] = uint8_t(x);
+      data[i] = BYTE(x);
     }
   }
 

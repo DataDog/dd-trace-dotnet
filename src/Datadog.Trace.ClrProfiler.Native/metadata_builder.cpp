@@ -52,6 +52,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
   }
 
   HRESULT hr;
+  type_ref = mdTypeRefNil;
 
   const LPCWSTR wrapper_type_name =
       method_replacement.wrapper_method.type_name.c_str();
@@ -68,9 +69,6 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
         assembly_import_, method_replacement.wrapper_method.assembly.name);
     if (assembly_ref == mdAssemblyRefNil) {
       // TODO: emit assembly reference if not found?
-      LOG_APPEND(L"missing reference to assembly: "
-                 << method_replacement.wrapper_method.assembly.name);
-      type_ref_out = type_ref;
       return S_FALSE;
     }
 

@@ -13,10 +13,10 @@ const size_t kPublicKeySize = 8;
 // PublicKey represents an Assembly Public Key token, which is an 8 byte binary
 // RSA key.
 struct PublicKey {
-  const uint8_t data[kPublicKeySize];
+  const BYTE data[kPublicKeySize];
 
   PublicKey() : data{0} {}
-  PublicKey(const uint8_t (&arr)[kPublicKeySize])
+  PublicKey(const BYTE (&arr)[kPublicKeySize])
       : data{arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7]} {}
 
   inline bool operator==(const PublicKey& other) const {
@@ -92,10 +92,10 @@ struct AssemblyReference {
 // [calling convention, number of parameters, return type, parameter type...]
 struct MethodSignature {
  public:
-  const std::vector<uint8_t> data;
+  const std::vector<BYTE> data;
 
   MethodSignature() {}
-  MethodSignature(const std::vector<uint8_t>& data) : data(data) {}
+  MethodSignature(const std::vector<BYTE>& data) : data(data) {}
 
   inline bool operator==(const MethodSignature& other) const {
     return data == other.data;
@@ -112,7 +112,7 @@ struct MethodReference {
 
   MethodReference(const std::wstring& assembly_name, std::wstring type_name,
                   std::wstring method_name,
-                  const std::vector<uint8_t>& method_signature)
+                  const std::vector<BYTE>& method_signature)
       : assembly(assembly_name),
         type_name(std::move(type_name)),
         method_name(std::move(method_name)),
