@@ -4,6 +4,7 @@
 #include <corhlpr.h>
 #include <corprof.h>
 #include <functional>
+#include <utility>
 
 #include "com_ptr.h"
 #include "integration.h"
@@ -24,10 +25,16 @@ class Enumerator {
   mutable HCORENUM ptr_;
 
  public:
-  Enumerator(
-      const std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)>& callback,
-      const std::function<void(HCORENUM)> close)
-      : callback_(callback), close_(close), ptr_(NULL) {}
+  Enumerator(std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback,
+             std::function<void(HCORENUM)> close);
+
+  Enumerator(const Enumerator& other) = default;
+
+  Enumerator(Enumerator&& other) noexcept = default;
+
+  Enumerator& operator=(const Enumerator& other) = default;
+
+  Enumerator& operator=(Enumerator&& other) noexcept = default;
 
   ~Enumerator() { close_(ptr_); }
 
