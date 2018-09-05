@@ -17,6 +17,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
             metadata_builder.cpp
             util.cpp
 )
+set_property(TARGET "Datadog.Trace.ClrProfiler.Native.static" PROPERTY CXX_STANDARD 17)
 
 add_library("Datadog.Trace.ClrProfiler.Native.shared" SHARED
             dllmain.cpp
