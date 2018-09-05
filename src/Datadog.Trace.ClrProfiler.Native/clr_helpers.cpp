@@ -57,18 +57,23 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
   std::wstring function_name(kNameMaxSize, 0);
   DWORD function_name_len = 0;
 
+  PCCOR_SIGNATURE raw_signature;
+  ULONG raw_signature_len;
+
   HRESULT hr = -1;
   switch (TypeFromToken(token)) {
     case mdtMemberRef:
       hr = metadata_import->GetMemberRefProps(
           token, &parent_token, function_name.data(),
-          (DWORD)(function_name.size()), &function_name_len, nullptr, nullptr);
+          (DWORD)(function_name.size()), &function_name_len, &raw_signature,
+          &raw_signature_len);
       break;
     case mdtMethodDef:
       hr = metadata_import->GetMemberProps(
           token, &parent_token, function_name.data(),
-          (DWORD)(function_name.size()), &function_name_len, nullptr, nullptr,
-          nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+          (DWORD)(function_name.size()), &function_name_len, nullptr,
+          &raw_signature, &raw_signature_len, nullptr, nullptr, nullptr,
+          nullptr, nullptr);
       break;
   }
   if (FAILED(hr) || function_name_len == 0) {
@@ -76,9 +81,14 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
   }
   function_name = function_name.substr(0, function_name_len - 1);
 
+  std::vector<BYTE> signature(raw_signature_len);
+  for (ULONG i = 0; i < raw_signature_len; i++) {
+    signature[i] = raw_signature[i];
+  }
+
   // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
 
-  return {token, function_name, GetTypeInfo(metadata_import, parent_token)};
+  return {token, function_name, GetTypeInfo(metadata_import, parent_token), signature};
 }
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {

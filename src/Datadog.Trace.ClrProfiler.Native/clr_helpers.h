@@ -11,6 +11,7 @@
 namespace trace {
 
 const size_t kNameMaxSize = 1024;
+const size_t kSignatureMaxSize = 1024;
 const ULONG kEnumeratorMax = 256;
 
 template <typename T>
@@ -200,12 +201,18 @@ struct FunctionInfo {
   mdToken id;
   std::wstring name;
   TypeInfo type;
+  std::vector<BYTE> signature;
 
   FunctionInfo() : id(0), name(L""), type({}) {}
-  FunctionInfo(mdToken id, std::wstring name, TypeInfo type)
-      : id(id), name(name), type(type) {}
+  FunctionInfo(mdToken id, std::wstring name, TypeInfo type,
+               const std::vector<BYTE>& signature)
+      : id(id), name(name), type(type), signature(signature) {}
 
   inline bool IsValid() const { return id != 0; }
+
+  inline size_t NumberOfArguments() const {
+    return signature.size() > 1 ? size_t(signature[1]) : 0;
+  }
 };
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
