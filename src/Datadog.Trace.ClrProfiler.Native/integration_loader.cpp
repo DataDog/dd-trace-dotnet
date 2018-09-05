@@ -111,11 +111,11 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
   std::wstring type = converter.from_bytes(src.value("type", ""));
   std::wstring method = converter.from_bytes(src.value("method", ""));
   auto arr = src.value("signature", json::array());
-  std::vector<uint8_t> signature;
+  std::vector<BYTE> signature;
   if (arr.is_array()) {
     for (auto& el : arr) {
       if (el.is_number_unsigned()) {
-        signature.push_back(uint8_t(el.get<uint64_t>()));
+        signature.push_back(BYTE(el.get<BYTE>()));
       }
     }
   }
