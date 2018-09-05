@@ -43,8 +43,7 @@ namespace Samples.ConsoleFramework
             using (var db = new BloggingContext())
             {
                 // Create and save a new Blog
-                Console.Write("Enter a name for a new Blog: ");
-                var name = Console.ReadLine();
+                var name = "test-1";
 
                 var blog = new Blog { Name = name };
                 db.Blogs.Add(blog);
