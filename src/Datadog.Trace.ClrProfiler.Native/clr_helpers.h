@@ -88,7 +88,7 @@ class EnumeratorIterator {
 };
 
 static Enumerator<mdTypeDef> EnumTypeDefs(
-    ComPtr<IMetaDataImport> metadata_import) {
+    const ComPtr<IMetaDataImport>& metadata_import) {
   return Enumerator<mdTypeDef>(
       [metadata_import](HCORENUM* ptr, mdTypeDef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -100,7 +100,7 @@ static Enumerator<mdTypeDef> EnumTypeDefs(
 }
 
 static Enumerator<mdTypeRef> EnumTypeRefs(
-    ComPtr<IMetaDataImport> metadata_import) {
+    const ComPtr<IMetaDataImport>& metadata_import) {
   return Enumerator<mdTypeRef>(
       [metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -139,7 +139,7 @@ static Enumerator<mdMemberRef> EnumMemberRefs(
 }
 
 static Enumerator<mdModuleRef> EnumModuleRefs(
-    ComPtr<IMetaDataImport> metadata_import) {
+    const ComPtr<IMetaDataImport>& metadata_import) {
   return Enumerator<mdModuleRef>(
       [metadata_import](HCORENUM* ptr, mdModuleRef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -151,7 +151,7 @@ static Enumerator<mdModuleRef> EnumModuleRefs(
 }
 
 static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
-    ComPtr<IMetaDataAssemblyImport> assembly_import) {
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   return Enumerator<mdAssemblyRef>(
       [assembly_import](HCORENUM* ptr, mdAssemblyRef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -163,8 +163,8 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
 }
 
 struct AssemblyInfo {
-  AssemblyID id;
-  std::wstring name;
+  const AssemblyID id;
+  const std::wstring name;
 
   AssemblyInfo() : id(0), name(L"") {}
   AssemblyInfo(AssemblyID id, std::wstring name) : id(id), name(name) {}
@@ -173,10 +173,10 @@ struct AssemblyInfo {
 };
 
 struct ModuleInfo {
-  ModuleID id;
-  std::wstring path;
-  AssemblyInfo assembly;
-  DWORD flags;
+  const ModuleID id;
+  const std::wstring path;
+  const AssemblyInfo assembly;
+  const DWORD flags;
 
   ModuleInfo() : id(0), path(L""), assembly({}), flags(0) {}
   ModuleInfo(ModuleID id, std::wstring path, AssemblyInfo assembly, DWORD flags)
@@ -189,8 +189,8 @@ struct ModuleInfo {
 };
 
 struct TypeInfo {
-  mdToken id;
-  std::wstring name;
+  const mdToken id;
+  const std::wstring name;
 
   TypeInfo() : id(0), name(L"") {}
   TypeInfo(mdToken id, std::wstring name) : id(id), name(name) {}
@@ -199,9 +199,9 @@ struct TypeInfo {
 };
 
 struct FunctionInfo {
-  mdToken id;
-  std::wstring name;
-  TypeInfo type;
+  const mdToken id;
+  const std::wstring name;
+  const TypeInfo type;
 
   FunctionInfo() : id(0), name(L""), type({}) {}
   FunctionInfo(mdToken id, std::wstring name, TypeInfo type)

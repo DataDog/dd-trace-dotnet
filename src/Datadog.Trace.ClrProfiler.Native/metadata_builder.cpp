@@ -66,7 +66,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
   } else {
     // type is defined in another assembly,
     // find a reference to the assembly where type lives
-    auto assembly_ref = FindAssemblyRef(
+    const auto assembly_ref = FindAssemblyRef(
         assembly_import_, method_replacement.wrapper_method.assembly.name);
     if (assembly_ref == mdAssemblyRefNil) {
       // TODO: emit assembly reference if not found?
