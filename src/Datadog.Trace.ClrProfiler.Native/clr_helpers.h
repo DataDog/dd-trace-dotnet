@@ -26,7 +26,10 @@ class Enumerator {
 
  public:
   Enumerator(std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback,
-             std::function<void(HCORENUM)> close);
+             std::function<void(HCORENUM)> close)
+      : callback_(std::move(callback)),
+        close_(std::move(close)),
+        ptr_(nullptr) {}
 
   Enumerator(const Enumerator& other) = default;
 
