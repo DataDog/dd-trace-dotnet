@@ -14,24 +14,24 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <!-- Custom Version property for the generated installer,
-         value is set to constant ProductVersion below and
-         accessed as $(var.ProductVersion) from WiX files.
+    <!-- Custom InstallerVersion property for the generated installer,
+         value is set to build constant InstallerVersion below and
+         accessed as $(var.InstallerVersion) from WiX files.
          This is the default value is one is not specified when building. -->
-    <Version Condition="'$(Version)'==''">0.2.2</Version>
-    <OutputName>DatadogDotNetTracing-$(Version)-$(Platform)-$(Configuration)</OutputName>
+    <InstallerVersion Condition="'$(InstallerVersion)'==''">0.2.2</InstallerVersion>
+    <OutputName>DatadogDotNetTracing-$(InstallerVersion)-$(Platform)-$(Configuration)</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DefineConstants>Debug;ProductVersion=$(Version)</DefineConstants>
+    <DefineConstants>Debug;InstallerVersion=$(InstallerVersion)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <DefineConstants>ProductVersion=$(Version)</DefineConstants>
+    <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-    <DefineConstants>Debug;ProductVersion=$(Version)</DefineConstants>
+    <DefineConstants>Debug;InstallerVersion=$(InstallerVersion)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <DefineConstants>ProductVersion=$(Version)</DefineConstants>
+    <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />
