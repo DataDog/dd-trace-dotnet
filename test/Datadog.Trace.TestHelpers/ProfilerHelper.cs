@@ -37,8 +37,6 @@ namespace Datadog.Trace.TestHelpers
                 Environment.SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
                 Environment.SetEnvironmentVariable("CORECLR_PROFILER", profilerClsid);
                 Environment.SetEnvironmentVariable("CORECLR_PROFILER_PATH", profilerDllPath);
-                Environment.SetEnvironmentVariable("CORECLR_PROFILER_PATH_32", profilerDllPath);
-                Environment.SetEnvironmentVariable("CORECLR_PROFILER_PATH_64", profilerDllPath);
 
                 startInfo = new ProcessStartInfo("dotnet", appPath);
             }
@@ -48,8 +46,6 @@ namespace Datadog.Trace.TestHelpers
                 Environment.SetEnvironmentVariable("COR_ENABLE_PROFILING", "1");
                 Environment.SetEnvironmentVariable("COR_PROFILER", profilerClsid);
                 Environment.SetEnvironmentVariable("COR_PROFILER_PATH", profilerDllPath);
-                Environment.SetEnvironmentVariable("COR_PROFILER_PATH_32", profilerDllPath);
-                Environment.SetEnvironmentVariable("COR_PROFILER_PATH_64", profilerDllPath);
 
                 startInfo = new ProcessStartInfo(appPath);
             }
