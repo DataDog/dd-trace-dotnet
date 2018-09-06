@@ -42,7 +42,7 @@ std::wstring GetAssemblyName(
   DWORD name_len = 0;
   ASSEMBLYMETADATA assembly_metadata{};
   DWORD assembly_flags = 0;
-  auto hr = assembly_import->GetAssemblyRefProps(
+  const auto hr = assembly_import->GetAssemblyRefProps(
       assembly_ref, nullptr, nullptr, name.data(), (DWORD)(name.size()),
       &name_len, &assembly_metadata, nullptr, nullptr, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
@@ -97,7 +97,7 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
   LPCBYTE base_load_address;
   AssemblyID assembly_id = 0;
   DWORD module_flags = 0;
-  HRESULT hr = info->GetModuleInfo2(
+  const HRESULT hr = info->GetModuleInfo2(
       module_id, &base_load_address, (DWORD)(module_path.size()),
       &module_path_len, module_path.data(), &assembly_id, &module_flags);
   if (FAILED(hr) || module_path_len == 0) {
@@ -113,8 +113,8 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
   std::wstring type_name(kNameMaxSize, 0);
   DWORD type_name_len = 0;
 
-  HRESULT hr = -1;
-  auto token_type = TypeFromToken(token);
+  HRESULT hr = E_FAIL;
+  const auto token_type = TypeFromToken(token);
   switch (token_type) {
     case mdtTypeDef:
       hr = metadata_import->GetTypeDefProps(token, type_name.data(),
@@ -186,7 +186,7 @@ std::vector<Integration> FilterIntegrationsByTarget(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   std::vector<Integration> enabled;
 
-  auto assembly_name = GetAssemblyName(assembly_import);
+  const auto assembly_name = GetAssemblyName(assembly_import);
 
   for (auto& i : integrations) {
     bool found = false;

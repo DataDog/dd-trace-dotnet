@@ -4,6 +4,7 @@
 #include <corhlpr.h>
 #include <corprof.h>
 #include <functional>
+#include <utility>
 
 #include "com_ptr.h"
 #include "integration.h"
@@ -25,10 +26,19 @@ class Enumerator {
   mutable HCORENUM ptr_;
 
  public:
-  Enumerator(
-      const std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)>& callback,
-      const std::function<void(HCORENUM)> close)
-      : callback_(callback), close_(close), ptr_(NULL) {}
+  Enumerator(std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback,
+             std::function<void(HCORENUM)> close)
+      : callback_(std::move(callback)),
+        close_(std::move(close)),
+        ptr_(nullptr) {}
+
+  Enumerator(const Enumerator& other) = default;
+
+  Enumerator(Enumerator&& other) noexcept = default;
+
+  Enumerator& operator=(const Enumerator& other) = default;
+
+  Enumerator& operator=(Enumerator&& other) noexcept = default;
 
   ~Enumerator() { close_(ptr_); }
 
@@ -49,31 +59,33 @@ template <typename T>
 class EnumeratorIterator {
  private:
   const Enumerator<T>* enumerator_;
-  HRESULT status_;
-  T arr_[kEnumeratorMax];
-  ULONG idx_;
-  ULONG sz_;
+  HRESULT status_ = S_FALSE;
+  T arr_[kEnumeratorMax]{};
+  ULONG idx_ = 0;
+  ULONG sz_ = 0;
 
  public:
   EnumeratorIterator(const Enumerator<T>* enumerator, HRESULT status)
-      : enumerator_(enumerator), idx_(0) {
+      : enumerator_(enumerator) {
     if (status == S_OK) {
       status_ = enumerator_->Next(arr_, kEnumeratorMax, &sz_);
       if (status_ == S_OK && sz_ == 0) {
         status_ = S_FALSE;
       }
+    } else {
+      status_ = status;
     }
   }
 
-  inline bool operator!=(EnumeratorIterator const& other) const {
+  bool operator!=(EnumeratorIterator const& other) const {
     return enumerator_ != other.enumerator_ ||
            (status_ == S_OK) != (other.status_ == S_OK);
   }
 
-  inline T const& operator*() const { return arr_[idx_]; }
+  T const& operator*() const { return arr_[idx_]; }
 
-  inline EnumeratorIterator<T>& operator++() {
-    if (idx_ < sz_) {
+  EnumeratorIterator<T>& operator++() {
+    if (idx_ < sz_ - 1) {
       idx_++;
     } else {
       idx_ = 0;
@@ -87,7 +99,7 @@ class EnumeratorIterator {
 };
 
 static Enumerator<mdTypeDef> EnumTypeDefs(
-    ComPtr<IMetaDataImport> metadata_import) {
+    const ComPtr<IMetaDataImport>& metadata_import) {
   return Enumerator<mdTypeDef>(
       [metadata_import](HCORENUM* ptr, mdTypeDef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -99,7 +111,7 @@ static Enumerator<mdTypeDef> EnumTypeDefs(
 }
 
 static Enumerator<mdTypeRef> EnumTypeRefs(
-    ComPtr<IMetaDataImport> metadata_import) {
+    const ComPtr<IMetaDataImport>& metadata_import) {
   return Enumerator<mdTypeRef>(
       [metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -138,7 +150,7 @@ static Enumerator<mdMemberRef> EnumMemberRefs(
 }
 
 static Enumerator<mdModuleRef> EnumModuleRefs(
-    ComPtr<IMetaDataImport> metadata_import) {
+    const ComPtr<IMetaDataImport>& metadata_import) {
   return Enumerator<mdModuleRef>(
       [metadata_import](HCORENUM* ptr, mdModuleRef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -150,7 +162,7 @@ static Enumerator<mdModuleRef> EnumModuleRefs(
 }
 
 static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
-    ComPtr<IMetaDataAssemblyImport> assembly_import) {
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   return Enumerator<mdAssemblyRef>(
       [assembly_import](HCORENUM* ptr, mdAssemblyRef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -162,57 +174,56 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
 }
 
 struct AssemblyInfo {
-  AssemblyID id;
-  std::wstring name;
+  const AssemblyID id;
+  const std::wstring name;
 
   AssemblyInfo() : id(0), name(L"") {}
-  AssemblyInfo(AssemblyID id, std::wstring name) : id(id), name(name) {}
+  AssemblyInfo(AssemblyID id, std::wstring name)
+      : id(id), name(std::move(name)) {}
 
-  inline bool is_valid() const { return id != 0; }
+  bool is_valid() const { return id != 0; }
 };
 
 struct ModuleInfo {
-  ModuleID id;
-  std::wstring path;
-  AssemblyInfo assembly;
-  DWORD flags;
+  const ModuleID id;
+  const std::wstring path;
+  const AssemblyInfo assembly;
+  const DWORD flags;
 
   ModuleInfo() : id(0), path(L""), assembly({}), flags(0) {}
   ModuleInfo(ModuleID id, std::wstring path, AssemblyInfo assembly, DWORD flags)
-      : id(id), path(path), assembly(assembly), flags(flags) {}
+      : id(id),
+        path(std::move(path)),
+        assembly(std::move(assembly)),
+        flags(flags) {}
 
-  inline bool IsValid() const { return id != 0; }
-  inline bool IsWindowsRuntime() const {
+  bool IsValid() const { return id != 0; }
+
+  bool IsWindowsRuntime() const {
     return ((flags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0);
   }
 };
 
 struct TypeInfo {
-  mdToken id;
-  std::wstring name;
+  const mdToken id;
+  const std::wstring name;
 
   TypeInfo() : id(0), name(L"") {}
-  TypeInfo(mdToken id, std::wstring name) : id(id), name(name) {}
+  TypeInfo(mdToken id, std::wstring name) : id(id), name(std::move(name)) {}
 
-  inline bool IsValid() const { return id != 0; }
+  bool IsValid() const { return id != 0; }
 };
 
 struct FunctionInfo {
-  mdToken id;
-  std::wstring name;
-  TypeInfo type;
-  std::vector<BYTE> signature;
+  const mdToken id;
+  const std::wstring name;
+  const TypeInfo type;
 
   FunctionInfo() : id(0), name(L""), type({}) {}
-  FunctionInfo(mdToken id, std::wstring name, TypeInfo type,
-               const std::vector<BYTE>& signature)
-      : id(id), name(name), type(type), signature(signature) {}
+  FunctionInfo(mdToken id, std::wstring name, TypeInfo type)
+      : id(id), name(std::move(name)), type(std::move(type)) {}
 
-  inline bool IsValid() const { return id != 0; }
-
-  inline size_t NumberOfArguments() const {
-    return signature.size() > 1 ? size_t(signature[1]) : 0;
-  }
+  bool IsValid() const { return id != 0; }
 };
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
@@ -226,16 +237,16 @@ std::wstring GetAssemblyName(
     const mdAssemblyRef& assembly_ref);
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
-                             const mdToken& function_id);
+                             const mdToken& token);
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id);
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
-                     const mdToken& type_id);
+                     const mdToken& token);
 
 mdAssemblyRef FindAssemblyRef(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-    const std::wstring& name);
+    const std::wstring& assembly_name);
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module

@@ -40,8 +40,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>bin\$(Configuration)\x86\</OutDir>
     <IntDir>obj\$(Configuration)\x86\</IntDir>
-    <LibraryPath>$(SolutionDir)src\Datadog.Trace.ClrProfiler.Native\$(Platform)$(Configuration);$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)src\Datadog.Trace.ClrProfiler.Native;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>bin\$(Configuration)\x86\</OutDir>
