@@ -28,7 +28,9 @@ namespace Datadog.Trace.TestHelpers
                 throw new ArgumentNullException(nameof(profilerClsid));
             }
 
-            // TODO: use "CorFlags MyAssembly.exe /32BIT+" to force 32/64 bit process?
+            // clear all relevant environment variables to start with a clean slate
+            ClearProfilerEnvironmentVariables();
+
             ProcessStartInfo startInfo;
 
             if (coreClr)
@@ -38,7 +40,7 @@ namespace Datadog.Trace.TestHelpers
                 Environment.SetEnvironmentVariable("CORECLR_PROFILER", profilerClsid);
                 Environment.SetEnvironmentVariable("CORECLR_PROFILER_PATH", profilerDllPath);
 
-                startInfo = new ProcessStartInfo("dotnet", appPath);
+                startInfo = new ProcessStartInfo("dotnet.exe", appPath);
             }
             else
             {
@@ -52,15 +54,39 @@ namespace Datadog.Trace.TestHelpers
 
             Environment.SetEnvironmentVariable("DATADOG_INTEGRATIONS", string.Join(";", integrationPaths));
 
-            // clear this one
-            Environment.SetEnvironmentVariable("DATADOG_PROFILER_PROCESSES", null);
-
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
 
             return Process.Start(startInfo);
+        }
+
+        public static void ClearProfilerEnvironmentVariables()
+        {
+            var environmentVariables = new[]
+                                       {
+                                           // .NET Core
+                                           "CORECLR_ENABLE_PROFILING",
+                                           "CORECLR_PROFILER",
+                                           "CORECLR_PROFILER_PATH",
+                                           "CORECLR_PROFILER_PATH_32",
+                                           "CORECLR_PROFILER_PATH_64",
+
+                                           // .NET Framework
+                                           "COR_ENABLE_PROFILING",
+                                           "COR_PROFILER",
+                                           "COR_PROFILER_PATH",
+
+                                           // Datadog
+                                           "DATADOG_PROFILER_PROCESSES",
+                                           "DATADOG_INTEGRATIONS",
+                                       };
+
+            foreach (string variable in environmentVariables)
+            {
+                Environment.SetEnvironmentVariable(variable, null);
+            }
         }
     }
 }
