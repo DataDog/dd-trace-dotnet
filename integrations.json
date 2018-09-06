@@ -14,7 +14,7 @@
           "signature":  [0, 4, 28, 28, 28, 28, 28]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
           "method": "BeforeAction",
           "signature": [ 0, 4, 28, 28, 28, 28, 28 ]
@@ -32,7 +32,7 @@
           "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
           "method": "AfterAction",
           "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
@@ -54,7 +54,7 @@
           "signature": [ 0, 5, 28, 28, 28, 28, 28, 28 ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration",
           "method": "BeginInvokeAction",
           "signature": [ 0, 5, 28, 28, 28, 28, 28, 28 ]
@@ -71,7 +71,7 @@
           "signature": [ 0, 2, 2, 28, 28 ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration",
           "method": "EndInvokeAction",
           "signature": [ 0, 2, 2, 28, 28 ]

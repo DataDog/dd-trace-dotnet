@@ -4,7 +4,7 @@ $args = @(
     "-out", "output\",
     "-arch", "x64",
     "-dPlatform=x64",
-    "-dProductVersion=0.2.0",
+    "-dProductVersion=0.2.2",
     "-dConfiguration=Release",
     "-ext", "WixUIExtension"
 )
