@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class SqlServerTests : TestHelper
     {
         [Fact]
+        [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
             using (var agent = new MockTracerAgent())
