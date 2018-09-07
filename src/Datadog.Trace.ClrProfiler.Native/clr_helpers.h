@@ -12,7 +12,6 @@
 namespace trace {
 
 const size_t kNameMaxSize = 1024;
-const size_t kSignatureMaxSize = 1024;
 const ULONG kEnumeratorMax = 256;
 
 template <typename T>

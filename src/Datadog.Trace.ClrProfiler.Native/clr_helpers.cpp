@@ -60,7 +60,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
   PCCOR_SIGNATURE raw_signature;
   ULONG raw_signature_len;
 
-  HRESULT hr = -1;
+  HRESULT hr = E_FAIL;
   switch (TypeFromToken(token)) {
     case mdtMemberRef:
       hr = metadata_import->GetMemberRefProps(
