@@ -147,18 +147,16 @@ namespace Datadog.Trace
 
         private static Uri DefaultAgentUri()
         {
-            var prefixes = new string[] { "DATADOG", "DD" };
+            var prefixes = new string[] { "DD", "DATADOG" };
 
             var host = prefixes.
                 Select(prefix => Environment.GetEnvironmentVariable($"{prefix}_TRACE_AGENT_HOSTNAME")).
-                Concat(new string[] { _defaultTraceAgentHost }).
                 Where(str => !string.IsNullOrEmpty(str)).
-                First();
+                FirstOrDefault() ?? _defaultTraceAgentHost;
             var port = prefixes.
                 Select(prefix => Environment.GetEnvironmentVariable($"{prefix}_TRACE_AGENT_PORT")).
-                Concat(new string[] { _defaultTraceAgentPort }).
                 Where(str => !string.IsNullOrEmpty(str)).
-                First();
+                FirstOrDefault() ?? _defaultTraceAgentPort;
 
             return new Uri($"http://{host}:{port}");
         }
