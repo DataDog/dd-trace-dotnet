@@ -1,9 +1,15 @@
-version: "3"
-
-services:
-  sqlserver-express:
-    image: microsoft/mssql-server-windows-express:2017-CU1
+ddagent:
+    image: datadog/docker-dd-agent
     environment:
-      SA_PASSWORD: "Password!123"
-      ACCEPT_EULA: "Y"
+        - DD_BIND_HOST=0.0.0.0
+        - DD_API_KEY=invalid_key_but_this_is_fine
+    ports:
+        - "127.0.0.1:8126:8126"
 
+sqlserver:
+    image: microsoft/mssql-server-linux:2017-CU3
+    environment:
+        - ACCEPT_EULA=Y
+        - SA_PASSWORD=password!123
+    ports:
+        - "127.0.0.1:1433:1433"
