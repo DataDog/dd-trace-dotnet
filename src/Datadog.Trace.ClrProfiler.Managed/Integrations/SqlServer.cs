@@ -34,7 +34,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // - row count is not supported so we don't set it
                 scope.Span.ResourceName = @this.CommandText;
                 scope.Span.Type = SpanTypes.Sql;
-                scope.Span.SetTag(Tags.SqlQuery, @this.CommandText);
                 scope.Span.SetTag(Tags.SqlDatabase, @this.Connection.ConnectionString);
 
                 dynamic result;

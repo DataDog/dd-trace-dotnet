@@ -40,28 +40,6 @@ namespace Samples.ConsoleFramework
             dictionary.Add("AddResult", addResult);
 
 
-            using (var db = new BloggingContext())
-            {
-                // Create and save a new Blog
-                var name = "test-1";
-
-                var blog = new Blog { Name = name };
-                db.Blogs.Add(blog);
-                db.SaveChanges();
-
-                // Display all Blogs from the database
-                var query = from b in db.Blogs
-                            orderby b.Name
-                            select b;
-
-                Console.WriteLine("All blogs in the database:");
-                foreach (var item in query)
-                {
-                    Console.WriteLine(item.Name);
-                }
-            }
-
-
             return dictionary;
         }
     }

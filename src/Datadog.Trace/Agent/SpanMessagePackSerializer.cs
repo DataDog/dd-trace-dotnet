@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Datadog.Trace.ExtensionMethods;
 using MsgPack;
 using MsgPack.Serialization;

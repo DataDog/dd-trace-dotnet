@@ -87,7 +87,7 @@
           "signature": [ 32, 2, 12, 82, 8, 11, 82, 91, 14 ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
           "method": "ExecuteReader",
           "signature": [ 0, 3, 28, 28, 8, 14 ]
