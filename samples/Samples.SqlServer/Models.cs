@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
-using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace Samples.SqlServer
 {
@@ -27,5 +26,11 @@ namespace Samples.SqlServer
     {
         public DbSet<Blog> Blogs { get; set; }
         public DbSet<Post> Posts { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // use LocalDB for ease of use
+            optionsBuilder.UseSqlServer(@"Server=(localdb)\MSSQLLocalDB;Database=BlogDatabase;Integrated Security=true");
+        }
     }
 }
