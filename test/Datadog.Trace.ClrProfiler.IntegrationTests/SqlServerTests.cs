@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using MessagePack;
 using Xunit;
+
+// EFCore targets netstandard2.0, so it requires net461 or higher or netcoreapp2.0 or higher
+#if !NET452
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -34,3 +30,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
+
+#endif
