@@ -8,3 +8,8 @@ services:
       SA_PASSWORD: Password1
     ports:
     - "1433:1433"
+
+networks:
+  default:
+    external:
+      name: nat
