@@ -65,9 +65,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static Process StartSample(string name)
         {
             // get path to native profiler dll
-            if (!File.Exists(GetProfilerDllPath()))
+            string profilerDllPath = GetProfilerDllPath();
+            if (!File.Exists(profilerDllPath))
             {
-                throw new Exception($"profiler not found: {GetProfilerDllPath()}");
+                throw new Exception($"profiler not found: {profilerDllPath}");
             }
 
             // get path to sample app that the profiler will attach to
@@ -85,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 BuildParameters.CoreClr,
                 integrationPaths,
                 Instrumentation.ProfilerClsid,
-                GetProfilerDllPath());
+                profilerDllPath);
         }
     }
 }
