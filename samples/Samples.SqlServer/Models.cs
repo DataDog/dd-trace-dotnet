@@ -25,6 +25,9 @@ namespace Samples.SqlServer
 
     public class BloggingContext : DbContext
     {
+        public BloggingContext() : base() { }
+        public BloggingContext(string nameOrConnectionString) : base(nameOrConnectionString) { }
+
         public DbSet<Blog> Blogs { get; set; }
         public DbSet<Post> Posts { get; set; }
     }

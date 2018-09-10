@@ -7,7 +7,7 @@ namespace Samples.SqlServer
     {
         static void Main(string[] args)
         {
-            using (var db = new BloggingContext())
+            using (var db = GetConnection())
             {
                 var name = "test";
 
@@ -29,6 +29,20 @@ namespace Samples.SqlServer
                 {
                     Console.WriteLine(item.Name);
                 }
+            }
+        }
+
+        private static BloggingContext GetConnection()
+        {
+            var cs = Environment.GetEnvironmentVariable("CONNECTION_STRING");
+            if (string.IsNullOrEmpty(cs))
+            {
+                Console.WriteLine("using default database");
+                return new BloggingContext();
+            } else
+            {
+                Console.WriteLine($"using datatabase: {cs}");
+                return new BloggingContext(cs);
             }
         }
     }

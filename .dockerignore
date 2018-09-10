@@ -9,14 +9,6 @@ packages/
 lib/coreclr/tests/**/*
 lib/coreclr/tests
 
-**/bin/
-**/bin/**/*
-**/obj/
-**/obj/**/*
-
-**/*.exe
-**/*.dll
-**/*.pdb
 **/*.dockerfile
 *.dockerfile
 **/Dockerfile
