@@ -2,18 +2,9 @@ version: "3"
 
 services:
   sql-server:
-    image: microsoft/mssql-server-windows-express:1709
+    image: microsoft/mssql-server-linux:2017-latest
     environment:
       ACCEPT_EULA: Y
       SA_PASSWORD: Password1
-
-  clr-profiler-integration-tests:
-    image: clr-profiler-integration-tests
-    build:
-      context: .
-      dockerfile: docker/Datadog.Trace.ClrProfiler.IntegrationTests.dockerfile
-    environment:
-      CONNECTION_STRING: "Data Source=.\\SQLEXPRESS;Initial Catalog=DatabaseName;Integrated Security=False;MultipleActiveResultSets=True;User Id=sa;Password=Password1"
-    depends_on:
-    - sql-server
-
+    ports:
+    - "1433:1433"
