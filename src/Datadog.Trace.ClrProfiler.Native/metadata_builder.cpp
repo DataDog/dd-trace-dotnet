@@ -14,8 +14,14 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   assembly_metadata.usMinorVersion = assembly_ref.version.minor;
   assembly_metadata.usBuildNumber = assembly_ref.version.build;
   assembly_metadata.usRevisionNumber = assembly_ref.version.revision;
-  assembly_metadata.szLocale = const_cast<wchar_t*>(assembly_ref.locale.data());
-  assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
+  if (assembly_ref.locale == L"neutral") {
+    assembly_metadata.szLocale = nullptr;
+    assembly_metadata.cbLocale = 0;
+  } else {
+    assembly_metadata.szLocale =
+        const_cast<wchar_t*>(assembly_ref.locale.data());
+    assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
+  }
 
   LOG_APPEND("EmitAssemblyRef " << assembly_ref.str());
 

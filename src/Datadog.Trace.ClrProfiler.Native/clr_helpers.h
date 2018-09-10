@@ -217,10 +217,15 @@ struct FunctionInfo {
   const mdToken id;
   const std::wstring name;
   const TypeInfo type;
+  const std::vector<BYTE> signature;
 
-  FunctionInfo() : id(0), name(L""), type({}) {}
-  FunctionInfo(mdToken id, std::wstring name, TypeInfo type)
-      : id(id), name(std::move(name)), type(std::move(type)) {}
+  FunctionInfo() : id(0), name(L""), type({}), signature({}) {}
+  FunctionInfo(mdToken id, std::wstring name, TypeInfo type,
+               const std::vector<BYTE>& signature)
+      : id(id),
+        name(std::move(name)),
+        type(std::move(type)),
+        signature(signature) {}
 
   bool IsValid() const { return id != 0; }
 };

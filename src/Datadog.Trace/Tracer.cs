@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using Datadog.Trace.Agent;
@@ -15,7 +16,8 @@ namespace Datadog.Trace
     {
         private const string UnknownServiceName = "UnknownService";
         private static readonly ILog _log = LogProvider.For<Tracer>();
-        private static Uri _defaultUri = new Uri("http://localhost:8126");
+        private static readonly string _defaultTraceAgentHost = "localhost";
+        private static readonly string _defaultTraceAgentPort = "8126";
 
         private AsyncLocalScopeManager _scopeManager;
         private string _defaultServiceName;
@@ -75,8 +77,7 @@ namespace Datadog.Trace
         /// <returns>The newly created tracer</returns>
         public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            agentEndpoint = agentEndpoint ?? _defaultUri;
-            return Create(agentEndpoint, defaultServiceName, null, isDebugEnabled);
+            return Create(agentEndpoint ?? DefaultAgentUri(), defaultServiceName, null, isDebugEnabled);
         }
 
         /// <summary>
@@ -142,6 +143,22 @@ namespace Datadog.Trace
             var agentWriter = new AgentWriter(api);
             var tracer = new Tracer(agentWriter, serviceName, isDebugEnabled);
             return tracer;
+        }
+
+        private static Uri DefaultAgentUri()
+        {
+            var prefixes = new string[] { "DD", "DATADOG" };
+
+            var host = prefixes.
+                Select(prefix => Environment.GetEnvironmentVariable($"{prefix}_TRACE_AGENT_HOSTNAME")).
+                Where(str => !string.IsNullOrEmpty(str)).
+                FirstOrDefault() ?? _defaultTraceAgentHost;
+            var port = prefixes.
+                Select(prefix => Environment.GetEnvironmentVariable($"{prefix}_TRACE_AGENT_PORT")).
+                Where(str => !string.IsNullOrEmpty(str)).
+                FirstOrDefault() ?? _defaultTraceAgentPort;
+
+            return new Uri($"http://{host}:{port}");
         }
 
         private static string CreateDefaultServiceName()

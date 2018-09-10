@@ -6,6 +6,11 @@ namespace Datadog.Trace
     public static class SpanTypes
     {
         /// <summary>
+        /// The span type for a sql database.
+        /// </summary>
+        public const string Sql = "sql";
+
+        /// <summary>
         /// The span type for a web integration.
         /// </summary>
         public const string Web = "web";

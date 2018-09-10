@@ -238,25 +238,41 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      // if the target matches by type name and method name
-      if (method_replacement.target_method.type_name == target.type.name &&
-          method_replacement.target_method.method_name == target.name) {
-        // replace with a call to the instrumentation wrapper
-        INT32 original_argument = pInstr->m_Arg32;
-        pInstr->m_opcode = CEE_CALL;
-        pInstr->m_Arg32 = wrapper_method_ref;
-
-        modified = true;
-
-        LOG_APPEND(L"JITCompilationStarted() replaced calls from "
-                   << caller.type.name << "." << caller.name << "() to "
-                   << method_replacement.target_method.type_name << "."
-                   << method_replacement.target_method.method_name << "() "
-                   << HEX(original_argument) << " with calls to "
-                   << method_replacement.wrapper_method.type_name << "."
-                   << method_replacement.wrapper_method.method_name << "() "
-                   << HEX(wrapper_method_ref) << ".");
+      // make sure the type and method names match
+      if (method_replacement.target_method.type_name != target.type.name ||
+          method_replacement.target_method.method_name != target.name) {
+        continue;
       }
+
+      // make sure the calling convention matches
+      if (method_replacement.target_method.method_signature.data.size() > 0 &&
+          method_replacement.target_method.method_signature.data[0] !=
+              target.signature[0]) {
+        continue;
+      }
+
+      // make sure the number of arguments match
+      if (method_replacement.target_method.method_signature.data.size() > 1 &&
+          method_replacement.target_method.method_signature.data[1] !=
+              target.signature[1]) {
+        continue;
+      }
+
+      // replace with a call to the instrumentation wrapper
+      INT32 original_argument = pInstr->m_Arg32;
+      pInstr->m_opcode = CEE_CALL;
+      pInstr->m_Arg32 = wrapper_method_ref;
+
+      modified = true;
+
+      LOG_APPEND(L"JITCompilationStarted() replaced calls from "
+                 << caller.type.name << "." << caller.name << "() to "
+                 << method_replacement.target_method.type_name << "."
+                 << method_replacement.target_method.method_name << "() "
+                 << HEX(original_argument) << " with calls to "
+                 << method_replacement.wrapper_method.type_name << "."
+                 << method_replacement.wrapper_method.method_name << "() "
+                 << HEX(wrapper_method_ref) << ".");
     }
   }
 
