@@ -21,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Fact]
-        [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1025:CodeMustNotContainMultipleWhitespaceInARow", Justification = "Reviewed.")]
         public void ProfilerAttached()
         {
             string standardOutput;
