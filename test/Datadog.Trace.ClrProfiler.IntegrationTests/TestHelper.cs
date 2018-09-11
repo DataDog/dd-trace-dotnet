@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             // get full paths to integration definitions
-            IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*.json").Select(Path.GetFullPath);
+            IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
             return ProfilerHelper.StartProcessWithProfiler(
                 sampleAppPath,
