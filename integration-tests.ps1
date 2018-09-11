@@ -11,7 +11,7 @@ try
   $name = "Datadog.Trace.ClrProfiler.IntegrationTests"
 
   foreach ($framework in $frameworks) {
-    $dll = Join-Path "test" $name "bin" $Platform $Configuration $framework "$($name).dll"
+    $dll = [io.path]::combine("test", $name, "bin", $Platform, $Configuration, $framework, "$($name).dll")
     dotnet vstest /Platform:$Platform /Logger:trx $dll
   }
 }
