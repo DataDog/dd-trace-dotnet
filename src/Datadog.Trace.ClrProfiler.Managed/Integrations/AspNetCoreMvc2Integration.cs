@@ -188,21 +188,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Action<object, object, object, object> CreateDelegate(Type type, string methodName)
         {
-            Type returnType = typeof(void);
-
-            Type[] parameterTypes =
-            {
-                typeof(object),
-                typeof(object),
-                typeof(object),
-                typeof(object),
-            };
-
-            return (Action<object, object, object, object>)DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
+            return DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
                 type,
                 methodName,
-                returnType,
-                parameterTypes,
                 false);
         }
     }
