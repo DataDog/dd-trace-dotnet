@@ -79,7 +79,10 @@
     "name": "SqlServer",
     "method_replacements": [
        {
-        "caller": {},
+        "caller": {
+          "assembly": "System.Data",
+          "type": "System.Data.SqlClient.SqlCommand"
+        },
         "target": {
           "assembly": "System.Data",
           "type": "System.Data.SqlClient.SqlCommand",
