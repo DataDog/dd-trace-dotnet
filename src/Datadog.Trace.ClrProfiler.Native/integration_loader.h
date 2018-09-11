@@ -14,12 +14,12 @@
 
 namespace trace {
 
-const std::wstring kIntegrationsEnvironmentName = L"DATADOG_INTEGRATIONS";
+const std::wstring kIntegrationsEnvironmentName = L"DD_INTEGRATIONS";
 
 using json = nlohmann::json;
 
 // LoadIntegrationsFromEnvironment loads integrations from any files specified
-// in the DATADOG_INTEGRATIONS environment variable
+// in the DD_INTEGRATIONS environment variable
 std::vector<Integration> LoadIntegrationsFromEnvironment();
 // LoadIntegrationsFromFile loads the integrations from a file
 std::vector<Integration> LoadIntegrationsFromFile(

@@ -20,7 +20,7 @@ namespace Samples.ConsoleCore
 
         private object Run()
         {
-            var prefixes = new[] { "COR_", "CORECLR_", "DATADOG_" };
+            var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
 
             var environmentVariables = from entry in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
                                        from prefix in prefixes

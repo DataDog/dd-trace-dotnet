@@ -109,8 +109,7 @@
     <ComponentGroup Id="EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
       <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
         <CreateFolder/>
-        <Environment Id="DATADOG_APM_DOTNET_HOME" Name="DATADOG_APM_DOTNET_HOME" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]" Part="all"/>        
-        <Environment Id="DATADOG_INTEGRATIONS" Name="DATADOG_INTEGRATIONS" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]\integrations.json" Part="all" />
+        <Environment Id="DD_INTEGRATIONS" Name="DD_INTEGRATIONS" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]\integrations.json" Part="all" />
       </Component>
     </ComponentGroup>
 
@@ -119,14 +118,14 @@
         <CreateFolder/>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]DATADOG_PROFILER_PROCESSES=w3wp.exe" Action="append"/>
+          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]DD_PROFILER_PROCESSES=w3wp.exe" Action="append"/>
         </RegistryKey>
       </Component>
 
       <Component Id="Registry.EnvironmentVariables.WAS" Guid="{6CF8AB88-240E-4A0A-B630-43119C064AD4}" Win64="$(var.Win64)">
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]DATADOG_PROFILER_PROCESSES=w3wp.exe" Action="append"/>
+          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]DD_PROFILER_PROCESSES=w3wp.exe" Action="append"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
