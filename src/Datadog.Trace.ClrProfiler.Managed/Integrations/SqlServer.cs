@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="behavior">The behavior.</param>
         /// <param name="method">The method.</param>
         /// <returns>The original methods return.</returns>
-        public static object ExecuteReader(dynamic @this, int behavior, string method)
+        public static object ExecuteReaderWithMethod(dynamic @this, int behavior, string method)
         {
             var command = (DbCommand)@this;
 
