@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace Datadog.Trace.TestHelpers
 {
     public class ProfilerHelper
     {
+        private const string DotNetCoreExecutable = "dotnet.exe";
+
         public static Process StartProcessWithProfiler(
             string appPath,
             bool coreClr,
@@ -40,7 +43,10 @@ namespace Datadog.Trace.TestHelpers
                 Environment.SetEnvironmentVariable("CORECLR_PROFILER", profilerClsid);
                 Environment.SetEnvironmentVariable("CORECLR_PROFILER_PATH", profilerDllPath);
 
-                startInfo = new ProcessStartInfo("dotnet.exe", appPath);
+                Environment.SetEnvironmentVariable("DD_PROFILER_PROCESSES", DotNetCoreExecutable);
+                Environment.SetEnvironmentVariable("DATADOG_PROFILER_PROCESSES", DotNetCoreExecutable);
+
+                startInfo = new ProcessStartInfo(DotNetCoreExecutable, appPath);
             }
             else
             {
@@ -48,6 +54,10 @@ namespace Datadog.Trace.TestHelpers
                 Environment.SetEnvironmentVariable("COR_ENABLE_PROFILING", "1");
                 Environment.SetEnvironmentVariable("COR_PROFILER", profilerClsid);
                 Environment.SetEnvironmentVariable("COR_PROFILER_PATH", profilerDllPath);
+
+                string executableFileName = Path.GetFileName(appPath);
+                Environment.SetEnvironmentVariable("DD_PROFILER_PROCESSES", executableFileName);
+                Environment.SetEnvironmentVariable("DATADOG_PROFILER_PROCESSES", executableFileName);
 
                 startInfo = new ProcessStartInfo(appPath);
             }

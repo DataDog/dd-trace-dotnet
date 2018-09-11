@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,8 +10,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class MockTracerAgent : IDisposable
     {
-        private HttpListener _listener;
-        private SpanCollector _collector;
+        private readonly HttpListener _listener;
+        private readonly SpanCollector _collector;
 
         public MockTracerAgent()
         {
@@ -59,8 +58,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private class SpanCollector
         {
-            private List<Span> _spans = new List<Span>();
-            private Task _task;
+            private readonly List<Span> _spans = new List<Span>();
+            private readonly Task _task;
 
             public SpanCollector(HttpListener listener)
             {
@@ -78,14 +77,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             public void Wait()
             {
-                _task.Wait();
+                if (!_task.Wait(TimeSpan.FromSeconds(20)))
+                {
+                    throw new Exception("Timeout while waiting for SpanCollector loop to end.");
+                }
             }
 
             private static List<Span> ToSpans(dynamic data)
             {
-                if (data is IDictionary)
+                if (data is IDictionary dict)
                 {
-                    var dict = data as IDictionary;
                     var span = new Span
                     {
                         TraceId = dict.Get<ulong>("trace_id"),
@@ -101,16 +102,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     return new List<Span> { span };
                 }
 
-                if (data is IEnumerable)
+                if (data is IEnumerable rawSpans)
                 {
-                    var rawSpans = data as IEnumerable;
                     var allSpans = new List<Span>();
-                    if (rawSpans != null)
+
+                    foreach (var rawSpan in rawSpans)
                     {
-                        foreach (var rawSpan in rawSpans)
-                        {
-                            allSpans.AddRange(ToSpans(rawSpan));
-                        }
+                        allSpans.AddRange(ToSpans(rawSpan));
                     }
 
                     return allSpans;
@@ -121,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             private void Handle(HttpListener listener)
             {
-                while (true)
+                while (listener.IsListening)
                 {
                     try
                     {

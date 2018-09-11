@@ -26,10 +26,10 @@ HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
 
-  auto process_name = GetCurrentProcessName();
+  const auto process_name = GetCurrentProcessName();
   auto allowed_process_names = GetEnvironmentValues(kProcessesEnvironmentName);
 
-  if (allowed_process_names.size() == 0) {
+  if (allowed_process_names.empty()) {
     LOG_APPEND(
         L"DATADOG_PROFILER_PROCESSES environment variable not set. Attaching "
         L"to any .NET process.");
@@ -74,10 +74,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   if (module_info.IsWindowsRuntime() ||
-      module_info.assembly.name == L"mscorlib") {
+      module_info.assembly.name == L"mscorlib" ||
+      module_info.assembly.name == L"netstandard") {
     // We cannot obtain writeable metadata interfaces on Windows Runtime modules
     // or instrument their IL. We must never try to add assembly references to
-    // mscorlib.
+    // mscorlib or netstandard.
     LOG_APPEND(L"ModuleLoadFinished() called for "
                << module_info.assembly.name << ". Skipping instrumentation.");
     return S_OK;
@@ -245,7 +246,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       }
 
       // make sure the calling convention matches
-      if (method_replacement.target_method.method_signature.data.size() > 0 &&
+      if (!method_replacement.target_method.method_signature.data.empty() &&
           method_replacement.target_method.method_signature.data[0] !=
               target.signature[0]) {
         continue;
@@ -259,7 +260,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       }
 
       // replace with a call to the instrumentation wrapper
-      INT32 original_argument = pInstr->m_Arg32;
+      const auto original_argument = pInstr->m_Arg32;
       pInstr->m_opcode = CEE_CALL;
       pInstr->m_Arg32 = wrapper_method_ref;
 

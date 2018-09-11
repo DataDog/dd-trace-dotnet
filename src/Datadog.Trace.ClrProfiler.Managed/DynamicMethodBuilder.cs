@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler
                 return null;
             }
 
-            var dynamicMethod = new DynamicMethod(methodName, returnType, parameterTypes);
+            var dynamicMethod = new DynamicMethod(methodName, returnType, parameterTypes, type);
             ILGenerator ilGenerator = dynamicMethod.GetILGenerator();
 
             for (int argumentIndex = 0; argumentIndex < parameterTypes.Length; argumentIndex++)
