@@ -58,8 +58,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private class SpanCollector
         {
-            private List<Span> _spans = new List<Span>();
-            private Task _task;
+            private readonly List<Span> _spans = new List<Span>();
+            private readonly Task _task;
 
             public SpanCollector(HttpListener listener)
             {
@@ -82,9 +82,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             private static List<Span> ToSpans(dynamic data)
             {
-                if (data is IDictionary)
+                if (data is IDictionary dict)
                 {
-                    var dict = data as IDictionary;
                     var span = new Span
                     {
                         TraceId = dict.Get<ulong>("trace_id"),
@@ -100,16 +99,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     return new List<Span> { span };
                 }
 
-                if (data is IEnumerable)
+                if (data is IEnumerable rawSpans)
                 {
-                    var rawSpans = data as IEnumerable;
                     var allSpans = new List<Span>();
-                    if (rawSpans != null)
+
+                    foreach (var rawSpan in rawSpans)
                     {
-                        foreach (var rawSpan in rawSpans)
-                        {
-                            allSpans.AddRange(ToSpans(rawSpan));
-                        }
+                        allSpans.AddRange(ToSpans(rawSpan));
                     }
 
                     return allSpans;
