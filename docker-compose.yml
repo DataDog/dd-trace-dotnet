@@ -2,7 +2,7 @@ version: "3"
 
 services:
   sqlserver:
-    image: microsoft/mssql-server-linux:2017-latest
+    image: microsoft/mssql-server-windows-express:1709
     environment:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=password!123
