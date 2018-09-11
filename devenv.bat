@@ -4,10 +4,10 @@ rem by enabling the Profiler API and starting Visual Studio.
 rem Any process started by VS will inherit the environment variables,
 rem enabling the profiler for apps run from VS, including while debugging.
 
-rem Clear previous values, if any
-set profiler_platform=
-set profiler_configuration=
-set start_visual_studio=
+rem Set default values
+set profiler_platform=x64
+set profiler_configuration=Debug
+set start_visual_studio=true
 
 :next_argument
 if not "%1" == "" (
@@ -36,10 +36,6 @@ if not "%1" == "" (
     shift
     goto next_argument
 )
-
-rem Set default values
-if "%profiler_configuration%" == "" set profiler_configuration=Debug
-if "%profiler_platform%" == "" set profiler_platform=x64
 
 echo Enabling profiler for "%profiler_configuration%/%profiler_platform%".
 
