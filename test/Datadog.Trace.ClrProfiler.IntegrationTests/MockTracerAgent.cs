@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,8 +10,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class MockTracerAgent : IDisposable
     {
-        private HttpListener _listener;
-        private SpanCollector _collector;
+        private readonly HttpListener _listener;
+        private readonly SpanCollector _collector;
 
         public MockTracerAgent()
         {
