@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -26,18 +27,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scope.Span.Type = SpanTypes.Sql;
                 scope.Span.SetTag(Tags.SqlDatabase, @this.Connection.ConnectionString);
 
-                dynamic result;
                 try
                 {
-                    result = @this.ExecuteReader(behavior, method);
+                    return @this.ExecuteReader((CommandBehavior)behavior, method);
                 }
                 catch (Exception ex)
                 {
                     scope.Span.SetException(ex);
                     throw;
                 }
-
-                return result;
             }
         }
     }
