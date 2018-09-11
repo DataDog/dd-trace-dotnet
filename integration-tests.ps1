@@ -3,7 +3,7 @@ Param(
   [string]$Configuration
 )
 
-docker-compose up --detach
+Start-Process "docker-compose" -ArgumentList "up","--detach" -NoNewWindow -Wait
 try
 {
   $Env:CONNECTION_STRING="Data Source=127.0.0.1,1433;Initial Catalog=Trace;Integrated Security=False;MultipleActiveResultSets=True;User Id=sa;Password=password!123"
@@ -17,5 +17,5 @@ try
 }
 finally
 {
-  docker-compose down
+  Start-Process "docker-compose" -ArgumentList "down" -NoNewWindow -Wait
 }
