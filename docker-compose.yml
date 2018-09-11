@@ -1,15 +1,15 @@
-ddagent:
-    image: datadog/docker-dd-agent
-    environment:
-        - DD_BIND_HOST=0.0.0.0
-        - DD_API_KEY=invalid_key_but_this_is_fine
-    ports:
-        - "127.0.0.1:8126:8126"
+version: "3"
 
-sqlserver:
-    image: microsoft/mssql-server-linux:2017-CU3
+services:
+  sqlserver:
+    image: microsoft/mssql-server-windows-express:1709
     environment:
-        - ACCEPT_EULA=Y
-        - SA_PASSWORD=password!123
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=password!123
     ports:
-        - "127.0.0.1:1433:1433"
+    - "1433:1433"
+
+networks:
+  default:
+    external:
+      name: nat
