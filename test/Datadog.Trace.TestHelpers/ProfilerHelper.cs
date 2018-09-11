@@ -52,7 +52,9 @@ namespace Datadog.Trace.TestHelpers
                 startInfo = new ProcessStartInfo(appPath);
             }
 
-            Environment.SetEnvironmentVariable("DATADOG_INTEGRATIONS", string.Join(";", integrationPaths));
+            string integrations = string.Join(";", integrationPaths);
+            Environment.SetEnvironmentVariable("DD_INTEGRATIONS", integrations);
+            Environment.SetEnvironmentVariable("DATADOG_INTEGRATIONS", integrations);
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
@@ -79,6 +81,8 @@ namespace Datadog.Trace.TestHelpers
                                            "COR_PROFILER_PATH",
 
                                            // Datadog
+                                           "DD_PROFILER_PROCESSES",
+                                           "DD_INTEGRATIONS",
                                            "DATADOG_PROFILER_PROCESSES",
                                            "DATADOG_INTEGRATIONS",
                                        };

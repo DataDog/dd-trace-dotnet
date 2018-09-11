@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using System.Data;
+using System.Data.Common;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -13,36 +10,43 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class SqlServer
     {
         private const string OperationName = "sqlserver.query";
+        private static Func<object, CommandBehavior, object> _executeReader;
 
         /// <summary>
         /// ExecuteReader traces any SQL call.
         /// </summary>
         /// <param name="this">The "this" pointer for the method call.</param>
         /// <param name="behavior">The behavior.</param>
-        /// <param name="method">The method.</param>
         /// <returns>The original methods return.</returns>
-        public static object ExecuteReader(dynamic @this, int behavior, string method)
+        public static object ExecuteReader(dynamic @this, int behavior)
         {
+            var command = (DbCommand)@this;
+
+            if (_executeReader == null)
+            {
+                _executeReader = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, CommandBehavior, object>>(
+                    command.GetType(),
+                    "ExecuteReader",
+                    isStatic: false);
+            }
+
             using (var scope = Tracer.Instance.StartActive(OperationName))
             {
                 // set the scope properties
                 // - row count is not supported so we don't set it
-                scope.Span.ResourceName = @this.CommandText;
+                scope.Span.ResourceName = command.CommandText;
                 scope.Span.Type = SpanTypes.Sql;
-                scope.Span.SetTag(Tags.SqlDatabase, @this.Connection.ConnectionString);
+                scope.Span.SetTag(Tags.SqlDatabase, command.Connection?.ConnectionString);
 
-                dynamic result;
                 try
                 {
-                    result = @this.ExecuteReader(behavior, method);
+                    return _executeReader(command, (CommandBehavior)behavior);
                 }
                 catch (Exception ex)
                 {
                     scope.Span.SetException(ex);
                     throw;
                 }
-
-                return result;
             }
         }
     }

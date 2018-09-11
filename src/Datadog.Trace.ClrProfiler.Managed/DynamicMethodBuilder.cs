@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -16,18 +17,43 @@ namespace Datadog.Trace.ClrProfiler
         /// <typeparam name="TDelegate">A <see cref="Delegate"/> type with the signature of the method to call.</typeparam>
         /// <param name="type">The <see cref="Type"/> that contains the method.</param>
         /// <param name="methodName">The name of the method.</param>
-        /// <param name="returnType">The return <see cref="Type"/> of the method.</param>
-        /// <param name="parameterTypes">An array with the <see cref="Type"/> of each of the method's parameters, in order.</param>
-        /// <param name="isVirtual"><c>true</c> if the dyanmic method should use a virtual method call, <c>false</c> otherwise.</param>
+        /// <param name="isStatic"><c>true</c> if the method is static, <c>false</c> otherwise.</param>
         /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
-        public static Delegate CreateMethodCallDelegate<TDelegate>(
+        public static TDelegate CreateMethodCallDelegate<TDelegate>(
             Type type,
             string methodName,
-            Type returnType,
-            Type[] parameterTypes,
-            bool isVirtual)
+            bool isStatic)
+            where TDelegate : Delegate
         {
-            MethodInfo methodInfo = type.GetMethod(methodName, BindingFlags.Static | BindingFlags.Public);
+            Type delegateType = typeof(TDelegate);
+            Type[] genericTypeArguments = delegateType.GenericTypeArguments;
+
+            Type returnType;
+            Type[] parameterTypes;
+
+            if (delegateType.Name.StartsWith("Func`"))
+            {
+                // last generic type argument is the return type
+                returnType = genericTypeArguments.Last();
+                parameterTypes = genericTypeArguments.Take(genericTypeArguments.Length - 1).ToArray();
+            }
+            else if (delegateType.Name.StartsWith("Action`"))
+            {
+                returnType = typeof(void);
+                parameterTypes = genericTypeArguments;
+            }
+            else
+            {
+                throw new Exception($"Only Func<> or Action<> are supported in {nameof(CreateMethodCallDelegate)}.");
+            }
+
+            // find any method that matches by name and parameter types
+            MethodInfo methodInfo = type.GetMethod(
+                methodName,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static,
+                null,
+                isStatic ? parameterTypes : parameterTypes.Skip(1).ToArray(),
+                null);
 
             if (methodInfo == null)
             {
@@ -67,10 +93,10 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
 
-            ilGenerator.Emit(isVirtual ? OpCodes.Callvirt : OpCodes.Call, methodInfo);
+            ilGenerator.Emit(methodInfo.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, methodInfo);
             ilGenerator.Emit(OpCodes.Ret);
 
-            return dynamicMethod.CreateDelegate(typeof(TDelegate));
+            return (TDelegate)dynamicMethod.CreateDelegate(delegateType);
         }
     }
 }

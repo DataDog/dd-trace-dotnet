@@ -83,7 +83,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     Assembly assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
                     Type type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
-                    _beforeAction = CreateDelegate(type, "BeforeAction");
+
+                    _beforeAction = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
+                        type,
+                        "BeforeAction",
+                        isStatic: true);
                 }
             }
             catch
@@ -134,7 +138,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 if (_afterAction == null)
                 {
                     Type type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
-                    _afterAction = CreateDelegate(type, "AfterAction");
+
+                    _afterAction = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
+                        type,
+                        "AfterAction",
+                        isStatic: true);
                 }
             }
             catch
@@ -184,26 +192,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 _scope?.Dispose();
             }
-        }
-
-        private static Action<object, object, object, object> CreateDelegate(Type type, string methodName)
-        {
-            Type returnType = typeof(void);
-
-            Type[] parameterTypes =
-            {
-                typeof(object),
-                typeof(object),
-                typeof(object),
-                typeof(object),
-            };
-
-            return (Action<object, object, object, object>)DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
-                type,
-                methodName,
-                returnType,
-                parameterTypes,
-                false);
         }
     }
 }

@@ -1,4 +1,5 @@
 using Xunit;
+using Xunit.Abstractions;
 
 // EFCore targets netstandard2.0, so it requires net461 or higher or netcoreapp2.0 or higher
 #if !NET452
@@ -7,16 +8,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class SqlServerTests : TestHelper
     {
+        public SqlServerTests(ITestOutputHelper output)
+            : base("SqlServer", output)
+        {
+        }
+
         [Fact]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
             using (var agent = new MockTracerAgent())
+            using (ProcessResult processResult = RunSampleAndWaitForExit())
             {
-                using (var process = StartSample("SqlServer"))
-                {
-                    process.WaitForExit();
-                }
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.GetSpans();
                 Assert.True(spans.Count > 1);

@@ -4,30 +4,48 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class TestHelper
     {
-        public static string GetPlatform()
+        protected TestHelper(string sampleAppName, ITestOutputHelper output)
+        {
+            SampleAppName = sampleAppName;
+            Output = output;
+
+            Output.WriteLine($"Platform: {GetPlatform()}");
+            Output.WriteLine($"Configuration: {BuildParameters.Configuration}");
+            Output.WriteLine($"TargetFramework: {BuildParameters.TargetFramework}");
+            Output.WriteLine($".NET Core: {BuildParameters.CoreClr}");
+            Output.WriteLine($"Application: {GetSampleApplicationPath()}");
+            Output.WriteLine($"Profiler DLL: {GetProfilerDllPath()}");
+        }
+
+        protected string SampleAppName { get; }
+
+        protected ITestOutputHelper Output { get; }
+
+        public string GetPlatform()
         {
             return Environment.Is64BitProcess ? "x64" : "x86";
         }
 
-        public static string GetOS()
+        public string GetOS()
         {
             return Environment.OSVersion.Platform == PlatformID.Win32NT ? "win" :
-                 Environment.OSVersion.Platform == PlatformID.Unix ? "linux" :
-                 Environment.OSVersion.Platform == PlatformID.MacOSX ? "osx" :
-                                                                        string.Empty;
+                   Environment.OSVersion.Platform == PlatformID.Unix    ? "linux" :
+                   Environment.OSVersion.Platform == PlatformID.MacOSX  ? "osx" :
+                                                                          string.Empty;
         }
 
-        public static string GetRuntimeIdentifier()
+        public string GetRuntimeIdentifier()
         {
             return BuildParameters.CoreClr ? string.Empty : $"{GetOS()}-{GetPlatform()}";
         }
 
-        public static string GetSolutionDirectory()
+        public string GetSolutionDirectory()
         {
             string[] pathParts = Environment.CurrentDirectory.ToLowerInvariant().Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             int directoryDepth = pathParts.Length - pathParts.ToList().IndexOf("test");
@@ -35,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return Path.GetFullPath(relativeBasePath);
         }
 
-        public static string GetProfilerDllPath()
+        public string GetProfilerDllPath()
         {
             return Path.Combine(
                 GetSolutionDirectory(),
@@ -47,13 +65,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "Datadog.Trace.ClrProfiler.Native.dll");
         }
 
-        public static string GetSampleDllPath(string name)
+        public string GetSampleApplicationPath()
         {
-            string appFileName = BuildParameters.CoreClr ? $"Samples.{name}.dll" : $"Samples.{name}.exe";
+            string appFileName = BuildParameters.CoreClr ? $"Samples.{SampleAppName}.dll" : $"Samples.{SampleAppName}.exe";
             return Path.Combine(
                 GetSolutionDirectory(),
                 "samples",
-                $"Samples.{name}",
+                $"Samples.{SampleAppName}",
                 "bin",
                 GetPlatform(),
                 BuildParameters.Configuration,
@@ -62,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 appFileName);
         }
 
-        public static Process StartSample(string name)
+        public Process StartSample()
         {
             // get path to native profiler dll
             string profilerDllPath = GetProfilerDllPath();
@@ -72,21 +90,43 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             // get path to sample app that the profiler will attach to
-            var sampleDllPath = GetSampleDllPath(name);
-            if (!File.Exists(sampleDllPath))
+            string sampleAppPath = GetSampleApplicationPath();
+            if (!File.Exists(sampleAppPath))
             {
-                throw new Exception($"application not found: {sampleDllPath}");
+                throw new Exception($"application not found: {sampleAppPath}");
             }
 
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*.json").Select(Path.GetFullPath);
 
             return ProfilerHelper.StartProcessWithProfiler(
-                sampleDllPath,
+                sampleAppPath,
                 BuildParameters.CoreClr,
                 integrationPaths,
                 Instrumentation.ProfilerClsid,
                 profilerDllPath);
+        }
+
+        public ProcessResult RunSampleAndWaitForExit()
+        {
+            Process process = StartSample();
+
+            string standardOutput = process.StandardOutput.ReadToEnd();
+            string standardError = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            int exitCode = process.ExitCode;
+
+            if (!string.IsNullOrWhiteSpace(standardOutput))
+            {
+                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
+
+            return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
     }
 }
