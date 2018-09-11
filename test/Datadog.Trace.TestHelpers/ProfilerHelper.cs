@@ -39,32 +39,32 @@ namespace Datadog.Trace.TestHelpers
             if (coreClr)
             {
                 // .NET Core
-                Environment.SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
-                Environment.SetEnvironmentVariable("CORECLR_PROFILER", profilerClsid);
-                Environment.SetEnvironmentVariable("CORECLR_PROFILER_PATH", profilerDllPath);
-
-                Environment.SetEnvironmentVariable("DD_PROFILER_PROCESSES", DotNetCoreExecutable);
-                Environment.SetEnvironmentVariable("DATADOG_PROFILER_PROCESSES", DotNetCoreExecutable);
-
                 startInfo = new ProcessStartInfo(DotNetCoreExecutable, appPath);
+
+                startInfo.EnvironmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
+                startInfo.EnvironmentVariables["CORECLR_PROFILER"] = profilerClsid;
+                startInfo.EnvironmentVariables["CORECLR_PROFILER_PATH"] = profilerDllPath;
+
+                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = DotNetCoreExecutable;
+                startInfo.EnvironmentVariables["DATADOG_PROFILER_PROCESSES"] = DotNetCoreExecutable;
             }
             else
             {
                 // .NET Framework
-                Environment.SetEnvironmentVariable("COR_ENABLE_PROFILING", "1");
-                Environment.SetEnvironmentVariable("COR_PROFILER", profilerClsid);
-                Environment.SetEnvironmentVariable("COR_PROFILER_PATH", profilerDllPath);
+                startInfo = new ProcessStartInfo(appPath);
+
+                startInfo.EnvironmentVariables["COR_ENABLE_PROFILING"] = "1";
+                startInfo.EnvironmentVariables["COR_PROFILER"] = profilerClsid;
+                startInfo.EnvironmentVariables["COR_PROFILER_PATH"] = profilerDllPath;
 
                 string executableFileName = Path.GetFileName(appPath);
-                Environment.SetEnvironmentVariable("DD_PROFILER_PROCESSES", executableFileName);
-                Environment.SetEnvironmentVariable("DATADOG_PROFILER_PROCESSES", executableFileName);
-
-                startInfo = new ProcessStartInfo(appPath);
+                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = executableFileName;
+                startInfo.EnvironmentVariables["DATADOG_PROFILER_PROCESSES"] = executableFileName;
             }
 
             string integrations = string.Join(";", integrationPaths);
-            Environment.SetEnvironmentVariable("DD_INTEGRATIONS", integrations);
-            Environment.SetEnvironmentVariable("DATADOG_INTEGRATIONS", integrations);
+            startInfo.EnvironmentVariables["DD_INTEGRATIONS"] = integrations;
+            startInfo.EnvironmentVariables["DATADOG_INTEGRATIONS"] = integrations;
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
