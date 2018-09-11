@@ -74,10 +74,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   if (module_info.IsWindowsRuntime() ||
-      module_info.assembly.name == L"mscorlib") {
+      module_info.assembly.name == L"mscorlib" ||
+      module_info.assembly.name == L"netstandard") {
     // We cannot obtain writeable metadata interfaces on Windows Runtime modules
     // or instrument their IL. We must never try to add assembly references to
-    // mscorlib.
+    // mscorlib or netstandard.
     LOG_APPEND(L"ModuleLoadFinished() called for "
                << module_info.assembly.name << ". Skipping instrumentation.");
     return S_OK;
