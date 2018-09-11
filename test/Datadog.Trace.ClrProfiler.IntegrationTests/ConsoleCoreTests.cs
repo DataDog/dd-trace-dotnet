@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
-using Datadog.Trace.TestHelpers;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -13,43 +6,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class ConsoleCoreTests : TestHelper
     {
-        private readonly ITestOutputHelper _output;
-
         public ConsoleCoreTests(ITestOutputHelper output)
+            : base("ConsoleCore", output)
         {
-            _output = output;
         }
 
         [Fact]
-        public void ProfilerAttached()
+        public void ProfilerAttached_MethodReplaced()
         {
-            string standardOutput;
-            string standardError;
-            int exitCode;
-
-            _output.WriteLine($"Platform: {GetPlatform()}");
-            _output.WriteLine($"Configuration: {BuildParameters.Configuration}");
-            _output.WriteLine($"TargetFramework: {BuildParameters.TargetFramework}");
-            _output.WriteLine($".NET Core: {BuildParameters.CoreClr}");
-            _output.WriteLine($"Application: {GetSampleDllPath("ConsoleCore")}");
-            _output.WriteLine($"Profiler DLL: {GetProfilerDllPath()}");
-
-            using (Process process = StartSample("ConsoleCore"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit())
             {
-                standardOutput = process.StandardOutput.ReadToEnd();
-                standardError = process.StandardError.ReadToEnd();
-                process.WaitForExit();
-                exitCode = process.ExitCode;
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
+
+                dynamic output = JsonConvert.DeserializeObject(processResult.StandardOutput);
+                Assert.True((bool)output.ProfilerAttached);
+                Assert.Equal(6, (int)output.AddResult);
             }
-
-            _output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-            _output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
-
-            Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
-
-            dynamic output = JsonConvert.DeserializeObject(standardOutput);
-            Assert.True((bool)output.ProfilerAttached);
-            Assert.Equal(6, (int)output.AddResult);
         }
     }
 }
