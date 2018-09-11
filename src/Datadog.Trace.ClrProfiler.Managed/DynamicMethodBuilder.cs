@@ -17,22 +17,23 @@ namespace Datadog.Trace.ClrProfiler
         /// <typeparam name="TDelegate">A <see cref="Delegate"/> type with the signature of the method to call.</typeparam>
         /// <param name="type">The <see cref="Type"/> that contains the method.</param>
         /// <param name="methodName">The name of the method.</param>
-        /// <param name="isVirtual"><c>true</c> if the dynamic method should use a virtual method call, <c>false</c> otherwise.</param>
+        /// <param name="isStatic"><c>true</c> if the method is static, <c>false</c> otherwise.</param>
         /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
         public static TDelegate CreateMethodCallDelegate<TDelegate>(
             Type type,
             string methodName,
-            bool isVirtual)
+            bool isStatic)
             where TDelegate : Delegate
         {
             Type delegateType = typeof(TDelegate);
             Type[] genericTypeArguments = delegateType.GenericTypeArguments;
+
             Type returnType;
             Type[] parameterTypes;
 
             if (delegateType.Name.StartsWith("Func`"))
             {
-                // last generic parameter
+                // last generic type argument is the return type
                 returnType = genericTypeArguments.Last();
                 parameterTypes = genericTypeArguments.Take(genericTypeArguments.Length - 1).ToArray();
             }
@@ -46,13 +47,19 @@ namespace Datadog.Trace.ClrProfiler
                 throw new Exception($"Only Func<> or Action<> are supported in {nameof(CreateMethodCallDelegate)}.");
             }
 
-            MethodInfo methodInfo = type.GetMethod(methodName, parameterTypes);
+            // find any method that matches by name and parameter types
+            MethodInfo methodInfo = type.GetMethod(
+                methodName,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static,
+                null,
+                isStatic ? parameterTypes : parameterTypes.Skip(1).ToArray(),
+                null);
 
             if (methodInfo == null)
             {
                 // method not found
                 // TODO: logging
-                return default;
+                return null;
             }
 
             var dynamicMethod = new DynamicMethod(methodName, returnType, parameterTypes);
@@ -86,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
 
-            ilGenerator.Emit(isVirtual ? OpCodes.Callvirt : OpCodes.Call, methodInfo);
+            ilGenerator.Emit(methodInfo.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, methodInfo);
             ilGenerator.Emit(OpCodes.Ret);
 
             return (TDelegate)dynamicMethod.CreateDelegate(delegateType);
