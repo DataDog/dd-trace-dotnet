@@ -116,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             private void Handle(HttpListener listener)
             {
-                while (true)
+                while (listener.IsListening)
                 {
                     try
                     {
