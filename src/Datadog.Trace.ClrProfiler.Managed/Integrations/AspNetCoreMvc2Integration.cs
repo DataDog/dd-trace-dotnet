@@ -191,7 +191,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
                 type,
                 methodName,
-                false);
+                true);
         }
     }
 }
