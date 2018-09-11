@@ -99,7 +99,7 @@
       {
         "caller": {},
         "target": {
-          "assembly": "System.Data",
+          "assembly": "System.Data.SqlClient",
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteReader",
           "signature": [ 32, 1, 12, 87, 12, 11, 92 ]
