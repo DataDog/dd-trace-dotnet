@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
         private const string RequestOperationName = "aspnet_mvc.request";
 
-        private static readonly Type ContollerContextType;
+        private static readonly Type ControllerContextType;
 
         private readonly HttpContextBase _httpContext;
         private readonly Scope _scope;
@@ -26,11 +26,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 Assembly assembly = Assembly.Load("System.Web.Mvc");
-                ContollerContextType = assembly.GetType("System.Web.Mvc.ControllerContext", throwOnError: false);
+                ControllerContextType = assembly.GetType("System.Web.Mvc.ControllerContext", throwOnError: false);
             }
             catch
             {
-                ContollerContextType = null;
+                ControllerContextType = null;
             }
         }
 
@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="controllerContextObj">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
         public AspNetMvc5Integration(object controllerContextObj)
         {
-            if (controllerContextObj == null || ContollerContextType == null)
+            if (controllerContextObj == null || ControllerContextType == null)
             {
                 // bail out early
                 return;
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (controllerContextObj.GetType() != ContollerContextType)
+                if (controllerContextObj.GetType() != ControllerContextType)
                 {
                     return;
                 }

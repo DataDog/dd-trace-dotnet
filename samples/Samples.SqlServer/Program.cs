@@ -9,6 +9,9 @@ namespace Samples.SqlServer
         {
             using (var db = new BloggingContext())
             {
+                // create database if missing
+                db.Database.EnsureCreated();
+
                 var name = "test";
 
                 var blog = (from b in db.Blogs where b.Name == name select b).FirstOrDefault();

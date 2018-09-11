@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
@@ -39,23 +37,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static string GetProfilerDllPath()
         {
-            return Path.Combine(new string[]
-            {
-                    GetSolutionDirectory(),
-                    "src",
-                    "Datadog.Trace.ClrProfiler.Native",
-                    "bin",
-                    BuildParameters.Configuration,
-                    GetPlatform(),
-                    "Datadog.Trace.ClrProfiler.Native.dll"
-            });
+            return Path.Combine(
+                GetSolutionDirectory(),
+                "src",
+                "Datadog.Trace.ClrProfiler.Native",
+                "bin",
+                BuildParameters.Configuration,
+                GetPlatform(),
+                "Datadog.Trace.ClrProfiler.Native.dll");
         }
 
         public static string GetSampleDllPath(string name)
         {
             string appFileName = BuildParameters.CoreClr ? $"Samples.{name}.dll" : $"Samples.{name}.exe";
-            return Path.Combine(new string[]
-            {
+            return Path.Combine(
                 GetSolutionDirectory(),
                 "samples",
                 $"Samples.{name}",
@@ -64,16 +59,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 BuildParameters.Configuration,
                 BuildParameters.TargetFramework,
                 GetRuntimeIdentifier(),
-                appFileName,
-            });
+                appFileName);
         }
 
         public static Process StartSample(string name)
         {
             // get path to native profiler dll
-            if (!File.Exists(GetProfilerDllPath()))
+            string profilerDllPath = GetProfilerDllPath();
+            if (!File.Exists(profilerDllPath))
             {
-                throw new Exception($"profiler not found: {GetProfilerDllPath()}");
+                throw new Exception($"profiler not found: {profilerDllPath}");
             }
 
             // get path to sample app that the profiler will attach to
@@ -91,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 BuildParameters.CoreClr,
                 integrationPaths,
                 Instrumentation.ProfilerClsid,
-                GetProfilerDllPath());
+                profilerDllPath);
         }
     }
 }
