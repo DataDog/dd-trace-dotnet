@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Data.Common;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -15,21 +16,27 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="this">The "this" pointer for the method call.</param>
         /// <param name="behavior">The behavior.</param>
-        /// <param name="method">The method.</param>
         /// <returns>The original methods return.</returns>
-        public static object ExecuteReader(dynamic @this, int behavior, string method)
+        public static object ExecuteReader(dynamic @this, int behavior)
         {
+            var command = (DbCommand)@this;
+
             using (var scope = Tracer.Instance.StartActive(OperationName))
             {
                 // set the scope properties
                 // - row count is not supported so we don't set it
-                scope.Span.ResourceName = @this.CommandText;
+                scope.Span.ResourceName = command.CommandText;
                 scope.Span.Type = SpanTypes.Sql;
-                scope.Span.SetTag(Tags.SqlDatabase, @this.Connection.ConnectionString);
+                scope.Span.SetTag(Tags.SqlDatabase, command.Connection?.ConnectionString);
 
                 try
                 {
-                    return @this.ExecuteReader((CommandBehavior)behavior, method);
+                    var dynamicMethod = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, CommandBehavior, object>>(
+                        command.GetType(),
+                        "ExecuteReader",
+                        false);
+
+                    return dynamicMethod(command, (CommandBehavior)behavior);
                 }
                 catch (Exception ex)
                 {
