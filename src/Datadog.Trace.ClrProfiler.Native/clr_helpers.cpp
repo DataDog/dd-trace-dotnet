@@ -1,4 +1,5 @@
 #include "clr_helpers.h"
+#include "macros.h"
 
 namespace trace {
 
@@ -88,7 +89,8 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
 
   // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
 
-  return {token, function_name, GetTypeInfo(metadata_import, parent_token), signature};
+  return {token, function_name, GetTypeInfo(metadata_import, parent_token),
+          signature};
 }
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
@@ -197,6 +199,7 @@ std::vector<Integration> FilterIntegrationsByTarget(
       }
       for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
         auto ref_name = GetAssemblyName(assembly_import, assembly_ref);
+        LOG_APPEND(L"-- assembly ref: " << assembly_name << " to " << ref_name);
         if (mr.target_method.assembly.name == ref_name) {
           found = true;
           break;
