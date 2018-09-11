@@ -77,7 +77,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             public void Wait()
             {
-                _task.Wait();
+                if (!_task.Wait(TimeSpan.FromSeconds(20)))
+                {
+                    throw new Exception("Timeout while waiting for SpanCollector loop to end.");
+                }
             }
 
             private static List<Span> ToSpans(dynamic data)
