@@ -116,8 +116,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             process.WaitForExit();
             int exitCode = process.ExitCode;
 
-            Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-            Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            if (!string.IsNullOrWhiteSpace(standardOutput))
+            {
+                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
