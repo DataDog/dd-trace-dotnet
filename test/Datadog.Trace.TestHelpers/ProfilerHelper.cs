@@ -46,7 +46,6 @@ namespace Datadog.Trace.TestHelpers
                 startInfo.EnvironmentVariables["CORECLR_PROFILER_PATH"] = profilerDllPath;
 
                 startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = DotNetCoreExecutable;
-                startInfo.EnvironmentVariables["DATADOG_PROFILER_PROCESSES"] = DotNetCoreExecutable;
             }
             else
             {
@@ -59,12 +58,10 @@ namespace Datadog.Trace.TestHelpers
 
                 string executableFileName = Path.GetFileName(appPath);
                 startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = executableFileName;
-                startInfo.EnvironmentVariables["DATADOG_PROFILER_PROCESSES"] = executableFileName;
             }
 
             string integrations = string.Join(";", integrationPaths);
             startInfo.EnvironmentVariables["DD_INTEGRATIONS"] = integrations;
-            startInfo.EnvironmentVariables["DATADOG_INTEGRATIONS"] = integrations;
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
