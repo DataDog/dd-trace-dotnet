@@ -26,13 +26,15 @@ HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
 
+  const auto process_name = GetCurrentProcessName();
+  LOG_APPEND(L"Initialize() called for " << process_name);
+
   if (integrations_.empty()) {
     LOG_APPEND(L"Profiler disabled: " << kIntegrationsEnvironmentName
                                       << L" environment variable not set.");
     return E_FAIL;
   }
 
-  const auto process_name = GetCurrentProcessName();
   const auto allowed_process_names = GetEnvironmentValues(kProcessesEnvironmentName);
 
   if (allowed_process_names.empty()) {
