@@ -171,11 +171,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 redirectStandardInput: true,
                 traceAgentPort: traceAgentPort);
 
+            var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
+
             Task.Run(() =>
             {
                 string line;
                 while ((line = process.StandardOutput.ReadLine()) != null)
                 {
+                    if (line.Contains("Successfully registered URL"))
+                    {
+                        wh.Set();
+                    }
                     Output.WriteLine($"[webserver][stdout] {line}");
                 }
             });
@@ -187,6 +193,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Output.WriteLine($"[webserver][stderr] {line}");
                 }
             });
+
+            wh.WaitOne(5000);
 
             return new IISExpress(process);
         }
