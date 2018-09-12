@@ -27,7 +27,15 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
 
   const auto process_name = GetCurrentProcessName();
-  auto allowed_process_names = GetEnvironmentValues(kProcessesEnvironmentName);
+  LOG_APPEND(L"Initialize() called for " << process_name);
+
+  if (integrations_.empty()) {
+    LOG_APPEND(L"Profiler disabled: " << kIntegrationsEnvironmentName
+                                      << L" environment variable not set.");
+    return E_FAIL;
+  }
+
+  const auto allowed_process_names = GetEnvironmentValues(kProcessesEnvironmentName);
 
   if (allowed_process_names.empty()) {
     LOG_APPEND(
@@ -41,7 +49,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
     if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
                   process_name) == allowed_process_names.end()) {
-      LOG_APPEND(L"CorProfiler disabled: module name \""
+      LOG_APPEND(L"Profiler disabled: module name \""
                  << process_name << "\" does not match "
                  << kProcessesEnvironmentName << " environment variable.");
       return E_FAIL;
@@ -51,14 +59,14 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
       &this->info_);
   LOG_IFFAILEDRET(hr,
-                  L"CorProfiler disabled: interface ICorProfilerInfo3 or "
+                  L"Profiler disabled: interface ICorProfilerInfo3 or "
                   L"higher not found.");
 
   hr = this->info_->SetEventMask(kEventMask);
   LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
 
   // we're in!
-  LOG_APPEND(L"CorProfiler attached to process " << process_name);
+  LOG_APPEND(L"Profiler attached to process " << process_name);
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;
