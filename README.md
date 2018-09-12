@@ -1,6 +1,6 @@
 # .NET Tracer for Datadog APM
 
-**The .NET Tracer is currently in Alpha and is not recommended for use in production.**
+**The .NET Tracer is currently in public Beta and is not recommended for use in production.**
 
 Please [check our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for more details and instructions on setting up .NET tracing.
 
