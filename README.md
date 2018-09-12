@@ -1,6 +1,6 @@
 # .NET Tracer for Datadog APM
 
-**The .NET Tracer is currently in Alpha and is not recommended for use in production.**
+**NOTE: The .NET Tracer is currently in Public Beta.**
 
 Environment|Build Status
 --|--
@@ -54,7 +54,7 @@ Due to [this issue](https://github.com/dotnet/sdk/issues/335) in the .NET Core S
 
 ### CoreCLR submodule
 
-This project makes use of git submodules to include required [CoreCLR](https://github.com/dotnet/coreclr) C++ headers. T build the C++ project, clone this repository with the `--recurse-submodules` option or run the following commands after cloning this repository:
+This project makes use of git submodules to include required [CoreCLR](https://github.com/dotnet/coreclr) C++ headers. To build the C++ project, clone this repository with the `--recurse-submodules` option or run the following commands after cloning this repository:
 
 ```
 git submodule init
