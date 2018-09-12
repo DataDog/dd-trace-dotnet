@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// ApsNetWeb5Integration wraps the Web API.
     /// </summary>
-    public static class AspNetWeb5Integration
+    public static class AspNetWebApi2Integration
     {
         private const string OperationName = "aspnet_web.query";
 
