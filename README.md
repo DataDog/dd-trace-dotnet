@@ -87,8 +87,6 @@ Microsoft .NET Profiling APIs
 - [Profiling API](https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/)
 - [Metadata API](https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/metadata/)
 - [The Book of the Runtime - Profiling](https://github.com/dotnet/coreclr/blob/master/Documentation/botr/profiling.md)
-- [Profiling API sample](https://github.com/Microsoft/clr-samples/tree/master/ProfilingAPI/ReJITEnterLeaveHooks) (cross-platform, minimal)
-- [Legacy Profiling API sample](https://github.com/MicrosoftArchive/clrprofiler/tree/master/ILRewrite) (Windows only, includes IL maniuplation)
 
 OpenTracing
 - [OpenTracing documentation](https://github.com/opentracing/opentracing-csharp)
