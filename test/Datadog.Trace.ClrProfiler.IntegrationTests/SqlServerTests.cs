@@ -1,3 +1,4 @@
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -8,6 +9,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class SqlServerTests : TestHelper
     {
+        private const int AgentPort = 9002;
+
         public SqlServerTests(ITestOutputHelper output)
             : base("SqlServer", output)
         {
@@ -17,13 +20,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            using (var agent = new MockTracerAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit())
+            using (var agent = new MockTracerAgent(9002))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(9002))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.GetSpans();
-                Assert.True(spans.Count > 1);
+                Assert.True(spans.Count > 0, "expected at least one span");
                 foreach (var span in spans)
                 {
                     Assert.Equal("sqlserver.query", span.Name);

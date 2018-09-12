@@ -14,7 +14,10 @@ namespace Datadog.Trace.TestHelpers
             bool coreClr,
             IEnumerable<string> integrationPaths,
             string profilerClsid,
-            string profilerDllPath)
+            string profilerDllPath,
+            string arguments = null,
+            bool redirectStandardInput = false,
+            int traceAgentPort = 9696)
         {
             if (appPath == null)
             {
@@ -39,7 +42,7 @@ namespace Datadog.Trace.TestHelpers
             if (coreClr)
             {
                 // .NET Core
-                startInfo = new ProcessStartInfo(DotNetCoreExecutable, appPath);
+                startInfo = new ProcessStartInfo(DotNetCoreExecutable, $"{appPath} ${arguments ?? string.Empty}");
 
                 startInfo.EnvironmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
                 startInfo.EnvironmentVariables["CORECLR_PROFILER"] = profilerClsid;
@@ -50,7 +53,7 @@ namespace Datadog.Trace.TestHelpers
             else
             {
                 // .NET Framework
-                startInfo = new ProcessStartInfo(appPath);
+                startInfo = new ProcessStartInfo(appPath, $"{arguments ?? string.Empty}");
 
                 startInfo.EnvironmentVariables["COR_ENABLE_PROFILING"] = "1";
                 startInfo.EnvironmentVariables["COR_PROFILER"] = profilerClsid;
@@ -62,11 +65,14 @@ namespace Datadog.Trace.TestHelpers
 
             string integrations = string.Join(";", integrationPaths);
             startInfo.EnvironmentVariables["DD_INTEGRATIONS"] = integrations;
+            startInfo.EnvironmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "localhost";
+            startInfo.EnvironmentVariables["DD_TRACE_AGENT_PORT"] = traceAgentPort.ToString();
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
+            startInfo.RedirectStandardInput = redirectStandardInput;
 
             return Process.Start(startInfo);
         }

@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     public static class Extensions
     {
