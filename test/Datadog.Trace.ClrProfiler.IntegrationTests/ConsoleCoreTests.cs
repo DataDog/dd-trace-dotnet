@@ -6,6 +6,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class ConsoleCoreTests : TestHelper
     {
+        private const int AgentPort = 9003;
+
         public ConsoleCoreTests(ITestOutputHelper output)
             : base("ConsoleCore", output)
         {
@@ -14,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         public void ProfilerAttached_MethodReplaced()
         {
-            using (ProcessResult processResult = RunSampleAndWaitForExit())
+            using (ProcessResult processResult = RunSampleAndWaitForExit(AgentPort))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 

@@ -13,5 +13,12 @@ namespace Samples.AspNetMvc5.Controllers
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
             return Ok(seconds);
         }
+
+        [HttpGet]
+        [Route("api/environment")]
+        public IHttpActionResult Environment()
+        {            
+            return Ok(System.Environment.GetEnvironmentVariables());
+        }
     }
 }

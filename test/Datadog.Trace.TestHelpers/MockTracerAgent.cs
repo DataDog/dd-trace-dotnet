@@ -3,25 +3,29 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MessagePack;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     public class MockTracerAgent : IDisposable
     {
         private readonly HttpListener _listener;
         private readonly SpanCollector _collector;
 
-        public MockTracerAgent()
+        public MockTracerAgent(int port)
         {
             _listener = new HttpListener();
-            _listener.Prefixes.Add("http://localhost:9696/");
+            _listener.Prefixes.Add($"http://localhost:{port}/");
             _listener.Start();
             _collector = new SpanCollector(_listener);
+            Port = port;
+        }
 
-            Environment.SetEnvironmentVariable("DD_TRACE_AGENT_HOSTNAME", "localhost");
-            Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", "9696");
+        public int Port
+        {
+            get; private set;
         }
 
         public List<Span> GetSpans()
