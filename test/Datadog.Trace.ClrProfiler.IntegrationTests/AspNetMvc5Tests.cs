@@ -42,11 +42,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                     catch (WebException wex)
                     {
-                        using (var response = (HttpWebResponse)wex.Response)
-                        using (var stream = wex.Response.GetResponseStream())
-                        using (var reader = new StreamReader(stream))
+                        Output.WriteLine($"[http] exception: {wex}");
+                        if (wex.Response is HttpWebResponse response)
                         {
-                            Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
+                            using (var stream = response.GetResponseStream())
+                            using (var reader = new StreamReader(stream))
+                            {
+                                Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
+                            }
                         }
                     }
                 }
