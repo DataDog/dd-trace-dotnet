@@ -2,20 +2,26 @@
 
 **The .NET Tracer is currently in Alpha and is not recommended for use in production.**
 
-Please [check our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for more details and instructions on setting up .NET tracing.
-
 Environment|Build Status
 --|--
 Windows|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=1)
 Linux|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=2)
 
-## The Components
+## Installation and Usage
 
-**[Datadog Trace Agent](https://github.com/DataDog/datadog-trace-agent)**: a service that runs on your application servers, accepting trace data from the Datadog Tracer and sending it to Datadog. The Trace Agent is not part of this repo; it's the same Trace Agent to which all Datadog tracers (e.g. Go, Python, Java, Ruby) send data.
+Please [check our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for instructions on setting up .NET tracing and details about supported frameworks.
 
-**[Datadog .NET Tracer](https://github.com/DataDog/dd-trace-csharp)**: a .NET library that lets you trace any piece of your .NET code. Supports manual instrumentation and can automatically instrument supported libraries out-of-the-box.
+- Automatic instrumentation on Windows: use the MSI installers on the [Releases](https://github.com/DataDog/dd-trace-csharp/releases) page.
+- Manual instrumentation on all supported frameworks and environments, use the [`Datadog.Trace`](https://www.nuget.org/packages/Datadog.Trace/) NuGet package.
+- OpenTracing support: use the [`Datadog.Trace.OpenTracing`](https://www.nuget.org/packages/Datadog.Trace.OpenTracing/) NuGet package.
 
 ## Development
+
+### The Components
+
+**[Datadog Trace Agent](https://github.com/DataDog/datadog-trace-agent)**: A service that runs on your application servers, accepting trace data from the Datadog Tracer and sending it to Datadog. The Trace Agent is not part of this repo; it's the same Trace Agent to which all Datadog tracers (e.g. Go, Python, Java, Ruby) send data.
+
+**[Datadog .NET Tracer](https://github.com/DataDog/dd-trace-csharp)**: This repository. A set of .NET libraries that let you trace any piece of your .NET code. Supports manual instrumentation and can automatically instrument supported libraries out-of-the-box.
 
 ### Windows
 
@@ -50,9 +56,9 @@ Requirements:
 
 Due to [this issue](https://github.com/dotnet/sdk/issues/335) in the .NET Core SDK, to build projects that target the .NET Framework and of , you'll need [this workaround](https://github.com/dotnet/netcorecli-fsc/wiki/.NET-Core-SDK-rc4#using-net-framework-as-targets-framework-the-osxunix-build-fails).
 
-### Setup
+### CoreCLR submodule
 
-This project makes use of git submodules. Clone this repository with the `--recurse-submodules` option or run the following commands after cloning this repository:
+This project makes use of git submodules to include required [CoreCLR](https://github.com/dotnet/coreclr) C++ headers. T build the C++ project, clone this repository with the `--recurse-submodules` option or run the following commands after cloning this repository:
 
 ```
 git submodule init
