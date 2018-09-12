@@ -9,11 +9,7 @@ Linux|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_api
 
 ## Installation and Usage
 
-Please [check our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for instructions on setting up .NET tracing and details about supported frameworks.
-
-- Automatic instrumentation on Windows: use the MSI installers on the [Releases](https://github.com/DataDog/dd-trace-csharp/releases) page.
-- Manual instrumentation on all supported frameworks and environments, use the [`Datadog.Trace`](https://www.nuget.org/packages/Datadog.Trace/) NuGet package.
-- OpenTracing support: use the [`Datadog.Trace.OpenTracing`](https://www.nuget.org/packages/Datadog.Trace.OpenTracing/) NuGet package.
+Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for instructions on setting up .NET tracing and details about supported frameworks.
 
 ## Development
 
