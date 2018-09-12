@@ -1,64 +1,62 @@
-# dd-trace-csharp
+# .NET Tracer for Datadog APM
 
-**Datadog .NET APM is currently in Alpha and is not recommended for use in production.**
+**The .NET Tracer is currently in Alpha and is not recommended for use in production.**
 
-Please [check our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for more details.
+Please [check our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for more details and instructions on setting up .NET tracing.
 
-## What is Datadog APM?
-
-Datadog APM traces the path of each request through your application stack, recording the latency of each step along the way. It sends all tracing data to Datadog, where you can easily identify which services or calls are slowing down your application the most.
-
-This repository contains what you need to trace .NET applications. Some quick notes up front:
-
-- Supports .NET Framework 4.5 or newer
-- Supports .NET Core 2.0 or newer
-- Multiple AppDomains are not supported
-
-## Build Status
-
-OS|Features|Status
---|--|--
-Windows|manual instrumentation (NuGet), automatic instrumentation (MSI)|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=1)
-Linux|manual instrumentation (NuGet)|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=2)
+Environment|Build Status
+--|--
+Windows|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=1)
+Linux|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=2)
 
 ## The Components
 
+**[Datadog Trace Agent](https://github.com/DataDog/datadog-trace-agent)**: a service that runs on your application servers, accepting trace data from the Datadog Tracer and sending it to Datadog. The Trace Agent is not part of this repo; it's the same Trace Agent to which all Datadog tracers (e.g. Go, Python, Java, Ruby) send data.
 
-**[Datadog Tracer](https://github.com/DataDog/dd-trace-csharp)**: an OpenTracing-compatible .NET library that lets you trace any piece of your .NET code.
-
-**[Datadog APM Agent](https://github.com/DataDog/datadog-trace-agent)**: a service that runs on your application servers, accepting trace data from the Datadog Tracer and sending it to Datadog. (The APM Agent is not part of this repo; it's the same Agent to which all Datadog tracers—Go, Python, etc—send data)
-
-## Getting Started
-
-Before instrumenting your code, [install the Datadog APM Agent](https://docs.datadoghq.com/tracing/setup/) on your application servers (or locally, if you're just trying out .NET APM).
+**[Datadog .NET Tracer](https://github.com/DataDog/dd-trace-csharp)**: a .NET library that lets you trace any piece of your .NET code. Supports manual instrumentation and can automatically instrument supported libraries out-of-the-box.
 
 ## Development
 
-### Dependencies
+### Windows
 
-#### Windows
+Minimum requirements to build the code in this repository:
 
-In order to build and run all the projects and tests included in this repo you need to have [Visual Studio 2017](https://visualstudio.microsoft.com/downloads/) and the [.NET Core 2.0 SDK](https://www.microsoft.com/net/download) or newer installed on your machine.
+- [Visual Studio 2017](https://visualstudio.microsoft.com/downloads/) v15.7 or newer
+  - Workloads
+    - Desktop development with C++
+    - .NET desktop development
+    - .NET Core cross-platform development
+    - Optional: ASP.NET and web development (to build samples )
+  - Individual components
+    - .NET Framework 4.7 targeting pack
+- [.NET Core 2.0 SDK](https://www.microsoft.com/net/download) or newer
+- Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
+  - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
+  - [WiX Toolset VS2017 Extension](https://marketplace.visualstudio.com/items?itemName=RobMensching.WixToolsetVisualStudio2017Extension) to build installer from VS2017
+- Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to run some integration tests
+  - Requires Windows 10 (1607 Anniversary Update, Build 14393 or newer)
 
-Some tests require you to have [Docker for Windows](https://docs.docker.com/docker-for-windows/) on your machine or to manually install the required dependencies.
+Microsoft provides [evaluation developer VMs]((https://developer.microsoft.com/en-us/windows/downloads/virtual-machines)) with Windows 10 with Visual Studio 2017 pre-installed.
 
-#### Linux
 
-Make sure you have installed:
-- [.NET Core SDK](https://www.microsoft.com/net/download) (2.0 or newer)
+### Linux
+
+Only manual instrumentation is supported on Linux at this time. Projects `Datadog.Trace`, `Datadog.Trace.OpenTracing`, and their respective test projects can be built on Linux when targeting .NET Core.
+
+Requirements:
+- [.NET Core SDK 2.0](https://www.microsoft.com/net/download) or newer
 - [Mono](https://www.mono-project.com/download/stable/)
 - [Docker](https://www.docker.com/)
 
-Because some projects target the desktop framework and of [this bug](https://github.com/dotnet/sdk/issues/335), you'll need [this workaround](https://github.com/dotnet/netcorecli-fsc/wiki/.NET-Core-SDK-rc4#using-net-framework-as-targets-framework-the-osxunix-build-fails) to make the build work.
+Due to [this issue](https://github.com/dotnet/sdk/issues/335) in the .NET Core SDK, to build projects that target the .NET Framework and of , you'll need [this workaround](https://github.com/dotnet/netcorecli-fsc/wiki/.NET-Core-SDK-rc4#using-net-framework-as-targets-framework-the-osxunix-build-fails).
 
 ### Setup
 
-This project makes use of git submodules. This means that in order to start developing on this project, you should either clone this repository with the `--recurse-submodules` option or run the following commands in the cloned repository:
+This project makes use of git submodules. Clone this repository with the `--recurse-submodules` option or run the following commands after cloning this repository:
 
 ```
 git submodule init
 git submodule update
-
 ```
 
 ### Running tests
@@ -80,8 +78,19 @@ Or on Unix systems:
 
 ## Further Reading
 
-- [Datadog APM documentation](https://docs.datadoghq.com/tracing/)
-- [Datadog - Tracing .NET Applications](https://docs.datadoghq.com/tracing/setup/dotnet/)
+Datadog APM
+- [Datadog APM](https://docs.datadoghq.com/tracing/)
+- [Datadog APM - Tracing .NET Applications](https://docs.datadoghq.com/tracing/setup/dotnet/)
+- [Datadog APM - Advanced Usage](https://docs.datadoghq.com/tracing/advanced_usage/?tab=dotnet)
+
+Microsoft .NET Profiling APIs
+- [Profiling API](https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/)
+- [Metadata API](https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/metadata/)
+- [The Book of the Runtime - Profiling](https://github.com/dotnet/coreclr/blob/master/Documentation/botr/profiling.md)
+- [Profiling API sample](https://github.com/Microsoft/clr-samples/tree/master/ProfilingAPI/ReJITEnterLeaveHooks) (cross-platform, minimal)
+- [Legacy Profiling API sample](https://github.com/MicrosoftArchive/clrprofiler/tree/master/ILRewrite) (Windows only, includes IL maniuplation)
+
+OpenTracing
 - [OpenTracing documentation](https://github.com/opentracing/opentracing-csharp)
 - [OpenTracing terminology](https://github.com/opentracing/specification/blob/master/specification.md)
 
