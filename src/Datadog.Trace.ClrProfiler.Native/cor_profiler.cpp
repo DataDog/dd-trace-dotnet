@@ -31,10 +31,10 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   if (allowed_process_names.empty()) {
     LOG_APPEND(
-        L"DATADOG_PROFILER_PROCESSES environment variable not set. Attaching "
-        L"to any .NET process.");
+        kProcessesEnvironmentName
+        << L" environment variable not set. Attaching to any .NET process.");
   } else {
-    LOG_APPEND(L"DATADOG_PROFILER_PROCESSES:");
+    LOG_APPEND(kProcessesEnvironmentName << L":");
     for (auto& name : allowed_process_names) {
       LOG_APPEND(L"  " + name);
     }
@@ -42,9 +42,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
                   process_name) == allowed_process_names.end()) {
       LOG_APPEND(L"CorProfiler disabled: module name \""
-                 << process_name
-                 << "\" does not match DATADOG_PROFILER_PROCESSES environment "
-                    "variable.");
+                 << process_name << "\" does not match "
+                 << kProcessesEnvironmentName << " environment variable.");
       return E_FAIL;
     }
   }
