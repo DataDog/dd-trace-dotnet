@@ -8,7 +8,7 @@ namespace Samples.AspNetCoreMvc2.Controllers
     {
         [HttpGet]
         [Route("api/delay/{seconds}")]
-        public ActionResult<int> Delay(int seconds)
+        public ActionResult Delay(int seconds)
         {
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
             return Ok(seconds);
