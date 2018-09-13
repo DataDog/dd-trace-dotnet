@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
                 string controllerName = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                 string actionName = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                string resourceName = $"{controllerName}.{actionName}";
+                string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
                 _scope = Tracer.Instance.StartActive(RequestOperationName);
                 Span span = _scope.Span;
