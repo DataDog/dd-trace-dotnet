@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Samples.AspNetCoreMvc2.Controllers
 {
-    [Microsoft.AspNetCore.Mvc.ApiController]
     public class ApiController : ControllerBase
     {
         [HttpGet]
