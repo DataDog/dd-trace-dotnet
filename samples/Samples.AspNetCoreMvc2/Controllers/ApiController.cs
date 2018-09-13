@@ -1,14 +1,14 @@
 using System;
 using System.Threading;
-using System.Web.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Samples.AspNetCoreMvc2.Controllers
 {
-    public class ApiController : System.Web.Http.ApiController
+    public class ApiController : ControllerBase
     {
         [HttpGet]
         [Route("api/delay/{seconds}")]
-        public IHttpActionResult Delay(int seconds)
+        public ActionResult Delay(int seconds)
         {
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
             return Ok(seconds);
