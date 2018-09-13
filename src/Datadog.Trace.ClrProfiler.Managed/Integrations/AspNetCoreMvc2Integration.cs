@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -28,8 +29,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 dynamic actionDescriptor = actionDescriptorObj;
-                string controllerName = actionDescriptor.ControllerName;
-                string actionName = actionDescriptor.ActionName;
+                string controllerName = (actionDescriptor.ControllerName as string)?.ToLowerInvariant();
+                string actionName = (actionDescriptor.ActionName as string)?.ToLowerInvariant();
                 string resourceName = $"{controllerName}.{actionName}";
 
                 _httpContext = httpContextObj;
