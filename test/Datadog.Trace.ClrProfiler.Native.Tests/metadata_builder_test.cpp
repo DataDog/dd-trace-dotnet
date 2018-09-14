@@ -42,12 +42,12 @@ class MetadataBuilderTest : public ::testing::Test {
 
     ComPtr<IUnknown> metadataInterfaces;
     hr = metadata_dispenser_->OpenScope(L"Samples.ExampleLibrary.dll",
-                                        ofReadWriteMask, IID_IMetaDataImport,
+                                        ofReadWriteMask, IID_IMetaDataImport2,
                                         metadataInterfaces.GetAddressOf());
     ASSERT_TRUE(SUCCEEDED(hr));
 
     const auto metadataImport =
-        metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport);
+        metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport2);
     const auto metadataEmit =
         metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
     const auto assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(

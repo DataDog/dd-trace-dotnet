@@ -35,7 +35,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  const auto allowed_process_names = GetEnvironmentValues(kProcessesEnvironmentName);
+  const auto allowed_process_names =
+      GetEnvironmentValues(kProcessesEnvironmentName);
 
   if (allowed_process_names.empty()) {
     LOG_APPEND(
@@ -105,13 +106,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   ComPtr<IUnknown> metadata_interfaces;
 
   auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
-                                           IID_IMetaDataImport,
+                                           IID_IMetaDataImport2,
                                            metadata_interfaces.GetAddressOf());
 
   LOG_IFFAILEDRET(hr, L"Failed to get metadata interface.");
 
   const auto metadata_import =
-      metadata_interfaces.As<IMetaDataImport>(IID_IMetaDataImport);
+      metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
   const auto metadata_emit =
       metadata_interfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
   const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
@@ -244,6 +245,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
       if (!target.IsValid()) {
         continue;
+      }
+
+      if (target.name.find(L"Execute") != std::wstring::npos) {
+        LOG_APPEND(L">>> method invocation: " << target.type.name << L","
+                                              << target.name);
       }
 
       // make sure the type and method names match

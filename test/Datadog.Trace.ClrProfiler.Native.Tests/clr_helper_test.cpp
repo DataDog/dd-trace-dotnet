@@ -7,7 +7,7 @@ using namespace trace;
 class DISABLED_CLRHelperTest : public ::testing::Test {
  protected:
   IMetaDataDispenser* metadata_dispenser_;
-  ComPtr<IMetaDataImport> metadata_import_;
+  ComPtr<IMetaDataImport2> metadata_import_;
   ComPtr<IMetaDataAssemblyImport> assembly_import_;
 
   void SetUp() override {
@@ -36,12 +36,12 @@ class DISABLED_CLRHelperTest : public ::testing::Test {
 
     ComPtr<IUnknown> metadataInterfaces;
     hr = metadata_dispenser_->OpenScope(L"Samples.ExampleLibrary.dll",
-                                        ofReadWriteMask, IID_IMetaDataImport,
+                                        ofReadWriteMask, IID_IMetaDataImport2,
                                         metadataInterfaces.GetAddressOf());
     ASSERT_TRUE(SUCCEEDED(hr));
 
     metadata_import_ =
-        metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport);
+        metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport2);
     assembly_import_ = metadataInterfaces.As<IMetaDataAssemblyImport>(
         IID_IMetaDataAssemblyImport);
   }
