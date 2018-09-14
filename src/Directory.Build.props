@@ -8,7 +8,7 @@
 
     <!-- NuGet package -->
     <Authors>Datadog</Authors>
-    <PackageIconUrl></PackageIconUrl>
+    <PackageIconUrl>https://github.com/DataDog/dd-trace-csharp/raw/master/datadog-logo-64x64.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/DataDog/dd-trace-csharp</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/DataDog/dd-trace-csharp/blob/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
