@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class StackExchangeRedis
     {
-        private static ConcurrentDictionary<Type, dynamic> _executeSyncImplBoundMethods = new ConcurrentDictionary<Type, dynamic>();
+        private static ConcurrentDictionary<Type, Func<object, object, object, object, object>> _executeSyncImplBoundMethods = new ConcurrentDictionary<Type, Func<object, object, object, object, object>>();
 
         /// <summary>
         /// Execute a synchronous redis operation.
@@ -28,22 +28,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object ExecuteSyncImpl(object multiplexer, object message, object processor, object server)
         {
             var resultType = GetResultTypeFromProcessor(processor);
-            dynamic originalMethod;
-            if (!_executeSyncImplBoundMethods.TryGetValue(resultType, out originalMethod))
+            if (!_executeSyncImplBoundMethods.TryGetValue(resultType, out var originalMethod))
             {
-                var method = multiplexer.GetType().GetMethod("ExecuteSyncImpl", BindingFlags.Instance | BindingFlags.NonPublic);
-                var boundMethod = method.MakeGenericMethod(resultType);
-                var methodParams = boundMethod.GetParameters();
-                var funcType = typeof(Func<,,,,>).MakeGenericType(boundMethod.ReturnType, boundMethod.DeclaringType, methodParams[0].ParameterType, methodParams[1].ParameterType, methodParams[2].ParameterType);
+                var asm = multiplexer.GetType().Assembly;
+                var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
+                var messageType = asm.GetType("StackExchange.Redis.Message");
+                var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
+                var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-                originalMethod = boundMethod.CreateDelegate(funcType);
-
+                originalMethod = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, object, object, object, object>>(
+                    multiplexerType,
+                    "ExecuteSyncImpl",
+                    new Type[] { messageType, processorType, serverType },
+                    new Type[] { resultType });
                 _executeSyncImplBoundMethods[resultType] = originalMethod;
             }
 
-            File.WriteAllLines(
-                @"C:\Temp\stack-exchange-redis.trace",
-                new string[] { $"multiplexer: {multiplexer}", $"message: {message}", $"processor: {processor}", $"server: {server}" });
             return originalMethod(multiplexer, message, processor, server);
         }
 
