@@ -7,6 +7,14 @@
     <RuntimeIdentifiers>win-x64;win-x86;linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
+    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' != 'netcoreapp2.0'">
+    <RuntimeIdentifier>win-$(Platform)</RuntimeIdentifier>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="StackExchange.Redis" Version="2.0.505" />
   </ItemGroup>
