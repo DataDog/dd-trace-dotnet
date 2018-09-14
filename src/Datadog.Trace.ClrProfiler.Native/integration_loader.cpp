@@ -119,6 +119,7 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
       }
     }
   } else if (raw_signature.is_string()) {
+    // load as a hex string
     std::string str = raw_signature;
     bool flip = false;
     char prev = 0;
@@ -139,9 +140,6 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
       }
       flip = !flip;
       prev = b;
-    }
-    for (auto& el : signature) {
-      LOG_APPEND(L"SIGNATURE " << method << L" " << HEX(el));
     }
   }
   return MethodReference(assembly, type, method, signature);
