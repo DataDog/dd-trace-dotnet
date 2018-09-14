@@ -8,9 +8,12 @@ namespace Samples.RedisCore
         static void Main(string[] args)
         {
             var redis = ConnectionMultiplexer.Connect("localhost");
-            redis.GetDatabase().StringSet("KEY", "VALUE");
-            var value = redis.GetDatabase().StringGetAsync("KEY").Result;
-            Console.WriteLine(value.ToString());
+            for (var i = 0; i < 100; i++)
+            {
+                redis.GetDatabase().StringSet($"KEY-{i}", $"VALUE {i}");
+                var value = redis.GetDatabase().StringGetAsync($"KEY-{i}").Result;
+                Console.WriteLine(value.ToString());
+            }
         }
     }
 }

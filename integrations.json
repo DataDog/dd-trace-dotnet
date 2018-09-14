@@ -150,6 +150,22 @@
           "method": "ExecuteSyncImpl",
           "signature": "00 04 1C 1C 1C 1C 1C"
         }
+      },
+      {
+        "caller": {
+          "assembly": "StackExchange.Redis"
+        },
+        "target": {
+          "assembly": "StackExchange.Redis",
+          "type": "StackExchange.Redis.ConnectionMultiplexer",
+          "method": "ExecuteAsyncImpl"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchangeRedis",
+          "method": "ExecuteAsyncImpl",
+          "signature": "00 05 1C 1C 1C 1C 1C 1C"
+        }
       }
     ]
   }

@@ -69,5 +69,20 @@ namespace Datadog.Trace
         /// The MVC or Web API action name.
         /// </summary>
         public const string AspNetAction = "aspnet.action";
+
+        /// <summary>
+        /// The Redis server hostname.
+        /// </summary>
+        public const string RedisHost = "out.host";
+
+        /// <summary>
+        /// The Redis server port.
+        /// </summary>
+        public const string RedisPort = "out.port";
+
+        /// <summary>
+        /// The raw command sent to redis.
+        /// </summary>
+        public const string RedisRawCommand = "redis.raw_command";
     }
 }
