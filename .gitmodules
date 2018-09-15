@@ -1,3 +1,0 @@
-[submodule "lib/coreclr"]
-	path = lib/coreclr
-	url = https://github.com/dotnet/coreclr.git
