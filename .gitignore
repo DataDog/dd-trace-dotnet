@@ -265,3 +265,5 @@ tools/
 .vscode/
 # Benchmark results
 BenchmarkDotNet.Artifacts/
+# CMake
+/src/Datadog.Trace.ClrProfiler.Native/build
