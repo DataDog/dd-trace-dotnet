@@ -19,7 +19,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
     assembly_metadata.cbLocale = 0;
   } else {
     assembly_metadata.szLocale =
-        const_cast<wchar_t*>(assembly_ref.locale.data());
+        (WCHAR*)assembly_ref.locale.data();
     assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
   }
 
@@ -33,7 +33,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   mdAssemblyRef assembly_ref_out;
   const HRESULT hr = assembly_emit_->DefineAssemblyRef(
       &assembly_ref.public_key.data[0], public_key_size,
-      assembly_ref.name.c_str(), &assembly_metadata,
+      (WCHAR*)assembly_ref.name.data(), &assembly_metadata,
       // hash blob
       nullptr,
       // cb of hash blob
@@ -61,8 +61,8 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
   HRESULT hr;
   type_ref = mdTypeRefNil;
 
-  const LPCWSTR wrapper_type_name =
-      method_replacement.wrapper_method.type_name.c_str();
+  const auto wrapper_type_name =
+      (WCHAR*)method_replacement.wrapper_method.type_name.data();
 
   if (metadata_.assemblyName ==
       method_replacement.wrapper_method.assembly.name) {
@@ -117,7 +117,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
   RETURN_IF_FAILED(hr);
 
   const auto wrapper_method_name =
-      method_replacement.wrapper_method.method_name.c_str();
+      (WCHAR*)method_replacement.wrapper_method.method_name.data();
   member_ref = mdMemberRefNil;
 
   hr = metadata_import_->FindMemberRef(
@@ -130,8 +130,8 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
     // if memberRef not found, create it by emitting a metadata token
     hr = metadata_emit_->DefineMemberRef(
         type_ref, wrapper_method_name,
-        method_replacement.wrapper_method.method_signature.data.data(),
-        (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
+        (PCCOR_SIGNATURE)method_replacement.wrapper_method.method_signature.data.data(),
+        (DWORD)method_replacement.wrapper_method.method_signature.data.size(),
         &member_ref);
   }
 
