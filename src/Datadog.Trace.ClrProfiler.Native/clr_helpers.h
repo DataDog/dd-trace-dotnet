@@ -33,11 +33,11 @@ class Enumerator {
 
   Enumerator(const Enumerator& other) = default;
 
-  Enumerator(Enumerator&& other) noexcept = default;
+  Enumerator(Enumerator&& other) = default;
 
   Enumerator& operator=(const Enumerator& other) = default;
 
-  Enumerator& operator=(Enumerator&& other) noexcept = default;
+  Enumerator& operator=(Enumerator&& other) = default;
 
   ~Enumerator() { close_(ptr_); }
 
