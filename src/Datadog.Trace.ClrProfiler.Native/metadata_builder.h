@@ -11,7 +11,7 @@ class MetadataBuilder {
  private:
   ModuleMetadata& metadata_;
   const mdModule module_ = mdModuleNil;
-  const ComPtr<IMetaDataImport> metadata_import_{};
+  const ComPtr<IMetaDataImport2> metadata_import_{};
   const ComPtr<IMetaDataEmit> metadata_emit_{};
   const ComPtr<IMetaDataAssemblyImport> assembly_import_{};
   const ComPtr<IMetaDataAssemblyEmit> assembly_emit_{};
@@ -21,7 +21,7 @@ class MetadataBuilder {
 
  public:
   MetadataBuilder(ModuleMetadata& metadata, const mdModule module,
-                  ComPtr<IMetaDataImport> metadata_import,
+                  ComPtr<IMetaDataImport2> metadata_import,
                   ComPtr<IMetaDataEmit> metadata_emit,
                   ComPtr<IMetaDataAssemblyImport> assembly_import,
                   ComPtr<IMetaDataAssemblyEmit> assembly_emit)

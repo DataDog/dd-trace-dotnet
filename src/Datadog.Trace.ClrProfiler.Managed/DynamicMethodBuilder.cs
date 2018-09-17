@@ -17,12 +17,14 @@ namespace Datadog.Trace.ClrProfiler
         /// <typeparam name="TDelegate">A <see cref="Delegate"/> type with the signature of the method to call.</typeparam>
         /// <param name="type">The <see cref="Type"/> that contains the method.</param>
         /// <param name="methodName">The name of the method.</param>
-        /// <param name="isStatic"><c>true</c> if the method is static, <c>false</c> otherwise.</param>
+        /// <param name="methodParameterTypes">optional types for the method parameters</param>
+        /// <param name="methodGenericArguments">optional generic type arguments for a generic method</param>
         /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
         public static TDelegate CreateMethodCallDelegate<TDelegate>(
             Type type,
             string methodName,
-            bool isStatic)
+            Type[] methodParameterTypes = null,
+            Type[] methodGenericArguments = null)
             where TDelegate : Delegate
         {
             Type delegateType = typeof(TDelegate);
@@ -48,18 +50,46 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             // find any method that matches by name and parameter types
-            MethodInfo methodInfo = type.GetMethod(
-                methodName,
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static,
-                null,
-                isStatic ? parameterTypes : parameterTypes.Skip(1).ToArray(),
-                null);
+            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            methods = methods.Where(m => m.Name == methodName).ToArray();
+            if (methodParameterTypes != null)
+            {
+                methods = methods.Where(m =>
+                {
+                    var ps = m.GetParameters();
+                    if (ps.Length != methodParameterTypes.Length)
+                    {
+                        return false;
+                    }
 
+                    for (var i = 0; i < ps.Length; i++)
+                    {
+                        var t1 = ps[i].ParameterType;
+                        var t2 = methodParameterTypes[i];
+
+                        // generics can be tricky to compare for type equality
+                        // so we will just check the namespace and name
+                        if (t1.Namespace != t2.Namespace || t1.Name != t2.Name)
+                        {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }).ToArray();
+            }
+
+            MethodInfo methodInfo = methods.FirstOrDefault();
             if (methodInfo == null)
             {
                 // method not found
                 // TODO: logging
                 return null;
+            }
+
+            if (methodGenericArguments != null)
+            {
+                methodInfo = methodInfo.MakeGenericMethod(methodGenericArguments);
             }
 
             var dynamicMethod = new DynamicMethod(methodName, returnType, parameterTypes, type);

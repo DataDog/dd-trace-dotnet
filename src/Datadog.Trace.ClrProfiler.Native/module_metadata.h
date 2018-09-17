@@ -16,11 +16,11 @@ class ModuleMetadata {
   std::unordered_map<std::wstring, mdTypeRef> wrapper_parent_type{};
 
  public:
-  const ComPtr<IMetaDataImport> metadata_import{};
+  const ComPtr<IMetaDataImport2> metadata_import{};
   std::wstring assemblyName = L"";
   std::vector<Integration> integrations = {};
 
-  ModuleMetadata(ComPtr<IMetaDataImport> metadata_import,
+  ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
                  std::wstring assembly_name,
                  std::vector<Integration> integrations)
       : metadata_import(std::move(metadata_import)),

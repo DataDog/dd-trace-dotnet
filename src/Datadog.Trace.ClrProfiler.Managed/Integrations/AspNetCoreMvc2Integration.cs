@@ -86,8 +86,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     _beforeAction = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
                         type,
-                        "BeforeAction",
-                        isStatic: true);
+                        "BeforeAction");
                 }
             }
             catch
@@ -141,8 +140,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     _afterAction = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
                         type,
-                        "AfterAction",
-                        isStatic: true);
+                        "AfterAction");
                 }
             }
             catch

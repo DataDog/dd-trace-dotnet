@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "Samples.RedisCore": {
+      "commandName": "Project"
+    }
+  }
+}

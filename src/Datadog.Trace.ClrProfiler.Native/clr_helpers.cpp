@@ -52,7 +52,7 @@ std::wstring GetAssemblyName(
   return name.substr(0, name_len - 1);
 }
 
-FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
+FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                              const mdToken& token) {
   mdToken parent_token = mdTokenNil;
   std::wstring function_name(kNameMaxSize, 0);
@@ -76,6 +76,15 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
           &raw_signature, &raw_signature_len, nullptr, nullptr, nullptr,
           nullptr, nullptr);
       break;
+    case mdtMethodSpec:
+      hr = metadata_import->GetMethodSpecProps(token, &parent_token, nullptr,
+                                               nullptr);
+      if (!FAILED(hr)) {
+        return GetFunctionInfo(metadata_import, parent_token);
+      }
+    default:
+      LOG_APPEND(L"[trace::GetFunctionInfo] unknown token type:"
+                 << HEX(TypeFromToken(token)));
   }
   if (FAILED(hr) || function_name_len == 0) {
     return {};
@@ -109,7 +118,7 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
           module_flags};
 }
 
-TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
+TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                      const mdToken& token) {
   mdToken parent_token = mdTokenNil;
   std::wstring type_name(kNameMaxSize, 0);

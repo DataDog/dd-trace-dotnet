@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Agent
         public async Task FlushAndCloseAsync()
         {
             _processExit.SetResult(true);
-            await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(2)));
+            await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)));
             if (!_flushTask.IsCompleted)
             {
                 _log.Warn("Could not flush all traces before process exit");

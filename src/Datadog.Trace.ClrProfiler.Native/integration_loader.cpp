@@ -110,13 +110,36 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
   std::wstring assembly = converter.from_bytes(src.value("assembly", ""));
   std::wstring type = converter.from_bytes(src.value("type", ""));
   std::wstring method = converter.from_bytes(src.value("method", ""));
-  auto arr = src.value("signature", json::array());
+  auto raw_signature = src.value("signature", json::array());
   std::vector<BYTE> signature;
-  if (arr.is_array()) {
-    for (auto& el : arr) {
+  if (raw_signature.is_array()) {
+    for (auto& el : raw_signature) {
       if (el.is_number_unsigned()) {
         signature.push_back(BYTE(el.get<BYTE>()));
       }
+    }
+  } else if (raw_signature.is_string()) {
+    // load as a hex string
+    std::string str = raw_signature;
+    bool flip = false;
+    char prev = 0;
+    for (auto& c : str) {
+      BYTE b = 0;
+      if ('0' <= c && c <= '9') {
+        b = c - '0';
+      } else if ('a' <= c && c <= 'f') {
+        b = c - 'a' + 10;
+      } else if ('A' <= c && c <= 'F') {
+        b = c - 'A' + 10;
+      } else {
+        // skip any non-hex character
+        continue;
+      }
+      if (flip) {
+        signature.push_back((prev << 4) + b);
+      }
+      flip = !flip;
+      prev = b;
     }
   }
   return MethodReference(assembly, type, method, signature);

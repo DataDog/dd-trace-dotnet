@@ -98,7 +98,7 @@ class EnumeratorIterator {
 };
 
 static Enumerator<mdTypeDef> EnumTypeDefs(
-    const ComPtr<IMetaDataImport>& metadata_import) {
+    const ComPtr<IMetaDataImport2>& metadata_import) {
   return Enumerator<mdTypeDef>(
       [metadata_import](HCORENUM* ptr, mdTypeDef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -110,7 +110,7 @@ static Enumerator<mdTypeDef> EnumTypeDefs(
 }
 
 static Enumerator<mdTypeRef> EnumTypeRefs(
-    const ComPtr<IMetaDataImport>& metadata_import) {
+    const ComPtr<IMetaDataImport2>& metadata_import) {
   return Enumerator<mdTypeRef>(
       [metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -122,7 +122,7 @@ static Enumerator<mdTypeRef> EnumTypeRefs(
 }
 
 static Enumerator<mdMethodDef> EnumMethods(
-    const ComPtr<IMetaDataImport>& metadata_import,
+    const ComPtr<IMetaDataImport2>& metadata_import,
     const mdToken& parent_token) {
   return Enumerator<mdMethodDef>(
       [metadata_import, parent_token](HCORENUM* ptr, mdMethodDef arr[],
@@ -135,7 +135,7 @@ static Enumerator<mdMethodDef> EnumMethods(
 }
 
 static Enumerator<mdMemberRef> EnumMemberRefs(
-    const ComPtr<IMetaDataImport>& metadata_import,
+    const ComPtr<IMetaDataImport2>& metadata_import,
     const mdToken& parent_token) {
   return Enumerator<mdMemberRef>(
       [metadata_import, parent_token](HCORENUM* ptr, mdMemberRef arr[],
@@ -149,7 +149,7 @@ static Enumerator<mdMemberRef> EnumMemberRefs(
 }
 
 static Enumerator<mdModuleRef> EnumModuleRefs(
-    const ComPtr<IMetaDataImport>& metadata_import) {
+    const ComPtr<IMetaDataImport2>& metadata_import) {
   return Enumerator<mdModuleRef>(
       [metadata_import](HCORENUM* ptr, mdModuleRef arr[], ULONG max,
                         ULONG* cnt) -> HRESULT {
@@ -240,12 +240,12 @@ std::wstring GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const mdAssemblyRef& assembly_ref);
 
-FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport>& metadata_import,
+FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                              const mdToken& token);
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id);
 
-TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport>& metadata_import,
+TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                      const mdToken& token);
 
 mdAssemblyRef FindAssemblyRef(
