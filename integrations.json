@@ -168,5 +168,26 @@
         }
       }
     ]
+  },
+  {
+    "name": "ServiceStackRedis",
+    "method_replacements": [
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendReceive"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStackRedis",
+          "method": "SendReceive",
+          "signature": "00 06 1C 1C 1C 1C 1C 02 18"
+        }
+      }
+    ]
   }
 ]

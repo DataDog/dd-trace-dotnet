@@ -91,15 +91,15 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   }
   function_name = function_name.substr(0, function_name_len - 1);
 
-  std::vector<BYTE> signature(raw_signature_len);
+  std::vector<BYTE> signature_data(raw_signature_len);
   for (ULONG i = 0; i < raw_signature_len; i++) {
-    signature[i] = raw_signature[i];
+    signature_data[i] = raw_signature[i];
   }
 
   // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
 
   return {token, function_name, GetTypeInfo(metadata_import, parent_token),
-          signature};
+          MethodSignature(signature_data)};
 }
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
