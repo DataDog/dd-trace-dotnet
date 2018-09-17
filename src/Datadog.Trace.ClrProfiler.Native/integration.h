@@ -38,6 +38,9 @@ struct PublicKey {
   }
 };
 
+#undef major
+#undef minor
+
 // Version is an Assembly version in the form Major.Minor.Build.Revision
 // (1.0.0.0)
 struct Version {
