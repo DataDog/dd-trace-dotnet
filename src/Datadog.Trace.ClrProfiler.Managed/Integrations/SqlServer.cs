@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Linq;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -108,7 +110,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             foreach (string name in names)
             {
-                if (builder[name] is string value)
+                if (builder.TryGetValue(name, out object valueObj) &&
+                    valueObj is string value)
                 {
                     return value;
                 }
