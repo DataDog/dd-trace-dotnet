@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -86,9 +87,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // - row count is not supported so we don't set it
             scope.Span.ResourceName = command.CommandText;
             scope.Span.Type = SpanTypes.Sql;
-            scope.Span.SetTag(Tags.SqlDatabase, command.Connection?.ConnectionString);
+            scope.Span.SetTag(Tags.DbType, "mssql");
+
+            // parse the connection string
+            var builder = new DbConnectionStringBuilder { ConnectionString = command.Connection.ConnectionString };
+
+            string database = GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog");
+            scope.Span.SetTag(Tags.DbName, database);
+
+            string user = GetConnectionStringValue(builder, "User ID", "UserID");
+            scope.Span.SetTag(Tags.DbUser, user);
+
+            string server = GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr");
+            scope.Span.SetTag(Tags.OutHost, server);
 
             return scope;
+        }
+
+        private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)
+        {
+            foreach (string name in names)
+            {
+                if (builder[name] is string value)
+                {
+                    return value;
+                }
+            }
+
+            return null;
         }
     }
 }
