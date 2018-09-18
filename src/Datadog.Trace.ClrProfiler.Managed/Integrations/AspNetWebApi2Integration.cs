@@ -104,8 +104,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (controllerContext?.RouteData?.Values is IDictionary<string, object> routeValues)
                 {
-                    controller = (routeValues.GetValueOrDefault("controller") as string) ?? string.Empty;
-                    action = (routeValues.GetValueOrDefault("action") as string) ?? string.Empty;
+                    controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+                    action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 }
             }
             catch
