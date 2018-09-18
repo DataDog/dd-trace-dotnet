@@ -23,8 +23,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             scope.Span.Type = SpanTypes.Redis;
             scope.Span.ResourceName = command;
             scope.Span.SetTag(Tags.RedisRawCommand, rawCommand);
-            scope.Span.SetTag(Tags.RedisHost, host);
-            scope.Span.SetTag(Tags.RedisPort, port);
+            scope.Span.SetTag(Tags.OutHost, host);
+            scope.Span.SetTag(Tags.OutPort, port);
 
             return scope;
         }
