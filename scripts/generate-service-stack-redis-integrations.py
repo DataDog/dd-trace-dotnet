@@ -11,6 +11,7 @@ VERSION = "0.2.2.0"
 class Signature(object):
     def __init__(self, types: List[str]):
         self.data = Signature.types_to_signature(types)
+        self.types = types
 
     @staticmethod
     def type_to_bytes(type_name: str) -> List[int]:
@@ -131,8 +132,17 @@ integrations = [
 
 
 def main():
+    print("INTEGRATIONS:")
     print(json.dumps([i.to_dict() for i in integrations],
                      indent=2, separators=(',', ': ')))
+    print("")
+    print("")
+    print("METHODS:")
+
+    for i in integrations:
+        for tr in i.type_replacements:
+            for mr in tr.method_replacements:
+                print(f"public static {mr.signature.types[0]} {mr.name}({','.join(t for t in mr.signature.types[1:])})")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461;net47;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net452;net461;net47;netcoreapp2.0</TargetFrameworks>
     <Platforms>AnyCPU;x64;x86</Platforms>
     <RuntimeIdentifiers>win-x64;win-x86;linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
@@ -16,8 +16,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ServiceStack.Redis.Core" Version="5.2.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.0.505" />
+    <PackageReference Include="ServiceStack.Redis" Version="5.2.0" />
+    <PackageReference Include="StackExchange.Redis" Version="1.2.6" />
   </ItemGroup>
   
   <ItemGroup>

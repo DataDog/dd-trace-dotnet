@@ -138,12 +138,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 host = host.Substring(0, host.IndexOf(':'));
             }
 
-            var rawCommand = GetCommandAndKey(multiplexer, message);
+            var rawCommand = GetRawCommand(multiplexer, message);
 
             return Redis.CreateScope(host, port, rawCommand, finishOnClose);
         }
 
-        private static string GetCommandAndKey(object multiplexer, object message)
+        private static string GetRawCommand(object multiplexer, object message)
         {
             string cmdAndKey = null;
             try
