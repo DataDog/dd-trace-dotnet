@@ -139,7 +139,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             var rawCommand = GetRawCommand(multiplexer, message);
-
             return Redis.CreateScope(host, port, rawCommand, finishOnClose);
         }
 
