@@ -83,8 +83,8 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
         return GetFunctionInfo(metadata_import, parent_token);
       }
     default:
-      LOG_APPEND(L"[trace::GetFunctionInfo] unknown token type:"
-                 << HEX(TypeFromToken(token)));
+      LOG(ERROR) << L"unknown token type:" << HEX(TypeFromToken(token));
+      break;
   }
   if (FAILED(hr) || function_name_len == 0) {
     return {};
@@ -208,8 +208,6 @@ std::vector<Integration> FilterIntegrationsByTarget(
       }
       for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
         auto ref_name = GetAssemblyName(assembly_import, assembly_ref);
-        // LOG_APPEND(L"-- assembly ref: " << assembly_name << " to " <<
-        // ref_name);
         if (mr.target_method.assembly.name == ref_name) {
           found = true;
           break;

@@ -1,7 +1,7 @@
 ﻿#ifndef DD_CLR_PROFILER_CS_HOLDER_H_
 #define DD_CLR_PROFILER_CS_HOLDER_H_
 
-#include <cor.h>
+#include "stdafx.h"
 
 class CSHolder {
  public:

@@ -6,7 +6,7 @@
 // license information.
 
 #include <atomic>
-#include "unknwn.h"
+#include "cor.h"
 
 class ClassFactory : public IClassFactory {
  private:

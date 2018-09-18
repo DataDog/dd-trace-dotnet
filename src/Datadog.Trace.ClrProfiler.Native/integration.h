@@ -1,7 +1,8 @@
 #ifndef DD_CLR_PROFILER_INTEGRATION_H_
 #define DD_CLR_PROFILER_INTEGRATION_H_
 
-#include <corhlpr.h>
+#include "stdafx.h"
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>

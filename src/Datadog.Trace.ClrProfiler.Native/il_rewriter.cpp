@@ -2,8 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
+#include "stdafx.h"
+
 #include <cassert>
-#include <corhlpr.cpp>
 
 #include "il_rewriter.h"
 

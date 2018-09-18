@@ -1,8 +1,8 @@
 ﻿#ifndef DD_CLR_PROFILER_COR_PROFILER_BASE_H_
 #define DD_CLR_PROFILER_COR_PROFILER_BASE_H_
 
-#include <corhlpr.h>
-#include <corprof.h>
+#include "stdafx.h"
+
 #include <atomic>
 
 namespace trace {

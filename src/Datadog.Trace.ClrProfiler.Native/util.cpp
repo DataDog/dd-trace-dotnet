@@ -6,7 +6,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "windows.h"
 
 namespace trace {
 

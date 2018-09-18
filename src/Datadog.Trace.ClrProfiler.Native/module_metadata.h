@@ -1,7 +1,8 @@
 ﻿#ifndef DD_CLR_PROFILER_MODULE_METADATA_H_
 #define DD_CLR_PROFILER_MODULE_METADATA_H_
 
-#include <corhlpr.h>
+#include "stdafx.h"
+
 #include <unordered_map>
 
 #include "clr_helpers.h"

@@ -1,7 +1,6 @@
 ﻿#ifndef DD_CLR_PROFILER_COM_PTR_H_
 #define DD_CLR_PROFILER_COM_PTR_H_
 
-#include <windows.h>
 #include <cassert>
 
 // https://msdn.microsoft.com/en-us/magazine/dn904668.aspx

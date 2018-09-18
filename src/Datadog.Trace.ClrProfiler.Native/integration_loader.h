@@ -1,6 +1,8 @@
 #ifndef DD_CLR_PROFILER_INTEGRATION_LOADER_H_
 #define DD_CLR_PROFILER_INTEGRATION_LOADER_H_
 
+#include "stdafx.h"
+
 #include <codecvt>
 #include <fstream>
 #include <locale>

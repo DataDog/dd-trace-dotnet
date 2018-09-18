@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <corhlpr.h>
+#include "stdafx.h"
 
 #include "com_ptr.h"
 #include "module_metadata.h"

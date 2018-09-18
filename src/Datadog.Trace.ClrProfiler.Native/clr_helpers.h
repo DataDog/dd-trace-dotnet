@@ -1,8 +1,8 @@
 #ifndef DD_CLR_PROFILER_CLR_HELPERS_H_
 #define DD_CLR_PROFILER_CLR_HELPERS_H_
 
-#include <corhlpr.h>
-#include <corprof.h>
+#include "stdafx.h"
+
 #include <functional>
 #include <utility>
 

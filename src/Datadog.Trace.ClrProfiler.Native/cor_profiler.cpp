@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
+#include "stdafx.h"
+
 #include <fstream>
 #include <string>
 #include <vector>
@@ -27,11 +29,11 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
 
   const auto process_name = GetCurrentProcessName();
-  LOG_APPEND(L"Initialize() called for " << process_name);
+  LOG(INFO) << L"Initialize() called for " << process_name;
 
   if (integrations_.empty()) {
-    LOG_APPEND(L"Profiler disabled: " << kIntegrationsEnvironmentName
-                                      << L" environment variable not set.");
+    LOG(WARNING) << L"Profiler disabled: " << kIntegrationsEnvironmentName
+                 << L" environment variable not set.";
     return E_FAIL;
   }
 
@@ -39,35 +41,36 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       GetEnvironmentValues(kProcessesEnvironmentName);
 
   if (allowed_process_names.empty()) {
-    LOG_APPEND(
-        kProcessesEnvironmentName
-        << L" environment variable not set. Attaching to any .NET process.");
+    LOG(INFO)
+        << kProcessesEnvironmentName
+        << L" environment variable not set. Attaching to any .NET process.";
   } else {
-    LOG_APPEND(kProcessesEnvironmentName << L":");
+    LOG(INFO) << kProcessesEnvironmentName << L":";
     for (auto& name : allowed_process_names) {
-      LOG_APPEND(L"  " + name);
+      LOG(INFO) << L"  " << name;
     }
 
     if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
                   process_name) == allowed_process_names.end()) {
-      LOG_APPEND(L"Profiler disabled: module name \""
-                 << process_name << "\" does not match "
-                 << kProcessesEnvironmentName << " environment variable.");
+      LOG(INFO) << L"Profiler disabled: module name \"" << process_name
+                << "\" does not match " << kProcessesEnvironmentName
+                << " environment variable.";
       return E_FAIL;
     }
   }
 
   HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
       &this->info_);
-  LOG_IFFAILEDRET(hr,
-                  L"Profiler disabled: interface ICorProfilerInfo3 or "
-                  L"higher not found.");
+  LOG_IF(ERROR, FAILED(hr))
+      << L"Profiler disabled: interface ICorProfilerInfo3 or higher not found.";
 
   hr = this->info_->SetEventMask(kEventMask);
-  LOG_IFFAILEDRET(hr, L"Failed to attach profiler: unable to set event mask.");
+
+  LOG_IF(ERROR, FAILED(hr)) << hr,
+      L"Failed to attach profiler: unable to set event mask.";
 
   // we're in!
-  LOG_APPEND(L"Profiler attached to process " << process_name);
+  LOG(INFO) << L"Profiler attached to process " << process_name;
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;
@@ -87,8 +90,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     // We cannot obtain writeable metadata interfaces on Windows Runtime modules
     // or instrument their IL. We must never try to add assembly references to
     // mscorlib or netstandard.
-    LOG_APPEND(L"ModuleLoadFinished() called for "
-               << module_info.assembly.name << ". Skipping instrumentation.");
+    LOG(INFO) << L"ModuleLoadFinished() called for "
+              << module_info.assembly.name << ". Skipping instrumentation.";
     return S_OK;
   }
 
@@ -96,10 +99,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    LOG_APPEND(L"ModuleLoadFinished() called for "
-               << module_info.assembly.name
-               << ". FilterIntegrationsByCaller() returned empty list. Nothing "
-                  "to instrument here.");
+    LOG(INFO) << L"ModuleLoadFinished() called for "
+              << module_info.assembly.name
+              << ". FilterIntegrationsByCaller() returned empty list. Nothing "
+                 "to instrument here.";
     return S_OK;
   }
 
@@ -109,7 +112,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                            IID_IMetaDataImport2,
                                            metadata_interfaces.GetAddressOf());
 
-  LOG_IFFAILEDRET(hr, L"Failed to get metadata interface.");
+  LOG_IF(ERROR, FAILED(hr)) << L"Failed to get metadata interface.";
 
   const auto metadata_import =
       metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
@@ -124,20 +127,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByTarget(enabled_integrations, assembly_import);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    LOG_APPEND(L"ModuleLoadFinished() called for "
-               << module_info.assembly.name
-               << ". FilterIntegrationsByTarget() returned empty list. Nothing "
-                  "to instrument here.");
+    LOG(INFO) << L"ModuleLoadFinished() called for "
+              << module_info.assembly.name
+              << ". FilterIntegrationsByTarget() returned empty list. Nothing "
+                 "to instrument here.";
     return S_OK;
   }
 
-  LOG_APPEND(
-      L"ModuleLoadFinished() will try to emit instrumentation metadata for "
-      << module_info.assembly.name);
+  LOG(INFO)
+      << L"ModuleLoadFinished() will try to emit instrumentation metadata for "
+      << module_info.assembly.name;
 
   mdModule module;
   hr = metadata_import->GetModuleFromScope(&module);
-  LOG_IFFAILEDRET(hr, L"ModuleLoadFinished() failed to get module token.");
+  LOG_IF(ERROR, FAILED(hr))
+      << L"ModuleLoadFinished() failed to get module token.";
 
   ModuleMetadata* module_metadata = new ModuleMetadata(
       metadata_import, module_info.assembly.name, enabled_integrations);
@@ -163,8 +167,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // store module info for later lookup
   module_id_to_info_map_.Update(module_id, module_metadata);
 
-  LOG_APPEND(L"ModuleLoadFinished() emitted instrumentation metadata for "
-             << module_info.assembly.name);
+  LOG(INFO) << L"ModuleLoadFinished() emitted instrumentation metadata for "
+            << module_info.assembly.name;
   return S_OK;
 }
 
@@ -247,11 +251,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      if (target.name.find(L"Execute") != std::wstring::npos) {
-        LOG_APPEND(L">>> method invocation: " << target.type.name << L","
-                                              << target.name);
-      }
-
       // make sure the type and method names match
       if (method_replacement.target_method.type_name != target.type.name ||
           method_replacement.target_method.method_name != target.name) {
@@ -279,14 +278,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       modified = true;
 
-      LOG_APPEND(L"JITCompilationStarted() replaced calls from "
-                 << caller.type.name << "." << caller.name << "() to "
-                 << method_replacement.target_method.type_name << "."
-                 << method_replacement.target_method.method_name << "() "
-                 << HEX(original_argument) << " with calls to "
-                 << method_replacement.wrapper_method.type_name << "."
-                 << method_replacement.wrapper_method.method_name << "() "
-                 << HEX(wrapper_method_ref) << ".");
+      LOG(INFO) << L"JITCompilationStarted() replaced calls from "
+                << caller.type.name << "." << caller.name << "() to "
+                << method_replacement.target_method.type_name << "."
+                << method_replacement.target_method.method_name << "() "
+                << HEX(original_argument) << " with calls to "
+                << method_replacement.wrapper_method.type_name << "."
+                << method_replacement.wrapper_method.method_name << "() "
+                << HEX(wrapper_method_ref) << ".";
     }
   }
 
