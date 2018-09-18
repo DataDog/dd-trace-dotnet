@@ -154,8 +154,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 host = host.Substring(0, host.IndexOf(':'));
             }
 
-            scope.Span.SetTag(Tags.RedisHost, host);
-            scope.Span.SetTag(Tags.RedisPort, port);
+            scope.Span.SetTag(Tags.OutHost, host);
+            scope.Span.SetTag(Tags.OutPort, port);
 
             return scope;
         }
