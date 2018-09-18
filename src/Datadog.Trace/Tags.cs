@@ -41,6 +41,21 @@ namespace Datadog.Trace
         public const string ErrorStack = "error.stack";
 
         /// <summary>
+        /// The type of database (e.g. mssql, mysql)
+        /// </summary>
+        public const string DbType = "db.type";
+
+        /// <summary>
+        /// The user used to sign into a database
+        /// </summary>
+        public const string DbUser = "db.user";
+
+        /// <summary>
+        /// The name of the database.
+        /// </summary>
+        public const string DbName = "db.name";
+
+        /// <summary>
         /// The query text
         /// </summary>
         public const string SqlQuery = "sql.query";
@@ -49,11 +64,6 @@ namespace Datadog.Trace
         /// The number of rows returned by a query
         /// </summary>
         public const string SqlRows = "sql.rows";
-
-        /// <summary>
-        /// The name of the database
-        /// </summary>
-        public const string SqlDatabase = "sql.db";
 
         /// <summary>
         /// The ASP.NET routing template.
@@ -71,14 +81,14 @@ namespace Datadog.Trace
         public const string AspNetAction = "aspnet.action";
 
         /// <summary>
-        /// The Redis server hostname.
+        /// The hostname of a outgoing server connection.
         /// </summary>
-        public const string RedisHost = "out.host";
+        public const string OutHost = "out.host";
 
         /// <summary>
-        /// The Redis server port.
+        /// The port of a outgoing server connection.
         /// </summary>
-        public const string RedisPort = "out.port";
+        public const string OutPort = "out.port";
 
         /// <summary>
         /// The raw command sent to redis.

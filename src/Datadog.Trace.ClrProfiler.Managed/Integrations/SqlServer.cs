@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -81,13 +82,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static Scope CreateScope(DbCommand command)
         {
             var scope = Tracer.Instance.StartActive(OperationName);
-
-            // set the scope properties
-            // - row count is not supported so we don't set it
-            scope.Span.ResourceName = command.CommandText;
-            scope.Span.Type = SpanTypes.Sql;
-            scope.Span.SetTag(Tags.SqlDatabase, command.Connection?.ConnectionString);
-
+            scope.Span.SetTag(Tags.DbType, "mssql");
+            scope.Span.AddTagsFromDbCommand(command);
             return scope;
         }
     }
