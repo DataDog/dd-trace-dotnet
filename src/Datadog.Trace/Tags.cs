@@ -66,11 +66,6 @@ namespace Datadog.Trace
         public const string SqlRows = "sql.rows";
 
         /// <summary>
-        /// The name of the database
-        /// </summary>
-        public const string SqlDatabase = "sql.db";
-
-        /// <summary>
         /// The ASP.NET routing template.
         /// </summary>
         public const string AspNetRoute = "aspnet.route";
