@@ -41,6 +41,21 @@ namespace Datadog.Trace
         public const string ErrorStack = "error.stack";
 
         /// <summary>
+        /// The type of database (e.g. mssql, mysql)
+        /// </summary>
+        public const string DbType = "db.type";
+
+        /// <summary>
+        /// The user used to sign into a database
+        /// </summary>
+        public const string DbUser = "db.user";
+
+        /// <summary>
+        /// The name of the database.
+        /// </summary>
+        public const string DbName = "db.name";
+
+        /// <summary>
         /// The query text
         /// </summary>
         public const string SqlQuery = "sql.query";
