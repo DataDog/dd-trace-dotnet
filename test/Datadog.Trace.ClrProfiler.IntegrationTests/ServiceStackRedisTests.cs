@@ -22,8 +22,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
+            var prefix = $"{BuildParameters.Configuration}.{BuildParameters.TargetFramework}.";
             using (var agent = new MockTracerAgent(AgentPort))
-            using (var processResult = RunSampleAndWaitForExit(AgentPort, arguments: "ServiceStack"))
+            using (var processResult = RunSampleAndWaitForExit(AgentPort, arguments: $"ServiceStack {prefix}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -42,13 +43,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var expected = new TupleList<string, string>
                 {
                     { "ROLE", "ROLE" },
-                    { "SET", "SET ServiceStack.Redis.INCR 0" },
+                    { "SET", $"SET {prefix}ServiceStack.Redis.INCR 0" },
                     { "PING", "PING" },
                     { "DDCUSTOM", "DDCUSTOM COMMAND" },
                     { "ECHO", "ECHO Hello World" },
                     { "SLOWLOG", "SLOWLOG GET 5" },
-                    { "INCR", "INCR ServiceStack.Redis.INCR" },
-                    { "INCRBYFLOAT", "INCRBYFLOAT ServiceStack.Redis.INCR 1.25" },
+                    { "INCR", $"INCR {prefix}ServiceStack.Redis.INCR" },
+                    { "INCRBYFLOAT", $"INCRBYFLOAT {prefix}ServiceStack.Redis.INCR 1.25" },
                     { "TIME", "TIME" },
                     { "SELECT", "SELECT 0" },
                     { "QUIT", "QUIT" },

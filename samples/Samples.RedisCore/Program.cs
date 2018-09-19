@@ -10,24 +10,32 @@ namespace Samples.RedisCore
     {
         static void Main(string[] args)
         {
+            string prefix = "";
+            if (args.Length > 1)
+            {
+                prefix = args[1];
+            }
+
             if (args.Length == 0 || args.Contains("ServiceStack"))
             {
-                RunServiceStack();
+                RunServiceStack(prefix);
             }
             if (args.Length == 0 || args.Contains("StackExchange"))
             {
-                RunStackExchange();
+                RunStackExchange(prefix);
             }
         }
 
-        private static void RunServiceStack()
+        private static void RunServiceStack(string prefix)
         {
-            Console.WriteLine("Testing ServiceStack.Redis");
+            prefix += "ServiceStack.Redis.";
+
+            Console.WriteLine($"Testing ServiceStack.Redis: {prefix}");
             using (var redisManager = new PooledRedisClientManager())
             using (var redis = (RedisClient)redisManager.GetClient())
             {
                 // clear
-                redis.Set("ServiceStack.Redis.INCR", 0);
+                redis.Set($"{prefix}INCR", 0);
 
                 RunCommands(new TupleList<string, Func<object>>
                 {
@@ -40,9 +48,9 @@ namespace Samples.RedisCore
                     // test SendExpectDeeplyNestedMultiData
                     { "SLOWLOG", () => redis.GetSlowlog(5) },
                     // test SendExpectLong
-                    { "INCR", () => redis.Incr("ServiceStack.Redis.INCR") },
+                    { "INCR", () => redis.Incr($"{prefix}INCR") },
                     // test SendExpectDouble},
-                    { "INCR", () => redis.IncrByFloat("ServiceStack.Redis.INCR", 1.25) },
+                    { "INCR", () => redis.IncrByFloat($"{prefix}INCR", 1.25) },
                     // test SendExpectMultiData
                     { "TIME", () => redis.GetServerTime() },
                     // test SendExpectSuccess
@@ -53,14 +61,16 @@ namespace Samples.RedisCore
             }
         }
 
-        private static void RunStackExchange()
+        private static void RunStackExchange(string prefix)
         {
-            Console.WriteLine("Testing StackExchange.Redis");
+            prefix += "StackExchange.Redis.";
+
+            Console.WriteLine($"Testing StackExchange.Redis {prefix}");
             using (var redis = ConnectionMultiplexer.Connect("localhost"))
             {
                 var db = redis.GetDatabase();
 
-                db.StringSet("StackExchange.Redis.INCR", "0");
+                db.StringSet($"{prefix}INCR", "0");
 
                 RunCommands(new TupleList<string, Func<object>>
                 {
@@ -68,8 +78,8 @@ namespace Samples.RedisCore
                     { "DDCUSTOM", () => db.Execute("DDCUSTOM", "COMMAND") },
                     { "ECHO", () => db.Execute("ECHO", "Hello World") },
                     { "SLOWLOG", () => db.Execute("SLOWLOG", "GET") },
-                    { "INCR", () => db.StringIncrementAsync("StackExchange.Redis.INCR").Result },
-                    { "INCR", () => db.StringIncrement("StackExchange.Redis.INCR", 1.25) },
+                    { "INCR", () => db.StringIncrementAsync($"{prefix}INCR").Result },
+                    { "INCR", () => db.StringIncrement($"{prefix}INCR", 1.25) },
                     { "TIME", () => db.Execute("TIME") },
                 });
             }
