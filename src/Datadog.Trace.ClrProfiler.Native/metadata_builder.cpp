@@ -2,6 +2,7 @@
 #include <string>
 
 #include "clr_helpers.h"
+#include "logging.h"
 #include "macros.h"
 #include "metadata_builder.h"
 
@@ -23,7 +24,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
     assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
   }
 
-  LOG_APPEND("EmitAssemblyRef " << assembly_ref.str());
+  logger_->info("EmitAssemblyRef {}", assembly_ref.str());
 
   DWORD public_key_size = 8;
   if (assembly_ref.public_key == trace::PublicKey()) {
@@ -41,7 +42,9 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
       // flags
       0, &assembly_ref_out);
 
-  LOG_IFFAILEDRET(hr, L"DefineAssemblyRef failed");
+  if (FAILED(hr)) {
+    logger_->error("DefineAssemblyRef failed");
+  }
   return S_OK;
 }
 
@@ -76,9 +79,8 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
         assembly_import_, method_replacement.wrapper_method.assembly.name);
     if (assembly_ref == mdAssemblyRefNil) {
       // TODO: emit assembly reference if not found?
-      LOG_APPEND("Assembly reference for "
-                 << method_replacement.wrapper_method.assembly.name
-                 << " not found.");
+      logger_->error("Assembly reference for {} not found.",
+                    method_replacement.wrapper_method.assembly.name);
       return E_FAIL;
     }
 

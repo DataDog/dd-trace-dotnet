@@ -1,15 +1,17 @@
 #ifndef DD_CLR_PROFILER_LOGGING_H_
 #define DD_CLR_PROFILER_LOGGING_H_
 
-#include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 #include <codecvt>
 #include <iostream>
 #include <locale>
 
+namespace trace {
+std::shared_ptr<spdlog::logger> GetLogger();
+}  // namespace trace
+
 // allow wstrings:
 
-extern std::shared_ptr<spdlog::logger> logger;
 namespace fmt {
 template <>
 struct formatter<std::wstring> {
