@@ -10,7 +10,8 @@ if (Test-Path $vcpkgRoot) {
     $p = Start-Process "git" `
         -ArgumentList "clone","https://github.com/Microsoft/vcpkg.git" `
         -WorkingDirectory $workspaceRoot `
-        -NoNewWindow -Wait -PassThru     
+        -NoNewWindow -PassThru
+    $p.WaitForExit()
     if ($p.ExitCode -ne 0) {
         Exit $p.ExitCode
     }
@@ -23,7 +24,8 @@ if (Test-Path $vcpkgExe) {
     $p = Start-Process "cmd" `
         -ArgumentList "/c","bootstrap-vcpkg.bat" `
         -WorkingDirectory $vcpkgRoot `
-        -NoNewWindow -Wait -PassThru     
+        -NoNewWindow -PassThru
+    $p.WaitForExit()
     if ($p.ExitCode -ne 0) {
         Exit $p.ExitCode
     }
@@ -38,7 +40,8 @@ foreach ($platform in $platforms) {
         $p = Start-Process $vcpkgExe `
             -ArgumentList "install","$($package):$($platform)-windows-static" `
             -WorkingDirectory $vcpkgRoot `
-            -NoNewWindow -Wait -PassThru 
+            -NoNewWindow -PassThru
+        $p.WaitForExit()
         if ($p.ExitCode -ne 0) {
             Exit $p.ExitCode
         }
