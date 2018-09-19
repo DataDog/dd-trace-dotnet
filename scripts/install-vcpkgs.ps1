@@ -11,7 +11,7 @@ function Run {
     )
     $proc = Start-Process $Name -ArgumentList $Args -WorkingDirectory $WorkingDirectory -NoNewWindow -PassThru
     $handle = $proc.Handle # cache proc.Handle
-    $proc.WaitForExit(60000)
+    $proc.WaitForExit(1000 * 60 * 10)
     return $proc
 }
 
