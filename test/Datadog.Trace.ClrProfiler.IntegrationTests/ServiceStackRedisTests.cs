@@ -29,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(11).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
-                Assert.Equal(11, spans.Count);
 
                 foreach (var span in spans)
                 {
@@ -58,10 +57,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 for (int i = 0; i < expected.Count; i++)
                 {
                     var e1 = expected[i].Item1;
-                    var a1 = spans[i].Resource;
-
                     var e2 = expected[i].Item2;
-                    var a2 = spans[i].Tags.Get<string>("redis.raw_command");
+
+                    var a1 = i < spans.Count ? spans[i].Resource : string.Empty;
+                    var a2 = i < spans.Count ? spans[i].Tags.Get<string>("redis.raw_command") : string.Empty;
 
                     Assert.True(e1 == a1, $"invalid resource name for span {i}, {e1} != {a1}");
                     Assert.True(e2 == a2, $"invalid raw command for span {i}, {e2} != {a2}");
