@@ -5,9 +5,10 @@
 
 namespace trace {
 std::shared_ptr<spdlog::logger> GetLogger() {
-  auto logger = spdlog::get("profiler");
+  auto logger = spdlog::get("dotnet-profiler");
   if (logger == nullptr) {
-    logger = spdlog::rotating_logger_mt("profiler", "C:\\Temp\\Profiler.log",
+    logger = spdlog::rotating_logger_mt("dotnet-profiler",
+                                        R"(C:\ProgramData\Datadog\logs)",
                                         1024 * 1024 * 5, 3);
   }
   return logger;
