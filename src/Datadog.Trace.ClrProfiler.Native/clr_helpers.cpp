@@ -1,4 +1,5 @@
 #include "clr_helpers.h"
+#include "logging.h"
 #include "macros.h"
 
 namespace trace {
@@ -83,8 +84,8 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
         return GetFunctionInfo(metadata_import, parent_token);
       }
     default:
-      LOG_APPEND(L"[trace::GetFunctionInfo] unknown token type:"
-                 << HEX(TypeFromToken(token)));
+      GetLogger()->error("[trace::GetFunctionInfo] unknown token type: {}",
+                         TypeFromToken(token));
   }
   if (FAILED(hr) || function_name_len == 0) {
     return {};

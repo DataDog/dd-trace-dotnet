@@ -23,6 +23,11 @@
     <ProjectGuid>{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}</ProjectGuid>
     <RootNamespace>DatadogTraceClrProfilerNativeDLL</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <Platform Condition="'$(Platform)'=='x86'">Win32</Platform>
+    <VCPKG_PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</VCPKG_PLATFORM>
+    <VCPKG_PLATFORM Condition="'$(Platform)'=='x64'">x64</VCPKG_PLATFORM>
+    <VCPKG_LIBS Condition="'$(Configuration)'=='Release'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\lib</VCPKG_LIBS>
+    <VCPKG_LIBS Condition="'$(Configuration)'=='Debug'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\debug\lib</VCPKG_LIBS>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -69,29 +74,36 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <IncludePath>$(VC_IncludePath);$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>bin\$(Configuration)\x86\</OutDir>
     <IntDir>obj\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
+    <LibraryPath>$(VCPKG_LIBS);$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
+    <LibraryPath>$(VCPKG_LIBS);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
+    <LibraryPath>$(VCPKG_LIBS);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>bin\$(Configuration)\x86\</OutDir>
     <IntDir>obj\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
+    <LibraryPath>$(VCPKG_LIBS);$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -106,6 +118,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>fmtd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -121,6 +134,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>fmtd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -139,6 +153,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>fmt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>
+      </ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -157,6 +174,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>fmt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>
+      </ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

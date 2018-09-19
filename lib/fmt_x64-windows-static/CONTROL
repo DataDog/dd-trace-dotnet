@@ -1,0 +1,5 @@
+Package: fmt
+Version: 5.1.0
+Architecture: x64-windows-static
+Multi-Arch: same
+Description: Formatting library for C++. It can be used as a safe alternative to printf or as a fast alternative to IOStreams.
