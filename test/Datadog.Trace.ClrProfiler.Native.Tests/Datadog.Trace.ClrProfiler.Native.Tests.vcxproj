@@ -26,11 +26,12 @@
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <VCPKG_PLATFORM Condition="'$(Platform)'=='Win32'">x86</VCPKG_PLATFORM>
+    <Platform Condition="'$(Platform)'=='x86'">Win32</Platform>
+    <VCPKG_PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</VCPKG_PLATFORM>
     <VCPKG_PLATFORM Condition="'$(Platform)'=='x64'">x64</VCPKG_PLATFORM>
     <VCPKG_INCLUDES>..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\include;..\..\lib\spdlog_$(VCPKG_PLATFORM)-windows-static\include</VCPKG_INCLUDES>
-    <VCPKG_LIBS Condition="'$(Configuration)'=='Release'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\lib\fmt.lib</VCPKG_LIBS>
-    <VCPKG_LIBS Condition="'$(Configuration)'=='Debug'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\debug\lib\fmtd.lib</VCPKG_LIBS>
+    <VCPKG_LIBS Condition="'$(Configuration)'=='Release'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\lib</VCPKG_LIBS>
+    <VCPKG_LIBS Condition="'$(Configuration)'=='Debug'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\debug\lib</VCPKG_LIBS>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -39,7 +40,8 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath);$(VCPKG_INCLUDES)</IncludePath>
+    <IncludePath>$(IncludePath);$(VCPKG_INCLUDES)</IncludePath>
+    <LibraryPath>$(LibraryPath);$(VCPKG_LIBS)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
@@ -106,6 +108,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>%(AdditionalDependencies);fmtd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -123,7 +126,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);fmtd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -141,6 +144,7 @@
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalDependencies>%(AdditionalDependencies);fmt.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -158,6 +162,7 @@
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalDependencies>%(AdditionalDependencies);fmt.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
