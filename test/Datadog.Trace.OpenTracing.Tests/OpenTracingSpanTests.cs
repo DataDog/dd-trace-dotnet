@@ -54,7 +54,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             span.Finish();
 
             double durationDifference = Math.Abs((((OpenTracingSpan)span).Duration - expectedDuration).TotalMilliseconds);
-            Assert.True(durationDifference < 20);
+            Assert.True(durationDifference < 100);
         }
 
         /*
