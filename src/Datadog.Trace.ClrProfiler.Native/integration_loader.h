@@ -7,9 +7,9 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 #include "integration.h"
-#include "json.hpp"
 #include "macros.h"
 
 namespace trace {
