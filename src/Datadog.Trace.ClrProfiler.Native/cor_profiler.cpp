@@ -247,11 +247,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      if (target.name.find(L"Execute") != std::wstring::npos) {
-        LOG_APPEND(L">>> method invocation: " << target.type.name << L","
-                                              << target.name);
-      }
-
       // make sure the type and method names match
       if (method_replacement.target_method.type_name != target.type.name ||
           method_replacement.target_method.method_name != target.name) {
@@ -260,15 +255,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       // make sure the calling convention matches
       if (!method_replacement.target_method.method_signature.data.empty() &&
-          method_replacement.target_method.method_signature.data[0] !=
-              target.signature[0]) {
+          method_replacement.target_method.method_signature
+                  .CallingConvention() !=
+              target.signature.CallingConvention()) {
         continue;
       }
 
       // make sure the number of arguments match
       if (method_replacement.target_method.method_signature.data.size() > 1 &&
-          method_replacement.target_method.method_signature.data[1] !=
-              target.signature[1]) {
+          method_replacement.target_method.method_signature
+                  .NumberOfArguments() !=
+              target.signature.NumberOfArguments()) {
         continue;
       }
 

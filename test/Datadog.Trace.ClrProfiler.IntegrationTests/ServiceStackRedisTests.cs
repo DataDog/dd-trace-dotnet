@@ -1,15 +1,19 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class StackExchangeRedisTests : TestHelper
+    public class ServiceStackRedisTests : TestHelper
     {
-        private const int AgentPort = 9003;
+        private const int AgentPort = 9004;
 
-        public StackExchangeRedisTests(ITestOutputHelper output)
+        public ServiceStackRedisTests(ITestOutputHelper output)
             : base("RedisCore", output)
         {
         }
@@ -20,12 +24,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var prefix = $"{BuildParameters.Configuration}.{BuildParameters.TargetFramework}.";
             using (var agent = new MockTracerAgent(AgentPort))
-            using (var processResult = RunSampleAndWaitForExit(AgentPort, arguments: $"StackExchange {prefix}"))
+            using (var processResult = RunSampleAndWaitForExit(AgentPort, arguments: $"ServiceStack {prefix}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.GetSpans().Where(s => s.Type == "redis").ToList();
-                Assert.Equal(8, spans.Count);
+                Assert.Equal(11, spans.Count);
 
                 foreach (var span in spans)
                 {
@@ -38,14 +42,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var expected = new TupleList<string, string>
                 {
-                    { "SET", $"SET {prefix}StackExchange.Redis.INCR" },
+                    { "ROLE", "ROLE" },
+                    { "SET", $"SET {prefix}ServiceStack.Redis.INCR 0" },
                     { "PING", "PING" },
-                    { "DDCUSTOM", "DDCUSTOM" },
-                    { "ECHO", "ECHO" },
-                    { "SLOWLOG", "SLOWLOG" },
-                    { "INCR", $"INCR {prefix}StackExchange.Redis.INCR" },
-                    { "INCRBYFLOAT", $"INCRBYFLOAT {prefix}StackExchange.Redis.INCR" },
+                    { "DDCUSTOM", "DDCUSTOM COMMAND" },
+                    { "ECHO", "ECHO Hello World" },
+                    { "SLOWLOG", "SLOWLOG GET 5" },
+                    { "INCR", $"INCR {prefix}ServiceStack.Redis.INCR" },
+                    { "INCRBYFLOAT", $"INCRBYFLOAT {prefix}ServiceStack.Redis.INCR 1.25" },
                     { "TIME", "TIME" },
+                    { "SELECT", "SELECT 0" },
+                    { "QUIT", "QUIT" },
                 };
 
                 for (int i = 0; i < expected.Count; i++)
