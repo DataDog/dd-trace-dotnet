@@ -22,8 +22,7 @@ namespace trace {
 CorProfiler* profiler = nullptr;
 
 CorProfiler::CorProfiler()
-    : integrations_(LoadIntegrationsFromEnvironment()),
-      logger_(GetLogger()) {}
+    : integrations_(LoadIntegrationsFromEnvironment()), logger_(GetLogger()) {}
 
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
