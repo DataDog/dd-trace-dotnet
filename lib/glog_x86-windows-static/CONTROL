@@ -1,0 +1,6 @@
+Package: glog
+Version: 0.3.5-2
+Depends: gflags
+Architecture: x86-windows-static
+Multi-Arch: same
+Description: C++ implementation of the Google logging module

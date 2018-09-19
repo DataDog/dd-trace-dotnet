@@ -1,0 +1,5 @@
+Package: gflags
+Version: 2.2.1-3
+Architecture: x86-windows-static
+Multi-Arch: same
+Description: A C++ library that implements commandline flags processing

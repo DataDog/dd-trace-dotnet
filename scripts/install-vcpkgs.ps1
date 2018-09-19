@@ -1,4 +1,5 @@
-$workspaceRoot = [IO.Path]::GetFullPath(([IO.Path]::Combine($PSScriptRoot, "..", "..")))
+$solutionRoot = [IO.Path]::GetFullPath(([IO.Path]::Combine($PSScriptRoot, "..")))
+$workspaceRoot = [IO.Path]::GetFullPath(([IO.Path]::Combine($solutionRoot, "..")))
 $vcpkgRoot = [IO.Path]::Combine($workspaceRoot, "vcpkg")
 $vcpkgExe = [IO.Path]::Combine($vcpkgRoot, "vcpkg.exe")
 
@@ -9,6 +10,7 @@ function Run {
         [Parameter(Position=1)][String[]] $Args, 
         [Parameter(Position=2)][string] $WorkingDirectory
     )
+    Write-Host "running $($Name) $($Args)"
     $proc = Start-Process $Name -ArgumentList $Args -WorkingDirectory $WorkingDirectory -NoNewWindow -PassThru
     $handle = $proc.Handle # cache proc.Handle
     $proc.WaitForExit(1000 * 60 * 10)
@@ -17,39 +19,41 @@ function Run {
 
 
 if (Test-Path $vcpkgRoot) {
-    Write-Output "vcpkg repo found"
+    Write-Host "vcpkg repo found"
 } else {
-    Write-Output "vcpkg repo not found, cloning"
+    Write-Host "vcpkg repo not found, cloning"
     $p = Run "git" "clone","https://github.com/Microsoft/vcpkg.git" $workspaceRoot
     if ($p.ExitCode -ne 0) {
-        Write-Output "failed to clone vcpkg repo: $($p.ExitCode)"
+        Write-Host "failed to clone vcpkg repo: $($p.ExitCode)"
         Exit 1
     }
 }
 
 if (Test-Path $vcpkgExe) {
-    Write-Output "vcpkg.exe found"
+    Write-Host "vcpkg.exe found"
 } else {
-    Write-Output "vcpkg.exe not found, bootstrapping"
+    Write-Host "vcpkg.exe not found, bootstrapping"
     $p = Run "cmd" "/c","bootstrap-vcpkg.bat" $vcpkgRoot
     if ($p.ExitCode -ne 0) {
-        Write-Output "failed to bootstrap vcpkg: $($p.ExitCode)"
+        Write-Host "failed to bootstrap vcpkg: $($p.ExitCode)"
         Exit 1
     }
 }
 
-$packages = @("spdlog", "nlohmann-json")
+$packages = @("fmt", "spdlog", "nlohmann-json")
 $platforms = @("x86", "x64")
 
 foreach ($platform in $platforms) {
     foreach ($package in $packages) {
-        Write-Output "installing $($package):$($platform)-windows-static"
+        Write-Host "installing $($package):$($platform)-windows-static"
         $p = Run $vcpkgExe "install","$($package):$($platform)-windows-static" $vcpkgRoot
         if ($p.ExitCode -ne 0) {
-            Write-Output "failed to install $($package):$($platform): $($p.ExitCode)"
+            Write-Host "failed to install $($package):$($platform): $($p.ExitCode)"
             Exit 1
         }
     }
 }
+
+Get-ChildItem ([IO.Path]::Combine($vcpkgRoot, "packages")) | Copy -Destination ([IO.Path]::Combine($solutionRoot, "lib")) -Recurse
 
 Exit 0
