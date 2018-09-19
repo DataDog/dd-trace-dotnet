@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.GetSpans().Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
+                var spans = agent.WaitForSpans(11).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
                 Assert.Equal(11, spans.Count);
 
                 foreach (var span in spans)

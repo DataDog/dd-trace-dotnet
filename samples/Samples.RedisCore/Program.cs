@@ -74,11 +74,11 @@ namespace Samples.RedisCore
 
                 RunCommands(new TupleList<string, Func<object>>
                 {
-                    { "PING", () => db.Ping() },
+                    { "PING", () => db.PingAsync().Result },
                     { "DDCUSTOM", () => db.Execute("DDCUSTOM", "COMMAND") },
                     { "ECHO", () => db.Execute("ECHO", "Hello World") },
                     { "SLOWLOG", () => db.Execute("SLOWLOG", "GET") },
-                    { "INCR", () => db.StringIncrementAsync($"{prefix}INCR").Result },
+                    { "INCR", () => db.StringIncrement($"{prefix}INCR") },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR", 1.25) },
                     { "TIME", () => db.Execute("TIME") },
                 });
