@@ -23,7 +23,7 @@ if (Test-Path $vcpkgRoot) {
     $p = Run "git" "clone","https://github.com/Microsoft/vcpkg.git" $workspaceRoot
     if ($p.ExitCode -ne 0) {
         Write-Output "failed to clone vcpkg repo: $($p.ExitCode)"
-        Exit $p.ExitCode
+        Exit 1
     }
 }
 
@@ -34,7 +34,7 @@ if (Test-Path $vcpkgExe) {
     $p = Run "cmd" "/c","bootstrap-vcpkg.bat" $vcpkgRoot
     if ($p.ExitCode -ne 0) {
         Write-Output "failed to bootstrap vcpkg: $($p.ExitCode)"
-        Exit $p.ExitCode
+        Exit 1
     }
 }
 
@@ -47,7 +47,7 @@ foreach ($platform in $platforms) {
         $p = Run $vcpkgExe "install","$($package):$($platform)-windows-static" $vcpkgRoot
         if ($p.ExitCode -ne 0) {
             Write-Output "failed to install $($package):$($platform): $($p.ExitCode)"
-            Exit $p.ExitCode
+            Exit 1
         }
     }
 }
