@@ -27,9 +27,9 @@
     <ProjectName>Datadog.Trace.ClrProfiler.Native</ProjectName>
     <VCPKG_PLATFORM Condition="'$(Platform)'=='Win32'">x86</VCPKG_PLATFORM>
     <VCPKG_PLATFORM Condition="'$(Platform)'=='x64'">x64</VCPKG_PLATFORM>
-    <VCPKG_INCLUDES>$(SolutionDir)lib\fmt_$(VCPKG_PLATFORM)-windows-static\include;$(SolutionDir)lib\spdlog_$(VCPKG_PLATFORM)-windows-static\include</VCPKG_INCLUDES>
-    <VCPKG_LIBS Condition="'$(Configuration)'=='Release'">$(SolutionDir)lib\fmt_$(VCPKG_PLATFORM)-windows-static\lib\fmt.lib</VCPKG_LIBS>
-    <VCPKG_LIBS Condition="'$(Configuration)'=='Debug'">$(SolutionDir)lib\fmt_$(VCPKG_PLATFORM)-windows-static\debug\lib\fmtd.lib</VCPKG_LIBS>
+    <VCPKG_INCLUDES>..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\include;..\..\lib\spdlog_$(VCPKG_PLATFORM)-windows-static\include</VCPKG_INCLUDES>
+    <VCPKG_LIBS Condition="'$(Configuration)'=='Release'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\lib\fmt.lib</VCPKG_LIBS>
+    <VCPKG_LIBS Condition="'$(Configuration)'=='Debug'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\debug\lib\fmtd.lib</VCPKG_LIBS>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">

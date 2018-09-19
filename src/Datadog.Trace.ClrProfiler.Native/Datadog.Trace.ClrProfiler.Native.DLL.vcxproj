@@ -23,6 +23,11 @@
     <ProjectGuid>{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}</ProjectGuid>
     <RootNamespace>DatadogTraceClrProfilerNativeDLL</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <VCPKG_PLATFORM Condition="'$(Platform)'=='Win32'">x86</VCPKG_PLATFORM>
+    <VCPKG_PLATFORM Condition="'$(Platform)'=='x64'">x64</VCPKG_PLATFORM>
+    <VCPKG_INCLUDES>..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\include;..\..\lib\spdlog_$(VCPKG_PLATFORM)-windows-static\include</VCPKG_INCLUDES>
+    <VCPKG_LIBS Condition="'$(Configuration)'=='Release'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\lib\fmt.lib</VCPKG_LIBS>
+    <VCPKG_LIBS Condition="'$(Configuration)'=='Debug'">..\..\lib\fmt_$(VCPKG_PLATFORM)-windows-static\debug\lib\fmtd.lib</VCPKG_LIBS>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -69,6 +74,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>bin\$(Configuration)\x86\</OutDir>
     <IntDir>obj\$(Configuration)\x86\</IntDir>
@@ -93,6 +101,14 @@
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(VCPKG_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>$(VCPKG_LIBS);%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
