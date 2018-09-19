@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -35,8 +35,8 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Finish_StartTimeInThePastWithNoEndTime_DurationProperlyComputed()
         {
-            // The 10 additional milliseconds account for the clock precision
-            var startTime = DateTimeOffset.UtcNow.AddMinutes(-1).AddMilliseconds(-10);
+            // The 100 additional milliseconds account for the clock precision
+            var startTime = DateTimeOffset.UtcNow.AddMinutes(-1).AddMilliseconds(-100);
             var span = _tracer.StartSpan("Operation", startTime: startTime);
 
             span.Finish();

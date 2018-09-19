@@ -11,11 +11,5 @@
     <div>
         @RenderBody()
     </div>
-
-    <footer>
-        <div>Samples.AspNetMvc5</div>
-        <div>Bitness: @(Environment.Is64BitProcess ? "64-bit" : "32-bit")</div>
-        <div>Profiler attached: @Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached</div>
-    </footer>
 </body>
 </html>

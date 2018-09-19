@@ -168,5 +168,154 @@
         }
       }
     ]
+  },
+  {
+    "name": "ServiceStackRedis",
+    "method_replacements": [
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectCode"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectCode",
+          "signature": "00 02 0e 1c 1d 1d 05"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectComplexResponse"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectComplexResponse",
+          "signature": "00 02 1c 1c 1d 1d 05"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectData"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectData",
+          "signature": "00 02 1d 05 1c 1d 1d 05"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectDeeplyNestedMultiData"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectDeeplyNestedMultiData",
+          "signature": "00 02 1d 1c 1c 1d 1d 05"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectDouble"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectDouble",
+          "signature": "00 02 0d 1c 1d 1d 05"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectLong"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectLong",
+          "signature": "00 02 0a 1c 1d 1d 05"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectMultiData"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectMultiData",
+          "signature": "00 02 1d 1d 05 1c 1d 1d 05"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectSuccess"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendExpectSuccess",
+          "signature": "00 02 01 1c 1d 1d 05"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendWithoutRead"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendWithoutRead",
+          "signature": "00 02 01 1c 1d 1d 05"
+        }
+      }
+    ]
   }
 ]

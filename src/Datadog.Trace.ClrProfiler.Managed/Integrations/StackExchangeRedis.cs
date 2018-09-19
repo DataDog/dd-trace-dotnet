@@ -15,9 +15,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class StackExchangeRedis
     {
-        private const string OperationName = "redis.command";
-        private const string ServiceName = "redis";
-
         private static ConcurrentDictionary<Type, Func<object, object, object, object, object>> _executeSyncImplBoundMethods =
             new ConcurrentDictionary<Type, Func<object, object, object, object, object>>();
 
@@ -132,19 +129,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(object multiplexer, object message, object server, bool finishOnClose = true)
         {
-            var scope = Tracer.Instance.StartActive(OperationName, serviceName: ServiceName, finishOnClose: finishOnClose);
-
-            var rawCommand = GetCommandAndKey(multiplexer, message);
-            var command = rawCommand;
-            if (command.Contains(" "))
-            {
-                command = command.Substring(0, command.IndexOf(' '));
-            }
-
-            scope.Span.Type = SpanTypes.Redis;
-            scope.Span.ResourceName = command;
-            scope.Span.SetTag(Tags.RedisRawCommand, rawCommand);
-
             var config = GetConfiguration(multiplexer);
             var host = config;
             var port = "6379";
@@ -154,13 +138,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 host = host.Substring(0, host.IndexOf(':'));
             }
 
-            scope.Span.SetTag(Tags.OutHost, host);
-            scope.Span.SetTag(Tags.OutPort, port);
-
-            return scope;
+            var rawCommand = GetRawCommand(multiplexer, message);
+            return Redis.CreateScope(host, port, rawCommand, finishOnClose);
         }
 
-        private static string GetCommandAndKey(object multiplexer, object message)
+        private static string GetRawCommand(object multiplexer, object message)
         {
             string cmdAndKey = null;
             try
