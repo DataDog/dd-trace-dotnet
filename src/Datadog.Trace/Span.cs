@@ -131,7 +131,15 @@ namespace Datadog.Trace
                     _tags = new Dictionary<string, string>();
                 }
 
-                _tags[key] = value;
+                if (value == null)
+                {
+                    _tags.Remove(key);
+                }
+                else
+                {
+                    _tags[key] = value;
+                }
+
                 return this;
             }
         }
