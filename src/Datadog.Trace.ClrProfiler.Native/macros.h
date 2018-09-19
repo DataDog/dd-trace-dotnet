@@ -1,7 +1,6 @@
 #ifndef DD_CLR_PROFILER_MACROS_H_
 #define DD_CLR_PROFILER_MACROS_H_
 
-#define HEX(HR) L"0x" << std::hex << std::uppercase << HR << std::dec
 #define RETURN_IF_FAILED(EXPR) \
   do {                         \
     hr = (EXPR);               \

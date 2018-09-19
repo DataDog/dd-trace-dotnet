@@ -1,5 +1,7 @@
 #include "clr_helpers.h"
+#include "logging.h"
 #include "macros.h"
+#include "util.h"
 
 namespace trace {
 
@@ -83,7 +85,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
         return GetFunctionInfo(metadata_import, parent_token);
       }
     default:
-      LOG(ERROR) << L"unknown token type:" << HEX(TypeFromToken(token));
+      logger->error("unknown token type: {:x}", TypeFromToken(token));
       break;
   }
   if (FAILED(hr) || function_name_len == 0) {

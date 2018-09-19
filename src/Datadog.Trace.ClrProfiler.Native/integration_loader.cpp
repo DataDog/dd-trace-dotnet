@@ -1,4 +1,5 @@
 #include "integration_loader.h"
+#include "logging.h"
 #include "util.h"
 
 namespace trace {
@@ -8,7 +9,7 @@ using json = nlohmann::json;
 std::vector<Integration> LoadIntegrationsFromEnvironment() {
   std::vector<Integration> integrations;
   for (const auto& f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
-    LOG(INFO) << L"loading integrations from " << f;
+    logger->info("loading integrations from {}", f);
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {
       integrations.push_back(i);
@@ -27,7 +28,7 @@ std::vector<Integration> LoadIntegrationsFromFile(
     integrations = LoadIntegrationsFromStream(stream);
     stream.close();
   } catch (...) {
-    LOG(ERROR) << L"failed to load integrations";
+    logger->error("failed to load integrations");
   }
 
   return integrations;
@@ -48,13 +49,13 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
       }
     }
 
-    LOG(INFO) << L"loaded integrations: " << j.dump().c_str();
+    logger->info("loaded integrations: {}", j.dump());
   } catch (const json::parse_error& e) {
-    LOG(ERROR) << L"invalid integrations: " << e.what();
+    logger->error("invalid integrations: {}", e.what());
   } catch (const json::type_error& e) {
-    LOG(ERROR) << L"invalid integrations: " << e.what();
+    logger->error("invalid integrations: {}", e.what());
   } catch (...) {
-    LOG(ERROR) << L"failed to load integrations";
+    logger->error("failed to load integrations");
   }
 
   return integrations;
@@ -71,8 +72,7 @@ std::optional<Integration> IntegrationFromJson(const json::value_type& src) {
   std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
   std::wstring name = converter.from_bytes(src.value("name", ""));
   if (name.empty()) {
-    LOG(INFO) << L"integration name is missing for integration: "
-              << src.dump().c_str();
+    logger->warn("integration name is missing for integration: {}", src.dump());
     return {};
   }
 
