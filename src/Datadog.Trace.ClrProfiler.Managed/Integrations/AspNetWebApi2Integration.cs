@@ -24,49 +24,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>A task with the result</returns>
         public static dynamic ExecuteAsync(dynamic @this, dynamic controllerContext, dynamic cancellationTokenSource)
         {
-            dynamic result;
-
             using (var scope = CreateScope(controllerContext))
             {
-                try
+                Action<Exception> onComplete = e =>
                 {
-                    result = @this.ExecuteAsync(controllerContext, ((CancellationTokenSource)cancellationTokenSource).Token);
-                    if (result is Task task)
+                    if (e != null)
                     {
-                        task.ContinueWith(
-                            t =>
-                            {
-                                if (t.IsFaulted)
-                                {
-                                    scope.Span.SetException(t.Exception);
-                                    scope.Span.Finish();
-                                }
-                                else if (t.IsCanceled)
-                                {
-                                    // abandon the span
-                                }
-                                else
-                                {
-                                    // some fields aren't set till after execution, so repopulate anything missing
-                                    UpdateSpan(controllerContext, scope.Span);
-                                    scope.Span.Finish();
-                                }
-                            });
+                        scope.Span.SetException(e);
                     }
-                    else
-                    {
-                        scope.Span.Finish();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    scope.Span.SetException(ex);
-                    scope.Span.Finish();
-                    throw;
-                }
-            }
 
-            return result;
+                    // some fields aren't set till after execution, so repopulate anything missing
+                    UpdateSpan(controllerContext, scope.Span);
+                    scope.Span.Finish();
+                };
+                Func<object> f = () => @this.ExecuteAsync(controllerContext, ((CancellationTokenSource)cancellationTokenSource).Token);
+
+                return scope.Span.Trace(f, onComplete: onComplete);
+            }
         }
 
         private static Scope CreateScope(dynamic controllerContext)

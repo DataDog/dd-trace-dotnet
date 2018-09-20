@@ -79,6 +79,11 @@ namespace Datadog.Trace.ClrProfiler
                 }).ToArray();
             }
 
+            if (methodGenericArguments != null)
+            {
+                methods = methods.Where(m => m.IsGenericMethodDefinition).ToArray();
+            }
+
             MethodInfo methodInfo = methods.FirstOrDefault();
             if (methodInfo == null)
             {
