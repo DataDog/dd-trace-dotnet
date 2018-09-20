@@ -123,6 +123,9 @@
                      Key="System\CurrentControlSet\Services\WAS">
           <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]DD_PROFILER_PROCESSES=w3wp.exe" Action="append"/>
         </RegistryKey>
+        <!-- W3SVC depends on WAS, so stopping WAS stops both services, and starting W3SVC starts both -->
+        <ServiceControl Id="WAS.Stop" Name="WAS" Stop="both" Wait="yes"/>
+        <ServiceControl Id="W3SVC.Start" Name="W3SVC" Start="both" Wait="yes"/>
       </Component>
     </ComponentGroup>
   </Fragment>
