@@ -33,6 +33,29 @@ namespace Datadog.Trace.TestHelpers
             return _collector.GetSpans();
         }
 
+        /// <summary>
+        /// Wait for the given number of spans to appear.
+        /// </summary>
+        /// <param name="count">The expected number of spans.</param>
+        /// <param name="timeoutInMilliseconds">The timeout</param>
+        /// <returns>The list of spans.</returns>
+        public List<Span> WaitForSpans(int count, int timeoutInMilliseconds = 20000)
+        {
+            var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
+            while (DateTime.Now < deadline)
+            {
+                var spans = GetSpans();
+                if (spans.Count >= count)
+                {
+                    return spans;
+                }
+
+                Thread.Sleep(500);
+            }
+
+            return GetSpans();
+        }
+
         public void Dispose()
         {
             _listener.Stop();

@@ -54,8 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var spans = agent.GetSpans();
-
+                var spans = agent.WaitForSpans(1);
                 Assert.True(spans.Count > 0, "expected at least one span");
                 foreach (var span in spans)
                 {

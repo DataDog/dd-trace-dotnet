@@ -1,12 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -89,41 +82,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             using (var scope = CreateScope(multiplexer, message, server, finishOnClose: false))
             {
-                try
-                {
-                    var result = originalMethod(multiplexer, message, processor, state, server);
-                    if (result is Task task)
-                    {
-                        task.ContinueWith(t =>
-                        {
-                            if (t.IsFaulted)
-                            {
-                                scope.Span.SetException(t.Exception);
-                                scope.Span.Finish();
-                            }
-                            else if (t.IsCanceled)
-                            {
-                                // abandon the span
-                            }
-                            else
-                            {
-                                scope.Span.Finish();
-                            }
-                        });
-                    }
-                    else
-                    {
-                        scope.Span.Finish();
-                    }
-
-                    return result;
-                }
-                catch (Exception ex)
-                {
-                    scope.Span.SetException(ex);
-                    scope.Span.Finish();
-                    throw;
-                }
+                return scope.Span.Trace(() => originalMethod(multiplexer, message, processor, state, server));
             }
         }
 
