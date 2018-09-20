@@ -13,7 +13,7 @@
           "method": "BeforeAction"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
           "method": "BeforeAction",
           "signature": [ 0, 4, 28, 28, 28, 28, 28 ]
@@ -30,7 +30,7 @@
           "method": "AfterAction"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
           "method": "AfterAction",
           "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
@@ -51,7 +51,7 @@
           "method": "BeginInvokeAction"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration",
           "method": "BeginInvokeAction",
           "signature": [ 0, 5, 28, 28, 28, 28, 28, 28 ]
@@ -67,7 +67,7 @@
           "method": "EndInvokeAction"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration",
           "method": "EndInvokeAction",
           "signature": [ 0, 2, 2, 28, 28 ]
@@ -86,7 +86,7 @@
           "method": "ExecuteAsync"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration",
           "method": "ExecuteAsync",
           "signature": [ 0, 3, 28, 28, 28, 28 ]
@@ -109,7 +109,7 @@
           "signature": [ 32, 2, 12, 82, 8, 11, 82, 91, 14 ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
           "method": "ExecuteReaderWithMethod",
           "signature": [ 0, 3, 28, 28, 8, 14 ]
@@ -124,7 +124,7 @@
           "signature": [ 32, 1, 12, 87, 12, 11, 92 ]
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
           "method": "ExecuteReader",
           "signature": [ 0, 2, 28, 28, 8 ]
@@ -145,7 +145,7 @@
           "method": "ExecuteSyncImpl"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchangeRedis",
           "method": "ExecuteSyncImpl",
           "signature": "00 04 1C 1C 1C 1C 1C"
@@ -161,7 +161,7 @@
           "method": "ExecuteAsyncImpl"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchangeRedis",
           "method": "ExecuteAsyncImpl",
           "signature": "00 05 1C 1C 1C 1C 1C 1C"
@@ -182,7 +182,7 @@
           "method": "SendExpectCode"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
           "method": "SendExpectCode",
           "signature": "00 02 0e 1c 1d 1d 05"
@@ -198,7 +198,7 @@
           "method": "SendExpectComplexResponse"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
           "method": "SendExpectComplexResponse",
           "signature": "00 02 1c 1c 1d 1d 05"
@@ -214,7 +214,7 @@
           "method": "SendExpectData"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
           "method": "SendExpectData",
           "signature": "00 02 1d 05 1c 1d 1d 05"
@@ -230,7 +230,7 @@
           "method": "SendExpectDeeplyNestedMultiData"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
           "method": "SendExpectDeeplyNestedMultiData",
           "signature": "00 02 1d 1c 1c 1d 1d 05"
@@ -246,7 +246,7 @@
           "method": "SendExpectDouble"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
           "method": "SendExpectDouble",
           "signature": "00 02 0d 1c 1d 1d 05"
@@ -262,7 +262,7 @@
           "method": "SendExpectLong"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
           "method": "SendExpectLong",
           "signature": "00 02 0a 1c 1d 1d 05"
@@ -278,7 +278,7 @@
           "method": "SendExpectMultiData"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
           "method": "SendExpectMultiData",
           "signature": "00 02 1d 1d 05 1c 1d 1d 05"
@@ -294,7 +294,7 @@
           "method": "SendExpectSuccess"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
           "method": "SendExpectSuccess",
           "signature": "00 02 01 1c 1d 1d 05"
@@ -310,7 +310,7 @@
           "method": "SendWithoutRead"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.2.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
           "method": "SendWithoutRead",
           "signature": "00 02 01 1c 1d 1d 05"
