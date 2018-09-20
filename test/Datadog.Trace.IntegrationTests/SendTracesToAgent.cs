@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Net;
 using Datadog.Trace.TestHelpers;
@@ -70,6 +70,24 @@ namespace Datadog.Trace.IntegrationTests
 
             var trace = _httpRecorder.Traces.Single();
             MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
+        }
+
+        [Fact]
+        public async void SubmitsOutOfOrderSpans()
+        {
+            var scope1 = _tracer.StartActive("op1");
+            var scope2 = _tracer.StartActive("op2");
+            scope1.Close();
+            scope2.Close();
+
+            await _httpRecorder.WaitForCompletion(1);
+            Assert.Single(_httpRecorder.Requests);
+            Assert.Single(_httpRecorder.Responses);
+            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
+
+            var trace = _httpRecorder.Traces.Single();
+            MsgPackHelpers.AssertSpanEqual(scope1.Span, trace[0].AsList()[0]);
+            MsgPackHelpers.AssertSpanEqual(scope2.Span, trace[0].AsList()[1]);
         }
 
         [Fact]

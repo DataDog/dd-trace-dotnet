@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -43,25 +43,9 @@ namespace Datadog.Trace
             lock (_lock)
             {
                 _openSpans--;
-                if (span.IsRootSpan)
+                if (_openSpans == 0)
                 {
-                    if (_openSpans != 0)
-                    {
-                        _log.DebugFormat("Some child spans were not finished before the root. {NumberOfOpenSpans}", _openSpans);
-                        if (_tracer.IsDebugEnabled)
-                        {
-                            foreach (var s in _spans.Where(x => !x.IsFinished))
-                            {
-                                _log.DebugFormat("Span {UnfinishedSpan} was not finished before its root span", s);
-                            }
-
-                            // TODO:bertrand Instead detect if we are being garbage collected and warn at that point
-                        }
-                    }
-                    else
-                    {
-                        _tracer.Write(_spans);
-                    }
+                    _tracer.Write(_spans);
                 }
             }
         }
