@@ -74,7 +74,7 @@ namespace Samples.RedisCore
 
                 RunCommands(new TupleList<string, Func<object>>
                 {
-                    { "PING", () => db.PingAsync().Result },
+                    { "PING", () => db.Ping() },
                     { "DDCUSTOM", () => db.Execute("DDCUSTOM", "COMMAND") },
                     { "ECHO", () => db.Execute("ECHO", "Hello World") },
                     { "SLOWLOG", () => db.Execute("SLOWLOG", "GET") },
