@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using MsgPack;
@@ -16,57 +16,57 @@ namespace Datadog.Trace.TestHelpers
     {
         public static ulong TraceId(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["trace_id"].AsUInt64();
+            return obj.FirstDictionary()["trace_id"].AsUInt64();
         }
 
         public static ulong SpanId(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["span_id"].AsUInt64();
+            return obj.FirstDictionary()["span_id"].AsUInt64();
         }
 
         public static ulong ParentId(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["parent_id"].AsUInt64();
+            return obj.FirstDictionary()["parent_id"].AsUInt64();
         }
 
         public static string OperationName(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["name"].AsString();
+            return obj.FirstDictionary()["name"].AsString();
         }
 
         public static string ResourceName(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["resource"].AsString();
+            return obj.FirstDictionary()["resource"].AsString();
         }
 
         public static string ServiceName(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["service"].AsString();
+            return obj.FirstDictionary()["service"].AsString();
         }
 
         public static long StartTime(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["start"].AsInt64();
+            return obj.FirstDictionary()["start"].AsInt64();
         }
 
         public static long Duration(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["duration"].AsInt64();
+            return obj.FirstDictionary()["duration"].AsInt64();
         }
 
         public static string Type(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["type"].AsString();
+            return obj.FirstDictionary()["type"].AsString();
         }
 
         public static string Error(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["error"].AsString();
+            return obj.FirstDictionary()["error"].AsString();
         }
 
         public static Dictionary<string, string> Tags(this MessagePackObject obj)
         {
-            return obj.AsList().First().AsDictionary()["meta"].AsDictionary().ToDictionary(kv => kv.Key.AsString(), kv => kv.Value.AsString());
+            return obj.FirstDictionary()["meta"].AsDictionary().ToDictionary(kv => kv.Key.AsString(), kv => kv.Value.AsString());
         }
 
         public static void AssertSpanEqual(Span expected, MessagePackObject actual)
@@ -93,6 +93,16 @@ namespace Datadog.Trace.TestHelpers
             {
                 Assert.Equal(expected.Tags, actual.Tags());
             }
+        }
+
+        private static MessagePackObjectDictionary FirstDictionary(this MessagePackObject obj)
+        {
+            if (obj.IsList)
+            {
+                return obj.AsList().First().FirstDictionary();
+            }
+
+            return obj.AsDictionary();
         }
     }
 }
