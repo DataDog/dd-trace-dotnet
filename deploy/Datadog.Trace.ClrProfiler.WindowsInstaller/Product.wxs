@@ -39,10 +39,6 @@
       <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="EnvironmentVariables.User"/>
     </Feature>
-
-    <InstallExecuteSequence>
-      <ScheduleReboot After='InstallFinalize'/>
-    </InstallExecuteSequence>
   </Product>
 
   <Fragment>
