@@ -24,22 +24,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>A task with the result</returns>
         public static dynamic ExecuteAsync(dynamic @this, dynamic controllerContext, dynamic cancellationTokenSource)
         {
-            using (var scope = CreateScope(controllerContext))
+            using (Scope scope = CreateScope(controllerContext))
             {
-                Action<Exception> onComplete = e =>
-                {
-                    if (e != null)
+                return scope.Span.Trace(
+                    () => @this.ExecuteAsync(controllerContext, ((CancellationTokenSource)cancellationTokenSource).Token),
+                    onComplete: e =>
                     {
-                        scope.Span.SetException(e);
-                    }
+                        if (e != null)
+                        {
+                            scope.Span.SetException(e);
+                        }
 
-                    // some fields aren't set till after execution, so repopulate anything missing
-                    UpdateSpan(controllerContext, scope.Span);
-                    scope.Span.Finish();
-                };
-                Func<object> f = () => @this.ExecuteAsync(controllerContext, ((CancellationTokenSource)cancellationTokenSource).Token);
-
-                return scope.Span.Trace(f, onComplete: onComplete);
+                        // some fields aren't set till after execution, so repopulate anything missing
+                        UpdateSpan(controllerContext, scope.Span);
+                        scope.Span.Finish();
+                    });
             }
         }
 
