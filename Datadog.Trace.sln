@@ -120,6 +120,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{40A4D351-5F60-48DE-86EE-A2F2EF69F287}"
 	ProjectSection(SolutionItems) = preProject
 		scripts\generate-service-stack-redis-integrations.py = scripts\generate-service-stack-redis-integrations.py
+		scripts\install-vcpkgs.ps1 = scripts\install-vcpkgs.ps1
 	EndProjectSection
 EndProject
 Global
