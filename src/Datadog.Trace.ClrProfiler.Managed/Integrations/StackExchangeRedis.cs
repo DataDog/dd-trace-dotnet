@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
                 var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-                originalMethod = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, object, object, object, object>>(
+                originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object>>.CreateMethodCallDelegate(
                     multiplexerType,
                     "ExecuteSyncImpl",
                     new Type[] { messageType, processorType, serverType },
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var stateType = typeof(object);
                 var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-                originalMethod = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, object, object, object, object, object>>(
+                originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, object>>.CreateMethodCallDelegate(
                     multiplexerType,
                     "ExecuteAsyncImpl",
                     new Type[] { messageType, processorType, stateType, serverType },
@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     var asm = multiplexer.GetType().Assembly;
                     var messageType = asm.GetType("StackExchange.Redis.Message");
-                    _getCommandAndKeyMethod = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, string>>(messageType, "get_CommandAndKey");
+                    _getCommandAndKeyMethod = DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(messageType, "get_CommandAndKey");
                 }
 
                 cmdAndKey = _getCommandAndKeyMethod(message);
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (_getConfigurationMethod == null)
                 {
-                    _getConfigurationMethod = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, string>>(multiplexer.GetType(), "get_Configuration");
+                    _getConfigurationMethod = DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(multiplexer.GetType(), "get_Configuration");
                 }
 
                 config = _getConfigurationMethod(multiplexer);

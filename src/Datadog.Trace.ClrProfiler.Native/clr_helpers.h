@@ -264,6 +264,10 @@ std::vector<Integration> FilterIntegrationsByTarget(
     const std::vector<Integration>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
+mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
+                              const mdToken& token,
+                              const MethodSignature& signature);
+
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_CLR_HELPERS_H_

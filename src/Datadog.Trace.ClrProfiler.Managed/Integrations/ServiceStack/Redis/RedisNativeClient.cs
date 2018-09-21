@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 
@@ -9,187 +10,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
     /// </summary>
     public static class RedisNativeClient
     {
-        private static Func<object, byte[][], string> _sendExpectCode;
-        private static Func<object, byte[][], object> _sendExpectComplexResponse;
-        private static Func<object, byte[][], byte[]> _sendExpectData;
-        private static Func<object, byte[][], object[]> _sendExpectDeeplyNestedMultiData;
-        private static Func<object, byte[][], double> _sendExpectDouble;
-        private static Func<object, byte[][], long> _sendExpectLong;
-        private static Func<object, byte[][], byte[][]> _sendExpectMultiData;
-        private static Action<object, byte[][]> _sendExpectSuccess;
-        private static Action<object, byte[][]> _sendWithoutRead;
-
         /// <summary>
-        /// Traces SendExpectCode.
+        /// Traces SendReceive.
         /// </summary>
-        /// <param name="redisNativeClient">The redis native client.</param>
-        /// <param name="cmdWithBinaryArgs">The command with arguments.</param>
-        /// <returns>the original result.</returns>
-        public static string SendExpectCode(object redisNativeClient, byte[][] cmdWithBinaryArgs)
+        /// <typeparam name="T">The return type</typeparam>
+        /// <param name="redisNativeClient">The redis native client</param>
+        /// <param name="cmdWithBinaryArgs">The command with args</param>
+        /// <param name="fn">The function</param>
+        /// <param name="completePipelineFn">An optional function to call to complete a pipeline</param>
+        /// <param name="sendWithoutRead">Whether or to send without waiting for the result</param>
+        /// <returns>The original result</returns>
+        public static T SendReceive<T>(object redisNativeClient, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead)
         {
-            if (_sendExpectCode == null)
-            {
-                _sendExpectCode = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, byte[][], string>>(redisNativeClient.GetType(), "SendExpectCode");
-            }
+            var originalMethod = DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>.GetOrCreateMethodCallDelegate(
+                redisNativeClient.GetType(), "SendReceive", methodGenericArguments: new Type[] { typeof(T) });
 
-            return Trace(redisNativeClient, cmdWithBinaryArgs, _sendExpectCode);
-        }
-
-        /// <summary>
-        /// Traces SendExpectComplexResponse.
-        /// </summary>
-        /// <param name="redisNativeClient">The redis native client.</param>
-        /// <param name="cmdWithBinaryArgs">The command with arguments.</param>
-        /// <returns>the original result.</returns>
-        public static object SendExpectComplexResponse(object redisNativeClient, byte[][] cmdWithBinaryArgs)
-        {
-            if (_sendExpectComplexResponse == null)
-            {
-                _sendExpectComplexResponse = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, byte[][], object>>(redisNativeClient.GetType(), "SendExpectComplexResponse");
-            }
-
-            return Trace(redisNativeClient, cmdWithBinaryArgs, _sendExpectComplexResponse);
-        }
-
-        /// <summary>
-        /// Traces SendExpectData.
-        /// </summary>
-        /// <param name="redisNativeClient">The redis native client.</param>
-        /// <param name="cmdWithBinaryArgs">The command with arguments.</param>
-        /// <returns>the original result.</returns>
-        public static byte[] SendExpectData(object redisNativeClient, byte[][] cmdWithBinaryArgs)
-        {
-            if (_sendExpectData == null)
-            {
-                _sendExpectData = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, byte[][], byte[]>>(redisNativeClient.GetType(), "SendExpectData");
-            }
-
-            return Trace(redisNativeClient, cmdWithBinaryArgs, _sendExpectData);
-        }
-
-        /// <summary>
-        /// Traces SendExpectDeeplyNestedMultiData.
-        /// </summary>
-        /// <param name="redisNativeClient">The redis native client.</param>
-        /// <param name="cmdWithBinaryArgs">The command with arguments.</param>
-        /// <returns>the original result.</returns>
-        public static object[] SendExpectDeeplyNestedMultiData(object redisNativeClient, byte[][] cmdWithBinaryArgs)
-        {
-            if (_sendExpectDeeplyNestedMultiData == null)
-            {
-                _sendExpectDeeplyNestedMultiData = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, byte[][], object[]>>(redisNativeClient.GetType(), "SendExpectDeeplyNestedMultiData");
-            }
-
-            return Trace(redisNativeClient, cmdWithBinaryArgs, _sendExpectDeeplyNestedMultiData);
-        }
-
-        /// <summary>
-        /// Traces SendExpectDouble.
-        /// </summary>
-        /// <param name="redisNativeClient">The redis native client.</param>
-        /// <param name="cmdWithBinaryArgs">The command with arguments.</param>
-        /// <returns>the original result.</returns>
-        public static double SendExpectDouble(object redisNativeClient, byte[][] cmdWithBinaryArgs)
-        {
-            if (_sendExpectDouble == null)
-            {
-                _sendExpectDouble = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, byte[][], double>>(redisNativeClient.GetType(), "SendExpectDouble");
-            }
-
-            return Trace(redisNativeClient, cmdWithBinaryArgs, _sendExpectDouble);
-        }
-
-        /// <summary>
-        /// Traces SendExpectLong.
-        /// </summary>
-        /// <param name="redisNativeClient">The redis native client.</param>
-        /// <param name="cmdWithBinaryArgs">The command with arguments.</param>
-        /// <returns>the original result.</returns>
-        public static long SendExpectLong(object redisNativeClient, byte[][] cmdWithBinaryArgs)
-        {
-            if (_sendExpectLong == null)
-            {
-                _sendExpectLong = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, byte[][], long>>(redisNativeClient.GetType(), "SendExpectLong");
-            }
-
-            return Trace(redisNativeClient, cmdWithBinaryArgs, _sendExpectLong);
-        }
-
-        /// <summary>
-        /// Traces SendExpectMultiData.
-        /// </summary>
-        /// <param name="redisNativeClient">The redis native client.</param>
-        /// <param name="cmdWithBinaryArgs">The command with arguments.</param>
-        /// <returns>the original result.</returns>
-        public static byte[][] SendExpectMultiData(object redisNativeClient, byte[][] cmdWithBinaryArgs)
-        {
-            if (_sendExpectMultiData == null)
-            {
-                _sendExpectMultiData = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, byte[][], byte[][]>>(redisNativeClient.GetType(), "SendExpectMultiData");
-            }
-
-            return Trace(redisNativeClient, cmdWithBinaryArgs, _sendExpectMultiData);
-        }
-
-        /// <summary>
-        /// Traces SendExpectSuccess.
-        /// </summary>
-        /// <param name="redisNativeClient">The redis native client.</param>
-        /// <param name="cmdWithBinaryArgs">The command with arguments.</param>
-        public static void SendExpectSuccess(object redisNativeClient, byte[][] cmdWithBinaryArgs)
-        {
-            if (_sendExpectSuccess == null)
-            {
-                _sendExpectSuccess = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, byte[][]>>(redisNativeClient.GetType(), "SendExpectSuccess");
-            }
-
-            Trace(redisNativeClient, cmdWithBinaryArgs, _sendExpectSuccess);
-        }
-
-        /// <summary>
-        /// Traces SendWithoutRead.
-        /// </summary>
-        /// <param name="redisNativeClient">The redis native client.</param>
-        /// <param name="cmdWithBinaryArgs">The command with arguments.</param>
-        public static void SendWithoutRead(object redisNativeClient, byte[][] cmdWithBinaryArgs)
-        {
-            if (_sendWithoutRead == null)
-            {
-                _sendWithoutRead = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, byte[][]>>(redisNativeClient.GetType(), "SendWithoutRead");
-            }
-
-            Trace(redisNativeClient, cmdWithBinaryArgs, _sendWithoutRead);
-        }
-
-        private static void Trace(dynamic redisNativeClient, byte[][] cmdWithBinaryArgs, Action<object, byte[][]> f)
-        {
             using (var scope = Integrations.Redis.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
             {
-                try
-                {
-                    f(redisNativeClient, cmdWithBinaryArgs);
-                }
-                catch (Exception e)
-                {
-                    scope.Span.SetException(e);
-                    throw;
-                }
-            }
-        }
-
-        private static T Trace<T>(dynamic redisNativeClient, byte[][] cmdWithBinaryArgs, Func<object, byte[][], T> f)
-        {
-            using (var scope = Integrations.Redis.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
-            {
-                try
-                {
-                    return f(redisNativeClient, cmdWithBinaryArgs);
-                }
-                catch (Exception e)
-                {
-                    scope.Span.SetException(e);
-                    throw;
-                }
+                return (T)scope.Span.Trace(() => originalMethod(redisNativeClient, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead));
             }
         }
 

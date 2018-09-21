@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     Assembly assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
                     Type type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
-                    _beforeAction = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
+                    _beforeAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
                         type,
                         "BeforeAction");
                 }
@@ -138,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     Type type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
-                    _afterAction = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
+                    _afterAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
                         type,
                         "AfterAction");
                 }
