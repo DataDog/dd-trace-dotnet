@@ -7,6 +7,9 @@
 
 #include <corhlpr.h>
 #include <corprof.h>
+#include <memory>
+
+#include "com_ptr.h"
 
 typedef enum {
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, ctrl) c,
@@ -54,7 +57,8 @@ class ILRewriter {
   ModuleID m_moduleId;
   mdToken m_tkMethod;
 
-  mdToken m_tkLocalVarSig;
+  std::shared_ptr<COR_SIGNATURE> local_var_sig_;
+  mdToken local_var_sig_token_;
   unsigned m_maxStack;
   unsigned m_flags;
   bool m_fGenerateTinyHeader;
@@ -83,6 +87,9 @@ class ILRewriter {
              ModuleID moduleID, mdToken tkMethod);
 
   ~ILRewriter();
+
+  size_t AddLocalVariable(const ComPtr<IMetaDataEmit>& metadata_emit,
+                          const CorElementType* element_type);
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //

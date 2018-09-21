@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
+#include <sigparser.h>
 #include <cassert>
 #include <corhlpr.cpp>
 
@@ -147,7 +148,9 @@ HRESULT ILRewriter::Import() {
   COR_ILMETHOD_DECODER decoder((COR_ILMETHOD*)pMethodBytes);
 
   // Import the header flags
-  m_tkLocalVarSig = decoder.GetLocalVarSigTok();
+  local_var_sig_ =
+      std::shared_ptr<COR_SIGNATURE>((COR_SIGNATURE*)decoder.LocalVarSig);
+  local_var_sig_token_ = decoder.GetLocalVarSigTok();
   m_maxStack = decoder.GetMaxStack();
   m_flags = (decoder.GetFlags() & CorILMethod_InitLocals);
 
@@ -531,7 +534,7 @@ again:
     pHeader->Size = sizeof(IMAGE_COR_ILMETHOD_FAT) / sizeof(DWORD);
     pHeader->MaxStack = m_maxStack;
     pHeader->CodeSize = offset;
-    pHeader->LocalVarSigTok = m_tkLocalVarSig;
+    pHeader->LocalVarSigTok = local_var_sig_token_;
 
     pCurrent = (BYTE*)(pHeader + 1);
 
@@ -612,4 +615,10 @@ void ILRewriter::DeallocateILMemory(LPBYTE pBody) {
   }
 
   delete[] pBody;
+}
+
+size_t ILRewriter::AddLocalVariable(const ComPtr<IMetaDataEmit>& metadata_emit,
+                                    const CorElementType* element_type) {
+  // SigParser parser(this->local_var_sig_token_);
+  return 0;
 }
