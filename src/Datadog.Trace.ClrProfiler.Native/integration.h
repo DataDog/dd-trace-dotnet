@@ -134,32 +134,56 @@ struct MethodSignature {
   }
 };
 
-struct MethodReference {
+struct TypeReference {
   const AssemblyReference assembly;
   const std::wstring type_name;
-  const std::wstring method_name;
-  const MethodSignature method_signature;
 
-  MethodReference() {}
-
-  MethodReference(const std::wstring& assembly_name, std::wstring type_name,
-                  std::wstring method_name,
-                  const std::vector<BYTE>& method_signature)
-      : assembly(assembly_name),
-        type_name(std::move(type_name)),
-        method_name(std::move(method_name)),
-        method_signature(method_signature) {}
+  TypeReference() : assembly({}), type_name(L"") {}
+  TypeReference(const std::wstring& assembly_name, std::wstring type_name)
+      : assembly(assembly_name), type_name(type_name) {}
 
   inline std::wstring get_type_cache_key() const {
     return L"[" + assembly.name + L"]" + type_name;
   }
 
+  inline bool operator==(const TypeReference& other) const {
+    return assembly == other.assembly && type_name == other.type_name;
+  }
+};
+
+struct MethodReference {
+  const TypeReference type_reference;
+  const std::wstring method_name;
+  const MethodSignature method_signature;
+
+  MethodReference()
+      : type_reference({}), method_name(L""), method_signature({}) {}
+
+  MethodReference(const TypeReference& type_reference,
+                  const std::wstring& method_name,
+                  const std::vector<BYTE>& method_signature)
+      : type_reference(type_reference),
+        method_name(method_name),
+        method_signature(method_signature) {}
+
+  MethodReference(const std::wstring& assembly_name,
+                  const std::wstring& type_name,
+                  const std::wstring& method_name,
+                  const std::vector<BYTE>& method_signature)
+      : type_reference({assembly_name, type_name}),
+        method_name(method_name),
+        method_signature(method_signature) {}
+
+  inline std::wstring get_type_cache_key() const {
+    return type_reference.get_type_cache_key();
+  }
+
   inline std::wstring get_method_cache_key() const {
-    return L"[" + assembly.name + L"]" + type_name + L"." + method_name;
+    return get_type_cache_key() + L"." + method_name;
   }
 
   inline bool operator==(const MethodReference& other) const {
-    return assembly == other.assembly && type_name == other.type_name &&
+    return type_reference == other.type_reference &&
            method_name == other.method_name &&
            method_signature == other.method_signature;
   }
@@ -186,16 +210,44 @@ struct MethodReplacement {
   }
 };
 
+struct MethodAdvice {
+  const MethodReference target;
+  const TypeReference interceptor;
+
+  MethodAdvice() : target({}) {}
+
+  MethodAdvice(MethodReference target, TypeReference interceptor)
+      : target(target), interceptor(interceptor) {}
+
+  inline MethodReference OnMethodEnterReference() const {
+    return {interceptor, L"OnMethodEnter", {0x00, 0x01, 0x1C, 0x1D, 0x1C}};
+  }
+
+  inline MethodReference OnMethodExitReference() const {
+    return {interceptor,
+            L"OnMethodExit",
+            {0x00, 0x03, 0x01, 0x1C, 0x10, 0x12, 0x75, 0x10, 0x1C}};
+  }
+
+  inline bool operator==(const MethodAdvice& other) const {
+    return target == other.target;
+  }
+};
+
 struct Integration {
   const std::wstring integration_name;
   std::vector<MethodReplacement> method_replacements;
+  std::vector<MethodAdvice> method_advice;
 
-  Integration() : integration_name(L""), method_replacements({}) {}
+  Integration()
+      : integration_name(L""), method_replacements({}), method_advice({}) {}
 
   Integration(std::wstring integration_name,
-              std::vector<MethodReplacement> method_replacements)
+              std::vector<MethodReplacement> method_replacements,
+              std::vector<MethodAdvice> method_advice)
       : integration_name(std::move(integration_name)),
-        method_replacements(std::move(method_replacements)) {}
+        method_replacements(std::move(method_replacements)),
+        method_advice(method_advice) {}
 
   inline bool operator==(const Integration& other) const {
     return integration_name == other.integration_name &&

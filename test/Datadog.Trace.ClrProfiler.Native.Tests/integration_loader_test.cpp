@@ -84,14 +84,16 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMethodReplacements) {
 
   EXPECT_EQ(1, integrations[0].method_replacements.size());
   auto mr = integrations[0].method_replacements[0];
-  EXPECT_STREQ(L"", mr.caller_method.assembly.name.c_str());
-  EXPECT_STREQ(L"", mr.caller_method.type_name.c_str());
+  EXPECT_STREQ(L"", mr.caller_method.type_reference.assembly.name.c_str());
+  EXPECT_STREQ(L"", mr.caller_method.type_reference.type_name.c_str());
   EXPECT_STREQ(L"", mr.caller_method.method_name.c_str());
-  EXPECT_STREQ(L"Assembly.One", mr.target_method.assembly.name.c_str());
-  EXPECT_STREQ(L"Type.One", mr.target_method.type_name.c_str());
+  EXPECT_STREQ(L"Assembly.One",
+               mr.target_method.type_reference.assembly.name.c_str());
+  EXPECT_STREQ(L"Type.One", mr.target_method.type_reference.type_name.c_str());
   EXPECT_STREQ(L"Method.One", mr.target_method.method_name.c_str());
-  EXPECT_STREQ(L"Assembly.Two", mr.wrapper_method.assembly.name.c_str());
-  EXPECT_STREQ(L"Type.Two", mr.wrapper_method.type_name.c_str());
+  EXPECT_STREQ(L"Assembly.Two",
+               mr.wrapper_method.type_reference.assembly.name.c_str());
+  EXPECT_STREQ(L"Type.Two", mr.wrapper_method.type_reference.type_name.c_str());
   EXPECT_STREQ(L"Method.Two", mr.wrapper_method.method_name.c_str());
   EXPECT_EQ(std::vector<uint8_t>({0, 1, 1, 28}),
             mr.wrapper_method.method_signature.data);
@@ -114,14 +116,16 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMissingCaller) {
 
   EXPECT_EQ(1, integrations[0].method_replacements.size());
   auto mr = integrations[0].method_replacements[0];
-  EXPECT_STREQ(L"", mr.caller_method.assembly.name.c_str());
-  EXPECT_STREQ(L"", mr.caller_method.type_name.c_str());
+  EXPECT_STREQ(L"", mr.caller_method.type_reference.assembly.name.c_str());
+  EXPECT_STREQ(L"", mr.caller_method.type_reference.type_name.c_str());
   EXPECT_STREQ(L"", mr.caller_method.method_name.c_str());
-  EXPECT_STREQ(L"Assembly.One", mr.target_method.assembly.name.c_str());
-  EXPECT_STREQ(L"Type.One", mr.target_method.type_name.c_str());
+  EXPECT_STREQ(L"Assembly.One",
+               mr.target_method.type_reference.assembly.name.c_str());
+  EXPECT_STREQ(L"Type.One", mr.target_method.type_reference.type_name.c_str());
   EXPECT_STREQ(L"Method.One", mr.target_method.method_name.c_str());
-  EXPECT_STREQ(L"Assembly.Two", mr.wrapper_method.assembly.name.c_str());
-  EXPECT_STREQ(L"Type.Two", mr.wrapper_method.type_name.c_str());
+  EXPECT_STREQ(L"Assembly.Two",
+               mr.wrapper_method.type_reference.assembly.name.c_str());
+  EXPECT_STREQ(L"Type.Two", mr.wrapper_method.type_reference.type_name.c_str());
   EXPECT_STREQ(L"Method.Two", mr.wrapper_method.method_name.c_str());
   EXPECT_EQ(std::vector<uint8_t>({0, 1, 1, 28}),
             mr.wrapper_method.method_signature.data);
@@ -144,8 +148,8 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithInvalidTarget) {
 
   EXPECT_EQ(1, integrations[0].method_replacements.size());
   auto mr = integrations[0].method_replacements[0];
-  EXPECT_STREQ(L"", mr.target_method.assembly.name.c_str());
-  EXPECT_STREQ(L"", mr.target_method.type_name.c_str());
+  EXPECT_STREQ(L"", mr.target_method.type_reference.assembly.name.c_str());
+  EXPECT_STREQ(L"", mr.target_method.type_reference.type_name.c_str());
   EXPECT_STREQ(L"", mr.target_method.method_name.c_str());
 }
 

@@ -86,7 +86,18 @@ std::optional<Integration> IntegrationFromJson(const json::value_type& src) {
       }
     }
   }
-  return Integration(name, replacements);
+
+  std::vector<MethodAdvice> advice;
+  auto advice_arr = src.value("method_advice", json::array());
+  if (advice_arr.is_array()) {
+    for (auto& el : advice_arr) {
+      auto ma = MethodAdviceFromJson(el);
+      if (ma.has_value()) {
+        advice.push_back(ma.value());
+      }
+    }
+  }
+  return Integration(name, replacements, advice);
 }
 
 std::optional<MethodReplacement> MethodReplacementFromJson(
@@ -99,6 +110,17 @@ std::optional<MethodReplacement> MethodReplacementFromJson(
   auto target = MethodReferenceFromJson(src.value("target", json::object()));
   auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
   return MethodReplacement(caller, target, wrapper);
+}
+
+std::optional<MethodAdvice> MethodAdviceFromJson(const json::value_type& src) {
+  if (!src.is_object()) {
+    return {};
+  }
+
+  auto target = MethodReferenceFromJson(src.value("target", json::object()));
+  auto interceptor =
+      TypeReferenceFromJson(src.value("interceptor", json::object()));
+  return MethodAdvice(target, interceptor);
 }
 
 MethodReference MethodReferenceFromJson(const json::value_type& src) {
@@ -143,6 +165,18 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
     }
   }
   return MethodReference(assembly, type, method, signature);
+}
+
+TypeReference TypeReferenceFromJson(const json::value_type& src) {
+  if (!src.is_object()) {
+    return {};
+  }
+
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+  std::wstring assembly = converter.from_bytes(src.value("assembly", ""));
+  std::wstring type = converter.from_bytes(src.value("type", ""));
+
+  return TypeReference(assembly, type);
 }
 
 }  // namespace

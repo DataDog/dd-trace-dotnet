@@ -23,7 +23,8 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
     assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
   }
 
-  LOG_APPEND("EmitAssemblyRef " << assembly_ref.str());
+  LOG_APPEND("[MetadataBuilder::EmitAssemblyRef] added assembly ref to "
+             << assembly_ref.str());
 
   DWORD public_key_size = 8;
   if (assembly_ref.public_key == trace::PublicKey()) {
@@ -45,11 +46,9 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   return S_OK;
 }
 
-HRESULT MetadataBuilder::FindWrapperTypeRef(
-    const MethodReplacement& method_replacement,
-    mdTypeRef& type_ref_out) const {
-  const auto& cache_key =
-      method_replacement.wrapper_method.get_type_cache_key();
+HRESULT MetadataBuilder::FindTypeReference(const TypeReference& type_reference,
+                                           mdTypeRef& type_ref_out) const {
+  const auto& cache_key = type_reference.get_type_cache_key();
   mdTypeRef type_ref = mdTypeRefNil;
 
   if (metadata_.TryGetWrapperParentTypeRef(cache_key, type_ref)) {
@@ -61,24 +60,21 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
   HRESULT hr;
   type_ref = mdTypeRefNil;
 
-  const LPCWSTR wrapper_type_name =
-      method_replacement.wrapper_method.type_name.c_str();
+  const LPCWSTR wrapper_type_name = type_reference.type_name.c_str();
 
-  if (metadata_.assemblyName ==
-      method_replacement.wrapper_method.assembly.name) {
+  if (metadata_.assemblyName == type_reference.assembly.name) {
     // type is defined in this assembly
     hr = metadata_emit_->DefineTypeRefByName(module_, wrapper_type_name,
                                              &type_ref);
   } else {
     // type is defined in another assembly,
     // find a reference to the assembly where type lives
-    const auto assembly_ref = FindAssemblyRef(
-        assembly_import_, method_replacement.wrapper_method.assembly.name);
+    const auto assembly_ref =
+        FindAssemblyRef(assembly_import_, type_reference.assembly.name);
     if (assembly_ref == mdAssemblyRefNil) {
       // TODO: emit assembly reference if not found?
-      LOG_APPEND("Assembly reference for "
-                 << method_replacement.wrapper_method.assembly.name
-                 << " not found.");
+      LOG_APPEND("Assembly reference for " << type_reference.assembly.name
+                                           << " not found.");
       return E_FAIL;
     }
 
@@ -101,10 +97,24 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
   return S_OK;
 }
 
-HRESULT MetadataBuilder::StoreWrapperMethodRef(
-    const MethodReplacement& method_replacement) const {
-  const auto& cache_key =
-      method_replacement.wrapper_method.get_method_cache_key();
+HRESULT MetadataBuilder::StoreMethodAdvice(
+    const MethodAdvice& method_advice) const {
+  auto hr = StoreMethodReference(method_advice.OnMethodEnterReference());
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = StoreMethodReference(method_advice.OnMethodExitReference());
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return S_OK;
+}
+
+HRESULT MetadataBuilder::StoreMethodReference(
+    const MethodReference& method_reference) const {
+  const auto& cache_key = method_reference.get_method_cache_key();
   mdMemberRef member_ref = mdMemberRefNil;
 
   if (metadata_.TryGetWrapperMemberRef(cache_key, member_ref)) {
@@ -112,28 +122,34 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
     return S_OK;
   }
 
+  auto hr = EmitAssemblyRef(method_reference.type_reference.assembly);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
   mdTypeRef type_ref = mdTypeRefNil;
-  HRESULT hr = FindWrapperTypeRef(method_replacement, type_ref);
+  hr = FindTypeReference(method_reference.type_reference, type_ref);
   RETURN_IF_FAILED(hr);
 
-  const auto wrapper_method_name =
-      method_replacement.wrapper_method.method_name.c_str();
+  const auto wrapper_method_name = method_reference.method_name.c_str();
   member_ref = mdMemberRefNil;
 
   hr = metadata_import_->FindMemberRef(
       type_ref, wrapper_method_name,
-      method_replacement.wrapper_method.method_signature.data.data(),
-      (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
-      &member_ref);
+      method_reference.method_signature.data.data(),
+      (DWORD)(method_reference.method_signature.data.size()), &member_ref);
 
   if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
     // if memberRef not found, create it by emitting a metadata token
     hr = metadata_emit_->DefineMemberRef(
         type_ref, wrapper_method_name,
-        method_replacement.wrapper_method.method_signature.data.data(),
-        (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
-        &member_ref);
+        method_reference.method_signature.data.data(),
+        (DWORD)(method_reference.method_signature.data.size()), &member_ref);
   }
+
+  LOG_APPEND(
+      L"[MetadataBuilder::StoreMethodReference] added method reference to "
+      << cache_key);
 
   RETURN_IF_FAILED(hr);
 

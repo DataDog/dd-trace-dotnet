@@ -4,10 +4,10 @@
 #include <codecvt>
 #include <fstream>
 #include <locale>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <vector>
-#include <nlohmann/json.hpp>
 
 #include "integration.h"
 #include "macros.h"
@@ -32,7 +32,9 @@ namespace {
 std::optional<Integration> IntegrationFromJson(const json::value_type& src);
 std::optional<MethodReplacement> MethodReplacementFromJson(
     const json::value_type& src);
+std::optional<MethodAdvice> MethodAdviceFromJson(const json::value_type& src);
 MethodReference MethodReferenceFromJson(const json::value_type& src);
+TypeReference TypeReferenceFromJson(const json::value_type& src);
 
 }  // namespace
 

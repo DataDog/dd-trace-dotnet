@@ -20,6 +20,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
         private static Action<object, byte[][]> _sendWithoutRead;
 
         /// <summary>
+        /// called when a method enters
+        /// </summary>
+        /// <param name="arguments">the arguments passed to the method</param>
+        /// <returns>data that will be passed to OnMethodExit</returns>
+        public static object OnMethodEnter(object[] arguments)
+        {
+            Console.WriteLine($"ON METHOD ENTER {arguments}");
+            return null;
+        }
+
+        /// <summary>
+        /// called when a method exits
+        /// </summary>
+        /// <param name="enter">the object returned by OnMethodEnter</param>
+        /// <param name="exception">a possible exception that was thrown during the execution of the method</param>
+        /// <param name="result">the result of the execution of the method</param>
+        public static void OnMethodExit(object enter, ref Exception exception, ref object result)
+        {
+            Console.WriteLine($"ON METHOD EXIT {enter} {exception} {result}");
+        }
+
+        /// <summary>
         /// Traces SendExpectCode.
         /// </summary>
         /// <param name="redisNativeClient">The redis native client.</param>
@@ -159,6 +181,30 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
             }
 
             Trace(redisNativeClient, cmdWithBinaryArgs, _sendWithoutRead);
+        }
+
+        private static int InvokeExample(int x, int y)
+        {
+            object[] arguments = new object[] { x, y };
+            object enter = OnMethodEnter(arguments);
+            Exception exception = null;
+            object result = null;
+            try
+            {
+                result = 10;
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            OnMethodExit(enter, ref exception, ref result);
+            if (exception != null)
+            {
+                throw exception;
+            }
+
+            return (int)result;
         }
 
         private static void Trace(dynamic redisNativeClient, byte[][] cmdWithBinaryArgs, Action<object, byte[][]> f)

@@ -178,8 +178,8 @@ std::vector<Integration> FilterIntegrationsByCaller(
   for (auto& i : integrations) {
     bool found = false;
     for (auto& mr : i.method_replacements) {
-      if (mr.caller_method.assembly.name.empty() ||
-          mr.caller_method.assembly.name == assembly_name) {
+      if (mr.caller_method.type_reference.assembly.name.empty() ||
+          mr.caller_method.type_reference.assembly.name == assembly_name) {
         found = true;
         break;
       }
@@ -202,7 +202,7 @@ std::vector<Integration> FilterIntegrationsByTarget(
   for (auto& i : integrations) {
     bool found = false;
     for (auto& mr : i.method_replacements) {
-      if (mr.target_method.assembly.name == assembly_name) {
+      if (mr.target_method.type_reference.assembly.name == assembly_name) {
         found = true;
         break;
       }
@@ -210,7 +210,7 @@ std::vector<Integration> FilterIntegrationsByTarget(
         auto ref_name = GetAssemblyName(assembly_import, assembly_ref);
         // LOG_APPEND(L"-- assembly ref: " << assembly_name << " to " <<
         // ref_name);
-        if (mr.target_method.assembly.name == ref_name) {
+        if (mr.target_method.type_reference.assembly.name == ref_name) {
           found = true;
           break;
         }

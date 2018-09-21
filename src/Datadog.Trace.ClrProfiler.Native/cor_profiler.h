@@ -39,6 +39,13 @@ class CorProfiler : public CorProfilerBase {
 
   bool IsAttached() const;
 
+  HRESULT InstrumentMethodAdvice(const ModuleID& module_id,
+                                 ModuleMetadata* module_metadata,
+                                 const FunctionInfo& function_info) const;
+  HRESULT InstrumentMethodReplacements(const ModuleID& module_id,
+                                       ModuleMetadata* module_metadata,
+                                       const FunctionInfo& function_info) const;
+
   HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
   HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID functionId,
                                                   BOOL fIsSafeToBlock) override;

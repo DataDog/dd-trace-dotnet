@@ -171,6 +171,19 @@
   },
   {
     "name": "ServiceStackRedis",
+    "method_advice": [
+      {
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendReceive"
+        },
+        "interceptor": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient"
+        }
+      }
+    ],
     "method_replacements": [
       {
         "caller": {

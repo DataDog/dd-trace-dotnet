@@ -16,8 +16,8 @@ class MetadataBuilder {
   const ComPtr<IMetaDataAssemblyImport> assembly_import_{};
   const ComPtr<IMetaDataAssemblyEmit> assembly_emit_{};
 
-  HRESULT FindWrapperTypeRef(const MethodReplacement& method_replacement,
-                             mdTypeRef& type_ref_out) const;
+  HRESULT FindTypeReference(const TypeReference& type_reference,
+                            mdTypeRef& type_ref_out) const;
 
  public:
   MetadataBuilder(ModuleMetadata& metadata, const mdModule module,
@@ -32,8 +32,9 @@ class MetadataBuilder {
         assembly_import_(std::move(assembly_import)),
         assembly_emit_(std::move(assembly_emit)) {}
 
-  HRESULT StoreWrapperMethodRef(
-      const MethodReplacement& method_replacement) const;
+  HRESULT StoreMethodAdvice(const MethodAdvice& method_advice) const;
+
+  HRESULT StoreMethodReference(const MethodReference& method_reference) const;
 
   HRESULT EmitAssemblyRef(const trace::AssemblyReference& assembly_ref) const;
 };

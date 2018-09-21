@@ -147,15 +147,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                    assembly_emit);
 
   for (const auto& integration : enabled_integrations) {
-    for (const auto& method_replacement : integration.method_replacements) {
-      // for each wrapper assembly, emit an assembly reference
-      hr = metadata_builder.EmitAssemblyRef(
-          method_replacement.wrapper_method.assembly);
-      RETURN_OK_IF_FAILED(hr);
+    for (const auto& ma : integration.method_advice) {
+      hr = metadata_builder.StoreMethodAdvice(ma);
+      if (FAILED(hr)) {
+        LOG_APPEND(L"failed to store method advice");
+      }
+    }
 
+    for (const auto& method_replacement : integration.method_replacements) {
       // for each method replacement in each enabled integration,
       // emit a reference to the instrumentation wrapper methods
-      hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
+      hr = metadata_builder.StoreMethodReference(
+          method_replacement.wrapper_method);
       RETURN_OK_IF_FAILED(hr);
     }
   }
@@ -199,23 +202,111 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   }
 
   // get function info
-  auto caller =
+  auto function_info =
       GetFunctionInfo(module_metadata->metadata_import, function_token);
-  if (!caller.IsValid()) {
+  if (!function_info.IsValid()) {
     return S_OK;
   }
 
+  hr = InstrumentMethodAdvice(module_id, module_metadata, function_info);
+  if (FAILED(hr)) {
+    LOG_APPEND(L"failed to instrument method advice");
+    return hr;
+  }
+
+  hr = InstrumentMethodReplacements(module_id, module_metadata, function_info);
+  if (FAILED(hr)) {
+    LOG_APPEND(L"failed to replace method calls");
+    return hr;
+  }
+
+  return S_OK;
+}
+
+bool CorProfiler::IsAttached() const { return is_attached_; }
+
+HRESULT CorProfiler::InstrumentMethodAdvice(
+    const ModuleID& module_id, ModuleMetadata* module_metadata,
+    const FunctionInfo& function_info) const {
+  auto method_advice = module_metadata->GetMethodAdvice(function_info);
+  if (method_advice.empty()) {
+    // nothing to do
+    return S_OK;
+  }
+
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_info.id);
+  auto hr = rewriter.Import();
+  if (FAILED(hr)) {
+    LOG_APPEND("failed to import method il instructions for method advice");
+    return hr;
+  }
+
+  std::vector<ILInstr*> prelude;
+
+  // emit a call to OnMethodEnter
+  for (auto& ma : method_advice) {
+    mdMemberRef method_token = mdMemberRefNil;
+    if (!module_metadata->TryGetWrapperMemberRef(
+            ma.OnMethodEnterReference().get_method_cache_key(), method_token)) {
+      // no method ref token found for wrapper method, we can't do the
+      // replacement, this should never happen because we always try to
+      // add the method ref in ModuleLoadFinished()
+      // TODO: log this
+      return S_OK;
+    }
+
+    LOG_APPEND(L">>> adding call to"
+               << ma.OnMethodEnterReference().get_method_cache_key() << L" in "
+               << function_info.type.name << L"." << function_info.name << L": "
+               << HEX(method_token));
+
+    auto ld_instr = rewriter.NewILInstr();
+    ld_instr->m_opcode = CEE_LDNULL;
+    prelude.push_back(ld_instr);
+
+    auto call_instr = rewriter.NewILInstr();
+    call_instr->m_opcode = CEE_CALL;
+    call_instr->m_Arg32 = method_token;
+    prelude.push_back(call_instr);
+
+    auto pop_instr = rewriter.NewILInstr();
+    pop_instr->m_opcode = CEE_POP;
+    prelude.push_back(pop_instr);
+  }
+
+  auto modified = false;
+
+  auto front = rewriter.GetILList()->m_pNext;
+  for (auto& instr : prelude) {
+    rewriter.InsertBefore(front, instr);
+    modified = true;
+  }
+
+  if (modified) {
+    hr = rewriter.Export();
+    if (FAILED(hr)) {
+      LOG_APPEND("failed to export method il instructions for method advice");
+      return hr;
+    }
+  }
+
+  return S_OK;
+}
+
+HRESULT CorProfiler::InstrumentMethodReplacements(
+    const ModuleID& module_id, ModuleMetadata* module_metadata,
+    const FunctionInfo& function_info) const {
   auto method_replacements =
-      module_metadata->GetMethodReplacementsForCaller(caller);
+      module_metadata->GetMethodReplacementsForCaller(function_info);
   if (method_replacements.empty()) {
     return S_OK;
   }
 
-  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_info.id);
   bool modified = false;
 
   // hr = rewriter.Initialize();
-  hr = rewriter.Import();
+  auto hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
   for (auto& method_replacement : method_replacements) {
@@ -248,7 +339,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       }
 
       // make sure the type and method names match
-      if (method_replacement.target_method.type_name != target.type.name ||
+      if (method_replacement.target_method.type_reference.type_name !=
+              target.type.name ||
           method_replacement.target_method.method_name != target.name) {
         continue;
       }
@@ -277,13 +369,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       modified = true;
 
       LOG_APPEND(L"JITCompilationStarted() replaced calls from "
-                 << caller.type.name << "." << caller.name << "() to "
-                 << method_replacement.target_method.type_name << "."
-                 << method_replacement.target_method.method_name << "() "
+                 << function_info.type.name << "." << function_info.name
+                 << "() to "
+                 << method_replacement.target_method.type_reference.type_name
+                 << "." << method_replacement.target_method.method_name << "() "
                  << HEX(original_argument) << " with calls to "
-                 << method_replacement.wrapper_method.type_name << "."
-                 << method_replacement.wrapper_method.method_name << "() "
-                 << HEX(wrapper_method_ref) << ".");
+                 << method_replacement.wrapper_method.type_reference.type_name
+                 << "." << method_replacement.wrapper_method.method_name
+                 << "() " << HEX(wrapper_method_ref) << ".");
     }
   }
 
@@ -293,8 +386,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   }
 
   return S_OK;
-}  // namespace trace
-
-bool CorProfiler::IsAttached() const { return is_attached_; }
+}
 
 }  // namespace trace

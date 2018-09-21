@@ -61,13 +61,29 @@ class ModuleMetadata {
     wrapper_parent_type[keyIn] = valueIn;
   }
 
+  inline std::vector<MethodAdvice> GetMethodAdvice(
+      const trace::FunctionInfo& function_info) const {
+    std::vector<MethodAdvice> enabled;
+    for (auto& i : integrations) {
+      for (auto& ma : i.method_advice) {
+        if ((ma.target.type_reference.type_name.empty() ||
+             ma.target.type_reference.type_name == function_info.type.name) &&
+            (ma.target.method_name.empty() ||
+             ma.target.method_name == function_info.name)) {
+          enabled.push_back(ma);
+        }
+      }
+    }
+    return enabled;
+  }
+
   inline std::vector<MethodReplacement> GetMethodReplacementsForCaller(
       const trace::FunctionInfo& caller) {
     std::vector<MethodReplacement> enabled;
     for (auto& i : integrations) {
       for (auto& mr : i.method_replacements) {
-        if ((mr.caller_method.type_name.empty() ||
-             mr.caller_method.type_name == caller.type.name) &&
+        if ((mr.caller_method.type_reference.type_name.empty() ||
+             mr.caller_method.type_reference.type_name == caller.type.name) &&
             (mr.caller_method.method_name.empty() ||
              mr.caller_method.method_name == caller.name)) {
           enabled.push_back(mr);

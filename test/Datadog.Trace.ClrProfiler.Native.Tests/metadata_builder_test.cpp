@@ -84,7 +84,7 @@ TEST_F(MetadataBuilderTest, StoresWrapperMemberRef) {
   MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
   MethodReference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
   MethodReplacement mr1(ref1, ref2, ref3);
-  auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
+  auto hr = metadata_builder_->StoreMethodReference(mr1.wrapper_method);
   ASSERT_EQ(S_OK, hr);
 
   mdMemberRef tmp;
@@ -105,7 +105,7 @@ TEST_F(MetadataBuilderTest, StoresWrapperMemberRefForSeparateAssembly) {
   MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
   MethodReference ref3(L"Samples.ExampleLibraryTracer", L"Class1", L"Add", {});
   MethodReplacement mr1(ref1, ref2, ref3);
-  auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
+  auto hr = metadata_builder_->StoreMethodReference(mr1.wrapper_method);
   ASSERT_EQ(S_OK, hr);
 
   mdMemberRef tmp;
