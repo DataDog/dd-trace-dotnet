@@ -41,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var expected = new TupleList<string, string>
                 {
+                    { "INFO", "INFO" },
                     { "ROLE", "ROLE" },
                     { "SET", $"SET {prefix}ServiceStack.Redis.INCR 0" },
                     { "PING", "PING" },
