@@ -1,7 +1,8 @@
 {
   "profiles": {
     "Samples.RedisCore": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "nativeDebugging": true
     }
   }
 }

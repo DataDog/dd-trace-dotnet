@@ -76,12 +76,16 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
           &raw_signature, &raw_signature_len, nullptr, nullptr, nullptr,
           nullptr, nullptr);
       break;
-    case mdtMethodSpec:
-      hr = metadata_import->GetMethodSpecProps(token, &parent_token, nullptr,
-                                               nullptr);
-      if (!FAILED(hr)) {
-        return GetFunctionInfo(metadata_import, parent_token);
+    case mdtMethodSpec: {
+      hr = metadata_import->GetMethodSpecProps(
+          token, &parent_token, &raw_signature, &raw_signature_len);
+      if (FAILED(hr)) {
+        return {};
       }
+      auto generic_info = GetFunctionInfo(metadata_import, parent_token);
+      function_name.assign(generic_info.name);
+      function_name_len = (DWORD)(generic_info.name.length() + 1);
+    } break;
     default:
       LOG_APPEND(L"[trace::GetFunctionInfo] unknown token type:"
                  << HEX(TypeFromToken(token)));
@@ -222,6 +226,18 @@ std::vector<Integration> FilterIntegrationsByTarget(
   }
 
   return enabled;
+}
+
+mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
+                              const mdToken& token,
+                              const MethodSignature& signature) {
+  mdMethodSpec spec = mdMethodSpecNil;
+  auto hr = metadata_emit->DefineMethodSpec(
+      token, signature.data.data(), ULONG(signature.data.size()), &spec);
+  if (FAILED(hr)) {
+    LOG_APPEND("[DefineMethodSpec] failed to define method spec");
+  }
+  return spec;
 }
 
 }  // namespace trace

@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler
                     {
                         if (!_traceTaskMethods.TryGetValue(genericArgs[0], out var traceTask))
                         {
-                            traceTask = DynamicMethodBuilder.CreateMethodCallDelegate<Func<Span, Task, Action<Exception>, Task>>(typeof(Extensions), "TraceTask", methodGenericArguments: genericArgs);
+                            traceTask = DynamicMethodBuilder<Func<Span, Task, Action<Exception>, Task>>.CreateMethodCallDelegate(typeof(Extensions), "TraceTask", methodGenericArguments: genericArgs);
                             _traceTaskMethods[genericArgs[0]] = traceTask;
                         }
 

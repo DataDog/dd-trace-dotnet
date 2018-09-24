@@ -41,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var expected = new TupleList<string, string>
                 {
+                    { "INFO", "INFO" },
                     { "ROLE", "ROLE" },
                     { "SET", $"SET {prefix}ServiceStack.Redis.INCR 0" },
                     { "PING", "PING" },
@@ -51,7 +52,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "INCRBYFLOAT", $"INCRBYFLOAT {prefix}ServiceStack.Redis.INCR 1.25" },
                     { "TIME", "TIME" },
                     { "SELECT", "SELECT 0" },
-                    { "QUIT", "QUIT" },
                 };
 
                 for (int i = 0; i < expected.Count; i++)
