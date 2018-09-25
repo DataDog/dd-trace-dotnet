@@ -50,21 +50,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         /// <param name="requestData">The request data</param>
         /// <param name="cancellationToken">A cancellation token</param>
         /// <returns>The original result</returns>
-        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken)
+        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationToken)
         {
             if (_requestDataType == null)
             {
                 _requestDataType = pipeline.GetType().Assembly.GetType("Elasticsearch.Net.RequestData");
             }
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, TResponse>>.GetOrCreateMethodCallDelegate(
+            var actualCancellationToken = DynamicMethodBuilder<Func<object, CancellationToken>>.GetOrCreateMethodCallDelegate(
+                pipeline.GetType(), "ctor", methodParameterTypes: new Type[] { typeof(CancellationTokenSource) }).Invoke(cancellationToken);
+
+            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, TResponse>>.GetOrCreateMethodCallDelegate(
                 pipeline.GetType(),
                 "CallElasticsearchAsync",
                 methodParameterTypes: new Type[] { _requestDataType, _cancellationTokenType },
                 methodGenericArguments: new Type[] { typeof(TResponse) });
             return CreateScope(pipeline, requestData).Span.Trace(() =>
             {
-                return originalMethod(pipeline, requestData, cancellationToken);
+                return originalMethod(pipeline, requestData, actualCancellationToken);
             });
         }
 
