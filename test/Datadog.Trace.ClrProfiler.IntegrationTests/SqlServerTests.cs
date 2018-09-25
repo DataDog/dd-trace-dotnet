@@ -1,3 +1,4 @@
+using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -29,9 +30,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count > 0, "expected at least one span");
                 foreach (var span in spans)
                 {
-                    Assert.Equal("sqlserver.query", span.Name);
+                    Assert.Equal(SqlServer.OperationName, span.Name);
                     Assert.Equal("Samples.SqlServer", span.Service);
-                    Assert.Equal("sql", span.Type);
+                    Assert.Equal(SpanTypes.Sql, span.Type);
                 }
             }
         }

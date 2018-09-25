@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -32,9 +33,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("redis.command", span.Name);
-                    Assert.Equal("redis", span.Service);
-                    Assert.Equal("redis", span.Type);
+                    Assert.Equal(Redis.OperationName, span.Name);
+                    Assert.Equal(Redis.ServiceName, span.Service);
+                    Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal("localhost", span.Tags.Get<string>("out.host"));
                     Assert.Equal("6379", span.Tags.Get<string>("out.port"));
                 }
