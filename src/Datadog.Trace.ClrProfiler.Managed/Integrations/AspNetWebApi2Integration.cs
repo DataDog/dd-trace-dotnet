@@ -5,7 +5,7 @@ using Datadog.Trace.ExtensionMethods;
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    /// ApsNetWeb5Integration wraps the Web API.
+    /// AspNetWeb5Integration wraps the Web API.
     /// </summary>
     public static class AspNetWebApi2Integration
     {
