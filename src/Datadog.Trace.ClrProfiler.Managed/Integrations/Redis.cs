@@ -13,7 +13,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         internal static Scope CreateScope(string host, string port, string rawCommand, bool finishOnClose = true)
         {
-            var scope = Tracer.Instance.StartActive(OperationName, serviceName: ServiceName, finishOnClose: finishOnClose);
+            Tracer tracer = Tracer.Instance;
+            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+
+            var scope = tracer.StartActive(OperationName, serviceName: serviceName, finishOnClose: finishOnClose);
             var command = rawCommand;
             if (command.Contains(" "))
             {
