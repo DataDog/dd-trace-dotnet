@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public sealed class AspNetCoreMvc2Integration : IDisposable
     {
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
-        private const string RequestOperationName = "aspnet_core_mvc.request";
+        private const string OperationName = "aspnet_core_mvc.request";
 
         private static Action<object, object, object, object> _beforeAction;
         private static Action<object, object, object, object> _afterAction;
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
                 string url = _httpContext.Request.GetDisplayUrl().ToLowerInvariant();
 
-                _scope = Tracer.Instance.StartActive(RequestOperationName);
+                _scope = Tracer.Instance.StartActive(OperationName);
                 Span span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";

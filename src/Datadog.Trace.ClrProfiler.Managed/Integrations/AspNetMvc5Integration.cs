@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     internal sealed class AspNetMvc5Integration : IDisposable
     {
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
-        private const string RequestOperationName = "aspnet_mvc.request";
+        private const string OperationName = "aspnet_mvc.request";
 
         private static readonly Type ControllerContextType;
 
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string actionName = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
-                _scope = Tracer.Instance.StartActive(RequestOperationName);
+                _scope = Tracer.Instance.StartActive(OperationName);
                 Span span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
