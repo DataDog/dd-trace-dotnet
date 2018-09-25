@@ -9,12 +9,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class StackExchangeRedis
     {
-        private static ConcurrentDictionary<Type, Func<object, object, object, object, object>> _executeSyncImplBoundMethods =
-            new ConcurrentDictionary<Type, Func<object, object, object, object, object>>();
-
-        private static ConcurrentDictionary<Type, Func<object, object, object, object, object, object>> _executeAsyncImplBoundMethods =
-            new ConcurrentDictionary<Type, Func<object, object, object, object, object, object>>();
-
         private static Func<object, string> _getCommandAndKeyMethod;
 
         private static Func<object, string> _getConfigurationMethod;
@@ -22,29 +16,26 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Execute a synchronous redis operation.
         /// </summary>
+        /// <typeparam name="T">The result type</typeparam>
         /// <param name="multiplexer">The connection multiplexer running the command.</param>
         /// <param name="message">The message to send to redis.</param>
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="server">The server to call.</param>
         /// <returns>The result</returns>
-        public static object ExecuteSyncImpl(object multiplexer, object message, object processor, object server)
+        public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server)
         {
-            var resultType = GetResultTypeFromProcessor(processor);
-            if (!_executeSyncImplBoundMethods.TryGetValue(resultType, out var originalMethod))
-            {
-                var asm = multiplexer.GetType().Assembly;
-                var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
-                var messageType = asm.GetType("StackExchange.Redis.Message");
-                var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
-                var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
+            var resultType = typeof(T);
+            var asm = multiplexer.GetType().Assembly;
+            var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
+            var messageType = asm.GetType("StackExchange.Redis.Message");
+            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
+            var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-                originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object>>.CreateMethodCallDelegate(
-                    multiplexerType,
-                    "ExecuteSyncImpl",
-                    new Type[] { messageType, processorType, serverType },
-                    new Type[] { resultType });
-                _executeSyncImplBoundMethods[resultType] = originalMethod;
-            }
+            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, T>>.CreateMethodCallDelegate(
+                multiplexerType,
+                "ExecuteSyncImpl",
+                new Type[] { messageType, processorType, serverType },
+                new Type[] { resultType });
 
             using (var scope = CreateScope(multiplexer, message, server))
             {
@@ -55,35 +46,32 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Execute an asynchronous redis operation.
         /// </summary>
+        /// <typeparam name="T">The result type</typeparam>
         /// <param name="multiplexer">The connection multiplexer running the command.</param>
         /// <param name="message">The message to send to redis.</param>
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
         /// <returns>An asynchronous task.</returns>
-        public static object ExecuteAsyncImpl(object multiplexer, object message, object processor, object state, object server)
+        public static T ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
         {
-            var resultType = GetResultTypeFromProcessor(processor);
-            if (!_executeAsyncImplBoundMethods.TryGetValue(resultType, out var originalMethod))
-            {
-                var asm = multiplexer.GetType().Assembly;
-                var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
-                var messageType = asm.GetType("StackExchange.Redis.Message");
-                var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
-                var stateType = typeof(object);
-                var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
+            var resultType = typeof(T);
+            var asm = multiplexer.GetType().Assembly;
+            var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
+            var messageType = asm.GetType("StackExchange.Redis.Message");
+            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
+            var stateType = typeof(object);
+            var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-                originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, object>>.CreateMethodCallDelegate(
-                    multiplexerType,
-                    "ExecuteAsyncImpl",
-                    new Type[] { messageType, processorType, stateType, serverType },
-                    new Type[] { resultType });
-                _executeAsyncImplBoundMethods[resultType] = originalMethod;
-            }
+            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, T>>.CreateMethodCallDelegate(
+                multiplexerType,
+                "ExecuteAsyncImpl",
+                new Type[] { messageType, processorType, stateType, serverType },
+                new Type[] { resultType });
 
             using (var scope = CreateScope(multiplexer, message, server, finishOnClose: false))
             {
-                return scope.Span.Trace(() => originalMethod(multiplexer, message, processor, state, server));
+                return (T)scope.Span.Trace(() => originalMethod(multiplexer, message, processor, state, server));
             }
         }
 

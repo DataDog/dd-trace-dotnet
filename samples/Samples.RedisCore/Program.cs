@@ -80,6 +80,7 @@ namespace Samples.RedisCore
                     { "SLOWLOG", () => db.Execute("SLOWLOG", "GET") },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR") },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR", 1.25) },
+                    { "GET", () => db.StringGet($"{prefix}INCR") },
                     { "TIME", () => db.Execute("TIME") },
                 });
             }

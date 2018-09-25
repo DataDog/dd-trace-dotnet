@@ -45,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SLOWLOG", "SLOWLOG" },
                     { "INCR", $"INCR {prefix}StackExchange.Redis.INCR" },
                     { "INCRBYFLOAT", $"INCRBYFLOAT {prefix}StackExchange.Redis.INCR" },
+                    { "GET", $"GET {prefix}StackExchange.Redis.INCR" },
                     { "TIME", "TIME" },
                 };
 

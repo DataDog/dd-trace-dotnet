@@ -148,7 +148,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchangeRedis",
           "method": "ExecuteSyncImpl",
-          "signature": "00 04 1C 1C 1C 1C 1C"
+          "signature": "10 01 04 1E 00 1C 1C 1C 1C"
         }
       },
       {
@@ -164,7 +164,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchangeRedis",
           "method": "ExecuteAsyncImpl",
-          "signature": "00 05 1C 1C 1C 1C 1C 1C"
+          "signature": "10 01 05 1E 00 1C 1C 1C 1C 1C"
         }
       }
     ]
