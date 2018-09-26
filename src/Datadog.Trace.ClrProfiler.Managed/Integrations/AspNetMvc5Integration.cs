@@ -188,9 +188,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
-                if (_httpContext != null)
+                // sometimes, if an exception was unhandled in user code, status code is set to 500 later in the pipeline,
+                // so it is still 200 here. if there was an unhandled exception, always set status code to 500.
+                if (_scope?.Span?.Error == true)
                 {
-                    _scope?.Span?.SetTag("http.status_code", _httpContext.Response.StatusCode.ToString());
+                    _scope?.Span?.SetTag(Tags.HttpStatusCode, "500");
+                }
+                else if (_httpContext != null)
+                {
+                    _scope?.Span?.SetTag(Tags.HttpStatusCode, _httpContext.Response.StatusCode.ToString());
                 }
             }
             finally
