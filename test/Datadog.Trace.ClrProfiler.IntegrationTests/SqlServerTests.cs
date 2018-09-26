@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 foreach (var span in spans)
                 {
                     Assert.Equal(SqlServer.OperationName, span.Name);
-                    Assert.Equal("Samples.SqlServer", span.Service);
+                    Assert.Equal($"Samples.SqlServer-{SqlServer.ServiceName}", span.Service);
                     Assert.Equal(SpanTypes.Sql, span.Type);
                 }
             }
