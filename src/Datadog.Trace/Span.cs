@@ -13,12 +13,12 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable
     {
-        private static ILog _log = LogProvider.For<Span>();
+        private static readonly ILog _log = LogProvider.For<Span>();
 
-        private object _lock = new object();
-        private IDatadogTracer _tracer;
-        private Dictionary<string, string> _tags;
-        private SpanContext _context;
+        private readonly object _lock = new object();
+        private readonly SpanContext _context;
+        private readonly IDatadogTracer _tracer;
+        private readonly Dictionary<string, string> _tags = new Dictionary<string, string>();
 
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
         {
@@ -134,11 +134,6 @@ namespace Datadog.Trace
                 {
                     _log.Debug("SetTag should not be called after the span was closed");
                     return this;
-                }
-
-                if (_tags == null)
-                {
-                    _tags = new Dictionary<string, string>();
                 }
 
                 if (value == null)
