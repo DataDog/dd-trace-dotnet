@@ -1,19 +1,15 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    /// ApsNetWeb5Integration wraps the Web API.
+    /// AspNetWeb5Integration wraps the Web API.
     /// </summary>
     public static class AspNetWebApi2Integration
     {
-        private const string OperationName = "aspnet_web.query";
+        internal const string OperationName = "aspnet-web-api.request";
 
         /// <summary>
         /// ExecuteAsync calls the underlying ExecuteAsync and traces the request.

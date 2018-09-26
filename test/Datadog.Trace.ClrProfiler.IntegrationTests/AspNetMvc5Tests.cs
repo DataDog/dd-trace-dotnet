@@ -58,8 +58,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count > 0, "expected at least one span");
                 foreach (var span in spans)
                 {
-                    Assert.Equal("aspnet_web.query", span.Name);
-                    Assert.Equal("web", span.Type);
+                    Assert.Equal(Integrations.AspNetWebApi2Integration.OperationName, span.Name);
+                    Assert.Equal(SpanTypes.Web, span.Type);
                     Assert.Equal("GET api/environment", span.Resource);
                 }
             }
