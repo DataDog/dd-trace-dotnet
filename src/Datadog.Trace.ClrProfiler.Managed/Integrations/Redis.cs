@@ -11,10 +11,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
             var scope = tracer.StartActive(OperationName, serviceName: serviceName, finishOnClose: finishOnClose);
-            var command = rawCommand;
-            if (command.Contains(" "))
+            int separatorIndex = rawCommand.IndexOf(' ');
+            string command;
+
+            if (separatorIndex >= 0)
             {
-                command = command.Substring(0, command.IndexOf(' '));
+                command = rawCommand.Substring(0, separatorIndex);
+            }
+            else
+            {
+                command = rawCommand;
             }
 
             scope.Span.Type = SpanTypes.Redis;

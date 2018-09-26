@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -88,13 +89,29 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(object multiplexer, object message, object server, bool finishOnClose = true)
         {
-            var config = GetConfiguration(multiplexer);
-            var host = config;
-            var port = "6379";
-            if (host.Contains(":"))
+            string config = GetConfiguration(multiplexer);
+            string host = null;
+            string port = null;
+
+            if (config != null)
             {
-                port = host.Substring(host.IndexOf(':') + 1);
-                host = host.Substring(0, host.IndexOf(':'));
+                // config can contain several settings separated by commas:
+                // hostname:port,name=MyName,keepAlive=180,syncTimeout=10000,abortConnect=False
+                // split in commas, find the one without '=', split that one on ':'
+                string[] hostAndPort = config.Split(',')
+                                             .FirstOrDefault(p => !p.Contains("="))
+                                            ?.Split(':');
+
+                if (hostAndPort != null)
+                {
+                    host = hostAndPort[0];
+                }
+
+                // check length because port is optional
+                if (hostAndPort?.Length > 1)
+                {
+                    port = hostAndPort[1];
+                }
             }
 
             var rawCommand = GetRawCommand(multiplexer, message);
@@ -124,7 +141,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static string GetConfiguration(object multiplexer)
         {
-            string config = null;
             try
             {
                 if (_getConfigurationMethod == null)
@@ -132,13 +148,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     _getConfigurationMethod = DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(multiplexer.GetType(), "get_Configuration");
                 }
 
-                config = _getConfigurationMethod(multiplexer);
+                return _getConfigurationMethod(multiplexer);
             }
             catch
             {
+                return null;
             }
-
-            return config ?? "localhost:6379";
         }
 
         /// <summary>
