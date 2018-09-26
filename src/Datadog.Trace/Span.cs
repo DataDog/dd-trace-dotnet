@@ -86,7 +86,7 @@ namespace Datadog.Trace
 
         // This is threadsafe only if used after the span has been closed.
         // It is acceptable because this property is internal. But if we were to make it public we would need to add some checks.
-        internal IReadOnlyDictionary<string, string> Tags => _tags;
+        internal ConcurrentDictionary<string, string> Tags => _tags;
 
         internal bool IsFinished { get; private set; }
 
