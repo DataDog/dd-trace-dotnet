@@ -61,6 +61,16 @@ namespace Datadog.Trace
         /// </summary>
         public string ServiceName => _context.ServiceName;
 
+        /// <summary>
+        /// Gets the trace's unique identifier.
+        /// </summary>
+        public ulong TraceId => _context.TraceId;
+
+        /// <summary>
+        /// Gets the span's unique identifier.
+        /// </summary>
+        public ulong SpanId => _context.SpanId;
+
         internal SpanContext Context => _context;
 
         internal ITraceContext TraceContext => _context.TraceContext;
