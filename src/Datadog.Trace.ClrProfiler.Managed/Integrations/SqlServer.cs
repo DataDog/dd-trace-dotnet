@@ -10,8 +10,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class SqlServer
     {
-        private const string OperationName = "sql-server.query";
-        private const string ServiceName = "sql-server";
+        internal const string OperationName = "sql-server.query";
+        internal const string ServiceName = "sql-server";
 
         private static Func<object, CommandBehavior, object> _executeReader;
         private static Func<object, CommandBehavior, string, object> _executeReaderWithMethod;

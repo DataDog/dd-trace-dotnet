@@ -11,10 +11,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// The ASP.NET MVC 5 integration.
     /// </summary>
-    internal sealed class AspNetMvc5Integration : IDisposable
+    public sealed class AspNetMvc5Integration : IDisposable
     {
+        internal const string OperationName = "aspnet-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
-        private const string OperationName = "aspnet-mvc.request";
 
         private static readonly Type ControllerContextType;
 

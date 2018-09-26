@@ -10,8 +10,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public sealed class AspNetCoreMvc2Integration : IDisposable
     {
+        internal const string OperationName = "aspnet-core-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
-        private const string OperationName = "aspnet-core-mvc.request";
 
         private static Action<object, object, object, object> _beforeAction;
         private static Action<object, object, object, object> _afterAction;
