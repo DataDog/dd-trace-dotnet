@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
         /// <returns>An asynchronous task.</returns>
-        public static T ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
+        public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
         {
             var resultType = typeof(T);
             var asm = multiplexer.GetType().Assembly;
@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             using (var scope = CreateScope(multiplexer, message, server, finishOnClose: false))
             {
-                return (T)scope.Span.Trace(() => originalMethod(multiplexer, message, processor, state, server));
+                return scope.Span.Trace(() => originalMethod(multiplexer, message, processor, state, server));
             }
         }
 
