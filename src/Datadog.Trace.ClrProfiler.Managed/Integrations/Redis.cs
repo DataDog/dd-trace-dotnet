@@ -14,10 +14,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal static Scope CreateScope(string host, string port, string rawCommand, bool finishOnClose = true)
         {
             var scope = Tracer.Instance.StartActive(OperationName, serviceName: ServiceName, finishOnClose: finishOnClose);
-            var command = rawCommand;
-            if (command.Contains(" "))
+            int separatorIndex = rawCommand.IndexOf(' ');
+            string command;
+
+            if (separatorIndex >= 0)
             {
-                command = command.Substring(0, command.IndexOf(' '));
+                command = rawCommand.Substring(0, separatorIndex);
+            }
+            else
+            {
+                command = rawCommand;
             }
 
             scope.Span.Type = SpanTypes.Redis;
