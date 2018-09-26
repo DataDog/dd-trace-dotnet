@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -18,7 +19,7 @@ namespace Datadog.Trace
         private readonly object _lock = new object();
         private readonly SpanContext _context;
         private readonly IDatadogTracer _tracer;
-        private readonly Dictionary<string, string> _tags = new Dictionary<string, string>();
+        private readonly ConcurrentDictionary<string, string> _tags = new ConcurrentDictionary<string, string>();
 
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
         {
@@ -128,25 +129,22 @@ namespace Datadog.Trace
         /// <returns> The span object itself</returns>
         public Span SetTag(string key, string value)
         {
-            lock (_lock)
+            if (IsFinished)
             {
-                if (IsFinished)
-                {
-                    _log.Debug("SetTag should not be called after the span was closed");
-                    return this;
-                }
-
-                if (value == null)
-                {
-                    _tags.Remove(key);
-                }
-                else
-                {
-                    _tags[key] = value;
-                }
-
+                _log.Debug("SetTag should not be called after the span was closed");
                 return this;
             }
+
+            if (value == null)
+            {
+                _tags.TryRemove(key, out value);
+            }
+            else
+            {
+                _tags[key] = value;
+            }
+
+            return this;
         }
 
         /// <summary>
@@ -211,12 +209,7 @@ namespace Datadog.Trace
 
         internal string GetTag(string key)
         {
-            lock (_lock)
-            {
-                string s = null;
-                _tags?.TryGetValue(key, out s);
-                return s;
-            }
+            return _tags.TryGetValue(key, out string value) ? value : null;
         }
     }
 }
