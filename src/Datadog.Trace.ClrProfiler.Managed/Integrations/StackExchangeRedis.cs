@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -55,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>An asynchronous task.</returns>
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
         {
-            var resultType = typeof(T);
+            var resultType = typeof(Task<T>);
             var asm = multiplexer.GetType().Assembly;
             var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
             var messageType = asm.GetType("StackExchange.Redis.Message");
@@ -63,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var stateType = typeof(object);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, T>>.CreateMethodCallDelegate(
+            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>.CreateMethodCallDelegate(
                 multiplexerType,
                 "ExecuteAsyncImpl",
                 new Type[] { messageType, processorType, stateType, serverType },
