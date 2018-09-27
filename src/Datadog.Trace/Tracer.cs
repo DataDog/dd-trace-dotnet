@@ -32,9 +32,23 @@ namespace Datadog.Trace
 
         internal Tracer(IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            // env > app.config > datadog.json
+            IConfigurationSource configurationSource = CreateConfigurationSource();
+
+            _isDebugEnabled = isDebugEnabled;
+            _agentWriter = agentWriter;
+            DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
+
+            // Register callbacks to make sure we flush the traces before exiting
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            Console.CancelKeyPress += Console_CancelKeyPress;
+            _scopeManager = new AsyncLocalScopeManager();
+        }
+
+        private static IConfigurationSource CreateConfigurationSource()
+        {
+            // app.config (app local) > datadog.json (app local) > env (system-wide)
             var configurationSource = new AggregateConfigurationSource();
-            configurationSource.AddSource(new EnvironmentConfigurationSource());
 
 #if NET45 || NET46
             configurationSource.AddSource(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
@@ -48,15 +62,8 @@ namespace Datadog.Trace
                 configurationSource.AddSource(JsonConfigurationSource.LoadFile(jsonConfigurationFileName));
             }
 
-            _isDebugEnabled = isDebugEnabled;
-            _agentWriter = agentWriter;
-            DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
-
-            // Register callbacks to make sure we flush the traces before exiting
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            Console.CancelKeyPress += Console_CancelKeyPress;
-            _scopeManager = new AsyncLocalScopeManager();
+            configurationSource.AddSource(new EnvironmentConfigurationSource());
+            return configurationSource;
         }
 
         /// <summary>
