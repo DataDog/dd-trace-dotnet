@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
@@ -11,8 +12,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private static Func<object, string> _getCommandAndKeyMethod;
 
         private static Func<object, string> _getConfigurationMethod;
-
-        private static Func<object, object> _getMultiplexer;
 
         /// <summary>
         /// Get the configuration for the multiplexer.
@@ -107,12 +106,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             object multiplexer = null;
             try
             {
-                if (_getMultiplexer == null)
-                {
-                    _getMultiplexer = DynamicMethodBuilder<Func<object, object>>.CreateMethodCallDelegate(obj.GetType(), "get_Multiplexer");
-                }
-
-                multiplexer = _getMultiplexer(obj);
+                var fi = obj.GetType().GetField("multiplexer", BindingFlags.NonPublic | BindingFlags.Instance);
+                multiplexer = fi.GetValue(obj);
             }
             catch
             {
