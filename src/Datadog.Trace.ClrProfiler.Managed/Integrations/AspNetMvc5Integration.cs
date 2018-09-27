@@ -70,8 +70,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.AspNetRoute, (string)controllerContext.RouteData.Route.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
-
-                _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
             }
             catch
             {
