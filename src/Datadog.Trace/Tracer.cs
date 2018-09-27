@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -53,6 +55,22 @@ namespace Datadog.Trace
 
         internal Tracer(IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
         {
+            // env > app.config > datadog.json
+            var configurationSource = new AggregateConfigurationSource();
+            configurationSource.AddSource(new EnvironmentConfigurationSource());
+
+#if NET45 || NET46
+            configurationSource.AddSource(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
+#endif
+
+            string jsonConfigurationFileName = configurationSource.GetString("DD_DOTNET_TRACER_CONFIGURATION_FILE") ??
+                                               Path.Combine(Environment.CurrentDirectory, "datadog.json");
+
+            if (File.Exists(jsonConfigurationFileName))
+            {
+                configurationSource.AddSource(JsonConfigurationSource.LoadFile(jsonConfigurationFileName));
+            }
+
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
             DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
