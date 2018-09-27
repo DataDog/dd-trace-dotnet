@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Web;
+using System.Web.Routing;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -55,9 +56,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
                 string url = _httpContext.Request.RawUrl.ToLowerInvariant();
 
-                IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
-                string controllerName = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                string actionName = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                RouteData routeData = controllerContext.RouteData as RouteData;
+                Route route = routeData?.Route as Route;
+                RouteValueDictionary routeValues = routeData?.Values;
+
+                if (route == null && routeData?.Route.GetType() == RouteCollectionRouteType)
+                {
+                    var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
+
+                    if (routeMatches?.Count > 0)
+                    {
+                        // route was defined using attribute routing i.e. [Route("/path/{id}")]
+                        // get route and routeValues from the RouteData in routeMatches
+                        route = routeMatches[0].Route as Route;
+                        routeValues = routeMatches[0].Values;
+                    }
+                }
+
+                string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+                string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
                 _scope = Tracer.Instance.StartActive(OperationName);
@@ -67,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.HttpRequestHeadersHost, host);
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, url);
-                span.SetTag(Tags.AspNetRoute, (string)controllerContext.RouteData.Route.Url);
+                span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
             }
