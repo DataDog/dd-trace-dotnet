@@ -225,8 +225,13 @@ namespace Samples.RedisCore
                 {
                     pending.Add(item.Item1, item.Item2());
                 }
-                catch
+                catch(Exception e)
                 {
+                    while (e.InnerException != null)
+                    {
+                        e = e.InnerException;
+                    }
+                    Console.WriteLine($"{e.Message}");
                 }
             }
 
