@@ -2,8 +2,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Web;
+using System.Web.Routing;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -16,23 +16,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal const string OperationName = "aspnet-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
 
-        private static readonly Type ControllerContextType;
+        private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
+        private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
 
         private readonly HttpContextBase _httpContext;
         private readonly Scope _scope;
-
-        static AspNetMvc5Integration()
-        {
-            try
-            {
-                Assembly assembly = Assembly.Load("System.Web.Mvc");
-                ControllerContextType = assembly.GetType("System.Web.Mvc.ControllerContext", throwOnError: false);
-            }
-            catch
-            {
-                ControllerContextType = null;
-            }
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetMvc5Integration"/> class.
@@ -67,9 +55,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
                 string url = _httpContext.Request.RawUrl.ToLowerInvariant();
 
-                IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
-                string controllerName = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                string actionName = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                RouteData routeData = controllerContext.RouteData as RouteData;
+                Route route = routeData?.Route as Route;
+                RouteValueDictionary routeValues = routeData?.Values;
+
+                if (route == null && routeData?.Route.GetType() == RouteCollectionRouteType)
+                {
+                    var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
+
+                    if (routeMatches?.Count > 0)
+                    {
+                        // route was defined using attribute routing i.e. [Route("/path/{id}")]
+                        // get route and routeValues from the RouteData in routeMatches
+                        route = routeMatches[0].Route as Route;
+                        routeValues = routeMatches[0].Values;
+                    }
+                }
+
+                string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+                string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
                 _scope = Tracer.Instance.StartActive(OperationName);
@@ -79,11 +83,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.HttpRequestHeadersHost, host);
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, url);
-                span.SetTag(Tags.AspNetRoute, (string)controllerContext.RouteData.Route.Url);
+                span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
-
-                _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
             }
             catch
             {
