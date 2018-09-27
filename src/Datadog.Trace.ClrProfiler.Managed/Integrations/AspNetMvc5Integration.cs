@@ -16,23 +16,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal const string OperationName = "aspnet-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
 
-        private static readonly Type ControllerContextType;
+        private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
+        private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
 
         private readonly HttpContextBase _httpContext;
         private readonly Scope _scope;
-
-        static AspNetMvc5Integration()
-        {
-            try
-            {
-                Assembly assembly = Assembly.Load("System.Web.Mvc");
-                ControllerContextType = assembly.GetType("System.Web.Mvc.ControllerContext", throwOnError: false);
-            }
-            catch
-            {
-                ControllerContextType = null;
-            }
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetMvc5Integration"/> class.
