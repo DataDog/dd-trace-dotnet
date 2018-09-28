@@ -85,6 +85,7 @@ namespace Samples.RedisCore
                     { "TIME", () => db.Execute("TIME") },
                 });
 
+                RunCommands(StackExchangeSyncCommands(prefix + "Database.", db));
 
                 var batch = db.CreateBatch();
                 var batchPending = RunStackExchangeAsync(prefix + "Batch.", batch);
@@ -113,6 +114,125 @@ namespace Samples.RedisCore
                 {
                 }
             }
+        }
+
+        private static TupleList<string, Func<object>> StackExchangeSyncCommands(string prefix, IDatabase db)
+        {
+            return new TupleList<string, Func<object>>()
+            {
+                { "DebugObject", () => db.DebugObject($"{prefix}DebugObject") },
+                { "Execute", () => db.Execute("DDCUSTOM", "COMMAND") },
+
+                { "GeoAdd", () => db.GeoAdd($"{prefix}Geo", new GeoEntry(1.5, 2.5, "member")) },
+                { "GeoDistance", () => db.GeoDistance($"{prefix}Geo", "member1", "member2") },
+                { "GeoHash", () => db.GeoHash($"{prefix}Geo", "member") },
+                { "GeoPosition", () => db.GeoPosition($"{prefix}Geo", "member") },
+                { "GeoRadius", () => db.GeoRadius($"{prefix}Geo", "member", 2.3) },
+                { "GeoRemove", () => db.GeoRemove($"{prefix}Geo", "member") },
+
+                { "HashDecrement", () => db.HashDecrement($"{prefix}Hash", "hashfield", 4.5) },
+                { "HashDelete", () => db.HashDelete($"{prefix}Hash", "hashfield") },
+                { "HashExists", () => db.HashExists($"{prefix}Hash", "hashfield") },
+                { "HashGet", () => db.HashGet($"{prefix}Hash", "hashfield") },
+                { "HashGetAll", () => db.HashGetAll($"{prefix}Hash") },
+                { "HashIncrement", () => db.HashIncrement($"{prefix}Hash", "hashfield") },
+                { "HashKeys", () => db.HashKeys($"{prefix}Hash") },
+                { "HashLength", () => db.HashLength($"{prefix}Hash") },
+                { "HashScan", () => db.HashScan($"{prefix}Hash", "*", 5, CommandFlags.None) },
+                { "HashSet", () => { db.HashSet($"{prefix}Hash", new HashEntry[] { new HashEntry("hashfield", "hashvalue") }); return null; } },
+                { "HashValues", () => db.HashValues($"{prefix}Hash") },
+
+                { "HyperLogLogAdd", () => db.HyperLogLogAdd($"{prefix}HyperLogLog", "value") },
+                { "HyperLogLogLength", () => db.HyperLogLogLength($"{prefix}HyperLogLog") },
+                { "HyperLogLogMerge", () => { db.HyperLogLogMerge($"{prefix}HyperLogLog2", new RedisKey[] { $"{prefix}HyperLogLog" }); return null; } },
+                
+                { "KeyDelete", () => db.KeyDelete($"{prefix}Key") },
+                { "KeyDump", () => db.KeyDump($"{prefix}Key") },
+                { "KeyExists", () => db.KeyExists($"{prefix}Key") },
+                { "KeyExpire", () => db.KeyExpire($"{prefix}Key", DateTime.Now) },
+                { "KeyMigrate", () => { db.KeyMigrate($"{prefix}Key", db.IdentifyEndpoint());  return null; } },
+                { "KeyMove", () =>  db.KeyMove($"{prefix}Key", 1) },
+                { "KeyPersist", () => db.KeyPersist($"{prefix}Key") },
+                { "KeyRandom", () => db.KeyRandom() },
+                { "KeyRename", () => db.KeyRename($"{prefix}Key", $"{prefix}Key2") },
+                { "KeyRestore", () => { db.KeyRestore($"{prefix}Key", new byte[] { 1,2,3,4 }); return null; } },
+                { "KeyTimeToLive", () => db.KeyTimeToLive($"{prefix}Key") },
+                { "KeyType", () => db.KeyType($"{prefix}Key") },
+
+                { "ListGetByIndex", () => db.ListGetByIndex($"{prefix}List", 0) },
+                { "ListInsertAfter", () => db.ListInsertAfter($"{prefix}List", "value1", "value2") },
+                { "ListInsertBefore", () => db.ListInsertBefore($"{prefix}List", "value1", "value2") },
+                { "ListLeftPop", () => db.ListLeftPop($"{prefix}List") },
+                { "ListLeftPush", () => db.ListLeftPush($"{prefix}List", "value3") },
+                { "ListLength", () => db.ListLength($"{prefix}List") },
+                { "ListRange", () => db.ListRange($"{prefix}List") },
+                { "ListRemove", () => db.ListRemove($"{prefix}List", "value1") },
+                { "ListRightPop", () => db.ListRightPop($"{prefix}List") },
+                { "ListRightPopLeftPush", () => db.ListRightPopLeftPush($"{prefix}List", $"{prefix}List2") },
+                { "ListRightPush", () => db.ListRightPush($"{prefix}List", new RedisValue[] { "value1", "value2" }) },
+                { "ListSetByIndex", () => { db.ListSetByIndex($"{prefix}List", 0, "value3"); return null; } },
+                { "ListTrim", () => { db.ListTrim($"{prefix}List", 0, 1); return null;  } },
+
+                { "LockExtend", () => db.LockExtend($"{prefix}Lock", "value1", new TimeSpan(0, 0, 10)) },
+                { "LockQuery", () => db.LockQuery($"{prefix}Lock") },
+                { "LockRelease", () => db.LockRelease($"{prefix}Lock", "value1") },
+                { "LockTake", () => db.LockTake($"{prefix}Lock", "value1", new TimeSpan(0, 0, 10)) },
+
+                { "Ping", () => db.Ping() },
+                { "Publish", () => db.Publish(new RedisChannel("value", RedisChannel.PatternMode.Auto), "message") },
+                // { "ScriptEvaluate", () => db.ScriptEvaluate() }
+
+                { "SetAdd", () => db.SetAdd($"{prefix}Set", "value1") },
+                { "SetCombine", () => db.SetCombine(SetOperation.Union, new RedisKey[] { $"{prefix}Set" }) },
+                { "SetCombineAndStore", () => db.SetCombineAndStore(SetOperation.Union, $"{prefix}Set", new RedisKey[] { $"{prefix}Set" }) },
+                { "SetContains", () => db.SetContains($"{prefix}Set", "value1") },
+                { "SetLength", () => db.SetLength($"{prefix}Set") },
+                { "SetMembers", () => db.SetMembers($"{prefix}Set") },
+                { "SetMove", () => db.SetMove($"{prefix}Set", $"{prefix}Set2", "value1") },
+                { "SetPop", () => db.SetPop($"{prefix}Set") },
+                { "SetRandomMember", () => db.SetRandomMember($"{prefix}Set") },
+                { "SetRandomMembers", () => db.SetRandomMembers($"{prefix}Set", 1) },
+                { "SetRemove", () => db.SetRemove($"{prefix}Set", "value1") },
+                { "SetScan", () => db.SetScan($"{prefix}Set", "*", 5) },
+
+                { "Sort", () => db.Sort($"{prefix}Key") },
+                { "SortAndStore", () => db.SortAndStore($"{prefix}Key2", $"{prefix}Key") },
+
+                { "SortedSetAdd", () => db.SortedSetAdd($"{prefix}SortedSet", new SortedSetEntry[] { new SortedSetEntry("element", 1) }) },
+                { "SortedSetCombineAndStore", () => db.SortedSetCombineAndStore(SetOperation.Union, $"{prefix}SortedSet2", $"{prefix}SortedSet", $"{prefix}SortedSet2") },
+                { "SortedSetDecrement", () => db.SortedSetDecrement($"{prefix}SortedSet", "element", 0.5) },
+                { "SortedSetIncrement", () => db.SortedSetIncrement($"{prefix}SortedSet", "element", 0.5) },
+                { "SortedSetLength", () => db.SortedSetLength($"{prefix}SortedSet") },
+                { "SortedSetLengthByValue", () => db.SortedSetLengthByValue($"{prefix}SortedSet", "value1", "value2") },
+                { "SortedSetRangeByRank", () => db.SortedSetRangeByRank($"{prefix}SortedSet") },
+                { "SortedSetRangeByRankWithScores", () => db.SortedSetRangeByRankWithScores($"{prefix}SortedSet") },
+                { "SortedSetRangeByScore", () => db.SortedSetRangeByScore($"{prefix}SortedSet") },
+                { "SortedSetRangeByScoreWithScores", () => db.SortedSetRangeByScoreWithScores($"{prefix}SortedSet") },
+                { "SortedSetRangeByValue", () => db.SortedSetRangeByValue($"{prefix}SortedSet") },
+                { "SortedSetRank", () => db.SortedSetRank($"{prefix}SortedSet", "element") },
+                { "SortedSetRemove", () => db.SortedSetRemove($"{prefix}SortedSet", "element") },
+                { "SortedSetRemoveRangeByRank", () => db.SortedSetRemoveRangeByRank($"{prefix}SortedSet", 0, 1) },
+                { "SortedSetRemoveRangeByScore", () => db.SortedSetRemoveRangeByScore($"{prefix}SortedSet", 1, 2) },
+                { "SortedSetRemoveRangeByValue", () => db.SortedSetRemoveRangeByValue($"{prefix}SortedSet", 1, 2) },
+                { "SortedSetScan", () => db.SortedSetScan($"{prefix}SortedSet", "*", 5) },
+                { "SortedSetScore", () => db.SortedSetScore($"{prefix}SortedSet", "element") },
+
+                { "StringAppend", () => db.StringAppend($"{prefix}Key", "value") },
+                { "StringBitCount", () => db.StringBitCount($"{prefix}Key") },
+                { "StringBitOperation", () => db.StringBitOperation(Bitwise.And, $"{prefix}Key", new RedisKey[] {$"{prefix}Key2" }) },
+                { "StringBitPosition", () => db.StringBitPosition($"{prefix}Key", true) },
+                { "StringDecrement", () => db.StringDecrement($"{prefix}Key", 5.5) },
+                { "StringGet", () => db.StringGet($"{prefix}Key") },
+                { "StringGetBit", () => db.StringGetBit($"{prefix}Key", 5) },
+                { "StringGetRange", () => db.StringGetRange($"{prefix}Key", 0, 3) },
+                { "StringGetSet", () => db.StringGetSet($"{prefix}Key", "value") },
+                { "StringGetWithExpiry", () => db.StringGetWithExpiry($"{prefix}Key") },
+                { "StringIncrement", () => db.StringIncrement($"{prefix}Key", 7.2) },
+                { "StringLength", () => db.StringLength($"{prefix}Key") },
+                { "StringSet", () => db.StringSet(new KeyValuePair<RedisKey, RedisValue>[] { new KeyValuePair<RedisKey, RedisValue>($"{prefix}Key", "value") }) },
+                { "StringSetBit", () => db.StringSetBit($"{prefix}Key", 0, true) },
+                { "StringSetRange", () => db.StringSetRange($"{prefix}Key", 17, "value") },
+            };
         }
 
         private static TupleList<string, Task> RunStackExchangeAsync(string prefix, IDatabaseAsync db)
@@ -225,7 +345,7 @@ namespace Samples.RedisCore
                 {
                     pending.Add(item.Item1, item.Item2());
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     while (e.InnerException != null)
                     {
@@ -261,7 +381,8 @@ namespace Samples.RedisCore
         {
             foreach (var cmd in commands)
             {
-                if (cmd.Item2 == null)
+                var f = cmd.Item2;
+                if (f == null)
                 {
                     continue;
                 }
@@ -269,12 +390,22 @@ namespace Samples.RedisCore
                 object result;
                 try
                 {
-                    result = cmd.Item2();
+                    result = f();
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    result = ex.Message;
+                    while (e.InnerException != null)
+                    {
+                        e = e.InnerException;
+                    }
+                    result = e.Message;
                 }
+
+                if (result is Task task)
+                {
+                    result = TaskResult(task);
+                }
+
                 Console.WriteLine($"{cmd.Item1}: {result}");
             }
         }
