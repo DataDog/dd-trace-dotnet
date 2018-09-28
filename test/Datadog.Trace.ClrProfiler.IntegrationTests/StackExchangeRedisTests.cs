@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.TestHelpers;
@@ -145,16 +147,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETRANGE", "SETRANGE key" },
                 });
 
-                for (int i = 0; i < expected.Count; i++)
+                var spanLookup = new Dictionary<Tuple<string, string>, MockTracerAgent.Span>();
+                foreach (var span in spans)
                 {
-                    var e1 = expected[i].Item1;
-                    var e2 = expected[i].Item2;
+                    spanLookup[new Tuple<string, string>(span.Resource, span.Tags.Get<string>("redis.raw_command"))] = span;
+                }
 
-                    var a1 = i < spans.Count ? spans[i].Resource : string.Empty;
-                    var a2 = i < spans.Count ? spans[i].Tags.Get<string>("redis.raw_command") : string.Empty;
-
-                    Assert.True(e1 == a1, $"invalid resource name for span {i}, expected `{e1}`, got `{a1}`");
-                    Assert.True(e2 == a2, $"invalid raw command for span {i}, expected `{e2}`, got `{a2}`");
+                foreach (var e in expected)
+                {
+                    Assert.True(spanLookup.ContainsKey(e), $"no span found for `{e.Item1}`, `{e.Item2}`");
                 }
             }
         }
