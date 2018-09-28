@@ -145,7 +145,7 @@ namespace Samples.RedisCore
                 { "HyperLogLogAdd", () => db.HyperLogLogAdd($"{prefix}HyperLogLog", "value") },
                 { "HyperLogLogLength", () => db.HyperLogLogLength($"{prefix}HyperLogLog") },
                 { "HyperLogLogMerge", () => { db.HyperLogLogMerge($"{prefix}HyperLogLog2", new RedisKey[] { $"{prefix}HyperLogLog" }); return null; } },
-                
+
                 { "KeyDelete", () => db.KeyDelete($"{prefix}Key") },
                 { "KeyDump", () => db.KeyDump($"{prefix}Key") },
                 { "KeyExists", () => db.KeyExists($"{prefix}Key") },
