@@ -3,17 +3,13 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
     /// <summary>
     /// Wraps calls to the Stack Exchange redis library.
     /// </summary>
-    public static class StackExchangeRedis
+    public class ConnectionMultiplexer : Base
     {
-        private static Func<object, string> _getCommandAndKeyMethod;
-
-        private static Func<object, string> _getConfigurationMethod;
-
         /// <summary>
         /// Execute a synchronous redis operation.
         /// </summary>
@@ -78,92 +74,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(object multiplexer, object message, object server, bool finishOnClose = true)
         {
-            string config = GetConfiguration(multiplexer);
-            string host = null;
-            string port = null;
-
-            if (config != null)
-            {
-                // config can contain several settings separated by commas:
-                // hostname:port,name=MyName,keepAlive=180,syncTimeout=10000,abortConnect=False
-                // split in commas, find the one without '=', split that one on ':'
-                string[] hostAndPort = config.Split(',')
-                                             .FirstOrDefault(p => !p.Contains("="))
-                                            ?.Split(':');
-
-                if (hostAndPort != null)
-                {
-                    host = hostAndPort[0];
-                }
-
-                // check length because port is optional
-                if (hostAndPort?.Length > 1)
-                {
-                    port = hostAndPort[1];
-                }
-            }
+            var config = GetConfiguration(multiplexer);
+            var hostAndPort = GetHostAndPort(config);
 
             var rawCommand = GetRawCommand(multiplexer, message);
-            return Redis.CreateScope(host, port, rawCommand, finishOnClose);
-        }
-
-        private static string GetRawCommand(object multiplexer, object message)
-        {
-            string cmdAndKey = null;
-            try
-            {
-                if (_getCommandAndKeyMethod == null)
-                {
-                    var asm = multiplexer.GetType().Assembly;
-                    var messageType = asm.GetType("StackExchange.Redis.Message");
-                    _getCommandAndKeyMethod = DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(messageType, "get_CommandAndKey");
-                }
-
-                cmdAndKey = _getCommandAndKeyMethod(message);
-            }
-            catch
-            {
-            }
-
-            return cmdAndKey ?? "COMMAND";
-        }
-
-        private static string GetConfiguration(object multiplexer)
-        {
-            try
-            {
-                if (_getConfigurationMethod == null)
-                {
-                    _getConfigurationMethod = DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(multiplexer.GetType(), "get_Configuration");
-                }
-
-                return _getConfigurationMethod(multiplexer);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Processor is a ResultProcessor&lt;T&gt;. This method returns the type of T.
-        /// </summary>
-        /// <param name="processor">The result processor</param>
-        /// <returns>The generic type</returns>
-        private static Type GetResultTypeFromProcessor(object processor)
-        {
-            var type = processor.GetType();
-            while (type != null)
-            {
-                if (type.GenericTypeArguments.Length > 0)
-                {
-                    return type.GenericTypeArguments[0];
-                }
-
-                type = type.BaseType;
-            }
-
-            return typeof(object);
+            return Datadog.Trace.ClrProfiler.Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand, finishOnClose);
         }
     }
 }
