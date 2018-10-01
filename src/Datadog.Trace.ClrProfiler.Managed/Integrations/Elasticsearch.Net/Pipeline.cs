@@ -48,26 +48,27 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         /// <typeparam name="TResponse">Type type of the response</typeparam>
         /// <param name="pipeline">The pipeline for the original method</param>
         /// <param name="requestData">The request data</param>
-        /// <param name="cancellationToken">A cancellation token</param>
+        /// <param name="cancellationTokenSource">A cancellation token</param>
         /// <returns>The original result</returns>
-        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationToken)
+        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource)
         {
             if (_requestDataType == null)
             {
                 _requestDataType = pipeline.GetType().Assembly.GetType("Elasticsearch.Net.RequestData");
             }
 
-            var actualCancellationToken = DynamicMethodBuilder<Func<object, CancellationToken>>.GetOrCreateMethodCallDelegate(
-                pipeline.GetType(), "ctor", methodParameterTypes: new Type[] { typeof(CancellationTokenSource) }).Invoke(cancellationToken);
+            var cancellationToken = (cancellationTokenSource as CancellationTokenSource)?.Token ?? CancellationToken.None;
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, TResponse>>.GetOrCreateMethodCallDelegate(
-                pipeline.GetType(),
-                "CallElasticsearchAsync",
-                methodParameterTypes: new Type[] { _requestDataType, _cancellationTokenType },
-                methodGenericArguments: new Type[] { typeof(TResponse) });
+            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, TResponse>>.
+                GetOrCreateMethodCallDelegate(
+                    pipeline.GetType(),
+                    "CallElasticsearchAsync",
+                    methodParameterTypes: new Type[] { _requestDataType, _cancellationTokenType },
+                    methodGenericArguments: new Type[] { typeof(TResponse) });
+
             return CreateScope(pipeline, requestData).Span.Trace(() =>
             {
-                return originalMethod(pipeline, requestData, actualCancellationToken);
+                return originalMethod(pipeline, requestData, cancellationToken);
             });
         }
 
