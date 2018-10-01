@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -12,10 +10,8 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 return value;
             }
-            else
-            {
-                return default(TValue);
-            }
+
+            return default(TValue);
         }
     }
 }

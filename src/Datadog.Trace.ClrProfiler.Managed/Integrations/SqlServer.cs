@@ -10,7 +10,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class SqlServer
     {
-        private const string OperationName = "sqlserver.query";
+        internal const string OperationName = "sql-server.query";
+        internal const string ServiceName = "sql-server";
+
         private static Func<object, CommandBehavior, object> _executeReader;
         private static Func<object, CommandBehavior, string, object> _executeReaderWithMethod;
 
@@ -81,7 +83,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(DbCommand command)
         {
-            var scope = Tracer.Instance.StartActive(OperationName);
+            Tracer tracer = Tracer.Instance;
+            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+
+            var scope = tracer.StartActive(OperationName, serviceName: serviceName);
             scope.Span.SetTag(Tags.DbType, "mssql");
             scope.Span.AddTagsFromDbCommand(command);
             return scope;

@@ -92,8 +92,11 @@ namespace Datadog.Trace.ClrProfiler
             {
                 if (t.IsFaulted)
                 {
-                    onComplete(t.Exception);
-                    throw t.Exception;
+                    t.Exception.Handle(e =>
+                    {
+                        onComplete(e);
+                        return false;
+                    });
                 }
 
                 if (t.IsCompleted)

@@ -2,8 +2,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Web;
+using System.Web.Routing;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -11,28 +11,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// The ASP.NET MVC 5 integration.
     /// </summary>
-    internal sealed class AspNetMvc5Integration : IDisposable
+    public sealed class AspNetMvc5Integration : IDisposable
     {
+        internal const string OperationName = "aspnet-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
-        private const string RequestOperationName = "aspnet_mvc.request";
 
-        private static readonly Type ControllerContextType;
+        private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
+        private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
 
         private readonly HttpContextBase _httpContext;
         private readonly Scope _scope;
-
-        static AspNetMvc5Integration()
-        {
-            try
-            {
-                Assembly assembly = Assembly.Load("System.Web.Mvc");
-                ControllerContextType = assembly.GetType("System.Web.Mvc.ControllerContext", throwOnError: false);
-            }
-            catch
-            {
-                ControllerContextType = null;
-            }
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetMvc5Integration"/> class.
@@ -67,23 +55,37 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
                 string url = _httpContext.Request.RawUrl.ToLowerInvariant();
 
-                IDictionary<string, object> routeValues = controllerContext.RouteData.Values;
-                string controllerName = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                string actionName = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                RouteData routeData = controllerContext.RouteData as RouteData;
+                Route route = routeData?.Route as Route;
+                RouteValueDictionary routeValues = routeData?.Values;
+
+                if (route == null && routeData?.Route.GetType() == RouteCollectionRouteType)
+                {
+                    var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
+
+                    if (routeMatches?.Count > 0)
+                    {
+                        // route was defined using attribute routing i.e. [Route("/path/{id}")]
+                        // get route and routeValues from the RouteData in routeMatches
+                        route = routeMatches[0].Route as Route;
+                        routeValues = routeMatches[0].Values;
+                    }
+                }
+
+                string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+                string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
-                _scope = Tracer.Instance.StartActive(RequestOperationName);
+                _scope = Tracer.Instance.StartActive(OperationName);
                 Span span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
                 span.SetTag(Tags.HttpRequestHeadersHost, host);
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, url);
-                span.SetTag(Tags.AspNetRoute, (string)controllerContext.RouteData.Route.Url);
+                span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
-
-                _scope = Tracer.Instance.ActivateSpan(span, finishOnClose: true);
             }
             catch
             {
@@ -188,9 +190,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
-                if (_httpContext != null)
+                // sometimes, if an exception was unhandled in user code, status code is set to 500 later in the pipeline,
+                // so it is still 200 here. if there was an unhandled exception, always set status code to 500.
+                if (_scope?.Span?.Error == true)
                 {
-                    _scope?.Span?.SetTag("http.status_code", _httpContext.Response.StatusCode.ToString());
+                    _scope?.Span?.SetTag(Tags.HttpStatusCode, "500");
+                }
+                else if (_httpContext != null)
+                {
+                    _scope?.Span?.SetTag(Tags.HttpStatusCode, _httpContext.Response.StatusCode.ToString());
                 }
             }
             finally
