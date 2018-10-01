@@ -260,9 +260,39 @@ HRESULT CorProfiler::InstrumentMethodAdvice(
                << function_info.type.name << L"." << function_info.name << L": "
                << HEX(method_token));
 
+    auto sz_instr = rewriter.NewILInstr();
+    sz_instr->m_opcode = CEE_LDC_I4_1;
+    prelude.push_back(sz_instr);
+
+    auto arr_instr = rewriter.NewILInstr();
+    arr_instr->m_opcode = CEE_NEWARR;
+    arr_instr->m_Arg64 = 0x0100000C;
+    prelude.push_back(arr_instr);
+
+    auto dup_instr = rewriter.NewILInstr();
+    dup_instr->m_opcode = CEE_DUP;
+    prelude.push_back(dup_instr);
+
+    auto pos_instr = rewriter.NewILInstr();
+    pos_instr->m_opcode = CEE_LDC_I4_0;
+    prelude.push_back(pos_instr);
+
+    /*auto null_instr = rewriter.NewILInstr();
+    null_instr->m_opcode = CEE_LDNULL;
+    prelude.push_back(null_instr);*/
+
     auto ld_instr = rewriter.NewILInstr();
-    ld_instr->m_opcode = CEE_LDNULL;
+    ld_instr->m_opcode = CEE_LDARG_0;
     prelude.push_back(ld_instr);
+
+    //auto box_instr = rewriter.NewILInstr();
+    //box_instr->m_opcode = CEE_BOX;
+    //box_instr->m_Arg64 = 0x1B000001;
+    //prelude.push_back(box_instr);
+
+    auto el_instr = rewriter.NewILInstr();
+    el_instr->m_opcode = CEE_STELEM_REF;
+    prelude.push_back(el_instr);
 
     auto call_instr = rewriter.NewILInstr();
     call_instr->m_opcode = CEE_CALL;

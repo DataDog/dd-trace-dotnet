@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include <sigparser.h>
 #include <cassert>
 #include <corhlpr.cpp>
 
@@ -615,10 +614,4 @@ void ILRewriter::DeallocateILMemory(LPBYTE pBody) {
   }
 
   delete[] pBody;
-}
-
-size_t ILRewriter::AddLocalVariable(const ComPtr<IMetaDataEmit>& metadata_emit,
-                                    const CorElementType* element_type) {
-  // SigParser parser(this->local_var_sig_token_);
-  return 0;
 }
