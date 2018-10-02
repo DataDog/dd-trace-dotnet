@@ -7,6 +7,31 @@
 
 namespace trace {
 
+MetadataBuilder::MetadataBuilder(
+    ModuleMetadata& metadata, const mdModule module,
+    ComPtr<IMetaDataImport2> metadata_import,
+    ComPtr<IMetaDataEmit> metadata_emit,
+    ComPtr<IMetaDataAssemblyImport> assembly_import,
+    ComPtr<IMetaDataAssemblyEmit> assembly_emit)
+    : metadata_(metadata),
+      module_(module),
+      metadata_import_(std::move(metadata_import)),
+      metadata_emit_(std::move(metadata_emit)),
+      assembly_import_(std::move(assembly_import)),
+      assembly_emit_(std::move(assembly_emit)) {
+  auto asmref = FindAssemblyRef(assembly_import_, L"mscorlib");
+
+  const std::vector<LPCWSTR> type_names = {L"System.Object",
+                                           L"System.Exception"};
+  for (auto& type_name : type_names) {
+    mdTypeRef typeref = mdTypeRefNil;
+    auto hr = metadata_emit_->DefineTypeRefByName(asmref, type_name, &typeref);
+    if (!FAILED(hr)) {
+      metadata_.type_refs[type_name] = typeref;
+    }
+  }
+}
+
 HRESULT MetadataBuilder::EmitAssemblyRef(
     const trace::AssemblyReference& assembly_ref) const {
   ASSEMBLYMETADATA assembly_metadata{};

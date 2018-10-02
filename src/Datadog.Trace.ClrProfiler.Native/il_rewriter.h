@@ -8,6 +8,7 @@
 #include <corhlpr.h>
 #include <corprof.h>
 #include <memory>
+#include <vector>
 
 #include "com_ptr.h"
 
@@ -65,9 +66,6 @@ class ILRewriter {
 
   ILInstr m_IL;  // Double linked list of all il instructions
 
-  unsigned m_nEH;
-  EHClause* m_pEH;
-
   // Helper table for importing.  Sparse array that maps BYTE offset of
   // beginning of an instruction to that instruction's ILInstr*.  BYTE offsets
   // that don't correspond to the beginning of an instruction are mapped to
@@ -82,6 +80,8 @@ class ILRewriter {
   IMethodMalloc* m_pIMethodMalloc;
 
  public:
+  std::vector<EHClause> eh;
+
   ILRewriter(ICorProfilerInfo* pICorProfilerInfo,
              ICorProfilerFunctionControl* pICorProfilerFunctionControl,
              ModuleID moduleID, mdToken tkMethod);
@@ -104,6 +104,17 @@ class ILRewriter {
   HRESULT ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH);
 
   ILInstr* NewILInstr();
+  inline ILInstr* NewILInstr(unsigned int opcode, ILInstr* target) {
+    auto i = NewILInstr();
+    i->m_opcode = opcode;
+    i->m_pTarget = target;
+    return i;
+  }
+  inline ILInstr* NewILInstr(unsigned int opcode) {
+    auto i = NewILInstr();
+    i->m_opcode = opcode;
+    return i;
+  }
 
   ILInstr* GetInstrFromOffset(unsigned offset);
 

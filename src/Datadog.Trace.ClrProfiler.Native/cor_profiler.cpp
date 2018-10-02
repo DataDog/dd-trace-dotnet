@@ -266,7 +266,7 @@ HRESULT CorProfiler::InstrumentMethodAdvice(
 
     auto arr_instr = rewriter.NewILInstr();
     arr_instr->m_opcode = CEE_NEWARR;
-    arr_instr->m_Arg64 = 0x0100000C;
+    arr_instr->m_Arg32 = module_metadata->type_refs[L"System.Object"];
     prelude.push_back(arr_instr);
 
     auto dup_instr = rewriter.NewILInstr();
@@ -277,18 +277,14 @@ HRESULT CorProfiler::InstrumentMethodAdvice(
     pos_instr->m_opcode = CEE_LDC_I4_0;
     prelude.push_back(pos_instr);
 
-    /*auto null_instr = rewriter.NewILInstr();
-    null_instr->m_opcode = CEE_LDNULL;
-    prelude.push_back(null_instr);*/
-
     auto ld_instr = rewriter.NewILInstr();
     ld_instr->m_opcode = CEE_LDARG_0;
     prelude.push_back(ld_instr);
 
-    //auto box_instr = rewriter.NewILInstr();
-    //box_instr->m_opcode = CEE_BOX;
-    //box_instr->m_Arg64 = 0x1B000001;
-    //prelude.push_back(box_instr);
+    // auto box_instr = rewriter.NewILInstr();
+    // box_instr->m_opcode = CEE_BOX;
+    // box_instr->m_Arg64 = 0x1B000001;
+    // prelude.push_back(box_instr);
 
     auto el_instr = rewriter.NewILInstr();
     el_instr->m_opcode = CEE_STELEM_REF;
@@ -310,6 +306,26 @@ HRESULT CorProfiler::InstrumentMethodAdvice(
   for (auto& instr : prelude) {
     rewriter.InsertBefore(front, instr);
     modified = true;
+  }
+
+  if (modified) {
+    auto leave_instr = rewriter.NewILInstr(CEE_LEAVE, front);
+    rewriter.InsertBefore(front, leave_instr);
+
+    auto catch_nop_instr = rewriter.NewILInstr(CEE_POP);
+    rewriter.InsertBefore(front, catch_nop_instr);
+
+    auto catch_leave_instr = rewriter.NewILInstr(CEE_LEAVE, front);
+    rewriter.InsertBefore(front, catch_leave_instr);
+
+    EHClause clause;
+    clause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    clause.m_ClassToken = module_metadata->type_refs[L"System.Exception"];
+    clause.m_pTryBegin = rewriter.GetILList()->m_pNext;
+    clause.m_pTryEnd = catch_nop_instr;
+    clause.m_pHandlerBegin = catch_nop_instr;
+    clause.m_pHandlerEnd = front;
+    rewriter.eh.push_back(clause);
   }
 
   if (modified) {

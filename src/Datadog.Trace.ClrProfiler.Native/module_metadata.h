@@ -19,6 +19,7 @@ class ModuleMetadata {
   const ComPtr<IMetaDataImport2> metadata_import{};
   std::wstring assemblyName = L"";
   std::vector<Integration> integrations = {};
+  std::unordered_map<std::wstring, mdTypeRef> type_refs{};
 
   ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
                  std::wstring assembly_name,

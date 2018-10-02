@@ -24,13 +24,7 @@ class MetadataBuilder {
                   ComPtr<IMetaDataImport2> metadata_import,
                   ComPtr<IMetaDataEmit> metadata_emit,
                   ComPtr<IMetaDataAssemblyImport> assembly_import,
-                  ComPtr<IMetaDataAssemblyEmit> assembly_emit)
-      : metadata_(metadata),
-        module_(module),
-        metadata_import_(std::move(metadata_import)),
-        metadata_emit_(std::move(metadata_emit)),
-        assembly_import_(std::move(assembly_import)),
-        assembly_emit_(std::move(assembly_emit)) {}
+                  ComPtr<IMetaDataAssemblyEmit> assembly_emit);
 
   HRESULT StoreMethodAdvice(const MethodAdvice& method_advice) const;
 
