@@ -14,8 +14,6 @@ namespace Samples.ExampleLibraryTracer
             return 2 * (x * y);
         }
 
-
-
         /// <summary>
         /// called when a method enters
         /// </summary>
@@ -32,7 +30,7 @@ namespace Samples.ExampleLibraryTracer
         /// <param name="enter">the object returned by OnMethodEnter</param>
         /// <param name="exception">a possible exception that was thrown during the execution of the method</param>
         /// <param name="result">the result of the execution of the method</param>
-        public static void OnMethodExit(object enter, ref Exception exception, ref object result)
+        public static void OnMethodExit(object enter, Exception exception, ref object result)
         {
         }
     }

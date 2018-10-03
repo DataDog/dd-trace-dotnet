@@ -58,8 +58,6 @@ class ILRewriter {
   ModuleID m_moduleId;
   mdToken m_tkMethod;
 
-  std::shared_ptr<COR_SIGNATURE> local_var_sig_;
-  mdToken local_var_sig_token_;
   unsigned m_maxStack;
   unsigned m_flags;
   bool m_fGenerateTinyHeader;
@@ -80,6 +78,9 @@ class ILRewriter {
   IMethodMalloc* m_pIMethodMalloc;
 
  public:
+  std::shared_ptr<COR_SIGNATURE> local_var_sig;
+  DWORD local_var_sig_size;
+  mdToken local_var_sig_token;
   std::vector<EHClause> eh;
 
   ILRewriter(ICorProfilerInfo* pICorProfilerInfo,
@@ -88,8 +89,7 @@ class ILRewriter {
 
   ~ILRewriter();
 
-  size_t AddLocalVariable(const ComPtr<IMetaDataEmit>& metadata_emit,
-                          const CorElementType* element_type);
+  size_t AddLocalVariable(const CorElementType element_type);
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //

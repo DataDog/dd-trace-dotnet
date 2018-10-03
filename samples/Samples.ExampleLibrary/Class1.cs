@@ -24,5 +24,52 @@ namespace Samples.ExampleLibrary
         {
             return o1 ?? o2;
         }
+
+
+        public object ExampleWrapper(object o1, object o2)
+        {
+            object enter = default(object);
+            try
+            {
+                enter = OnMethodEnter(new object[] { o1, o2 });
+            }
+            catch
+            {
+            }
+            object res = default(object);
+            try
+            {
+                res = (o1) ?? (o2);
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    OnMethodExit(enter, ex, ref res);
+                }
+                catch
+                {
+                }
+                throw;
+            }
+            try
+            {
+                OnMethodExit(enter, null, ref res);
+            }
+            catch
+            {
+            }
+            return res;
+        }
+
+        private object OnMethodEnter(object[] v)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void OnMethodExit(object enter, Exception ex, ref object res)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

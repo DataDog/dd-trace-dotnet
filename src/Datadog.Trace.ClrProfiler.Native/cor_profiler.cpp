@@ -14,6 +14,7 @@
 #include "macros.h"
 #include "metadata_builder.h"
 #include "module_metadata.h"
+#include "signature.h"
 #include "util.h"
 
 namespace trace {
@@ -259,6 +260,10 @@ HRESULT CorProfiler::InstrumentMethodAdvice(
                << ma.OnMethodEnterReference().get_method_cache_key() << L" in "
                << function_info.type.name << L"." << function_info.name << L": "
                << HEX(method_token));
+
+    trace::signature::Reader rdr(rewriter.local_var_sig, rewriter.local_var_sig_size);
+    auto locals = rdr.ReadLocals();
+    // rewriter.AddLocalVariable(metadata_emit)
 
     auto sz_instr = rewriter.NewILInstr();
     sz_instr->m_opcode = CEE_LDC_I4_1;
