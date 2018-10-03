@@ -19,13 +19,22 @@ MetadataBuilder::MetadataBuilder(
       metadata_emit_(std::move(metadata_emit)),
       assembly_import_(std::move(assembly_import)),
       assembly_emit_(std::move(assembly_emit)) {
-  auto asmref = FindAssemblyRef(assembly_import_, L"mscorlib");
+  auto systemasm = mdAssemblyRefNil;
+  const std::vector<LPCWSTR> possible_assembly_names = {
+      L"System.Runtime", L"mscorlib", L"netstandard"};
+  for (auto& assembly_name : possible_assembly_names) {
+    systemasm = FindAssemblyRef(assembly_import_, assembly_name);
+    if (systemasm != mdAssemblyRefNil) {
+      break;
+    }
+  }
 
   const std::vector<LPCWSTR> type_names = {L"System.Object",
                                            L"System.Exception"};
   for (auto& type_name : type_names) {
     mdTypeRef typeref = mdTypeRefNil;
-    auto hr = metadata_emit_->DefineTypeRefByName(asmref, type_name, &typeref);
+    auto hr =
+        metadata_emit_->DefineTypeRefByName(systemasm, type_name, &typeref);
     if (!FAILED(hr)) {
       metadata_.type_refs[type_name] = typeref;
     }

@@ -19,5 +19,10 @@ namespace Samples.ExampleLibrary
         }
 
         public Func<int, int, int> Divide = (int x, int y) => x / y;
+
+        public object Example(object o1, object o2)
+        {
+            return o1 ?? o2;
+        }
     }
 }

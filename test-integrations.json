@@ -1,21 +1,20 @@
 [
   {
     "name": "example",
-    "method_replacements": [
+    "method_advice": [
       {
-        "caller": {},
         "target": {
           "assembly": "Samples.ExampleLibrary",
           "type": "Samples.ExampleLibrary.Class1",
-          "method": "Add"
+          "method": "Example"
         },
-        "wrapper": {
+        "interceptor": {
           "assembly": "Samples.ExampleLibraryTracer, Version=1.0.0.0",
-          "type": "Samples.ExampleLibraryTracer.Class1",
-          "method": "Add",
-          "signature": [ 32, 2, 8, 8, 8 ]
+          "type": "Samples.ExampleLibraryTracer.Class1"
         }
-      },
+      }
+    ],
+    "method_replacements": [
       {
         "caller": {},
         "target": {

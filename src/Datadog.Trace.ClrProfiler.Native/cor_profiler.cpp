@@ -309,7 +309,7 @@ HRESULT CorProfiler::InstrumentMethodAdvice(
   }
 
   if (modified) {
-    auto leave_instr = rewriter.NewILInstr(CEE_LEAVE, front);
+    /*auto leave_instr = rewriter.NewILInstr(CEE_LEAVE, front);
     rewriter.InsertBefore(front, leave_instr);
 
     auto catch_nop_instr = rewriter.NewILInstr(CEE_POP);
@@ -325,7 +325,7 @@ HRESULT CorProfiler::InstrumentMethodAdvice(
     clause.m_pTryEnd = catch_nop_instr;
     clause.m_pHandlerBegin = catch_nop_instr;
     clause.m_pHandlerEnd = front;
-    rewriter.eh.push_back(clause);
+    rewriter.eh.push_back(clause);*/
   }
 
   if (modified) {
