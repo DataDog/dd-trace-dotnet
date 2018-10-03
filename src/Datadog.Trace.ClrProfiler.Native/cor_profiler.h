@@ -3,6 +3,8 @@
 
 #include <corhlpr.h>
 #include <corprof.h>
+#include <istream>
+#include <mutex>
 #include <vector>
 
 #include "cor_profiler_base.h"
@@ -30,14 +32,16 @@ const DWORD kEventMask =
 
 class CorProfiler : public CorProfilerBase {
  private:
+  std::mutex mutex_;
   bool is_attached_ = false;
   IDToInfoMap<ModuleID, ModuleMetadata*> module_id_to_info_map_;
-  const std::vector<Integration> integrations_;
+  std::vector<Integration> integrations_;
 
  public:
   CorProfiler();
 
-  bool IsAttached() const;
+  bool AddIntegrations(std::istream& integration_stream);
+  bool IsAttached();
 
   HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
   HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID functionId,

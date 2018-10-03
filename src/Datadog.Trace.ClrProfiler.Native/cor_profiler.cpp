@@ -24,6 +24,8 @@ CorProfiler::CorProfiler() : integrations_(LoadIntegrationsFromEnvironment()) {}
 
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
+  std::lock_guard guard(mutex_);
+
   is_attached_ = FALSE;
 
   const auto process_name = GetCurrentProcessName();
@@ -76,6 +78,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hrStatus) {
+  std::lock_guard guard(mutex_);
+
   auto module_info = GetModuleInfo(this->info_, module_id);
   if (!module_info.IsValid()) {
     return S_OK;
@@ -171,6 +175,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId,
                                                             HRESULT hrStatus) {
+  std::lock_guard guard(mutex_);
+
   ModuleMetadata* metadata;
 
   if (module_id_to_info_map_.LookupIfExists(moduleId, &metadata)) {
@@ -183,6 +189,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId,
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     FunctionID function_id, BOOL is_safe_to_block) {
+  std::lock_guard guard(mutex_);
+
   ClassID class_id;
   ModuleID module_id;
   mdToken function_token = mdTokenNil;
@@ -304,6 +312,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   return S_OK;
 }  // namespace trace
 
-bool CorProfiler::IsAttached() const { return is_attached_; }
+bool CorProfiler::IsAttached() {
+  std::lock_guard guard(mutex_);
+  return is_attached_;
+}
+
+bool CorProfiler::AddIntegrations(std::istream& integration_stream) {
+  std::lock_guard guard(mutex_);
+
+  auto integrations = LoadIntegrationsFromStream(integration_stream);
+  for (auto& i : integrations) {
+    LOG_APPEND(L"Adding integration " << i.integration_name);
+    integrations_.push_back(i);
+  }
+  return true;
+}
 
 }  // namespace trace

@@ -2,14 +2,27 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Attributes;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
     /// <summary>
     /// Wraps calls to the Stack Exchange redis library.
     /// </summary>
+    [TraceType("StackExchange.Redis", "StackExchange.Redis.ConnectionMultiplexer")]
     public class ConnectionMultiplexer : Base
     {
+        /// <summary>
+        /// Traces ExecuteSyncImpl
+        /// </summary>
+        /// <param name="args">the arguments</param>
+        /// <returns>the span</returns>
+        [TraceMethodEnter("T ExecuteSyncImpl[T](StackExchange.Redis.Message, StackExchange.Redis.ResultProcessor`1[T], StackExchange.Redis.ServerEndPoint)")]
+        public static object OnExecuteSyncImplEnter(object[] args)
+        {
+            return null;
+        }
+
         /// <summary>
         /// Execute a synchronous redis operation.
         /// </summary>

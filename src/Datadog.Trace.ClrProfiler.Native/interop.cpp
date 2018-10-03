@@ -6,8 +6,15 @@
 // NativeMethods.cs!
 //---------------------------------------------------------------------------------------
 
+#include <istream>
 #include "cor_profiler.h"
 
 EXTERN_C BOOL STDAPICALLTYPE IsProfilerAttached() {
   return trace::profiler->IsAttached();
+}
+
+EXTERN_C BOOL STDAPICALLTYPE AddIntegrations(const char* integrations_json) {
+  std::stringstream ss;
+  ss << integrations_json;
+  return trace::profiler->AddIntegrations(ss);
 }
