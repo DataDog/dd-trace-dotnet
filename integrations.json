@@ -16,7 +16,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.3.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
           "method": "BeforeAction",
-          "signature": [ 0, 4, 28, 28, 28, 28, 28 ]
+          "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
         }
       },
       {

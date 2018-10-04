@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 _httpContext = httpContextObj;
                 string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
-                string url = _httpContext.Request.GetDisplayUrl().ToLowerInvariant();
+                string url = GetDisplayUrl(_httpContext.Request).ToLowerInvariant();
 
                 _scope = Tracer.Instance.StartActive(OperationName);
                 Span span = _scope.Span;
@@ -189,6 +190,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 _scope?.Dispose();
             }
+        }
+
+        private static string GetDisplayUrl(dynamic request)
+        {
+            string host = request.Host.Value;
+            string pathBase = request.PathBase.Value;
+            string path = request.Path.Value;
+            string queryString = request.QueryString.Value;
+
+            return new StringBuilder(request.Scheme.Length + "://".Length + host.Length + pathBase.Length + path.Length + queryString.Length).Append(request.Scheme)
+                                                                                                                                             .Append("://")
+                                                                                                                                             .Append(host)
+                                                                                                                                             .Append(pathBase)
+                                                                                                                                             .Append(path)
+                                                                                                                                             .Append(queryString)
+                                                                                                                                             .ToString();
         }
     }
 }
