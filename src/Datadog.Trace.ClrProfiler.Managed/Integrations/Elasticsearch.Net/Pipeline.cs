@@ -114,7 +114,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
             {
             }
 
-            var scope = Tracer.Instance.StartActive(OperationName, serviceName: ServiceName, finishOnClose: false);
+            var serviceName = string.Join("-", Tracer.Instance.DefaultServiceName, ServiceName);
+
+            var scope = Tracer.Instance.StartActive(OperationName, serviceName: serviceName, finishOnClose: false);
             scope.Span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
             scope.Span.Type = SpanType;
             scope.Span.SetTag(ComponentKey, ComponentValue);

@@ -263,15 +263,12 @@ namespace Samples.Elasticsearch
 
         private static List<Func<object>> JobCommands(ElasticClient elastic)
         {
-            // elastic.CloseJob(new CloseJobRequest("test_close_job_id"));
             // elastic.UpdateJob
-            // elastic.ValidateJob
-            // elastic.PutJob
-            // elastic.OpenJob
             // elastic.PostJobData
-            // elastic.DeleteJob
             return new List<Func<object>>
             {
+                () => elastic.PutJob(new PutJobRequest("test_job")),
+                () => elastic.ValidateJob(new ValidateJobRequest()),
                 () => elastic.GetInfluencers(new GetInfluencersRequest("test_job")),
                 () => elastic.GetJobs(new GetJobsRequest("test_job")),
                 () => elastic.GetJobStats(new GetJobStatsRequest()),
@@ -282,6 +279,9 @@ namespace Samples.Elasticsearch
                 () => elastic.GetAnomalyRecords(new GetAnomalyRecordsRequest("test_job")),
                 () => elastic.GetBuckets(new GetBucketsRequest("test_job")),
                 () => elastic.GetCategories(new GetCategoriesRequest("test_job")),
+                () => elastic.CloseJob(new CloseJobRequest("test_job")),
+                () => elastic.OpenJob(new OpenJobRequest("test_job")),
+                () => elastic.DeleteJob(new DeleteJobRequest("test_job")),
             };
         }
 
