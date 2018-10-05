@@ -31,10 +31,6 @@ class Enumerator {
         close_(std::move(close)),
         ptr_(nullptr) {}
 
-  Enumerator(const Enumerator& other) = default;
-
-  Enumerator(Enumerator&& other) noexcept = default;
-
   Enumerator& operator=(const Enumerator& other) = default;
 
   Enumerator& operator=(Enumerator&& other) noexcept = default;
@@ -174,10 +170,10 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
 
 struct AssemblyInfo {
   const AssemblyID id;
-  const std::wstring name;
+  const std::u16string name;
 
-  AssemblyInfo() : id(0), name(L"") {}
-  AssemblyInfo(AssemblyID id, std::wstring name)
+  AssemblyInfo() : id(0), name(u"") {}
+  AssemblyInfo(AssemblyID id, std::u16string name)
       : id(id), name(std::move(name)) {}
 
   bool is_valid() const { return id != 0; }
@@ -185,12 +181,13 @@ struct AssemblyInfo {
 
 struct ModuleInfo {
   const ModuleID id;
-  const std::wstring path;
+  const std::u16string path;
   const AssemblyInfo assembly;
   const DWORD flags;
 
-  ModuleInfo() : id(0), path(L""), assembly({}), flags(0) {}
-  ModuleInfo(ModuleID id, std::wstring path, AssemblyInfo assembly, DWORD flags)
+  ModuleInfo() : id(0), path(u""), assembly({}), flags(0) {}
+  ModuleInfo(ModuleID id, std::u16string path, AssemblyInfo assembly,
+             DWORD flags)
       : id(id),
         path(std::move(path)),
         assembly(std::move(assembly)),
@@ -205,22 +202,22 @@ struct ModuleInfo {
 
 struct TypeInfo {
   const mdToken id;
-  const std::wstring name;
+  const std::u16string name;
 
-  TypeInfo() : id(0), name(L"") {}
-  TypeInfo(mdToken id, std::wstring name) : id(id), name(std::move(name)) {}
+  TypeInfo() : id(0), name(u"") {}
+  TypeInfo(mdToken id, std::u16string name) : id(id), name(std::move(name)) {}
 
   bool IsValid() const { return id != 0; }
 };
 
 struct FunctionInfo {
   const mdToken id;
-  const std::wstring name;
+  const std::u16string name;
   const TypeInfo type;
   const MethodSignature signature;
 
-  FunctionInfo() : id(0), name(L""), type({}), signature() {}
-  FunctionInfo(mdToken id, std::wstring name, TypeInfo type,
+  FunctionInfo() : id(0), name(u""), type({}), signature() {}
+  FunctionInfo(mdToken id, std::u16string name, TypeInfo type,
                MethodSignature signature)
       : id(id),
         name(std::move(name)),
@@ -233,10 +230,10 @@ struct FunctionInfo {
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id);
 
-std::wstring GetAssemblyName(
+std::u16string GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
-std::wstring GetAssemblyName(
+std::u16string GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const mdAssemblyRef& assembly_ref);
 
@@ -250,13 +247,13 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
 
 mdAssemblyRef FindAssemblyRef(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-    const std::wstring& assembly_name);
+    const std::u16string& assembly_name);
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
 std::vector<Integration> FilterIntegrationsByCaller(
     const std::vector<Integration>& integrations,
-    const std::wstring& assembly_name);
+    const std::u16string& assembly_name);
 
 // FilterIntegrationsByTarget removes any integrations which have a target not
 // referenced by the module's assembly import

@@ -2,10 +2,14 @@
 #define DD_CLR_PROFILER_INTEGRATION_H_
 
 #include <corhlpr.h>
+#include <codecvt>
 #include <iomanip>
 #include <iostream>
+#include <locale>
 #include <sstream>
+#include <string>
 #include <vector>
+#include "util.h"
 
 namespace trace {
 
@@ -29,12 +33,12 @@ struct PublicKey {
     return true;
   }
 
-  inline std::wstring str() const {
+  inline std::u16string str() const {
     std::wostringstream ss;
     for (int i = 0; i < kPublicKeySize; i++) {
       ss << std::setfill(L'0') << std::setw(2) << std::hex << data[i];
     }
-    return ss.str();
+    return ToU16(ss.str());
   }
 };
 
@@ -56,10 +60,10 @@ struct Version {
            build == other.build && revision == other.revision;
   }
 
-  inline std::wstring str() const {
-    std::wostringstream ss;
-    ss << major << L"." << minor << L"." << build << L"." << revision;
-    return ss.str();
+  inline std::u16string str() const {
+    std::ostringstream ss;
+    ss << major << "." << minor << "." << build << "." << revision;
+    return ToU16(ss.str());
   }
 };
 
@@ -68,24 +72,25 @@ struct Version {
 //     Some.Assembly.Name, Version=1.0.0.0, Culture=neutral,
 //     PublicKeyToken=abcdef0123456789
 struct AssemblyReference {
-  const std::wstring name;
+  const std::u16string name;
   const Version version;
-  const std::wstring locale;
+  const std::u16string locale;
   const PublicKey public_key;
 
   AssemblyReference() {}
-  AssemblyReference(const std::wstring& str);
+  AssemblyReference(const std::u16string& str);
 
   inline bool operator==(const AssemblyReference& other) const {
     return name == other.name && version == other.version &&
            locale == other.locale && public_key == other.public_key;
   }
 
-  inline std::wstring str() const {
-    std::wostringstream ss;
-    ss << name << L", Version=" << version.str() << L", Culture=" << locale
-       << L", PublicKeyToken=" << public_key.str();
-    return ss.str();
+  inline std::u16string str() const {
+    std::ostringstream ss;
+    ss << ToU8(name) << ", Version=" << ToU8(version.str())
+       << ", Culture=" << ToU8(locale)
+       << ", PublicKeyToken=" << ToU8(public_key.str());
+    return ToU16(ss.str());
   }
 };
 
@@ -125,37 +130,37 @@ struct MethodSignature {
     return 0;
   }
 
-  std::wstring str() const {
-    std::wostringstream ss;
+  std::u16string str() const {
+    std::stringstream ss;
     for (auto& b : data) {
-      ss << std::hex << std::setfill(L'0') << std::setw(2) << b;
+      ss << std::hex << std::setfill('0') << std::setw(2) << b;
     }
-    return ss.str();
+    return ToU16(ss.str());
   }
 };
 
 struct MethodReference {
   const AssemblyReference assembly;
-  const std::wstring type_name;
-  const std::wstring method_name;
+  const std::u16string type_name;
+  const std::u16string method_name;
   const MethodSignature method_signature;
 
   MethodReference() {}
 
-  MethodReference(const std::wstring& assembly_name, std::wstring type_name,
-                  std::wstring method_name,
+  MethodReference(const std::u16string& assembly_name, std::u16string type_name,
+                  std::u16string method_name,
                   const std::vector<BYTE>& method_signature)
       : assembly(assembly_name),
         type_name(std::move(type_name)),
         method_name(std::move(method_name)),
         method_signature(method_signature) {}
 
-  inline std::wstring get_type_cache_key() const {
-    return L"[" + assembly.name + L"]" + type_name;
+  inline std::u16string get_type_cache_key() const {
+    return u"[" + assembly.name + u"]" + type_name;
   }
 
-  inline std::wstring get_method_cache_key() const {
-    return L"[" + assembly.name + L"]" + type_name + L"." + method_name;
+  inline std::u16string get_method_cache_key() const {
+    return u"[" + assembly.name + u"]" + type_name + u"." + method_name;
   }
 
   inline bool operator==(const MethodReference& other) const {
@@ -187,12 +192,12 @@ struct MethodReplacement {
 };
 
 struct Integration {
-  const std::wstring integration_name;
+  const std::u16string integration_name;
   std::vector<MethodReplacement> method_replacements;
 
-  Integration() : integration_name(L""), method_replacements({}) {}
+  Integration() : integration_name(u""), method_replacements({}) {}
 
-  Integration(std::wstring integration_name,
+  Integration(std::u16string integration_name,
               std::vector<MethodReplacement> method_replacements)
       : integration_name(std::move(integration_name)),
         method_replacements(std::move(method_replacements)) {}
@@ -205,10 +210,10 @@ struct Integration {
 
 namespace {
 
-std::wstring GetNameFromAssemblyReferenceString(const std::wstring& wstr);
-Version GetVersionFromAssemblyReferenceString(const std::wstring& wstr);
-std::wstring GetLocaleFromAssemblyReferenceString(const std::wstring& wstr);
-PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& wstr);
+std::u16string GetNameFromAssemblyReferenceString(const std::u16string& wstr);
+Version GetVersionFromAssemblyReferenceString(const std::u16string& wstr);
+std::u16string GetLocaleFromAssemblyReferenceString(const std::u16string& wstr);
+PublicKey GetPublicKeyFromAssemblyReferenceString(const std::u16string& wstr);
 
 }  // namespace
 

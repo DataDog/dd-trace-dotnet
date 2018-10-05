@@ -1,6 +1,9 @@
 #ifndef DD_CLR_PROFILER_UTIL_H_
 #define DD_CLR_PROFILER_UTIL_H_
 
+#include <array>
+#include <codecvt>
+#include <locale>
 #include <string>
 #include <vector>
 
@@ -29,6 +32,23 @@ std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name);
 
 // GetCurrentProcessName gets the current process file name.
 std::wstring GetCurrentProcessName();
+
+std::u16string ToU16(const std::string &str) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+  return convert.from_bytes(str);
+}
+
+std::u16string ToU16(const std::wstring &wstr) {
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert_from;
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert_to;
+  auto bstr = convert_from.to_bytes(wstr);
+  return convert_to.from_bytes(bstr);
+}
+
+std::string ToU8(const std::u16string &str) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+  return converter.to_bytes(str);
+}
 
 }  // namespace trace
 
