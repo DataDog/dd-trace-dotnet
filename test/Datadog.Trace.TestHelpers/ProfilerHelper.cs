@@ -42,7 +42,7 @@ namespace Datadog.Trace.TestHelpers
             if (coreClr)
             {
                 // .NET Core
-                startInfo = new ProcessStartInfo(DotNetCoreExecutable, $"{appPath} ${arguments ?? string.Empty}");
+                startInfo = new ProcessStartInfo(DotNetCoreExecutable, $"{appPath} {arguments ?? string.Empty}");
 
                 startInfo.EnvironmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
                 startInfo.EnvironmentVariables["CORECLR_PROFILER"] = profilerClsid;
