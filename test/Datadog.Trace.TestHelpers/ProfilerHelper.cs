@@ -68,6 +68,9 @@ namespace Datadog.Trace.TestHelpers
             startInfo.EnvironmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "localhost";
             startInfo.EnvironmentVariables["DD_TRACE_AGENT_PORT"] = traceAgentPort.ToString();
 
+            // for ASP.NET Core sample apps, set the server's port
+            startInfo.EnvironmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{traceAgentPort}/";
+
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
