@@ -1,3 +1,5 @@
+#if NET461
+
 using System.IO;
 using System.Net;
 using Datadog.Trace.TestHelpers;
@@ -60,3 +62,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
+
+#endif
