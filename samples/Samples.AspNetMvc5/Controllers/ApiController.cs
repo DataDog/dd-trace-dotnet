@@ -17,7 +17,7 @@ namespace Samples.AspNetMvc5.Controllers
         [HttpGet]
         [Route("api/environment")]
         public IHttpActionResult Environment()
-        {            
+        {
             return Ok(System.Environment.GetEnvironmentVariables());
         }
     }
