@@ -124,7 +124,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const auto metadata_import =
       metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
   const auto metadata_emit =
-      metadata_interfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
+      metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
   const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
       IID_IMetaDataAssemblyImport);
   const auto assembly_emit =
@@ -151,8 +151,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     logger->error("ModuleLoadFinished() failed to get module token.");
   }
 
-  ModuleMetadata* module_metadata = new ModuleMetadata(
-      metadata_import, module_info.assembly.name, enabled_integrations);
+  ModuleMetadata* module_metadata =
+      new ModuleMetadata(metadata_import, metadata_emit,
+                         module_info.assembly.name, enabled_integrations);
 
   MetadataBuilder metadata_builder(*module_metadata, module, metadata_import,
                                    metadata_emit, assembly_import,
@@ -267,16 +268,26 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       // make sure the calling convention matches
       if (!method_replacement.target_method.method_signature.data.empty() &&
-          method_replacement.target_method.method_signature.data[0] !=
-              target.signature[0]) {
+          method_replacement.target_method.method_signature
+                  .CallingConvention() !=
+              target.signature.CallingConvention()) {
         continue;
       }
 
       // make sure the number of arguments match
       if (method_replacement.target_method.method_signature.data.size() > 1 &&
-          method_replacement.target_method.method_signature.data[1] !=
-              target.signature[1]) {
+          method_replacement.target_method.method_signature
+                  .NumberOfArguments() !=
+              target.signature.NumberOfArguments()) {
         continue;
+      }
+
+      // we need to emit a method spec to populate the generic arguments
+      if (method_replacement.wrapper_method.method_signature
+              .NumberOfTypeArguments() > 0) {
+        wrapper_method_ref =
+            DefineMethodSpec(module_metadata->metadata_emit, wrapper_method_ref,
+                             target.signature);
       }
 
       // replace with a call to the instrumentation wrapper

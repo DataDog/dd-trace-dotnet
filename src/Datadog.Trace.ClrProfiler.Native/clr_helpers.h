@@ -217,11 +217,11 @@ struct FunctionInfo {
   const mdToken id;
   const std::wstring name;
   const TypeInfo type;
-  const std::vector<BYTE> signature;
+  const MethodSignature signature;
 
-  FunctionInfo() : id(0), name(L""), type({}), signature({}) {}
+  FunctionInfo() : id(0), name(L""), type({}), signature() {}
   FunctionInfo(mdToken id, std::wstring name, TypeInfo type,
-               const std::vector<BYTE>& signature)
+               MethodSignature signature)
       : id(id),
         name(std::move(name)),
         type(std::move(type)),
@@ -263,6 +263,10 @@ std::vector<Integration> FilterIntegrationsByCaller(
 std::vector<Integration> FilterIntegrationsByTarget(
     const std::vector<Integration>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import);
+
+mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
+                              const mdToken& token,
+                              const MethodSignature& signature);
 
 }  // namespace trace
 

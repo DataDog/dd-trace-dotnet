@@ -18,13 +18,16 @@ class ModuleMetadata {
 
  public:
   const ComPtr<IMetaDataImport2> metadata_import{};
+  const ComPtr<IMetaDataEmit2> metadata_emit{};
   std::wstring assemblyName = L"";
   std::vector<Integration> integrations = {};
 
   ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
+                 ComPtr<IMetaDataEmit2> metadata_emit,
                  std::wstring assembly_name,
                  std::vector<Integration> integrations)
       : metadata_import(std::move(metadata_import)),
+        metadata_emit(std::move(metadata_emit)),
         assemblyName(std::move(assembly_name)),
         integrations(std::move(integrations)) {}
 

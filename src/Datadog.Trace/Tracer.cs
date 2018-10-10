@@ -20,7 +20,6 @@ namespace Datadog.Trace
         private static readonly string _defaultTraceAgentPort = "8126";
 
         private AsyncLocalScopeManager _scopeManager;
-        private string _defaultServiceName;
         private IAgentWriter _agentWriter;
         private bool _isDebugEnabled;
 
@@ -33,7 +32,7 @@ namespace Datadog.Trace
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
-            _defaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
+            DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
@@ -61,7 +60,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
-        string IDatadogTracer.DefaultServiceName => _defaultServiceName;
+        public string DefaultServiceName { get; }
 
         /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.

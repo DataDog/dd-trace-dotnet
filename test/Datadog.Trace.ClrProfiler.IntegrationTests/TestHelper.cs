@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
@@ -82,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 appFileName);
         }
 
-        public Process StartSample(int traceAgentPort)
+        public Process StartSample(int traceAgentPort, string arguments = null)
         {
             // get path to native profiler dll
             string profilerDllPath = GetProfilerDllPath();
@@ -107,12 +108,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 integrationPaths,
                 Instrumentation.ProfilerClsid,
                 profilerDllPath,
+                arguments: arguments,
                 traceAgentPort: traceAgentPort);
         }
 
-        public ProcessResult RunSampleAndWaitForExit(int traceAgentPort)
+        public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, string arguments = null)
         {
-            Process process = StartSample(traceAgentPort);
+            Process process = StartSample(traceAgentPort, arguments: arguments);
 
             string standardOutput = process.StandardOutput.ReadToEnd();
             string standardError = process.StandardError.ReadToEnd();
@@ -199,6 +201,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return new IISExpress(process);
         }
 
+        protected void ValidateSpans<T>(IEnumerable<MockTracerAgent.Span> spans, Func<MockTracerAgent.Span, T> mapper, IEnumerable<T> expected)
+        {
+            var spanLookup = new Dictionary<T, int>();
+            foreach (var span in spans)
+            {
+                var key = mapper(span);
+                if (spanLookup.ContainsKey(key))
+                {
+                    spanLookup[key]++;
+                }
+                else
+                {
+                    spanLookup[key] = 1;
+                }
+            }
+
+            var missing = new List<T>();
+            foreach (var e in expected)
+            {
+                var found = spanLookup.ContainsKey(e);
+                if (found)
+                {
+                    if (--spanLookup[e] <= 0)
+                    {
+                        spanLookup.Remove(e);
+                    }
+                }
+                else
+                {
+                    missing.Add(e);
+                }
+            }
+
+            foreach (var e in missing)
+            {
+                Assert.True(false, $"no span found for `{e}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key}").ToArray())}`");
+            }
+        }
+
         public class IISExpress : IDisposable
         {
             private Process _process;
@@ -225,6 +266,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _process.StandardInput.Write("q");
                 _process.StandardInput.Flush();
                 _process.WaitForExit();
+            }
+        }
+
+        internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
+        {
+            public void Add(T1 item, T2 item2)
+            {
+                Add(new Tuple<T1, T2>(item, item2));
             }
         }
     }

@@ -1,19 +1,15 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    /// ApsNetWeb5Integration wraps the Web API.
+    /// AspNetWeb5Integration wraps the Web API.
     /// </summary>
     public static class AspNetWebApi2Integration
     {
-        private const string OperationName = "aspnet_web.query";
+        internal const string OperationName = "aspnet-web-api.request";
 
         /// <summary>
         /// ExecuteAsync calls the underlying ExecuteAsync and traces the request.
@@ -24,49 +20,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>A task with the result</returns>
         public static dynamic ExecuteAsync(dynamic @this, dynamic controllerContext, dynamic cancellationTokenSource)
         {
-            dynamic result;
-
-            using (var scope = CreateScope(controllerContext))
+            using (Scope scope = CreateScope(controllerContext))
             {
-                try
-                {
-                    result = @this.ExecuteAsync(controllerContext, ((CancellationTokenSource)cancellationTokenSource).Token);
-                    if (result is Task task)
+                return scope.Span.Trace(
+                    () => @this.ExecuteAsync(controllerContext, ((CancellationTokenSource)cancellationTokenSource).Token),
+                    onComplete: e =>
                     {
-                        task.ContinueWith(
-                            t =>
-                            {
-                                if (t.IsFaulted)
-                                {
-                                    scope.Span.SetException(t.Exception);
-                                    scope.Span.Finish();
-                                }
-                                else if (t.IsCanceled)
-                                {
-                                    // abandon the span
-                                }
-                                else
-                                {
-                                    // some fields aren't set till after execution, so repopulate anything missing
-                                    UpdateSpan(controllerContext, scope.Span);
-                                    scope.Span.Finish();
-                                }
-                            });
-                    }
-                    else
-                    {
-                        scope.Span.Finish();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    scope.Span.SetException(ex);
-                    scope.Span.Finish();
-                    throw;
-                }
-            }
+                        if (e != null)
+                        {
+                            scope.Span.SetException(e);
+                        }
 
-            return result;
+                        // some fields aren't set till after execution, so repopulate anything missing
+                        UpdateSpan(controllerContext, scope.Span);
+                        scope.Span.Finish();
+                    });
+            }
         }
 
         private static Scope CreateScope(dynamic controllerContext)

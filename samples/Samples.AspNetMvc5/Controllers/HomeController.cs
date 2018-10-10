@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -9,7 +12,16 @@ namespace Samples.AspNetMvc5.Controllers
     {
         public ActionResult Index()
         {
-            return View();
+            var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
+
+            var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
+                          from prefix in prefixes
+                          let key = (envVar.Key as string)?.ToUpperInvariant()
+                          let value = envVar.Value as string
+                          where key.StartsWith(prefix)
+                          select new KeyValuePair<string, string>(key, value);
+
+            return View(envVars.ToList());
         }
 
         [Route("delay/{seconds}")]

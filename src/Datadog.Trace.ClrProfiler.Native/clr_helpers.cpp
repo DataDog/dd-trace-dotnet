@@ -78,12 +78,16 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
           &raw_signature, &raw_signature_len, nullptr, nullptr, nullptr,
           nullptr, nullptr);
       break;
-    case mdtMethodSpec:
-      hr = metadata_import->GetMethodSpecProps(token, &parent_token, nullptr,
-                                               nullptr);
-      if (!FAILED(hr)) {
-        return GetFunctionInfo(metadata_import, parent_token);
+    case mdtMethodSpec: {
+      hr = metadata_import->GetMethodSpecProps(
+          token, &parent_token, &raw_signature, &raw_signature_len);
+      if (FAILED(hr)) {
+        return {};
       }
+      auto generic_info = GetFunctionInfo(metadata_import, parent_token);
+      function_name.assign(generic_info.name);
+      function_name_len = (DWORD)(generic_info.name.length() + 1);
+    } break;
     default:
       logger->error("unknown token type: {:x}", TypeFromToken(token));
       break;
@@ -93,15 +97,15 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   }
   function_name = function_name.substr(0, function_name_len - 1);
 
-  std::vector<BYTE> signature(raw_signature_len);
+  std::vector<BYTE> signature_data(raw_signature_len);
   for (ULONG i = 0; i < raw_signature_len; i++) {
-    signature[i] = raw_signature[i];
+    signature_data[i] = raw_signature[i];
   }
 
   // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
 
   return {token, function_name, GetTypeInfo(metadata_import, parent_token),
-          signature};
+          MethodSignature(signature_data)};
 }
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
@@ -222,6 +226,18 @@ std::vector<Integration> FilterIntegrationsByTarget(
   }
 
   return enabled;
+}
+
+mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
+                              const mdToken& token,
+                              const MethodSignature& signature) {
+  mdMethodSpec spec = mdMethodSpecNil;
+  auto hr = metadata_emit->DefineMethodSpec(
+      token, signature.data.data(), ULONG(signature.data.size()), &spec);
+  if (FAILED(hr)) {
+    LOG_APPEND("[DefineMethodSpec] failed to define method spec");
+  }
+  return spec;
 }
 
 }  // namespace trace

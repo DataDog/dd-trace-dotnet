@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -9,7 +10,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class SqlServer
     {
-        private const string OperationName = "sqlserver.query";
+        internal const string OperationName = "sql-server.query";
+        internal const string ServiceName = "sql-server";
+
         private static Func<object, CommandBehavior, object> _executeReader;
         private static Func<object, CommandBehavior, string, object> _executeReaderWithMethod;
 
@@ -26,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (_executeReaderWithMethod == null)
             {
-                _executeReaderWithMethod = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, CommandBehavior, string, object>>(
+                _executeReaderWithMethod = DynamicMethodBuilder<Func<object, CommandBehavior, string, object>>.CreateMethodCallDelegate(
                     command.GetType(),
                     "ExecuteReader",
                     new Type[] { typeof(CommandBehavior), typeof(string) });
@@ -58,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (_executeReader == null)
             {
-                _executeReader = DynamicMethodBuilder.CreateMethodCallDelegate<Func<object, CommandBehavior, object>>(
+                _executeReader = DynamicMethodBuilder<Func<object, CommandBehavior, object>>.CreateMethodCallDelegate(
                     command.GetType(),
                     "ExecuteReader",
                     new Type[] { typeof(CommandBehavior) });
@@ -80,14 +83,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(DbCommand command)
         {
-            var scope = Tracer.Instance.StartActive(OperationName);
+            Tracer tracer = Tracer.Instance;
+            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
-            // set the scope properties
-            // - row count is not supported so we don't set it
-            scope.Span.ResourceName = command.CommandText;
-            scope.Span.Type = SpanTypes.Sql;
-            scope.Span.SetTag(Tags.SqlDatabase, command.Connection?.ConnectionString);
-
+            var scope = tracer.StartActive(OperationName, serviceName: serviceName);
+            scope.Span.SetTag(Tags.DbType, "mssql");
+            scope.Span.AddTagsFromDbCommand(command);
             return scope;
         }
     }

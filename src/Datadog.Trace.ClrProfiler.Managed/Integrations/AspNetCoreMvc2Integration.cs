@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.ExtensionMethods;
+using System.Text;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -10,8 +10,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public sealed class AspNetCoreMvc2Integration : IDisposable
     {
+        internal const string OperationName = "aspnet-core-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
-        private const string RequestOperationName = "aspnet_core_mvc.request";
 
         private static Action<object, object, object, object> _beforeAction;
         private static Action<object, object, object, object> _afterAction;
@@ -34,9 +34,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 _httpContext = httpContextObj;
                 string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
-                string url = _httpContext.Request.GetDisplayUrl().ToLowerInvariant();
+                string url = GetDisplayUrl(_httpContext.Request).ToLowerInvariant();
 
-                _scope = Tracer.Instance.StartActive(RequestOperationName);
+                _scope = Tracer.Instance.StartActive(OperationName);
                 Span span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     Assembly assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
                     Type type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
-                    _beforeAction = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
+                    _beforeAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
                         type,
                         "BeforeAction");
                 }
@@ -138,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     Type type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
-                    _afterAction = DynamicMethodBuilder.CreateMethodCallDelegate<Action<object, object, object, object>>(
+                    _afterAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
                         type,
                         "AfterAction");
                 }
@@ -190,6 +190,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 _scope?.Dispose();
             }
+        }
+
+        private static string GetDisplayUrl(dynamic request)
+        {
+            string host = request.Host.Value;
+            string pathBase = request.PathBase.Value;
+            string path = request.Path.Value;
+            string queryString = request.QueryString.Value;
+
+            return new StringBuilder(request.Scheme.Length + "://".Length + host.Length + pathBase.Length + path.Length + queryString.Length).Append(request.Scheme)
+                                                                                                                                             .Append("://")
+                                                                                                                                             .Append(host)
+                                                                                                                                             .Append(pathBase)
+                                                                                                                                             .Append(path)
+                                                                                                                                             .Append(queryString)
+                                                                                                                                             .ToString();
         }
     }
 }

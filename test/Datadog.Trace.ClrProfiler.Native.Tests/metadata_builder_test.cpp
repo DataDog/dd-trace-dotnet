@@ -49,7 +49,7 @@ class MetadataBuilderTest : public ::testing::Test {
     const auto metadataImport =
         metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport2);
     const auto metadataEmit =
-        metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit);
+        metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
     const auto assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(
         IID_IMetaDataAssemblyImport);
     const auto assemblyEmit =
@@ -58,7 +58,7 @@ class MetadataBuilderTest : public ::testing::Test {
     const std::wstring assemblyName = L"Samples.ExampleLibrary";
     std::vector<Integration> integrations;
     module_metadata_ =
-        new ModuleMetadata(metadataImport, assemblyName, integrations);
+        new ModuleMetadata(metadataImport, metadataEmit, assemblyName, integrations);
 
     mdModule module;
     hr = metadataImport->GetModuleFromScope(&module);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -13,12 +14,12 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable
     {
-        private static ILog _log = LogProvider.For<Span>();
+        private static readonly ILog _log = LogProvider.For<Span>();
 
-        private object _lock = new object();
-        private IDatadogTracer _tracer;
-        private Dictionary<string, string> _tags;
-        private SpanContext _context;
+        private readonly object _lock = new object();
+        private readonly SpanContext _context;
+        private readonly IDatadogTracer _tracer;
+        private readonly ConcurrentDictionary<string, string> _tags = new ConcurrentDictionary<string, string>();
 
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
         {
@@ -61,6 +62,16 @@ namespace Datadog.Trace
         /// </summary>
         public string ServiceName => _context.ServiceName;
 
+        /// <summary>
+        /// Gets the trace's unique identifier.
+        /// </summary>
+        public ulong TraceId => _context.TraceId;
+
+        /// <summary>
+        /// Gets the span's unique identifier.
+        /// </summary>
+        public ulong SpanId => _context.SpanId;
+
         internal SpanContext Context => _context;
 
         internal ITraceContext TraceContext => _context.TraceContext;
@@ -75,7 +86,7 @@ namespace Datadog.Trace
 
         // This is threadsafe only if used after the span has been closed.
         // It is acceptable because this property is internal. But if we were to make it public we would need to add some checks.
-        internal IReadOnlyDictionary<string, string> Tags => _tags;
+        internal ConcurrentDictionary<string, string> Tags => _tags;
 
         internal bool IsFinished { get; private set; }
 
@@ -118,22 +129,22 @@ namespace Datadog.Trace
         /// <returns> The span object itself</returns>
         public Span SetTag(string key, string value)
         {
-            lock (_lock)
+            if (IsFinished)
             {
-                if (IsFinished)
-                {
-                    _log.Debug("SetTag should not be called after the span was closed");
-                    return this;
-                }
-
-                if (_tags == null)
-                {
-                    _tags = new Dictionary<string, string>();
-                }
-
-                _tags[key] = value;
+                _log.Debug("SetTag should not be called after the span was closed");
                 return this;
             }
+
+            if (value == null)
+            {
+                _tags.TryRemove(key, out value);
+            }
+            else
+            {
+                _tags[key] = value;
+            }
+
+            return this;
         }
 
         /// <summary>
@@ -191,6 +202,15 @@ namespace Datadog.Trace
         public void SetException(Exception exception)
         {
             Error = true;
+
+            // for AggregateException, use the first inner exception until we can support multiple errors.
+            // there will be only one error in most cases, and even if there are more and we lose
+            // the other ones, it's still better than the generic "one or more errors occurred" message.
+            if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+            {
+                exception = aggregateException.InnerExceptions[0];
+            }
+
             SetTag(Trace.Tags.ErrorMsg, exception.Message);
             SetTag(Trace.Tags.ErrorStack, exception.StackTrace);
             SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
@@ -198,12 +218,7 @@ namespace Datadog.Trace
 
         internal string GetTag(string key)
         {
-            lock (_lock)
-            {
-                string s = null;
-                _tags?.TryGetValue(key, out s);
-                return s;
-            }
+            return _tags.TryGetValue(key, out string value) ? value : null;
         }
     }
 }

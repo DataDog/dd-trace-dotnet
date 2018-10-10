@@ -102,6 +102,37 @@ struct MethodSignature {
   inline bool operator==(const MethodSignature& other) const {
     return data == other.data;
   }
+
+  CorCallingConvention CallingConvention() const {
+    return CorCallingConvention(data.empty() ? 0 : data[0]);
+  }
+
+  size_t NumberOfTypeArguments() const {
+    if (data.size() > 1 &&
+        (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+      return data[1];
+    }
+    return 0;
+  }
+
+  size_t NumberOfArguments() const {
+    if (data.size() > 2 &&
+        (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+      return data[2];
+    }
+    if (data.size() > 1) {
+      return data[1];
+    }
+    return 0;
+  }
+
+  std::wstring str() const {
+    std::wostringstream ss;
+    for (auto& b : data) {
+      ss << std::hex << std::setfill(L'0') << std::setw(2) << b;
+    }
+    return ss.str();
+  }
 };
 
 struct MethodReference {
