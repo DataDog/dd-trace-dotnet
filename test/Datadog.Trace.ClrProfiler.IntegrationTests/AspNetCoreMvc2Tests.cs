@@ -1,3 +1,4 @@
+/*
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -96,3 +97,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
+*/
