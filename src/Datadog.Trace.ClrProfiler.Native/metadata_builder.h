@@ -3,6 +3,7 @@
 #include <corhlpr.h>
 
 #include "com_ptr.h"
+#include "logging.h"
 #include "module_metadata.h"
 
 namespace trace {
@@ -15,6 +16,7 @@ class MetadataBuilder {
   const ComPtr<IMetaDataEmit> metadata_emit_{};
   const ComPtr<IMetaDataAssemblyImport> assembly_import_{};
   const ComPtr<IMetaDataAssemblyEmit> assembly_emit_{};
+  const std::shared_ptr<spdlog::logger> logger_;
 
   HRESULT FindWrapperTypeRef(const MethodReplacement& method_replacement,
                              mdTypeRef& type_ref_out) const;
@@ -30,7 +32,8 @@ class MetadataBuilder {
         metadata_import_(std::move(metadata_import)),
         metadata_emit_(std::move(metadata_emit)),
         assembly_import_(std::move(assembly_import)),
-        assembly_emit_(std::move(assembly_emit)) {}
+        assembly_emit_(std::move(assembly_emit)),
+        logger_(GetLogger()) {}
 
   HRESULT StoreWrapperMethodRef(
       const MethodReplacement& method_replacement) const;

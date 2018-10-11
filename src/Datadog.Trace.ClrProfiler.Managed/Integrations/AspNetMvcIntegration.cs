@@ -9,12 +9,12 @@ using Datadog.Trace.ExtensionMethods;
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    /// The ASP.NET MVC 5 integration.
+    /// The ASP.NET MVC integration.
     /// </summary>
-    public sealed class AspNetMvc5Integration : IDisposable
+    public sealed class AspNetMvcIntegration : IDisposable
     {
         internal const string OperationName = "aspnet-mvc.request";
-        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvc5Integration";
+        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
 
         private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
         private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
@@ -23,10 +23,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private readonly Scope _scope;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AspNetMvc5Integration"/> class.
+        /// Initializes a new instance of the <see cref="AspNetMvcIntegration"/> class.
         /// </summary>
         /// <param name="controllerContextObj">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
-        public AspNetMvc5Integration(object controllerContextObj)
+        public AspNetMvcIntegration(object controllerContextObj)
         {
             if (controllerContextObj == null || ControllerContextType == null)
             {
@@ -109,13 +109,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             dynamic callback,
             dynamic state)
         {
-            AspNetMvc5Integration integration = null;
+            AspNetMvcIntegration integration = null;
 
             try
             {
                 if (HttpContext.Current != null)
                 {
-                    integration = new AspNetMvc5Integration((object)controllerContext);
+                    integration = new AspNetMvcIntegration((object)controllerContext);
                     HttpContext.Current.Items[HttpContextKey] = integration;
                 }
             }
@@ -144,13 +144,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
         public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
         {
-            AspNetMvc5Integration integration = null;
+            AspNetMvcIntegration integration = null;
 
             try
             {
                 if (HttpContext.Current != null)
                 {
-                    integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvc5Integration;
+                    integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvcIntegration;
                 }
             }
             catch

@@ -53,7 +53,7 @@ if (Test-Path $vcpkgExe) {
     }
 }
 
-$packages = @("nlohmann-json")
+$packages = @("fmt", "spdlog", "nlohmann-json")
 if ($IsWindows) {
     $platforms = @("x86", "x64")
 } else {

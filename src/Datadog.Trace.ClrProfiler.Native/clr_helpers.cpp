@@ -1,5 +1,6 @@
 #include "clr_helpers.h"
 #include <string>
+#include "logging.h"
 #include "macros.h"
 
 namespace trace {
@@ -88,8 +89,8 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       function_name_len = (DWORD)(generic_info.name.length() + 1);
     } break;
     default:
-      LOG_APPEND(L"[trace::GetFunctionInfo] unknown token type:"
-                 << HEX(TypeFromToken(token)));
+      GetLogger()->error("[trace::GetFunctionInfo] unknown token type: {}",
+                         TypeFromToken(token));
   }
   if (FAILED(hr) || function_name_len == 0) {
     return {};
@@ -236,7 +237,7 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
   auto hr = metadata_emit->DefineMethodSpec(
       token, signature.data.data(), ULONG(signature.data.size()), &spec);
   if (FAILED(hr)) {
-    LOG_APPEND("[DefineMethodSpec] failed to define method spec");
+    GetLogger()->error("[DefineMethodSpec] failed to define method spec");
   }
   return spec;
 }
