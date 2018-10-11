@@ -19,6 +19,7 @@ namespace Samples.AspNetCoreMvc2.Controllers
                           let key = (envVar.Key as string)?.ToUpperInvariant()
                           let value = envVar.Value as string
                           where key.StartsWith(prefix)
+                          orderby key
                           select new KeyValuePair<string, string>(key, value);
 
             return View(envVars.ToList());
