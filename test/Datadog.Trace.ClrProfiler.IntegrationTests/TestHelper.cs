@@ -108,13 +108,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 integrationPaths,
                 Instrumentation.ProfilerClsid,
                 profilerDllPath,
-                arguments: arguments,
+                arguments,
                 traceAgentPort: traceAgentPort);
         }
 
         public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, string arguments = null)
         {
-            Process process = StartSample(traceAgentPort, arguments: arguments);
+            Process process = StartSample(traceAgentPort, arguments);
 
             string standardOutput = process.StandardOutput.ReadToEnd();
             string standardError = process.StandardError.ReadToEnd();
