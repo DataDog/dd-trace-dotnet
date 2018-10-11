@@ -4,8 +4,7 @@
     "method_replacements": [
       {
         "caller": {
-          "assembly": "Microsoft.AspNetCore.Mvc.Core",
-          "type": "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker"
+          "assembly": "Microsoft.AspNetCore.Mvc.Core"
         },
         "target": {
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
@@ -21,8 +20,7 @@
       },
       {
         "caller": {
-          "assembly": "Microsoft.AspNetCore.Mvc.Core",
-          "type": "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker"
+          "assembly": "Microsoft.AspNetCore.Mvc.Core"
         },
         "target": {
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
