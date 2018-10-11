@@ -10,8 +10,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class AspNetCoreMvc2Tests : TestHelper
     {
-        private const int AgentPort = 59000;
-        private const int Port = 59001;
+        private const int AgentPort = 9008;
+        private const int Port = 9009;
 
         public AspNetCoreMvc2Tests(ITestOutputHelper output)
             : base("AspNetCoreMvc2", output)
@@ -31,18 +31,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 process.OutputDataReceived += (sender, args) =>
                                               {
-                                                  if (args.Data?.Contains("Now listening on:") == true)
+                                                  if (args.Data != null)
                                                   {
-                                                      wh.Set();
-                                                  }
+                                                      if (args.Data.Contains("Now listening on:") || args.Data.Contains("Unable to start Kestrel"))
+                                                      {
+                                                          wh.Set();
+                                                      }
 
-                                                  Output.WriteLine($"[webserver][stdout] {args.Data}");
+                                                      Output.WriteLine($"[webserver][stdout] {args.Data}");
+                                                  }
                                               };
                 process.BeginOutputReadLine();
 
                 process.ErrorDataReceived += (sender, args) =>
                                              {
-                                                 Output.WriteLine($"[webserver][stderr] {args.Data}");
+                                                 if (args.Data != null)
+                                                 {
+                                                     Output.WriteLine($"[webserver][stderr] {args.Data}");
+                                                 }
                                              };
                 process.BeginErrorReadLine();
 
