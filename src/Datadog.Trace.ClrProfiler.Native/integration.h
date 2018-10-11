@@ -11,6 +11,9 @@
 #include <vector>
 #include "util.h"
 
+#undef minor
+#undef major
+
 namespace trace {
 
 const size_t kPublicKeySize = 8;
