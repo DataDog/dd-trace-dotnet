@@ -6,8 +6,8 @@ $vcpkgExe = [IO.Path]::Combine($vcpkgRoot, "vcpkg.exe")
 
 function Run {
     param(
-        [Parameter(Position=0)][string] $Name, 
-        [Parameter(Position=1)][String[]] $Args, 
+        [Parameter(Position=0)][string] $Name,
+        [Parameter(Position=1)][String[]] $Args,
         [Parameter(Position=2)][string] $WorkingDirectory
     )
     Write-Host "running $($Name) $($Args)"
@@ -40,7 +40,7 @@ if (Test-Path $vcpkgExe) {
     }
 }
 
-$packages = @("nlohmann-json")
+$packages = @("fmt", "spdlog", "nlohmann-json")
 $platforms = @("x86", "x64")
 
 foreach ($platform in $platforms) {

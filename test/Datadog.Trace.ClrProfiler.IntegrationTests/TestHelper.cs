@@ -180,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 string line;
                 while ((line = process.StandardOutput.ReadLine()) != null)
                 {
-                    if (line.Contains("Successfully registered URL"))
+                    if (line.Contains("IIS Express is running"))
                     {
                         wh.Set();
                     }
