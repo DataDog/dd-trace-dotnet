@@ -7,10 +7,10 @@ using namespace trace;
 
 class MetadataBuilderTest : public ::testing::Test {
  protected:
-  ModuleMetadata* module_metadata_;
-  MetadataBuilder* metadata_builder_;
-  ICLRStrongName* strong_name_;
-  IMetaDataDispenser* metadata_dispenser_;
+  ModuleMetadata* module_metadata_ = nullptr;
+  MetadataBuilder* metadata_builder_ = nullptr;
+  ICLRStrongName* strong_name_ = nullptr;
+  IMetaDataDispenser* metadata_dispenser_ = nullptr;
 
   void SetUp() override {
     ICLRMetaHost* metahost = nullptr;
