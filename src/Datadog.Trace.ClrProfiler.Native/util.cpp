@@ -86,9 +86,7 @@ std::u16string GetCurrentProcessName() {
   return current_process_path;
 }
 
-std::u16string ToU16(const std::string &str) {
-  return ToU16(ToW(str));
-}
+std::u16string ToU16(const std::string &str) { return ToU16(ToW(str)); }
 
 std::u16string ToU16(const std::wstring &wstr) {
 #ifdef _WIN32
@@ -125,9 +123,15 @@ std::wstring ToW(const std::u16string &ustr) {
 #endif
 }
 
+#ifdef _WIN32
 wchar_t *ToLPWSTR(const std::u16string &ustr) {
   return reinterpret_cast<wchar_t *>(const_cast<char16_t *>(ustr.data()));
 }
+#else
+char16_t *ToLPWSTR(const std::u16string &ustr) {
+  return const_cast<char16_t *>(ustr.data());
+}
+#endif
 
 bool IsSpace(const char16_t c) {
   return c == u' ' || c == u'\t' || c == u'\r' || c == u'\n' || c == u'\v';

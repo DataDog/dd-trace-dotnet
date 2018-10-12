@@ -45,7 +45,11 @@ std::wstring ToW(const std::string &str);
 
 std::wstring ToW(const std::u16string &ustr);
 
-wchar_t* ToLPWSTR(const std::u16string &ustr);
+#ifdef _WIN32
+wchar_t *ToLPWSTR(const std::u16string &ustr);
+#else
+char16_t *ToLPWSTR(const std::u16string &ustr);
+#endif
 
 bool IsSpace(const char16_t c);
 
