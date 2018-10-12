@@ -16,7 +16,7 @@ void Split(const std::u16string &s, char16_t delim, Out result) {
   size_t prev = 0;
   while ((next = s.find(delim, prev)) != std::u16string::npos) {
     *(result++) = s.substr(prev, next - prev);
-    prev = next;
+    prev = next+1;
   }
   *(result++) = s.substr(prev);
 }

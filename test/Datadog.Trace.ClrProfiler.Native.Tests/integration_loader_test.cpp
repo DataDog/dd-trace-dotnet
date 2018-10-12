@@ -171,7 +171,7 @@ TEST(IntegrationLoaderTest, LoadsFromEnvironment) {
 
   auto name = tmpname1.wstring() + L";" + tmpname2.wstring();
 
-  SetEnvironmentVariableW(ToLPWSTR(kIntegrationsEnvironmentName), name.data());
+  SetEnvironmentVariableW(ToW(kIntegrationsEnvironmentName).c_str(), name.data());
 
   std::vector<std::u16string> expected_names = {u"test-integration-1",
                                                 u"test-integration-2"};
