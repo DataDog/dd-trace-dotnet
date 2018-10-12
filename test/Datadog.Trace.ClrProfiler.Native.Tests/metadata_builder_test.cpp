@@ -41,7 +41,7 @@ class MetadataBuilderTest : public ::testing::Test {
     ASSERT_TRUE(SUCCEEDED(hr));
 
     ComPtr<IUnknown> metadataInterfaces;
-    hr = metadata_dispenser_->OpenScope(L"Samples.ExampleLibrary.dll",
+    hr = metadata_dispenser_->OpenScope(ToLPWSTR(u"Samples.ExampleLibrary.dll"),
                                         ofReadWriteMask, IID_IMetaDataImport2,
                                         metadataInterfaces.GetAddressOf());
     ASSERT_TRUE(SUCCEEDED(hr));
@@ -55,7 +55,7 @@ class MetadataBuilderTest : public ::testing::Test {
     const auto assemblyEmit =
         metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-    const std::wstring assemblyName = L"Samples.ExampleLibrary";
+    const std::u16string assemblyName = u"Samples.ExampleLibrary";
     std::vector<Integration> integrations;
     module_metadata_ =
         new ModuleMetadata(metadataImport, metadataEmit, assemblyName, integrations);
@@ -69,7 +69,7 @@ class MetadataBuilderTest : public ::testing::Test {
                             metadataEmit, assemblyImport, assemblyEmit);
 
     hr = metadata_builder_->EmitAssemblyRef(trace::AssemblyReference(
-        L"Samples.ExampleLibraryTracer, Version=1.0.0.0"));
+        u"Samples.ExampleLibraryTracer, Version=1.0.0.0"));
     ASSERT_TRUE(SUCCEEDED(hr));
   }
 
@@ -80,37 +80,37 @@ class MetadataBuilderTest : public ::testing::Test {
 };
 
 TEST_F(MetadataBuilderTest, StoresWrapperMemberRef) {
-  MethodReference ref1(L"", L"", L"", {});
-  MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
-  MethodReference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
+  MethodReference ref1(u"", u"", u"", {});
+  MethodReference ref2(u"Samples.ExampleLibrary", u"Class1", u"Add", {});
+  MethodReference ref3(u"Samples.ExampleLibrary", u"Class1", u"Add", {});
   MethodReplacement mr1(ref1, ref2, ref3);
   auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);
 
   mdMemberRef tmp;
   auto ok = module_metadata_->TryGetWrapperMemberRef(
-      L"[Samples.ExampleLibrary]Class1.Add", tmp);
+      u"[Samples.ExampleLibrary]Class1.Add", tmp);
   EXPECT_TRUE(ok);
   EXPECT_NE(tmp, 0);
 
   tmp = 0;
   ok = module_metadata_->TryGetWrapperMemberRef(
-      L"[Samples.ExampleLibrary]Class2.Add", tmp);
+      u"[Samples.ExampleLibrary]Class2.Add", tmp);
   EXPECT_FALSE(ok);
   EXPECT_EQ(tmp, 0);
 }
 
 TEST_F(MetadataBuilderTest, StoresWrapperMemberRefForSeparateAssembly) {
-  MethodReference ref1(L"", L"", L"", {});
-  MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
-  MethodReference ref3(L"Samples.ExampleLibraryTracer", L"Class1", L"Add", {});
+  MethodReference ref1(u"", u"", u"", {});
+  MethodReference ref2(u"Samples.ExampleLibrary", u"Class1", u"Add", {});
+  MethodReference ref3(u"Samples.ExampleLibraryTracer", u"Class1", u"Add", {});
   MethodReplacement mr1(ref1, ref2, ref3);
   auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);
 
   mdMemberRef tmp;
   auto ok = module_metadata_->TryGetWrapperMemberRef(
-      L"[Samples.ExampleLibraryTracer]Class1.Add", tmp);
+      u"[Samples.ExampleLibraryTracer]Class1.Add", tmp);
   EXPECT_TRUE(ok);
   EXPECT_NE(tmp, 0);
 }

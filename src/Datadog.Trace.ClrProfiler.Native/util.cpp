@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "pal.h"
+#include <corhlpr.h>
 
 namespace trace {
 
@@ -46,8 +46,8 @@ std::u16string Trim(const std::u16string &str) {
 std::u16string GetEnvironmentValue(const std::u16string &name) {
   const size_t max_buf_size = 4096;
   std::u16string buf(max_buf_size, 0);
-  auto len =
-      GetEnvironmentVariable(name.data(), buf.data(), (DWORD)(buf.size()));
+  auto len = GetEnvironmentVariable(ToLPWSTR(name), ToLPWSTR(buf),
+                                    (DWORD)(buf.size()));
   return Trim(buf.substr(0, len));
 }
 
@@ -69,7 +69,7 @@ std::vector<std::u16string> GetEnvironmentValues(const std::u16string &name) {
 
 std::u16string GetCurrentProcessName() {
   std::u16string current_process_path(260, 0);
-  const DWORD len = GetModuleFileName(nullptr, current_process_path.data(),
+  const DWORD len = GetModuleFileName(nullptr, ToLPWSTR(current_process_path),
                                       (DWORD)(current_process_path.size()));
   current_process_path = current_process_path.substr(0, len);
 
@@ -87,28 +87,46 @@ std::u16string GetCurrentProcessName() {
 }
 
 std::u16string ToU16(const std::string &str) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.from_bytes(str);
+  return ToU16(ToW(str));
 }
 
 std::u16string ToU16(const std::wstring &wstr) {
+#ifdef _WIN32
+  return std::u16string(reinterpret_cast<const char16_t *>(wstr.data()));
+#else
   std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert_from;
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert_to;
   auto bstr = convert_from.to_bytes(wstr);
   return convert_to.from_bytes(bstr);
+#endif
 }
 
-std::string ToU8(const std::u16string &str) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
-  return converter.to_bytes(str);
+std::string ToU8(const std::u16string &ustr) { return ToU8(ToW(ustr)); }
+
+std::string ToU8(const std::wstring &wstr) {
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> converter;
+  return converter.to_bytes(wstr);
+}
+
+std::wstring ToW(const std::string &str) {
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> converter;
+  return converter.from_bytes(str);
 }
 
 std::wstring ToW(const std::u16string &ustr) {
+#ifdef _WIN32
+  return std::wstring(reinterpret_cast<const wchar_t *>(ustr.data()));
+#else
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
       convert_from;
   std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert_to;
   auto bstr = convert_from.to_bytes(ustr);
   return convert_to.from_bytes(bstr);
+#endif
+}
+
+wchar_t *ToLPWSTR(const std::u16string &ustr) {
+  return reinterpret_cast<wchar_t *>(const_cast<char16_t *>(ustr.data()));
 }
 
 bool IsSpace(const char16_t c) {

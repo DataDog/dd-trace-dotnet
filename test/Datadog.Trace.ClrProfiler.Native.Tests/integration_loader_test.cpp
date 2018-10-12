@@ -12,7 +12,7 @@
 using namespace trace;
 
 TEST(IntegrationLoaderTest, HandlesMissingFile) {
-  auto integrations = LoadIntegrationsFromFile(L"missing-file");
+  auto integrations = LoadIntegrationsFromFile(u"missing-file");
   EXPECT_EQ(0, integrations.size());
 }
 
@@ -50,7 +50,8 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithNoMethods) {
 
   auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
-  EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
+  EXPECT_STREQ(L"test-integration",
+               ToW(integrations[0].integration_name).c_str());
   EXPECT_EQ(0, integrations[0].method_replacements.size());
 }
 
@@ -62,7 +63,8 @@ TEST(IntegrationLoaderTest,
 
   auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
-  EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
+  EXPECT_STREQ(L"test-integration",
+               ToW(integrations[0].integration_name).c_str());
   EXPECT_EQ(0, integrations[0].method_replacements.size());
 }
 
@@ -80,19 +82,20 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMethodReplacements) {
 
   auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
-  EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
+  EXPECT_STREQ(L"test-integration",
+               ToW(integrations[0].integration_name).c_str());
 
   EXPECT_EQ(1, integrations[0].method_replacements.size());
   auto mr = integrations[0].method_replacements[0];
-  EXPECT_STREQ(L"", mr.caller_method.assembly.name.c_str());
-  EXPECT_STREQ(L"", mr.caller_method.type_name.c_str());
-  EXPECT_STREQ(L"", mr.caller_method.method_name.c_str());
-  EXPECT_STREQ(L"Assembly.One", mr.target_method.assembly.name.c_str());
-  EXPECT_STREQ(L"Type.One", mr.target_method.type_name.c_str());
-  EXPECT_STREQ(L"Method.One", mr.target_method.method_name.c_str());
-  EXPECT_STREQ(L"Assembly.Two", mr.wrapper_method.assembly.name.c_str());
-  EXPECT_STREQ(L"Type.Two", mr.wrapper_method.type_name.c_str());
-  EXPECT_STREQ(L"Method.Two", mr.wrapper_method.method_name.c_str());
+  EXPECT_STREQ(L"", ToW(mr.caller_method.assembly.name).c_str());
+  EXPECT_STREQ(L"", ToW(mr.caller_method.type_name).c_str());
+  EXPECT_STREQ(L"", ToW(mr.caller_method.method_name).c_str());
+  EXPECT_STREQ(L"Assembly.One", ToW(mr.target_method.assembly.name).c_str());
+  EXPECT_STREQ(L"Type.One", ToW(mr.target_method.type_name).c_str());
+  EXPECT_STREQ(L"Method.One", ToW(mr.target_method.method_name).c_str());
+  EXPECT_STREQ(L"Assembly.Two", ToW(mr.wrapper_method.assembly.name).c_str());
+  EXPECT_STREQ(L"Type.Two", ToW(mr.wrapper_method.type_name).c_str());
+  EXPECT_STREQ(L"Method.Two", ToW(mr.wrapper_method.method_name).c_str());
   EXPECT_EQ(std::vector<uint8_t>({0, 1, 1, 28}),
             mr.wrapper_method.method_signature.data);
 }
@@ -110,19 +113,20 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMissingCaller) {
 
   auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
-  EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
+  EXPECT_STREQ(L"test-integration",
+               ToW(integrations[0].integration_name).c_str());
 
   EXPECT_EQ(1, integrations[0].method_replacements.size());
   auto mr = integrations[0].method_replacements[0];
-  EXPECT_STREQ(L"", mr.caller_method.assembly.name.c_str());
-  EXPECT_STREQ(L"", mr.caller_method.type_name.c_str());
-  EXPECT_STREQ(L"", mr.caller_method.method_name.c_str());
-  EXPECT_STREQ(L"Assembly.One", mr.target_method.assembly.name.c_str());
-  EXPECT_STREQ(L"Type.One", mr.target_method.type_name.c_str());
-  EXPECT_STREQ(L"Method.One", mr.target_method.method_name.c_str());
-  EXPECT_STREQ(L"Assembly.Two", mr.wrapper_method.assembly.name.c_str());
-  EXPECT_STREQ(L"Type.Two", mr.wrapper_method.type_name.c_str());
-  EXPECT_STREQ(L"Method.Two", mr.wrapper_method.method_name.c_str());
+  EXPECT_STREQ(L"", ToW(mr.caller_method.assembly.name).c_str());
+  EXPECT_STREQ(L"", ToW(mr.caller_method.type_name).c_str());
+  EXPECT_STREQ(L"", ToW(mr.caller_method.method_name).c_str());
+  EXPECT_STREQ(L"Assembly.One", ToW(mr.target_method.assembly.name).c_str());
+  EXPECT_STREQ(L"Type.One", ToW(mr.target_method.type_name).c_str());
+  EXPECT_STREQ(L"Method.One", ToW(mr.target_method.method_name).c_str());
+  EXPECT_STREQ(L"Assembly.Two", ToW(mr.wrapper_method.assembly.name).c_str());
+  EXPECT_STREQ(L"Type.Two", ToW(mr.wrapper_method.type_name).c_str());
+  EXPECT_STREQ(L"Method.Two", ToW(mr.wrapper_method.method_name).c_str());
   EXPECT_EQ(std::vector<uint8_t>({0, 1, 1, 28}),
             mr.wrapper_method.method_signature.data);
 }
@@ -140,13 +144,14 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithInvalidTarget) {
 
   auto integrations = LoadIntegrationsFromStream(str);
   EXPECT_EQ(1, integrations.size());
-  EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
+  EXPECT_STREQ(L"test-integration",
+               ToW(integrations[0].integration_name).c_str());
 
   EXPECT_EQ(1, integrations[0].method_replacements.size());
   auto mr = integrations[0].method_replacements[0];
-  EXPECT_STREQ(L"", mr.target_method.assembly.name.c_str());
-  EXPECT_STREQ(L"", mr.target_method.type_name.c_str());
-  EXPECT_STREQ(L"", mr.target_method.method_name.c_str());
+  EXPECT_STREQ(L"", ToW(mr.target_method.assembly.name).c_str());
+  EXPECT_STREQ(L"", ToW(mr.target_method.type_name).c_str());
+  EXPECT_STREQ(L"", ToW(mr.target_method.method_name).c_str());
 }
 
 TEST(IntegrationLoaderTest, LoadsFromEnvironment) {
@@ -166,11 +171,11 @@ TEST(IntegrationLoaderTest, LoadsFromEnvironment) {
 
   auto name = tmpname1.wstring() + L";" + tmpname2.wstring();
 
-  SetEnvironmentVariableW(kIntegrationsEnvironmentName.data(), name.data());
+  SetEnvironmentVariableW(ToLPWSTR(kIntegrationsEnvironmentName), name.data());
 
-  std::vector<std::wstring> expected_names = {L"test-integration-1",
-                                              L"test-integration-2"};
-  std::vector<std::wstring> actual_names;
+  std::vector<std::u16string> expected_names = {u"test-integration-1",
+                                                u"test-integration-2"};
+  std::vector<std::u16string> actual_names;
   for (auto& integration : LoadIntegrationsFromEnvironment()) {
     actual_names.push_back(integration.integration_name);
   }

@@ -48,17 +48,17 @@ class DISABLED_CLRHelperTest : public ::testing::Test {
 };
 
 TEST_F(DISABLED_CLRHelperTest, EnumeratesTypeDefs) {
-  std::vector<std::wstring> expected_types = {L"Samples.ExampleLibrary.Class1",
-                                              L"<>c"};
-  std::vector<std::wstring> actual_types;
+  std::vector<std::u16string> expected_types = {
+      u"Samples.ExampleLibrary.Class1", u"<>c"};
+  std::vector<std::u16string> actual_types;
 
   for (auto& def : EnumTypeDefs(metadata_import_)) {
-    std::wstring name(256, 0);
+    std::u16string name(256, 0);
     DWORD name_sz = 0;
     DWORD flags = 0;
     mdToken extends = 0;
     auto hr = metadata_import_->GetTypeDefProps(
-        def, name.data(), (DWORD)(name.size()), &name_sz, &flags, &extends);
+        def, ToLPWSTR(name), (DWORD)(name.size()), &name_sz, &flags, &extends);
     ASSERT_TRUE(SUCCEEDED(hr));
 
     if (name_sz > 0) {
@@ -71,8 +71,8 @@ TEST_F(DISABLED_CLRHelperTest, EnumeratesTypeDefs) {
 }
 
 TEST_F(DISABLED_CLRHelperTest, EnumeratesAssemblyRefs) {
-  std::vector<std::wstring> expected_assemblies = {L"System.Runtime"};
-  std::vector<std::wstring> actual_assemblies;
+  std::vector<std::u16string> expected_assemblies = {u"System.Runtime"};
+  std::vector<std::u16string> actual_assemblies;
   for (auto& ref : EnumAssemblyRefs(assembly_import_)) {
     auto name = GetAssemblyName(assembly_import_, ref);
     if (!name.empty()) {
@@ -84,28 +84,28 @@ TEST_F(DISABLED_CLRHelperTest, EnumeratesAssemblyRefs) {
 
 TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByCaller) {
   Integration i1 = {
-      L"integration-1",
-      {{{L"Assembly.One", L"SomeType", L"SomeMethod", {}}, {}, {}}}};
+      u"integration-1",
+      {{{u"Assembly.One", u"SomeType", u"SomeMethod", {}}, {}, {}}}};
   Integration i2 = {
-      L"integration-2",
-      {{{L"Assembly.Two", L"SomeType", L"SomeMethod", {}}, {}, {}}}};
-  Integration i3 = {L"integration-3", {{{}, {}, {}}}};
+      u"integration-2",
+      {{{u"Assembly.Two", u"SomeType", u"SomeMethod", {}}, {}, {}}}};
+  Integration i3 = {u"integration-3", {{{}, {}, {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
   std::vector<Integration> actual =
-      FilterIntegrationsByCaller(all, L"Assembly.One");
+      FilterIntegrationsByCaller(all, u"Assembly.One");
   EXPECT_EQ(expected, actual);
 }
 
 TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByTarget) {
   Integration i1 = {
-      L"integration-1",
-      {{{}, {L"Samples.ExampleLibrary", L"SomeType", L"SomeMethod", {}}, {}}}};
+      u"integration-1",
+      {{{}, {u"Samples.ExampleLibrary", u"SomeType", u"SomeMethod", {}}, {}}}};
   Integration i2 = {
-      L"integration-2",
-      {{{}, {L"Assembly.Two", L"SomeType", L"SomeMethod", {}}, {}}}};
-  Integration i3 = {L"integration-3",
-                    {{{}, {L"System.Runtime", L"", L"", {}}, {}}}};
+      u"integration-2",
+      {{{}, {u"Assembly.Two", u"SomeType", u"SomeMethod", {}}, {}}}};
+  Integration i3 = {u"integration-3",
+                    {{{}, {u"System.Runtime", u"", u"", {}}, {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
   std::vector<Integration> actual =
@@ -114,8 +114,9 @@ TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByTarget) {
 }
 
 TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromTypeDefs) {
-  std::set<std::wstring> expected = {L"Samples.ExampleLibrary.Class1", L"<>c"};
-  std::set<std::wstring> actual;
+  std::set<std::u16string> expected = {u"Samples.ExampleLibrary.Class1",
+                                       u"<>c"};
+  std::set<std::u16string> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
     auto type_info = GetTypeInfo(metadata_import_, type_def);
     if (type_info.IsValid()) {
@@ -126,22 +127,22 @@ TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromTypeDefs) {
 }
 
 TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromTypeRefs) {
-  std::set<std::wstring> expected = {
-      L"System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
-      L"System.Runtime.CompilerServices.RuntimeCompatibilityAttribute",
-      L"System.Diagnostics.DebuggableAttribute",
-      L"DebuggingModes",
-      L"System.Runtime.Versioning.TargetFrameworkAttribute",
-      L"System.Reflection.AssemblyCompanyAttribute",
-      L"System.Reflection.AssemblyConfigurationAttribute",
-      L"System.Reflection.AssemblyFileVersionAttribute",
-      L"System.Reflection.AssemblyInformationalVersionAttribute",
-      L"System.Reflection.AssemblyProductAttribute",
-      L"System.Reflection.AssemblyTitleAttribute",
-      L"System.Object",
-      L"System.Func`3",
-      L"System.Runtime.CompilerServices.CompilerGeneratedAttribute"};
-  std::set<std::wstring> actual;
+  std::set<std::u16string> expected = {
+      u"System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
+      u"System.Runtime.CompilerServices.RuntimeCompatibilityAttribute",
+      u"System.Diagnostics.DebuggableAttribute",
+      u"DebuggingModes",
+      u"System.Runtime.Versioning.TargetFrameworkAttribute",
+      u"System.Reflection.AssemblyCompanyAttribute",
+      u"System.Reflection.AssemblyConfigurationAttribute",
+      u"System.Reflection.AssemblyFileVersionAttribute",
+      u"System.Reflection.AssemblyInformationalVersionAttribute",
+      u"System.Reflection.AssemblyProductAttribute",
+      u"System.Reflection.AssemblyTitleAttribute",
+      u"System.Object",
+      u"System.Func`3",
+      u"System.Runtime.CompilerServices.CompilerGeneratedAttribute"};
+  std::set<std::u16string> actual;
   for (auto& type_ref : EnumTypeRefs(metadata_import_)) {
     auto type_info = GetTypeInfo(metadata_import_, type_ref);
     if (type_info.IsValid()) {
@@ -153,8 +154,8 @@ TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromTypeRefs) {
 
 TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromModuleRefs) {
   // TODO(cbd): figure out how to create a module ref, for now its empty
-  std::set<std::wstring> expected = {};
-  std::set<std::wstring> actual;
+  std::set<std::u16string> expected = {};
+  std::set<std::u16string> actual;
   for (auto& module_ref : EnumModuleRefs(metadata_import_)) {
     auto type_info = GetTypeInfo(metadata_import_, module_ref);
     actual.insert(type_info.name);
@@ -163,8 +164,9 @@ TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromModuleRefs) {
 }
 
 TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromMethods) {
-  std::set<std::wstring> expected = {L"Samples.ExampleLibrary.Class1", L"<>c"};
-  std::set<std::wstring> actual;
+  std::set<std::u16string> expected = {u"Samples.ExampleLibrary.Class1",
+                                       u"<>c"};
+  std::set<std::u16string> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
     for (auto& method_def : EnumMethods(metadata_import_, type_def)) {
       auto type_info = GetTypeInfo(metadata_import_, method_def);

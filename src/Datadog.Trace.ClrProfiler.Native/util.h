@@ -37,9 +37,15 @@ std::u16string ToU16(const std::string &str);
 
 std::u16string ToU16(const std::wstring &wstr);
 
-std::string ToU8(const std::u16string &str);
+std::string ToU8(const std::u16string &ustr);
+
+std::string ToU8(const std::wstring &wstr);
+
+std::wstring ToW(const std::string &str);
 
 std::wstring ToW(const std::u16string &ustr);
+
+wchar_t* ToLPWSTR(const std::u16string &ustr);
 
 bool IsSpace(const char16_t c);
 

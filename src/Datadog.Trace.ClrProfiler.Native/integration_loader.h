@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
+#include <optional>
 
 #include "integration.h"
 #include "macros.h"
