@@ -1,19 +1,21 @@
 #ifndef DD_CLR_PROFILER_COR_PROFILER_H_
 #define DD_CLR_PROFILER_COR_PROFILER_H_
 
+#include <cmath>
+#include <vector>
+
 #include <corhlpr.h>
 #include <corprof.h>
-#include <spdlog/spdlog.h>
-#include <vector>
 
 #include "cor_profiler_base.h"
 #include "id_to_info_map.h"
 #include "integration.h"
+#include "logging.h"
 #include "module_metadata.h"
 
 namespace trace {
 
-const std::wstring kProcessesEnvironmentName = L"DD_PROFILER_PROCESSES";
+const std::u16string kProcessesEnvironmentName = u"DD_PROFILER_PROCESSES";
 
 const DWORD kEventMask =
     COR_PRF_MONITOR_JIT_COMPILATION |

@@ -1,15 +1,19 @@
 #include "clr_helpers.h"
+
+#include <string>
+
 #include "logging.h"
 #include "macros.h"
+#include "util.h"
 
 namespace trace {
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id) {
-  std::wstring name(kNameMaxSize, 0);
+  std::u16string name(kNameMaxSize, 0);
   DWORD name_len = 0;
   auto hr = info->GetAssemblyInfo(assembly_id, (DWORD)(name.size()), &name_len,
-                                  name.data(), nullptr, nullptr);
+                                  ToLPWSTR(name), nullptr, nullptr);
   if (FAILED(hr) || name_len == 0) {
     return {};
   }
@@ -17,38 +21,38 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
   return {assembly_id, name};
 }
 
-std::wstring GetAssemblyName(
+std::u16string GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   mdAssembly current = mdAssemblyNil;
   auto hr = assembly_import->GetAssemblyFromScope(&current);
   if (FAILED(hr)) {
-    return L"";
+    return u"";
   }
-  std::wstring name(kNameMaxSize, 0);
+  std::u16string name(kNameMaxSize, 0);
   DWORD name_len = 0;
   ASSEMBLYMETADATA assembly_metadata{};
   DWORD assembly_flags = 0;
   hr = assembly_import->GetAssemblyProps(
-      current, nullptr, nullptr, nullptr, name.data(), (DWORD)(name.size()),
+      current, nullptr, nullptr, nullptr, ToLPWSTR(name), (DWORD)(name.size()),
       &name_len, &assembly_metadata, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
-    return L"";
+    return u"";
   }
   return name.substr(0, name_len - 1);
 }
 
-std::wstring GetAssemblyName(
+std::u16string GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const mdAssemblyRef& assembly_ref) {
-  std::wstring name(kNameMaxSize, 0);
+  std::u16string name(kNameMaxSize, 0);
   DWORD name_len = 0;
   ASSEMBLYMETADATA assembly_metadata{};
   DWORD assembly_flags = 0;
   const auto hr = assembly_import->GetAssemblyRefProps(
-      assembly_ref, nullptr, nullptr, name.data(), (DWORD)(name.size()),
+      assembly_ref, nullptr, nullptr, ToLPWSTR(name), (DWORD)(name.size()),
       &name_len, &assembly_metadata, nullptr, nullptr, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
-    return L"";
+    return u"";
   }
   return name.substr(0, name_len - 1);
 }
@@ -56,7 +60,7 @@ std::wstring GetAssemblyName(
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                              const mdToken& token) {
   mdToken parent_token = mdTokenNil;
-  std::wstring function_name(kNameMaxSize, 0);
+  std::u16string function_name(kNameMaxSize, 0);
   DWORD function_name_len = 0;
 
   PCCOR_SIGNATURE raw_signature;
@@ -66,13 +70,13 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   switch (TypeFromToken(token)) {
     case mdtMemberRef:
       hr = metadata_import->GetMemberRefProps(
-          token, &parent_token, function_name.data(),
+          token, &parent_token, ToLPWSTR(function_name),
           (DWORD)(function_name.size()), &function_name_len, &raw_signature,
           &raw_signature_len);
       break;
     case mdtMethodDef:
       hr = metadata_import->GetMemberProps(
-          token, &parent_token, function_name.data(),
+          token, &parent_token, ToLPWSTR(function_name),
           (DWORD)(function_name.size()), &function_name_len, nullptr,
           &raw_signature, &raw_signature_len, nullptr, nullptr, nullptr,
           nullptr, nullptr);
@@ -108,14 +112,15 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
 }
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
-  std::wstring module_path(260, 0);
+  std::u16string module_path(260, 0);
   DWORD module_path_len = 0;
   LPCBYTE base_load_address;
   AssemblyID assembly_id = 0;
   DWORD module_flags = 0;
   const HRESULT hr = info->GetModuleInfo2(
       module_id, &base_load_address, (DWORD)(module_path.size()),
-      &module_path_len, module_path.data(), &assembly_id, &module_flags);
+      &module_path_len, ToLPWSTR(module_path), &assembly_id,
+      &module_flags);
   if (FAILED(hr) || module_path_len == 0) {
     return {};
   }
@@ -126,28 +131,30 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                      const mdToken& token) {
   mdToken parent_token = mdTokenNil;
-  std::wstring type_name(kNameMaxSize, 0);
+  std::u16string type_name(kNameMaxSize, 0);
   DWORD type_name_len = 0;
 
   HRESULT hr = E_FAIL;
   const auto token_type = TypeFromToken(token);
   switch (token_type) {
     case mdtTypeDef:
-      hr = metadata_import->GetTypeDefProps(token, type_name.data(),
+      hr = metadata_import->GetTypeDefProps(token, ToLPWSTR(type_name),
                                             (DWORD)(type_name.size()),
                                             &type_name_len, nullptr, nullptr);
       break;
     case mdtTypeRef:
       hr = metadata_import->GetTypeRefProps(
-          token, &parent_token, type_name.data(), (DWORD)(type_name.size()),
+          token, &parent_token, ToLPWSTR(type_name),
+          (DWORD)(type_name.size()),
           &type_name_len);
       break;
     case mdtTypeSpec:
       // do we need to handle this case?
       break;
     case mdtModuleRef:
-      metadata_import->GetModuleRefProps(
-          token, type_name.data(), (DWORD)(type_name.size()), &type_name_len);
+      metadata_import->GetModuleRefProps(token, ToLPWSTR(type_name),
+                                         (DWORD)(type_name.size()),
+                                         &type_name_len);
       break;
     case mdtMemberRef:
       return GetFunctionInfo(metadata_import, token).type;
@@ -166,7 +173,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
 
 mdAssemblyRef FindAssemblyRef(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-    const std::wstring& assembly_name) {
+    const std::u16string& assembly_name) {
   for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assembly_import)) {
     if (GetAssemblyName(assembly_import, assembly_ref) == assembly_name) {
       return assembly_ref;
@@ -177,7 +184,7 @@ mdAssemblyRef FindAssemblyRef(
 
 std::vector<Integration> FilterIntegrationsByCaller(
     const std::vector<Integration>& integrations,
-    const std::wstring& assembly_name) {
+    const std::u16string& assembly_name) {
   std::vector<Integration> enabled;
 
   for (auto& i : integrations) {

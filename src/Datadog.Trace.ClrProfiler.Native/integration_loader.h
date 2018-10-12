@@ -1,20 +1,22 @@
 #ifndef DD_CLR_PROFILER_INTEGRATION_LOADER_H_
 #define DD_CLR_PROFILER_INTEGRATION_LOADER_H_
 
+#include <cmath>
+
 #include <codecvt>
 #include <fstream>
 #include <locale>
-#include <optional>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
-#include <nlohmann/json.hpp>
+#include <optional>
 
 #include "integration.h"
 #include "macros.h"
 
 namespace trace {
 
-const std::wstring kIntegrationsEnvironmentName = L"DD_INTEGRATIONS";
+const std::u16string kIntegrationsEnvironmentName = u"DD_INTEGRATIONS";
 
 using json = nlohmann::json;
 
@@ -23,7 +25,7 @@ using json = nlohmann::json;
 std::vector<Integration> LoadIntegrationsFromEnvironment();
 // LoadIntegrationsFromFile loads the integrations from a file
 std::vector<Integration> LoadIntegrationsFromFile(
-    const std::wstring& file_path);
+    const std::u16string& file_path);
 // LoadIntegrationsFromFile loads the integrations from a stream
 std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream);
 

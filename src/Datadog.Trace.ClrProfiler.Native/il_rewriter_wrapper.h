@@ -1,6 +1,8 @@
 #ifndef DD_CLR_PROFILER_IL_REWRITER_WRAPPER_H_
 #define DD_CLR_PROFILER_IL_REWRITER_WRAPPER_H_
 
+#include <cmath>
+
 #include "il_rewriter.h"
 #include "module_metadata.h"
 

@@ -1,28 +1,29 @@
+#include "integration.h"
+
 #include <regex>
 #include <sstream>
-
-#include "integration.h"
+#include <string>
 
 namespace trace {
 
-AssemblyReference::AssemblyReference(const std::wstring& str)
-    : name(GetNameFromAssemblyReferenceString(str)),
-      version(GetVersionFromAssemblyReferenceString(str)),
-      locale(GetLocaleFromAssemblyReferenceString(str)),
-      public_key(GetPublicKeyFromAssemblyReferenceString(str)) {}
+AssemblyReference::AssemblyReference(const std::u16string& ustr)
+    : name(GetNameFromAssemblyReferenceString(ustr)),
+      version(GetVersionFromAssemblyReferenceString(ustr)),
+      locale(GetLocaleFromAssemblyReferenceString(ustr)),
+      public_key(GetPublicKeyFromAssemblyReferenceString(ustr)) {}
 
 namespace {
 
-std::wstring GetNameFromAssemblyReferenceString(const std::wstring& wstr) {
-  std::wstring name = wstr;
+std::u16string GetNameFromAssemblyReferenceString(const std::u16string& ustr) {
+  std::u16string name = ustr;
 
-  auto pos = name.find(L',');
+  auto pos = name.find(u',');
   if (pos != std::wstring::npos) {
     name = name.substr(0, pos);
   }
 
   // strip spaces
-  pos = name.rfind(L' ');
+  pos = name.rfind(u' ');
   if (pos != std::wstring::npos) {
     name = name.substr(0, pos);
   }
@@ -30,7 +31,9 @@ std::wstring GetNameFromAssemblyReferenceString(const std::wstring& wstr) {
   return name;
 }
 
-Version GetVersionFromAssemblyReferenceString(const std::wstring& str) {
+Version GetVersionFromAssemblyReferenceString(const std::u16string& ustr) {
+  auto wstr = ToW(ustr);
+
   unsigned short major = 0;
   unsigned short minor = 0;
   unsigned short build = 0;
@@ -40,7 +43,7 @@ Version GetVersionFromAssemblyReferenceString(const std::wstring& str) {
       std::wregex(L"Version=([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)");
 
   std::wsmatch match;
-  if (std::regex_search(str, match, re) && match.size() == 5) {
+  if (std::regex_search(wstr, match, re) && match.size() == 5) {
     std::wstringstream(match.str(1)) >> major;
     std::wstringstream(match.str(2)) >> minor;
     std::wstringstream(match.str(3)) >> build;
@@ -50,24 +53,27 @@ Version GetVersionFromAssemblyReferenceString(const std::wstring& str) {
   return {major, minor, build, revision};
 }
 
-std::wstring GetLocaleFromAssemblyReferenceString(const std::wstring& str) {
+std::u16string GetLocaleFromAssemblyReferenceString(
+    const std::u16string& ustr) {
+  auto wstr = ToW(ustr);
   std::wstring locale = L"neutral";
 
   static auto re = std::wregex(L"Culture=([a-zA-Z0-9]+)");
   std::wsmatch match;
-  if (std::regex_search(str, match, re) && match.size() == 2) {
+  if (std::regex_search(wstr, match, re) && match.size() == 2) {
     locale = match.str(1);
   }
 
-  return locale;
+  return ToU16(locale);
 }
 
-PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& str) {
+PublicKey GetPublicKeyFromAssemblyReferenceString(const std::u16string& ustr) {
+  auto wstr = ToW(ustr);
   BYTE data[8] = {0};
 
   static auto re = std::wregex(L"PublicKeyToken=([a-fA-F0-9]{16})");
   std::wsmatch match;
-  if (std::regex_search(str, match, re) && match.size() == 2) {
+  if (std::regex_search(wstr, match, re) && match.size() == 2) {
     for (int i = 0; i < 8; i++) {
       auto s = match.str(1).substr(i * 2, 2);
       unsigned long x;
