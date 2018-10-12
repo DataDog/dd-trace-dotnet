@@ -1,9 +1,8 @@
-#include <spdlog/sinks/rotating_file_sink.h>
-#include <spdlog/sinks/null_sink.h>
-#include <filesystem>
-
 #include "logging.h"
-#include "util.h"
+
+#include <spdlog/sinks/null_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
+#include <filesystem>
 
 namespace trace {
 std::shared_ptr<spdlog::logger> GetLogger() {
@@ -14,9 +13,9 @@ std::shared_ptr<spdlog::logger> GetLogger() {
     std::unique_lock<std::mutex> lck(mtx);
 
     try {
-      auto programdata = GetEnvironmentValue(L"PROGRAMDATA");
-      if (programdata.empty()) {
-        programdata = L"C:\\ProgramData";
+      char const* programdata = getenv("PROGRAMDATA");
+      if (programdata == nullptr) {
+        programdata = "C:\\ProgramData";
       }
       auto path = std::filesystem::path(programdata)
                       .append("Datadog")

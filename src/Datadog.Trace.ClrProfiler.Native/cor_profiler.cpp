@@ -2,13 +2,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
+#include "cor_profiler.h"
+
 #include <fstream>
 #include <string>
 #include <vector>
 
 #include "clr_helpers.h"
 #include "com_ptr.h"
-#include "cor_profiler.h"
 #include "il_rewriter.h"
 #include "integration_loader.h"
 #include "logging.h"
@@ -29,11 +30,11 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
 
   const auto process_name = GetCurrentProcessName();
-  logger_->info("Initialize() called for {}", process_name);
+  logger_->info("Initialize() called for {}", ToU8(process_name));
 
   if (integrations_.empty()) {
     logger_->warn("Profiler disabled: {} environment variable not set.",
-                  kIntegrationsEnvironmentName);
+                  ToU8(kIntegrationsEnvironmentName));
     return E_FAIL;
   }
 
@@ -43,11 +44,11 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   if (allowed_process_names.empty()) {
     logger_->info(
         "{} environment variable not set. Attaching to any .NET process.",
-        kProcessesEnvironmentName);
+        ToU8(kProcessesEnvironmentName));
   } else {
-    logger_->info("{}:", kProcessesEnvironmentName);
+    logger_->info("{}:", ToU8(kProcessesEnvironmentName));
     for (auto& name : allowed_process_names) {
-      logger_->info("  {}", name);
+      logger_->info("  {}", ToU8(name));
     }
 
     if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
@@ -55,7 +56,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       logger_->info(
           "Profiler disabled: module name \"{}\" does not match {} environment "
           "variable",
-          process_name, kProcessesEnvironmentName);
+          ToU8(process_name), ToU8(kProcessesEnvironmentName));
       return E_FAIL;
     }
   }
@@ -73,7 +74,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // we're in!
-  logger_->info("Profiler attached to process {}", process_name);
+  logger_->info("Profiler attached to process {}", ToU8(process_name));
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;
@@ -95,7 +96,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     // mscorlib or netstandard.
     logger_->info(
         "ModuleLoadFinished() called for {}. Skipping instrumentation.",
-        module_info.assembly.name);
+        ToU8(module_info.assembly.name));
     return S_OK;
   }
 
@@ -106,7 +107,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     logger_->info(
         "ModuleLoadFinished() called for {}. FilterIntegrationsByCaller() "
         "returned empty list. Nothing to instrument here.",
-        module_info.assembly.name);
+        ToU8(module_info.assembly.name));
     return S_OK;
   }
 
@@ -136,13 +137,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     logger_->info(
         "ModuleLoadFinished() called for {}. FilterIntegrationsByTarget() "
         "returned empty list. Nothing to instrument here.",
-        module_info.assembly.name);
+        ToU8(module_info.assembly.name));
     return S_OK;
   }
 
   logger_->info(
       "ModuleLoadFinished() will try to emit instrumentation metadata for {}",
-      module_info.assembly.name);
+      ToU8(module_info.assembly.name));
 
   mdModule module;
   hr = metadata_import->GetModuleFromScope(&module);
@@ -176,7 +177,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   module_id_to_info_map_.Update(module_id, module_metadata);
 
   logger_->info("ModuleLoadFinished() emitted instrumentation metadata for {}",
-                module_info.assembly.name);
+                ToU8(module_info.assembly.name));
   return S_OK;
 }
 
@@ -299,12 +300,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       logger_->info(
           "JITCompilationStarted() replaced calls from {}.{}() to {}.{}() {:x} "
           "with calls to {}.{}() {:x}.",
-          caller.type.name, caller.name,
-          method_replacement.target_method.type_name,
-          method_replacement.target_method.method_name,
+          ToU8(caller.type.name), ToU8(caller.name),
+          ToU8(method_replacement.target_method.type_name),
+          ToU8(method_replacement.target_method.method_name),
           int32_t(original_argument),
-          method_replacement.wrapper_method.type_name,
-          method_replacement.wrapper_method.method_name,
+          ToU8(method_replacement.wrapper_method.type_name),
+          ToU8(method_replacement.wrapper_method.method_name),
           uint32_t(wrapper_method_ref));
     }
   }

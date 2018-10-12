@@ -1,10 +1,12 @@
-﻿#include <fstream>
+﻿#include <cmath>
+#include <fstream>
 #include <string>
 
 #include "clr_helpers.h"
 #include "logging.h"
 #include "macros.h"
 #include "metadata_builder.h"
+#include "util.h"
 
 namespace trace {
 
@@ -15,16 +17,16 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   assembly_metadata.usMinorVersion = assembly_ref.version.minor;
   assembly_metadata.usBuildNumber = assembly_ref.version.build;
   assembly_metadata.usRevisionNumber = assembly_ref.version.revision;
-  if (assembly_ref.locale == L"neutral") {
+  if (assembly_ref.locale == u"neutral") {
     assembly_metadata.szLocale = nullptr;
     assembly_metadata.cbLocale = 0;
   } else {
     assembly_metadata.szLocale =
-        const_cast<wchar_t*>(assembly_ref.locale.data());
+        const_cast<char16_t*>(assembly_ref.locale.data());
     assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
   }
 
-  logger_->info("EmitAssemblyRef {}", assembly_ref.str());
+  logger_->info("EmitAssemblyRef {}", ToU8(assembly_ref.str()));
 
   DWORD public_key_size = 8;
   if (assembly_ref.public_key == trace::PublicKey()) {
@@ -80,7 +82,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
     if (assembly_ref == mdAssemblyRefNil) {
       // TODO: emit assembly reference if not found?
       logger_->error("Assembly reference for {} not found.",
-                    method_replacement.wrapper_method.assembly.name);
+                     ToU8(method_replacement.wrapper_method.assembly.name));
       return E_FAIL;
     }
 

@@ -33,26 +33,15 @@ std::vector<std::u16string> GetEnvironmentValues(const std::u16string &name);
 // GetCurrentProcessName gets the current process file name.
 std::u16string GetCurrentProcessName();
 
-std::u16string ToU16(const std::string &str) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.from_bytes(str);
-}
+std::u16string ToU16(const std::string &str);
 
-std::u16string ToU16(const std::wstring &wstr) {
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert_from;
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert_to;
-  auto bstr = convert_from.to_bytes(wstr);
-  return convert_to.from_bytes(bstr);
-}
+std::u16string ToU16(const std::wstring &wstr);
 
-std::string ToU8(const std::u16string &str) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
-  return converter.to_bytes(str);
-}
+std::string ToU8(const std::u16string &str);
 
-bool IsSpace(const char16_t c) {
-  return c == u' ' || c == u'\t' || c == u'\r' || c == u'\n' || c == u'\v';
-}
+std::wstring ToW(const std::u16string &ustr);
+
+bool IsSpace(const char16_t c);
 
 }  // namespace trace
 

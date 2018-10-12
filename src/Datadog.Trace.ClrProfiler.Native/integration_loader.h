@@ -1,6 +1,8 @@
 #ifndef DD_CLR_PROFILER_INTEGRATION_LOADER_H_
 #define DD_CLR_PROFILER_INTEGRATION_LOADER_H_
 
+#include <cmath>
+
 #include <codecvt>
 #include <fstream>
 #include <locale>
@@ -13,7 +15,7 @@
 
 namespace trace {
 
-const std::wstring kIntegrationsEnvironmentName = L"DD_INTEGRATIONS";
+const std::u16string kIntegrationsEnvironmentName = u"DD_INTEGRATIONS";
 
 using json = nlohmann::json;
 
@@ -22,14 +24,14 @@ using json = nlohmann::json;
 std::vector<Integration> LoadIntegrationsFromEnvironment();
 // LoadIntegrationsFromFile loads the integrations from a file
 std::vector<Integration> LoadIntegrationsFromFile(
-    const std::wstring& file_path);
+    const std::u16string& file_path);
 // LoadIntegrationsFromFile loads the integrations from a stream
 std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream);
 
 namespace {
 
-std::tuple<Integration, bool> IntegrationFromJson(const json::value_type& src);
-std::tuple<MethodReplacement, bool> MethodReplacementFromJson(
+std::optional<Integration> IntegrationFromJson(const json::value_type& src);
+std::optional<MethodReplacement> MethodReplacementFromJson(
     const json::value_type& src);
 MethodReference MethodReferenceFromJson(const json::value_type& src);
 

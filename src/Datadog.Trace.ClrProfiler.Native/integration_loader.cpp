@@ -1,4 +1,5 @@
 #include "integration_loader.h"
+
 #include "logging.h"
 #include "util.h"
 
@@ -9,7 +10,7 @@ using json = nlohmann::json;
 std::vector<Integration> LoadIntegrationsFromEnvironment() {
   std::vector<Integration> integrations;
   for (const auto& f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
-    GetLogger()->info("loading integrations from {}", f);
+    GetLogger()->info("loading integrations from {}", ToU8(f));
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {
       integrations.push_back(i);
@@ -19,12 +20,12 @@ std::vector<Integration> LoadIntegrationsFromEnvironment() {
 }
 
 std::vector<Integration> LoadIntegrationsFromFile(
-    const std::wstring& file_path) {
+    const std::u16string& file_path) {
   std::vector<Integration> integrations;
 
   try {
     std::ifstream stream;
-    stream.open(file_path);
+    stream.open(ToU8(file_path));
     integrations = LoadIntegrationsFromStream(stream);
     stream.close();
   } catch (...) {
@@ -69,8 +70,7 @@ std::optional<Integration> IntegrationFromJson(const json::value_type& src) {
   }
 
   // first get the name, which is required
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-  std::wstring name = converter.from_bytes(src.value("name", ""));
+  auto name = ToU16(src.value("name", ""));
   if (name.empty()) {
     GetLogger()->error("integration name is missing for integration: {}",
                        src.dump());
@@ -107,10 +107,9 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
     return {};
   }
 
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-  std::wstring assembly = converter.from_bytes(src.value("assembly", ""));
-  std::wstring type = converter.from_bytes(src.value("type", ""));
-  std::wstring method = converter.from_bytes(src.value("method", ""));
+  auto assembly = ToU16(src.value("assembly", ""));
+  auto type = ToU16(src.value("type", ""));
+  auto method = ToU16(src.value("method", ""));
   auto raw_signature = src.value("signature", json::array());
   std::vector<BYTE> signature;
   if (raw_signature.is_array()) {

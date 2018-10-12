@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
 #include "pal.h"
 
 namespace trace {
@@ -83,6 +84,35 @@ std::u16string GetCurrentProcessName() {
   }
 
   return current_process_path;
+}
+
+std::u16string ToU16(const std::string &str) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+  return convert.from_bytes(str);
+}
+
+std::u16string ToU16(const std::wstring &wstr) {
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert_from;
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert_to;
+  auto bstr = convert_from.to_bytes(wstr);
+  return convert_to.from_bytes(bstr);
+}
+
+std::string ToU8(const std::u16string &str) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+  return converter.to_bytes(str);
+}
+
+std::wstring ToW(const std::u16string &ustr) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      convert_from;
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert_to;
+  auto bstr = convert_from.to_bytes(ustr);
+  return convert_to.from_bytes(bstr);
+}
+
+bool IsSpace(const char16_t c) {
+  return c == u' ' || c == u'\t' || c == u'\r' || c == u'\n' || c == u'\v';
 }
 
 }  // namespace trace
