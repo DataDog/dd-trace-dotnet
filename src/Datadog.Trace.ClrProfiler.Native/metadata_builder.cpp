@@ -43,7 +43,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
       0, &assembly_ref_out);
 
   if (FAILED(hr)) {
-    logger_->error("DefineAssemblyRef failed");
+    Warn("DefineAssemblyRef failed");
   }
   return S_OK;
 }
@@ -79,8 +79,8 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
         assembly_import_, method_replacement.wrapper_method.assembly.name);
     if (assembly_ref == mdAssemblyRefNil) {
       // TODO: emit assembly reference if not found?
-      logger_->error("Assembly reference for {} not found.",
-                    method_replacement.wrapper_method.assembly.name);
+      Warn("Assembly reference for {} not found.",
+           method_replacement.wrapper_method.assembly.name);
       return E_FAIL;
     }
 

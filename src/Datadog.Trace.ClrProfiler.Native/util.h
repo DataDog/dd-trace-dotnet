@@ -1,10 +1,43 @@
 #ifndef DD_CLR_PROFILER_UTIL_H_
 #define DD_CLR_PROFILER_UTIL_H_
 
+#include <sstream>
 #include <string>
 #include <vector>
 
 namespace trace {
+
+std::string toString(const std::string &str);
+std::string toString(const std::wstring &wstr);
+std::string toString(int x);
+
+template <typename Arg>
+inline std::string ToString(Arg const &arg) {
+  return toString(arg);
+}
+
+template <typename... Args>
+inline std::string ToString(Args const &... args) {
+  std::ostringstream oss;
+  int a[] = {0, ((void)(oss << ToString(args) << " "), 0)...};
+  return oss.str();
+}
+
+std::wstring toWString(const std::string &str);
+std::wstring toWString(const std::wstring &wstr);
+std::wstring toWString(int x);
+
+template <typename Arg>
+inline std::wstring ToWString(Arg const &arg) {
+  return toWString(arg);
+}
+
+template <typename... Args>
+inline std::wstring ToWString(Args const &... args) {
+  std::wstringstream s;
+  int a[] = {0, ((void)(s << ToWString(args) << " "), 0)...};
+  return s.str();
+}
 
 template <typename Out>
 void Split(const std::wstring &s, wchar_t delim, Out result);

@@ -9,7 +9,7 @@ using json = nlohmann::json;
 std::vector<Integration> LoadIntegrationsFromEnvironment() {
   std::vector<Integration> integrations;
   for (const auto& f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
-    GetLogger()->info("loading integrations from {}", f);
+    Info("loading integrations from {}", f);
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {
       integrations.push_back(i);
@@ -24,11 +24,11 @@ std::vector<Integration> LoadIntegrationsFromFile(
 
   try {
     std::ifstream stream;
-    stream.open(file_path);
+    stream.open(ToString(file_path));
     integrations = LoadIntegrationsFromStream(stream);
     stream.close();
   } catch (...) {
-    GetLogger()->error("failed to load integrations");
+    Warn("failed to load integrations");
   }
 
   return integrations;
@@ -44,18 +44,18 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
 
     for (auto& el : j) {
       auto i = IntegrationFromJson(el);
-      if (i.has_value()) {
-        integrations.push_back(i.value());
+      if (std::get<1>(i)) {
+        integrations.push_back(std::get<0>(i));
       }
     }
 
-    GetLogger()->info("loaded integrations: {}", j.dump());
+    Info("loaded integrations: {}", j.dump());
   } catch (const json::parse_error& e) {
-    GetLogger()->error("invalid integrations: {}", e.what());
+    Warn("invalid integrations: {}", e.what());
   } catch (const json::type_error& e) {
-    GetLogger()->error("invalid integrations: {}", e.what());
+    Warn("invalid integrations: {}", e.what());
   } catch (...) {
-    GetLogger()->error("failed to load integrations");
+    Warn("failed to load integrations");
   }
 
   return integrations;
@@ -65,16 +65,14 @@ namespace {
 
 std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src) {
   if (!src.is_object()) {
-    return make_pair<Integration, bool>({}, false);
+    return std::make_pair<Integration, bool>({}, false);
   }
 
   // first get the name, which is required
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-  std::wstring name = converter.from_bytes(src.value("name", ""));
+  auto name = ToWString(src.value("name", ""));
   if (name.empty()) {
-    GetLogger()->error("integration name is missing for integration: {}",
-                       src.dump());
-    return make_pair<Integration, bool>({}, false);
+    Warn("integration name is missing for integration: {}", src.dump());
+    return std::make_pair<Integration, bool>({}, false);
   }
 
   std::vector<MethodReplacement> replacements;
@@ -87,19 +85,20 @@ std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src) {
       }
     }
   }
-  return make_pair<Integration, bool>({name, replacements}, true);
+  return std::make_pair<Integration, bool>({name, replacements}, true);
 }
 
 std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     const json::value_type& src) {
   if (!src.is_object()) {
-    return make_pair<MethodReplacement, bool>({}, false);
+    return std::make_pair<MethodReplacement, bool>({}, false);
   }
 
   auto caller = MethodReferenceFromJson(src.value("caller", json::object()));
   auto target = MethodReferenceFromJson(src.value("target", json::object()));
   auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
-  return make_pair<MethodReplacement, bool>({caller, target, wrapper}, true);
+  return std::make_pair<MethodReplacement, bool>({caller, target, wrapper},
+                                                 true);
 }
 
 MethodReference MethodReferenceFromJson(const json::value_type& src) {
@@ -107,10 +106,9 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
     return {};
   }
 
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-  std::wstring assembly = converter.from_bytes(src.value("assembly", ""));
-  std::wstring type = converter.from_bytes(src.value("type", ""));
-  std::wstring method = converter.from_bytes(src.value("method", ""));
+  auto assembly = ToWString(src.value("assembly", ""));
+  auto type = ToWString(src.value("type", ""));
+  auto method = ToWString(src.value("method", ""));
   auto raw_signature = src.value("signature", json::array());
   std::vector<BYTE> signature;
   if (raw_signature.is_array()) {

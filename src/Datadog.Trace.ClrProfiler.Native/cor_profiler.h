@@ -1,14 +1,13 @@
 #ifndef DD_CLR_PROFILER_COR_PROFILER_H_
 #define DD_CLR_PROFILER_COR_PROFILER_H_
 
-#include <corhlpr.h>
-#include <corprof.h>
-#include <vector>
+#include <atomic>
+#include <string>
+#include "cor.h"
+#include "corprof.h"
 
 #include "cor_profiler_base.h"
-#include "id_to_info_map.h"
 #include "integration.h"
-#include "module_metadata.h"
 
 namespace trace {
 
@@ -31,21 +30,12 @@ const DWORD kEventMask =
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
-  IDToInfoMap<ModuleID, ModuleMetadata*> module_id_to_info_map_;
   const std::vector<Integration> integrations_;
 
  public:
   CorProfiler();
 
   bool IsAttached() const;
-
-  HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
-  HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID functionId,
-                                                  BOOL fIsSafeToBlock) override;
-  HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID moduleId,
-                                               HRESULT hrStatus) override;
-  HRESULT STDMETHODCALLTYPE ModuleUnloadFinished(ModuleID moduleId,
-                                                 HRESULT hrStatus) override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,

@@ -9,7 +9,12 @@ add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
     class_factory.cpp
     cor_profiler.cpp
+    cor_profiler_base.cpp
+    integration.cpp
+    integration_loader.cpp
+    interop.cpp
     logging.cpp
+    util.cpp
 )
 set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
 target_include_directories("Datadog.Trace.ClrProfiler.Native.static"

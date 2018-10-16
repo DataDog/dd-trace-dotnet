@@ -1,7 +1,6 @@
 #include "util.h"
 
 #include <cwctype>
-#include <filesystem>
 #include <iterator>
 #include <sstream>
 #include <string>
@@ -9,6 +8,28 @@
 #include "windows.h"
 
 namespace trace {
+
+std::string toString(const std::string &str) { return str; }
+std::string toString(const std::wstring &wstr) {
+  std::string str(wstr.begin(), wstr.end());
+  return str;
+}
+std::string toString(int x) {
+  std::stringstream s;
+  s << x;
+  return s.str();
+}
+
+std::wstring toWString(const std::string &str) {
+  std::wstring wstr(str.begin(), str.end());
+  return wstr;
+}
+std::wstring toWString(const std::wstring &wstr) { return wstr; }
+std::wstring toWString(int x) {
+  std::wstringstream s;
+  s << x;
+  return s.str();
+}
 
 template <typename Out>
 void Split(const std::wstring &s, wchar_t delim, Out result) {
@@ -42,11 +63,19 @@ std::wstring Trim(const std::wstring &str) {
 }
 
 std::wstring GetEnvironmentValue(const std::wstring &name) {
+#ifdef _WIN32
   const size_t max_buf_size = 4096;
   std::wstring buf(max_buf_size, 0);
   auto len =
       GetEnvironmentVariable(name.data(), buf.data(), (DWORD)(buf.size()));
   return Trim(buf.substr(0, len));
+#else
+  auto value = std::getenv(ToString(name).c_str());
+  if (value == nullptr) {
+    return L"";
+  }
+  return Trim(ToWString(value));
+#endif
 }
 
 std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name,
@@ -66,11 +95,15 @@ std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name) {
 }
 
 std::wstring GetCurrentProcessName() {
+#ifdef _WIN32
   std::wstring current_process_path(260, 0);
   const DWORD len = GetModuleFileName(nullptr, current_process_path.data(),
                                       (DWORD)(current_process_path.size()));
   current_process_path = current_process_path.substr(0, len);
   return std::filesystem::path(current_process_path).filename();
+#else
+  return L"dotnet";
+#endif
 }
 
 }  // namespace trace
