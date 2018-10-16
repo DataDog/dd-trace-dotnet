@@ -7,6 +7,9 @@
 #include <sstream>
 #include <vector>
 
+#undef major
+#undef minor
+
 namespace trace {
 
 const size_t kPublicKeySize = 8;

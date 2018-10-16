@@ -3,7 +3,6 @@
 
 #include <corhlpr.h>
 #include <corprof.h>
-#include <spdlog/spdlog.h>
 #include <vector>
 
 #include "cor_profiler_base.h"
@@ -34,7 +33,6 @@ class CorProfiler : public CorProfilerBase {
   bool is_attached_ = false;
   IDToInfoMap<ModuleID, ModuleMetadata*> module_id_to_info_map_;
   const std::vector<Integration> integrations_;
-  const std::shared_ptr<spdlog::logger> logger_;
 
  public:
   CorProfiler();

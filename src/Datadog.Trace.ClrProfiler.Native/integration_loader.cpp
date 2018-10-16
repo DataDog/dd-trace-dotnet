@@ -63,9 +63,9 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
 
 namespace {
 
-std::optional<Integration> IntegrationFromJson(const json::value_type& src) {
+std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src) {
   if (!src.is_object()) {
-    return {};
+    return make_pair<Integration, bool>({}, false);
   }
 
   // first get the name, which is required
@@ -74,7 +74,7 @@ std::optional<Integration> IntegrationFromJson(const json::value_type& src) {
   if (name.empty()) {
     GetLogger()->error("integration name is missing for integration: {}",
                        src.dump());
-    return {};
+    return make_pair<Integration, bool>({}, false);
   }
 
   std::vector<MethodReplacement> replacements;
@@ -82,24 +82,24 @@ std::optional<Integration> IntegrationFromJson(const json::value_type& src) {
   if (arr.is_array()) {
     for (auto& el : arr) {
       auto mr = MethodReplacementFromJson(el);
-      if (mr.has_value()) {
-        replacements.push_back(mr.value());
+      if (std::get<1>(mr)) {
+        replacements.push_back(std::get<0>(mr));
       }
     }
   }
-  return Integration(name, replacements);
+  return make_pair<Integration, bool>({name, replacements}, true);
 }
 
-std::optional<MethodReplacement> MethodReplacementFromJson(
+std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     const json::value_type& src) {
   if (!src.is_object()) {
-    return {};
+    return make_pair<MethodReplacement, bool>({}, false);
   }
 
   auto caller = MethodReferenceFromJson(src.value("caller", json::object()));
   auto target = MethodReferenceFromJson(src.value("target", json::object()));
   auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
-  return MethodReplacement(caller, target, wrapper);
+  return make_pair<MethodReplacement, bool>({caller, target, wrapper}, true);
 }
 
 MethodReference MethodReferenceFromJson(const json::value_type& src) {

@@ -4,6 +4,7 @@
 
 #include "class_factory.h"
 #include "cor_profiler.h"
+#include "logging.h"
 
 ClassFactory::ClassFactory() : refCount(0) {}
 
@@ -17,7 +18,7 @@ HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid,
     return S_OK;
   }
 
-  *ppvObject = NULL;
+  *ppvObject = nullptr;
   return E_NOINTERFACE;
 }
 
@@ -37,16 +38,14 @@ ULONG STDMETHODCALLTYPE ClassFactory::Release() {
 HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
                                                        REFIID riid,
                                                        void** ppvObject) {
-  if (pUnkOuter != NULL) {
-    *ppvObject = NULL;
+  if (pUnkOuter != nullptr) {
+    *ppvObject = nullptr;
     return CLASS_E_NOAGGREGATION;
   }
 
-  trace::CorProfiler* profiler = new trace::CorProfiler();
-  if (profiler == NULL) {
-    return E_FAIL;
-  }
+  trace::Info("ClassFactory::CreateInstance");
 
+  auto profiler = new trace::CorProfiler();
   return profiler->QueryInterface(riid, ppvObject);
 }
 
