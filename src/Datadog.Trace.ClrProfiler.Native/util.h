@@ -36,7 +36,7 @@ inline std::wstring ToWString(Arg const &arg) {
 template <typename... Args>
 inline std::wstring ToWString(Args const &... args) {
   std::wstringstream s;
-  int a[] = {0, ((void)(s << ToWString(args) << " "), 0)...};
+  int a[] = {0, ((void)(s << ToWString(args) << L" "), 0)...};
   return s.str();
 }
 

@@ -1,22 +1,24 @@
 #include "util.h"
 
-#include <unicode/unistr.h>
 #include <cwctype>
 #include <iterator>
 #include <sstream>
 #include <string>
 #include <vector>
+#include "miniutf.hpp"
 #include "windows.h"
 
 namespace trace {
 
 std::string toString(const std::string &str) { return str; }
 std::string toString(const std::wstring &wstr) {
-  UnicodeString ucs;
-  ucs.append(reinterpret_cast<const UChar *>(wstr.data()), 0, wstr.size());
-  std::string str;
-  ucs.toUTF8String(str);
-  return str;
+  if (sizeof(char16_t) == sizeof(wchar_t)) {
+    std::u16string ustr(reinterpret_cast<const char16_t *>(wstr.c_str()));
+    return miniutf::to_utf8(ustr);
+  } else {
+    std::u32string ustr(reinterpret_cast<const char32_t *>(wstr.c_str()));
+    return miniutf::to_utf8(ustr);
+  }
 }
 std::string toString(int x) {
   std::stringstream s;
@@ -25,8 +27,15 @@ std::string toString(int x) {
 }
 
 std::wstring toWString(const std::string &str) {
-  std::wstring wstr(str.begin(), str.end());
-  return wstr;
+  if (sizeof(char16_t) == sizeof(wchar_t)) {
+    auto ustr = miniutf::to_utf16(str);
+    std::wstring wstr(reinterpret_cast<const wchar_t *>(ustr.c_str()));
+    return wstr;
+  } else {
+    auto ustr = miniutf::to_utf32(str);
+    std::wstring wstr(reinterpret_cast<const wchar_t *>(ustr.c_str()));
+    return wstr;
+  }
 }
 std::wstring toWString(const std::wstring &wstr) { return wstr; }
 std::wstring toWString(int x) {
@@ -37,11 +46,14 @@ std::wstring toWString(int x) {
 
 template <typename Out>
 void Split(const std::wstring &s, wchar_t delim, Out result) {
-  std::wstringstream ss(s);
-  std::wstring item;
-  while (std::getline(ss, item, delim)) {
-    *(result++) = item;
+  size_t lpos = 0;
+  for (size_t i = 0; i < s.length(); i++) {
+    if (s[i] == delim) {
+      *(result++) = s.substr(lpos, (i - lpos));
+      lpos = i + 1;
+    }
   }
+  *(result++) = s.substr(lpos);
 }
 
 std::vector<std::wstring> Split(const std::wstring &s, wchar_t delim) {
@@ -51,16 +63,20 @@ std::vector<std::wstring> Split(const std::wstring &s, wchar_t delim) {
 }
 
 std::wstring Trim(const std::wstring &str) {
-  std::wstring trimmed = str;
-
-  // trim space off the front
-  while (!trimmed.empty() && std::iswspace(trimmed[0])) {
-    trimmed = trimmed.substr(1);
+  if (str.length() == 0) {
+    return L"";
   }
 
-  // trim space off the back
-  while (!trimmed.empty() && std::iswspace(trimmed[trimmed.size() - 1])) {
-    trimmed = trimmed.substr(0, trimmed.size() - 1);
+  std::wstring trimmed = str;
+
+  auto lpos = trimmed.find_first_not_of(L" \t");
+  if (lpos != std::wstring::npos) {
+    trimmed = trimmed.substr(lpos);
+  }
+
+  auto rpos = trimmed.find_last_of(L" \t");
+  if (rpos != std::wstring::npos) {
+    trimmed = trimmed.substr(0, rpos);
   }
 
   return trimmed;
@@ -87,7 +103,7 @@ std::wstring GetEnvironmentValue(const std::wstring &name) {
 std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name,
                                                const wchar_t delim) {
   std::vector<std::wstring> values;
-  for (auto &s : Split(GetEnvironmentValue(name), delim)) {
+  for (auto s : Split(GetEnvironmentValue(name), delim)) {
     s = Trim(s);
     if (!s.empty()) {
       values.push_back(s);
@@ -97,7 +113,7 @@ std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name,
 }
 
 std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name) {
-  return GetEnvironmentValues(name, ';');
+  return GetEnvironmentValues(name, L';');
 }
 
 std::wstring GetCurrentProcessName() {

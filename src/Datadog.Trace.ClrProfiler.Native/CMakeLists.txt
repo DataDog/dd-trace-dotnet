@@ -2,14 +2,7 @@ cmake_minimum_required (VERSION 3.8)
 
 project("Datadog.Trace.ClrProfiler.Native" VERSION 0.3.2)
 
-include(ExternalProject)
-ExternalProject_Add(icu
-    URL http://download.icu-project.org/files/icu4c/63.1/icu4c-63_1-src.tgz    
-    CONFIGURE_COMMAND ./source/configure --prefix=${CMAKE_BINARY_DIR} --disable-shared --enable-static
-    BUILD_IN_SOURCE 1
-)
-
-add_compile_options(-std=c++11 -fPIC -fms-extensions -fshort-wchar)
+add_compile_options(-std=c++11 -fPIC -fms-extensions)
 add_compile_options(-DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
@@ -20,6 +13,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
     integration.cpp
     integration_loader.cpp
     interop.cpp
+    miniutf.cpp
     logging.cpp
     util.cpp
 )
@@ -30,8 +24,9 @@ target_include_directories("Datadog.Trace.ClrProfiler.Native.static"
     PUBLIC $<BUILD_INTERFACE:/opt/coreclr/src/pal/prebuilt/inc>
     PUBLIC $<BUILD_INTERFACE:/opt/coreclr/src/pal/inc>
     PUBLIC $<BUILD_INTERFACE:/opt/coreclr/src/inc>
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
 )
-target_link_libraries("Datadog.Trace.ClrProfiler.Native.static" ${CMAKE_BINARY_DIR}/lib/libicuuc.a)
+#target_link_libraries("Datadog.Trace.ClrProfiler.Native.static" ${CMAKE_BINARY_DIR}/lib/libicuuc.a)
 
 
 add_library("Datadog.Trace.ClrProfiler.Native" SHARED

@@ -8,8 +8,8 @@ using json = nlohmann::json;
 
 std::vector<Integration> LoadIntegrationsFromEnvironment() {
   std::vector<Integration> integrations;
-  for (const auto& f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
-    Info("loading integrations from {}", f);
+  for (const auto f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
+    Info("loading integrations from", f);
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {
       integrations.push_back(i);
