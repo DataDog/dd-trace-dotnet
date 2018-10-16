@@ -1,5 +1,6 @@
 #include "util.h"
 
+#include <unicode/unistr.h>
 #include <cwctype>
 #include <iterator>
 #include <sstream>
@@ -11,7 +12,10 @@ namespace trace {
 
 std::string toString(const std::string &str) { return str; }
 std::string toString(const std::wstring &wstr) {
-  std::string str(wstr.begin(), wstr.end());
+  UnicodeString ucs;
+  ucs.append(reinterpret_cast<const UChar *>(wstr.data()), 0, wstr.size());
+  std::string str;
+  ucs.toUTF8String(str);
   return str;
 }
 std::string toString(int x) {
@@ -70,11 +74,13 @@ std::wstring GetEnvironmentValue(const std::wstring &name) {
       GetEnvironmentVariable(name.data(), buf.data(), (DWORD)(buf.size()));
   return Trim(buf.substr(0, len));
 #else
-  auto value = std::getenv(ToString(name).c_str());
-  if (value == nullptr) {
+  auto cstr = std::getenv(ToString(name).c_str());
+  if (cstr == nullptr) {
     return L"";
   }
-  return Trim(ToWString(value));
+  std::string str(cstr);
+  auto wstr = ToWString(str);
+  return Trim(wstr);
 #endif
 }
 

@@ -24,6 +24,7 @@ inline std::string ToString(Args const &... args) {
 }
 
 std::wstring toWString(const std::string &str);
+std::wstring toWString(const char *str);
 std::wstring toWString(const std::wstring &wstr);
 std::wstring toWString(int x);
 
