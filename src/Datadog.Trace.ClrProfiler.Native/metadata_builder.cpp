@@ -19,8 +19,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
     assembly_metadata.szLocale = nullptr;
     assembly_metadata.cbLocale = 0;
   } else {
-    assembly_metadata.szLocale =
-        const_cast<char16_t*>(ToU16String(assembly_ref.locale).data());
+    assembly_metadata.szLocale = const_cast<WCHAR*>(ToLPCWSTR(assembly_ref.locale));
     assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
   }
 
@@ -34,7 +33,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   mdAssemblyRef assembly_ref_out;
   const HRESULT hr = assembly_emit_->DefineAssemblyRef(
       &assembly_ref.public_key.data[0], public_key_size,
-      ToU16String(assembly_ref.name).c_str(), &assembly_metadata,
+      ToLPCWSTR(assembly_ref.name), &assembly_metadata,
       // hash blob
       nullptr,
       // cb of hash blob
@@ -69,7 +68,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
     // type is defined in this assembly
     hr = metadata_emit_->DefineTypeRefByName(
         module_,
-        ToU16String(method_replacement.wrapper_method.type_name).data(),
+        ToLPCWSTR(method_replacement.wrapper_method.type_name),
         &type_ref);
   } else {
     // type is defined in another assembly,
@@ -86,14 +85,14 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
     // search for an existing reference to the type
     hr = metadata_import_->FindTypeRef(
         assembly_ref,
-        ToU16String(method_replacement.wrapper_method.type_name).data(),
+        ToLPCWSTR(method_replacement.wrapper_method.type_name),
         &type_ref);
 
     if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
       // if typeRef not found, create a new one by emitting a metadata token
       hr = metadata_emit_->DefineTypeRefByName(
           assembly_ref,
-          ToU16String(method_replacement.wrapper_method.type_name).data(),
+          ToLPCWSTR(method_replacement.wrapper_method.type_name),
           &type_ref);
     }
   }
@@ -125,7 +124,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
 
   hr = metadata_import_->FindMemberRef(
       type_ref,
-      ToU16String(method_replacement.wrapper_method.method_name).data(),
+      ToLPCWSTR(method_replacement.wrapper_method.method_name),
       method_replacement.wrapper_method.method_signature.data.data(),
       (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
       &member_ref);
@@ -134,7 +133,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
     // if memberRef not found, create it by emitting a metadata token
     hr = metadata_emit_->DefineMemberRef(
         type_ref,
-        ToU16String(method_replacement.wrapper_method.method_name).data(),
+        ToLPCWSTR(method_replacement.wrapper_method.method_name),
         method_replacement.wrapper_method.method_signature.data.data(),
         (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
         &member_ref);

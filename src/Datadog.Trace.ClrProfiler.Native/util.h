@@ -49,6 +49,16 @@ inline std::u16string ToU16String(Arg const &arg) {
   return toU16String(arg);
 }
 
+#ifdef _WIN32
+inline const wchar_t *ToLPCWSTR(const std::wstring &wstr) {
+  return wstr.data();
+}
+#else
+inline const char16_t *ToLPCWSTR(const std::wstring &wstr) {
+  return ToU16String(wstr).data();
+}
+#endif
+
 template <typename Out>
 void Split(const std::wstring &s, wchar_t delim, Out result);
 

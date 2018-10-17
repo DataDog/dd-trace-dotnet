@@ -6,15 +6,14 @@ namespace trace {
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id) {
-  std::u16string name(kNameMaxSize, 0);
+  WCHAR name[kNameMaxSize];
   DWORD name_len = 0;
-  auto hr = info->GetAssemblyInfo(assembly_id, (DWORD)(name.size()), &name_len,
-                                  const_cast<char16_t*>(name.data()), nullptr,
+  auto hr = info->GetAssemblyInfo(assembly_id, kNameMaxSize, &name_len,
+                                  name, nullptr,
                                   nullptr);
   if (FAILED(hr) || name_len == 0) {
     return {};
   }
-  name = name.substr(0, name_len - 1);
   return {assembly_id, ToWString(name)};
 }
 
@@ -25,40 +24,38 @@ std::wstring GetAssemblyName(
   if (FAILED(hr)) {
     return L"";
   }
-  std::u16string name(kNameMaxSize, 0);
+  WCHAR name[kNameMaxSize];
   DWORD name_len = 0;
   ASSEMBLYMETADATA assembly_metadata{};
   DWORD assembly_flags = 0;
   hr = assembly_import->GetAssemblyProps(
-      current, nullptr, nullptr, nullptr, const_cast<char16_t*>(name.data()),
-      (DWORD)(name.size()), &name_len, &assembly_metadata, &assembly_flags);
+      current, nullptr, nullptr, nullptr, name, kNameMaxSize, &name_len, &assembly_metadata, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
     return L"";
   }
-  return ToWString(name.substr(0, name_len - 1));
+  return ToWString(name);
 }
 
 std::wstring GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const mdAssemblyRef& assembly_ref) {
-  std::u16string name(kNameMaxSize, 0);
+  WCHAR name[kNameMaxSize];
   DWORD name_len = 0;
   ASSEMBLYMETADATA assembly_metadata{};
   DWORD assembly_flags = 0;
   const auto hr = assembly_import->GetAssemblyRefProps(
-      assembly_ref, nullptr, nullptr, const_cast<char16_t*>(name.data()),
-      (DWORD)(name.size()), &name_len, &assembly_metadata, nullptr, nullptr,
+      assembly_ref, nullptr, nullptr, name, kNameMaxSize, &name_len, &assembly_metadata, nullptr, nullptr,
       &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
     return L"";
   }
-  return ToWString(name.substr(0, name_len - 1));
+  return ToWString(name);
 }
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                              const mdToken& token) {
   mdToken parent_token = mdTokenNil;
-  std::u16string function_name(kNameMaxSize, 0);
+  WCHAR function_name[kNameMaxSize];
   DWORD function_name_len = 0;
 
   PCCOR_SIGNATURE raw_signature;
@@ -68,14 +65,12 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   switch (TypeFromToken(token)) {
     case mdtMemberRef:
       hr = metadata_import->GetMemberRefProps(
-          token, &parent_token, const_cast<char16_t*>(function_name.data()),
-          (DWORD)(function_name.size()), &function_name_len, &raw_signature,
+          token, &parent_token, function_name, kNameMaxSize, &function_name_len, &raw_signature,
           &raw_signature_len);
       break;
     case mdtMethodDef:
       hr = metadata_import->GetMemberProps(
-          token, &parent_token, const_cast<char16_t*>(function_name.data()),
-          (DWORD)(function_name.size()), &function_name_len, nullptr,
+          token, &parent_token, function_name, kNameMaxSize, &function_name_len, nullptr,
           &raw_signature, &raw_signature_len, nullptr, nullptr, nullptr,
           nullptr, nullptr);
       break;
@@ -86,7 +81,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
         return {};
       }
       auto generic_info = GetFunctionInfo(metadata_import, parent_token);
-      function_name.assign(ToU16String(generic_info.name));
+      wcscpy(function_name, ToLPCWSTR(generic_info.name));
       function_name_len = (DWORD)(generic_info.name.length() + 1);
     } break;
     default:
@@ -96,7 +91,6 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   if (FAILED(hr) || function_name_len == 0) {
     return {};
   }
-  function_name = function_name.substr(0, function_name_len - 1);
 
   std::vector<BYTE> signature_data(raw_signature_len);
   for (ULONG i = 0; i < raw_signature_len; i++) {
@@ -111,14 +105,15 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
 }
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
-  std::u16string module_path(260, 0);
+  const DWORD module_path_size = 260;
+  WCHAR module_path[module_path_size];
   DWORD module_path_len = 0;
   LPCBYTE base_load_address;
   AssemblyID assembly_id = 0;
   DWORD module_flags = 0;
   const HRESULT hr = info->GetModuleInfo2(
-      module_id, &base_load_address, (DWORD)(module_path.size()),
-      &module_path_len, const_cast<char16_t*>(module_path.data()), &assembly_id,
+      module_id, &base_load_address, module_path_size,
+      &module_path_len, module_path, &assembly_id,
       &module_flags);
   if (FAILED(hr) || module_path_len == 0) {
     return {};
@@ -130,29 +125,27 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                      const mdToken& token) {
   mdToken parent_token = mdTokenNil;
-  std::u16string type_name(kNameMaxSize, 0);
+  WCHAR type_name[kNameMaxSize];
   DWORD type_name_len = 0;
 
   HRESULT hr = E_FAIL;
   const auto token_type = TypeFromToken(token);
   switch (token_type) {
     case mdtTypeDef:
-      hr = metadata_import->GetTypeDefProps(
-          token, const_cast<char16_t*>(type_name.data()),
-          (DWORD)(type_name.size()), &type_name_len, nullptr, nullptr);
+      hr = metadata_import->GetTypeDefProps(token,type_name,
+          kNameMaxSize, &type_name_len, nullptr, nullptr);
       break;
     case mdtTypeRef:
       hr = metadata_import->GetTypeRefProps(
-          token, &parent_token, const_cast<char16_t*>(type_name.data()),
-          (DWORD)(type_name.size()), &type_name_len);
+          token, &parent_token, type_name,
+          kNameMaxSize, &type_name_len);
       break;
     case mdtTypeSpec:
       // do we need to handle this case?
       break;
     case mdtModuleRef:
-      metadata_import->GetModuleRefProps(
-          token, const_cast<char16_t*>(type_name.data()),
-          (DWORD)(type_name.size()), &type_name_len);
+      metadata_import->GetModuleRefProps(token, type_name,
+          kNameMaxSize, &type_name_len);
       break;
     case mdtMemberRef:
       return GetFunctionInfo(metadata_import, token).type;
@@ -164,7 +157,6 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   if (FAILED(hr) || type_name_len == 0) {
     return {};
   }
-  type_name = type_name.substr(0, type_name_len - 1);
 
   return {token, ToWString(type_name)};
 }
