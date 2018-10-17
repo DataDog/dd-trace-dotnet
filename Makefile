@@ -44,7 +44,7 @@ DATADOG_TRACE_NATIVE_FILES := $(shell find $(ROOT_DIR)/src/Datadog.Trace.ClrProf
 
 src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so: /tmp/docker-coreclr $(DATADOG_TRACE_NATIVE_FILES)
 	docker run -v $(ROOT_DIR):/project coreclr:latest \
-		sh -c 'cd /project/src/Datadog.Trace.ClrProfiler.Native/ && mkdir -p obj/Debug/x64 && cd obj/Debug/x64 && cmake --trace ../../.. && make'
+		sh -c 'cd /project/src/Datadog.Trace.ClrProfiler.Native/ && mkdir -p obj/Debug/x64 && cd obj/Debug/x64 && cmake ../../.. && make'
 
 # Samples.ConsoleCore
 

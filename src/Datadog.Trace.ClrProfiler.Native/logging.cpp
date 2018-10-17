@@ -9,11 +9,16 @@
 namespace trace {
 
 void Log(const std::string& str) {
+  static auto current_process_name = ToString(GetCurrentProcessName());
+
+  std::stringstream ss;
+  ss << "[" << current_process_name << "] " << GetPID() << ": " << str
+     << std::endl;
+  auto line = ss.str();
+
   try {
     std::ofstream out(DatadogLogFilePath(), std::ios::app);
-    std::stringstream ss;
-    ss << "[pid:" << GetPID() << "] " << str << std::endl;
-    out << ss.str();
+    out << line;
   } catch (...) {
   }
 }

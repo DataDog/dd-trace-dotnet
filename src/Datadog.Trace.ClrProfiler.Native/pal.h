@@ -38,7 +38,7 @@ inline std::wstring GetCurrentProcessName() {
   current_process_path = current_process_path.substr(0, len);
   return std::filesystem::path(current_process_path).filename();
 #else
-  std::ifwstream comm(L"/proc/self/comm");
+  std::wfstream comm("/proc/self/comm");
   std::wstring name;
   std::getline(comm, name);
   return name;
@@ -47,9 +47,9 @@ inline std::wstring GetCurrentProcessName() {
 
 inline int GetPID() {
 #ifdef _WIN32
-    return _getpid();
+  return _getpid();
 #else
-    return getpid();
+  return getpid();
 #endif
 }
 
