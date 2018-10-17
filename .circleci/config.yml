@@ -1,26 +1,10 @@
 version: 2
 jobs:
   build:
-    working_directory: /app
-    docker:
-      - image: microsoft/dotnet:2.1-sdk
+    machine: true
     steps:
       - checkout
-      - setup_remote_docker:
-         docker_layer_caching: true
       - run:
           name: Build projects
           command: |
-            ./Makefile-build.sh
-      - run:
-          name: Build application Docker image
-          command: |
-            docker build -t coreclr:latest .
-      - run:
-          name: Build native
-          command: |
-            make native
-      - run:
-          name: Run integration tests
-          command: |
-            make Datadog.Trace.ClrProfiler.IntegrationTests
+            make build
