@@ -9,6 +9,7 @@ namespace trace {
 
 std::string toString(const std::string &str);
 std::string toString(const std::wstring &wstr);
+std::string toString(const std::u16string &ustr);
 std::string toString(int x);
 
 template <typename Arg>

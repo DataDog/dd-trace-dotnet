@@ -60,10 +60,11 @@ samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/Samples.ConsoleCore.dll: $
 
 Samples.ConsoleCore: samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/Samples.ConsoleCore.dll src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so
 	docker run -it -v $(ROOT_DIR):/project microsoft/dotnet:2.1-sdk sh -c " \
-		(mkdir -p /var/log/datadog && touch /var/log/datadog/dotnet-profiler.log && tail -f /var/log/datadog/dotnet-profiler.log &) ; \
+		(mkdir -p /var/log/datadog && touch /var/log/datadog/dotnet-profiler.log) ; \
 		env CORECLR_ENABLE_PROFILING=1 \
 		    CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8} \
 		    CORECLR_PROFILER_PATH=/project/src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so \
 		    DD_INTEGRATIONS='/project/integrations.json;/project/test-integrations.json' \
-		dotnet /project/samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/Samples.ConsoleCore.dll \
+		dotnet /project/samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/Samples.ConsoleCore.dll ; \
+		cat /var/log/datadog/dotnet-profiler.log \
 		"

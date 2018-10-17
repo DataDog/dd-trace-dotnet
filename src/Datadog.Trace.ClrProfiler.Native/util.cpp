@@ -11,6 +11,9 @@
 namespace trace {
 
 std::string toString(const std::string &str) { return str; }
+std::string toString(const std::u16string &ustr) {
+  return miniutf::to_utf8(ustr);
+}
 std::string toString(const std::wstring &wstr) {
   if (sizeof(char16_t) == sizeof(wchar_t)) {
     std::u16string ustr(reinterpret_cast<const char16_t *>(wstr.c_str()));

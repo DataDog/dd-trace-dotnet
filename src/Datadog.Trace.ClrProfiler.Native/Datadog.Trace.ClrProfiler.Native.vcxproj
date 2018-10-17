@@ -153,8 +153,6 @@
     <ClInclude Include="com_ptr.h" />
     <ClInclude Include="cor_profiler.h" />
     <ClInclude Include="cor_profiler_base.h" />
-    <ClInclude Include="cs_holder.h" />
-    <ClInclude Include="id_to_info_map.h" />
     <ClInclude Include="il_rewriter.h" />
     <ClInclude Include="il_rewriter_wrapper.h" />
     <ClInclude Include="integration.h" />
@@ -173,7 +171,6 @@
     <ClCompile Include="class_factory.cpp" />
     <ClCompile Include="clr_helpers.cpp" />
     <ClCompile Include="cor_profiler_base.cpp" />
-    <ClCompile Include="cs_holder.cpp" />
     <ClCompile Include="cor_profiler.cpp" />
     <ClCompile Include="il_rewriter.cpp" />
     <ClCompile Include="il_rewriter_wrapper.cpp" />
