@@ -3,19 +3,19 @@ jobs:
   build:
     working_directory: /app
     docker:
-      - image: circleci/build-image
+      - image: microsoft/dotnet:2.1-sdk
     steps:
       - checkout
       - setup_remote_docker:
          docker_layer_caching: true
       - run:
+          name: Build projects
+          command: |
+            ./Makefile-build.sh
+      - run:
           name: Build application Docker image
           command: |
             docker build -t coreclr:latest .
-      - run:
-          name: Build projects
-          command: |
-            make build
       - run:
           name: Build native
           command: |
