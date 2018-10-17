@@ -27,12 +27,6 @@ RUN sudo apt-get install -y \
 
 RUN cd /usr/lib/llvm-3.9/lib && ln -s ../../x86_64-linux-gnu/liblldb-3.9.so.1 liblldb-3.9.so.1
 
-RUN mkdir -p /opt
-RUN cd /opt && git clone --branch v2.1.5 https://github.com/dotnet/coreclr.git
-
-RUN cd /opt/coreclr && ./build.sh -configureonly
-RUN cd /opt/coreclr && ./build.sh -skipconfigure -skipmscorlib -skiptests -skipnuget -skiprestoreoptdata -skipcrossgen -skiprestore -disableoss -cross -crosscomponent
-
 RUN apt-get update && apt-get install -y \
     python-software-properties \
     software-properties-common
@@ -42,7 +36,6 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
     apt-get install -y \
         curl \
         ninja-build
-
 # cmake
 RUN apt-get remove -y cmake && \
     curl -o /tmp/cmake.sh https://cmake.org/files/v3.12/cmake-3.12.3-Linux-x86_64.sh && \
@@ -50,13 +43,19 @@ RUN apt-get remove -y cmake && \
 
 # libraries
 
+RUN mkdir -p /opt
 ENV CXX=clang++-3.9
 ENV CC=clang-3.9
 
+# - coreclr
+RUN cd /opt && git clone --depth 1 --branch v2.1.5 https://github.com/dotnet/coreclr.git
+# RUN cd /opt/coreclr && ./build.sh -configureonly
+# RUN cd /opt/coreclr && ./build.sh -skipconfigure -skipmscorlib -skiptests -skipnuget -skiprestoreoptdata -skipcrossgen -skiprestore -disableoss -cross -crosscomponent
+
 # - nlohmann/json
-RUN cd /opt && git clone --branch v3.3.0 https://github.com/nlohmann/json.git
-RUN cd /opt/json && cmake -G Ninja . && cmake --build .
+RUN cd /opt && git clone --depth 1 --branch v3.3.0 https://github.com/nlohmann/json.git
+# RUN cd /opt/json && cmake -G Ninja . && cmake --build .
 
 # - re2
-RUN cd /opt && git clone --branch 2018-10-01 https://github.com/google/re2.git
+RUN cd /opt && git clone --depth 1 --branch 2018-10-01 https://github.com/google/re2.git
 RUN cd /opt/re2 && env CXXFLAGS="-O3 -g -fPIC" make
