@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "bin",
                 BuildParameters.Configuration,
                 GetPlatform(),
-                "Datadog.Trace.ClrProfiler.Native.dll");
+                "Datadog.Trace.ClrProfiler.Native." + (GetOS() == "win" ? "dll" : "so"));
         }
 
         public string GetSampleApplicationPath()

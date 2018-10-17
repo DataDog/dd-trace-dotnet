@@ -46,6 +46,10 @@ src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Nat
 	docker run -v $(ROOT_DIR):/project coreclr:latest \
 		sh -c 'cd /project/src/Datadog.Trace.ClrProfiler.Native/ && mkdir -p obj/Debug/x64 && cd obj/Debug/x64 && cmake ../../.. && make'
 
+src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/Datadog.Trace.ClrProfiler.Native.so: src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so
+	mkdir -p src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/
+	cp src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/Datadog.Trace.ClrProfiler.Native.so
+
 # Samples.ConsoleCore
 
 SAMPLES_CONSOLECORE_FILES := $(shell find $(ROOT_DIR)/samples/Samples.ConsoleCore -type f -not -path '$(ROOT_DIR)/samples/Samples.ConsoleCore/bin*' -not -path '$(ROOT_DIR)/samples/Samples.ConsoleCore/obj*')
@@ -66,5 +70,20 @@ Samples.ConsoleCore: samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/Sampl
 		    CORECLR_PROFILER_PATH=/project/src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so \
 		    DD_INTEGRATIONS='/project/integrations.json;/project/test-integrations.json' \
 		dotnet /project/samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/Samples.ConsoleCore.dll ; \
+		cat /var/log/datadog/dotnet-profiler.log \
+		"
+
+# Datadog.Trace.ClrProfiler.IntegrationTests
+
+CLR_PROFILER_INTEGRATION_TEST_FILES := $(shell find $(ROOT_DIR)/test/Datadog.Trace.ClrProfiler.IntegrationTests -type f -not -path '*/bin*' -not -path '*/obj*')
+
+test/Datadog.Trace.ClrProfiler.IntegrationTests/bin/Release/netcoreapp2.0/publish/Datadog.Trace.ClrProfiler.IntegrationTests.dll: Makefile $(CLR_PROFILER_INTEGRATION_TEST_FILES)
+	docker run -v $(ROOT_DIR):/project microsoft/dotnet:2.1-sdk \
+		dotnet publish --framework netcoreapp2.0 --configuration Release /project/test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+
+Datadog.Trace.ClrProfiler.IntegrationTests: src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/Datadog.Trace.ClrProfiler.Native.so
+	docker run -it -v $(ROOT_DIR):/project microsoft/dotnet:2.1-sdk sh -c " \
+		(mkdir -p /var/log/datadog && touch /var/log/datadog/dotnet-profiler.log) ; \
+		dotnet test /project/test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj ; \
 		cat /var/log/datadog/dotnet-profiler.log \
 		"
