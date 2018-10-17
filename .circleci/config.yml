@@ -6,31 +6,21 @@ jobs:
       - image: docker:17.05.0-ce-git
     steps:
       - checkout
-      - setup_remote_docker
-      - restore_cache:
-          keys:
-            - v1-{{ .Branch }}
-          paths:
-            - /caches/coreclr.tar
-      - run:
-          name: Load Docker image layer cache
-          command: |
-            set +o pipefail
-            docker load -i /caches/coreclr.tar | true
+      - setup_remote_docker:
+         docker_layer_caching: true
       - run:
           name: Build application Docker image
           command: |
-            docker build --cache-from=coreclr -t coreclr:latest .
+            docker build -t coreclr:latest .
       - run:
-          name: Save Docker image layer cache
-          command: |
-            mkdir -p /caches
-            docker save -o /caches/coreclr.tar coreclr
-      - save_cache:
-          key: v1-{{ .Branch }}-{{ epoch }}
-          paths:
-            - /caches/coreclr.tar
-      - run:
-          name: Build Projects
+          name: Build projects
           command: |
             make build
+      - run:
+          name: Build native
+          command: |
+            make native
+      - run:
+          name: Run integration tests
+          command: |
+            make Datadog.Trace.ClrProfiler.IntegrationTests
