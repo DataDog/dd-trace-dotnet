@@ -1,7 +1,10 @@
-#include <regex>
-#include <sstream>
 
 #include "integration.h"
+
+#include <re2/re2.h>
+#include <sstream>
+
+#include "util.h"
 
 namespace trace {
 
@@ -36,16 +39,16 @@ Version GetVersionFromAssemblyReferenceString(const std::wstring& str) {
   unsigned short build = 0;
   unsigned short revision = 0;
 
-  static auto re =
-      std::wregex(L"Version=([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)");
+  // static auto re =
+  //     std::wregex(L"Version=([0-9]+)\\.([0-9]+)\\.([0-9]+)\\.([0-9]+)");
 
-  std::wsmatch match;
-  if (std::regex_search(str, match, re) && match.size() == 5) {
-    std::wstringstream(match.str(1)) >> major;
-    std::wstringstream(match.str(2)) >> minor;
-    std::wstringstream(match.str(3)) >> build;
-    std::wstringstream(match.str(4)) >> revision;
-  }
+  // std::wsmatch match;
+  // if (std::regex_search(str, match, re) && match.size() == 5) {
+  //   std::wstringstream(match.str(1)) >> major;
+  //   std::wstringstream(match.str(2)) >> minor;
+  //   std::wstringstream(match.str(3)) >> build;
+  //   std::wstringstream(match.str(4)) >> revision;
+  // }
 
   return {major, minor, build, revision};
 }
@@ -53,10 +56,11 @@ Version GetVersionFromAssemblyReferenceString(const std::wstring& str) {
 std::wstring GetLocaleFromAssemblyReferenceString(const std::wstring& str) {
   std::wstring locale = L"neutral";
 
-  static auto re = std::wregex(L"Culture=([a-zA-Z0-9]+)");
-  std::wsmatch match;
-  if (std::regex_search(str, match, re) && match.size() == 2) {
-    locale = match.str(1);
+  static re2::RE2 re("Culture=([a-zA-Z0-9]+)", RE2::Quiet);
+
+  std::string match;
+  if (re2::RE2::FullMatch(ToString(str), re, &match)) {
+    locale = ToWString(match);
   }
 
   return locale;
@@ -65,16 +69,16 @@ std::wstring GetLocaleFromAssemblyReferenceString(const std::wstring& str) {
 PublicKey GetPublicKeyFromAssemblyReferenceString(const std::wstring& str) {
   BYTE data[8] = {0};
 
-  static auto re = std::wregex(L"PublicKeyToken=([a-fA-F0-9]{16})");
-  std::wsmatch match;
-  if (std::regex_search(str, match, re) && match.size() == 2) {
-    for (int i = 0; i < 8; i++) {
-      auto s = match.str(1).substr(i * 2, 2);
-      unsigned long x;
-      std::wstringstream(s) >> std::hex >> x;
-      data[i] = BYTE(x);
-    }
-  }
+  // static auto re = std::wregex(L"PublicKeyToken=([a-fA-F0-9]{16})");
+  // std::wsmatch match;
+  // if (std::regex_search(str, match, re) && match.size() == 2) {
+  //   for (int i = 0; i < 8; i++) {
+  //     auto s = match.str(1).substr(i * 2, 2);
+  //     unsigned long x;
+  //     std::wstringstream(s) >> std::hex >> x;
+  //     data[i] = BYTE(x);
+  //   }
+  // }
 
   return PublicKey(data);
 }

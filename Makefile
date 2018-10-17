@@ -43,8 +43,8 @@ src/Datadog.Trace.ClrProfiler.Managed/bin/Release/netcoreapp2.0/Datadog.Trace.Cl
 DATADOG_TRACE_NATIVE_FILES := $(shell find $(ROOT_DIR)/src/Datadog.Trace.ClrProfiler.Native -type f -not -path '$(ROOT_DIR)/src/Datadog.Trace.ClrProfiler.Native/bin*' -not -path '$(ROOT_DIR)/src/Datadog.Trace.ClrProfiler.Native/obj*')
 
 src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so: /tmp/docker-coreclr $(DATADOG_TRACE_NATIVE_FILES)
-	#docker run -v $(ROOT_DIR):/project coreclr:latest sh -c 'cd /project/src/Datadog.Trace.ClrProfiler.Native/ && ./build.sh'
-	docker run -v $(ROOT_DIR):/project coreclr:latest sh -c 'cd /project/src/Datadog.Trace.ClrProfiler.Native/ && mkdir -p obj/Debug/x64 && cd obj/Debug/x64 && cmake -G Ninja ../../.. && ninja'
+	docker run -v $(ROOT_DIR):/project coreclr:latest \
+		sh -c 'cd /project/src/Datadog.Trace.ClrProfiler.Native/ && mkdir -p obj/Debug/x64 && cd obj/Debug/x64 && cmake --trace ../../.. && make'
 
 # Samples.ConsoleCore
 

@@ -1,4 +1,8 @@
 #include "integration_loader.h"
+
+#include <exception>
+#include <stdexcept>
+
 #include "logging.h"
 #include "util.h"
 
@@ -28,7 +32,14 @@ std::vector<Integration> LoadIntegrationsFromFile(
     integrations = LoadIntegrationsFromStream(stream);
     stream.close();
   } catch (...) {
-    Warn("failed to load integrations");
+    auto ex = std::current_exception();
+    try {
+      if (ex) {
+        std::rethrow_exception(ex);
+      }
+    } catch (const std::exception& ex) {
+      Warn("failed to load integrations", ex.what());
+    }
   }
 
   return integrations;
@@ -55,7 +66,14 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
   } catch (const json::type_error& e) {
     Warn("invalid integrations: {}", e.what());
   } catch (...) {
-    Warn("failed to load integrations");
+    auto ex = std::current_exception();
+    try {
+      if (ex) {
+        std::rethrow_exception(ex);
+      }
+    } catch (const std::exception& ex) {
+      Warn("failed to load integrations", ex.what());
+    }
   }
 
   return integrations;

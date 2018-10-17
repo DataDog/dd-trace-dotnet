@@ -64,3 +64,7 @@ RUN cd /opt/spdlog && cmake -G Ninja . && cmake --build .
 # - nlohmann/json
 RUN cd /opt && git clone --branch v3.3.0 https://github.com/nlohmann/json.git
 RUN cd /opt/json && cmake -G Ninja . && cmake --build .
+
+# - re2
+RUN cd /opt && git clone --branch 2018-10-01 https://github.com/google/re2.git
+RUN cd /opt/re2 && env CXXFLAGS="-O3 -g -fPIC" make && make install
