@@ -61,9 +61,6 @@ std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name,
 // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
 std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name);
 
-// GetCurrentProcessName gets the current process file name.
-std::wstring GetCurrentProcessName();
-
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_UTIL_H_

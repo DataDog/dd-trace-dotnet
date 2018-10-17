@@ -24,7 +24,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
     assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
   }
 
-  logger_->info("EmitAssemblyRef {}", assembly_ref.str());
+  Info("EmitAssemblyRef", assembly_ref.str());
 
   DWORD public_key_size = 8;
   if (assembly_ref.public_key == trace::PublicKey()) {
@@ -79,8 +79,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
         assembly_import_, method_replacement.wrapper_method.assembly.name);
     if (assembly_ref == mdAssemblyRefNil) {
       // TODO: emit assembly reference if not found?
-      Warn("Assembly reference for {} not found.",
-           method_replacement.wrapper_method.assembly.name);
+      Warn("Assembly reference for", method_replacement.wrapper_method.assembly.name, " not found");
       return E_FAIL;
     }
 

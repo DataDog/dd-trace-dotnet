@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include "miniutf.hpp"
-#include "windows.h"
+#include "pal.h"
 
 namespace trace {
 
@@ -114,18 +114,6 @@ std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name,
 
 std::vector<std::wstring> GetEnvironmentValues(const std::wstring &name) {
   return GetEnvironmentValues(name, L';');
-}
-
-std::wstring GetCurrentProcessName() {
-#ifdef _WIN32
-  std::wstring current_process_path(260, 0);
-  const DWORD len = GetModuleFileName(nullptr, current_process_path.data(),
-                                      (DWORD)(current_process_path.size()));
-  current_process_path = current_process_path.substr(0, len);
-  return std::filesystem::path(current_process_path).filename();
-#else
-  return L"dotnet";
-#endif
 }
 
 }  // namespace trace

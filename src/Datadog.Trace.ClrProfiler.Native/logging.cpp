@@ -1,19 +1,18 @@
 #include "logging.h"
 
-#include <unistd.h>
 #include <fstream>
 #include <ios>
 #include <sstream>
 
-namespace trace {
+#include "pal.h"
 
-std::string LogName() { return "/var/log/datadog/dotnet-profiler.log"; }
+namespace trace {
 
 void Log(const std::string& str) {
   try {
-    std::ofstream out(LogName(), std::ios::app);
+    std::ofstream out(DatadogLogFilePath(), std::ios::app);
     std::stringstream ss;
-    ss << "[pid:" << getpid() << "] " << str << std::endl;
+    ss << "[pid:" << GetPID() << "] " << str << std::endl;
     out << ss.str();
   } catch (...) {
   }
