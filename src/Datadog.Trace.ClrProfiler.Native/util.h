@@ -26,6 +26,7 @@ inline std::string ToString(Args const &... args) {
 std::wstring toWString(const std::string &str);
 std::wstring toWString(const char *str);
 std::wstring toWString(const std::wstring &wstr);
+std::wstring toWString(const std::u16string &ustr);
 std::wstring toWString(int x);
 
 template <typename Arg>
@@ -38,6 +39,13 @@ inline std::wstring ToWString(Args const &... args) {
   std::wstringstream s;
   int a[] = {0, ((void)(s << ToWString(args) << L" "), 0)...};
   return s.str();
+}
+
+std::u16string toU16String(const std::wstring &wstr);
+
+template <typename Arg>
+inline std::u16string ToU16String(Arg const &arg) {
+  return toU16String(arg);
 }
 
 template <typename Out>

@@ -2,12 +2,15 @@
 #define DD_CLR_PROFILER_COR_PROFILER_H_
 
 #include <atomic>
+#include <mutex>
 #include <string>
+#include <unordered_map>
 #include "cor.h"
 #include "corprof.h"
 
 #include "cor_profiler_base.h"
 #include "integration.h"
+#include "module_metadata.h"
 
 namespace trace {
 
@@ -32,10 +35,21 @@ class CorProfiler : public CorProfilerBase {
   bool is_attached_ = false;
   const std::vector<Integration> integrations_;
 
+  std::mutex module_id_to_info_map_lock_;
+  std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
+
  public:
   CorProfiler();
 
   bool IsAttached() const;
+
+  HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
+  HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id,
+                                               HRESULT hrStatus) override;
+  HRESULT STDMETHODCALLTYPE ModuleUnloadFinished(ModuleID module_id,
+                                                 HRESULT hrStatus) override;
+  HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID functionId,
+                                                  BOOL fIsSafeToBlock) override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,

@@ -37,11 +37,29 @@ std::wstring toWString(const std::string &str) {
     return wstr;
   }
 }
+std::wstring toWString(const std::u16string &ustr) {
+  if (sizeof(char16_t) == sizeof(wchar_t)) {
+    std::wstring wstr(reinterpret_cast<const wchar_t *>(ustr.c_str()));
+    return wstr;
+  } else {
+    return toWString(miniutf::to_utf8(ustr));
+  }
+}
 std::wstring toWString(const std::wstring &wstr) { return wstr; }
 std::wstring toWString(int x) {
   std::wstringstream s;
   s << x;
   return s.str();
+}
+
+std::u16string toU16String(const std::wstring &wstr) {
+  if (sizeof(char16_t) == sizeof(wchar_t)) {
+    std::u16string ustr(reinterpret_cast<const char16_t *>(wstr.c_str()));
+    return ustr;
+  } else {
+    std::u32string ustr(reinterpret_cast<const char32_t *>(wstr.c_str()));
+    return miniutf::to_utf16(miniutf::to_utf8(ustr));
+  }
 }
 
 template <typename Out>

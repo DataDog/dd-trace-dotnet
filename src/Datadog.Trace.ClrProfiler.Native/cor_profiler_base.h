@@ -10,7 +10,9 @@ namespace trace {
 class CorProfilerBase : public ICorProfilerCallback8 {
  private:
   std::atomic<int> ref_count_;
-  ICorProfilerInfo8* info_;
+
+ protected:
+  ICorProfilerInfo3* info_;
 
  public:
   CorProfilerBase();

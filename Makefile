@@ -65,5 +65,5 @@ Samples.ConsoleCore: samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/Sampl
 		    CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8} \
 		    CORECLR_PROFILER_PATH=/project/src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so \
 		    DD_INTEGRATIONS='/project/integrations.json;/project/test-integrations.json' \
-		dotnet run --framework netcoreapp2.0 --project /project/samples/Samples.ConsoleCore/Samples.ConsoleCore.csproj \
+		dotnet /project/samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/Samples.ConsoleCore.dll \
 		"

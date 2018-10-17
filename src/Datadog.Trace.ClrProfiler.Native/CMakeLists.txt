@@ -8,11 +8,14 @@ add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
 add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
     class_factory.cpp
+    clr_helpers.cpp
     cor_profiler.cpp
     cor_profiler_base.cpp
+    il_rewriter.cpp
     integration.cpp
     integration_loader.cpp
     interop.cpp
+    metadata_builder.cpp
     miniutf.cpp
     logging.cpp
     util.cpp
