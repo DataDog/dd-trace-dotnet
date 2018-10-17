@@ -7,7 +7,7 @@ namespace Datadog.Trace.TestHelpers
 {
     public class ProfilerHelper
     {
-        private const string DotNetCoreExecutable = "dotnet.exe";
+        private static string dotNetCoreExecutable = Environment.OSVersion.Platform == PlatformID.Win32NT ? "dotnet.exe" : "dotnet";
 
         public static Process StartProcessWithProfiler(
             string appPath,
@@ -42,13 +42,13 @@ namespace Datadog.Trace.TestHelpers
             if (coreClr)
             {
                 // .NET Core
-                startInfo = new ProcessStartInfo(DotNetCoreExecutable, $"{appPath} {arguments ?? string.Empty}");
+                startInfo = new ProcessStartInfo(dotNetCoreExecutable, $"{appPath} {arguments ?? string.Empty}");
 
                 startInfo.EnvironmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
                 startInfo.EnvironmentVariables["CORECLR_PROFILER"] = profilerClsid;
                 startInfo.EnvironmentVariables["CORECLR_PROFILER_PATH"] = profilerDllPath;
 
-                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = DotNetCoreExecutable;
+                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = dotNetCoreExecutable;
             }
             else
             {

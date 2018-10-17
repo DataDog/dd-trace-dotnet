@@ -79,16 +79,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public string GetSampleApplicationPath()
         {
             string appFileName = BuildParameters.CoreClr ? $"Samples.{SampleAppName}.dll" : $"Samples.{SampleAppName}.exe";
-            return Path.Combine(
+            string binDir = Path.Combine(
                 GetSolutionDirectory(),
                 "samples",
                 $"Samples.{SampleAppName}",
-                "bin",
-                GetPlatform(),
-                BuildParameters.Configuration,
-                BuildParameters.TargetFramework,
-                GetRuntimeIdentifier(),
-                appFileName);
+                "bin");
+
+            if (GetOS() == "win")
+            {
+                return Path.Combine(
+                                binDir,
+                                GetPlatform(),
+                                BuildParameters.Configuration,
+                                BuildParameters.TargetFramework,
+                                GetRuntimeIdentifier(),
+                                appFileName);
+            }
+            else
+            {
+                return Path.Combine(
+                                binDir,
+                                BuildParameters.Configuration,
+                                BuildParameters.TargetFramework,
+                                GetRuntimeIdentifier(),
+                                "publish",
+                                appFileName);
+            }
         }
 
         public Process StartSample(int traceAgentPort, string arguments = null)

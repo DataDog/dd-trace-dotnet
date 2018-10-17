@@ -1,8 +1,6 @@
 #ifndef DD_CLR_PROFILER_PAL_H_
 #define DD_CLR_PROFILER_PAL_H_
 
-#include <stdlib.h>
-
 #ifdef _WIN32
 
 #include <process.h>
