@@ -8,3 +8,7 @@ jobs:
           name: Build projects
           command: |
             make build
+      - run:
+          name: Build native
+          command: |
+            make native
