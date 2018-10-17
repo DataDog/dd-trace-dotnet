@@ -60,11 +60,11 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
       }
     }
 
-    Info("loaded integrations: {}", j.dump());
+    Info("loaded integrations:", j.dump());
   } catch (const json::parse_error& e) {
-    Warn("invalid integrations: {}", e.what());
+    Warn("invalid integrations:", e.what());
   } catch (const json::type_error& e) {
-    Warn("invalid integrations: {}", e.what());
+    Warn("invalid integrations:", e.what());
   } catch (...) {
     auto ex = std::current_exception();
     try {
@@ -89,7 +89,7 @@ std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src) {
   // first get the name, which is required
   auto name = ToWString(src.value("name", ""));
   if (name.empty()) {
-    Warn("integration name is missing for integration: {}", src.dump());
+    Warn("integration name is missing for integration:", src.dump());
     return std::make_pair<Integration, bool>({}, false);
   }
 

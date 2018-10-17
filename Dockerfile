@@ -23,7 +23,7 @@ RUN sudo apt-get install -y \
     libcurl4-openssl-dev \
     libssl-dev \
     libnuma-dev \
-    libkrb5-dev 
+    libkrb5-dev
 
 RUN cd /usr/lib/llvm-3.9/lib && ln -s ../../x86_64-linux-gnu/liblldb-3.9.so.1 liblldb-3.9.so.1
 
@@ -53,18 +53,10 @@ RUN apt-get remove -y cmake && \
 ENV CXX=clang++-3.9
 ENV CC=clang-3.9
 
-# - fmt
-RUN cd /opt && git clone --branch 5.2.1 https://github.com/fmtlib/fmt.git
-RUN cd /opt/fmt && cmake -G Ninja . && cmake --build .
-
-# - spdlog
-RUN cd /opt && git clone --branch v1.2.0 https://github.com/gabime/spdlog.git
-RUN cd /opt/spdlog && cmake -G Ninja . && cmake --build .
-
 # - nlohmann/json
 RUN cd /opt && git clone --branch v3.3.0 https://github.com/nlohmann/json.git
 RUN cd /opt/json && cmake -G Ninja . && cmake --build .
 
 # - re2
 RUN cd /opt && git clone --branch 2018-10-01 https://github.com/google/re2.git
-RUN cd /opt/re2 && env CXXFLAGS="-O3 -g -fPIC" make && make install
+RUN cd /opt/re2 && env CXXFLAGS="-O3 -g -fPIC" make
