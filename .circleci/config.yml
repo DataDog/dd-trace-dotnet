@@ -1,31 +1,32 @@
 version: 2
 jobs:
   build:
+    working_directory: /app
     docker:
-      - image: datadog/docker-library:ddtrace_csharp_0_1_1
-      - image: datadog/docker-dd-agent
-        env:
-          - DD_APM_ENABLED=true
-          - DD_BIND_HOST=0.0.0.0
-          - DD_API_KEY=invalid_key_but_this_is_fine
-      - image: microsoft/mssql-server-linux:2017-CU3
-        env:
-          - ACCEPT_EULA=Y
-          - SA_PASSWORD=password!123
+      - image: docker:17.05.0-ce-git
     steps:
       - checkout
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - v1-{{ .Branch }}
+          paths:
+            - /caches/coreclr.tar
       - run:
-          name: Run clang-format
+          name: Load Docker image layer cache
           command: |
-            find ./ -iname *.h -o -iname *.cpp | while read fname; do 
-              changes=$(clang-format-6.0 -output-replacements-xml $fname | grep -c "<replacement " || true)
-              if [ $changes != 0 ]
-              then
-                clang-format-6.0 -output-replacements-xml $fname
-                echo "$fname did not pass clang-format, consider running: find ./ -iname *.h -o -iname *.cpp | xargs clang-format-6.0 -i"
-                exit 1
-              fi
-            done
-      - run: git submodule init
-      - run: git submodule update
-      - run: ./build.sh
+            set +o pipefail
+            docker load -i /caches/coreclr.tar | true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from=app -t coreclr:latest .
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/coreclr.tar coreclr
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/coreclr.tar
