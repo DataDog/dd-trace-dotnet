@@ -149,8 +149,8 @@ struct MethodReference {
                   std::wstring method_name,
                   const std::vector<BYTE>& method_signature)
       : assembly(assembly_name),
-        type_name(std::move(type_name)),
-        method_name(std::move(method_name)),
+        type_name(type_name),
+        method_name(method_name),
         method_signature(method_signature) {}
 
   inline std::wstring get_type_cache_key() const {
@@ -178,9 +178,9 @@ struct MethodReplacement {
   MethodReplacement(MethodReference caller_method,
                     MethodReference target_method,
                     MethodReference wrapper_method)
-      : caller_method(std::move(caller_method)),
-        target_method(std::move(target_method)),
-        wrapper_method(std::move(wrapper_method)) {}
+      : caller_method(caller_method),
+        target_method(target_method),
+        wrapper_method(wrapper_method) {}
 
   inline bool operator==(const MethodReplacement& other) const {
     return caller_method == other.caller_method &&
@@ -197,8 +197,8 @@ struct Integration {
 
   Integration(std::wstring integration_name,
               std::vector<MethodReplacement> method_replacements)
-      : integration_name(std::move(integration_name)),
-        method_replacements(std::move(method_replacements)) {}
+      : integration_name(integration_name),
+        method_replacements(method_replacements) {}
 
   inline bool operator==(const Integration& other) const {
     return integration_name == other.integration_name &&

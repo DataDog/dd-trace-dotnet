@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 3.8)
+cmake_policy(SET CMP0015 NEW)
 
 project("Datadog.Trace.ClrProfiler.Native" VERSION 0.4.0)
 
@@ -23,10 +24,10 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
 )
 set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
 target_include_directories("Datadog.Trace.ClrProfiler.Native.static"
-    PUBLIC $<BUILD_INTERFACE:/opt/coreclr/src/pal/inc/rt>
-    PUBLIC $<BUILD_INTERFACE:/opt/coreclr/src/pal/prebuilt/inc>
-    PUBLIC $<BUILD_INTERFACE:/opt/coreclr/src/pal/inc>
-    PUBLIC $<BUILD_INTERFACE:/opt/coreclr/src/inc>
+    PUBLIC ../../lib/coreclr/src/pal/inc/rt
+    PUBLIC ../../lib/coreclr/src/pal/prebuilt/inc
+    PUBLIC ../../lib/coreclr/src/pal/inc
+    PUBLIC ../../lib/coreclr/src/inc
     PUBLIC $<BUILD_INTERFACE:/opt/re2>
     PUBLIC $<BUILD_INTERFACE:/opt/json/include>
 )

@@ -18,7 +18,7 @@ build: $(SAMPLE_FILES) $(SRC_FILES) $(TEST_FILES)
 NATIVE_FILES := $(shell find $(ROOT_DIR)/src/Datadog.Trace.ClrProfiler.Native -type f -not -path '$(ROOT_DIR)/src/Datadog.Trace.ClrProfiler.Native/bin*' -not -path '$(ROOT_DIR)/src/Datadog.Trace.ClrProfiler.Native/obj*')
 
 native: /tmp/docker-coreclr $(NATIVE_FILES)
-	docker run -v $(ROOT_DIR):/project coreclr:latest \
+	docker run -v $(ROOT_DIR):/project microsoft/dotnet:2.1-sdk \
 		sh -c 'cd /project/src/Datadog.Trace.ClrProfiler.Native/ && mkdir -p obj/Debug/x64 && cd obj/Debug/x64 && cmake ../../.. && make'
 	mkdir -p src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/
 	cp src/Datadog.Trace.ClrProfiler.Native/obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/Datadog.Trace.ClrProfiler.Native.so

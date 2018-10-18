@@ -28,10 +28,10 @@ class MetadataBuilder {
                   ComPtr<IMetaDataAssemblyEmit> assembly_emit)
       : metadata_(metadata),
         module_(module),
-        metadata_import_(std::move(metadata_import)),
-        metadata_emit_(std::move(metadata_emit)),
-        assembly_import_(std::move(assembly_import)),
-        assembly_emit_(std::move(assembly_emit)) {}
+        metadata_import_(metadata_import),
+        metadata_emit_(metadata_emit),
+        assembly_import_(assembly_import),
+        assembly_emit_(assembly_emit) {}
 
   HRESULT StoreWrapperMethodRef(
       const MethodReplacement& method_replacement) const;

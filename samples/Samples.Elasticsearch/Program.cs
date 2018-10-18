@@ -11,8 +11,8 @@ namespace Samples.Elasticsearch
     {
         static void Main(string[] args)
         {
-            var localhost = new Uri("http://localhost:9200");
-            var settings = new ConnectionSettings(localhost).DefaultIndex("elastic-net-example");
+            var host = new Uri("http://" + Host() + ":9200");
+            var settings = new ConnectionSettings(host).DefaultIndex("elastic-net-example");
             var elastic = new ElasticClient(settings);
 
             var commands = new List<Func<object>>().
@@ -45,6 +45,11 @@ namespace Samples.Elasticsearch
                     Console.WriteLine($"Exception: {ex.Message}");
                 }
             }
+        }
+
+        private static string Host()
+        {
+            return Environment.GetEnvironmentVariable("ELASTICSEARCH_HOST") ?? "localhost";
         }
 
         private static List<Func<object>> DocumentCommands(ElasticClient elastic)

@@ -25,10 +25,10 @@ class ModuleMetadata {
                  ComPtr<IMetaDataEmit2> metadata_emit,
                  std::wstring assembly_name,
                  std::vector<Integration> integrations)
-      : metadata_import(std::move(metadata_import)),
-        metadata_emit(std::move(metadata_emit)),
-        assemblyName(std::move(assembly_name)),
-        integrations(std::move(integrations)) {}
+      : metadata_import(metadata_import),
+        metadata_emit(metadata_emit),
+        assemblyName(assembly_name),
+        integrations(integrations) {}
 
   bool TryGetWrapperMemberRef(const std::wstring& keyIn,
                               mdMemberRef& valueOut) const {

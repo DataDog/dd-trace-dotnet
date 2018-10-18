@@ -47,11 +47,6 @@ RUN mkdir -p /opt
 ENV CXX=clang++-3.9
 ENV CC=clang-3.9
 
-# - coreclr
-RUN cd /opt && git clone --depth 1 --branch v2.1.5 https://github.com/dotnet/coreclr.git
-# RUN cd /opt/coreclr && ./build.sh -configureonly
-# RUN cd /opt/coreclr && ./build.sh -skipconfigure -skipmscorlib -skiptests -skipnuget -skiprestoreoptdata -skipcrossgen -skiprestore -disableoss -cross -crosscomponent
-
 # - nlohmann/json
 RUN cd /opt && git clone --depth 1 --branch v3.3.0 https://github.com/nlohmann/json.git
 # RUN cd /opt/json && cmake -G Ninja . && cmake --build .

@@ -27,9 +27,7 @@ class Enumerator {
  public:
   Enumerator(std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback,
              std::function<void(HCORENUM)> close)
-      : callback_(std::move(callback)),
-        close_(std::move(close)),
-        ptr_(nullptr) {}
+      : callback_(callback), close_(close), ptr_(nullptr) {}
 
   Enumerator(const Enumerator& other) = default;
 
@@ -173,8 +171,7 @@ struct AssemblyInfo {
   const std::wstring name;
 
   AssemblyInfo() : id(0), name(L"") {}
-  AssemblyInfo(AssemblyID id, std::wstring name)
-      : id(id), name(std::move(name)) {}
+  AssemblyInfo(AssemblyID id, std::wstring name) : id(id), name(name) {}
 
   bool is_valid() const { return id != 0; }
 };
@@ -187,10 +184,7 @@ struct ModuleInfo {
 
   ModuleInfo() : id(0), path(L""), assembly({}), flags(0) {}
   ModuleInfo(ModuleID id, std::wstring path, AssemblyInfo assembly, DWORD flags)
-      : id(id),
-        path(std::move(path)),
-        assembly(std::move(assembly)),
-        flags(flags) {}
+      : id(id), path(path), assembly(assembly), flags(flags) {}
 
   bool IsValid() const { return id != 0; }
 
@@ -204,7 +198,7 @@ struct TypeInfo {
   const std::wstring name;
 
   TypeInfo() : id(0), name(L"") {}
-  TypeInfo(mdToken id, std::wstring name) : id(id), name(std::move(name)) {}
+  TypeInfo(mdToken id, std::wstring name) : id(id), name(name) {}
 
   bool IsValid() const { return id != 0; }
 };
@@ -218,10 +212,7 @@ struct FunctionInfo {
   FunctionInfo() : id(0), name(L""), type({}), signature() {}
   FunctionInfo(mdToken id, std::wstring name, TypeInfo type,
                MethodSignature signature)
-      : id(id),
-        name(std::move(name)),
-        type(std::move(type)),
-        signature(signature) {}
+      : id(id), name(name), type(type), signature(signature) {}
 
   bool IsValid() const { return id != 0; }
 };
