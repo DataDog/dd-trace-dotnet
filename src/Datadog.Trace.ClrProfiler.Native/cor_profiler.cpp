@@ -174,7 +174,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID module_id,
                                                             HRESULT hrStatus) {
-  Info("CorProfiler::ModuleUnloadFinished", module_id);
+  Info("CorProfiler::ModuleUnloadFinished", uint64_t(module_id));
   {
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
     if (module_id_to_info_map_.count(module_id) > 0) {
