@@ -7,8 +7,8 @@ jobs:
       - run:
           name: Build projects
           command: |
-            make build
+            docker-compose run build
       - run:
           name: Build native
           command: |
-            make native
+            docker-compose run Datadog.Trace.ClrProfiler.Native
