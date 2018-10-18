@@ -36,7 +36,7 @@ services:
       context: ./
       dockerfile: ./docker/native.dockerfile
     image: datadog-native
-    command: bash -c "cd /project/src/Datadog.Trace.ClrProfiler.Native/ && mkdir -p obj/Debug/x64 && cd obj/Debug/x64 && cmake ../../.. && make"
+    command: /project/docker/Datadog.Trace.ClrProfiler.Native.sh
     volumes:
     - ./:/project
 
@@ -90,7 +90,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it redis:6379 -- wait-for-it elasticsearch:9200 -- wait-for-it sqlserver:1433 -- dotnet test --verbosity minimal /project/test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj"
+    command: /project/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
     volumes:
     - ./:/project
     environment:
