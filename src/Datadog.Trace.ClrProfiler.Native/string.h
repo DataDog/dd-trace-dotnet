@@ -1,7 +1,7 @@
 #ifndef DD_CLR_PROFILER_STRING_H_
 #define DD_CLR_PROFILER_STRING_H_
 
-#include <pal.h>
+#include <corhlpr.h>
 #include <sstream>
 #include <string>
 
