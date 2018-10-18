@@ -14,32 +14,34 @@
 
 #endif
 
+#include "string.h"
+
 namespace trace {
 
-inline std::string DatadogLogFilePath() {
+inline WSTRING DatadogLogFilePath() {
 #ifdef _WIN32
   std::string programdata(getenv("PROGRAMDATA"));
   if (programdata.empty()) {
     programdata = "C:\\ProgramData";
   }
-  return programdata + "\\Datadog\\logs\\dotnet-profiler.log";
+  return ToWSTRING(programdata + "\\Datadog\\logs\\dotnet-profiler.log");
 #else
-  return "/var/log/datadog/dotnet-profiler.log";
+  return ToWSTRING("/var/log/datadog/dotnet-profiler.log");
 #endif
 }
 
-inline std::wstring GetCurrentProcessName() {
+inline WSTRING GetCurrentProcessName() {
 #ifdef _WIN32
-  std::wstring current_process_path(260, 0);
+  WSTRING current_process_path(260, 0);
   const DWORD len = GetModuleFileName(nullptr, current_process_path.data(),
                                       (DWORD)(current_process_path.size()));
   current_process_path = current_process_path.substr(0, len);
   return std::filesystem::path(current_process_path).filename();
 #else
-  std::wfstream comm("/proc/self/comm");
-  std::wstring name;
+  std::fstream comm("/proc/self/comm");
+  std::string name;
   std::getline(comm, name);
-  return name;
+  return ToWSTRING(name);
 #endif
 }
 

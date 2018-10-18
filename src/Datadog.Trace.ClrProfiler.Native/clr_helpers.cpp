@@ -16,15 +16,15 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
   if (FAILED(hr) || name_len == 0) {
     return {};
   }
-  return {assembly_id, ToWString(name)};
+  return {assembly_id, WSTRING(name)};
 }
 
-std::wstring GetAssemblyName(
+WSTRING GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   mdAssembly current = mdAssemblyNil;
   auto hr = assembly_import->GetAssemblyFromScope(&current);
   if (FAILED(hr)) {
-    return L"";
+    return ""_W;
   }
   WCHAR name[kNameMaxSize];
   DWORD name_len = 0;
@@ -34,14 +34,13 @@ std::wstring GetAssemblyName(
                                          name, kNameMaxSize, &name_len,
                                          &assembly_metadata, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
-    return L"";
+    return ""_W;
   }
-  return ToWString(name);
+  return WSTRING(name);
 }
 
-std::wstring GetAssemblyName(
-    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-    const mdAssemblyRef& assembly_ref) {
+WSTRING GetAssemblyName(const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+                        const mdAssemblyRef& assembly_ref) {
   WCHAR name[kNameMaxSize];
   DWORD name_len = 0;
   ASSEMBLYMETADATA assembly_metadata{};
@@ -50,9 +49,9 @@ std::wstring GetAssemblyName(
       assembly_ref, nullptr, nullptr, name, kNameMaxSize, &name_len,
       &assembly_metadata, nullptr, nullptr, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
-    return L"";
+    return ""_W;
   }
-  return ToWString(name);
+  return WSTRING(name);
 }
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
@@ -84,7 +83,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
         return {};
       }
       auto generic_info = GetFunctionInfo(metadata_import, parent_token);
-      std::memcpy(function_name, ToLPCWSTR(generic_info.name),
+      std::memcpy(function_name, generic_info.name.c_str(),
                   sizeof(WCHAR) * (generic_info.name.length() + 1));
       function_name_len = (DWORD)(generic_info.name.length() + 1);
     } break;
@@ -103,7 +102,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
 
   // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
 
-  return {token, ToWString(function_name),
+  return {token, WSTRING(function_name),
           GetTypeInfo(metadata_import, parent_token),
           MethodSignature(signature_data)};
 }
@@ -121,7 +120,7 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
   if (FAILED(hr) || module_path_len == 0) {
     return {};
   }
-  return {module_id, ToWString(module_path), GetAssemblyInfo(info, assembly_id),
+  return {module_id, WSTRING(module_path), GetAssemblyInfo(info, assembly_id),
           module_flags};
 }
 
@@ -160,12 +159,12 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
     return {};
   }
 
-  return {token, ToWString(type_name)};
+  return {token, WSTRING(type_name)};
 }
 
 mdAssemblyRef FindAssemblyRef(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-    const std::wstring& assembly_name) {
+    const WSTRING& assembly_name) {
   for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assembly_import)) {
     if (GetAssemblyName(assembly_import, assembly_ref) == assembly_name) {
       return assembly_ref;
@@ -176,7 +175,7 @@ mdAssemblyRef FindAssemblyRef(
 
 std::vector<Integration> FilterIntegrationsByCaller(
     const std::vector<Integration>& integrations,
-    const std::wstring& assembly_name) {
+    const WSTRING& assembly_name) {
   std::vector<Integration> enabled;
 
   for (auto& i : integrations) {

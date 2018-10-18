@@ -20,6 +20,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
     logging.cpp
     metadata_builder.cpp
     miniutf.cpp
+    string.cpp
     util.cpp
 )
 set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")

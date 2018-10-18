@@ -14,7 +14,7 @@
 
 namespace trace {
 
-const std::wstring kProcessesEnvironmentName = L"DD_PROFILER_PROCESSES";
+const WSTRING kProcessesEnvironmentName = "DD_PROFILER_PROCESSES"_W;
 
 const DWORD kEventMask =
     COR_PRF_MONITOR_JIT_COMPILATION |

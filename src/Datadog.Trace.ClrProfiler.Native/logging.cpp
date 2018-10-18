@@ -17,7 +17,7 @@ void Log(const std::string& str) {
   auto line = ss.str();
 
   try {
-    std::ofstream out(DatadogLogFilePath(), std::ios::app);
+    std::ofstream out(ToString(DatadogLogFilePath()), std::ios::app);
     out << line;
   } catch (...) {
   }

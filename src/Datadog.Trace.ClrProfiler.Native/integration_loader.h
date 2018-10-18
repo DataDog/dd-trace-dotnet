@@ -12,7 +12,7 @@
 
 namespace trace {
 
-const std::wstring kIntegrationsEnvironmentName = L"DD_INTEGRATIONS";
+const WSTRING kIntegrationsEnvironmentName = "DD_INTEGRATIONS"_W;
 
 using json = nlohmann::json;
 
@@ -20,8 +20,7 @@ using json = nlohmann::json;
 // in the DD_INTEGRATIONS environment variable
 std::vector<Integration> LoadIntegrationsFromEnvironment();
 // LoadIntegrationsFromFile loads the integrations from a file
-std::vector<Integration> LoadIntegrationsFromFile(
-    const std::wstring& file_path);
+std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path);
 // LoadIntegrationsFromFile loads the integrations from a stream
 std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream);
 

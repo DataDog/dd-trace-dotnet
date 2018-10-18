@@ -15,11 +15,12 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   assembly_metadata.usMinorVersion = assembly_ref.version.minor;
   assembly_metadata.usBuildNumber = assembly_ref.version.build;
   assembly_metadata.usRevisionNumber = assembly_ref.version.revision;
-  if (assembly_ref.locale == L"neutral") {
+  if (assembly_ref.locale == "neutral"_W) {
     assembly_metadata.szLocale = nullptr;
     assembly_metadata.cbLocale = 0;
   } else {
-    assembly_metadata.szLocale = const_cast<WCHAR*>(ToLPCWSTR(assembly_ref.locale));
+    assembly_metadata.szLocale =
+        const_cast<WCHAR*>(assembly_ref.locale.c_str());
     assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
   }
 
@@ -33,7 +34,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   mdAssemblyRef assembly_ref_out;
   const HRESULT hr = assembly_emit_->DefineAssemblyRef(
       &assembly_ref.public_key.data[0], public_key_size,
-      ToLPCWSTR(assembly_ref.name), &assembly_metadata,
+      assembly_ref.name.c_str(), &assembly_metadata,
       // hash blob
       nullptr,
       // cb of hash blob
@@ -67,8 +68,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
       method_replacement.wrapper_method.assembly.name) {
     // type is defined in this assembly
     hr = metadata_emit_->DefineTypeRefByName(
-        module_,
-        ToLPCWSTR(method_replacement.wrapper_method.type_name),
+        module_, method_replacement.wrapper_method.type_name.c_str(),
         &type_ref);
   } else {
     // type is defined in another assembly,
@@ -84,15 +84,13 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
 
     // search for an existing reference to the type
     hr = metadata_import_->FindTypeRef(
-        assembly_ref,
-        ToLPCWSTR(method_replacement.wrapper_method.type_name),
+        assembly_ref, method_replacement.wrapper_method.type_name.c_str(),
         &type_ref);
 
     if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
       // if typeRef not found, create a new one by emitting a metadata token
       hr = metadata_emit_->DefineTypeRefByName(
-          assembly_ref,
-          ToLPCWSTR(method_replacement.wrapper_method.type_name),
+          assembly_ref, method_replacement.wrapper_method.type_name.c_str(),
           &type_ref);
     }
   }
@@ -123,8 +121,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
   member_ref = mdMemberRefNil;
 
   hr = metadata_import_->FindMemberRef(
-      type_ref,
-      ToLPCWSTR(method_replacement.wrapper_method.method_name),
+      type_ref, method_replacement.wrapper_method.method_name.c_str(),
       method_replacement.wrapper_method.method_signature.data.data(),
       (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
       &member_ref);
@@ -132,8 +129,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
   if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
     // if memberRef not found, create it by emitting a metadata token
     hr = metadata_emit_->DefineMemberRef(
-        type_ref,
-        ToLPCWSTR(method_replacement.wrapper_method.method_name),
+        type_ref, method_replacement.wrapper_method.method_name.c_str(),
         method_replacement.wrapper_method.method_signature.data.data(),
         (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
         &member_ref);

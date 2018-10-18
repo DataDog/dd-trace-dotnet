@@ -168,22 +168,22 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
 
 struct AssemblyInfo {
   const AssemblyID id;
-  const std::wstring name;
+  const WSTRING name;
 
-  AssemblyInfo() : id(0), name(L"") {}
-  AssemblyInfo(AssemblyID id, std::wstring name) : id(id), name(name) {}
+  AssemblyInfo() : id(0), name(""_W) {}
+  AssemblyInfo(AssemblyID id, WSTRING name) : id(id), name(name) {}
 
   bool is_valid() const { return id != 0; }
 };
 
 struct ModuleInfo {
   const ModuleID id;
-  const std::wstring path;
+  const WSTRING path;
   const AssemblyInfo assembly;
   const DWORD flags;
 
-  ModuleInfo() : id(0), path(L""), assembly({}), flags(0) {}
-  ModuleInfo(ModuleID id, std::wstring path, AssemblyInfo assembly, DWORD flags)
+  ModuleInfo() : id(0), path(""_W), assembly({}), flags(0) {}
+  ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags)
       : id(id), path(path), assembly(assembly), flags(flags) {}
 
   bool IsValid() const { return id != 0; }
@@ -195,22 +195,22 @@ struct ModuleInfo {
 
 struct TypeInfo {
   const mdToken id;
-  const std::wstring name;
+  const WSTRING name;
 
-  TypeInfo() : id(0), name(L"") {}
-  TypeInfo(mdToken id, std::wstring name) : id(id), name(name) {}
+  TypeInfo() : id(0), name(""_W) {}
+  TypeInfo(mdToken id, WSTRING name) : id(id), name(name) {}
 
   bool IsValid() const { return id != 0; }
 };
 
 struct FunctionInfo {
   const mdToken id;
-  const std::wstring name;
+  const WSTRING name;
   const TypeInfo type;
   const MethodSignature signature;
 
-  FunctionInfo() : id(0), name(L""), type({}), signature() {}
-  FunctionInfo(mdToken id, std::wstring name, TypeInfo type,
+  FunctionInfo() : id(0), name(""_W), type({}), signature() {}
+  FunctionInfo(mdToken id, WSTRING name, TypeInfo type,
                MethodSignature signature)
       : id(id), name(name), type(type), signature(signature) {}
 
@@ -220,12 +220,10 @@ struct FunctionInfo {
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id);
 
-std::wstring GetAssemblyName(
-    const ComPtr<IMetaDataAssemblyImport>& assembly_import);
+WSTRING GetAssemblyName(const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
-std::wstring GetAssemblyName(
-    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-    const mdAssemblyRef& assembly_ref);
+WSTRING GetAssemblyName(const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+                        const mdAssemblyRef& assembly_ref);
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                              const mdToken& token);
@@ -237,13 +235,12 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
 
 mdAssemblyRef FindAssemblyRef(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-    const std::wstring& assembly_name);
+    const WSTRING& assembly_name);
 
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
 std::vector<Integration> FilterIntegrationsByCaller(
-    const std::vector<Integration>& integrations,
-    const std::wstring& assembly_name);
+    const std::vector<Integration>& integrations, const WSTRING& assembly_name);
 
 // FilterIntegrationsByTarget removes any integrations which have a target not
 // referenced by the module's assembly import

@@ -11,6 +11,7 @@
 #include "metadata_builder.h"
 #include "module_metadata.h"
 #include "pal.h"
+#include "util.h"
 
 namespace trace {
 
@@ -80,8 +81,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   if (module_info.IsWindowsRuntime() ||
-      module_info.assembly.name == L"mscorlib" ||
-      module_info.assembly.name == L"netstandard") {
+      module_info.assembly.name == "mscorlib"_W ||
+      module_info.assembly.name == "netstandard"_W) {
     // We cannot obtain writeable metadata interfaces on Windows Runtime modules
     // or instrument their IL. We must never try to add assembly references to
     // mscorlib or netstandard.

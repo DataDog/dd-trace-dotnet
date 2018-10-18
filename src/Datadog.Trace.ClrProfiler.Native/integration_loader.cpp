@@ -22,8 +22,7 @@ std::vector<Integration> LoadIntegrationsFromEnvironment() {
   return integrations;
 }
 
-std::vector<Integration> LoadIntegrationsFromFile(
-    const std::wstring& file_path) {
+std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path) {
   std::vector<Integration> integrations;
 
   try {
@@ -87,7 +86,7 @@ std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src) {
   }
 
   // first get the name, which is required
-  auto name = ToWString(src.value("name", ""));
+  auto name = ToWSTRING(src.value("name", ""));
   if (name.empty()) {
     Warn("integration name is missing for integration:", src.dump());
     return std::make_pair<Integration, bool>({}, false);
@@ -124,9 +123,9 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
     return {};
   }
 
-  auto assembly = ToWString(src.value("assembly", ""));
-  auto type = ToWString(src.value("type", ""));
-  auto method = ToWString(src.value("method", ""));
+  auto assembly = ToWSTRING(src.value("assembly", ""));
+  auto type = ToWSTRING(src.value("type", ""));
+  auto method = ToWSTRING(src.value("method", ""));
   auto raw_signature = src.value("signature", json::array());
   std::vector<BYTE> signature;
   if (raw_signature.is_array()) {

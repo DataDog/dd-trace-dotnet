@@ -165,6 +165,7 @@
     <ClInclude Include="miniutfdata.h" />
     <ClInclude Include="module_metadata.h" />
     <ClInclude Include="pal.h" />
+    <ClInclude Include="string.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
