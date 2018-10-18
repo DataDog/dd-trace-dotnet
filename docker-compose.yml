@@ -31,6 +31,15 @@ services:
     volumes:
     - ./:/project
 
+  package:
+    build:
+      context: ./
+      dockerfile: ./docker/package.dockerfile
+    image: datadog-package
+    command: /project/docker/package.sh
+    volumes:
+    - ./:/project
+
   Datadog.Trace.ClrProfiler.Native:
     build:
       context: ./

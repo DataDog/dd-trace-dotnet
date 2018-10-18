@@ -265,3 +265,5 @@ tools/
 .vscode/
 # Benchmark results
 BenchmarkDotNet.Artifacts/
+
+deploy/linux/
