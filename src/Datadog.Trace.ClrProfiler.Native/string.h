@@ -12,7 +12,7 @@ typedef std::basic_stringstream<WCHAR> WSTRINGSTREAM;
 
 std::string ToString(const std::string& str);
 std::string ToString(const char* str);
-std::string ToString(const unsigned int i);
+std::string ToString(const uint64_t i);
 std::string ToString(const WSTRING& wstr);
 
 WSTRING ToWSTRING(const std::string& str);

@@ -5,7 +5,7 @@ namespace trace {
 
 std::string ToString(const std::string& str) { return str; }
 std::string ToString(const char* str) { return std::string(str); }
-std::string ToString(const unsigned int i) {
+std::string ToString(const uint64_t i) {
   std::stringstream ss;
   ss << i;
   return ss.str();
