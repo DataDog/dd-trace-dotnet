@@ -30,7 +30,12 @@ namespace Samples.SqlServer
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             // use LocalDB for ease of use
-            optionsBuilder.UseSqlServer(@"Server=(localdb)\MSSQLLocalDB;Database=BlogDatabase;Integrated Security=true");
+            optionsBuilder.UseSqlServer(ConnectionString());
+        }
+
+        private static string ConnectionString()
+        {
+            return Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ?? @"Server=(localdb)\MSSQLLocalDB;Database=BlogDatabase;Integrated Security=true";
         }
     }
 }

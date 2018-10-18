@@ -3,12 +3,16 @@ jobs:
   build:
     machine: true
     steps:
-      - checkout
-      - run:
-          name: Build projects
-          command: |
-            docker-compose run build
-      - run:
-          name: Build native
-          command: |
-            docker-compose run Datadog.Trace.ClrProfiler.Native
+    - checkout
+    - run:
+        name: Build projects
+        command: |
+          docker-compose run build
+    - run:
+        name: Build native
+        command: |
+          docker-compose run Datadog.Trace.ClrProfiler.Native
+    - run:
+        name: Run integration tests
+        command: |
+          docker-compose run Datadog.Trace.ClrProfiler.IntegrationTests

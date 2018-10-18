@@ -14,6 +14,14 @@ services:
     environment:
     - discovery.type=single-node
 
+  sqlserver:
+    image: microsoft/mssql-server-linux:latest
+    ports:
+    - "1433:1433"
+    environment:
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=Strong!Passw0rd
+
   build:
     build:
       context: ./
@@ -56,7 +64,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "mkdir -p /var/log/datadog ; wait-for-it redis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/Release/netcoreapp2.0/publish/Samples.Elasticsearch.dll ; cat /var/log/datadog/dotnet-profiler.log"
+    command: bash -c "mkdir -p /var/log/datadog ; wait-for-it elasticsearch:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/Release/netcoreapp2.0/publish/Samples.Elasticsearch.dll ; cat /var/log/datadog/dotnet-profiler.log"
     volumes:
     - ./:/project
     environment:
@@ -64,15 +72,32 @@ services:
     depends_on:
     - elasticsearch
 
+  Samples.SqlServer:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "mkdir -p /var/log/datadog ; wait-for-it sqlserver:1433 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/Release/netcoreapp2.0/publish/Samples.SqlServer.dll ; cat /var/log/datadog/dotnet-profiler.log"
+    volumes:
+    - ./:/project
+    environment:
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
+    depends_on:
+    - sqlserver
+
   Datadog.Trace.ClrProfiler.IntegrationTests:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "mkdir -p /var/log/datadog ; wait-for-it redis:6379 -- dotnet test /project/test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj  ; cat /var/log/datadog/dotnet-profiler.log"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it redis:6379 -- wait-for-it elasticsearch:9200 -- wait-for-it sqlserver:1433 -- dotnet test --verbosity minimal /project/test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj"
     volumes:
     - ./:/project
     environment:
     - REDIS_HOST=redis
+    - ELASTICSEARCH_HOST=elasticsearch
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
     depends_on:
     - redis
+    - elasticsearch
+    - sqlserver
