@@ -32,7 +32,11 @@ namespace Datadog.Trace.Agent
 
         public async Task FlushAndCloseAsync()
         {
-            _processExit.SetResult(true);
+            if (!_processExit.TrySetResult(true))
+            {
+                return;
+            }
+
             await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)));
             if (!_flushTask.IsCompleted)
             {

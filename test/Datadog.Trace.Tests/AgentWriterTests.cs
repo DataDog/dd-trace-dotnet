@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,6 +36,14 @@ namespace Datadog.Trace.Tests
             _agentWriter.WriteTrace(trace);
             await Task.Delay(TimeSpan.FromSeconds(1.5));
             _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
+        }
+
+        [Fact]
+        public async Task FlushTwice()
+        {
+            var w = new AgentWriter(_api.Object);
+            await w.FlushAndCloseAsync();
+            await w.FlushAndCloseAsync();
         }
     }
 }
