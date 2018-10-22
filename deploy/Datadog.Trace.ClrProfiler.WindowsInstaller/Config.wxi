@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <Include>
-  <?define BaseProductName = ".NET Tracing" ?>
+  <?define BaseProductName = ".NET Tracer" ?>
   <?define ArpManufacturer = "Datadog, Inc." ?>
   <?define Company = "Datadog" ?>
   <?define ManagedDllPath = "$(sys.CURRENTDIR)..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\$(var.Configuration)\net45" ?>
