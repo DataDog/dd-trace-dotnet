@@ -65,7 +65,7 @@ namespace Datadog.Trace.Agent
             }
             catch (Exception ex)
             {
-                _log.ErrorException("An error occured while sending serializing traces", ex);
+                _log.ErrorException("An error occurred while serializing traces", ex);
                 return;
             }
 
@@ -86,30 +86,16 @@ namespace Datadog.Trace.Agent
                 {
                     if (retryCount >= retryLimit)
                     {
-                        _log.ErrorException("An error occured while sending traces to the agent at {Endpoint}", ex, endpoint);
+                        _log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}", ex, endpoint);
                         return;
                     }
                 }
 
-                await Sleep(sleepDuration);
+                await Task.Delay(sleepDuration);
 
                 retryCount++;
                 sleepDuration *= 2;
             }
-        }
-
-        private Task<bool> Sleep(int milliseconds)
-        {
-            var tcs = new TaskCompletionSource<bool>();
-            var timer = new Timer();
-            timer.Elapsed += (obj, args) =>
-            {
-                tcs.TrySetResult(true);
-            };
-            timer.Interval = milliseconds;
-            timer.AutoReset = false;
-            timer.Start();
-            return tcs.Task;
         }
     }
 }
