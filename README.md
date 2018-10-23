@@ -2,10 +2,13 @@
 
 **NOTE: The .NET Tracer is currently in Public Beta.**
 
-Environment|Build Status
---|--
-Windows|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=1)
-Linux|[![Build status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=2)
+OS|Tests|Status
+--|--|--
+Windows|C# unit tests|[![Build Status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows/windows-unit-tests-managed)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=1)
+Windows|C++ unit tests|[![Build Status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows/windows-unit-tests-native)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=11)
+Windows|integration tests|[![Build Status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows/windows-integration-tests)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=5)
+Linux|C# unit tests|[![Build Status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux/linux-unit-tests-managed)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=2)
+Linux|integration tests|[![CircleCI](https://circleci.com/gh/DataDog/dd-trace-csharp/tree/master.svg?style=svg)](https://circleci.com/gh/DataDog/dd-trace-csharp/tree/master)
 
 ## Installation and Usage
 
