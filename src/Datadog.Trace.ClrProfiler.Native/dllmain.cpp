@@ -15,14 +15,14 @@ const IID IID_IClassFactory = {
     0x0000,
     {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
+extern "C" {
 BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_call,
                                LPVOID lpReserved) {
   return TRUE;
 }
 
-extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid,
-                                                       REFIID riid,
-                                                       LPVOID* ppv) {
+HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID riid,
+                                            LPVOID* ppv) {
   // {846F5F1C-F9AE-4B07-969E-05C26BC060D8}
   const GUID CLSID_CorProfiler = {
       0x846f5f1c,
@@ -43,4 +43,5 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid,
   return factory->QueryInterface(riid, ppv);
 }
 
-extern "C" HRESULT STDMETHODCALLTYPE DllCanUnloadNow() { return S_OK; }
+HRESULT STDMETHODCALLTYPE DllCanUnloadNow() { return S_OK; }
+}

@@ -40,7 +40,7 @@ if (Test-Path $vcpkgExe) {
     }
 }
 
-$packages = @("fmt", "spdlog", "nlohmann-json")
+$packages = @("fmt", "spdlog", "nlohmann-json", "re2")
 $platforms = @("x86", "x64")
 
 foreach ($platform in $platforms) {

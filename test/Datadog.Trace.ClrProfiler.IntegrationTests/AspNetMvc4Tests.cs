@@ -26,6 +26,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
+            if (Environment.OSVersion.Platform != PlatformID.Win32Windows)
+            {
+                return;
+            }
+
             using (var agent = new MockTracerAgent(AgentPort))
             {
                 using (var iis = StartIISExpress(AgentPort, Port))

@@ -1,20 +1,18 @@
 #ifndef DD_CLR_PROFILER_INTEGRATION_LOADER_H_
 #define DD_CLR_PROFILER_INTEGRATION_LOADER_H_
 
-#include <codecvt>
 #include <fstream>
 #include <locale>
-#include <optional>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
-#include <nlohmann/json.hpp>
 
 #include "integration.h"
 #include "macros.h"
 
 namespace trace {
 
-const std::wstring kIntegrationsEnvironmentName = L"DD_INTEGRATIONS";
+const WSTRING kIntegrationsEnvironmentName = "DD_INTEGRATIONS"_W;
 
 using json = nlohmann::json;
 
@@ -22,15 +20,14 @@ using json = nlohmann::json;
 // in the DD_INTEGRATIONS environment variable
 std::vector<Integration> LoadIntegrationsFromEnvironment();
 // LoadIntegrationsFromFile loads the integrations from a file
-std::vector<Integration> LoadIntegrationsFromFile(
-    const std::wstring& file_path);
+std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path);
 // LoadIntegrationsFromFile loads the integrations from a stream
 std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream);
 
 namespace {
 
-std::optional<Integration> IntegrationFromJson(const json::value_type& src);
-std::optional<MethodReplacement> MethodReplacementFromJson(
+std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src);
+std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     const json::value_type& src);
 MethodReference MethodReferenceFromJson(const json::value_type& src);
 

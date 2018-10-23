@@ -7,30 +7,30 @@
 #include "clr_helpers.h"
 #include "com_ptr.h"
 #include "integration.h"
+#include "string.h"
 
 namespace trace {
 
 class ModuleMetadata {
  private:
-  std::unordered_map<std::wstring, mdMemberRef> wrapper_refs{};
-  std::unordered_map<std::wstring, mdTypeRef> wrapper_parent_type{};
+  std::unordered_map<WSTRING, mdMemberRef> wrapper_refs{};
+  std::unordered_map<WSTRING, mdTypeRef> wrapper_parent_type{};
 
  public:
   const ComPtr<IMetaDataImport2> metadata_import{};
   const ComPtr<IMetaDataEmit2> metadata_emit{};
-  std::wstring assemblyName = L"";
+  WSTRING assemblyName = ""_W;
   std::vector<Integration> integrations = {};
 
   ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
-                 ComPtr<IMetaDataEmit2> metadata_emit,
-                 std::wstring assembly_name,
+                 ComPtr<IMetaDataEmit2> metadata_emit, WSTRING assembly_name,
                  std::vector<Integration> integrations)
-      : metadata_import(std::move(metadata_import)),
-        metadata_emit(std::move(metadata_emit)),
-        assemblyName(std::move(assembly_name)),
-        integrations(std::move(integrations)) {}
+      : metadata_import(metadata_import),
+        metadata_emit(metadata_emit),
+        assemblyName(assembly_name),
+        integrations(integrations) {}
 
-  bool TryGetWrapperMemberRef(const std::wstring& keyIn,
+  bool TryGetWrapperMemberRef(const WSTRING& keyIn,
                               mdMemberRef& valueOut) const {
     const auto search = wrapper_refs.find(keyIn);
 
@@ -42,7 +42,7 @@ class ModuleMetadata {
     return false;
   }
 
-  bool TryGetWrapperParentTypeRef(const std::wstring& keyIn,
+  bool TryGetWrapperParentTypeRef(const WSTRING& keyIn,
                                   mdTypeRef& valueOut) const {
     const auto search = wrapper_parent_type.find(keyIn);
 
@@ -54,13 +54,11 @@ class ModuleMetadata {
     return false;
   }
 
-  void SetWrapperMemberRef(const std::wstring& keyIn,
-                           const mdMemberRef valueIn) {
+  void SetWrapperMemberRef(const WSTRING& keyIn, const mdMemberRef valueIn) {
     wrapper_refs[keyIn] = valueIn;
   }
 
-  void SetWrapperParentTypeRef(const std::wstring& keyIn,
-                               const mdTypeRef valueIn) {
+  void SetWrapperParentTypeRef(const WSTRING& keyIn, const mdTypeRef valueIn) {
     wrapper_parent_type[keyIn] = valueIn;
   }
 

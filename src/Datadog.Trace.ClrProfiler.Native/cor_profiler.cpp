@@ -1,39 +1,36 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full
-// license information.
+#include "cor_profiler.h"
 
-#include <fstream>
+#include <corprof.h>
 #include <string>
-#include <vector>
+#include "corhlpr.h"
 
 #include "clr_helpers.h"
-#include "com_ptr.h"
-#include "cor_profiler.h"
 #include "il_rewriter.h"
 #include "integration_loader.h"
 #include "logging.h"
-#include "macros.h"
 #include "metadata_builder.h"
 #include "module_metadata.h"
+#include "pal.h"
 #include "util.h"
 
 namespace trace {
 
 CorProfiler* profiler = nullptr;
 
-CorProfiler::CorProfiler()
-    : integrations_(LoadIntegrationsFromEnvironment()), logger_(GetLogger()) {}
+CorProfiler::CorProfiler() : integrations_(LoadIntegrationsFromEnvironment()) {
+  Info("CorProfiler::CorProfiler");
+}
 
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
 
   const auto process_name = GetCurrentProcessName();
-  logger_->info("Initialize() called for {}", process_name);
+  Info("Initialize() called for", process_name);
 
   if (integrations_.empty()) {
-    logger_->warn("Profiler disabled: {} environment variable not set.",
-                  kIntegrationsEnvironmentName);
+    Warn("Profiler disabled:", kIntegrationsEnvironmentName,
+         "environment variable not set.");
     return E_FAIL;
   }
 
@@ -41,21 +38,18 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       GetEnvironmentValues(kProcessesEnvironmentName);
 
   if (allowed_process_names.empty()) {
-    logger_->info(
-        "{} environment variable not set. Attaching to any .NET process.",
-        kProcessesEnvironmentName);
+    Info(kProcessesEnvironmentName,
+         "environment variable not set. Attaching to any .NET process.");
   } else {
-    logger_->info("{}:", kProcessesEnvironmentName);
+    Info(kProcessesEnvironmentName);
     for (auto& name : allowed_process_names) {
-      logger_->info("  {}", name);
+      Info("  ", name);
     }
 
     if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
                   process_name) == allowed_process_names.end()) {
-      logger_->info(
-          "Profiler disabled: module name \"{}\" does not match {} environment "
-          "variable",
-          process_name, kProcessesEnvironmentName);
+      Info("Profiler disabled: module name", process_name, "does not match",
+           kProcessesEnvironmentName, " environment variable");
       return E_FAIL;
     }
   }
@@ -63,17 +57,16 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
       &this->info_);
   if (FAILED(hr)) {
-    logger_->error(
-        "Profiler disabled: interface ICorProfilerInfo3 or higher not found.");
+    Warn("Profiler disabled: interface ICorProfilerInfo3 or higher not found.");
   }
 
   hr = this->info_->SetEventMask(kEventMask);
   if (FAILED(hr)) {
-    logger_->error("Failed to attach profiler: unable to set event mask.");
+    Warn("Failed to attach profiler: unable to set event mask.");
   }
 
   // we're in!
-  logger_->info("Profiler attached to process {}", process_name);
+  Info("Profiler attached to process", process_name);
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;
@@ -88,14 +81,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   if (module_info.IsWindowsRuntime() ||
-      module_info.assembly.name == L"mscorlib" ||
-      module_info.assembly.name == L"netstandard") {
+      module_info.assembly.name == "mscorlib"_W ||
+      module_info.assembly.name == "netstandard"_W) {
     // We cannot obtain writeable metadata interfaces on Windows Runtime modules
     // or instrument their IL. We must never try to add assembly references to
     // mscorlib or netstandard.
-    logger_->info(
-        "ModuleLoadFinished() called for {}. Skipping instrumentation.",
-        module_info.assembly.name);
+    Info("ModuleLoadFinished() called for", module_info.assembly.name,
+         "Skipping instrumentation");
     return S_OK;
   }
 
@@ -103,10 +95,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    logger_->info(
-        "ModuleLoadFinished() called for {}. FilterIntegrationsByCaller() "
-        "returned empty list. Nothing to instrument here.",
-        module_info.assembly.name);
+    Info("ModuleLoadFinished() called for", module_info.assembly.name,
+         "FilterIntegrationsByCaller() returned empty list. Nothing to "
+         "instrument here.");
     return S_OK;
   }
 
@@ -117,7 +108,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                            metadata_interfaces.GetAddressOf());
 
   if (FAILED(hr)) {
-    logger_->error("failed to get metadata interface");
+    Warn("failed to get metadata interface");
   }
 
   const auto metadata_import =
@@ -133,21 +124,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByTarget(enabled_integrations, assembly_import);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    logger_->info(
-        "ModuleLoadFinished() called for {}. FilterIntegrationsByTarget() "
-        "returned empty list. Nothing to instrument here.",
-        module_info.assembly.name);
+    Info("ModuleLoadFinished() called for", module_info.assembly.name,
+         "FilterIntegrationsByTarget() returned empty list. Nothing to "
+         "instrument here.");
     return S_OK;
   }
 
-  logger_->info(
-      "ModuleLoadFinished() will try to emit instrumentation metadata for {}",
-      module_info.assembly.name);
+  Info("ModuleLoadFinished() will try to emit instrumentation metadata for",
+       module_info.assembly.name);
 
   mdModule module;
   hr = metadata_import->GetModuleFromScope(&module);
   if (FAILED(hr)) {
-    logger_->error("ModuleLoadFinished() failed to get module token.");
+    Warn("ModuleLoadFinished() failed to get module token.");
   }
 
   ModuleMetadata* module_metadata =
@@ -173,20 +162,26 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   // store module info for later lookup
-  module_id_to_info_map_.Update(module_id, module_metadata);
+  {
+    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+    module_id_to_info_map_[module_id] = module_metadata;
+  }
 
-  logger_->info("ModuleLoadFinished() emitted instrumentation metadata for {}",
-                module_info.assembly.name);
+  Info("ModuleLoadFinished() emitted instrumentation metadata for",
+       module_info.assembly.name);
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId,
+HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID module_id,
                                                             HRESULT hrStatus) {
-  ModuleMetadata* metadata;
-
-  if (module_id_to_info_map_.LookupIfExists(moduleId, &metadata)) {
-    module_id_to_info_map_.Erase(moduleId);
-    delete metadata;
+  Info("CorProfiler::ModuleUnloadFinished", uint64_t(module_id));
+  {
+    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+    if (module_id_to_info_map_.count(module_id) > 0) {
+      auto metadata = module_id_to_info_map_[module_id];
+      delete metadata;
+      module_id_to_info_map_.erase(module_id);
+    }
   }
 
   return S_OK;
@@ -203,8 +198,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   RETURN_OK_IF_FAILED(hr);
 
   ModuleMetadata* module_metadata = nullptr;
+  {
+    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+    if (module_id_to_info_map_.count(module_id) > 0) {
+      module_metadata = module_id_to_info_map_[module_id];
+    }
+  }
 
-  if (!module_id_to_info_map_.LookupIfExists(module_id, &module_metadata)) {
+  if (module_metadata == nullptr) {
     // we haven't stored a ModuleInfo for this module, so we can't modify its
     // IL
     return S_OK;
@@ -296,16 +297,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       modified = true;
 
-      logger_->info(
-          "JITCompilationStarted() replaced calls from {}.{}() to {}.{}() {:x} "
-          "with calls to {}.{}() {:x}.",
-          caller.type.name, caller.name,
-          method_replacement.target_method.type_name,
-          method_replacement.target_method.method_name,
-          int32_t(original_argument),
-          method_replacement.wrapper_method.type_name,
-          method_replacement.wrapper_method.method_name,
-          uint32_t(wrapper_method_ref));
+      Info("JITCompilationStarted() replaced calls from", caller.type.name, ".",
+           caller.name, "() to ", method_replacement.target_method.type_name,
+           ".", method_replacement.target_method.method_name, "()",
+           int32_t(original_argument), "with calls to",
+           method_replacement.wrapper_method.type_name,
+           method_replacement.wrapper_method.method_name, "()",
+           uint32_t(wrapper_method_ref));
     }
   }
 
@@ -315,7 +313,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   }
 
   return S_OK;
-}  // namespace trace
+}
 
 bool CorProfiler::IsAttached() const { return is_attached_; }
 

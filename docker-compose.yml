@@ -1,15 +1,112 @@
-ddagent:
-    image: datadog/docker-dd-agent
-    environment:
-        - DD_BIND_HOST=0.0.0.0
-        - DD_API_KEY=invalid_key_but_this_is_fine
+version: '3'
+services:
+  redis:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
     ports:
-        - "127.0.0.1:8126:8126"
+    - "6379:6379"
 
-sqlserver:
-    image: microsoft/mssql-server-linux:2017-CU3
-    environment:
-        - ACCEPT_EULA=Y
-        - SA_PASSWORD=password!123
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
     ports:
-        - "127.0.0.1:1433:1433"
+    - "9200:9200"
+    - "9300:9300"
+    environment:
+    - discovery.type=single-node
+
+  sqlserver:
+    image: microsoft/mssql-server-linux:latest
+    ports:
+    - "1433:1433"
+    environment:
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=Strong!Passw0rd
+
+  build:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: /project/docker/build.sh
+    volumes:
+    - ./:/project
+
+  package:
+    build:
+      context: ./
+      dockerfile: ./docker/package.dockerfile
+    image: datadog-package
+    command: /project/docker/package.sh
+    volumes:
+    - ./:/project
+
+  Datadog.Trace.ClrProfiler.Native:
+    build:
+      context: ./
+      dockerfile: ./docker/native.dockerfile
+    image: datadog-native
+    command: /project/docker/Datadog.Trace.ClrProfiler.Native.sh
+    volumes:
+    - ./:/project
+
+  Samples.ConsoleCore:
+    image: microsoft/dotnet:2.1-sdk
+    command: bash -c "/project/docker/with-profiler-logs.bash /project/docker/with-profiler.bash dotnet /project/samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/publish/Samples.ConsoleCore.dll"
+    volumes:
+    - ./:/project
+
+  Samples.RedisCore:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it redis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.RedisCore/bin/Release/netcoreapp2.0/publish/Samples.RedisCore.dll"
+    volumes:
+    - ./:/project
+    environment:
+    - REDIS_HOST=redis
+    depends_on:
+    - redis
+
+  Samples.Elasticsearch:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/Release/netcoreapp2.0/publish/Samples.Elasticsearch.dll"
+    volumes:
+    - ./:/project
+    environment:
+    - ELASTICSEARCH_HOST=elasticsearch
+    depends_on:
+    - elasticsearch
+
+  Samples.SqlServer:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/Release/netcoreapp2.0/publish/Samples.SqlServer.dll"
+    volumes:
+    - ./:/project
+    environment:
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
+    depends_on:
+    - sqlserver
+
+  Datadog.Trace.ClrProfiler.IntegrationTests:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: /project/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    volumes:
+    - ./:/project
+    environment:
+    - REDIS_HOST=redis
+    - ELASTICSEARCH_HOST=elasticsearch
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
+    depends_on:
+    - redis
+    - elasticsearch
+    - sqlserver

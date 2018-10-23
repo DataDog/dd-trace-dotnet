@@ -30,13 +30,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(11).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
+                var host = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
 
                 foreach (var span in spans)
                 {
                     Assert.Equal(Redis.OperationName, span.Name);
                     Assert.Equal($"Samples.RedisCore-{Redis.ServiceName}", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
-                    Assert.Equal("localhost", span.Tags.Get<string>("out.host"));
+                    Assert.Equal(host, span.Tags.Get<string>("out.host"));
                     Assert.Equal("6379", span.Tags.Get<string>("out.port"));
                 }
 

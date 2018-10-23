@@ -50,10 +50,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public string GetSolutionDirectory()
         {
-            string[] pathParts = Environment.CurrentDirectory.ToLowerInvariant().Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            int directoryDepth = pathParts.Length - pathParts.ToList().IndexOf("test");
-            string relativeBasePath = string.Join("\\", Enumerable.Repeat("..", directoryDepth));
-            return Path.GetFullPath(relativeBasePath);
+            var pathParts = new Stack<string>(Environment.CurrentDirectory.ToLowerInvariant().Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            while (pathParts.Count > 0)
+            {
+                if (pathParts.Pop() == "test")
+                {
+                    break;
+                }
+            }
+
+            var l = pathParts.ToList();
+            l.Reverse();
+            return string.Join(GetOS() == "win" ? "\\" : "/", l);
         }
 
         public string GetProfilerDllPath()
@@ -65,22 +73,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "bin",
                 BuildParameters.Configuration,
                 GetPlatform(),
-                "Datadog.Trace.ClrProfiler.Native.dll");
+                "Datadog.Trace.ClrProfiler.Native." + (GetOS() == "win" ? "dll" : "so"));
         }
 
         public string GetSampleApplicationPath()
         {
             string appFileName = BuildParameters.CoreClr ? $"Samples.{SampleAppName}.dll" : $"Samples.{SampleAppName}.exe";
-            return Path.Combine(
+            string binDir = Path.Combine(
                 GetSolutionDirectory(),
                 "samples",
                 $"Samples.{SampleAppName}",
-                "bin",
-                GetPlatform(),
-                BuildParameters.Configuration,
-                BuildParameters.TargetFramework,
-                GetRuntimeIdentifier(),
-                appFileName);
+                "bin");
+
+            if (GetOS() == "win")
+            {
+                return Path.Combine(
+                                binDir,
+                                GetPlatform(),
+                                BuildParameters.Configuration,
+                                BuildParameters.TargetFramework,
+                                GetRuntimeIdentifier(),
+                                appFileName);
+            }
+            else
+            {
+                return Path.Combine(
+                                binDir,
+                                BuildParameters.Configuration,
+                                BuildParameters.TargetFramework,
+                                GetRuntimeIdentifier(),
+                                "publish",
+                                appFileName);
+            }
         }
 
         public Process StartSample(int traceAgentPort, string arguments = null)

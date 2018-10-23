@@ -1,21 +1,35 @@
-#!/bin/sh
+#!/bin/bash
 
-[ -z "${CORECLR_PATH:-}" ] && CORECLR_PATH=~/coreclr
-[ -z "${BuildOS:-}"      ] && BuildOS=Linux
-[ -z "${BuildArch:-}"    ] && BuildArch=x64
-[ -z "${BuildType:-}"    ] && BuildType=Debug
-[ -z "${Output:-}"       ] && Output=CorProfiler.so
+set -euxo pipefail
 
-printf '  CORECLR_PATH : %s\n' "$CORECLR_PATH"
-printf '  BuildOS      : %s\n' "$BuildOS"
-printf '  BuildArch    : %s\n' "$BuildArch"
-printf '  BuildType    : %s\n' "$BuildType"
+CORECLR_OS=Linux
+CORECLR_ARCH=x64
+CORECLR_CONFIGURATION=Debug
 
-printf '  Building %s ... ' "$Output"
+CXX_FLAGS="${CXX_FLAGS:-} \
+    -Wno-invalid-noreturn \
+    -fPIC \
+    -fms-extensions \
+    -DBIT64 \
+    -DPAL_STDCPP_COMPAT \
+    -DPLATFORM_UNIX \
+    -std=c++11 \
+    "
 
-CXX_FLAGS="$CXX_FLAGS --no-undefined -Wno-invalid-noreturn -fPIC -fms-extensions -DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -std=c++11"
-INCLUDES="-I $CORECLR_PATH/src/pal/inc/rt -I $CORECLR_PATH/src/pal/prebuilt/inc -I $CORECLR_PATH/src/pal/inc -I $CORECLR_PATH/src/inc -I $CORECLR_PATH/bin/Product/$BuildOS.$BuildArch.$BuildType/inc"
+LD_FLAGS="${LD_FLAGS:-} \
+    -I /opt/coreclr/src/pal/inc/rt \
+    -I /opt/coreclr/src/pal/prebuilt/inc \
+    -I /opt/coreclr/src/pal/inc \
+    -I /opt/coreclr/src/inc \
+    -I /opt/coreclr/bin/Product/$CORECLR_OS.$CORECLR_ARCH.$CORECLR_CONFIGURATION/inc \
+    -I /opt/spdlog/include \
+    "
 
-clang++ -shared -o $Output $CXX_FLAGS $INCLUDES ClassFactory.cpp CorProfiler.cpp dllmain.cpp ILRewriter.cpp
-
-printf 'Done.\n'
+mkdir -p obj/$CORECLR_CONFIGURATION/$CORECLR_ARCH
+clang++-3.9 \
+    -shared \
+    -o obj/$CORECLR_CONFIGURATION/$CORECLR_ARCH/Datadog.Trace.ClrProfiler.Native.so \
+    $CXX_FLAGS \
+    $LD_FLAGS \
+    class_factory.cpp \
+    dllmain.cpp 

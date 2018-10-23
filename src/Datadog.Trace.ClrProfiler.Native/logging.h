@@ -1,31 +1,34 @@
 #ifndef DD_CLR_PROFILER_LOGGING_H_
 #define DD_CLR_PROFILER_LOGGING_H_
 
-#include <spdlog/spdlog.h>
-#include <codecvt>
-#include <iostream>
-#include <locale>
+#include "string.h"
 
 namespace trace {
-std::shared_ptr<spdlog::logger> GetLogger();
+
+void Log(const std::string &str);
+
+template <typename Arg>
+inline std::string LogToString(Arg const &arg) {
+  return ToString(arg);
+}
+
+template <typename... Args>
+inline std::string LogToString(Args const &... args) {
+  std::ostringstream oss;
+  int a[] = {0, ((void)(oss << LogToString(args) << " "), 0)...};
+  return oss.str();
+}
+
+template <typename... Args>
+inline void Info(const Args... args) {
+  Log("[info] " + LogToString(args...));
+}
+
+template <typename... Args>
+inline void Warn(const Args... args) {
+  Log("[warn] " + LogToString(args...));
+}
+
 }  // namespace trace
-
-// allow wstrings:
-
-namespace fmt {
-template <>
-struct formatter<std::wstring> {
-  template <typename ParseContext>
-  constexpr auto parse(ParseContext& ctx) {
-    return ctx.begin();
-  }
-  template <typename FormatContext>
-  auto format(const std::wstring& wstr, FormatContext& ctx) {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-    const auto str = converter.to_bytes(wstr);
-    return format_to(ctx.begin(), "{}", std::string_view(str));
-  }
-};
-}  // namespace fmt
 
 #endif  // DD_CLR_PROFILER_LOGGING_H_

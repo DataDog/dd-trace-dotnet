@@ -27,12 +27,17 @@ namespace Samples.RedisCore
             }
         }
 
+        private static string Host()
+        {
+            return Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
+        }
+
         private static void RunServiceStack(string prefix)
         {
             prefix += "ServiceStack.Redis.";
 
             Console.WriteLine($"Testing ServiceStack.Redis: {prefix}");
-            using (var redisManager = new PooledRedisClientManager())
+            using (var redisManager = new PooledRedisClientManager(Host()))
             using (var redis = (RedisClient)redisManager.GetClient())
             {
                 // clear
@@ -67,7 +72,7 @@ namespace Samples.RedisCore
             prefix += "StackExchange.Redis.";
 
             Console.WriteLine($"Testing StackExchange.Redis {prefix}");
-            using (var redis = ConnectionMultiplexer.Connect("localhost,allowAdmin=true"))
+            using (var redis = ConnectionMultiplexer.Connect(Host() + ",allowAdmin=true"))
             {
                 var db = redis.GetDatabase(1);
 

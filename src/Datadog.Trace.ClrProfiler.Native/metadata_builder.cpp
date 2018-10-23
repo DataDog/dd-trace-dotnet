@@ -15,16 +15,16 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
   assembly_metadata.usMinorVersion = assembly_ref.version.minor;
   assembly_metadata.usBuildNumber = assembly_ref.version.build;
   assembly_metadata.usRevisionNumber = assembly_ref.version.revision;
-  if (assembly_ref.locale == L"neutral") {
+  if (assembly_ref.locale == "neutral"_W) {
     assembly_metadata.szLocale = nullptr;
     assembly_metadata.cbLocale = 0;
   } else {
     assembly_metadata.szLocale =
-        const_cast<wchar_t*>(assembly_ref.locale.data());
+        const_cast<WCHAR*>(assembly_ref.locale.c_str());
     assembly_metadata.cbLocale = (DWORD)(assembly_ref.locale.size());
   }
 
-  logger_->info("EmitAssemblyRef {}", assembly_ref.str());
+  Info("EmitAssemblyRef", assembly_ref.str());
 
   DWORD public_key_size = 8;
   if (assembly_ref.public_key == trace::PublicKey()) {
@@ -43,7 +43,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
       0, &assembly_ref_out);
 
   if (FAILED(hr)) {
-    logger_->error("DefineAssemblyRef failed");
+    Warn("DefineAssemblyRef failed");
   }
   return S_OK;
 }
@@ -64,14 +64,12 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
   HRESULT hr;
   type_ref = mdTypeRefNil;
 
-  const LPCWSTR wrapper_type_name =
-      method_replacement.wrapper_method.type_name.c_str();
-
   if (metadata_.assemblyName ==
       method_replacement.wrapper_method.assembly.name) {
     // type is defined in this assembly
-    hr = metadata_emit_->DefineTypeRefByName(module_, wrapper_type_name,
-                                             &type_ref);
+    hr = metadata_emit_->DefineTypeRefByName(
+        module_, method_replacement.wrapper_method.type_name.c_str(),
+        &type_ref);
   } else {
     // type is defined in another assembly,
     // find a reference to the assembly where type lives
@@ -79,19 +77,21 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(
         assembly_import_, method_replacement.wrapper_method.assembly.name);
     if (assembly_ref == mdAssemblyRefNil) {
       // TODO: emit assembly reference if not found?
-      logger_->error("Assembly reference for {} not found.",
-                    method_replacement.wrapper_method.assembly.name);
+      Warn("Assembly reference for",
+           method_replacement.wrapper_method.assembly.name, " not found");
       return E_FAIL;
     }
 
     // search for an existing reference to the type
-    hr = metadata_import_->FindTypeRef(assembly_ref, wrapper_type_name,
-                                       &type_ref);
+    hr = metadata_import_->FindTypeRef(
+        assembly_ref, method_replacement.wrapper_method.type_name.c_str(),
+        &type_ref);
 
     if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
       // if typeRef not found, create a new one by emitting a metadata token
-      hr = metadata_emit_->DefineTypeRefByName(assembly_ref, wrapper_type_name,
-                                               &type_ref);
+      hr = metadata_emit_->DefineTypeRefByName(
+          assembly_ref, method_replacement.wrapper_method.type_name.c_str(),
+          &type_ref);
     }
   }
 
@@ -118,12 +118,10 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
   HRESULT hr = FindWrapperTypeRef(method_replacement, type_ref);
   RETURN_IF_FAILED(hr);
 
-  const auto wrapper_method_name =
-      method_replacement.wrapper_method.method_name.c_str();
   member_ref = mdMemberRefNil;
 
   hr = metadata_import_->FindMemberRef(
-      type_ref, wrapper_method_name,
+      type_ref, method_replacement.wrapper_method.method_name.c_str(),
       method_replacement.wrapper_method.method_signature.data.data(),
       (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
       &member_ref);
@@ -131,7 +129,7 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
   if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
     // if memberRef not found, create it by emitting a metadata token
     hr = metadata_emit_->DefineMemberRef(
-        type_ref, wrapper_method_name,
+        type_ref, method_replacement.wrapper_method.method_name.c_str(),
         method_replacement.wrapper_method.method_signature.data.data(),
         (DWORD)(method_replacement.wrapper_method.method_signature.data.size()),
         &member_ref);
