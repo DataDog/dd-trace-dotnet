@@ -24,7 +24,7 @@ inline WSTRING DatadogLogFilePath() {
   if (programdata.empty()) {
     programdata = "C:\\ProgramData";
   }
-  return ToWSTRING(programdata + "\\Datadog .NET Tracer\\logs");
+  return ToWSTRING(programdata + "\\Datadog .NET Tracer\\logs\\dotnet-profiler.log");
 #else
   return ToWSTRING("/var/log/datadog/dotnet-profiler.log");
 #endif
