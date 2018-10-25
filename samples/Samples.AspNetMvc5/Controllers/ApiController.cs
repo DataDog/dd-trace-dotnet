@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace Samples.AspNetMvc5.Controllers
@@ -11,14 +12,22 @@ namespace Samples.AspNetMvc5.Controllers
         public IHttpActionResult Delay(int seconds)
         {
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
-            return Ok(seconds);
+            return Json(seconds);
+        }
+
+        [HttpGet]
+        [Route("api/delay-async/{seconds}")]
+        public async Task<IHttpActionResult> DelayAsync(int seconds)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(seconds)).ConfigureAwait(false);
+            return Json(seconds);
         }
 
         [HttpGet]
         [Route("api/environment")]
         public IHttpActionResult Environment()
         {
-            return Ok(System.Environment.GetEnvironmentVariables());
+            return Json(System.Environment.GetEnvironmentVariables());
         }
     }
 }
