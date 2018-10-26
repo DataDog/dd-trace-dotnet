@@ -1,3 +1,6 @@
+#if NET45
+
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.ExtensionMethods;
@@ -11,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         internal const string OperationName = "aspnet-web-api.request";
 
+        private static readonly Type HttpControllerContextType = Type.GetType("System.Web.Http.Controllers.HttpControllerContext, System.Web.Http", throwOnError: false);
+
         /// <summary>
         /// ExecuteAsync calls the underlying ExecuteAsync and traces the request.
         /// </summary>
@@ -18,23 +23,37 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="controllerContext">The controller context for the call</param>
         /// <param name="cancellationTokenSource">The cancellation token source</param>
         /// <returns>A task with the result</returns>
-        public static dynamic ExecuteAsync(dynamic @this, dynamic controllerContext, dynamic cancellationTokenSource)
+        public static object ExecuteAsync(object @this, object controllerContext, object cancellationTokenSource)
         {
+            Type controllerType = @this.GetType();
+
+            // in some cases, ExecuteAsync() is an explicit interface implementation,
+            // which is not public and has a different name, so try both
+            var executeAsyncFunc =
+                DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
+                   .GetOrCreateMethodCallDelegate(controllerType, "ExecuteAsync") ??
+                DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
+                   .GetOrCreateMethodCallDelegate(controllerType, "System.Web.Http.Controllers.IHttpController.ExecuteAsync");
+
             using (Scope scope = CreateScope(controllerContext))
             {
                 return scope.Span.Trace(
-                    () => @this.ExecuteAsync(controllerContext, ((CancellationTokenSource)cancellationTokenSource).Token),
-                    onComplete: e =>
-                    {
-                        if (e != null)
-                        {
-                            scope.Span.SetException(e);
-                        }
+                                        () =>
+                                        {
+                                            CancellationToken cancellationToken = ((CancellationTokenSource)cancellationTokenSource).Token;
+                                            return executeAsyncFunc(@this, controllerContext, cancellationToken);
+                                        },
+                                        onComplete: e =>
+                                        {
+                                            if (e != null)
+                                            {
+                                                scope.Span.SetException(e);
+                                            }
 
-                        // some fields aren't set till after execution, so repopulate anything missing
-                        UpdateSpan(controllerContext, scope.Span);
-                        scope.Span.Finish();
-                    });
+                                            // some fields aren't set till after execution, so repopulate anything missing
+                                            UpdateSpan(controllerContext, scope.Span);
+                                            scope.Span.Finish();
+                                        });
             }
         }
 
@@ -92,3 +111,5 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
     }
 }
+
+#endif

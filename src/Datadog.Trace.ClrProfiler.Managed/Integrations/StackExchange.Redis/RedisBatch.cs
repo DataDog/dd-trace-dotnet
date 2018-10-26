@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
@@ -22,18 +19,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>An asynchronous task.</returns>
         public static object ExecuteAsync<T>(object obj, object message, object processor, object server)
         {
-            var resultType = typeof(Task<T>);
+            var genericType = typeof(T);
             var asm = obj.GetType().Assembly;
             var batchType = asm.GetType("StackExchange.Redis.RedisBatch");
             var messageType = asm.GetType("StackExchange.Redis.Message");
-            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(typeof(T));
+            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(genericType);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
             var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, Task<T>>>.CreateMethodCallDelegate(
                 obj.GetType(),
                 "ExecuteAsync",
                 new Type[] { messageType, processorType, serverType },
-                new Type[] { resultType });
+                new Type[] { genericType });
 
             // we only trace RedisBatch methods here
             if (obj.GetType() == batchType)

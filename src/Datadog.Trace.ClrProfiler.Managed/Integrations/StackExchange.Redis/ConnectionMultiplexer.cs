@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Concurrent;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
@@ -52,11 +50,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>An asynchronous task.</returns>
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
         {
-            var resultType = typeof(Task<T>);
+            var genericType = typeof(T);
             var asm = multiplexer.GetType().Assembly;
             var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
             var messageType = asm.GetType("StackExchange.Redis.Message");
-            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
+            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(genericType);
             var stateType = typeof(object);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
@@ -64,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 multiplexerType,
                 "ExecuteAsyncImpl",
                 new Type[] { messageType, processorType, stateType, serverType },
-                new Type[] { resultType });
+                new Type[] { genericType });
 
             using (var scope = CreateScope(multiplexer, message, server, finishOnClose: false))
             {
