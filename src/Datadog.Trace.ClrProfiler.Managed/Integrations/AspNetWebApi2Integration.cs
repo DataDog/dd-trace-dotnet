@@ -2,9 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -27,22 +25,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>A task with the result</returns>
         public static object ExecuteAsync(object @this, object controllerContext, object cancellationTokenSource)
         {
+            Type controllerType = @this.GetType();
+
+            // in some cases, ExecuteAsync() is an explicit interface implementation,
+            // which is not public and has a different name, so try both
+            var executeAsyncFunc =
+                DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
+                   .GetOrCreateMethodCallDelegate(controllerType, "ExecuteAsync") ??
+                DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
+                   .GetOrCreateMethodCallDelegate(controllerType, "System.Web.Http.Controllers.IHttpController.ExecuteAsync");
+
             using (Scope scope = CreateScope(controllerContext))
             {
                 return scope.Span.Trace(
                                         () =>
                                         {
-                                            Type controllerType = @this.GetType();
-                                            Type[] parameterTypes = null; // { HttpControllerContextType, typeof(CancellationToken) };
-
-                                            // in some cases, ExecuteAsync() is an explicit interface implementation,
-                                            // which is not public and has a different name, so try both
-                                            var executeAsyncFunc =
-                                                DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
-                                                   .GetOrCreateMethodCallDelegate(controllerType, "ExecuteAsync", parameterTypes) ??
-                                                DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
-                                                   .GetOrCreateMethodCallDelegate(controllerType, "System.Web.Http.Controllers.IHttpController.ExecuteAsync", parameterTypes);
-
                                             CancellationToken cancellationToken = ((CancellationTokenSource)cancellationTokenSource).Token;
                                             return executeAsyncFunc(@this, controllerContext, cancellationToken);
                                         },
