@@ -36,13 +36,13 @@ WSTRING Trim(const WSTRING &str) {
   WSTRING trimmed = str;
 
   auto lpos = trimmed.find_first_not_of(" \t"_W);
-  if (lpos != WSTRING::npos) {
+  if (lpos != WSTRING::npos && lpos > 0) {
     trimmed = trimmed.substr(lpos);
   }
 
-  auto rpos = trimmed.find_last_of(" \t"_W);
+  auto rpos = trimmed.find_last_not_of(" \t"_W);
   if (rpos != WSTRING::npos) {
-    trimmed = trimmed.substr(0, rpos);
+    trimmed = trimmed.substr(0, rpos + 1);
   }
 
   return trimmed;
