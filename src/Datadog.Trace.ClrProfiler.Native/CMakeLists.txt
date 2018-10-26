@@ -34,6 +34,8 @@ target_include_directories("Datadog.Trace.ClrProfiler.Native.static"
 )
 target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
     /opt/re2/obj/libre2.a
+    -static-libgcc
+    -static-libstdc++
 )
 
 add_library("Datadog.Trace.ClrProfiler.Native" SHARED

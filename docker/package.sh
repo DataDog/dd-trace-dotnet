@@ -2,9 +2,10 @@
 set -euxo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-VERSION=0.4.0
+VERSION=0.4.1
 
 mkdir -p $DIR/../deploy/linux
+cp $DIR/../integrations.json $DIR/../src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/
 
 cd $DIR/../deploy/linux
 for pkgtype in deb rpm tar ; do
@@ -14,9 +15,10 @@ for pkgtype in deb rpm tar ; do
         -t $pkgtype \
         -n datadog-dotnet-apm \
         -v $VERSION \
-        --prefix /opt/datadog \
+        $(if [ $pkgtype != 'tar' ] ; then echo --prefix /opt/datadog ; fi) \
         --chdir $DIR/../src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64 \
-        Datadog.Trace.ClrProfiler.Native.so
+        Datadog.Trace.ClrProfiler.Native.so \
+        integrations.json
 done
 
 gzip -f datadog-dotnet-apm.tar
