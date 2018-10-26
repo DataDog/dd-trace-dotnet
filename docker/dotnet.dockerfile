@@ -1,6 +1,6 @@
-FROM microsoft/dotnet:2.1-sdk
+FROM microsoft/dotnet:2.1-sdk-alpine
+
+RUN apk add bash libc6-compat
 
 ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /bin/wait-for-it
 RUN chmod +x /bin/wait-for-it
-
-RUN apt-get update && apt-get install -y colortail
