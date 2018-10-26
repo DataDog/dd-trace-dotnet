@@ -2,18 +2,16 @@
   <Import Project="..\Directory.Build.props" />
 
   <PropertyGroup>
-    <!-- overrides -->
-    <IsPackable>true</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <!-- NuGet package -->
-    <Authors>Datadog</Authors>
+    <IsPackable>true</IsPackable>
     <PackageIconUrl>https://github.com/DataDog/dd-trace-csharp/raw/master/datadog-logo-64x64.png</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/DataDog/dd-trace-csharp</PackageProjectUrl>
+    <PackageProjectUrl>https://docs.datadoghq.com/tracing/setup/dotnet/</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/DataDog/dd-trace-csharp/blob/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>https://github.com/DataDog/dd-trace-csharp/releases</PackageReleaseNotes>
-    <PackageTags>Datadog APM tracing profiling</PackageTags>
+    <PackageReleaseNotes>See release notes at https://github.com/DataDog/dd-trace-csharp/releases</PackageReleaseNotes>
+    <PackageTags>Datadog;APM;tracing;profiling;instrumentation</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/DataDog/dd-trace-csharp.git</RepositoryUrl>
     <Copyright>Datadog, Inc. 2017-2018</Copyright>
