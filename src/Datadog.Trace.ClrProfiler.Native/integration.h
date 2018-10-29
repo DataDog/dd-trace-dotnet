@@ -37,7 +37,7 @@ struct PublicKey {
   inline WSTRING str() const {
     std::stringstream ss;
     for (int i = 0; i < kPublicKeySize; i++) {
-      ss << std::setfill('0') << std::setw(2) << std::hex << data[i];
+      ss << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(data[i]);
     }
     return ToWSTRING(ss.str());
   }
@@ -133,7 +133,7 @@ struct MethodSignature {
   WSTRING str() const {
     WSTRINGSTREAM ss;
     for (auto& b : data) {
-      ss << std::hex << std::setfill('0'_W) << std::setw(2) << b;
+      ss << std::hex << std::setfill('0'_W) << std::setw(2) << static_cast<int>(b);
     }
     return ss.str();
   }
