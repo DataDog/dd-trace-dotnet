@@ -6,3 +6,4 @@ coreclr,https://github.com/dotnet/coreclr,MIT,Copyright (c) .NET Foundation and 
 clr-samples,https://github.com/Microsoft/clr-samples,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 clrprofiler,https://github.com/MicrosoftArchive/clrprofiler,MIT,Copyright (c) Microsoft Corporation.  All rights reserved.
 JSON for Modern C++,https://github.com/nlohmann/json,MIT,Copyright (c) 2013-2018 Niels Lohmann
+Sigil,https://github.com/kevin-montrose/Sigil,MS-PL,
