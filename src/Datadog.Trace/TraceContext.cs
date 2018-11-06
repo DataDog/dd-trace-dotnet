@@ -46,6 +46,7 @@ namespace Datadog.Trace
                 if (_openSpans == 0)
                 {
                     _tracer.Write(_spans);
+                    _spans = new List<Span>();
                 }
             }
         }
