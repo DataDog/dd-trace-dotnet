@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
 {
@@ -36,10 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
                 pipeline.GetType(),
                 "CallElasticsearch",
                 methodGenericArguments: new Type[] { typeof(TResponse) });
-            return CreateScope(pipeline, requestData).Span.Trace(() =>
-            {
-                return originalMethod(pipeline, requestData);
-            });
+            return CreateScope(pipeline, requestData).Span.Trace(() => originalMethod(pipeline, requestData));
         }
 
         /// <summary>
@@ -59,17 +57,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
 
             var cancellationToken = (cancellationTokenSource as CancellationTokenSource)?.Token ?? CancellationToken.None;
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, TResponse>>.
-                GetOrCreateMethodCallDelegate(
+            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
+               .GetOrCreateMethodCallDelegate(
                     pipeline.GetType(),
                     "CallElasticsearchAsync",
-                    methodParameterTypes: new Type[] { _requestDataType, _cancellationTokenType },
-                    methodGenericArguments: new Type[] { typeof(TResponse) });
+                    methodParameterTypes: new[] { _requestDataType, _cancellationTokenType },
+                    methodGenericArguments: new[] { typeof(TResponse) });
 
-            return CreateScope(pipeline, requestData).Span.Trace(() =>
-            {
-                return originalMethod(pipeline, requestData, cancellationToken);
-            });
+            return CreateScope(pipeline, requestData).Span.Trace(() => originalMethod(pipeline, requestData, cancellationToken));
         }
 
         private static Scope CreateScope(dynamic pipeline, dynamic requestData)

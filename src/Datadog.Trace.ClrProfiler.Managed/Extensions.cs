@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler
@@ -23,14 +20,18 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>The result of the function call</returns>
         public static object Trace(this Span span, Func<object> func, Action<Exception> onComplete = null)
         {
-            onComplete = onComplete ?? new Action<Exception>(e =>
+            if (onComplete == null)
             {
-                if (e != null)
+                onComplete = e =>
                 {
-                    span.SetException(e);
-                }
-                span.Finish();
-            });
+                    if (e != null)
+                    {
+                        span.SetException(e);
+                    }
+
+                    span.Finish();
+                };
+            }
 
             try
             {
@@ -71,42 +72,45 @@ namespace Datadog.Trace.ClrProfiler
 
         private static Task TraceTask(Span span, Task task, Action<Exception> onComplete)
         {
-            return task.ContinueWith(t =>
-            {
-                if (t.IsFaulted)
+            return task.ContinueWith(
+                t =>
                 {
-                    onComplete(t.Exception);
-                    throw t.Exception;
-                }
+                    if (t.IsFaulted && t.Exception != null)
+                    {
+                        onComplete(t.Exception);
+                        throw t.Exception;
+                    }
 
-                if (t.IsCompleted)
-                {
-                    onComplete(null);
-                }
-            });
+                    if (t.IsCompleted)
+                    {
+                        onComplete(null);
+                    }
+                });
         }
 
         private static Task<T> TraceTask<T>(Span span, Task<T> task, Action<Exception> onComplete)
         {
-            return task.ContinueWith(t =>
-            {
-                if (t.IsFaulted)
+            return task.ContinueWith(
+                t =>
                 {
-                    t.Exception.Handle(e =>
+                    if (t.IsFaulted)
                     {
-                        onComplete(e);
-                        return false;
-                    });
-                }
+                        t.Exception?.Handle(
+                            e =>
+                            {
+                                onComplete(e);
+                                return false;
+                            });
+                    }
 
-                if (t.IsCompleted)
-                {
-                    onComplete(null);
-                    return t.Result;
-                }
+                    if (t.IsCompleted)
+                    {
+                        onComplete(null);
+                        return t.Result;
+                    }
 
-                return default;
-            });
+                    return default;
+                });
         }
 
         private static Type[] GetGenericTypeArguments(Type generic, Type toCheck)
