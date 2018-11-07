@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
             string method = null;
             try
             {
-                method = requestData?.Method;
+                method = requestData?.Method?.ToString();
             }
             catch
             {
