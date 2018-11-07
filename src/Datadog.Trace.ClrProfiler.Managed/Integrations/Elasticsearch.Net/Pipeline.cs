@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
 
             var cancellationToken = (cancellationTokenSource as CancellationTokenSource)?.Token ?? CancellationToken.None;
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
+            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, TResponse>>
                .GetOrCreateMethodCallDelegate(
                     pipeline.GetType(),
                     "CallElasticsearchAsync",
