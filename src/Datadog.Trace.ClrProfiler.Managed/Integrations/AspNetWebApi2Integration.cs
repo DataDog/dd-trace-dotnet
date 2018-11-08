@@ -2,7 +2,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -25,35 +27,45 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>A task with the result</returns>
         public static object ExecuteAsync(object @this, object controllerContext, object cancellationTokenSource)
         {
+            var cancellationToken = ((CancellationTokenSource)cancellationTokenSource).Token;
+            return ExecuteAsync(@this, controllerContext, cancellationToken);
+        }
+
+        /// <summary>
+        /// ExecuteAsync calls the underlying ExecuteAsync and traces the request.
+        /// </summary>
+        /// <param name="this">The Api Controller</param>
+        /// <param name="controllerContext">The controller context for the call</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>A task with the result</returns>
+        public static async Task<HttpResponseMessage> ExecuteAsync(object @this, object controllerContext, CancellationToken cancellationToken)
+        {
             Type controllerType = @this.GetType();
 
             // in some cases, ExecuteAsync() is an explicit interface implementation,
             // which is not public and has a different name, so try both
             var executeAsyncFunc =
-                DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
+                DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
                    .GetOrCreateMethodCallDelegate(controllerType, "ExecuteAsync") ??
-                DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
+                DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
                    .GetOrCreateMethodCallDelegate(controllerType, "System.Web.Http.Controllers.IHttpController.ExecuteAsync");
 
             using (Scope scope = CreateScope(controllerContext))
             {
-                return scope.Span.Trace(
-                                        () =>
-                                        {
-                                            CancellationToken cancellationToken = ((CancellationTokenSource)cancellationTokenSource).Token;
-                                            return executeAsyncFunc(@this, controllerContext, cancellationToken);
-                                        },
-                                        onComplete: e =>
-                                        {
-                                            if (e != null)
-                                            {
-                                                scope.Span.SetException(e);
-                                            }
+                try
+                {
+                    var responseMessage = await executeAsyncFunc(@this, controllerContext, cancellationToken).ConfigureAwait(false);
 
-                                            // some fields aren't set till after execution, so repopulate anything missing
-                                            UpdateSpan(controllerContext, scope.Span);
-                                            scope.Span.Finish();
-                                        });
+                    // some fields aren't set till after execution, so populate anything missing
+                    UpdateSpan(controllerContext, scope.Span);
+
+                    return responseMessage;
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
             }
         }
 

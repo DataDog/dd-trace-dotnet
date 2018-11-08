@@ -42,17 +42,17 @@ namespace Datadog.Trace.ClrProfiler
                     var genericArgs = GetGenericTypeArguments(typeof(Task<>), typ);
                     if (genericArgs.Length == 1)
                     {
-                        if (!_traceTaskMethods.TryGetValue(genericArgs[0], out var traceTask))
+                        if (!_traceTaskMethods.TryGetValue(genericArgs[0], out var traceTaskAsync))
                         {
-                            traceTask = DynamicMethodBuilder<Func<Span, Task, Action<Exception>, Task>>.CreateMethodCallDelegate(typeof(Extensions), "TraceTask", methodGenericArguments: genericArgs);
-                            _traceTaskMethods[genericArgs[0]] = traceTask;
+                            traceTaskAsync = DynamicMethodBuilder<Func<Span, Task, Action<Exception>, Task>>.CreateMethodCallDelegate(typeof(Extensions), "TraceTaskAsync", methodGenericArguments: genericArgs);
+                            _traceTaskMethods[genericArgs[0]] = traceTaskAsync;
                         }
 
-                        result = traceTask(span, task, onComplete);
+                        result = traceTaskAsync(span, task, onComplete);
                     }
                     else
                     {
-                        result = TraceTask(span, task, onComplete);
+                        result = TraceTaskAsync(task, onComplete);
                     }
                 }
                 else
@@ -69,44 +69,33 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        private static Task TraceTask(Span span, Task task, Action<Exception> onComplete)
+        private static async Task TraceTaskAsync(Task task, Action<Exception> onComplete)
         {
-            return task.ContinueWith(t =>
+            try
             {
-                if (t.IsFaulted)
-                {
-                    onComplete(t.Exception);
-                    throw t.Exception;
-                }
-
-                if (t.IsCompleted)
-                {
-                    onComplete(null);
-                }
-            });
+                await task.ConfigureAwait(false);
+                onComplete(null);
+            }
+            catch (Exception ex)
+            {
+                onComplete(ex);
+                throw;
+            }
         }
 
-        private static Task<T> TraceTask<T>(Span span, Task<T> task, Action<Exception> onComplete)
+        private static async Task<T> TraceTaskAsync<T>(Task<T> task, Action<Exception> onComplete)
         {
-            return task.ContinueWith(t =>
+            try
             {
-                if (t.IsFaulted)
-                {
-                    t.Exception.Handle(e =>
-                    {
-                        onComplete(e);
-                        return false;
-                    });
-                }
-
-                if (t.IsCompleted)
-                {
-                    onComplete(null);
-                    return t.Result;
-                }
-
-                return default;
-            });
+                T result = await task.ConfigureAwait(false);
+                onComplete(null);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                onComplete(ex);
+                throw;
+            }
         }
 
         private static Type[] GetGenericTypeArguments(Type generic, Type toCheck)
