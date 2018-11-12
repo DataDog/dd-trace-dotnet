@@ -17,9 +17,7 @@ namespace Datadog.Trace
         private const string UnknownServiceName = "UnknownService";
         private const string DefaultTraceAgentHost = "localhost";
         private const string DefaultTraceAgentPort = "8126";
-
-        private static readonly ILog Log = LogProvider.For<Tracer>();
-        private static readonly Uri DefaultAgentUri;
+        private const string TraceAgentPortEnvironmentVariableName = "DD_TRACE_AGENT_PORT";
 
         private static readonly string[] TraceAgentHostEnvironmentVariableNames =
         {
@@ -30,7 +28,8 @@ namespace Datadog.Trace
             "DD_TRACE_AGENT_HOSTNAME"
         };
 
-        private static readonly string TraceAgentPortEnvironmentVariableName = "DD_TRACE_AGENT_PORT";
+        private static readonly ILog Log = LogProvider.For<Tracer>();
+        private static readonly Uri DefaultAgentUri;
 
         private readonly AsyncLocalScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
