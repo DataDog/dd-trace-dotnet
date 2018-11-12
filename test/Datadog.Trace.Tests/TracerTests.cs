@@ -268,7 +268,7 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable("DD_AGENT_HOST", host);
             Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", port);
 
-            Uri uri = Tracer.GetAgentUri();
+            Uri uri = Tracer.CreateAgentUri();
 
             Assert.Equal(new Uri(expectedUri), uri);
 

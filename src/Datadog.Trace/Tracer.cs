@@ -37,7 +37,10 @@ namespace Datadog.Trace
 
         static Tracer()
         {
-            DefaultAgentUri = GetAgentUri();
+            // create Agent uri once and save it
+            DefaultAgentUri = CreateAgentUri();
+
+            // create the default global Tracer
             Instance = Create();
         }
 
@@ -157,7 +160,12 @@ namespace Datadog.Trace
             return tracer;
         }
 
-        internal static Uri GetAgentUri()
+        /// <summary>
+        /// Create an Uri to the Agent using host and port from
+        /// environment variables or defaults if not set.
+        /// </summary>
+        /// <returns>An Uri that can be used to send traces to the Agent.</returns>
+        internal static Uri CreateAgentUri()
         {
             var host = TraceAgentHostEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
                                                              .FirstOrDefault(str => !string.IsNullOrEmpty(str))
