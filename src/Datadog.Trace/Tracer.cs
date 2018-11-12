@@ -19,6 +19,7 @@ namespace Datadog.Trace
         private const string DefaultTraceAgentPort = "8126";
 
         private static readonly ILog Log = LogProvider.For<Tracer>();
+        private static readonly Uri DefaultAgentUri;
 
         private static readonly string[] TraceAgentHostEnvironmentVariableNames =
         {
@@ -37,6 +38,7 @@ namespace Datadog.Trace
 
         static Tracer()
         {
+            DefaultAgentUri = GetAgentUri();
             Instance = Create();
         }
 
@@ -88,11 +90,11 @@ namespace Datadog.Trace
         /// <returns>The newly created tracer</returns>
         public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            return Create(agentEndpoint ?? GetAgentUri(), defaultServiceName, null, isDebugEnabled);
+            return Create(agentEndpoint ?? DefaultAgentUri, defaultServiceName, null, isDebugEnabled);
         }
 
         /// <summary>
-        /// Make a span active and return a scope that can be disposed to desactivate the span
+        /// Make a span active and return a scope that can be disposed to close the span
         /// </summary>
         /// <param name="span">The span to activate</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
