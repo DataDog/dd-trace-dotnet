@@ -157,7 +157,7 @@ namespace Datadog.Trace
             return tracer;
         }
 
-        private static Uri GetAgentUri()
+        internal static Uri GetAgentUri()
         {
             var host = TraceAgentHostEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
                                                              .FirstOrDefault(str => !string.IsNullOrEmpty(str))
