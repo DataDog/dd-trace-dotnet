@@ -17,15 +17,22 @@ namespace Datadog.Trace
         private const string UnknownServiceName = "UnknownService";
         private const string DefaultTraceAgentHost = "localhost";
         private const string DefaultTraceAgentPort = "8126";
-        private const string TraceAgentPortEnvironmentVariableName = "DD_TRACE_AGENT_PORT";
 
         private static readonly string[] TraceAgentHostEnvironmentVariableNames =
         {
             // officially documented name
             "DD_AGENT_HOST",
-
             // backwards compatibility for names used in the past
-            "DD_TRACE_AGENT_HOSTNAME"
+            "DD_TRACE_AGENT_HOSTNAME",
+            "DATADOG_TRACE_AGENT_HOSTNAME"
+        };
+
+        private static readonly string[] TraceAgentPortEnvironmentVariableNames =
+        {
+            // officially documented name
+            "DD_TRACE_AGENT_PORT",
+            // backwards compatibility for names used in the past
+            "DATADOG_TRACE_AGENT_PORT"
         };
 
         private static readonly ILog Log = LogProvider.For<Tracer>();
@@ -169,11 +176,13 @@ namespace Datadog.Trace
         {
             var host = TraceAgentHostEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
                                                              .FirstOrDefault(str => !string.IsNullOrEmpty(str))
-                                                            ?.Trim();
+                                                            ?.Trim() ?? DefaultTraceAgentHost;
 
-            var port = Environment.GetEnvironmentVariable(TraceAgentPortEnvironmentVariableName)?.Trim();
+            var port = TraceAgentPortEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
+                                                             .FirstOrDefault(str => !string.IsNullOrEmpty(str))
+                                                            ?.Trim() ?? DefaultTraceAgentPort;
 
-            return new Uri($"http://{host ?? DefaultTraceAgentHost}:{port ?? DefaultTraceAgentPort}");
+            return new Uri($"http://{host}:{port}");
         }
 
         private static string CreateDefaultServiceName()
