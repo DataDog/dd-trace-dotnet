@@ -255,5 +255,26 @@ namespace Datadog.Trace.Tests
                 Assert.Equal(root.Span.Context.SpanId, span.Span.Context.ParentId);
             }
         }
+
+        [Theory]
+        [InlineData("ddagent", "5000", "http://ddagent:5000")]
+        [InlineData("", "", "http://localhost:8126")]
+        [InlineData(null, null, "http://localhost:8126")]
+        public void SetHostAndPortEnvironmentVariables(string host, string port, string expectedUri)
+        {
+            string originalHost = Environment.GetEnvironmentVariable("DD_AGENT_HOST");
+            string originalPort = Environment.GetEnvironmentVariable("DD_TRACE_AGENT_PORT");
+
+            Environment.SetEnvironmentVariable("DD_AGENT_HOST", host);
+            Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", port);
+
+            Uri uri = Tracer.CreateAgentUri();
+
+            Assert.Equal(new Uri(expectedUri), uri);
+
+            // reset the environment variables to their original values (if any) when done
+            Environment.SetEnvironmentVariable("DD_AGENT_HOST", originalHost);
+            Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", originalPort);
+        }
     }
 }
