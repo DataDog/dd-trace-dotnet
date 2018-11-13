@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler
@@ -12,7 +9,8 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     public static class Extensions
     {
-        private static ConcurrentDictionary<Type, Func<Span, Task, Action<Exception>, Task>> _traceTaskMethods = new ConcurrentDictionary<Type, Func<Span, Task, Action<Exception>, Task>>();
+        private static readonly ConcurrentDictionary<Type, Func<Task, Action<Exception>, Task>> TraceTaskMethods =
+            new ConcurrentDictionary<Type, Func<Task, Action<Exception>, Task>>();
 
         /// <summary>
         /// Trace traces a function which returns an object with the given span. If the object is a task, the span will be finished when the task completes.
@@ -23,32 +21,42 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>The result of the function call</returns>
         public static object Trace(this Span span, Func<object> func, Action<Exception> onComplete = null)
         {
-            onComplete = onComplete ?? new Action<Exception>(e =>
+            if (onComplete == null)
             {
-                if (e != null)
+                onComplete = e =>
                 {
-                    span.SetException(e);
-                }
-                span.Finish();
-            });
+                    if (e != null)
+                    {
+                        span.SetException(e);
+                    }
+
+                    span.Finish();
+                };
+            }
 
             try
             {
                 var result = func();
+                var resultType = result.GetType();
 
                 if (result is Task task)
                 {
-                    var typ = task.GetType();
-                    var genericArgs = GetGenericTypeArguments(typeof(Task<>), typ);
-                    if (genericArgs.Length == 1)
+                    if (resultType.IsGenericType)
                     {
-                        if (!_traceTaskMethods.TryGetValue(genericArgs[0], out var traceTaskAsync))
+                        Type[] genericArgs = resultType.GenericTypeArguments;
+
+                        if (!TraceTaskMethods.TryGetValue(genericArgs[0], out var traceTaskAsync))
                         {
-                            traceTaskAsync = DynamicMethodBuilder<Func<Span, Task, Action<Exception>, Task>>.CreateMethodCallDelegate(typeof(Extensions), "TraceTaskAsync", methodGenericArguments: genericArgs);
-                            _traceTaskMethods[genericArgs[0]] = traceTaskAsync;
+                            traceTaskAsync = DynamicMethodBuilder<Func<Task, Action<Exception>, Task>>
+                               .CreateMethodCallDelegate(
+                                    typeof(Extensions),
+                                    "TraceTaskAsync",
+                                    methodGenericArguments: genericArgs);
+
+                            TraceTaskMethods[genericArgs[0]] = traceTaskAsync;
                         }
 
-                        result = traceTaskAsync(span, task, onComplete);
+                        result = traceTaskAsync(task, onComplete);
                     }
                     else
                     {
@@ -96,22 +104,6 @@ namespace Datadog.Trace.ClrProfiler
                 onComplete(ex);
                 throw;
             }
-        }
-
-        private static Type[] GetGenericTypeArguments(Type generic, Type toCheck)
-        {
-            while (toCheck != null && toCheck != typeof(object))
-            {
-                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
-                if (generic == cur)
-                {
-                    return toCheck.GetGenericArguments();
-                }
-
-                toCheck = toCheck.BaseType;
-            }
-
-            return null;
         }
     }
 }
