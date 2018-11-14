@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         /// <returns>The original result</returns>
         public static object CallElasticsearchAsync<TResponse>(object @this, object requestData, object cancellationTokenSource)
         {
-            var cancellationToken = ((CancellationTokenSource)cancellationTokenSource).Token;
+            var cancellationToken = ((CancellationTokenSource)cancellationTokenSource)?.Token ?? CancellationToken.None;
             return CallElasticsearchAsyncInternal<TResponse>(@this, requestData, cancellationToken);
         }
 
