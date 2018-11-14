@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Elasticsearch.Net;
 using Nest;
 
 
@@ -29,6 +30,9 @@ namespace Samples.Elasticsearch
                 Concat(UserCommands(elastic)).
                 Concat(UserCommandsAsync(elastic)).
                 Concat(WatchCommands(elastic));
+
+            var exceptions = new List<Exception>();
+
             foreach (var action in commands)
             {
                 try
@@ -38,12 +42,23 @@ namespace Samples.Elasticsearch
                     {
                         result = TaskResult(task);
                     }
+
                     Console.WriteLine($"{result}");
+                }
+                catch (UnexpectedElasticsearchClientException ex)
+                {
+                    Console.WriteLine($"UnexpectedElasticsearchClientException: {ex.Message}");
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Exception: {ex.Message}");
+                    exceptions.Add(ex);
                 }
+            }
+
+            if (exceptions.Count > 0)
+            {
+                throw new AggregateException(exceptions).Flatten();
             }
         }
 
