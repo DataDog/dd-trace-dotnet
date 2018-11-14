@@ -33,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         "Bulk",
                         "Create",
+                        "Search",
                         "DeleteByQuery",
 
                         "CreateIndex",
@@ -73,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         "CatRepositories",
                         "CatSegments",
                         "CatShards",
-                        "CatSnapshots",
+                        // "CatSnapshots",
                         "CatTasks",
                         "CatTemplates",
                         "CatThreadPool",

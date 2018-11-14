@@ -78,6 +78,7 @@ namespace Samples.Elasticsearch
                     Title = "CreateDocument",
                 }),
                 () => elastic.Count<Post>(),
+                () => elastic.Search<Post>(s => s.MatchAll()),
                 () => elastic.DeleteByQuery(new DeleteByQueryRequest("test_index")
                 {
                     Size = 0,
@@ -111,6 +112,7 @@ namespace Samples.Elasticsearch
                     Title = "CreateDocument",
                 }),
                 () => elastic.CountAsync<Post>(),
+                () => elastic.SearchAsync<Post>(s => s.MatchAll()),
                 () => elastic.DeleteByQueryAsync(new DeleteByQueryRequest("test_index")
                 {
                     Size = 0,
@@ -238,7 +240,7 @@ namespace Samples.Elasticsearch
                 () => elastic.CatRepositories(new CatRepositoriesRequest()),
                 () => elastic.CatSegments(new CatSegmentsRequest()),
                 () => elastic.CatShards(new CatShardsRequest()),
-                () => elastic.CatSnapshots(new CatSnapshotsRequest()),
+                // () => elastic.CatSnapshots(new CatSnapshotsRequest()),
                 () => elastic.CatTasks(new CatTasksRequest()),
                 () => elastic.CatTemplates(new CatTemplatesRequest()),
                 () => elastic.CatThreadPool(new CatThreadPoolRequest()),
@@ -265,7 +267,7 @@ namespace Samples.Elasticsearch
                 () => elastic.CatRepositoriesAsync(new CatRepositoriesRequest()),
                 () => elastic.CatSegmentsAsync(new CatSegmentsRequest()),
                 () => elastic.CatShardsAsync(new CatShardsRequest()),
-                () => elastic.CatSnapshotsAsync(new CatSnapshotsRequest()),
+                // () => elastic.CatSnapshotsAsync(new CatSnapshotsRequest()),
                 () => elastic.CatTasksAsync(new CatTasksRequest()),
                 () => elastic.CatTemplatesAsync(new CatTemplatesRequest()),
                 () => elastic.CatThreadPoolAsync(new CatThreadPoolRequest()),
