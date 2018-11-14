@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    scope.Span.SetException(ex);
                     throw;
                 }
             }
