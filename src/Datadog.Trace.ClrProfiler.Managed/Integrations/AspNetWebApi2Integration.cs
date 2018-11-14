@@ -16,10 +16,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         internal const string OperationName = "aspnet-web-api.request";
 
-        private static readonly Type HttpControllerContextType = Type.GetType("System.Web.Http.Controllers.HttpControllerContext, System.Web.Http", throwOnError: false);
-
         /// <summary>
-        /// ExecuteAsync calls the underlying ExecuteAsync and traces the request.
+        /// Calls the underlying ExecuteAsync and traces the request.
         /// </summary>
         /// <param name="this">The Api Controller</param>
         /// <param name="controllerContext">The controller context for the call</param>
@@ -28,17 +26,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object ExecuteAsync(object @this, object controllerContext, object cancellationTokenSource)
         {
             var cancellationToken = ((CancellationTokenSource)cancellationTokenSource).Token;
-            return ExecuteAsync(@this, controllerContext, cancellationToken);
+            return ExecuteAsyncInternal(@this, controllerContext, cancellationToken);
         }
 
         /// <summary>
-        /// ExecuteAsync calls the underlying ExecuteAsync and traces the request.
+        /// Calls the underlying ExecuteAsync and traces the request.
         /// </summary>
         /// <param name="this">The Api Controller</param>
         /// <param name="controllerContext">The controller context for the call</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>A task with the result</returns>
-        public static async Task<HttpResponseMessage> ExecuteAsync(object @this, object controllerContext, CancellationToken cancellationToken)
+        private static async Task<HttpResponseMessage> ExecuteAsyncInternal(object @this, object controllerContext, CancellationToken cancellationToken)
         {
             Type controllerType = @this.GetType();
 
@@ -69,9 +67,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScope(dynamic controllerContext)
+        private static Scope CreateScope(object controllerContext)
         {
-            var scope = Tracer.Instance.StartActive(OperationName, finishOnClose: false);
+            var scope = Tracer.Instance.StartActive(OperationName);
             UpdateSpan(controllerContext, scope.Span);
             return scope;
         }
