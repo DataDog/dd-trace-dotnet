@@ -56,9 +56,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
         /// <returns>An asynchronous task.</returns>
-        public static object ExecuteAsyncImplAsync<T>(object @this, object message, object processor, object state, object server)
+        public static object ExecuteAsyncImpl<T>(object @this, object message, object processor, object state, object server)
         {
-            return ExecuteAsyncImplAsyncInternal<T>(@this, message, processor, state, server);
+            return ExecuteAsyncImplInternal<T>(@this, message, processor, state, server);
         }
 
         /// <summary>
