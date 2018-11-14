@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
         /// <returns>An asynchronous task.</returns>
-        private static async Task<object> ExecuteAsyncImplAsyncInternal<T>(object @this, object message, object processor, object state, object server)
+        private static async Task<T> ExecuteAsyncImplInternal<T>(object @this, object message, object processor, object state, object server)
         {
             var genericType = typeof(T);
             var asm = @this.GetType().Assembly;
