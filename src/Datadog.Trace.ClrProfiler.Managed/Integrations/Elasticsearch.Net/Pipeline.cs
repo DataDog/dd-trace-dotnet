@@ -34,10 +34,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         /// <returns>The original result</returns>
         public static object CallElasticsearch<TResponse>(object @this, object requestData)
         {
-            var originalMethod = DynamicMethodBuilder<Func<object, object, TResponse>>.GetOrCreateMethodCallDelegate(
-                @this.GetType(),
-                "CallElasticsearch",
-                methodGenericArguments: new Type[] { typeof(TResponse) });
+            var originalMethod = DynamicMethodBuilder<Func<object, object, TResponse>>
+               .GetOrCreateMethodCallDelegate(
+                    @this.GetType(),
+                    "CallElasticsearch",
+                    methodGenericArguments: new Type[] { typeof(TResponse) });
 
             using (var scope = CreateScope(@this, requestData))
             {

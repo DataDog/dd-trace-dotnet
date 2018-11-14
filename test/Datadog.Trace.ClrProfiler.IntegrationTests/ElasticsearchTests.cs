@@ -117,10 +117,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     });
                 }
 
-                var spans = agent.WaitForSpans(expected.Count).
-                    Where(s => s.Type == "elasticsearch").
-                    OrderBy(s => s.Start).
-                    ToList();
+                var spans = agent.WaitForSpans(expected.Count)
+                                 .Where(s => s.Type == "elasticsearch")
+                                 .OrderBy(s => s.Start)
+                                 .ToList();
 
                 foreach (var span in spans)
                 {
