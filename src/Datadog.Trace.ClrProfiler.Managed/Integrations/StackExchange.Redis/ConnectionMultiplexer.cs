@@ -34,7 +34,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
             using (var scope = CreateScope(@this, message))
             {
+                try
+                {
                 return originalMethod(@this, message, processor, server);
+            }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
             }
         }
 
