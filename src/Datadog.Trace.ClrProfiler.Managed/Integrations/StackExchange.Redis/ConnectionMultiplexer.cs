@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
     /// <summary>
-    /// Wraps calls to the Stack Exchange redis library.
+    /// Wraps calls to the StackExchange redis library.
     /// </summary>
     public class ConnectionMultiplexer : Base
     {
@@ -29,15 +29,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, T>>.CreateMethodCallDelegate(
                 multiplexerType,
                 "ExecuteSyncImpl",
-                new Type[] { messageType, processorType, serverType },
-                new Type[] { resultType });
+                new[] { messageType, processorType, serverType },
+                new[] { resultType });
 
             using (var scope = CreateScope(@this, message))
             {
                 try
                 {
-                return originalMethod(@this, message, processor, server);
-            }
+                    return originalMethod(@this, message, processor, server);
+                }
                 catch (Exception ex)
                 {
                     scope.Span.SetException(ex);
