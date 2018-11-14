@@ -13,25 +13,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
         /// Traces SendReceive.
         /// </summary>
         /// <typeparam name="T">The return type</typeparam>
-        /// <param name="redisNativeClient">The redis native client</param>
+        /// <param name="this">The redis native client</param>
         /// <param name="cmdWithBinaryArgs">The command with args</param>
         /// <param name="fn">The function</param>
         /// <param name="completePipelineFn">An optional function to call to complete a pipeline</param>
         /// <param name="sendWithoutRead">Whether or to send without waiting for the result</param>
         /// <returns>The original result</returns>
-        public static T SendReceive<T>(object redisNativeClient, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead)
+        public static T SendReceive<T>(object @this, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead)
         {
             var originalMethod = DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>
                .GetOrCreateMethodCallDelegate(
-                    redisNativeClient.GetType(),
+                    @this.GetType(),
                     "SendReceive",
                     methodGenericArguments: new[] { typeof(T) });
 
-            using (var scope = Integrations.Redis.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
+            using (var scope = Integrations.Redis.CreateScope(GetHost(@this), GetPort(@this), GetRawCommand(cmdWithBinaryArgs)))
             {
                 try
                 {
-                    return originalMethod(redisNativeClient, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead);
+                    return originalMethod(@this, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead);
                 }
                 catch (Exception ex)
                 {
