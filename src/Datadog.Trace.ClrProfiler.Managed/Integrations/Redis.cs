@@ -5,12 +5,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal const string OperationName = "redis.command";
         internal const string ServiceName = "redis";
 
-        internal static Scope CreateScope(string host, string port, string rawCommand, bool finishOnClose = true)
+        internal static Scope CreateScope(string host, string port, string rawCommand)
         {
             Tracer tracer = Tracer.Instance;
             string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
-            var scope = tracer.StartActive(OperationName, serviceName: serviceName, finishOnClose: finishOnClose);
+            var scope = tracer.StartActive(OperationName, serviceName: serviceName);
             int separatorIndex = rawCommand.IndexOf(' ');
             string command;
 

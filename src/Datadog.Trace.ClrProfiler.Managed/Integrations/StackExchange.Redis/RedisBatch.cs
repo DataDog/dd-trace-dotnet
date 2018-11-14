@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var hostAndPort = GetHostAndPort(config);
             var cmd = GetRawCommand(batch, message);
 
-            return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, cmd, finishOnClose: false);
+            return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, cmd);
         }
     }
 }
