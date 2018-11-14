@@ -20,17 +20,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         public static T ExecuteSyncImpl<T>(object @this, object message, object processor, object server)
         {
             var resultType = typeof(T);
-            var asm = @this.GetType().Assembly;
-            var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
+            var multiplexerType = @this.GetType();
+            var asm = multiplexerType.Assembly;
             var messageType = asm.GetType("StackExchange.Redis.Message");
             var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, T>>.CreateMethodCallDelegate(
-                multiplexerType,
-                "ExecuteSyncImpl",
-                new[] { messageType, processorType, serverType },
-                new[] { resultType });
+            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, T>>
+               .CreateMethodCallDelegate(
+                    multiplexerType,
+                    "ExecuteSyncImpl",
+                    new[] { messageType, processorType, serverType },
+                    new[] { resultType });
 
             using (var scope = CreateScope(@this, message))
             {
@@ -74,8 +75,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private static async Task<T> ExecuteAsyncImplInternal<T>(object @this, object message, object processor, object state, object server)
         {
             var genericType = typeof(T);
-            var asm = @this.GetType().Assembly;
-            var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
+            var multiplexerType = @this.GetType();
+            var asm = multiplexerType.Assembly;
             var messageType = asm.GetType("StackExchange.Redis.Message");
             var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(genericType);
             var stateType = typeof(object);
