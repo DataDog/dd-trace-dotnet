@@ -33,9 +33,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                     new[] { messageType, processorType, serverType },
                     new[] { resultType });
 
-            using (var scope = CreateScope(multiplexer, message, server))
+            using (var scope = CreateScope(multiplexer, message))
             {
-                return originalMethod(multiplexer, message, processor, server);
+                try
+                {
+                    return originalMethod(multiplexer, message, processor, server);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
             }
         }
 
@@ -50,6 +58,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server to call.</param>
         /// <returns>An asynchronous task.</returns>
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
+        {
+            return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server);
+        }
+
+        /// <summary>
+        /// Execute an asynchronous redis operation.
+        /// </summary>
+        /// <typeparam name="T">The result type</typeparam>
+        /// <param name="multiplexer">The connection multiplexer running the command.</param>
+        /// <param name="message">The message to send to redis.</param>
+        /// <param name="processor">The processor to handle the result.</param>
+        /// <param name="state">The state to use for the task.</param>
+        /// <param name="server">The server to call.</param>
+        /// <returns>An asynchronous task.</returns>
+        private static async Task<T> ExecuteAsyncImplInternal<T>(object multiplexer, object message, object processor, object state, object server)
         {
             var genericType = typeof(T);
             var multiplexerType = multiplexer.GetType();
@@ -66,13 +89,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                     new[] { messageType, processorType, stateType, serverType },
                     new[] { genericType });
 
-            using (var scope = CreateScope(multiplexer, message, server, finishOnClose: false))
+            using (var scope = CreateScope(multiplexer, message))
             {
-                return scope.Span.Trace(() => originalMethod(multiplexer, message, processor, state, server));
+                try
+                {
+                    return await originalMethod(multiplexer, message, processor, state, server).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
             }
         }
 
-        private static Scope CreateScope(object multiplexer, object message, object server, bool finishOnClose = true)
+        private static Scope CreateScope(object multiplexer, object message)
         {
             var config = GetConfiguration(multiplexer);
             var hostAndPort = GetHostAndPort(config);
