@@ -535,21 +535,15 @@ namespace Samples.Elasticsearch
 
         private static object TaskResult(Task task)
         {
+            task.Wait();
             var taskType = task.GetType();
 
             bool isTaskOfT =
                 taskType.IsGenericType
                 && taskType.GetGenericTypeDefinition() == typeof(Task<>);
 
-            if (isTaskOfT)
-            {
-                return taskType.GetProperty("Result").GetValue(task);
-            }
-            else
-            {
-                task.Wait();
-                return null;
-            }
+
+            return isTaskOfT ? taskType.GetProperty("Result")?.GetValue(task) : null;
         }
 
         public class Post
