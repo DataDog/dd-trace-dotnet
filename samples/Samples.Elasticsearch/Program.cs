@@ -45,10 +45,6 @@ namespace Samples.Elasticsearch
 
                     Console.WriteLine($"{result}");
                 }
-                catch (UnexpectedElasticsearchClientException ex)
-                {
-                    Console.WriteLine($"UnexpectedElasticsearchClientException: {ex.Message}");
-                }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Exception: {ex.Message}");
