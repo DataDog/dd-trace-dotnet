@@ -58,18 +58,15 @@ namespace Datadog.Trace.ClrProfiler
             Type delegateType = typeof(TDelegate);
             Type[] genericTypeArguments = delegateType.GenericTypeArguments;
 
-            Type returnType;
             Type[] parameterTypes;
 
             if (delegateType.Name.StartsWith("Func`"))
             {
                 // last generic type argument is the return type
-                returnType = genericTypeArguments.Last();
                 parameterTypes = genericTypeArguments.Take(genericTypeArguments.Length - 1).ToArray();
             }
             else if (delegateType.Name.StartsWith("Action`"))
             {
-                returnType = typeof(void);
                 parameterTypes = genericTypeArguments;
             }
             else

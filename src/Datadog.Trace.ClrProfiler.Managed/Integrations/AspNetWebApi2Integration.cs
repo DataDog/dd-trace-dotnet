@@ -14,10 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         internal const string OperationName = "aspnet-web-api.request";
 
-        private static readonly Type HttpControllerContextType = Type.GetType("System.Web.Http.Controllers.HttpControllerContext, System.Web.Http", throwOnError: false);
-
         /// <summary>
-        /// ExecuteAsync calls the underlying ExecuteAsync and traces the request.
+        /// Calls the underlying ExecuteAsync and traces the request.
         /// </summary>
         /// <param name="this">The Api Controller</param>
         /// <param name="controllerContext">The controller context for the call</param>
@@ -57,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScope(dynamic controllerContext)
+        private static Scope CreateScope(object controllerContext)
         {
             var scope = Tracer.Instance.StartActive(OperationName, finishOnClose: false);
             UpdateSpan(controllerContext, scope.Span);

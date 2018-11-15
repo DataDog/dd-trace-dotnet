@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
     /// <summary>
-    /// Wraps calls to the Stack Exchange redis library.
+    /// Wraps calls to the StackExchange redis library.
     /// </summary>
     public class ConnectionMultiplexer : Base
     {
@@ -20,17 +20,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server)
         {
             var resultType = typeof(T);
-            var asm = multiplexer.GetType().Assembly;
-            var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
+            var multiplexerType = multiplexer.GetType();
+            var asm = multiplexerType.Assembly;
             var messageType = asm.GetType("StackExchange.Redis.Message");
             var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, T>>.CreateMethodCallDelegate(
-                multiplexerType,
-                "ExecuteSyncImpl",
-                new Type[] { messageType, processorType, serverType },
-                new Type[] { resultType });
+            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, T>>
+               .CreateMethodCallDelegate(
+                    multiplexerType,
+                    "ExecuteSyncImpl",
+                    new[] { messageType, processorType, serverType },
+                    new[] { resultType });
 
             using (var scope = CreateScope(multiplexer, message, server))
             {
@@ -51,18 +52,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
         {
             var genericType = typeof(T);
-            var asm = multiplexer.GetType().Assembly;
-            var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
+            var multiplexerType = multiplexer.GetType();
+            var asm = multiplexerType.Assembly;
             var messageType = asm.GetType("StackExchange.Redis.Message");
             var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(genericType);
             var stateType = typeof(object);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>.CreateMethodCallDelegate(
-                multiplexerType,
-                "ExecuteAsyncImpl",
-                new Type[] { messageType, processorType, stateType, serverType },
-                new Type[] { genericType });
+            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>
+               .CreateMethodCallDelegate(
+                    multiplexerType,
+                    "ExecuteAsyncImpl",
+                    new[] { messageType, processorType, stateType, serverType },
+                    new[] { genericType });
 
             using (var scope = CreateScope(multiplexer, message, server, finishOnClose: false))
             {
@@ -74,9 +76,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         {
             var config = GetConfiguration(multiplexer);
             var hostAndPort = GetHostAndPort(config);
-
             var rawCommand = GetRawCommand(multiplexer, message);
-            return Datadog.Trace.ClrProfiler.Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand, finishOnClose);
+
+            return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
         }
     }
 }

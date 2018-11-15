@@ -29,8 +29,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, Task<T>>>.CreateMethodCallDelegate(
                 obj.GetType(),
                 "ExecuteAsync",
-                new Type[] { messageType, processorType, serverType },
-                new Type[] { genericType });
+                    new[] { messageType, processorType, serverType },
+                    new[] { genericType });
 
             // we only trace RedisBatch methods here
             if (obj.GetType() == batchType)
@@ -52,7 +52,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var config = GetConfiguration(multiplexer);
             var hostAndPort = GetHostAndPort(config);
             var cmd = GetRawCommand(batch, message);
-            return Datadog.Trace.ClrProfiler.Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, cmd, finishOnClose: false);
+
+            return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, cmd, finishOnClose: false);
         }
     }
 }

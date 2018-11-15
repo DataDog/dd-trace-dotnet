@@ -51,8 +51,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 // hostname:port,name=MyName,keepAlive=180,syncTimeout=10000,abortConnect=False
                 // split in commas, find the one without '=', split that one on ':'
                 string[] hostAndPort = config.Split(',')
-                                         .FirstOrDefault(p => !p.Contains("="))
-                                        ?.Split(':');
+                                             .FirstOrDefault(p => !p.Contains("="))
+                                            ?.Split(':');
 
                 if (hostAndPort != null)
                 {

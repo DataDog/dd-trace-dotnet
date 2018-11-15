@@ -21,11 +21,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         private const string ElasticsearchUrlKey = "elasticsearch.url";
         private const string ElasticsearchParamsKey = "elasticsearch.params";
 
+        private static readonly Type CancellationTokenType = typeof(CancellationToken);
+
         private static Type _requestDataType;
-        private static Type _cancellationTokenType = typeof(CancellationToken);
 
         /// <summary>
-        /// CallElasticsearch traces a call to Elasticsearch
+        /// Traces a synchronous call to Elasticsearch.
         /// </summary>
         /// <typeparam name="TResponse">The type of the response</typeparam>
         /// <param name="pipeline">The pipeline for the original method</param>
@@ -33,10 +34,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         /// <returns>The original result</returns>
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData)
         {
-            var originalMethod = DynamicMethodBuilder<Func<object, object, TResponse>>.GetOrCreateMethodCallDelegate(
-                pipeline.GetType(),
-                "CallElasticsearch",
-                methodGenericArguments: new Type[] { typeof(TResponse) });
+            var originalMethod = DynamicMethodBuilder<Func<object, object, TResponse>>
+               .GetOrCreateMethodCallDelegate(
+                    pipeline.GetType(),
+                    "CallElasticsearch",
+                    methodGenericArguments: new Type[] { typeof(TResponse) });
+
             return CreateScope(pipeline, requestData).Span.Trace(() =>
             {
                 return originalMethod(pipeline, requestData);
@@ -44,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         }
 
         /// <summary>
-        /// CallElasticsearchAsync traces an asynchronous call to Elasticsearch
+        /// Traces an asynchronous call to Elasticsearch.
         /// </summary>
         /// <typeparam name="TResponse">Type type of the response</typeparam>
         /// <param name="pipeline">The pipeline for the original method</param>
@@ -55,17 +58,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         {
             if (_requestDataType == null)
             {
-                _requestDataType = pipeline.GetType().Assembly.GetType("Elasticsearch.Net.RequestData");
+                _requestDataType = requestData.GetType();
             }
 
             var cancellationToken = (cancellationTokenSource as CancellationTokenSource)?.Token ?? CancellationToken.None;
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>.
-                GetOrCreateMethodCallDelegate(
+            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
+               .GetOrCreateMethodCallDelegate(
                     pipeline.GetType(),
                     "CallElasticsearchAsync",
-                    methodParameterTypes: new Type[] { _requestDataType, _cancellationTokenType },
-                    methodGenericArguments: new Type[] { typeof(TResponse) });
+                    new[] { _requestDataType, CancellationTokenType },
+                    new[] { typeof(TResponse) });
 
             return CreateScope(pipeline, requestData).Span.Trace(() =>
             {
@@ -73,16 +76,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
             });
         }
 
-        private static Scope CreateScope(dynamic pipeline, dynamic requestData)
+        private static Scope CreateScope(object pipeline, dynamic requestData)
         {
             string requestName = null;
             try
             {
-                var requestParameters = DynamicMethodBuilder<Func<object, dynamic>>.GetOrCreateMethodCallDelegate(
-                    pipeline.GetType(),
-                    "get_RequestParameters")(pipeline);
-                requestName = requestParameters?.GetType()?.Name;
-                requestName = requestName?.Replace("RequestParameters", string.Empty);
+                var requestParameters = DynamicMethodBuilder<Func<object, object>>
+                   .GetOrCreateMethodCallDelegate(
+                        pipeline.GetType(),
+                        "get_RequestParameters")(pipeline);
+
+                requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
             }
             catch
             {
