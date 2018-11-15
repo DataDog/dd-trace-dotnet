@@ -2,6 +2,16 @@
 
 **NOTE: The .NET Tracer is currently in Public Beta.**
 
+## Downloads
+Package|Download
+--|--
+Windows and Linux Installers|[Releases page](https://github.com/DataDog/dd-trace-csharp/releases)
+`Datadog.Trace`|[![Datadog.Trace](https://img.shields.io/nuget/vpre/Datadog.Trace.svg)](https://www.nuget.org/packages/Datadog.Trace)
+`Datadog.Trace.OpenTracing`|[![Datadog.Trace.OpenTracing](https://img.shields.io/nuget/vpre/Datadog.Trace.OpenTracing.svg)](https://www.nuget.org/packages/Datadog.Trace.OpenTracing)
+`Datadog.Trace.ClrProfiler.Managed`|[![Datadog.Trace.ClrProfiler.Managed](https://img.shields.io/nuget/vpre/Datadog.Trace.ClrProfiler.Managed.svg)](https://www.nuget.org/packages/Datadog.Trace.ClrProfiler.Managed)
+
+## Build Status
+
 OS|Tests|Status
 --|--|--
 Windows|C# unit tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-csharp/_apis/build/status/Windows/windows-unit-tests-managed)](https://dev.azure.com/datadog-apm/dd-trace-csharp/_build/latest?definitionId=1)
