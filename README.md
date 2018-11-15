@@ -4,11 +4,11 @@
 
 OS|Tests|Status
 --|--|--
-Windows|C# unit tests|[![Build Status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows/windows-unit-tests-managed)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=1)
-Windows|C++ unit tests|[![Build Status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows/windows-unit-tests-native)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=11)
-Windows|integration tests|[![Build Status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Windows/windows-integration-tests)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=5)
-Linux|C# unit tests|[![Build Status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux/linux-unit-tests-managed)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=2)
-Linux|integration tests|[![Build Status](https://datadog-apm.visualstudio.com/dd-trace-csharp/_apis/build/status/Linux/linux-integration-tests)](https://datadog-apm.visualstudio.com/dd-trace-csharp/_build/latest?definitionId=13)
+Windows|C# unit tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-csharp/_apis/build/status/Windows/windows-unit-tests-managed)](https://dev.azure.com/datadog-apm/dd-trace-csharp/_build/latest?definitionId=1)
+Windows|C++ unit tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-csharp/_apis/build/status/Windows/windows-unit-tests-native)](https://dev.azure.com/datadog-apm/dd-trace-csharp/_build/latest?definitionId=11)
+Windows|integration tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-csharp/_apis/build/status/Windows/windows-integration-tests)](https://dev.azure.com/datadog-apm/dd-trace-csharp/_build/latest?definitionId=5)
+Linux|C# unit tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-csharp/_apis/build/status/Linux/linux-unit-tests-managed)](https://dev.azure.com/datadog-apm/dd-trace-csharp/_build/latest?definitionId=2)
+Linux|integration tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-csharp/_apis/build/status/Linux/linux-integration-tests)](https://dev.azure.com/datadog-apm/dd-trace-csharp/_build/latest?definitionId=13)
 
 ## Installation and Usage
 
