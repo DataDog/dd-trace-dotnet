@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -120,10 +117,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     });
                 }
 
-                var spans = agent.WaitForSpans(expected.Count).
-                    Where(s => s.Type == "elasticsearch").
-                    OrderBy(s => s.Start).
-                    ToList();
+                var spans = agent.WaitForSpans(expected.Count)
+                                 .Where(s => s.Type == "elasticsearch")
+                                 .OrderBy(s => s.Start)
+                                 .ToList();
 
                 foreach (var span in spans)
                 {
