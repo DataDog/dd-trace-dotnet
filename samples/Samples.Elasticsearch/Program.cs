@@ -251,6 +251,9 @@ namespace Samples.Elasticsearch
                 () => elastic.CatRepositories(new CatRepositoriesRequest()),
                 () => elastic.CatSegments(new CatSegmentsRequest()),
                 () => elastic.CatShards(new CatShardsRequest()),
+                // CatSnapshots is failing with a JSON deserialization error.
+                // It might be a bug in the client or an incompatibility between client
+                // and server versions.
                 // () => elastic.CatSnapshots(new CatSnapshotsRequest()),
                 () => elastic.CatTasks(new CatTasksRequest()),
                 () => elastic.CatTemplates(new CatTemplatesRequest()),
@@ -278,6 +281,9 @@ namespace Samples.Elasticsearch
                 () => elastic.CatRepositoriesAsync(new CatRepositoriesRequest()),
                 () => elastic.CatSegmentsAsync(new CatSegmentsRequest()),
                 () => elastic.CatShardsAsync(new CatShardsRequest()),
+                // CatSnapshots is failing with a JSON deserialization error.
+                // It might be a bug in the client or an incompatibility between client
+                // and server versions.
                 // () => elastic.CatSnapshotsAsync(new CatSnapshotsRequest()),
                 () => elastic.CatTasksAsync(new CatTasksRequest()),
                 () => elastic.CatTemplatesAsync(new CatTemplatesRequest()),
