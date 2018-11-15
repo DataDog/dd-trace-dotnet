@@ -40,10 +40,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
                     "CallElasticsearch",
                     methodGenericArguments: new Type[] { typeof(TResponse) });
 
-            return CreateScope(pipeline, requestData).Span.Trace(() =>
+            using (var scope = CreateScope(pipeline, requestData))
             {
-                return originalMethod(pipeline, requestData);
-            });
+                try
+                {
+                    return originalMethod(pipeline, requestData);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -56,12 +64,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         /// <returns>The original result</returns>
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource)
         {
+            var cancellationToken = ((CancellationTokenSource)cancellationTokenSource)?.Token ?? CancellationToken.None;
+            return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken);
+        }
+
+        /// <summary>
+        /// Traces an asynchronous call to Elasticsearch.
+        /// </summary>
+        /// <typeparam name="TResponse">Type type of the response</typeparam>
+        /// <param name="pipeline">The pipeline for the original method</param>
+        /// <param name="requestData">The request data</param>
+        /// <param name="cancellationToken">A cancellation token</param>
+        /// <returns>The original result</returns>
+        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken)
+        {
             if (_requestDataType == null)
             {
                 _requestDataType = requestData.GetType();
             }
-
-            var cancellationToken = (cancellationTokenSource as CancellationTokenSource)?.Token ?? CancellationToken.None;
 
             var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
                .GetOrCreateMethodCallDelegate(
@@ -70,10 +90,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
                     new[] { _requestDataType, CancellationTokenType },
                     new[] { typeof(TResponse) });
 
-            return CreateScope(pipeline, requestData).Span.Trace(() =>
+            using (var scope = CreateScope(pipeline, requestData))
             {
-                return originalMethod(pipeline, requestData, cancellationToken);
-            });
+                try
+                {
+                    return await originalMethod(pipeline, requestData, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
+            }
         }
 
         private static Scope CreateScope(object pipeline, dynamic requestData)
@@ -121,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
 
             var serviceName = string.Join("-", Tracer.Instance.DefaultServiceName, ServiceName);
 
-            var scope = Tracer.Instance.StartActive(OperationName, serviceName: serviceName, finishOnClose: false);
+            var scope = Tracer.Instance.StartActive(OperationName, serviceName: serviceName);
             scope.Span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
             scope.Span.Type = SpanType;
             scope.Span.SetTag(ComponentKey, ComponentValue);
