@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
 {
@@ -59,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
 
             var cancellationToken = (cancellationTokenSource as CancellationTokenSource)?.Token ?? CancellationToken.None;
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, TResponse>>.
+            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>.
                 GetOrCreateMethodCallDelegate(
                     pipeline.GetType(),
                     "CallElasticsearchAsync",
@@ -99,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
             string method = null;
             try
             {
-                method = requestData?.Method;
+                method = requestData?.Method?.ToString();
             }
             catch
             {
