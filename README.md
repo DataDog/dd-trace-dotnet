@@ -2,6 +2,10 @@
 
 **NOTE: The .NET Tracer is currently in Public Beta.**
 
+## Installation and Usage
+
+Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for instructions on setting up .NET tracing and details about supported frameworks.
+
 ## Downloads
 Package|Download
 --|--
@@ -19,10 +23,6 @@ Windows|C++ unit tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-tra
 Windows|integration tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-csharp/_apis/build/status/Windows/windows-integration-tests)](https://dev.azure.com/datadog-apm/dd-trace-csharp/_build/latest?definitionId=5)
 Linux|C# unit tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-csharp/_apis/build/status/Linux/linux-unit-tests-managed)](https://dev.azure.com/datadog-apm/dd-trace-csharp/_build/latest?definitionId=2)
 Linux|integration tests|[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-csharp/_apis/build/status/Linux/linux-integration-tests)](https://dev.azure.com/datadog-apm/dd-trace-csharp/_build/latest?definitionId=13)
-
-## Installation and Usage
-
-Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for instructions on setting up .NET tracing and details about supported frameworks.
 
 ## Development
 
