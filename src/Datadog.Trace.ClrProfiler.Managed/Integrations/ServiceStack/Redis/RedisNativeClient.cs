@@ -29,7 +29,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
 
             using (var scope = Integrations.Redis.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
             {
-                return (T)scope.Span.Trace(() => originalMethod(redisNativeClient, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead));
+                try
+                {
+                    return originalMethod(redisNativeClient, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
             }
         }
 
