@@ -15,7 +15,7 @@ inline std::string LogToString(Arg const &arg) {
 template <typename... Args>
 inline std::string LogToString(Args const &... args) {
   std::ostringstream oss;
-  int a[] = {0, ((void)(oss << LogToString(args) << " "), 0)...};
+  int a[] = {0, ((void)(oss << LogToString(args)), 0)...};
   return oss.str();
 }
 

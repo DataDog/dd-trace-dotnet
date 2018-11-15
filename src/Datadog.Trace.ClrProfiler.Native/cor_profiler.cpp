@@ -29,8 +29,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   Info("Initialize() called for", process_name);
 
   if (integrations_.empty()) {
-    Warn("Profiler disabled:", kIntegrationsEnvironmentName,
-         "environment variable not set.");
+    Warn("Profiler disabled: ", kIntegrationsEnvironmentName,
+         " environment variable not set.");
     return E_FAIL;
   }
 
@@ -39,7 +39,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   if (allowed_process_names.empty()) {
     Info(kProcessesEnvironmentName,
-         "environment variable not set. Attaching to any .NET process.");
+         " environment variable not set. Attaching to any .NET process.");
   } else {
     Info(kProcessesEnvironmentName);
     for (auto& name : allowed_process_names) {
@@ -48,7 +48,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
     if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
                   process_name) == allowed_process_names.end()) {
-      Info("Profiler disabled: module name", process_name, "does not match",
+      Info("Profiler disabled: module name ", process_name, " does not match ",
            kProcessesEnvironmentName, " environment variable");
       return E_FAIL;
     }
@@ -82,12 +82,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   if (module_info.IsWindowsRuntime() ||
       module_info.assembly.name == "mscorlib"_W ||
-      module_info.assembly.name == "netstandard"_W) {
-    // We cannot obtain writeable metadata interfaces on Windows Runtime modules
+      module_info.assembly.name == "netstandard"_W ||
+      module_info.assembly.name == "Datadog.Trace"_W ||
+      module_info.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W ||
+      module_info.assembly.name == "Sigil.Emit.DynamicAssembly"_W) {
+    // We cannot obtain writable metadata interfaces on Windows Runtime modules
     // or instrument their IL. We must never try to add assembly references to
     // mscorlib or netstandard.
-    Info("ModuleLoadFinished() called for", module_info.assembly.name,
-         "Skipping instrumentation");
+    Info("ModuleLoadFinished() called for ", module_info.assembly.name,
+         ". Skipping instrumentation.");
     return S_OK;
   }
 
@@ -95,8 +98,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Info("ModuleLoadFinished() called for", module_info.assembly.name,
-         "FilterIntegrationsByCaller() returned empty list. Nothing to "
+    Info("ModuleLoadFinished() called for ", module_info.assembly.name,
+         ". FilterIntegrationsByCaller() returned empty list. Nothing to "
          "instrument here.");
     return S_OK;
   }
@@ -124,14 +127,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByTarget(enabled_integrations, assembly_import);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Info("ModuleLoadFinished() called for", module_info.assembly.name,
-         "FilterIntegrationsByTarget() returned empty list. Nothing to "
+    Info("ModuleLoadFinished() called for ", module_info.assembly.name,
+         ". FilterIntegrationsByTarget() returned empty list. Nothing to "
          "instrument here.");
     return S_OK;
   }
 
-  Info("ModuleLoadFinished() will try to emit instrumentation metadata for",
-       module_info.assembly.name);
+  Info("ModuleLoadFinished() will try to emit instrumentation metadata for ",
+       module_info.assembly.name, ".");
 
   mdModule module;
   hr = metadata_import->GetModuleFromScope(&module);
@@ -297,12 +300,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       modified = true;
 
-      Info("JITCompilationStarted() replaced calls from", caller.type.name, ".",
-           caller.name, "() to ", method_replacement.target_method.type_name,
-           ".", method_replacement.target_method.method_name, "()",
-           int32_t(original_argument), "with calls to",
-           method_replacement.wrapper_method.type_name,
-           method_replacement.wrapper_method.method_name, "()",
+      Info("JITCompilationStarted() replaced calls from ", caller.type.name,
+           ".", caller.name, "() to ",
+           method_replacement.target_method.type_name, ".",
+           method_replacement.target_method.method_name, "() ",
+           int32_t(original_argument), " with calls to ",
+           method_replacement.wrapper_method.type_name, ".",
+           method_replacement.wrapper_method.method_name, "() ",
            uint32_t(wrapper_method_ref));
     }
   }
