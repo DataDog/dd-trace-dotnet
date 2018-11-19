@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
     /// <summary>
-    /// Wraps calls to the Stack Exchange redis library.
+    /// Wraps calls to the StackExchange redis library.
     /// </summary>
     public class ConnectionMultiplexer : Base
     {
@@ -20,21 +20,30 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server)
         {
             var resultType = typeof(T);
-            var asm = multiplexer.GetType().Assembly;
-            var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
+            var multiplexerType = multiplexer.GetType();
+            var asm = multiplexerType.Assembly;
             var messageType = asm.GetType("StackExchange.Redis.Message");
             var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, T>>.CreateMethodCallDelegate(
-                multiplexerType,
-                "ExecuteSyncImpl",
-                new Type[] { messageType, processorType, serverType },
-                new Type[] { resultType });
+            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, T>>
+               .CreateMethodCallDelegate(
+                    multiplexerType,
+                    "ExecuteSyncImpl",
+                    new[] { messageType, processorType, serverType },
+                    new[] { resultType });
 
-            using (var scope = CreateScope(multiplexer, message, server))
+            using (var scope = CreateScope(multiplexer, message))
             {
-                return originalMethod(multiplexer, message, processor, server);
+                try
+                {
+                    return originalMethod(multiplexer, message, processor, server);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
             }
         }
 
@@ -50,33 +59,57 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>An asynchronous task.</returns>
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
         {
+            return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server);
+        }
+
+        /// <summary>
+        /// Execute an asynchronous redis operation.
+        /// </summary>
+        /// <typeparam name="T">The result type</typeparam>
+        /// <param name="multiplexer">The connection multiplexer running the command.</param>
+        /// <param name="message">The message to send to redis.</param>
+        /// <param name="processor">The processor to handle the result.</param>
+        /// <param name="state">The state to use for the task.</param>
+        /// <param name="server">The server to call.</param>
+        /// <returns>An asynchronous task.</returns>
+        private static async Task<T> ExecuteAsyncImplInternal<T>(object multiplexer, object message, object processor, object state, object server)
+        {
             var genericType = typeof(T);
-            var asm = multiplexer.GetType().Assembly;
-            var multiplexerType = asm.GetType("StackExchange.Redis.ConnectionMultiplexer");
+            var multiplexerType = multiplexer.GetType();
+            var asm = multiplexerType.Assembly;
             var messageType = asm.GetType("StackExchange.Redis.Message");
             var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(genericType);
             var stateType = typeof(object);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>.CreateMethodCallDelegate(
-                multiplexerType,
-                "ExecuteAsyncImpl",
-                new Type[] { messageType, processorType, stateType, serverType },
-                new Type[] { genericType });
+            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>
+               .CreateMethodCallDelegate(
+                    multiplexerType,
+                    "ExecuteAsyncImpl",
+                    new[] { messageType, processorType, stateType, serverType },
+                    new[] { genericType });
 
-            using (var scope = CreateScope(multiplexer, message, server, finishOnClose: false))
+            using (var scope = CreateScope(multiplexer, message))
             {
-                return scope.Span.Trace(() => originalMethod(multiplexer, message, processor, state, server));
+                try
+                {
+                    return await originalMethod(multiplexer, message, processor, state, server).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
             }
         }
 
-        private static Scope CreateScope(object multiplexer, object message, object server, bool finishOnClose = true)
+        private static Scope CreateScope(object multiplexer, object message)
         {
             var config = GetConfiguration(multiplexer);
             var hostAndPort = GetHostAndPort(config);
-
             var rawCommand = GetRawCommand(multiplexer, message);
-            return Datadog.Trace.ClrProfiler.Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand, finishOnClose);
+
+            return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
         }
     }
 }

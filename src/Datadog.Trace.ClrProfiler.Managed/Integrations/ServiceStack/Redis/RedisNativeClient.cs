@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 
@@ -22,12 +21,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
         /// <returns>The original result</returns>
         public static T SendReceive<T>(object redisNativeClient, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead)
         {
-            var originalMethod = DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>.GetOrCreateMethodCallDelegate(
-                redisNativeClient.GetType(), "SendReceive", methodGenericArguments: new Type[] { typeof(T) });
+            var originalMethod = DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>
+               .GetOrCreateMethodCallDelegate(
+                    redisNativeClient.GetType(),
+                    "SendReceive",
+                    methodGenericArguments: new[] { typeof(T) });
 
             using (var scope = Integrations.Redis.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
             {
-                return (T)scope.Span.Trace(() => originalMethod(redisNativeClient, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead));
+                try
+                {
+                    return originalMethod(redisNativeClient, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
             }
         }
 
@@ -47,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
         {
             try
             {
-                return ((int)redisNativeClient?.Port).ToString();
+                return ((object)redisNativeClient?.Port)?.ToString();
             }
             catch
             {
@@ -57,17 +67,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
 
         private static string GetRawCommand(byte[][] cmdWithBinaryArgs)
         {
-            return string.Join(" ", cmdWithBinaryArgs.Select(bs =>
-            {
-                try
-                {
-                    return Encoding.UTF8.GetString(bs);
-                }
-                catch
-                {
-                    return string.Empty;
-                }
-            }));
+            return string.Join(
+                " ",
+                cmdWithBinaryArgs.Select(
+                    bs =>
+                    {
+                        try
+                        {
+                            return Encoding.UTF8.GetString(bs);
+                        }
+                        catch
+                        {
+                            return string.Empty;
+                        }
+                    }));
         }
     }
 }
