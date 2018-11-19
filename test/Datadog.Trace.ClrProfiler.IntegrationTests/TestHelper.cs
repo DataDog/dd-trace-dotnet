@@ -204,13 +204,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 string line;
                 while ((line = process.StandardOutput.ReadLine()) != null)
                 {
+                    Output.WriteLine($"[webserver][stdout] {line}");
+
                     if (line.Contains("IIS Express is running"))
                     {
                         wh.Set();
                     }
-                    Output.WriteLine($"[webserver][stdout] {line}");
                 }
             });
+
             Task.Run(() =>
             {
                 string line;
@@ -221,7 +223,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
 
             wh.WaitOne(5000);
-
             return new IISExpress(process);
         }
 
