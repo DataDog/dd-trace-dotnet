@@ -266,7 +266,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public class IISExpress : IDisposable
         {
-            private Process _process;
+            private readonly Process _process;
 
             public IISExpress(Process process)
             {
@@ -275,21 +275,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             public void Dispose()
             {
-                Task.Run(() =>
-                {
-                    Thread.Sleep(5000);
-                    try
-                    {
-                        _process.Kill();
-                    }
-                    catch
-                    {
-                    }
-                });
-
+                // signal IIS Express to quit
                 _process.StandardInput.Write("q");
                 _process.StandardInput.Flush();
-                _process.WaitForExit();
+
+                if (!_process.WaitForExit(5000))
+                {
+                    // kill it forcefully after timeout
+                    _process.Kill();
+                }
             }
         }
 
