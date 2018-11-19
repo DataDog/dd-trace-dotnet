@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -265,7 +267,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public class IISExpress : IDisposable
+        protected async Task AssertHttpSpan(
+            string path,
+            int agentPort,
+            int httpPort,
+            HttpStatusCode expectedHttpStatusCode,
+            string expectedSpanType,
+            string expectedOperationName,
+            string expectedResourceName)
+        {
+            List<MockTracerAgent.Span> spans;
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (var httpClient = new HttpClient())
+            {
+                var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
+                var content = await response.Content.ReadAsStringAsync();
+                Output.WriteLine($"[http] {response.StatusCode} {content}");
+                Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+
+                spans = agent.WaitForSpans(1);
+                Assert.True(spans.Count == 1, "expected one span");
+            }
+
+            MockTracerAgent.Span span = spans[0];
+            Assert.Equal(expectedSpanType, span.Type);
+            Assert.Equal(expectedOperationName, span.Name);
+            Assert.Equal(expectedResourceName, span.Resource);
+        }
+
+        public sealed class IISExpress : IDisposable
         {
             private readonly Process _process;
 

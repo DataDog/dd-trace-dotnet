@@ -8,12 +8,12 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IIS test collection")]
-    public class AspNetMvc4Tests : TestHelper, IClassFixture<IisFixture>
+    public class AspNetWebApi2Tests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
 
-        public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output)
-            : base("AspNetMvc4", output)
+        public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output)
+            : base("AspNetMvc5", output)
         {
             _iisFixture = iisFixture;
             _iisFixture.StartIis(this);
@@ -21,8 +21,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Theory]
         [Trait("Category", "EndToEnd")]
-        [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [InlineData("/Home/Index", "GET home.index")]
+        [Trait("Integration", nameof(Integrations.AspNetWebApi2Integration))]
+        [InlineData("/api/environment", "GET api/environment")]
+        [InlineData("/api/delay/0", "GET api/delay/{seconds}")]
+        [InlineData("/api/delay-async/0", "GET api/delay-async/{seconds}")]
         public async Task SubmitsTraces(
             string path,
             string expectedResourceName)
@@ -33,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
                 SpanTypes.Web,
-                Integrations.AspNetMvcIntegration.OperationName,
+                Integrations.AspNetWebApi2Integration.OperationName,
                 expectedResourceName);
         }
     }
