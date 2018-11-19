@@ -74,12 +74,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\samples\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj">
-      <Project>{4b243cf1-4269-45c6-a238-1a9bfa58b8cc}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\samples\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj">
-      <Project>{fdb5c8d0-018d-4ff9-9680-c6a5078f819b}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.vcxproj">
       <Project>{91b6272f-5780-4c94-8071-dbba7b4f67f3}</Project>
     </ProjectReference>
