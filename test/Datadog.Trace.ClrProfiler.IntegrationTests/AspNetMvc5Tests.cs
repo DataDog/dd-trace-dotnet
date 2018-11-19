@@ -26,6 +26,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 using (var iis = StartIISExpress(AgentPort, Port))
                 {
+                    // give IIS Express time to boot up
+                    await Task.Delay(2000);
+
                     try
                     {
                         var request = WebRequest.Create($"http://localhost:{Port}/api/environment");
