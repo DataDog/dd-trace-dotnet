@@ -30,12 +30,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
-        public string GetPlatform()
+        public static string GetPlatform()
         {
             return Environment.Is64BitProcess ? "x64" : "x86";
         }
 
-        public string GetOS()
+        public static string GetOS()
         {
             return Environment.OSVersion.Platform == PlatformID.Win32NT ? "win" :
                    Environment.OSVersion.Platform == PlatformID.Unix ? "linux" :
@@ -43,12 +43,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                                                           string.Empty;
         }
 
-        public string GetRuntimeIdentifier()
+        public static string GetRuntimeIdentifier()
         {
             return BuildParameters.CoreClr ? string.Empty : $"{GetOS()}-{GetPlatform()}";
         }
 
-        public string GetSolutionDirectory()
+        public static string GetSolutionDirectory()
         {
             var pathParts = new Stack<string>(Environment.CurrentDirectory.ToLowerInvariant().Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
             while (pathParts.Count > 0)
