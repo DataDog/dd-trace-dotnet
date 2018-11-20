@@ -52,23 +52,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static string GetSolutionDirectory()
         {
-            var directories = Environment.CurrentDirectory
-                                         .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                                         .TakeWhile(d => !string.Equals(d, "test", StringComparison.InvariantCultureIgnoreCase))
-                                         .ToArray();
+            string currentDirectory = Environment.CurrentDirectory;
 
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT && char.IsLetter(directories[0][0]) && directories[0][1] == ':')
-            {
-                // on Windows, add the root directory '\' after the drive letter to the first segment (e.g. "C:\")
-                directories[0] = directories[0] + Path.DirectorySeparatorChar;
-            }
-            else
-            {
-                // on other platforms, add the root directory '/' before the first segment
-                directories[0] = '/' + directories[0] + Path.DirectorySeparatorChar;
-            }
+            int index = currentDirectory.Replace('\\', '/')
+                                        .LastIndexOf("/test/", StringComparison.InvariantCultureIgnoreCase);
 
-            return Path.Combine(directories);
+            return currentDirectory.Substring(0, index);
         }
 
         public static string GetProfilerDllPath()
