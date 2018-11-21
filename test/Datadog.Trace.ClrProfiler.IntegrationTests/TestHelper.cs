@@ -305,7 +305,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _process.StandardInput.Write("q");
                 _process.StandardInput.Flush();
 
-                if (!_process.WaitForExit(5000))
+                // wait for IIS Express to exit
+                // check every second for 20 seconds
+                int timeoutRemaining = 20000;
+                const int timeoutStep = 1000;
+
+                while (!_process.HasExited && timeoutRemaining > 0)
+                {
+                    _process.WaitForExit(timeoutStep);
+                    timeoutRemaining -= timeoutStep;
+                }
+
+                if (!_process.HasExited)
                 {
                     // kill it forcefully after timeout
                     _process.Kill();

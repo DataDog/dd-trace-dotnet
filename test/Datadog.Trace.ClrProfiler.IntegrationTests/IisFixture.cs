@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // start IIS Express and give it a few seconds to boot up
             _iisExpress = helper.StartIISExpress(AgentPort, HttpPort);
-            Thread.Sleep(TimeSpan.FromSeconds(2));
+            Thread.Sleep(TimeSpan.FromSeconds(3));
         }
 
         public void Dispose()
