@@ -14,14 +14,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public int HttpPort { get; private set; }
 
-        public void StartIis(TestHelper helper)
+        public void TryStartIis(TestHelper helper)
         {
-            AgentPort = Interlocked.Increment(ref _nextPort);
-            HttpPort = Interlocked.Increment(ref _nextPort);
+            lock (this)
+            {
+                if (_iisExpress == null)
+                {
+                    AgentPort = Interlocked.Increment(ref _nextPort);
+                    HttpPort = Interlocked.Increment(ref _nextPort);
 
-            // start IIS Express and give it a few seconds to boot up
-            _iisExpress = helper.StartIISExpress(AgentPort, HttpPort);
-            Thread.Sleep(TimeSpan.FromSeconds(3));
+                    // start IIS Express and give it a few seconds to boot up
+                    _iisExpress = helper.StartIISExpress(AgentPort, HttpPort);
+                    Thread.Sleep(TimeSpan.FromSeconds(3));
+                }
+            }
         }
 
         public void Dispose()

@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("AspNetMvc5", output)
         {
             _iisFixture = iisFixture;
-            _iisFixture.StartIis(this);
+            _iisFixture.TryStartIis(this);
         }
 
         [Theory]
