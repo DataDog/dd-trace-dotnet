@@ -154,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public IISExpress StartIISExpress(int traceAgentPort, int iisPort)
+        public Process StartIISExpress(int traceAgentPort, int iisPort)
         {
             // get path to native profiler dll
             string profilerDllPath = GetProfilerDllPath();
@@ -219,7 +219,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
 
             wh.WaitOne(5000);
-            return new IISExpress(process);
+            return process;
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockTracerAgent.Span> spans, Func<MockTracerAgent.Span, T> mapper, IEnumerable<T> expected)
@@ -288,29 +288,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Assert.Equal(expectedSpanType, span.Type);
             Assert.Equal(expectedOperationName, span.Name);
             Assert.Equal(expectedResourceName, span.Resource);
-        }
-
-        public sealed class IISExpress : IDisposable
-        {
-            private readonly Process _process;
-
-            public IISExpress(Process process)
-            {
-                _process = process;
-            }
-
-            public void Dispose()
-            {
-                // signal IIS Express to quit
-                _process.StandardInput.Write("q");
-                _process.StandardInput.Flush();
-
-                if (!_process.WaitForExit(10000))
-                {
-                    // kill it forcefully after timeout
-                    _process.Kill();
-                }
-            }
         }
 
         internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
