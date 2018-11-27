@@ -1,64 +1,41 @@
 #if NET461
 
-using System.IO;
 using System.Net;
-using Datadog.Trace.TestHelpers;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class AspNetMvc5Tests : TestHelper
+    public class AspNetMvc5Tests : TestHelper, IClassFixture<IisFixture>
     {
-        private const int AgentPort = 9000;
-        private const int Port = 9001;
+        private readonly IisFixture _iisFixture;
 
-        public AspNetMvc5Tests(ITestOutputHelper output)
+        public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output)
             : base("AspNetMvc5", output)
         {
+            _iisFixture = iisFixture;
+            _iisFixture.TryStartIis(this);
         }
 
-        [Fact]
+        [Theory]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
+        [InlineData("/Home/Index", "GET home.index")]
+        [InlineData("/delay/0", "GET home.delay")]
+        [InlineData("/delay-async/0", "GET home.delayasync")]
+        public async Task SubmitsTraces(
+            string path,
+            string expectedResourceName)
         {
-            using (var agent = new MockTracerAgent(AgentPort))
-            {
-                using (var iis = StartIISExpress(AgentPort, Port))
-                {
-                    try
-                    {
-                        var request = WebRequest.Create($"http://localhost:{Port}/api/environment");
-                        using (var response = (HttpWebResponse)request.GetResponse())
-                        using (var stream = response.GetResponseStream())
-                        using (var reader = new StreamReader(stream))
-                        {
-                            Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
-                        }
-                    }
-                    catch (WebException wex)
-                    {
-                        Output.WriteLine($"[http] exception: {wex}");
-                        if (wex.Response is HttpWebResponse response)
-                        {
-                            using (var stream = response.GetResponseStream())
-                            using (var reader = new StreamReader(stream))
-                            {
-                                Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
-                            }
-                        }
-                    }
-                }
-
-                var spans = agent.WaitForSpans(1);
-                Assert.True(spans.Count > 0, "expected at least one span");
-                foreach (var span in spans)
-                {
-                    Assert.Equal(Integrations.AspNetWebApi2Integration.OperationName, span.Name);
-                    Assert.Equal(SpanTypes.Web, span.Type);
-                    Assert.Equal("GET api/environment", span.Resource);
-                }
-            }
+            await AssertHttpSpan(
+                path,
+                _iisFixture.AgentPort,
+                _iisFixture.HttpPort,
+                HttpStatusCode.OK,
+                SpanTypes.Web,
+                Integrations.AspNetMvcIntegration.OperationName,
+                expectedResourceName);
         }
     }
 }

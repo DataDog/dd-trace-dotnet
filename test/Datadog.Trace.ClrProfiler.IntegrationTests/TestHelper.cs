@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -30,12 +32,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
-        public string GetPlatform()
+        public static string GetPlatform()
         {
             return Environment.Is64BitProcess ? "x64" : "x86";
         }
 
-        public string GetOS()
+        public static string GetOS()
         {
             return Environment.OSVersion.Platform == PlatformID.Win32NT ? "win" :
                    Environment.OSVersion.Platform == PlatformID.Unix ? "linux" :
@@ -43,28 +45,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                                                           string.Empty;
         }
 
-        public string GetRuntimeIdentifier()
+        public static string GetRuntimeIdentifier()
         {
             return BuildParameters.CoreClr ? string.Empty : $"{GetOS()}-{GetPlatform()}";
         }
 
-        public string GetSolutionDirectory()
+        public static string GetSolutionDirectory()
         {
-            var pathParts = new Stack<string>(Environment.CurrentDirectory.ToLowerInvariant().Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            while (pathParts.Count > 0)
-            {
-                if (pathParts.Pop() == "test")
-                {
-                    break;
-                }
-            }
+            string currentDirectory = Environment.CurrentDirectory;
 
-            var l = pathParts.ToList();
-            l.Reverse();
-            return string.Join(GetOS() == "win" ? "\\" : "/", l);
+            int index = currentDirectory.Replace('\\', '/')
+                                        .LastIndexOf("/test/", StringComparison.InvariantCultureIgnoreCase);
+
+            return currentDirectory.Substring(0, index);
         }
 
-        public string GetProfilerDllPath()
+        public static string GetProfilerDllPath()
         {
             return Path.Combine(
                 GetSolutionDirectory(),
@@ -158,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public IISExpress StartIISExpress(int traceAgentPort, int iisPort)
+        public Process StartIISExpress(int traceAgentPort, int iisPort)
         {
             // get path to native profiler dll
             string profilerDllPath = GetProfilerDllPath();
@@ -204,13 +200,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 string line;
                 while ((line = process.StandardOutput.ReadLine()) != null)
                 {
+                    Output.WriteLine($"[webserver][stdout] {line}");
+
                     if (line.Contains("IIS Express is running"))
                     {
                         wh.Set();
                     }
-                    Output.WriteLine($"[webserver][stdout] {line}");
                 }
             });
+
             Task.Run(() =>
             {
                 string line;
@@ -221,8 +219,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
 
             wh.WaitOne(5000);
-
-            return new IISExpress(process);
+            return process;
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockTracerAgent.Span> spans, Func<MockTracerAgent.Span, T> mapper, IEnumerable<T> expected)
@@ -264,33 +261,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public class IISExpress : IDisposable
+        protected async Task AssertHttpSpan(
+            string path,
+            int agentPort,
+            int httpPort,
+            HttpStatusCode expectedHttpStatusCode,
+            string expectedSpanType,
+            string expectedOperationName,
+            string expectedResourceName)
         {
-            private Process _process;
+            List<MockTracerAgent.Span> spans;
 
-            public IISExpress(Process process)
+            using (var agent = new MockTracerAgent(agentPort))
+            using (var httpClient = new HttpClient())
             {
-                _process = process;
+                var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
+                var content = await response.Content.ReadAsStringAsync();
+                Output.WriteLine($"[http] {response.StatusCode} {content}");
+                Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+
+                spans = agent.WaitForSpans(1);
+                Assert.True(spans.Count == 1, "expected one span");
             }
 
-            public void Dispose()
-            {
-                Task.Run(() =>
-                {
-                    Thread.Sleep(5000);
-                    try
-                    {
-                        _process.Kill();
-                    }
-                    catch
-                    {
-                    }
-                });
-
-                _process.StandardInput.Write("q");
-                _process.StandardInput.Flush();
-                _process.WaitForExit();
-            }
+            MockTracerAgent.Span span = spans[0];
+            Assert.Equal(expectedSpanType, span.Type);
+            Assert.Equal(expectedOperationName, span.Name);
+            Assert.Equal(expectedResourceName, span.Resource);
         }
 
         internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
