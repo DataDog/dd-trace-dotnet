@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -16,7 +15,8 @@ namespace Datadog.Trace.TestHelpers
             string profilerClsid,
             string profilerDllPath,
             string arguments = null,
-            int traceAgentPort = 9696)
+            int traceAgentPort = 9696,
+            bool createNoWindow = true)
         {
             if (appPath == null)
             {
@@ -33,47 +33,62 @@ namespace Datadog.Trace.TestHelpers
                 throw new ArgumentNullException(nameof(profilerClsid));
             }
 
-            // clear all relevant environment variables to start with a clean slate
-            ClearProfilerEnvironmentVariables();
-
             ProcessStartInfo startInfo;
 
             if (coreClr)
             {
                 // .NET Core
                 startInfo = new ProcessStartInfo(DotNetCoreExecutable, $"{appPath} {arguments ?? string.Empty}");
-
-                startInfo.EnvironmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
-                startInfo.EnvironmentVariables["CORECLR_PROFILER"] = profilerClsid;
-                startInfo.EnvironmentVariables["CORECLR_PROFILER_PATH"] = profilerDllPath;
-
-                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = DotNetCoreExecutable;
             }
             else
             {
                 // .NET Framework
                 startInfo = new ProcessStartInfo(appPath, $"{arguments ?? string.Empty}");
-
-                startInfo.EnvironmentVariables["COR_ENABLE_PROFILING"] = "1";
-                startInfo.EnvironmentVariables["COR_PROFILER"] = profilerClsid;
-                startInfo.EnvironmentVariables["COR_PROFILER_PATH"] = profilerDllPath;
-
-                string executableFileName = Path.GetFileName(appPath);
-                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = executableFileName;
             }
 
-            string integrations = string.Join(";", integrationPaths);
-            startInfo.EnvironmentVariables["DD_INTEGRATIONS"] = integrations;
-            startInfo.EnvironmentVariables["DD_AGENT_HOST"] = "localhost";
-            startInfo.EnvironmentVariables["DD_TRACE_AGENT_PORT"] = traceAgentPort.ToString();
+            // clear all relevant environment variables to start with a clean slate
+            ClearProfilerEnvironmentVariables();
+
+            // get environment variables that need to be set on the new process to enable profiling
+            var environmentVariables = GetProfilerEnvironmentVariables(profilerClsid, profilerDllPath, integrationPaths, traceAgentPort);
+
+            foreach (var keyValuePair in environmentVariables)
+            {
+                startInfo.EnvironmentVariables[keyValuePair.Key] = keyValuePair.Value;
+            }
 
             startInfo.UseShellExecute = false;
-            startInfo.CreateNoWindow = true;
+            startInfo.CreateNoWindow = createNoWindow;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
             startInfo.RedirectStandardInput = true;
 
             return Process.Start(startInfo);
+        }
+
+        public static IDictionary<string, string> GetProfilerEnvironmentVariables(
+            string profilerClsid,
+            string profilerDllPath,
+            IEnumerable<string> integrationFiles,
+            int traceAgentPort = 9696)
+        {
+            return new Dictionary<string, string>
+            {
+                // .NET Core
+                ["CORECLR_ENABLE_PROFILING"] = "1",
+                ["CORECLR_PROFILER"] = profilerClsid,
+                ["CORECLR_PROFILER_PATH"] = profilerDllPath,
+
+                // .NET Framework
+                ["COR_ENABLE_PROFILING"] = "1",
+                ["COR_PROFILER"] = profilerClsid,
+                ["COR_PROFILER_PATH"] = profilerDllPath,
+
+                // Datadog
+                ["DD_INTEGRATIONS"] = string.Join(";", integrationFiles),
+                ["DD_AGENT_HOST"] = "localhost",
+                ["DD_TRACE_AGENT_PORT"] = traceAgentPort.ToString(),
+            };
         }
 
         public static void ClearProfilerEnvironmentVariables()
@@ -97,8 +112,6 @@ namespace Datadog.Trace.TestHelpers
                 "DD_INTEGRATIONS",
                 "DD_AGENT_NAME",
                 "DD_TRACE_AGENT_PORT",
-                "DATADOG_PROFILER_PROCESSES",
-                "DATADOG_INTEGRATIONS",
             };
 
             foreach (string variable in environmentVariables)
