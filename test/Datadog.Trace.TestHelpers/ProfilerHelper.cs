@@ -16,7 +16,6 @@ namespace Datadog.Trace.TestHelpers
             string profilerClsid,
             string profilerDllPath,
             string arguments = null,
-            bool redirectStandardInput = false,
             int traceAgentPort = 9696)
         {
             if (appPath == null)
@@ -65,23 +64,14 @@ namespace Datadog.Trace.TestHelpers
 
             string integrations = string.Join(";", integrationPaths);
             startInfo.EnvironmentVariables["DD_INTEGRATIONS"] = integrations;
-            startInfo.EnvironmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "localhost";
+            startInfo.EnvironmentVariables["DD_AGENT_HOST"] = "localhost";
             startInfo.EnvironmentVariables["DD_TRACE_AGENT_PORT"] = traceAgentPort.ToString();
-
-            // for ASP.NET Core sample apps, set the server's port
-            startInfo.EnvironmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{traceAgentPort}/";
-
-            var value = Environment.GetEnvironmentVariable("REDIS_HOST");
-            if (!string.IsNullOrEmpty(value))
-            {
-                startInfo.EnvironmentVariables["REDIS_HOST"] = value;
-            }
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
-            startInfo.RedirectStandardInput = redirectStandardInput;
+            startInfo.RedirectStandardInput = true;
 
             return Process.Start(startInfo);
         }
@@ -89,25 +79,27 @@ namespace Datadog.Trace.TestHelpers
         public static void ClearProfilerEnvironmentVariables()
         {
             var environmentVariables = new[]
-                                       {
-                                           // .NET Core
-                                           "CORECLR_ENABLE_PROFILING",
-                                           "CORECLR_PROFILER",
-                                           "CORECLR_PROFILER_PATH",
-                                           "CORECLR_PROFILER_PATH_32",
-                                           "CORECLR_PROFILER_PATH_64",
+            {
+                // .NET Core
+                "CORECLR_ENABLE_PROFILING",
+                "CORECLR_PROFILER",
+                "CORECLR_PROFILER_PATH",
+                "CORECLR_PROFILER_PATH_32",
+                "CORECLR_PROFILER_PATH_64",
 
-                                           // .NET Framework
-                                           "COR_ENABLE_PROFILING",
-                                           "COR_PROFILER",
-                                           "COR_PROFILER_PATH",
+                // .NET Framework
+                "COR_ENABLE_PROFILING",
+                "COR_PROFILER",
+                "COR_PROFILER_PATH",
 
-                                           // Datadog
-                                           "DD_PROFILER_PROCESSES",
-                                           "DD_INTEGRATIONS",
-                                           "DATADOG_PROFILER_PROCESSES",
-                                           "DATADOG_INTEGRATIONS",
-                                       };
+                // Datadog
+                "DD_PROFILER_PROCESSES",
+                "DD_INTEGRATIONS",
+                "DD_AGENT_NAME",
+                "DD_TRACE_AGENT_PORT",
+                "DATADOG_PROFILER_PROCESSES",
+                "DATADOG_INTEGRATIONS",
+            };
 
             foreach (string variable in environmentVariables)
             {

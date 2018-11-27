@@ -191,8 +191,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Instrumentation.ProfilerClsid,
                 profilerDllPath,
                 args,
-                redirectStandardInput: true,
-                traceAgentPort: traceAgentPort);
+                traceAgentPort);
 
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
