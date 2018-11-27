@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return Environment.OSVersion.Platform == PlatformID.Win32NT ? "win" :
                    Environment.OSVersion.Platform == PlatformID.Unix ? "linux" :
                    Environment.OSVersion.Platform == PlatformID.MacOSX ? "osx" :
-                                                                          string.Empty;
+                   string.Empty;
         }
 
         public static string GetRuntimeIdentifier()
@@ -84,22 +84,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (GetOS() == "win")
             {
                 return Path.Combine(
-                                binDir,
-                                GetPlatform(),
-                                BuildParameters.Configuration,
-                                BuildParameters.TargetFramework,
-                                GetRuntimeIdentifier(),
-                                appFileName);
+                    binDir,
+                    GetPlatform(),
+                    BuildParameters.Configuration,
+                    BuildParameters.TargetFramework,
+                    GetRuntimeIdentifier(),
+                    appFileName);
             }
             else
             {
                 return Path.Combine(
-                                binDir,
-                                BuildParameters.Configuration,
-                                BuildParameters.TargetFramework,
-                                GetRuntimeIdentifier(),
-                                "publish",
-                                appFileName);
+                    binDir,
+                    BuildParameters.Configuration,
+                    BuildParameters.TargetFramework,
+                    GetRuntimeIdentifier(),
+                    "publish",
+                    appFileName);
             }
         }
 
@@ -171,17 +171,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
-            var exe = $"C:\\Program Files{(Environment.Is64BitProcess ? string.Empty : " (x86)")}\\IIS Express\\iisexpress.exe";
-            var args = new string[]
-                {
-                    $"/clr:v4.0",
-                    $"/path:{sampleDir}",
-                    $"/systray:false",
-                    $"/port:{iisPort}",
-                    $"/trace:info",
-                };
+            var exe = Environment.Is64BitProcess
+                          ? @"C:\Program Files\IIS Express\iisexpress.exe"
+                          : @"C:\Program Files (x86)\IIS Express\iisexpress.exe";
 
-            Output.WriteLine($"[webserver] starting {exe} {string.Join(" ", args)}");
+            if (!File.Exists(exe))
+            {
+                throw new FileNotFoundException($"IIS Express executable not found in \"{exe}\"");
+            }
+
+            var args = $"/clr:v4.0 /path:{sampleDir} /systray:false /port:{iisPort} /trace:info";
+
+            Output.WriteLine($"[webserver] starting \"{exe}\" {args}");
 
             var process = ProfilerHelper.StartProcessWithProfiler(
                 exe,
@@ -189,34 +190,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 integrationPaths,
                 Instrumentation.ProfilerClsid,
                 profilerDllPath,
-                arguments: string.Join(" ", args),
+                args,
                 redirectStandardInput: true,
                 traceAgentPort: traceAgentPort);
 
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-            Task.Run(() =>
-            {
-                string line;
-                while ((line = process.StandardOutput.ReadLine()) != null)
+            Task.Run(
+                () =>
                 {
-                    Output.WriteLine($"[webserver][stdout] {line}");
-
-                    if (line.Contains("IIS Express is running"))
+                    string line;
+                    while ((line = process.StandardOutput.ReadLine()) != null)
                     {
-                        wh.Set();
-                    }
-                }
-            });
+                        Output.WriteLine($"[webserver][stdout] {line}");
 
-            Task.Run(() =>
-            {
-                string line;
-                while ((line = process.StandardError.ReadLine()) != null)
+                        if (line.Contains("IIS Express is running"))
+                        {
+                            wh.Set();
+                        }
+                    }
+                });
+
+            Task.Run(
+                () =>
                 {
-                    Output.WriteLine($"[webserver][stderr] {line}");
-                }
-            });
+                    string line;
+                    while ((line = process.StandardError.ReadLine()) != null)
+                    {
+                        Output.WriteLine($"[webserver][stderr] {line}");
+                    }
+                });
 
             wh.WaitOne(5000);
             return process;
