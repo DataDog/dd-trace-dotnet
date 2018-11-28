@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class ConsoleCoreTests : TestHelper
+    public class ConsoleCoreTests : TestBase
     {
         private const int AgentPort = 9003;
 

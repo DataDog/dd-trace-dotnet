@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class ElasticsearchTests : TestHelper
+    public class ElasticsearchTests : TestBase
     {
         private const int AgentPort = 9005;
 

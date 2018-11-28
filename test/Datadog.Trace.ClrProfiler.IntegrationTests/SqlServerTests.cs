@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class SqlServerTests : TestHelper
+    public class SqlServerTests : TestBase
     {
         private const int AgentPort = 9002;
 

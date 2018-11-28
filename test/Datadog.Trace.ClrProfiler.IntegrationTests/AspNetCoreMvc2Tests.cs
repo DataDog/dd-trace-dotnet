@@ -11,7 +11,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class AspNetCoreMvc2Tests : TestHelper
+    public class AspNetCoreMvc2Tests : TestBase
     {
         private const int AgentPort = 9008;
         private const int Port = 9009;

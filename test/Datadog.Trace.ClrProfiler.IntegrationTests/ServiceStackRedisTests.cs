@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -10,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class ServiceStackRedisTests : TestHelper
+    public class ServiceStackRedisTests : TestBase
     {
         private const int AgentPort = 9004;
 

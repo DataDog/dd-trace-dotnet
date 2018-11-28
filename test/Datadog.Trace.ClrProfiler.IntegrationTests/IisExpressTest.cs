@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class IisExpressTest : TestHelper, IClassFixture<IisExpressFixture>, IDisposable
+    public class IisExpressTest : TestBase, IClassFixture<IisExpressFixture>, IDisposable
     {
         public IisExpressTest(string sampleAppName, ITestOutputHelper output, IisExpressFixture fixture)
             : base(sampleAppName, output)

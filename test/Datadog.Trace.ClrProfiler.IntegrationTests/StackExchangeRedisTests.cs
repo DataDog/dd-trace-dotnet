@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class StackExchangeRedisTests : TestHelper
+    public class StackExchangeRedisTests : TestBase
     {
         private const int AgentPort = 9003;
 
