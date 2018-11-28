@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw exception;
             }
 
-            var args = $"/clr:v4.0 /path:{applicationDirectory} /port:{iisPort} /systray:false /trace:info";
+            var args = $"/clr:v4.0 /path:{applicationDirectory} /port:{iisPort} /systray:true /trace:info";
 
             var startInfo = new ProcessStartInfo(exe, args)
             {

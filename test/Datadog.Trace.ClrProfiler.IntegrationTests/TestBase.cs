@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
                 var content = await response.Content.ReadAsStringAsync();
-                Output.WriteLine($"[http] {response.StatusCode} {content}");
+                Output.WriteLine($"[http] {response.StatusCode}{Environment.NewLine}{content}");
                 Assert.Equal(expectedHttpStatusCode, response.StatusCode);
 
                 spans = agent.WaitForSpans(1);
