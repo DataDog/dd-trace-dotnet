@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void SubmitsTraces()
         {
             using (var agent = new MockTracerAgent(9002))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(9002))
+            using (ProcessResult processResult = RunSampleApp(9002))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 

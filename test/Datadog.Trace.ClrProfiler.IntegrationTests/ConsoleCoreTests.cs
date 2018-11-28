@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         public void ProfilerAttached_MethodReplaced()
         {
-            using (ProcessResult processResult = RunSampleAndWaitForExit(AgentPort))
+            using (ProcessResult processResult = RunSampleApp(AgentPort))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 

@@ -103,10 +103,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public Process StartSample(int traceAgentPort, string arguments = null)
+        public ProcessResult RunSampleApp(int traceAgentPort, string arguments = null)
         {
             // get path to native profiler dll
             string profilerDllPath = GetProfilerDllPath();
+
             if (!File.Exists(profilerDllPath))
             {
                 throw new Exception($"profiler not found: {profilerDllPath}");
@@ -114,6 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // get path to sample app that the profiler will attach to
             string sampleAppPath = GetSampleApplicationPath();
+
             if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
@@ -122,19 +124,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
-            return ProfilerHelper.StartProcessWithProfiler(
+            Process process = ProfilerHelper.StartProcessWithProfiler(
                 sampleAppPath,
                 BuildParameters.CoreClr,
                 integrationPaths,
                 Instrumentation.ProfilerClsid,
                 profilerDllPath,
                 arguments,
-                traceAgentPort: traceAgentPort);
-        }
-
-        public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, string arguments = null)
-        {
-            Process process = StartSample(traceAgentPort, arguments);
+                traceAgentPort);
 
             string standardOutput = process.StandardOutput.ReadToEnd();
             string standardError = process.StandardError.ReadToEnd();

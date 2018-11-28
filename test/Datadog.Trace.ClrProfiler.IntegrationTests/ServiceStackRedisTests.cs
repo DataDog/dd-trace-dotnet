@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var prefix = $"{BuildParameters.Configuration}.{BuildParameters.TargetFramework}.";
             using (var agent = new MockTracerAgent(AgentPort))
-            using (var processResult = RunSampleAndWaitForExit(AgentPort, arguments: $"ServiceStack {prefix}"))
+            using (var processResult = RunSampleApp(AgentPort, arguments: $"ServiceStack {prefix}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
