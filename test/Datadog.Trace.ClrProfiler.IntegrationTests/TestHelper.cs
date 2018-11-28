@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -149,69 +148,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
-        }
-
-        public Process StartIISExpress(int traceAgentPort, int iisPort)
-        {
-            var sampleDir = Path.Combine(
-                GetSolutionDirectory(),
-                "samples",
-                $"Samples.{SampleAppName}");
-
-            // get full paths to integration definitions
-            IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
-
-            var exe = Environment.Is64BitProcess
-                          ? @"C:\Program Files\IIS Express\iisexpress.exe"
-                          : @"C:\Program Files (x86)\IIS Express\iisexpress.exe";
-
-            if (!File.Exists(exe))
-            {
-                throw new FileNotFoundException($"IIS Express executable not found in \"{exe}\"");
-            }
-
-            var args = $"/clr:v4.0 /path:{sampleDir} /systray:false /port:{iisPort} /trace:info";
-
-            Output.WriteLine($"[webserver] starting \"{exe}\" {args}");
-
-            var process = ProfilerHelper.StartProcessWithProfiler(
-                exe,
-                BuildParameters.CoreClr,
-                integrationPaths,
-                Instrumentation.ProfilerClsid,
-                GetProfilerDllPath(),
-                args,
-                traceAgentPort);
-
-            var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
-
-            Task.Run(
-                () =>
-                {
-                    string line;
-                    while ((line = process.StandardOutput.ReadLine()) != null)
-                    {
-                        Output.WriteLine($"[webserver][stdout] {line}");
-
-                        if (line.Contains("IIS Express is running"))
-                        {
-                            wh.Set();
-                        }
-                    }
-                });
-
-            Task.Run(
-                () =>
-                {
-                    string line;
-                    while ((line = process.StandardError.ReadLine()) != null)
-                    {
-                        Output.WriteLine($"[webserver][stderr] {line}");
-                    }
-                });
-
-            wh.WaitOne(5000);
-            return process;
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockTracerAgent.Span> spans, Func<MockTracerAgent.Span, T> mapper, IEnumerable<T> expected)
