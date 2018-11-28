@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -18,20 +19,13 @@ namespace Datadog.Trace.TestHelpers
             int traceAgentPort = 9696,
             bool createNoWindow = true)
         {
-            if (appPath == null)
-            {
-                throw new ArgumentNullException(nameof(appPath));
-            }
-
-            if (integrationPaths == null)
-            {
-                throw new ArgumentNullException(nameof(integrationPaths));
-            }
-
-            if (profilerClsid == null)
-            {
-                throw new ArgumentNullException(nameof(profilerClsid));
-            }
+#pragma warning disable SA1501 // Statement must not be on a single line
+            if (appPath == null) { throw new ArgumentNullException(nameof(appPath)); }
+            if (integrationPaths == null) { throw new ArgumentNullException(nameof(integrationPaths)); }
+            if (profilerClsid == null) { throw new ArgumentNullException(nameof(profilerClsid)); }
+            if (profilerDllPath == null) { throw new ArgumentNullException(nameof(profilerDllPath)); }
+            if (!File.Exists(profilerDllPath)) { throw new Exception($"Native profiler library not found in \"{profilerDllPath}\""); }
+#pragma warning restore SA1501 // Statement must not be on a single line
 
             ProcessStartInfo startInfo;
 

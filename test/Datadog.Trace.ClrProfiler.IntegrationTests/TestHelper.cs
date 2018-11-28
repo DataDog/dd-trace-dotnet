@@ -156,13 +156,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public Process StartIISExpress(int traceAgentPort, int iisPort)
         {
-            // get path to native profiler dll
-            string profilerDllPath = GetProfilerDllPath();
-            if (!File.Exists(profilerDllPath))
-            {
-                throw new Exception($"profiler not found: {profilerDllPath}");
-            }
-
             var sampleDir = Path.Combine(
                 GetSolutionDirectory(),
                 "samples",
@@ -189,7 +182,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 BuildParameters.CoreClr,
                 integrationPaths,
                 Instrumentation.ProfilerClsid,
-                profilerDllPath,
+                GetProfilerDllPath(),
                 args,
                 traceAgentPort);
 
