@@ -7,15 +7,11 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class AspNetMvc5Tests : TestHelper, IClassFixture<IisFixture>
+    public class AspNetMvc5Tests : IisExpressTest
     {
-        private readonly IisFixture _iisFixture;
-
-        public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output)
-            : base("AspNetMvc5", output)
+        public AspNetMvc5Tests(ITestOutputHelper output, IisExpressFixture fixture)
+            : base("AspNetMvc5", output, fixture)
         {
-            _iisFixture = iisFixture;
-            _iisFixture.TryStartIis(this);
         }
 
         [Theory]
@@ -30,8 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             await AssertHttpSpan(
                 path,
-                _iisFixture.AgentPort,
-                _iisFixture.HttpPort,
+                Fixture.AgentPort,
+                Fixture.HttpPort,
                 HttpStatusCode.OK,
                 SpanTypes.Web,
                 Integrations.AspNetMvcIntegration.OperationName,

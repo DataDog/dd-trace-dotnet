@@ -7,6 +7,8 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
+// TODO: add env var ASPNETCORE_URLS = "http://localhost:{HttpServerPort}/"
+
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class AspNetCoreMvc2Tests : TestHelper
