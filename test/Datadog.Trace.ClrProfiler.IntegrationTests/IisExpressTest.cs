@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -15,12 +14,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // set the output for each test
             Fixture.Output = output;
 
-            if (!Fixture.IsRunning)
+            if (!Fixture.StartCalled)
             {
                 Fixture.StartIis(sampleAppName);
+            }
 
-                // give IIS Express a few seconds to boot up in slow environments
-                Thread.Sleep(5);
+            if (!Fixture.StartedSuccessfully)
+            {
+                throw new InvalidOperationException("IIS Express failed to start.");
             }
         }
 

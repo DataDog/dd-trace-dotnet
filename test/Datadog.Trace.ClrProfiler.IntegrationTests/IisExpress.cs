@@ -13,8 +13,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public IisExpress()
         {
             _process = new Process();
-            _process.Exited += (sender, args) => IsRunning = false;
-            _process.EnableRaisingEvents = true;
         }
 
         public event DataReceivedEventHandler OutputDataReceived
@@ -30,8 +28,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public event EventHandler<EventArgs<string>> Message;
-
-        public bool IsRunning { get; private set; }
 
         public void Start(
             string applicationDirectory,
@@ -81,12 +77,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             OnMessage($"starting \"{exe}\" {args}");
 
             _process.StartInfo = startInfo;
-            _process.Start();
 
-            if (!_process.HasExited)
+            if (_process.Start() && !_process.HasExited)
             {
-                IsRunning = true;
-
                 _process.BeginOutputReadLine();
                 _process.BeginErrorReadLine();
             }

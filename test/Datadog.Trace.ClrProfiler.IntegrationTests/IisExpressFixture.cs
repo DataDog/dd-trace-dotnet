@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -23,18 +24,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public ITestOutputHelper Output { get; set; }
 
-        public bool IsRunning => _iisExpress?.IsRunning ?? false;
+        public bool StartCalled { get; private set; }
+
+        public bool StartedSuccessfully { get; private set; }
 
         public void StartIis(string sampleAppName)
         {
             if (sampleAppName == null) { throw new ArgumentNullException(nameof(sampleAppName)); }
 
-            if (_iisExpress != null)
+            if (StartCalled)
             {
-                _iisExpress.Stop();
-                _iisExpress.Dispose();
+                // StartIis() can only be called once per Fixture instance
+                throw new InvalidOperationException("IIS Express was already started on this Fixture instance.");
             }
 
+            StartCalled = true;
             AgentPort = Interlocked.Increment(ref _nextPort);
             HttpPort = Interlocked.Increment(ref _nextPort);
 
@@ -47,6 +51,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 integrationPaths,
                 AgentPort);
 
+            var waitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
+            var stopwatch = Stopwatch.StartNew();
             _iisExpress = new IisExpress();
 
             _iisExpress.Message += (sender, e) =>
@@ -62,6 +68,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 if (Output != null && !string.IsNullOrEmpty(e.Data))
                 {
                     Output.WriteLine($"[webserver][stdout] {e.Data}");
+
+                    if (e.Data.Contains("IIS Express is running"))
+                    {
+                        Output.WriteLine($"[webserver] IIS Express started after {stopwatch.Elapsed}");
+                        stopwatch.Stop();
+                        waitHandle.Set();
+                    }
                 }
             };
 
@@ -75,6 +88,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var sampleAppDirectory = Path.Combine(TestHelper.GetSolutionDirectory(), "samples", $"Samples.{sampleAppName}");
             _iisExpress.Start(sampleAppDirectory, Environment.Is64BitProcess, HttpPort, environmentVariables);
+
+            // give IIS Express a few seconds to boot up in slow environments,
+            // stop waiting when it outputs "IIS Express is running" or after timeout
+            waitHandle.WaitOne(TimeSpan.FromSeconds(10));
+
+            StartedSuccessfully = true;
         }
 
         // called after all test methods in a class are finished
