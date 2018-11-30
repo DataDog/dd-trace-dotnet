@@ -15,16 +15,39 @@ namespace Datadog.Trace
     public class Tracer : IDatadogTracer
     {
         private const string UnknownServiceName = "UnknownService";
-        private static readonly ILog _log = LogProvider.For<Tracer>();
-        private static readonly string _defaultTraceAgentHost = "localhost";
-        private static readonly string _defaultTraceAgentPort = "8126";
+        private const string DefaultTraceAgentHost = "localhost";
+        private const string DefaultTraceAgentPort = "8126";
 
-        private AsyncLocalScopeManager _scopeManager;
-        private IAgentWriter _agentWriter;
-        private bool _isDebugEnabled;
+        private static readonly string[] TraceAgentHostEnvironmentVariableNames =
+        {
+            // officially documented name
+            "DD_AGENT_HOST",
+            // backwards compatibility for names used in the past
+            "DD_TRACE_AGENT_HOSTNAME",
+            "DATADOG_TRACE_AGENT_HOSTNAME"
+        };
+
+        private static readonly string[] TraceAgentPortEnvironmentVariableNames =
+        {
+            // officially documented name
+            "DD_TRACE_AGENT_PORT",
+            // backwards compatibility for names used in the past
+            "DATADOG_TRACE_AGENT_PORT"
+        };
+
+        private static readonly ILog Log = LogProvider.For<Tracer>();
+        private static readonly Uri DefaultAgentUri;
+
+        private readonly AsyncLocalScopeManager _scopeManager;
+        private readonly IAgentWriter _agentWriter;
+        private readonly bool _isDebugEnabled;
 
         static Tracer()
         {
+            // create Agent uri once and save it
+            DefaultAgentUri = CreateAgentUri();
+
+            // create the default global Tracer
             Instance = Create();
         }
 
@@ -76,11 +99,11 @@ namespace Datadog.Trace
         /// <returns>The newly created tracer</returns>
         public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            return Create(agentEndpoint ?? DefaultAgentUri(), defaultServiceName, null, isDebugEnabled);
+            return Create(agentEndpoint ?? DefaultAgentUri, defaultServiceName, null, isDebugEnabled);
         }
 
         /// <summary>
-        /// Make a span active and return a scope that can be disposed to desactivate the span
+        /// Make a span active and return a scope that can be disposed to close the span
         /// </summary>
         /// <param name="span">The span to activate</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
@@ -144,18 +167,20 @@ namespace Datadog.Trace
             return tracer;
         }
 
-        private static Uri DefaultAgentUri()
+        /// <summary>
+        /// Create an Uri to the Agent using host and port from
+        /// environment variables or defaults if not set.
+        /// </summary>
+        /// <returns>An Uri that can be used to send traces to the Agent.</returns>
+        internal static Uri CreateAgentUri()
         {
-            var prefixes = new string[] { "DD", "DATADOG" };
+            var host = TraceAgentHostEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
+                                                             .FirstOrDefault(str => !string.IsNullOrEmpty(str))
+                                                            ?.Trim() ?? DefaultTraceAgentHost;
 
-            var host = prefixes.
-                Select(prefix => Environment.GetEnvironmentVariable($"{prefix}_TRACE_AGENT_HOSTNAME")).
-                Where(str => !string.IsNullOrEmpty(str)).
-                FirstOrDefault() ?? _defaultTraceAgentHost;
-            var port = prefixes.
-                Select(prefix => Environment.GetEnvironmentVariable($"{prefix}_TRACE_AGENT_PORT")).
-                Where(str => !string.IsNullOrEmpty(str)).
-                FirstOrDefault() ?? _defaultTraceAgentPort;
+            var port = TraceAgentPortEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
+                                                             .FirstOrDefault(str => !string.IsNullOrEmpty(str))
+                                                            ?.Trim() ?? DefaultTraceAgentPort;
 
             return new Uri($"http://{host}:{port}");
         }
@@ -177,7 +202,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                _log.ErrorException("Error creating default service name.", ex);
+                Log.ErrorException("Error creating default service name.", ex);
                 return null;
             }
         }

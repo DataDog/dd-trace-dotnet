@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Elasticsearch.Net;
 using Nest;
 
 
@@ -29,6 +30,9 @@ namespace Samples.Elasticsearch
                 Concat(UserCommands(elastic)).
                 Concat(UserCommandsAsync(elastic)).
                 Concat(WatchCommands(elastic));
+
+            var exceptions = new List<Exception>();
+
             foreach (var action in commands)
             {
                 try
@@ -38,12 +42,19 @@ namespace Samples.Elasticsearch
                     {
                         result = TaskResult(task);
                     }
+
                     Console.WriteLine($"{result}");
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Exception: {ex.Message}");
+                    exceptions.Add(ex);
                 }
+            }
+
+            if (exceptions.Count > 0)
+            {
+                throw new AggregateException(exceptions).Flatten();
             }
         }
 
@@ -78,6 +89,7 @@ namespace Samples.Elasticsearch
                     Title = "CreateDocument",
                 }),
                 () => elastic.Count<Post>(),
+                () => elastic.Search<Post>(s => s.MatchAll()),
                 () => elastic.DeleteByQuery(new DeleteByQueryRequest("test_index")
                 {
                     Size = 0,
@@ -111,6 +123,7 @@ namespace Samples.Elasticsearch
                     Title = "CreateDocument",
                 }),
                 () => elastic.CountAsync<Post>(),
+                () => elastic.SearchAsync<Post>(s => s.MatchAll()),
                 () => elastic.DeleteByQueryAsync(new DeleteByQueryRequest("test_index")
                 {
                     Size = 0,
@@ -238,7 +251,10 @@ namespace Samples.Elasticsearch
                 () => elastic.CatRepositories(new CatRepositoriesRequest()),
                 () => elastic.CatSegments(new CatSegmentsRequest()),
                 () => elastic.CatShards(new CatShardsRequest()),
-                () => elastic.CatSnapshots(new CatSnapshotsRequest()),
+                // CatSnapshots is failing with a JSON deserialization error.
+                // It might be a bug in the client or an incompatibility between client
+                // and server versions.
+                // () => elastic.CatSnapshots(new CatSnapshotsRequest()),
                 () => elastic.CatTasks(new CatTasksRequest()),
                 () => elastic.CatTemplates(new CatTemplatesRequest()),
                 () => elastic.CatThreadPool(new CatThreadPoolRequest()),
@@ -265,7 +281,10 @@ namespace Samples.Elasticsearch
                 () => elastic.CatRepositoriesAsync(new CatRepositoriesRequest()),
                 () => elastic.CatSegmentsAsync(new CatSegmentsRequest()),
                 () => elastic.CatShardsAsync(new CatShardsRequest()),
-                () => elastic.CatSnapshotsAsync(new CatSnapshotsRequest()),
+                // CatSnapshots is failing with a JSON deserialization error.
+                // It might be a bug in the client or an incompatibility between client
+                // and server versions.
+                // () => elastic.CatSnapshotsAsync(new CatSnapshotsRequest()),
                 () => elastic.CatTasksAsync(new CatTasksRequest()),
                 () => elastic.CatTemplatesAsync(new CatTemplatesRequest()),
                 () => elastic.CatThreadPoolAsync(new CatThreadPoolRequest()),
@@ -533,21 +552,15 @@ namespace Samples.Elasticsearch
 
         private static object TaskResult(Task task)
         {
+            task.Wait();
             var taskType = task.GetType();
 
             bool isTaskOfT =
                 taskType.IsGenericType
                 && taskType.GetGenericTypeDefinition() == typeof(Task<>);
 
-            if (isTaskOfT)
-            {
-                return taskType.GetProperty("Result").GetValue(task);
-            }
-            else
-            {
-                task.Wait();
-                return null;
-            }
+
+            return isTaskOfT ? taskType.GetProperty("Result")?.GetValue(task) : null;
         }
 
         public class Post
