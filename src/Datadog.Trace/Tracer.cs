@@ -45,6 +45,7 @@ namespace Datadog.Trace
 
         private readonly AsyncLocalScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
+        private readonly IConfigurationSource _configurationSource;
         private readonly bool _isDebugEnabled;
 
         static Tracer()
@@ -56,20 +57,23 @@ namespace Datadog.Trace
             Instance = Create();
         }
 
-        internal Tracer(IAgentWriter agentWriter, ISampler sampler, string defaultServiceName = null, bool isDebugEnabled = false)
+        internal Tracer(
+            IAgentWriter agentWriter,
+            string defaultServiceName = null,
+            bool isDebugEnabled = false,
+            IConfigurationSource configurationSource = null)
         {
-            IConfigurationSource configurationSource = CreateConfigurationSource();
-
-            _isDebugEnabled = isDebugEnabled;
-            _agentWriter = agentWriter;
+            _agentWriter = agentWriter ?? throw new ArgumentNullException(nameof(agentWriter));
             Sampler = sampler;
             DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
+            _isDebugEnabled = isDebugEnabled;
+            _configurationSource = configurationSource ?? CreateDefaultConfigurationSource();
+            _scopeManager = new AsyncLocalScopeManager();
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
-            _scopeManager = new AsyncLocalScopeManager();
         }
 
         /// <summary>
@@ -234,24 +238,43 @@ namespace Datadog.Trace
             return new Uri($"http://{host}:{port}");
         }
 
-        private static IConfigurationSource CreateConfigurationSource()
+        private static IConfigurationSource CreateDefaultConfigurationSource()
         {
-            // app.config (app local) > datadog.json (app local) > env (system-wide)
-            var configurationSource = new AggregateConfigurationSource();
+            // env > appSettings (local) > datadog.yaml/datadog.json (local)
+            var configurationSource = new AggregateConfigurationSource
+            {
+                new EnvironmentConfigurationSource()
+            };
 
 #if !NETSTANDARD2_0
-            configurationSource.AddSource(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
+            // on .NET Framework only, also read from app.config/web.config
+            configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
 #endif
 
-            string jsonConfigurationFileName = configurationSource.GetString("DD_DOTNET_TRACER_CONFIGURATION_FILE") ??
-                                               Path.Combine(Environment.CurrentDirectory, "datadog.json");
+            var configurationFileNames = configurationSource.GetString("DD_DOTNET_TRACER_CONFIGURATION_FILE");
 
-            if (File.Exists(jsonConfigurationFileName))
+            if (configurationFileNames == null)
             {
-                configurationSource.AddSource(JsonConfigurationSource.LoadFile(jsonConfigurationFileName));
+                // if environment variable is not set, look for default file names in the current directory
+                var defaultYamlFile = Path.Combine(Environment.CurrentDirectory, "datadog.yaml");
+                var defaultJsonFile = Path.Combine(Environment.CurrentDirectory, "datadog.json");
+                configurationFileNames = string.Join(";", defaultYamlFile, defaultJsonFile);
             }
 
-            configurationSource.AddSource(new EnvironmentConfigurationSource());
+            foreach (var configurationFileName in configurationFileNames.Split(';'))
+            {
+                var configurationFileNameExtension = Path.GetExtension(configurationFileName)?.ToLowerInvariant();
+
+                if (configurationFileNameExtension == ".yaml" && File.Exists(configurationFileName))
+                {
+                    // configurationSource.AddSource(YamlConfigurationSource.LoadFile(configurationFileName));
+                }
+                else if (configurationFileNameExtension == ".json" && File.Exists(configurationFileName))
+                {
+                    configurationSource.Add(JsonConfigurationSource.LoadFile(configurationFileName));
+                }
+            }
+
             return configurationSource;
         }
 
@@ -276,7 +299,7 @@ namespace Datadog.Trace
                 // System.Web.dll is only available on .NET Framework
                 if (System.Web.Hosting.HostingEnvironment.IsHosted)
                 {
-                    // if we are hosted as an ASP.NET application, return "SiteName/ApplicationVirtualPath".
+                    // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
                     // note that ApplicationVirtualPath includes a leading slash.
                     return (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
                 }
