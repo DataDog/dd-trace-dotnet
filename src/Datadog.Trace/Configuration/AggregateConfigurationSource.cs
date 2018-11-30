@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,7 +8,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Represents one or more configuration sources.
     /// </summary>
-    public class AggregateConfigurationSource : IConfigurationSource
+    public class AggregateConfigurationSource : IConfigurationSource, IEnumerable<IConfigurationSource>
     {
         private readonly List<IConfigurationSource> _sources = new List<IConfigurationSource>();
 
@@ -15,7 +16,7 @@ namespace Datadog.Trace.Configuration
         /// Adds a new configuration source to this instance.
         /// </summary>
         /// <param name="source">The configuration source to add.</param>
-        public void AddSource(IConfigurationSource source)
+        public void Add(IConfigurationSource source)
         {
             _sources.Add(source);
         }
@@ -57,6 +58,18 @@ namespace Datadog.Trace.Configuration
         {
             return _sources.Select(source => source.GetBool(key))
                            .FirstOrDefault(value => value != null);
+        }
+
+        /// <inheritdoc />
+        IEnumerator<IConfigurationSource> IEnumerable<IConfigurationSource>.GetEnumerator()
+        {
+            return _sources.GetEnumerator();
+        }
+
+        /// <inheritdoc />
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _sources.GetEnumerator();
         }
     }
 }
