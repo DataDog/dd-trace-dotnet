@@ -72,27 +72,6 @@ namespace Datadog.Trace
             _scopeManager = new AsyncLocalScopeManager();
         }
 
-        private static IConfigurationSource CreateConfigurationSource()
-        {
-            // app.config (app local) > datadog.json (app local) > env (system-wide)
-            var configurationSource = new AggregateConfigurationSource();
-
-#if NET45 || NET46
-            configurationSource.AddSource(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
-#endif
-
-            string jsonConfigurationFileName = configurationSource.GetString("DD_DOTNET_TRACER_CONFIGURATION_FILE") ??
-                                               Path.Combine(Environment.CurrentDirectory, "datadog.json");
-
-            if (File.Exists(jsonConfigurationFileName))
-            {
-                configurationSource.AddSource(JsonConfigurationSource.LoadFile(jsonConfigurationFileName));
-            }
-
-            configurationSource.AddSource(new EnvironmentConfigurationSource());
-            return configurationSource;
-        }
-
         /// <summary>
         /// Gets or sets the global tracer object
         /// </summary>
@@ -253,6 +232,27 @@ namespace Datadog.Trace
                                                             ?.Trim() ?? DefaultTraceAgentPort;
 
             return new Uri($"http://{host}:{port}");
+        }
+
+        private static IConfigurationSource CreateConfigurationSource()
+        {
+            // app.config (app local) > datadog.json (app local) > env (system-wide)
+            var configurationSource = new AggregateConfigurationSource();
+
+#if !NETSTANDARD2_0
+            configurationSource.AddSource(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
+#endif
+
+            string jsonConfigurationFileName = configurationSource.GetString("DD_DOTNET_TRACER_CONFIGURATION_FILE") ??
+                                               Path.Combine(Environment.CurrentDirectory, "datadog.json");
+
+            if (File.Exists(jsonConfigurationFileName))
+            {
+                configurationSource.AddSource(JsonConfigurationSource.LoadFile(jsonConfigurationFileName));
+            }
+
+            configurationSource.AddSource(new EnvironmentConfigurationSource());
+            return configurationSource;
         }
 
         /// <summary>
