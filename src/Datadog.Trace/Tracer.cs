@@ -150,7 +150,7 @@ namespace Datadog.Trace
 
             var env = Environment.GetEnvironmentVariable(EnvVariableName);
 
-            // automatically the "env" tag if environment variable is defined
+            // automatically add the "env" tag if environment variable is defined
             if (!string.IsNullOrWhiteSpace(env))
             {
                 span.SetTag(Tags.Env, env);
