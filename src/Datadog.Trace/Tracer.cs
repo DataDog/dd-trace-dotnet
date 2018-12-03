@@ -186,6 +186,11 @@ namespace Datadog.Trace
             return new Uri($"http://{host}:{port}");
         }
 
+        /// <summary>
+        /// Determines the default service name for the executing application by looking at
+        /// environment variables, hosted app name (.NET Framework on IIS only), assembly name, and process name.
+        /// </summary>
+        /// <returns>The default service name.</returns>
         private static string CreateDefaultServiceName()
         {
             try
@@ -199,6 +204,7 @@ namespace Datadog.Trace
                 }
 
 #if !NETSTANDARD2_0
+                // System.Web.dll is only available on .NET Framework
                 if (System.Web.Hosting.HostingEnvironment.IsHosted)
                 {
                     // if we are hosted as an ASP.NET application, return "SiteName/ApplicationVirtualPath".
@@ -206,6 +212,7 @@ namespace Datadog.Trace
                     return (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
                 }
 #endif
+
                 return Assembly.GetEntryAssembly()?.GetName().Name ??
                        Process.GetCurrentProcess().ProcessName;
             }
