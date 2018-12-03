@@ -6,6 +6,11 @@ namespace Datadog.Trace
     public static class Tags
     {
         /// <summary>
+        /// The environment of the profiled service.
+        /// </summary>
+        public const string Env = "env";
+
+        /// <summary>
         /// The URL of an HTTP request
         /// </summary>
         public const string HttpUrl = "http.url";

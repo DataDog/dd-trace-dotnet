@@ -277,6 +277,23 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
+        [InlineData(null)]
+        [InlineData("test")]
+        public void SetEnvEnvironmentVariable(string env)
+        {
+            var name = "DD_ENV";
+            string originalEnv = Environment.GetEnvironmentVariable(name);
+
+            Environment.SetEnvironmentVariable(name, env);
+            Span span = Tracer.Instance.StartSpan("operation");
+
+            Assert.Equal(env, span.GetTag(Tags.Env));
+
+            // reset the environment variable to its original value (if any) when done
+            Environment.SetEnvironmentVariable(name, originalEnv);
+        }
+
+        [Theory]
         // if no service name is specified, fallback to a best guess (e.g. assembly name, process name)
         [InlineData(null, null, null, null)]
         // if only one is set, use that one
