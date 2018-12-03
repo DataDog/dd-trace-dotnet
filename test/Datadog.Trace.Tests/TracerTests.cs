@@ -290,7 +290,7 @@ namespace Datadog.Trace.Tests
 
             Assert.Equal(env, span.GetTag(Tags.Env));
 
-            // reset the environment variable to its original values (if any) when done
+            // reset the environment variable to its original value (if any) when done
             Environment.SetEnvironmentVariable(name, originalEnv);
         }
     }
