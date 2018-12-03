@@ -17,6 +17,7 @@ namespace Datadog.Trace
         private const string UnknownServiceName = "UnknownService";
         private const string DefaultTraceAgentHost = "localhost";
         private const string DefaultTraceAgentPort = "8126";
+        private const string EnvVariableName = "DD_ENV";
 
         private static readonly string[] TraceAgentHostEnvironmentVariableNames =
         {
@@ -146,6 +147,15 @@ namespace Datadog.Trace
             }
 
             var span = new Span(this, childOf, operationName, serviceName, startTime);
+
+            var env = Environment.GetEnvironmentVariable(EnvVariableName);
+
+            // automatically the "env" tag if environment variable is defined
+            if (!string.IsNullOrWhiteSpace(env))
+            {
+                span.SetTag("env", env);
+            }
+
             span.TraceContext.AddSpan(span);
             return span;
         }
