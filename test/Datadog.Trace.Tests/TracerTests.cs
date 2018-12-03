@@ -269,12 +269,39 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", port);
 
             Uri uri = Tracer.CreateAgentUri();
-
             Assert.Equal(new Uri(expectedUri), uri);
 
             // reset the environment variables to their original values (if any) when done
             Environment.SetEnvironmentVariable("DD_AGENT_HOST", originalHost);
             Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", originalPort);
+        }
+
+        [Theory]
+        [InlineData(null, null, null, null)]
+        [InlineData("envService", null, null, "envService")]
+        [InlineData(null, "tracerService", null, "tracerService")]
+        [InlineData(null, null, "spanService", "spanService")]
+        [InlineData("envService", "tracerService", "spanService", "spanService")]
+        public void SetServiceName(string envServiceName, string tracerServiceName, string spanServiceName, string expectedServiceName)
+        {
+            var name = "DD_SERVICE_NAME";
+            string originalEnv = Environment.GetEnvironmentVariable(name);
+            Environment.SetEnvironmentVariable(name, envServiceName);
+
+            var tracer = new Tracer(_writerMock.Object, defaultServiceName: tracerServiceName);
+            Span span = tracer.StartSpan("operationName", serviceName: spanServiceName);
+
+            if (expectedServiceName == null)
+            {
+                Assert.Contains(span.ServiceName, TestRunners.ValidNames);
+            }
+            else
+            {
+                Assert.Equal(expectedServiceName, span.ServiceName);
+            }
+
+            // reset the environment variable to its original values (if any) when done
+            Environment.SetEnvironmentVariable(name, originalEnv);
         }
     }
 }
