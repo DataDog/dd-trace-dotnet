@@ -17,6 +17,7 @@ namespace Datadog.Trace
         private const string UnknownServiceName = "UnknownService";
         private const string DefaultTraceAgentHost = "localhost";
         private const string DefaultTraceAgentPort = "8126";
+        private const string ServiceNameVariableName = "DD_SERVICE_NAME";
 
         private static readonly string[] TraceAgentHostEnvironmentVariableNames =
         {
@@ -189,6 +190,14 @@ namespace Datadog.Trace
         {
             try
             {
+                // allow users to override this with an environment variable
+                var serviceName = Environment.GetEnvironmentVariable(ServiceNameVariableName);
+
+                if (!string.IsNullOrWhiteSpace(serviceName))
+                {
+                    return serviceName;
+                }
+
 #if !NETSTANDARD2_0
                 if (System.Web.Hosting.HostingEnvironment.IsHosted)
                 {
