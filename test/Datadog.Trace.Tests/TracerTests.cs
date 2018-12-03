@@ -277,10 +277,16 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
+        // if no service name is specified, fallback to a best guess (e.g. assembly name, process name)
         [InlineData(null, null, null, null)]
+        // if only one is set, use that one
         [InlineData("envService", null, null, "envService")]
         [InlineData(null, "tracerService", null, "tracerService")]
         [InlineData(null, null, "spanService", "spanService")]
+        // if more than one is set, follow precedence: span > tracer > env > default
+        [InlineData(null, "tracerService", "spanService", "spanService")]
+        [InlineData("envService", null, "spanService", "spanService")]
+        [InlineData("envService", "tracerService", null, "tracerService")]
         [InlineData("envService", "tracerService", "spanService", "spanService")]
         public void SetServiceName(string envServiceName, string tracerServiceName, string spanServiceName, string expectedServiceName)
         {
