@@ -153,7 +153,7 @@ namespace Datadog.Trace
             // automatically the "env" tag if environment variable is defined
             if (!string.IsNullOrWhiteSpace(env))
             {
-                span.SetTag("env", env);
+                span.SetTag(Tags.Env, env);
             }
 
             span.TraceContext.AddSpan(span);
