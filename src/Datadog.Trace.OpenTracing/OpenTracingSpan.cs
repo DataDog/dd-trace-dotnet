@@ -116,21 +116,23 @@ namespace Datadog.Trace.OpenTracing
         public ISpan SetTag(string key, string value)
         {
             // TODO:bertrand do we want this behavior on the Span object too ?
-            if (key == DatadogTags.ResourceName)
+
+            switch (key)
             {
-                Span.ResourceName = value;
-                return this;
+                case DatadogTags.ResourceName:
+                    Span.ResourceName = value;
+                    return this;
+                case DatadogTags.SpanType:
+                    Span.Type = value;
+                    return this;
+                 case DatadogTags.ServiceName:
+                     Span.ServiceName = value;
+                     return this;
             }
 
             if (key == global::OpenTracing.Tag.Tags.Error.Key)
             {
                 Span.Error = value == bool.TrueString;
-                return this;
-            }
-
-            if (key == DatadogTags.SpanType)
-            {
-                Span.Type = value;
                 return this;
             }
 
