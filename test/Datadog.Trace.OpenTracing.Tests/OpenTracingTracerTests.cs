@@ -156,5 +156,95 @@ namespace Datadog.Trace.OpenTracing.Tests
             Assert.Equal(parentId, otSpanContext.Context.SpanId);
             Assert.Equal(traceId, otSpanContext.Context.TraceId);
         }
+
+        [Fact]
+        public void StartActive_NoServiceName_DefaultServiceName()
+        {
+            var scope = _tracer.BuildSpan("Operation")
+                               .StartActive();
+
+            var otSpan = (OpenTracingSpan)scope.Span;
+            var ddSpan = otSpan.Span;
+
+            Assert.Contains(ddSpan.ServiceName, TestRunners.ValidNames);
+        }
+
+        [Fact]
+        public void StartActive_SetServiceName_ServiceNameIsSet()
+        {
+            var scope = _tracer.BuildSpan("Operation")
+                              .WithTag(DatadogTags.ServiceName, "MyAwesomeService")
+                              .StartActive();
+
+            var otSpan = (OpenTracingSpan)scope.Span;
+            var ddSpan = otSpan.Span;
+
+            Assert.Equal("MyAwesomeService", ddSpan.ServiceName);
+        }
+
+        [Fact]
+        public void StartActive_SetParentServiceName_ChildServiceNameIsSet()
+        {
+            var parentScope = _tracer.BuildSpan("ParentOperation")
+                                     .WithTag(DatadogTags.ServiceName, "MyAwesomeService")
+                                     .StartActive();
+
+            var childScope = _tracer.BuildSpan("ChildOperation")
+                                    .AsChildOf(parentScope.Span)
+                                    .StartActive();
+
+            var otSpan = (OpenTracingSpan)childScope.Span;
+            var ddSpan = otSpan.Span;
+
+            Assert.Equal("MyAwesomeService", ddSpan.ServiceName);
+        }
+
+        [Fact]
+        public void StartActive_NoServiceName_DefaultServiceName_WithTracerDefault()
+        {
+            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+
+            var scope = tracer.BuildSpan("Operation")
+                               .StartActive();
+
+            var otSpan = (OpenTracingSpan)scope.Span;
+            var ddSpan = otSpan.Span;
+
+            Assert.Equal("DefaultServiceName", ddSpan.ServiceName);
+        }
+
+        [Fact]
+        public void StartActive_SetServiceName_ServiceNameIsSet_WithTracerDefault()
+        {
+            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+
+            var scope = tracer.BuildSpan("Operation")
+                              .WithTag(DatadogTags.ServiceName, "MyAwesomeService")
+                              .StartActive();
+
+            var otSpan = (OpenTracingSpan)scope.Span;
+            var ddSpan = otSpan.Span;
+
+            Assert.Equal("MyAwesomeService", ddSpan.ServiceName);
+        }
+
+        [Fact]
+        public void StartActive_SetParentServiceName_ChildServiceNameIsSet_WithTracerDefault()
+        {
+            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+
+            var parentScope = tracer.BuildSpan("ParentOperation")
+                                     .WithTag(DatadogTags.ServiceName, "MyAwesomeService")
+                                     .StartActive();
+
+            var childScope = tracer.BuildSpan("ChildOperation")
+                                    .AsChildOf(parentScope.Span)
+                                    .StartActive();
+
+            var otSpan = (OpenTracingSpan)childScope.Span;
+            var ddSpan = otSpan.Span;
+
+            Assert.Equal("MyAwesomeService", ddSpan.ServiceName);
+        }
     }
 }
