@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -73,7 +73,7 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId { get; }
 
-        internal string ServiceName { get; }
+        internal string ServiceName { get; set;  }
 
         // This may be null if SpanContext was extracted from another process context
         internal TraceContext TraceContext { get; }
