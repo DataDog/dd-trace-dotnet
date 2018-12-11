@@ -2,12 +2,12 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
+namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
     /// Traces an Elasticsearch pipeline
     /// </summary>
-    public static class Pipeline
+    public static class ElasticsearchNetIntegration
     {
         private const string OperationName = "elasticsearch.query";
         private const string ServiceName = "elasticsearch";
