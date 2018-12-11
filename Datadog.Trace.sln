@@ -125,6 +125,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch", "sa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc4", "samples\Samples.AspNetMvc4\Samples.AspNetMvc4.csproj", "{6D86109F-B7C9-477D-86D7-45735A3A0818}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MongoDB", "samples\Samples.MongoDB\Samples.MongoDB.csproj", "{75199971-170A-46B9-9F44-16366042E5A5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{5D8E1F81-B820-4736-B797-271B0FE787EE}"
+	ProjectSection(SolutionItems) = preProject
+		tools\Directory.Build.props = tools\Directory.Build.props
+		tools\GlobalSuppressions.cs = tools\GlobalSuppressions.cs
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateIntegrationDefinitions", "tools\GenerateIntegrationDefinitions\GenerateIntegrationDefinitions.csproj", "{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -399,6 +409,30 @@ Global
 		{6D86109F-B7C9-477D-86D7-45735A3A0818}.Release|x64.Build.0 = Release|Any CPU
 		{6D86109F-B7C9-477D-86D7-45735A3A0818}.Release|x86.ActiveCfg = Release|Any CPU
 		{6D86109F-B7C9-477D-86D7-45735A3A0818}.Release|x86.Build.0 = Release|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Debug|x64.Build.0 = Debug|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Debug|x86.Build.0 = Debug|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Release|x64.ActiveCfg = Release|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Release|x64.Build.0 = Release|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Release|x86.ActiveCfg = Release|Any CPU
+		{75199971-170A-46B9-9F44-16366042E5A5}.Release|x86.Build.0 = Release|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Debug|x64.Build.0 = Debug|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Debug|x86.Build.0 = Debug|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Release|x64.ActiveCfg = Release|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Release|x64.Build.0 = Release|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Release|x86.ActiveCfg = Release|Any CPU
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -427,6 +461,8 @@ Global
 		{F5B27CC4-1DF6-4ECD-A4FD-8200152F9A5A} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{C98950B1-DC4B-43DA-974F-EF2CF325EC2B} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{6D86109F-B7C9-477D-86D7-45735A3A0818} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{75199971-170A-46B9-9F44-16366042E5A5} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
