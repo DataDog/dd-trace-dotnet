@@ -6,7 +6,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// <summary>
     /// Wraps calls to the StackExchange redis library.
     /// </summary>
-    public class ConnectionMultiplexer : Base
+    public static class ConnectionMultiplexer
     {
         /// <summary>
         /// Execute a synchronous redis operation.
@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server to call.</param>
         /// <returns>The result</returns>
         [InterceptMethod(
-            Integration = "StackExchange.Redis",
+            Integration = "StackExchangeRedis",
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
@@ -115,9 +115,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static Scope CreateScope(object multiplexer, object message)
         {
-            var config = GetConfiguration(multiplexer);
-            var hostAndPort = GetHostAndPort(config);
-            var rawCommand = GetRawCommand(multiplexer, message);
+            var config = StackExchangeRedisHelper.GetConfiguration(multiplexer);
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
+            var rawCommand = StackExchangeRedisHelper.GetRawCommand(multiplexer, message);
 
             return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
         }

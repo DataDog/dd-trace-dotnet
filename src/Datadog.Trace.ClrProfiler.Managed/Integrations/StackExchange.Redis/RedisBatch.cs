@@ -6,7 +6,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// <summary>
     /// Traces StackExchange.Redis.RedisBatch
     /// </summary>
-    public class RedisBatch : Base
+    public static class RedisBatch
     {
         /// <summary>
         /// Execute an asynchronous redis operation.
@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server</param>
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
-            Integration = "StackExchange.Redis",
+            Integration = "StackExchangeRedis",
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
             TargetType = "StackExchange.Redis.RedisBase")]
@@ -75,10 +75,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static Scope CreateScope(object batch, object message)
         {
-            var multiplexer = GetMultiplexer(batch);
-            var config = GetConfiguration(multiplexer);
-            var hostAndPort = GetHostAndPort(config);
-            var cmd = GetRawCommand(batch, message);
+            var multiplexer = StackExchangeRedisHelper.GetMultiplexer(batch);
+            var config = StackExchangeRedisHelper.GetConfiguration(multiplexer);
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
+            var cmd = StackExchangeRedisHelper.GetRawCommand(batch, message);
 
             return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, cmd);
         }
