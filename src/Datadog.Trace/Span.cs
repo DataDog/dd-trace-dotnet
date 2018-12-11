@@ -58,12 +58,12 @@ namespace Datadog.Trace
         public bool Error { get; set; }
 
         /// <summary>
-        /// Gets the service name
+        /// Gets or sets the service name
         /// </summary>
         public string ServiceName
         {
-            get { return _context.ServiceName; }
-            internal set { _context.ServiceName = value; }
+            get => _context.ServiceName;
+            set => _context.ServiceName = value;
         }
 
         /// <summary>
