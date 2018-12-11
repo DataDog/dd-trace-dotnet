@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
             var cmd = StackExchangeRedisHelper.GetRawCommand(batch, message);
 
-            return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, cmd);
+            return Integrations.RedisHelper.CreateScope(hostAndPort.Item1, hostAndPort.Item2, cmd);
         }
     }
 }

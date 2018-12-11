@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
             var rawCommand = StackExchangeRedisHelper.GetRawCommand(multiplexer, message);
 
-            return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
+            return Integrations.RedisHelper.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
         }
     }
 }

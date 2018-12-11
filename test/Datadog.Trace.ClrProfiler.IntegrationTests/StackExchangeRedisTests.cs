@@ -242,8 +242,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(Redis.OperationName, span.Name);
-                    Assert.Equal($"Samples.RedisCore-{Redis.ServiceName}", span.Service);
+                    Assert.Equal(RedisHelper.OperationName, span.Name);
+                    Assert.Equal($"Samples.RedisCore-{RedisHelper.ServiceName}", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, span.Tags.Get<string>("out.host"));
                     Assert.Equal("6379", span.Tags.Get<string>("out.port"));

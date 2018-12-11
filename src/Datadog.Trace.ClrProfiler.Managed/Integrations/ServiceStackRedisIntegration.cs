@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     "SendReceive",
                     methodGenericArguments: new[] { typeof(T) });
 
-            using (var scope = Integrations.Redis.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
+            using (var scope = Integrations.RedisHelper.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
             {
                 try
                 {
