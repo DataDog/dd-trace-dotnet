@@ -76,7 +76,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the service name
         /// </summary>
-        public string ServiceName { get; internal set; }
+        internal string ServiceName { get; set; }
 
         // This may be null if SpanContext was extracted from another process context
         internal TraceContext TraceContext { get; }
