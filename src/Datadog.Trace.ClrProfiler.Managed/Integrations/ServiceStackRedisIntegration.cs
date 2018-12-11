@@ -2,12 +2,12 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
+namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
     /// Wraps a RedisNativeClient.
     /// </summary>
-    public static class RedisNativeClient
+    public static class ServiceStackRedisIntegration
     {
         /// <summary>
         /// Traces SendReceive.
