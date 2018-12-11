@@ -17,6 +17,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="server">The server to call.</param>
         /// <returns>The result</returns>
+        [InterceptMethod(
+            Integration = "StackExchange.Redis",
+            CallerAssembly = "StackExchange.Redis",
+            TargetAssembly = "StackExchange.Redis",
+            TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
         public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server)
         {
             var resultType = typeof(T);
@@ -57,6 +62,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
         /// <returns>An asynchronous task.</returns>
+        [InterceptMethod(
+            Integration = "StackExchange.Redis",
+            CallerAssembly = "StackExchange.Redis",
+            TargetAssembly = "StackExchange.Redis",
+            TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
         {
             return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server);

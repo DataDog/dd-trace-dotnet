@@ -17,6 +17,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="processor">The result processor</param>
         /// <param name="server">The server</param>
         /// <returns>An asynchronous task.</returns>
+        [InterceptMethod(
+            Integration = "StackExchange.Redis",
+            CallerAssembly = "StackExchange.Redis",
+            TargetAssembly = "StackExchange.Redis",
+            TargetType = "StackExchange.Redis.RedisBase")]
         public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server)
         {
             return ExecuteAsyncInternal<T>(redisBase, message, processor, server);

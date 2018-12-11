@@ -102,6 +102,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate.</param>
         /// <param name="state">An object that holds the state of the async operation.</param>
         /// <returns>Returns the <see cref="IAsyncResult "/> returned by the original BeginInvokeAction() that is later passed to <see cref="EndInvokeAction"/>.</returns>
+        [InterceptMethod(
+            CallerAssembly = "System.Web.Mvc",
+            TargetAssembly = "System.Web.Mvc",
+            TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker")]
         public static object BeginInvokeAction(
             dynamic asyncControllerActionInvoker,
             dynamic controllerContext,
@@ -142,6 +146,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="asyncControllerActionInvoker">The AsyncControllerActionInvoker instance.</param>
         /// <param name="asyncResult">The <see cref="IAsyncResult"/> returned by <see cref="BeginInvokeAction"/>.</param>
         /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
+        [InterceptMethod(
+            CallerAssembly = "System.Web.Mvc",
+            TargetAssembly = "System.Web.Mvc",
+            TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker")]
         public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
         {
             AspNetMvcIntegration integration = null;

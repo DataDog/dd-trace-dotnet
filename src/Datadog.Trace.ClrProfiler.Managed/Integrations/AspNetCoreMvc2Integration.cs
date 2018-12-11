@@ -58,6 +58,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
         /// <param name="httpContext">The HttpContext for the current request.</param>
         /// <param name="routeData">A RouteData with information about the current route.</param>
+        [InterceptMethod(
+            CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
         public static void BeforeAction(
             object diagnosticSource,
             object actionDescriptor,
@@ -114,6 +118,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
         /// <param name="httpContext">The HttpContext for the current request.</param>
         /// <param name="routeData">A RouteData with information about the current route.</param>
+        [InterceptMethod(
+            CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
         public static void AfterAction(
             object diagnosticSource,
             object actionDescriptor,
