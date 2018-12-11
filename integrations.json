@@ -92,40 +92,60 @@
       }
     ]
   },
-  {
-    "name": "SqlServer",
+    {
+    "name": "Elasticsearch",
     "method_replacements": [
       {
         "caller": {
-          "assembly": "System.Data",
-          "type": "System.Data.SqlClient.SqlCommand"
+          "assembly": "Elasticsearch.Net"
         },
         "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.SqlClient.SqlCommand",
-          "method": "ExecuteReader",
-          "signature": [ 32, 2, 12, 82, 8, 11, 82, 91, 14 ]
+          "assembly": "Elasticsearch.Net",
+          "type": "Elasticsearch.Net.IRequestPipeline",
+          "method": "CallElasticsearch"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
-          "method": "ExecuteReaderWithMethod",
-          "signature": [ 0, 3, 28, 28, 8, 14 ]
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net.Pipeline",
+          "method": "CallElasticsearch",
+          "signature": "10 01 02 1C 1C 1C"
         }
       },
       {
-        "caller": {},
+        "caller": {
+          "assembly": "Elasticsearch.Net"
+        },
         "target": {
-          "assembly": "System.Data.SqlClient",
-          "type": "System.Data.SqlClient.SqlCommand",
-          "method": "ExecuteReader",
-          "signature": [ 32, 1, 12, 87, 12, 11, 92 ]
+          "assembly": "Elasticsearch.Net",
+          "type": "Elasticsearch.Net.IRequestPipeline",
+          "method": "CallElasticsearchAsync"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
-          "method": "ExecuteReader",
-          "signature": [ 0, 2, 28, 28, 8 ]
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net.Pipeline",
+          "method": "CallElasticsearchAsync",
+          "signature": "10 01 03 1C 1C 1C 1C"
+        }
+      }
+    ]
+  },
+  {
+    "name": "ServiceStackRedis",
+    "method_replacements": [
+      {
+        "caller": {
+          "assembly": "ServiceStack.Redis"
+        },
+        "target": {
+          "assembly": "ServiceStack.Redis",
+          "type": "ServiceStack.Redis.RedisNativeClient",
+          "method": "SendReceive"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "method": "SendReceive",
+          "signature": "10 01 05 1E 00 1C 1D 1D 05 1C 1C 02"
         }
       }
     ]
@@ -184,59 +204,39 @@
     ]
   },
   {
-    "name": "ServiceStackRedis",
+    "name": "SqlServer",
     "method_replacements": [
       {
         "caller": {
-          "assembly": "ServiceStack.Redis"
+          "assembly": "System.Data",
+          "type": "System.Data.SqlClient.SqlCommand"
         },
         "target": {
-          "assembly": "ServiceStack.Redis",
-          "type": "ServiceStack.Redis.RedisNativeClient",
-          "method": "SendReceive"
+          "assembly": "System.Data",
+          "type": "System.Data.SqlClient.SqlCommand",
+          "method": "ExecuteReader",
+          "signature": [ 32, 2, 12, 82, 8, 11, 82, 91, 14 ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
-          "method": "SendReceive",
-          "signature": "10 01 05 1E 00 1C 1D 1D 05 1C 1C 02"
-        }
-      }
-    ]
-  },
-  {
-    "name": "Elasticsearch",
-    "method_replacements": [
-      {
-        "caller": {
-          "assembly": "Elasticsearch.Net"
-        },
-        "target": {
-          "assembly": "Elasticsearch.Net",
-          "type": "Elasticsearch.Net.IRequestPipeline",
-          "method": "CallElasticsearch"
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net.Pipeline",
-          "method": "CallElasticsearch",
-          "signature": "10 01 02 1C 1C 1C"
+          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
+          "method": "ExecuteReaderWithMethod",
+          "signature": [ 0, 3, 28, 28, 8, 14 ]
         }
       },
       {
-        "caller": {
-          "assembly": "Elasticsearch.Net"
-        },
+        "caller": {},
         "target": {
-          "assembly": "Elasticsearch.Net",
-          "type": "Elasticsearch.Net.IRequestPipeline",
-          "method": "CallElasticsearchAsync"
+          "assembly": "System.Data.SqlClient",
+          "type": "System.Data.SqlClient.SqlCommand",
+          "method": "ExecuteReader",
+          "signature": [ 32, 1, 12, 87, 12, 11, 92 ]
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net.Pipeline",
-          "method": "CallElasticsearchAsync",
-          "signature": "10 01 03 1C 1C 1C 1C"
+          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
+          "method": "ExecuteReader",
+          "signature": [ 0, 2, 28, 28, 8 ]
         }
       }
     ]
