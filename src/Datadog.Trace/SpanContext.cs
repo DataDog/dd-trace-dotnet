@@ -73,7 +73,10 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId { get; }
 
-        internal string ServiceName { get; set;  }
+        /// <summary>
+        /// Gets or sets the service name
+        /// </summary>
+        public string ServiceName { get; set; }
 
         // This may be null if SpanContext was extracted from another process context
         internal TraceContext TraceContext { get; }
