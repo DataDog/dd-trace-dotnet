@@ -25,7 +25,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>A task with the result</returns>
         public static object ExecuteAsync(object apiController, object controllerContext, object cancellationTokenSource)
         {
-            var cancellationToken = ((CancellationTokenSource)cancellationTokenSource).Token;
+            if (apiController == null) { throw new ArgumentNullException(nameof(apiController)); }
+
+            if (controllerContext == null) { throw new ArgumentNullException(nameof(controllerContext)); }
+
+            var tokenSource = cancellationTokenSource as CancellationTokenSource;
+            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             return ExecuteAsyncInternal(apiController, controllerContext, cancellationToken);
         }
 
