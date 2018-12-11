@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GenerateIntegrationDefinitions": {
+      "commandName": "Project",
+      "commandLineArgs": "\"%UserProfile%\\source\\repos\\dd-trace-csharp\\integrations.json\""
+    }
+  }
+}

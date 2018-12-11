@@ -11,22 +11,41 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         ///
         /// </summary>
-        public string MethodName { get; }
+        public string Integration { get; set; }
 
         /// <summary>
         ///
         /// </summary>
-        public InterceptMethodAttribute()
-        {
-        }
+        public string CallerAssembly { get; set; }
 
         /// <summary>
         ///
         /// </summary>
-        /// <param name="methodName"></param>
-        public InterceptMethodAttribute(string methodName)
-        {
-            MethodName = methodName;
-        }
+        public string CallerType { get; set; }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public string CallerMethod { get; set; }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public string TargetAssembly { get; set; }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public string TargetType { get; set; }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public string TargetMethod { get; set; }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public string TargetSignature { get; set; }
     }
 }
