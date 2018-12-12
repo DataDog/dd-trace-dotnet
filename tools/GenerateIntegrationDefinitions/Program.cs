@@ -99,7 +99,7 @@ namespace GenerateIntegrationDefinitions
             signatureHelper.AddArguments(parameters, requiredCustomModifiers: null, optionalCustomModifiers: null);
             var signatureBytes = signatureHelper.GetSignature();
 
-            var signatureHexString = string.Join(separator: " ", values: signatureBytes.Select(b => b.ToString("X2")));
+            var signatureHexString = string.Join(" ", signatureBytes.Select(b => b.ToString("X2")));
             return signatureHexString;
         }
     }
