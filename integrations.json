@@ -1,6 +1,6 @@
 [
   {
-    "name": "aspNetCoreMvc2",
+    "name": "AspNetCoreMvc2",
     "method_replacements": [
       {
         "caller": {
@@ -15,7 +15,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
           "method": "BeforeAction",
-          "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
+          "signature": "00 04 01 1C 1C 1C 1C"
         }
       },
       {
@@ -31,13 +31,13 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
           "method": "AfterAction",
-          "signature": [ 0, 4, 1, 28, 28, 28, 28 ]
+          "signature": "00 04 01 1C 1C 1C 1C"
         }
       }
     ]
   },
   {
-    "name": "aspNetMvc",
+    "name": "AspNetMvc",
     "method_replacements": [
       {
         "caller": {
@@ -52,7 +52,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
           "method": "BeginInvokeAction",
-          "signature": [ 0, 5, 28, 28, 28, 28, 28, 28 ]
+          "signature": "00 05 1C 1C 1C 1C 1C 1C"
         }
       },
       {
@@ -68,13 +68,13 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
           "method": "EndInvokeAction",
-          "signature": [ 0, 2, 2, 28, 28 ]
+          "signature": "00 02 02 1C 1C"
         }
       }
     ]
   },
   {
-    "name": "aspNetWebApi2",
+    "name": "AspNetWebApi2",
     "method_replacements": [
       {
         "caller": {},
@@ -87,13 +87,13 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration",
           "method": "ExecuteAsync",
-          "signature": [ 0, 3, 28, 28, 28, 28 ]
+          "signature": "00 03 1C 1C 1C 1C"
         }
       }
     ]
   },
-    {
-    "name": "Elasticsearch",
+  {
+    "name": "ElasticsearchNet",
     "method_replacements": [
       {
         "caller": {
@@ -106,7 +106,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net.Pipeline",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNetIntegration",
           "method": "CallElasticsearch",
           "signature": "10 01 02 1C 1C 1C"
         }
@@ -122,7 +122,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net.Pipeline",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNetIntegration",
           "method": "CallElasticsearchAsync",
           "signature": "10 01 03 1C 1C 1C 1C"
         }
@@ -143,7 +143,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis.RedisNativeClient",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStackRedisIntegration",
           "method": "SendReceive",
           "signature": "10 01 05 1E 00 1C 1D 1D 05 1C 1C 02"
         }
@@ -162,13 +162,13 @@
           "assembly": "System.Data",
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteReader",
-          "signature": [ 32, 2, 12, 82, 8, 11, 82, 91, 14 ]
+          "signature": "20 02 0C 52 08 0B 52 5B 0E"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
           "method": "ExecuteReaderWithMethod",
-          "signature": [ 0, 3, 28, 28, 8, 14 ]
+          "signature": "00 03 1C 1C 08 0E"
         }
       },
       {
@@ -177,13 +177,13 @@
           "assembly": "System.Data.SqlClient",
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteReader",
-          "signature": [ 32, 1, 12, 87, 12, 11, 92 ]
+          "signature": "20 01 0C 57 0C 0B 5C"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
           "method": "ExecuteReader",
-          "signature": [ 0, 2, 28, 28, 8 ]
+          "signature": "00 02 1C 1C 08"
         }
       }
     ]
