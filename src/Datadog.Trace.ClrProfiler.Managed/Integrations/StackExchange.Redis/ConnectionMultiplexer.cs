@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server to call.</param>
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
-            Integration = "StackExchange.Redis",
+            Integration = "StackExchangeRedis",
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
