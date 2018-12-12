@@ -93,14 +93,24 @@ namespace GenerateIntegrationDefinitions
         {
             var returnType = method.ReturnType;
             var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
-            // var genericArguments = method.IsGenericMethod ? method.GetGenericArguments() : new Type[0];
 
             var signatureHelper = SignatureHelper.GetMethodSigHelper(method.CallingConvention, returnType);
             signatureHelper.AddArguments(parameters, requiredCustomModifiers: null, optionalCustomModifiers: null);
             var signatureBytes = signatureHelper.GetSignature();
 
-            var signatureHexString = string.Join(" ", signatureBytes.Select(b => b.ToString("X2")));
-            return signatureHexString;
+            if (method.IsGenericMethod)
+            {
+                var genericArguments = method.GetGenericArguments();
+
+                var newSignatureBytes = new byte[signatureBytes.Length + 1];
+                newSignatureBytes[0] = (byte)(signatureBytes[0] | 0x10);
+                newSignatureBytes[1] = (byte)genericArguments.Length;
+                Array.Copy(signatureBytes, 1, newSignatureBytes, 2, signatureBytes.Length - 1);
+
+                signatureBytes = newSignatureBytes;
+            }
+
+            return string.Join(" ", signatureBytes.Select(b => b.ToString("X2")));
         }
     }
 }
