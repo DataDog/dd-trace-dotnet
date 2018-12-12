@@ -22,11 +22,12 @@ namespace GenerateIntegrationDefinitions
                                let integrationName = attribute.Integration ?? GetIntegrationName(wrapperType)
                                orderby integrationName
                                group new
-                               {
-                                   wrapperType,
-                                   wrapperMethod,
-                                   attribute
-                               } by integrationName into g
+                                   {
+                                       wrapperType,
+                                       wrapperMethod,
+                                       attribute
+                                   }
+                                   by integrationName into g
                                select new
                                {
                                    name = g.Key,
