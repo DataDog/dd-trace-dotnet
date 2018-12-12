@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Data.SqlClient.SqlCommand",
             TargetMethod = "ExecuteReader",
             TargetSignature = "20 02 0C 52 08 0B 52 5B 0E")]
-        public static object ExecuteReader(dynamic @this, int behavior, string method)
+        public static object ExecuteReaderWithMethod(dynamic @this, int behavior, string method)
         {
             var command = (DbCommand)@this;
 
