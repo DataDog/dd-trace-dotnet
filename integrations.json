@@ -151,6 +151,44 @@
     ]
   },
   {
+    "name": "SqlServer",
+    "method_replacements": [
+      {
+        "caller": {
+          "assembly": "System.Data",
+          "type": "System.Data.SqlClient.SqlCommand"
+        },
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.SqlClient.SqlCommand",
+          "method": "ExecuteReader",
+          "signature": [ 32, 2, 12, 82, 8, 11, 82, 91, 14 ]
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
+          "method": "ExecuteReaderWithMethod",
+          "signature": [ 0, 3, 28, 28, 8, 14 ]
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.SqlClient",
+          "type": "System.Data.SqlClient.SqlCommand",
+          "method": "ExecuteReader",
+          "signature": [ 32, 1, 12, 87, 12, 11, 92 ]
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
+          "method": "ExecuteReader",
+          "signature": [ 0, 2, 28, 28, 8 ]
+        }
+      }
+    ]
+  },
+  {
     "name": "StackExchangeRedis",
     "method_replacements": [
       {
@@ -199,44 +237,6 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch",
           "method": "ExecuteAsync",
           "signature": "10 01 04 1C 1C 1C 1C 1C"
-        }
-      }
-    ]
-  },
-  {
-    "name": "SqlServer",
-    "method_replacements": [
-      {
-        "caller": {
-          "assembly": "System.Data",
-          "type": "System.Data.SqlClient.SqlCommand"
-        },
-        "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.SqlClient.SqlCommand",
-          "method": "ExecuteReader",
-          "signature": [ 32, 2, 12, 82, 8, 11, 82, 91, 14 ]
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
-          "method": "ExecuteReaderWithMethod",
-          "signature": [ 0, 3, 28, 28, 8, 14 ]
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data.SqlClient",
-          "type": "System.Data.SqlClient.SqlCommand",
-          "method": "ExecuteReader",
-          "signature": [ 32, 1, 12, 87, 12, 11, 92 ]
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServer",
-          "method": "ExecuteReader",
-          "signature": [ 0, 2, 28, 28, 8 ]
         }
       }
     ]
