@@ -15,6 +15,8 @@ namespace GenerateIntegrationDefinitions
         {
             var integrationsAssembly = typeof(Instrumentation).Assembly;
 
+            // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
+            // and create objects that will generate correct JSON schema
             var integrations = from wrapperType in integrationsAssembly.GetTypes()
                                from wrapperMethod in wrapperType.GetRuntimeMethods()
                                let attribute = wrapperMethod.GetCustomAttribute<InterceptMethodAttribute>(inherit: false)
@@ -101,6 +103,8 @@ namespace GenerateIntegrationDefinitions
 
             if (method.IsGenericMethod)
             {
+                // if method is generic, or IMAGE_CEE_CS_CALLCONV_GENERIC into the
+                // first byte (calling convention) and insert second byte with generic parameter count
                 var genericArguments = method.GetGenericArguments();
 
                 var newSignatureBytes = new byte[signatureBytes.Length + 1];
