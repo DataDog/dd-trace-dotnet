@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                .GetOrCreateMethodCallDelegate(
                     pipeline.GetType(),
                     "CallElasticsearch",
-                    methodGenericArguments: new Type[] { typeof(TResponse) });
+                    methodGenericArguments: new[] { typeof(TResponse) });
 
             using (var scope = CreateScope(pipeline, requestData))
             {
@@ -66,6 +66,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="requestData">The request data</param>
         /// <param name="cancellationTokenSource">A cancellation token</param>
         /// <returns>The original result</returns>
+        [InterceptMethod(
+            CallerAssembly = "Elasticsearch.Net",
+            TargetAssembly = "Elasticsearch.Net",
+            TargetType = "Elasticsearch.Net.IRequestPipeline")]
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource)
         {
             var cancellationToken = ((CancellationTokenSource)cancellationTokenSource)?.Token ?? CancellationToken.None;
