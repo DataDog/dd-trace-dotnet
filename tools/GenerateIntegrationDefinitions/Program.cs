@@ -99,27 +99,8 @@ namespace GenerateIntegrationDefinitions
             signatureHelper.AddArguments(parameters, requiredCustomModifiers: null, optionalCustomModifiers: null);
             var signatureBytes = signatureHelper.GetSignature();
 
-            var signatureHexString = string.Join(separator: ' ', values: signatureBytes.Select(b => b.ToString("X2")));
+            var signatureHexString = string.Join(separator: " ", values: signatureBytes.Select(b => b.ToString("X2")));
             return signatureHexString;
-
-
-            /*
-            var signatureHeader = new SignatureHeader(SignatureKind.Method, SignatureCallingConvention.Default, SignatureAttributes.None);
-
-            var methodSignature = new MethodSignature<object>(
-                signatureHeader,
-                returnType,
-                parameters.Count,
-                genericArguments.Length,
-                ImmutableArray.CreateRange(parameters));
-            */
-
-            /*
-            var encoder = new MethodSignatureEncoder();
-            encoder.Builder.WriteByte(SignatureCallingConvention.Default);
-
-            return methodSignature.ToString();
-            */
         }
     }
 }
