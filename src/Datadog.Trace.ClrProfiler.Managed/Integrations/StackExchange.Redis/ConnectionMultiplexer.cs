@@ -6,7 +6,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// <summary>
     /// Wraps calls to the StackExchange redis library.
     /// </summary>
-    public class ConnectionMultiplexer : Base
+    public static class ConnectionMultiplexer
     {
         /// <summary>
         /// Execute a synchronous redis operation.
@@ -17,6 +17,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="server">The server to call.</param>
         /// <returns>The result</returns>
+        [InterceptMethod(
+            Integration = "StackExchangeRedis",
+            CallerAssembly = "StackExchange.Redis",
+            TargetAssembly = "StackExchange.Redis",
+            TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
         public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server)
         {
             var resultType = typeof(T);
@@ -57,6 +62,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
         /// <returns>An asynchronous task.</returns>
+        [InterceptMethod(
+            Integration = "StackExchangeRedis",
+            CallerAssembly = "StackExchange.Redis",
+            TargetAssembly = "StackExchange.Redis",
+            TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
         {
             return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server);
@@ -105,11 +115,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         private static Scope CreateScope(object multiplexer, object message)
         {
-            var config = GetConfiguration(multiplexer);
-            var hostAndPort = GetHostAndPort(config);
-            var rawCommand = GetRawCommand(multiplexer, message);
+            var config = StackExchangeRedisHelper.GetConfiguration(multiplexer);
+            var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
+            var rawCommand = StackExchangeRedisHelper.GetRawCommand(multiplexer, message);
 
-            return Integrations.Redis.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
+            return Integrations.RedisHelper.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
         }
     }
 }

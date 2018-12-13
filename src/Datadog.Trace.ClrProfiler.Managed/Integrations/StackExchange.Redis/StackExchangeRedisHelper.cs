@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// <summary>
     /// Base class for redis integration.
     /// </summary>
-    public class Base
+    internal static class StackExchangeRedisHelper
     {
         private static Func<object, string> _getCommandAndKeyMethod;
 
@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// </summary>
         /// <param name="multiplexer">The multiplexer</param>
         /// <returns>The configuration</returns>
-        protected static string GetConfiguration(object multiplexer)
+        public static string GetConfiguration(object multiplexer)
         {
             try
             {
@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// </summary>
         /// <param name="config">The config</param>
         /// <returns>The host and port</returns>
-        protected static Tuple<string, string> GetHostAndPort(string config)
+        public static Tuple<string, string> GetHostAndPort(string config)
         {
             string host = null;
             string port = null;
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="multiplexer">The multiplexer</param>
         /// <param name="message">The message</param>
         /// <returns>The raw command</returns>
-        protected static string GetRawCommand(object multiplexer, object message)
+        public static string GetRawCommand(object multiplexer, object message)
         {
             string cmdAndKey = null;
             try
@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// </summary>
         /// <param name="obj">The object</param>
         /// <returns>The multiplexer</returns>
-        protected static object GetMultiplexer(object obj)
+        public static object GetMultiplexer(object obj)
         {
             object multiplexer = null;
             try

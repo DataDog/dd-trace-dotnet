@@ -23,6 +23,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="controllerContext">The controller context for the call</param>
         /// <param name="cancellationTokenSource">The cancellation token source</param>
         /// <returns>A task with the result</returns>
+        [InterceptMethod(
+            TargetAssembly = "System.Web.Http",
+            TargetType = "System.Web.Http.Controllers.IHttpController")]
         public static object ExecuteAsync(object apiController, object controllerContext, object cancellationTokenSource)
         {
             if (apiController == null) { throw new ArgumentNullException(nameof(apiController)); }

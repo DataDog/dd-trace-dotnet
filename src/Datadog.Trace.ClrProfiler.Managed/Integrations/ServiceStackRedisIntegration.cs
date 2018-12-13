@@ -2,12 +2,12 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
+namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
     /// Wraps a RedisNativeClient.
     /// </summary>
-    public static class RedisNativeClient
+    public static class ServiceStackRedisIntegration
     {
         /// <summary>
         /// Traces SendReceive.
@@ -19,6 +19,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
         /// <param name="completePipelineFn">An optional function to call to complete a pipeline</param>
         /// <param name="sendWithoutRead">Whether or to send without waiting for the result</param>
         /// <returns>The original result</returns>
+        [InterceptMethod(
+            CallerAssembly = "ServiceStack.Redis",
+            TargetAssembly = "ServiceStack.Redis",
+            TargetType = "ServiceStack.Redis.RedisNativeClient")]
         public static T SendReceive<T>(object redisNativeClient, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead)
         {
             var originalMethod = DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>
@@ -27,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.ServiceStack.Redis
                     "SendReceive",
                     methodGenericArguments: new[] { typeof(T) });
 
-            using (var scope = Integrations.Redis.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
+            using (var scope = Integrations.RedisHelper.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
             {
                 try
                 {

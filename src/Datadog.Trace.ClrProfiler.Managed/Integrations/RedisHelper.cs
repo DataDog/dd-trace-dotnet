@@ -1,6 +1,6 @@
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
-    internal static class Redis
+    internal static class RedisHelper
     {
         internal const string OperationName = "redis.command";
         internal const string ServiceName = "redis";

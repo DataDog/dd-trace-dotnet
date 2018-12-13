@@ -2,12 +2,12 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
+namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
     /// Traces an Elasticsearch pipeline
     /// </summary>
-    public static class Pipeline
+    public static class ElasticsearchNetIntegration
     {
         private const string OperationName = "elasticsearch.query";
         private const string ServiceName = "elasticsearch";
@@ -32,13 +32,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         /// <param name="pipeline">The pipeline for the original method</param>
         /// <param name="requestData">The request data</param>
         /// <returns>The original result</returns>
+        [InterceptMethod(
+            CallerAssembly = "Elasticsearch.Net",
+            TargetAssembly = "Elasticsearch.Net",
+            TargetType = "Elasticsearch.Net.IRequestPipeline")]
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData)
         {
             var originalMethod = DynamicMethodBuilder<Func<object, object, TResponse>>
                .GetOrCreateMethodCallDelegate(
                     pipeline.GetType(),
                     "CallElasticsearch",
-                    methodGenericArguments: new Type[] { typeof(TResponse) });
+                    methodGenericArguments: new[] { typeof(TResponse) });
 
             using (var scope = CreateScope(pipeline, requestData))
             {
@@ -62,6 +66,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Elasticsearch.Net
         /// <param name="requestData">The request data</param>
         /// <param name="cancellationTokenSource">A cancellation token</param>
         /// <returns>The original result</returns>
+        [InterceptMethod(
+            CallerAssembly = "Elasticsearch.Net",
+            TargetAssembly = "Elasticsearch.Net",
+            TargetType = "Elasticsearch.Net.IRequestPipeline")]
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource)
         {
             var cancellationToken = ((CancellationTokenSource)cancellationTokenSource)?.Token ?? CancellationToken.None;
