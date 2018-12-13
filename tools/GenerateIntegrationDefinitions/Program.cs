@@ -103,12 +103,13 @@ namespace GenerateIntegrationDefinitions
 
             if (method.IsGenericMethod)
             {
-                // if method is generic, or IMAGE_CEE_CS_CALLCONV_GENERIC into the
-                // first byte (calling convention) and insert second byte with generic parameter count
+                // if method is generic, fix first byte (calling convention)
+                // and insert a second byte with generic parameter count
+                const byte IMAGE_CEE_CS_CALLCONV_GENERIC = 0x10;
                 var genericArguments = method.GetGenericArguments();
 
                 var newSignatureBytes = new byte[signatureBytes.Length + 1];
-                newSignatureBytes[0] = (byte)(signatureBytes[0] | 0x10);
+                newSignatureBytes[0] = (byte)(signatureBytes[0] | IMAGE_CEE_CS_CALLCONV_GENERIC);
                 newSignatureBytes[1] = (byte)genericArguments.Length;
                 Array.Copy(signatureBytes, 1, newSignatureBytes, 2, signatureBytes.Length - 1);
 
