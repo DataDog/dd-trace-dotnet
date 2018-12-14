@@ -143,7 +143,23 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                                             kNameMaxSize, &type_name_len);
       break;
     case mdtTypeSpec:
-      // do we need to handle this case?
+      {
+        PCCOR_SIGNATURE signature{};
+        ULONG signature_length{};
+
+        hr = metadata_import->GetTypeSpecFromToken(token, &signature,
+                                                   &signature_length);
+
+        if (FAILED(hr) || signature_length < 3) {
+          return {};
+        }
+
+        if (signature[0] & ELEMENT_TYPE_GENERICINST) {
+          mdToken type_token;
+          CorSigUncompressToken(&signature[2], &type_token);
+          return GetTypeInfo(metadata_import, type_token);
+        }
+      }
       break;
     case mdtModuleRef:
       metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize,
