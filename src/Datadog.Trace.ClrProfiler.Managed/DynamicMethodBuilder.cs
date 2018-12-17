@@ -22,17 +22,19 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         /// <param name="type">The <see cref="Type"/> that contains the method.</param>
         /// <param name="methodName">The name of the method.</param>
+        /// <param name="returnType">The method's return type.</param>
         /// <param name="methodParameterTypes">optional types for the method parameters</param>
         /// <param name="methodGenericArguments">optional generic type arguments for a generic method</param>
         /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
         public static TDelegate GetOrCreateMethodCallDelegate(
             Type type,
             string methodName,
+            Type returnType = null,
             Type[] methodParameterTypes = null,
             Type[] methodGenericArguments = null)
         {
             return _cached.GetOrAdd(
-                                    new Key(type, methodName, methodParameterTypes, methodGenericArguments),
+                new Key(type, methodName, returnType, methodParameterTypes, methodGenericArguments),
                                     key => CreateMethodCallDelegate(
                                                                     key.Type,
                                                                     key.MethodName,
@@ -177,15 +179,17 @@ namespace Datadog.Trace.ClrProfiler
 
         private struct Key
         {
-            public Type Type;
-            public string MethodName;
-            public Type[] MethodParameterTypes;
-            public Type[] MethodGenericArguments;
+            public readonly Type Type;
+            public readonly string MethodName;
+            public readonly Type ReturnType;
+            public readonly Type[] MethodParameterTypes;
+            public readonly Type[] MethodGenericArguments;
 
-            public Key(Type type, string methodName, Type[] methodParameterTypes, Type[] methodGenericArguments)
+            public Key(Type type, string methodName, Type returnType, Type[] methodParameterTypes, Type[] methodGenericArguments)
             {
                 Type = type;
                 MethodName = methodName;
+                ReturnType = returnType;
                 MethodParameterTypes = methodParameterTypes;
                 MethodGenericArguments = methodGenericArguments;
             }
@@ -201,6 +205,11 @@ namespace Datadog.Trace.ClrProfiler
                 }
 
                 if (!object.Equals(x.MethodName, y.MethodName))
+                {
+                    return false;
+                }
+
+                if (!object.Equals(x.ReturnType, y.ReturnType))
                 {
                     return false;
                 }
