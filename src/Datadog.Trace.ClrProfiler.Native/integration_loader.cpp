@@ -13,7 +13,7 @@ using json = nlohmann::json;
 std::vector<Integration> LoadIntegrationsFromEnvironment() {
   std::vector<Integration> integrations;
   for (const auto f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
-    Info("loading integrations from", f);
+    Info("Loading integrations from file: ", f);
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {
       integrations.push_back(i);
@@ -37,7 +37,7 @@ std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path) {
         std::rethrow_exception(ex);
       }
     } catch (const std::exception& ex) {
-      Warn("failed to load integrations", ex.what());
+      Warn("Failed to load integrations: ", ex.what());
     }
   }
 
@@ -59,11 +59,11 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
       }
     }
 
-    Info("loaded integrations:", j.dump());
+    Info("Loaded integrations: ", j.dump());
   } catch (const json::parse_error& e) {
-    Warn("invalid integrations:", e.what());
+    Warn("Invalid integrations:", e.what());
   } catch (const json::type_error& e) {
-    Warn("invalid integrations:", e.what());
+    Warn("Invalid integrations:", e.what());
   } catch (...) {
     auto ex = std::current_exception();
     try {
@@ -71,7 +71,7 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
         std::rethrow_exception(ex);
       }
     } catch (const std::exception& ex) {
-      Warn("failed to load integrations", ex.what());
+      Warn("Failed to load integrations: ", ex.what());
     }
   }
 
@@ -88,7 +88,7 @@ std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src) {
   // first get the name, which is required
   auto name = ToWSTRING(src.value("name", ""));
   if (name.empty()) {
-    Warn("integration name is missing for integration:", src.dump());
+    Warn("Integration name is missing for integration: ", src.dump());
     return std::make_pair<Integration, bool>({}, false);
   }
 
@@ -111,9 +111,9 @@ std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     return std::make_pair<MethodReplacement, bool>({}, false);
   }
 
-  auto caller = MethodReferenceFromJson(src.value("caller", json::object()));
-  auto target = MethodReferenceFromJson(src.value("target", json::object()));
-  auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
+  const auto caller = MethodReferenceFromJson(src.value("caller", json::object()));
+  const auto target = MethodReferenceFromJson(src.value("target", json::object()));
+  const auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
   return std::make_pair<MethodReplacement, bool>({caller, target, wrapper},
                                                  true);
 }
@@ -123,9 +123,9 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
     return {};
   }
 
-  auto assembly = ToWSTRING(src.value("assembly", ""));
-  auto type = ToWSTRING(src.value("type", ""));
-  auto method = ToWSTRING(src.value("method", ""));
+  const auto assembly = ToWSTRING(src.value("assembly", ""));
+  const auto type = ToWSTRING(src.value("type", ""));
+  const auto method = ToWSTRING(src.value("method", ""));
   auto raw_signature = src.value("signature", json::array());
   std::vector<BYTE> signature;
   if (raw_signature.is_array()) {
