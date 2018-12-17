@@ -130,6 +130,25 @@
     ]
   },
   {
+    "name": "MongoDb",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "MongoDB.Driver.Core",
+          "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
+          "method": "Execute"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration",
+          "method": "Execute",
+          "signature": "00 03 1C 1C 1C 1C"
+        }
+      }
+    ]
+  },
+  {
     "name": "ServiceStackRedis",
     "method_replacements": [
       {
