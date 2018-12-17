@@ -61,15 +61,21 @@ namespace Datadog.Trace.ClrProfiler
             Type[] genericTypeArguments = delegateType.GenericTypeArguments;
 
             Type[] parameterTypes;
+            Type returnType;
 
             if (delegateType.Name.StartsWith("Func`"))
             {
                 // last generic type argument is the return type
-                parameterTypes = genericTypeArguments.Take(genericTypeArguments.Length - 1).ToArray();
+                int parameterCount = genericTypeArguments.Length - 1;
+                parameterTypes = new Type[parameterCount];
+                Array.Copy(genericTypeArguments, parameterTypes, parameterCount);
+
+                returnType = genericTypeArguments[parameterCount];
             }
             else if (delegateType.Name.StartsWith("Action`"))
             {
                 parameterTypes = genericTypeArguments;
+                returnType = null;
             }
             else
             {
@@ -171,6 +177,15 @@ namespace Datadog.Trace.ClrProfiler
             else
             {
                 dynamicMethod.Call(methodInfo);
+            }
+
+            if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
+            {
+                dynamicMethod.Box(methodInfo.ReturnType);
+            }
+            else if (methodInfo.ReturnType != returnType)
+            {
+                dynamicMethod.CastClass(returnType);
             }
 
             dynamicMethod.Return();
