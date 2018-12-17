@@ -35,11 +35,11 @@ namespace Datadog.Trace.ClrProfiler
         {
             return _cached.GetOrAdd(
                 new Key(type, methodName, returnType, methodParameterTypes, methodGenericArguments),
-                                    key => CreateMethodCallDelegate(
-                                                                    key.Type,
-                                                                    key.MethodName,
-                                                                    key.MethodParameterTypes,
-                                                                    key.MethodGenericArguments));
+                key => CreateMethodCallDelegate(
+                    key.Type,
+                    key.MethodName,
+                    key.MethodParameterTypes,
+                    key.MethodGenericArguments));
         }
 
         /// <summary>
@@ -89,35 +89,37 @@ namespace Datadog.Trace.ClrProfiler
             // if methodParameterTypes was specified, check for a method that matches
             if (methodParameterTypes != null)
             {
-                methods = methods.Where(m =>
-                                        {
-                                            var ps = m.GetParameters();
-                                            if (ps.Length != methodParameterTypes.Length)
-                                            {
-                                                return false;
-                                            }
+                methods = methods.Where(
+                    m =>
+                    {
+                        var ps = m.GetParameters();
+                        if (ps.Length != methodParameterTypes.Length)
+                        {
+                            return false;
+                        }
 
-                                            for (var i = 0; i < ps.Length; i++)
-                                            {
-                                                var t1 = ps[i].ParameterType;
-                                                var t2 = methodParameterTypes[i];
+                        for (var i = 0; i < ps.Length; i++)
+                        {
+                            var t1 = ps[i].ParameterType;
+                            var t2 = methodParameterTypes[i];
 
-                                                // generics can be tricky to compare for type equality
-                                                // so we will just check the namespace and name
-                                                if (t1.Namespace != t2.Namespace || t1.Name != t2.Name)
-                                                {
-                                                    return false;
-                                                }
-                                            }
+                            // generics can be tricky to compare for type equality
+                            // so we will just check the namespace and name
+                            if (t1.Namespace != t2.Namespace || t1.Name != t2.Name)
+                            {
+                                return false;
+                            }
+                        }
 
-                                            return true;
-                                        });
+                        return true;
+                    });
             }
 
             if (methodGenericArguments != null)
             {
-                methods = methods.Where(m => m.IsGenericMethodDefinition &&
-                                             m.GetGenericArguments().Length == methodGenericArguments.Length)
+                methods = methods.Where(
+                                      m => m.IsGenericMethodDefinition &&
+                                           m.GetGenericArguments().Length == methodGenericArguments.Length)
                                  .ToArray();
             }
 
