@@ -170,13 +170,15 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
 
-            if (methodInfo.IsVirtual)
+            if (methodInfo.IsStatic)
             {
-                dynamicMethod.CallVirtual(methodInfo);
+                dynamicMethod.Call(methodInfo);
             }
             else
             {
-                dynamicMethod.Call(methodInfo);
+                // C# compiler always uses CALLVIRT for instance methods
+                // to get the cheap null check, even if they are not virtual
+                dynamicMethod.CallVirtual(methodInfo);
             }
 
             if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
