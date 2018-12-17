@@ -26,6 +26,13 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
   Info("CorProfiler::Initialize");
 
+  Info(kIntegrationsEnvironmentName, " ",
+       GetEnvironmentValue(kIntegrationsEnvironmentName));
+  Info("DD_AGENT_HOST"_W, GetEnvironmentValue("DD_AGENT_HOST"_W));
+  Info("DD_TRACE_AGENT_PORT"_W, GetEnvironmentValue("DD_TRACE_AGENT_PORT"_W));
+  Info("DD_ENV"_W, GetEnvironmentValue("DD_ENV"_W));
+  Info("DD_SERVICE_NAME"_W, GetEnvironmentValue("DD_SERVICE_NAME"_W));
+
   const auto process_name = GetCurrentProcessName();
 
   if (integrations_.empty()) {
