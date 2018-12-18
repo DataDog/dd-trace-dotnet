@@ -89,8 +89,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       function_name_len = (DWORD)(generic_info.name.length() + 1);
     } break;
     default:
-      Warn("[trace::GetFunctionInfo] unknown token type: {}",
-           token_type);
+      Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
   }
   if (FAILED(hr) || function_name_len == 0) {
     return {};
@@ -142,8 +141,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       hr = metadata_import->GetTypeRefProps(token, &parent_token, type_name,
                                             kNameMaxSize, &type_name_len);
       break;
-    case mdtTypeSpec:
-      {
+    case mdtTypeSpec: {
         PCCOR_SIGNATURE signature{};
         ULONG signature_length{};
 
@@ -159,8 +157,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
           CorSigUncompressToken(&signature[2], &type_token);
           return GetTypeInfo(metadata_import, type_token);
         }
-      }
-      break;
+    } break;
     case mdtModuleRef:
       metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize,
                                          &type_name_len);

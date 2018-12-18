@@ -1,7 +1,7 @@
 #ifndef DD_CLR_PROFILER_LOGGING_H_
 #define DD_CLR_PROFILER_LOGGING_H_
 
-#include "string.h"
+#include "string.h"  // NOLINT
 
 namespace trace {
 

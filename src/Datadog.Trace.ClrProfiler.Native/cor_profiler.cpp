@@ -128,7 +128,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                            metadata_interfaces.GetAddressOf());
 
   if (FAILED(hr)) {
-    Warn("Failed to get metadata interface");
+    Warn("CorProfiler::ModuleLoadFinished: Failed to get metadata interface");
     return S_OK;
   }
 
