@@ -41,13 +41,14 @@ class CorProfiler : public CorProfilerBase {
 
   bool IsAttached() const;
 
-  HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
+  HRESULT STDMETHODCALLTYPE
+  Initialize(IUnknown* cor_profiler_info_unknown) override;
   HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id,
                                                HRESULT hrStatus) override;
   HRESULT STDMETHODCALLTYPE ModuleUnloadFinished(ModuleID module_id,
                                                  HRESULT hrStatus) override;
-  HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID functionId,
-                                                  BOOL fIsSafeToBlock) override;
+  HRESULT STDMETHODCALLTYPE
+  JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,
