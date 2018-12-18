@@ -18,9 +18,7 @@ namespace trace {
 
 CorProfiler* profiler = nullptr;
 
-CorProfiler::CorProfiler() : integrations_(LoadIntegrationsFromEnvironment()) {
-  Info("CorProfiler::CorProfiler");
-}
+CorProfiler::CorProfiler() { Info("CorProfiler::CorProfiler"); }
 
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
@@ -40,18 +38,12 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
   }
 
-  const auto process_name = GetCurrentProcessName();
-
-  if (integrations_.empty()) {
-    Warn("Profiler disabled: ", environment::integrations_path,
-         " environment variable not set.");
-    return E_FAIL;
-  }
-
   const auto allowed_process_names =
       GetEnvironmentValues(environment::process_names);
 
   if (!allowed_process_names.empty()) {
+    const auto process_name = GetCurrentProcessName();
+
     if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
                   process_name) == allowed_process_names.end()) {
       Info("Profiler disabled: ", process_name, " not found in ",
@@ -60,15 +52,25 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     }
   }
 
+  integrations_ = LoadIntegrationsFromEnvironment();
+
+  if (integrations_.empty()) {
+    Warn("Profiler disabled: ", environment::integrations_path,
+         " environment variable not set.");
+    return E_FAIL;
+  }
+
   HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
       &this->info_);
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: interface ICorProfilerInfo3 not found.");
+    return E_FAIL;
   }
 
   hr = this->info_->SetEventMask(kEventMask);
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
+    return E_FAIL;
   }
 
   // we're in!

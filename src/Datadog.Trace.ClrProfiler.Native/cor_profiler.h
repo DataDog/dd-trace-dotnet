@@ -31,7 +31,7 @@ const DWORD kEventMask =
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
-  const std::vector<Integration> integrations_;
+  std::vector<Integration> integrations_;
 
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
