@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                         if (firstElement.TryGetPropertyValue("Value", out object collectionNameObj) && collectionNameObj != null)
                         {
-                            collectionName = (string)collectionNameObj;
+                            collectionName = collectionNameObj.ToString();
                         }
                     }
 
