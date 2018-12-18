@@ -5,6 +5,7 @@
 
 #include "logging.h"
 #include "util.h"
+#include "environment_variables.h"
 
 namespace trace {
 
@@ -12,7 +13,7 @@ using json = nlohmann::json;
 
 std::vector<Integration> LoadIntegrationsFromEnvironment() {
   std::vector<Integration> integrations;
-  for (const auto f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
+  for (const auto f : GetEnvironmentValues(environment::integrations_path)) {
     Info("Loading integrations from file: ", f);
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {

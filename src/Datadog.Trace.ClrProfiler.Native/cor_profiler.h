@@ -14,8 +14,6 @@
 
 namespace trace {
 
-const WSTRING kProcessesEnvironmentName = "DD_PROFILER_PROCESSES"_W;
-
 const DWORD kEventMask =
     COR_PRF_MONITOR_JIT_COMPILATION |
     COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST | /* helps the case

@@ -5,6 +5,7 @@
 #include "corhlpr.h"
 
 #include "clr_helpers.h"
+#include "environment_variables.h"
 #include "il_rewriter.h"
 #include "integration_loader.h"
 #include "logging.h"
@@ -25,37 +26,36 @@ HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
   Info("CorProfiler::Initialize");
+  Info("Environment variables:");
 
-  Info(kIntegrationsEnvironmentName, " ",
-       GetEnvironmentValue(kIntegrationsEnvironmentName));
-  Info("DD_AGENT_HOST"_W, GetEnvironmentValue("DD_AGENT_HOST"_W));
-  Info("DD_TRACE_AGENT_PORT"_W, GetEnvironmentValue("DD_TRACE_AGENT_PORT"_W));
-  Info("DD_ENV"_W, GetEnvironmentValue("DD_ENV"_W));
-  Info("DD_SERVICE_NAME"_W, GetEnvironmentValue("DD_SERVICE_NAME"_W));
+  WSTRING env_vars[] = {environment::integrations_path,
+                        environment::process_names,
+                        environment::agent_host,
+                        environment::agent_port,
+                        environment::env,
+                        environment::service_name,
+                        environment::disabled_integrations};
+
+  for (auto&& env_var : env_vars) {
+    Info("  ", env_var, "=", GetEnvironmentValue(env_var));
+  }
 
   const auto process_name = GetCurrentProcessName();
 
   if (integrations_.empty()) {
-    Warn("Profiler disabled: ", kIntegrationsEnvironmentName,
+    Warn("Profiler disabled: ", environment::integrations_path,
          " environment variable not set.");
     return E_FAIL;
   }
 
   const auto allowed_process_names =
-      GetEnvironmentValues(kProcessesEnvironmentName);
+      GetEnvironmentValues(environment::process_names);
 
-  if (allowed_process_names.empty()) {
-    Info(kProcessesEnvironmentName,
-         " environment variable not set. Attaching to any .NET process.");
-  } else {
-    Info(kProcessesEnvironmentName);
-    for (auto& name : allowed_process_names) {
-      Info("  ", name);
-    }
-
+  if (!allowed_process_names.empty()) {
     if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
                   process_name) == allowed_process_names.end()) {
-      Info("Profiler disabled: ", process_name, " not found in ", kProcessesEnvironmentName, ".");
+      Info("Profiler disabled: ", process_name, " not found in ",
+           environment::process_names, ".");
       return E_FAIL;
     }
   }
@@ -303,8 +303,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       modified = true;
 
-      Info("CorProfiler::JITCompilationStarted() replaced calls from ", caller.type.name,
-           ".", caller.name, "() to ",
+      Info("CorProfiler::JITCompilationStarted() replaced calls from ",
+           caller.type.name, ".", caller.name, "() to ",
            method_replacement.target_method.type_name, ".",
            method_replacement.target_method.method_name, "() ",
            int32_t(original_argument), " with calls to ",
