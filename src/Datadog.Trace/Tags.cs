@@ -101,8 +101,13 @@ namespace Datadog.Trace
         public const string RedisRawCommand = "redis.raw_command";
 
         /// <summary>
-        /// A query send to MongoDB.
+        /// A MongoDB query.
         /// </summary>
         public const string MongoDbQuery = "mongodb.query";
+
+        /// <summary>
+        /// A MongoDB collection name.
+        /// </summary>
+        public const string MongoDbCollection = "mongodb.collection";
     }
 }
