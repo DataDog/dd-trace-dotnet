@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler
     public static class MemberAccessor
     {
         /// <summary>
-        /// Tries to call a method with the specified name, a single parameter, and a return value.
+        /// Tries to call an instance method with the specified name, a single parameter, and a return value.
         /// </summary>
         /// <typeparam name="TArg1">The type of the method's single parameter.</typeparam>
         /// <typeparam name="TResult">The type of the method's result value.</typeparam>
@@ -40,8 +40,7 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
-        /// Gets the value of the property in <paramref name="source"/>
-        /// specified by <paramref name="propertyName"/>.
+        /// Tries to get the value of an instance property with the specified name.
         /// </summary>
         /// <typeparam name="TResult">The type of the property.</typeparam>
         /// <param name="source">The value that contains the property.</param>
@@ -102,8 +101,7 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
-        /// Gets the value of the field in <paramref name="source"/>
-        /// specified by <paramref name="fieldName"/>.
+        /// Tries to get the value of an instance field with the specified name.
         /// </summary>
         /// <typeparam name="TResult">The type of the field.</typeparam>
         /// <param name="source">The value that contains the field.</param>
