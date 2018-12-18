@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Reflection;
 using Sigil;
 
@@ -9,6 +10,8 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     public static class MemberAccessor
     {
+        private static readonly ConcurrentDictionary<string, object> Cache = new ConcurrentDictionary<string, object>();
+
         /// <summary>
         /// Tries to call an instance method with the specified name, a single parameter, and a return value.
         /// </summary>
@@ -22,21 +25,25 @@ namespace Datadog.Trace.ClrProfiler
         public static bool TryCallMethod<TArg1, TResult>(this object source, string methodName, TArg1 arg1, out TResult value)
         {
             var type = source.GetType();
+            var paramType1 = typeof(TArg1);
 
-            var func = DynamicMethodBuilder<Func<object, TArg1, TResult>>
-               .CreateMethodCallDelegate(
-                    type,
-                    methodName,
-                    methodParameterTypes: new[] { typeof(TArg1) });
+            object cachedItem = Cache.GetOrAdd(
+                $"{type.AssemblyQualifiedName}.{methodName}.{paramType1.AssemblyQualifiedName}",
+                key =>
+                    DynamicMethodBuilder<Func<object, TArg1, TResult>>
+                       .CreateMethodCallDelegate(
+                            type,
+                            methodName,
+                            methodParameterTypes: new[] { paramType1 }));
 
-            if (func == null)
+            if (cachedItem is Func<object, TArg1, TResult> func)
             {
-                value = default;
-                return false;
+                value = func(source, arg1);
+                return true;
             }
 
-            value = func(source, arg1);
-            return true;
+            value = default;
+            return false;
         }
 
         /// <summary>
@@ -50,27 +57,69 @@ namespace Datadog.Trace.ClrProfiler
         public static bool TryGetPropertyValue<TResult>(this object source, string propertyName, out TResult value)
         {
             var type = source.GetType();
-            PropertyInfo propertyInfo = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+            object cachedItem = Cache.GetOrAdd(
+                $"{type.AssemblyQualifiedName}.{propertyName}",
+                key => CreatePropertyDelegate<TResult>(type, propertyName));
+
+            if (cachedItem is Func<object, TResult> func)
+            {
+                value = func(source);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Tries to get the value of an instance field with the specified name.
+        /// </summary>
+        /// <typeparam name="TResult">The type of the field.</typeparam>
+        /// <param name="source">The value that contains the field.</param>
+        /// <param name="fieldName">The name of the field.</param>
+        /// <param name="value">The value of the field, or <c>null</c> if the field is not found.</param>
+        /// <returns><c>true</c> if the field exists, otherwise <c>false</c>.</returns>
+        public static bool TryGetFieldValue<TResult>(this object source, string fieldName, out TResult value)
+        {
+            var type = source.GetType();
+
+            object cachedItem = Cache.GetOrAdd(
+                $"{type.AssemblyQualifiedName}.{fieldName}",
+                key => CreateFieldDelegate<TResult>(type, fieldName));
+
+            if (cachedItem is Func<object, TResult> func)
+            {
+                value = func(source);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
+        private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
+        {
+            PropertyInfo propertyInfo = containerType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
             if (propertyInfo == null)
             {
-                value = default;
-                return false;
+                return null;
             }
 
-            MethodInfo methodInfo = propertyInfo.GetMethod;
-
-            var dynamicMethod = Emit<Func<object, TResult>>.NewDynamicMethod($"{type.FullName}.get_{propertyName}");
+            var dynamicMethod = Emit<Func<object, TResult>>.NewDynamicMethod($"{containerType.FullName}.get_{propertyName}");
             dynamicMethod.LoadArgument(0);
 
-            if (type.IsValueType)
+            if (containerType.IsValueType)
             {
-                dynamicMethod.Unbox(type);
+                dynamicMethod.Unbox(containerType);
             }
             else
             {
-                dynamicMethod.CastClass(type);
+                dynamicMethod.CastClass(containerType);
             }
+
+            MethodInfo methodInfo = propertyInfo.GetMethod;
 
             if (methodInfo.IsStatic)
             {
@@ -93,42 +142,28 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             dynamicMethod.Return();
-
-            // TODO: cache the dynamic method
-            Func<object, TResult> func = dynamicMethod.CreateDelegate();
-            value = func(source);
-            return true;
+            return dynamicMethod.CreateDelegate();
         }
 
-        /// <summary>
-        /// Tries to get the value of an instance field with the specified name.
-        /// </summary>
-        /// <typeparam name="TResult">The type of the field.</typeparam>
-        /// <param name="source">The value that contains the field.</param>
-        /// <param name="fieldName">The name of the field.</param>
-        /// <param name="value">The value of the field, or <c>null</c> if the field is not found.</param>
-        /// <returns><c>true</c> if the field exists, otherwise <c>false</c>.</returns>
-        public static bool TryGetFieldValue<TResult>(this object source, string fieldName, out TResult value)
+        private static Func<object, TResult> CreateFieldDelegate<TResult>(Type containerType, string fieldName)
         {
-            var type = source.GetType();
-            FieldInfo fieldInfo = type.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo fieldInfo = containerType.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
             if (fieldInfo == null)
             {
-                value = default;
-                return false;
+                return null;
             }
 
-            var dynamicMethod = Emit<Func<object, TResult>>.NewDynamicMethod($"{type.FullName}.{fieldName}");
+            var dynamicMethod = Emit<Func<object, TResult>>.NewDynamicMethod($"{containerType.FullName}.{fieldName}");
             dynamicMethod.LoadArgument(0);
 
-            if (type.IsValueType)
+            if (containerType.IsValueType)
             {
-                dynamicMethod.UnboxAny(type);
+                dynamicMethod.UnboxAny(containerType);
             }
             else
             {
-                dynamicMethod.CastClass(type);
+                dynamicMethod.CastClass(containerType);
             }
 
             dynamicMethod.LoadField(fieldInfo);
@@ -143,11 +178,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             dynamicMethod.Return();
-
-            // TODO: cache the dynamic method
-            Func<object, TResult> func = dynamicMethod.CreateDelegate();
-            value = func(source);
-            return true;
+            return dynamicMethod.CreateDelegate();
         }
     }
 }
