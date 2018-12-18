@@ -26,7 +26,9 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   Info("CorProfiler::Initialize");
   Info("Environment variables:");
 
-  WSTRING env_vars[] = {environment::integrations_path,
+  WSTRING env_vars[] = {environment::tracing_enabled,
+                        environment::debug_enabled,
+                        environment::integrations_path,
                         environment::process_names,
                         environment::agent_host,
                         environment::agent_port,
@@ -36,6 +38,14 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   for (auto&& env_var : env_vars) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
+  }
+
+  const WSTRING tracing_enabled =
+      GetEnvironmentValue(environment::tracing_enabled);
+
+  if (tracing_enabled == "0"_W || tracing_enabled == "false"_W) {
+    Info("Profiler disabled in ", environment::tracing_enabled);
+    return E_FAIL;
   }
 
   const auto allowed_process_names =
