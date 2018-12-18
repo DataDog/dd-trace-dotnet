@@ -34,7 +34,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var executeReaderWithMethod = DynamicMethodBuilder<Func<object, CommandBehavior, string, object>>
                .GetOrCreateMethodCallDelegate(
                     command.GetType(),
-                    "ExecuteReader");
+                    "ExecuteReader",
+                    methodParameterTypes: new[] { typeof(CommandBehavior), typeof(string) });
 
             using (var scope = CreateScope(command))
             {
@@ -68,7 +69,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var executeReader = DynamicMethodBuilder<Func<object, CommandBehavior, object>>
                .GetOrCreateMethodCallDelegate(
                     command.GetType(),
-                    "ExecuteReader");
+                    "ExecuteReader",
+                    methodParameterTypes: new[] { typeof(CommandBehavior) });
 
             using (var scope = CreateScope(command))
             {
