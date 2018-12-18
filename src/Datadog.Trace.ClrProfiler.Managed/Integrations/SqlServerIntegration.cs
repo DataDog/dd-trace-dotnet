@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// SqlServer handles tracing System.Data.SqlClient
     /// </summary>
-    public static class SqlServer
+    public static class SqlServerIntegration
     {
         internal const string OperationName = "sql-server.query";
         internal const string ServiceName = "sql-server";
