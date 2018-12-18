@@ -153,6 +153,7 @@
     <ClInclude Include="com_ptr.h" />
     <ClInclude Include="cor_profiler.h" />
     <ClInclude Include="cor_profiler_base.h" />
+    <ClInclude Include="environment_variables.h" />
     <ClInclude Include="il_rewriter.h" />
     <ClInclude Include="il_rewriter_wrapper.h" />
     <ClInclude Include="integration.h" />
