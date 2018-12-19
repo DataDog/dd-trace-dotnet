@@ -3,7 +3,8 @@
 
 #include "string.h"  // NOLINT
 
-namespace trace::environment {
+namespace trace {
+namespace environment {
 
 const WSTRING tracing_enabled = "DD_TRACE_ENABLED"_W;
 
@@ -26,6 +27,7 @@ const WSTRING service_name = "DD_SERVICE_NAME"_W;
 // supports multiple values
 const WSTRING disabled_integrations = "DD_DISABLED_INTEGRATIONS"_W;
 
-}  // namespace trace::environment
+}  // namespace environment
+}  // namespace trace
 
 #endif
