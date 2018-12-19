@@ -65,15 +65,6 @@ Requirements:
 
 Due to [this issue](https://github.com/dotnet/sdk/issues/335) in the .NET Core SDK, to build projects that target the .NET Framework and of , you'll need [this workaround](https://github.com/dotnet/netcorecli-fsc/wiki/.NET-Core-SDK-rc4#using-net-framework-as-targets-framework-the-osxunix-build-fails).
 
-### CoreCLR submodule
-
-This project makes use of git submodules to include required [CoreCLR](https://github.com/dotnet/coreclr) C++ headers. To build the C++ project, clone this repository with the `--recurse-submodules` option or run the following commands after cloning this repository:
-
-```
-git submodule init
-git submodule update
-```
-
 ### Running tests
 
 The tests require the dependencies specified in `docker-compose.yaml` to be running on the same machine.
