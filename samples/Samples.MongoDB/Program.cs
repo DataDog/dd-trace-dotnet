@@ -39,8 +39,6 @@ namespace Samples.MongoDB
                 Run(collection, newDocument);
                 RunAsync(collection, newDocument).Wait();
             }
-
-            Tracer.Instance.Flush().Wait();
         }
 
         public static void Run(IMongoCollection<BsonDocument> collection, BsonDocument newDocument)
