@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -22,12 +23,82 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetAssembly = "MongoDB.Driver.Core",
+            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol")]
+        [InterceptMethod(
+            TargetAssembly = "MongoDB.Driver.Core",
             TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1")]
         public static object Execute(object wireProtocol, object connection, object cancellationTokenSource)
         {
             // TResult MongoDB.Driver.Core.WireProtocol.IWireProtocol<TResult>.Execute(IConnection connection, CancellationToken cancellationToken)
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 
+            var execute = DynamicMethodBuilder<Func<object, object, object, object>>
+               .GetOrCreateMethodCallDelegate(
+                    wireProtocol.GetType(),
+                    "Execute");
+
+            using (var scope = CreateScope(wireProtocol, connection))
+            {
+                try
+                {
+                    var tokenSource = cancellationTokenSource as CancellationTokenSource;
+                    var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+                    return execute(wireProtocol, connection, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it.
+        /// </summary>
+        /// <param name="wireProtocol">The IWireProtocol`1 instance we are replacing.</param>
+        /// <param name="connection">The connection.</param>
+        /// <param name="cancellationTokenSource">A cancellation token source.</param>
+        /// <returns>The original method's return value.</returns>
+        [InterceptMethod(
+            TargetAssembly = "MongoDB.Driver.Core",
+            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol")]
+        [InterceptMethod(
+            TargetAssembly = "MongoDB.Driver.Core",
+            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1")]
+        public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource)
+        {
+            // TResult MongoDB.Driver.Core.WireProtocol.IWireProtocol<TResult>.Execute(IConnection connection, CancellationToken cancellationToken)
+            var tokenSource = cancellationTokenSource as CancellationTokenSource;
+            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            return ExecuteAsyncInternal(wireProtocol, connection, cancellationToken);
+        }
+
+        private static async Task<object> ExecuteAsyncInternal(object wireProtocol, object connection, CancellationToken cancellationToken)
+        {
+            if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
+
+            var executeAsync = DynamicMethodBuilder<Func<object, object, object, Task<object>>>
+               .GetOrCreateMethodCallDelegate(
+                    wireProtocol.GetType(),
+                    "ExecuteAsync");
+
+            using (var scope = CreateScope(wireProtocol, connection))
+            {
+                try
+                {
+                    return await executeAsync(wireProtocol, connection, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    scope.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        private static Scope CreateScope(object wireProtocol, object connection)
+        {
             string databaseName = null;
             string host = null;
             string port = null;
@@ -96,32 +167,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Tracer tracer = Tracer.Instance;
             string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
-            var execute = DynamicMethodBuilder<Func<object, object, object, object>>
-               .GetOrCreateMethodCallDelegate(
-                    wireProtocol.GetType(),
-                    "Execute");
-
-            using (var scope = tracer.StartActive(OperationName, serviceName: serviceName))
-            {
-                scope.Span.Type = SpanTypes.MongoDB;
-                scope.Span.ResourceName = resourceName;
-                scope.Span.SetTag(Tags.DbName, databaseName);
-                scope.Span.SetTag(Tags.MongoDbQuery, query);
-                scope.Span.SetTag(Tags.MongoDbCollection, collectionName);
-                scope.Span.SetTag(Tags.OutHost, host);
-                scope.Span.SetTag(Tags.OutPort, port);
-
-                try
-                {
-                    var cancellationToken = (cancellationTokenSource as CancellationTokenSource)?.Token ?? CancellationToken.None;
-                    return execute(wireProtocol, connection, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    scope.Span.SetException(ex);
-                    throw;
-                }
-            }
+            var scope = tracer.StartActive(OperationName, serviceName: serviceName);
+            scope.Span.Type = SpanTypes.MongoDB;
+            scope.Span.ResourceName = resourceName;
+            scope.Span.SetTag(Tags.DbName, databaseName);
+            scope.Span.SetTag(Tags.MongoDbQuery, query);
+            scope.Span.SetTag(Tags.MongoDbCollection, collectionName);
+            scope.Span.SetTag(Tags.OutHost, host);
+            scope.Span.SetTag(Tags.OutPort, port);
+            return scope;
         }
     }
 }
