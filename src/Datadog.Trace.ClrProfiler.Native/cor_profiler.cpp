@@ -112,7 +112,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  const std::vector<std::basic_string<wchar_t>> disabled_integration_names =
+  const std::vector<WSTRING> disabled_integration_names =
       GetEnvironmentValues(environment::disabled_integrations);
   std::vector<Integration> enabled_integrations =
       FilterIntegrationsByName(integrations_, disabled_integration_names);
