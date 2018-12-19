@@ -95,7 +95,7 @@ TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
   std::vector<Integration> expected = {i1, i3};
   std::vector<WSTRING> disabled_integrations = {"integration-2"_W};
   std::vector<Integration> actual =
-      FilterEnabledIntegrations(all, disabled_integrations);
+      FilterIntegrationsByName(all, disabled_integrations);
   EXPECT_EQ(expected, actual);
 }
 

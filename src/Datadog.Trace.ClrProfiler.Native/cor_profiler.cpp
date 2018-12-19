@@ -115,7 +115,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const std::vector<std::basic_string<wchar_t>> disabled_integration_names =
       GetEnvironmentValues(environment::disabled_integrations);
   std::vector<Integration> enabled_integrations =
-      FilterEnabledIntegrations(integrations_, disabled_integration_names);
+      FilterIntegrationsByName(integrations_, disabled_integration_names);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
