@@ -194,12 +194,15 @@ std::vector<Integration> FilterIntegrationsByName(
 
   for (auto& i : integrations) {
     bool disabled = false;
+
     for (auto& disabled_integration : integration_names) {
       if (i.integration_name == disabled_integration) {
+        // this integration is disabled, skip it
         disabled = true;
         break;
       }
     }
+
     if (!disabled) {
       enabled.push_back(i);
     }
