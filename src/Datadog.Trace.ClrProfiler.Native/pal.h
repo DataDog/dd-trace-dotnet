@@ -14,17 +14,26 @@
 
 #endif
 
-#include "string.h"
+#include "environment_variables.h"
+#include "string.h"  // NOLINT
+#include "util.h"
 
 namespace trace {
 
 inline WSTRING DatadogLogFilePath() {
+  WSTRING path = GetEnvironmentValue(environment::log_path);
+
+  if (path.length() > 0) {
+    return path;
+  }
+
 #ifdef _WIN32
   std::string programdata(getenv("PROGRAMDATA"));
   if (programdata.empty()) {
     programdata = "C:\\ProgramData";
   }
-  return ToWSTRING(programdata + "\\Datadog .NET Tracer\\logs\\dotnet-profiler.log");
+  return ToWSTRING(programdata +
+                   "\\Datadog .NET Tracer\\logs\\dotnet-profiler.log");
 #else
   return ToWSTRING("/var/log/datadog/dotnet-profiler.log");
 #endif
