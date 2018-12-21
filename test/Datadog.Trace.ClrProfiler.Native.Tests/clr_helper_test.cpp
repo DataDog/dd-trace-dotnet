@@ -82,6 +82,23 @@ TEST_F(DISABLED_CLRHelperTest, EnumeratesAssemblyRefs) {
   EXPECT_EQ(expected_assemblies, actual_assemblies);
 }
 
+TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
+  Integration i1 = {
+      L"integration-1",
+      {{{}, {L"Samples.ExampleLibrary", L"SomeType", L"SomeMethod", {}}, {}}}};
+  Integration i2 = {
+      L"integration-2",
+      {{{}, {L"Assembly.Two", L"SomeType", L"SomeMethod", {}}, {}}}};
+  Integration i3 = {L"integration-3",
+                    {{{}, {L"System.Runtime", L"", L"", {}}, {}}}};
+  std::vector<Integration> all = {i1, i2, i3};
+  std::vector<Integration> expected = {i1, i3};
+  std::vector<WSTRING> disabled_integrations = {"integration-2"_W};
+  std::vector<Integration> actual =
+      FilterIntegrationsByName(all, disabled_integrations);
+  EXPECT_EQ(expected, actual);
+}
+
 TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByCaller) {
   Integration i1 = {
       L"integration-1",

@@ -237,6 +237,12 @@ mdAssemblyRef FindAssemblyRef(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const WSTRING& assembly_name);
 
+// FilterIntegrationsByName removes integrations whose names are specified in
+// disabled_integration_names
+std::vector<Integration> FilterIntegrationsByName(
+    const std::vector<Integration>& integrations,
+    std::vector<WSTRING> integration_names);
+
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
 std::vector<Integration> FilterIntegrationsByCaller(

@@ -14,8 +14,6 @@
 
 namespace trace {
 
-const WSTRING kProcessesEnvironmentName = "DD_PROFILER_PROCESSES"_W;
-
 const DWORD kEventMask =
     COR_PRF_MONITOR_JIT_COMPILATION |
     COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST | /* helps the case
@@ -33,7 +31,7 @@ const DWORD kEventMask =
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
-  const std::vector<Integration> integrations_;
+  std::vector<Integration> integrations_;
 
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
@@ -43,13 +41,14 @@ class CorProfiler : public CorProfilerBase {
 
   bool IsAttached() const;
 
-  HRESULT STDMETHODCALLTYPE Initialize(IUnknown* pICorProfilerInfoUnk) override;
+  HRESULT STDMETHODCALLTYPE
+  Initialize(IUnknown* cor_profiler_info_unknown) override;
   HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id,
                                                HRESULT hrStatus) override;
   HRESULT STDMETHODCALLTYPE ModuleUnloadFinished(ModuleID module_id,
                                                  HRESULT hrStatus) override;
-  HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID functionId,
-                                                  BOOL fIsSafeToBlock) override;
+  HRESULT STDMETHODCALLTYPE
+  JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,
