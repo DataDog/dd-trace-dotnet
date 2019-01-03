@@ -41,7 +41,7 @@ Minimum requirements to build the code in this repository:
     - Desktop development with C++
     - .NET desktop development
     - .NET Core cross-platform development
-    - Optional: ASP.NET and web development (to build samples )
+    - Optional: ASP.NET and web development (to build samples)
   - Individual components
     - .NET Framework 4.7 targeting pack
 - [.NET Core 2.1 SDK](https://www.microsoft.com/net/download) or newer
