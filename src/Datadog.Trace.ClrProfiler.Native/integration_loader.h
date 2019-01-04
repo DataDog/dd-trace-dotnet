@@ -12,8 +12,6 @@
 
 namespace trace {
 
-const WSTRING kIntegrationsEnvironmentName = "DD_INTEGRATIONS"_W;
-
 using json = nlohmann::json;
 
 // LoadIntegrationsFromEnvironment loads integrations from any files specified
