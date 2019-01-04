@@ -140,7 +140,7 @@
           "method": "Execute"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration",
           "method": "Execute",
           "signature": "00 03 1C 1C 1C 1C"
@@ -154,7 +154,7 @@
           "method": "Execute"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration",
           "method": "Execute",
           "signature": "00 03 1C 1C 1C 1C"
@@ -168,7 +168,7 @@
           "method": "ExecuteAsync"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration",
           "method": "ExecuteAsync",
           "signature": "00 03 1C 1C 1C 1C"
@@ -182,7 +182,7 @@
           "method": "ExecuteAsync"
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.5.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration",
           "method": "ExecuteAsync",
           "signature": "00 03 1C 1C 1C 1C"
