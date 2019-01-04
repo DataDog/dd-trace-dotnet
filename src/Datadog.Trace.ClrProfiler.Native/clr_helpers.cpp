@@ -89,8 +89,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       function_name_len = (DWORD)(generic_info.name.length() + 1);
     } break;
     default:
-      Warn("[trace::GetFunctionInfo] unknown token type: {}",
-           token_type);
+      Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
   }
   if (FAILED(hr) || function_name_len == 0) {
     return {};
@@ -142,25 +141,23 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       hr = metadata_import->GetTypeRefProps(token, &parent_token, type_name,
                                             kNameMaxSize, &type_name_len);
       break;
-    case mdtTypeSpec:
-      {
-        PCCOR_SIGNATURE signature{};
-        ULONG signature_length{};
+    case mdtTypeSpec: {
+      PCCOR_SIGNATURE signature{};
+      ULONG signature_length{};
 
-        hr = metadata_import->GetTypeSpecFromToken(token, &signature,
-                                                   &signature_length);
+      hr = metadata_import->GetTypeSpecFromToken(token, &signature,
+                                                 &signature_length);
 
-        if (FAILED(hr) || signature_length < 3) {
-          return {};
-        }
-
-        if (signature[0] & ELEMENT_TYPE_GENERICINST) {
-          mdToken type_token;
-          CorSigUncompressToken(&signature[2], &type_token);
-          return GetTypeInfo(metadata_import, type_token);
-        }
+      if (FAILED(hr) || signature_length < 3) {
+        return {};
       }
-      break;
+
+      if (signature[0] & ELEMENT_TYPE_GENERICINST) {
+        mdToken type_token;
+        CorSigUncompressToken(&signature[2], &type_token);
+        return GetTypeInfo(metadata_import, type_token);
+      }
+    } break;
     case mdtModuleRef:
       metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize,
                                          &type_name_len);
@@ -188,6 +185,30 @@ mdAssemblyRef FindAssemblyRef(
     }
   }
   return mdAssemblyRefNil;
+}
+
+std::vector<Integration> FilterIntegrationsByName(
+    const std::vector<Integration>& integrations,
+    const std::vector<WSTRING> integration_names) {
+  std::vector<Integration> enabled;
+
+  for (auto& i : integrations) {
+    bool disabled = false;
+
+    for (auto& disabled_integration : integration_names) {
+      if (i.integration_name == disabled_integration) {
+        // this integration is disabled, skip it
+        disabled = true;
+        break;
+      }
+    }
+
+    if (!disabled) {
+      enabled.push_back(i);
+    }
+  }
+
+  return enabled;
 }
 
 std::vector<Integration> FilterIntegrationsByCaller(
