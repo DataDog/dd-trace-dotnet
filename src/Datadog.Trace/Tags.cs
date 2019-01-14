@@ -96,8 +96,18 @@ namespace Datadog.Trace
         public const string OutPort = "out.port";
 
         /// <summary>
-        /// The raw command sent to redis.
+        /// The raw command sent to Redis.
         /// </summary>
         public const string RedisRawCommand = "redis.raw_command";
+
+        /// <summary>
+        /// A MongoDB query.
+        /// </summary>
+        public const string MongoDbQuery = "mongodb.query";
+
+        /// <summary>
+        /// A MongoDB collection name.
+        /// </summary>
+        public const string MongoDbCollection = "mongodb.collection";
     }
 }

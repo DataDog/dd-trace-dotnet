@@ -19,5 +19,10 @@ namespace Datadog.Trace
         /// The span type for a web integration.
         /// </summary>
         public const string Web = "web";
+
+        /// <summary>
+        /// The span type for a MongoDB integration.
+        /// </summary>
+        public const string MongoDB = "mongodb";
     }
 }

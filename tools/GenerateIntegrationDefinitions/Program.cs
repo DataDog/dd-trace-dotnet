@@ -19,8 +19,9 @@ namespace GenerateIntegrationDefinitions
             // and create objects that will generate correct JSON schema
             var integrations = from wrapperType in integrationsAssembly.GetTypes()
                                from wrapperMethod in wrapperType.GetRuntimeMethods()
-                               let attribute = wrapperMethod.GetCustomAttribute<InterceptMethodAttribute>(inherit: false)
-                               where attribute != null
+                               let attributes = wrapperMethod.GetCustomAttributes<InterceptMethodAttribute>(inherit: false)
+                               where attributes.Any()
+                               from attribute in attributes
                                let integrationName = attribute.Integration ?? GetIntegrationName(wrapperType)
                                orderby integrationName
                                group new
