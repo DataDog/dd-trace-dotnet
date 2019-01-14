@@ -160,8 +160,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // TODO: logging
                 }
 
-                string[] parts = { operationName, databaseName, query };
-                resourceName = string.Join(" ", parts.Where(s => !string.IsNullOrWhiteSpace(s)));
+                resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"} {query ?? "query"}";
             }
 
             Tracer tracer = Tracer.Instance;
