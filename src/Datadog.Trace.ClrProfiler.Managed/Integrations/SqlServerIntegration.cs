@@ -8,13 +8,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// SqlServer handles tracing System.Data.SqlClient
     /// </summary>
-    public static class SqlServer
+    public static class SqlServerIntegration
     {
         internal const string OperationName = "sql-server.query";
         internal const string ServiceName = "sql-server";
-
-        private static Func<object, CommandBehavior, object> _executeReader;
-        private static Func<object, CommandBehavior, string, object> _executeReaderWithMethod;
 
         /// <summary>
         /// ExecuteReader traces any SQL call.
@@ -34,19 +31,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var command = (DbCommand)@this;
 
-            if (_executeReaderWithMethod == null)
-            {
-                _executeReaderWithMethod = DynamicMethodBuilder<Func<object, CommandBehavior, string, object>>.CreateMethodCallDelegate(
+            var executeReaderWithMethod = DynamicMethodBuilder<Func<object, CommandBehavior, string, object>>
+               .GetOrCreateMethodCallDelegate(
                     command.GetType(),
                     "ExecuteReader",
-                    new[] { typeof(CommandBehavior), typeof(string) });
-            }
+                    methodParameterTypes: new[] { typeof(CommandBehavior), typeof(string) });
 
             using (var scope = CreateScope(command))
             {
                 try
                 {
-                    return _executeReaderWithMethod(command, (CommandBehavior)behavior, method);
+                    return executeReaderWithMethod(command, (CommandBehavior)behavior, method);
                 }
                 catch (Exception ex)
                 {
@@ -71,19 +66,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var command = (DbCommand)@this;
 
-            if (_executeReader == null)
-            {
-                _executeReader = DynamicMethodBuilder<Func<object, CommandBehavior, object>>.CreateMethodCallDelegate(
+            var executeReader = DynamicMethodBuilder<Func<object, CommandBehavior, object>>
+               .GetOrCreateMethodCallDelegate(
                     command.GetType(),
                     "ExecuteReader",
-                    new[] { typeof(CommandBehavior) });
-            }
+                    methodParameterTypes: new[] { typeof(CommandBehavior) });
 
             using (var scope = CreateScope(command))
             {
                 try
                 {
-                    return _executeReader(command, (CommandBehavior)behavior);
+                    return executeReader(command, (CommandBehavior)behavior);
                 }
                 catch (Exception ex)
                 {

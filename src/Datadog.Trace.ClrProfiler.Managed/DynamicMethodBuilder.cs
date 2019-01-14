@@ -22,22 +22,24 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         /// <param name="type">The <see cref="Type"/> that contains the method.</param>
         /// <param name="methodName">The name of the method.</param>
+        /// <param name="returnType">The method's return type.</param>
         /// <param name="methodParameterTypes">optional types for the method parameters</param>
         /// <param name="methodGenericArguments">optional generic type arguments for a generic method</param>
         /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
         public static TDelegate GetOrCreateMethodCallDelegate(
             Type type,
             string methodName,
+            Type returnType = null,
             Type[] methodParameterTypes = null,
             Type[] methodGenericArguments = null)
         {
             return _cached.GetOrAdd(
-                                    new Key(type, methodName, methodParameterTypes, methodGenericArguments),
-                                    key => CreateMethodCallDelegate(
-                                                                    key.Type,
-                                                                    key.MethodName,
-                                                                    key.MethodParameterTypes,
-                                                                    key.MethodGenericArguments));
+                new Key(type, methodName, returnType, methodParameterTypes, methodGenericArguments),
+                key => CreateMethodCallDelegate(
+                    key.Type,
+                    key.MethodName,
+                    key.MethodParameterTypes,
+                    key.MethodGenericArguments));
         }
 
         /// <summary>
@@ -59,15 +61,21 @@ namespace Datadog.Trace.ClrProfiler
             Type[] genericTypeArguments = delegateType.GenericTypeArguments;
 
             Type[] parameterTypes;
+            Type returnType;
 
             if (delegateType.Name.StartsWith("Func`"))
             {
                 // last generic type argument is the return type
-                parameterTypes = genericTypeArguments.Take(genericTypeArguments.Length - 1).ToArray();
+                int parameterCount = genericTypeArguments.Length - 1;
+                parameterTypes = new Type[parameterCount];
+                Array.Copy(genericTypeArguments, parameterTypes, parameterCount);
+
+                returnType = genericTypeArguments[parameterCount];
             }
             else if (delegateType.Name.StartsWith("Action`"))
             {
                 parameterTypes = genericTypeArguments;
+                returnType = null;
             }
             else
             {
@@ -81,35 +89,37 @@ namespace Datadog.Trace.ClrProfiler
             // if methodParameterTypes was specified, check for a method that matches
             if (methodParameterTypes != null)
             {
-                methods = methods.Where(m =>
-                                        {
-                                            var ps = m.GetParameters();
-                                            if (ps.Length != methodParameterTypes.Length)
-                                            {
-                                                return false;
-                                            }
+                methods = methods.Where(
+                    m =>
+                    {
+                        var ps = m.GetParameters();
+                        if (ps.Length != methodParameterTypes.Length)
+                        {
+                            return false;
+                        }
 
-                                            for (var i = 0; i < ps.Length; i++)
-                                            {
-                                                var t1 = ps[i].ParameterType;
-                                                var t2 = methodParameterTypes[i];
+                        for (var i = 0; i < ps.Length; i++)
+                        {
+                            var t1 = ps[i].ParameterType;
+                            var t2 = methodParameterTypes[i];
 
-                                                // generics can be tricky to compare for type equality
-                                                // so we will just check the namespace and name
-                                                if (t1.Namespace != t2.Namespace || t1.Name != t2.Name)
-                                                {
-                                                    return false;
-                                                }
-                                            }
+                            // generics can be tricky to compare for type equality
+                            // so we will just check the namespace and name
+                            if (t1.Namespace != t2.Namespace || t1.Name != t2.Name)
+                            {
+                                return false;
+                            }
+                        }
 
-                                            return true;
-                                        });
+                        return true;
+                    });
             }
 
             if (methodGenericArguments != null)
             {
-                methods = methods.Where(m => m.IsGenericMethodDefinition &&
-                                             m.GetGenericArguments().Length == methodGenericArguments.Length)
+                methods = methods.Where(
+                                      m => m.IsGenericMethodDefinition &&
+                                           m.GetGenericArguments().Length == methodGenericArguments.Length)
                                  .ToArray();
             }
 
@@ -162,13 +172,24 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
 
-            if (methodInfo.IsVirtual)
+            if (methodInfo.IsStatic)
             {
-                dynamicMethod.CallVirtual(methodInfo);
+                dynamicMethod.Call(methodInfo);
             }
             else
             {
-                dynamicMethod.Call(methodInfo);
+                // C# compiler always uses CALLVIRT for instance methods
+                // to get the cheap null check, even if they are not virtual
+                dynamicMethod.CallVirtual(methodInfo);
+            }
+
+            if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
+            {
+                dynamicMethod.Box(methodInfo.ReturnType);
+            }
+            else if (methodInfo.ReturnType != returnType)
+            {
+                dynamicMethod.CastClass(returnType);
             }
 
             dynamicMethod.Return();
@@ -177,15 +198,17 @@ namespace Datadog.Trace.ClrProfiler
 
         private struct Key
         {
-            public Type Type;
-            public string MethodName;
-            public Type[] MethodParameterTypes;
-            public Type[] MethodGenericArguments;
+            public readonly Type Type;
+            public readonly string MethodName;
+            public readonly Type ReturnType;
+            public readonly Type[] MethodParameterTypes;
+            public readonly Type[] MethodGenericArguments;
 
-            public Key(Type type, string methodName, Type[] methodParameterTypes, Type[] methodGenericArguments)
+            public Key(Type type, string methodName, Type returnType, Type[] methodParameterTypes, Type[] methodGenericArguments)
             {
                 Type = type;
                 MethodName = methodName;
+                ReturnType = returnType;
                 MethodParameterTypes = methodParameterTypes;
                 MethodGenericArguments = methodGenericArguments;
             }
@@ -201,6 +224,11 @@ namespace Datadog.Trace.ClrProfiler
                 }
 
                 if (!object.Equals(x.MethodName, y.MethodName))
+                {
+                    return false;
+                }
+
+                if (!object.Equals(x.ReturnType, y.ReturnType))
                 {
                     return false;
                 }

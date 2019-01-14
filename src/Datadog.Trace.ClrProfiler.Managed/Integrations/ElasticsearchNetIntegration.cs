@@ -95,8 +95,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                .GetOrCreateMethodCallDelegate(
                     pipeline.GetType(),
                     "CallElasticsearchAsync",
-                    new[] { _requestDataType, CancellationTokenType },
-                    new[] { typeof(TResponse) });
+                    methodParameterTypes: new[] { _requestDataType, CancellationTokenType },
+                    methodGenericArguments: new[] { typeof(TResponse) });
 
             using (var scope = CreateScope(pipeline, requestData))
             {
