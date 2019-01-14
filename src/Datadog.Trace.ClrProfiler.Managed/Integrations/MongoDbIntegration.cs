@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -13,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         internal const string OperationName = "mongodb.query";
         internal const string ServiceName = "mongodb";
+
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(MongoDbIntegration));
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.
@@ -103,23 +106,37 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string host = null;
             string port = null;
 
-            if (wireProtocol.TryGetFieldValue("_databaseNamespace", out object databaseNamespace))
+            try
             {
-                databaseNamespace?.TryGetPropertyValue("DatabaseName", out databaseName);
+                if (wireProtocol.TryGetFieldValue("_databaseNamespace", out object databaseNamespace))
+                {
+                    databaseNamespace?.TryGetPropertyValue("DatabaseName", out databaseName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WarnException("Unable to access DatabaseName property.", ex);
             }
 
-            if (connection != null && connection.TryGetPropertyValue("EndPoint", out object endpoint))
+            try
             {
-                if (endpoint is IPEndPoint ipEndPoint)
+                if (connection != null && connection.TryGetPropertyValue("EndPoint", out object endpoint))
                 {
-                    host = ipEndPoint.Address.ToString();
-                    port = ipEndPoint.Port.ToString();
+                    if (endpoint is IPEndPoint ipEndPoint)
+                    {
+                        host = ipEndPoint.Address.ToString();
+                        port = ipEndPoint.Port.ToString();
+                    }
+                    else if (endpoint is DnsEndPoint dnsEndPoint)
+                    {
+                        host = dnsEndPoint.Host;
+                        port = dnsEndPoint.Port.ToString();
+                    }
                 }
-                else if (endpoint is DnsEndPoint dnsEndPoint)
-                {
-                    host = dnsEndPoint.Host;
-                    port = dnsEndPoint.Port.ToString();
-                }
+            }
+            catch (Exception ex)
+            {
+                Log.WarnException("Unable to access EndPoint properties.", ex);
             }
 
             string operationName = null;
@@ -127,9 +144,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string query = null;
             string resourceName = null;
 
-            if (wireProtocol.TryGetFieldValue("_command", out object command) && command != null)
+            try
             {
-                try
+                if (wireProtocol.TryGetFieldValue("_command", out object command) && command != null)
                 {
                     // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
                     // and its value is the collection name
@@ -154,13 +171,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                             }
                         }
                     }
-                }
-                catch
-                {
-                    // TODO: logging
-                }
 
-                resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"} {query ?? "query"}";
+                    resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"} {query ?? "query"}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WarnException("Unable to access IWireProtocol.Command properties.", ex);
             }
 
             Tracer tracer = Tracer.Instance;
