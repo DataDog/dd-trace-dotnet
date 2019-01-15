@@ -62,7 +62,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5", "sampl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc2", "samples\Samples.AspNetCoreMvc2\Samples.AspNetCoreMvc2.csproj", "{9951A03A-AD1B-48D8-A96D-B85532BEDADD}"
 	ProjectSection(ProjectDependencies) = postProject
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
 	EndProjectSection
 EndProject
@@ -86,14 +85,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibraryTracer", "samples\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj", "{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.ConsoleFramework", "samples\Samples.ConsoleFramework\Samples.ConsoleFramework.csproj", "{F40F73F0-95CA-43B5-9881-DC58F0AE8BC3}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ConsoleCore", "samples\Samples.ConsoleCore\Samples.ConsoleCore.csproj", "{BC7B3216-9C37-4570-8A4A-5D716AB98E9C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.IntegrationTests", "test\Datadog.Trace.ClrProfiler.IntegrationTests\Datadog.Trace.ClrProfiler.IntegrationTests.csproj", "{0D546118-B70A-44D0-B675-39EDB99FCEEE}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -106,9 +99,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.I
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer", "samples\Samples.SqlServer\Samples.SqlServer.csproj", "{086FF8A0-9CEE-470A-9751-78B0F1340649}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.RedisCore", "samples\Samples.RedisCore\Samples.RedisCore.csproj", "{F5B27CC4-1DF6-4ECD-A4FD-8200152F9A5A}"
 EndProject
