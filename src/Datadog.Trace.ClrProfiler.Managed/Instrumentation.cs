@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     return NativeMethods.IsProfilerAttached();
                 }
-                catch
+                catch (DllNotFoundException)
                 {
                     return false;
                 }
