@@ -75,18 +75,18 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // load all available integrations from JSON files
-  integrations_ = LoadIntegrationsFromEnvironment();
+  std::vector<Integration> all_integrations = LoadIntegrationsFromEnvironment();
 
   // get list of disabled integration names
   const std::vector<WSTRING> disabled_integration_names =
       GetEnvironmentValues(environment::disabled_integrations);
 
   // remove disabled integrations
-  std::vector<Integration> enabled_integrations =
-      FilterIntegrationsByName(integrations_, disabled_integration_names);
+  integrations_ =
+      FilterIntegrationsByName(all_integrations, disabled_integration_names);
 
   // check if there are any enabled integrations left
-  if (enabled_integrations.empty()) {
+  if (integrations_.empty()) {
     Warn("Profiler disabled: no enabled integrations found.");
     return E_FAIL;
   }
