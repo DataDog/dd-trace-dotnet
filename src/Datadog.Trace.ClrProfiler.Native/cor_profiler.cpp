@@ -40,6 +40,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
   }
 
+  // check if tracing is completely disabled
   const WSTRING tracing_enabled =
       GetEnvironmentValue(environment::tracing_enabled);
 
@@ -48,6 +49,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  // check if there is a whitelist of process names
   const auto allowed_process_names =
       GetEnvironmentValues(environment::process_names);
 
@@ -62,14 +64,32 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     }
   }
 
-  integrations_ = LoadIntegrationsFromEnvironment();
+  const WSTRING integrations_paths =
+      GetEnvironmentValue(environment::integrations_path);
 
-  if (integrations_.empty()) {
+  if (integrations_paths.empty()) {
     Warn("Profiler disabled: ", environment::integrations_path,
          " environment variable not set.");
     return E_FAIL;
   }
 
+  const std::vector<WSTRING> disabled_integration_names =
+      GetEnvironmentValues(environment::disabled_integrations);
+
+  // load all available integrations from json files
+  integrations_ = LoadIntegrationsFromEnvironment();
+
+  // remove disabled integrations
+  std::vector<Integration> enabled_integrations =
+      FilterIntegrationsByName(integrations_, disabled_integration_names);
+
+  // check if there are any enabled integrations left
+  if (enabled_integrations.empty()) {
+    Warn("Profiler disabled: no enabled integrations found.");
+    return E_FAIL;
+  }
+
+  // get Profiler interface
   HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
       &this->info_);
   if (FAILED(hr)) {
@@ -77,6 +97,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  // set event mask to subscribe to events and disable NGEN images
   hr = this->info_->SetEventMask(kEventMask);
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
