@@ -136,9 +136,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  std::vector<Integration> enabled_integrations =
+  std::vector<Integration> filtered_integrations =
       FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
-  if (enabled_integrations.empty()) {
+  if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
          ". Skipping (filtered by caller).");
@@ -165,9 +165,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  enabled_integrations =
-      FilterIntegrationsByTarget(enabled_integrations, assembly_import);
-  if (enabled_integrations.empty()) {
+  filtered_integrations =
+      FilterIntegrationsByTarget(filtered_integrations, assembly_import);
+  if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
          ". Skipping (filtered by target).");
@@ -183,13 +183,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   ModuleMetadata* module_metadata =
       new ModuleMetadata(metadata_import, metadata_emit,
-                         module_info.assembly.name, enabled_integrations);
+                         module_info.assembly.name, filtered_integrations);
 
   MetadataBuilder metadata_builder(*module_metadata, module, metadata_import,
                                    metadata_emit, assembly_import,
                                    assembly_emit);
 
-  for (const auto& integration : enabled_integrations) {
+  for (const auto& integration : filtered_integrations) {
     for (const auto& method_replacement : integration.method_replacements) {
       // for each wrapper assembly, emit an assembly reference
       hr = metadata_builder.EmitAssemblyRef(
