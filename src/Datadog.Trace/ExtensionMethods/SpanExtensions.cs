@@ -26,7 +26,7 @@ namespace Datadog.Trace.ExtensionMethods
             string user = GetConnectionStringValue(builder, "User ID", "UserID");
             span.SetTag(Tags.DbUser, user);
 
-            string server = GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr");
+            string server = GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host");
             span.SetTag(Tags.OutHost, server);
         }
 
