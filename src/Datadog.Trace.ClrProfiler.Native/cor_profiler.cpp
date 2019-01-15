@@ -166,7 +166,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   mdModule module;
   hr = metadata_import->GetModuleFromScope(&module);
   if (FAILED(hr)) {
-    Warn("CorProfiler::ModuleLoadFinished: failed to get module token.");
+    Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+         ". Failed to get module token.");
     return S_OK;
   }
 
@@ -183,12 +184,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       // for each wrapper assembly, emit an assembly reference
       hr = metadata_builder.EmitAssemblyRef(
           method_replacement.wrapper_method.assembly);
-      RETURN_OK_IF_FAILED(hr);
+      if (FAILED(hr)) {
+        Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+             ". Failed to emit wrapper assembly ref.");
+        return S_OK;
+      }
 
       // for each method replacement in each enabled integration,
       // emit a reference to the instrumentation wrapper methods
       hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
-      RETURN_OK_IF_FAILED(hr);
+      if (FAILED(hr)) {
+        Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+             ". Failed to emit wrapper method ref.");
+        return S_OK;
+      }
     }
   }
 
@@ -198,14 +207,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     module_id_to_info_map_[module_id] = module_metadata;
   }
 
-  Info("CorProfiler::ModuleLoadFinished: emitted instrumentation metadata for ",
-       module_info.assembly.name);
+  Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+       ". Emitted instrumentation metadata.");
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID module_id,
                                                             HRESULT hrStatus) {
-  Info("CorProfiler::ModuleUnloadFinished ", uint64_t(module_id));
+  Info("CorProfiler::ModuleUnloadFinished: ", uint64_t(module_id));
   {
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
     if (module_id_to_info_map_.count(module_id) > 0) {
