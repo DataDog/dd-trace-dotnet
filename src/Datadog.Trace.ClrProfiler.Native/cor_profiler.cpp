@@ -195,7 +195,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
       if (FAILED(hr)) {
         Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-             ". Failed to emit wrapper method ref.");
+             ". Failed to emit and store wrapper method ref.");
         return S_OK;
       }
     }
