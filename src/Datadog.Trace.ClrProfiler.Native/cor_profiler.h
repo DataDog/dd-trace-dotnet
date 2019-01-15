@@ -21,7 +21,7 @@ const DWORD kEventMask =
                                                                 profiler is
                                                                 used on Full
                                                                 CLR */
-    // COR_PRF_DISABLE_INLINING |
+    COR_PRF_DISABLE_INLINING |
     COR_PRF_MONITOR_MODULE_LOADS |
     // COR_PRF_MONITOR_ASSEMBLY_LOADS |
     // COR_PRF_MONITOR_APPDOMAIN_LOADS |
