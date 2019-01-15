@@ -103,7 +103,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       module_info.assembly.name == "netstandard"_W ||
       module_info.assembly.name == "Datadog.Trace"_W ||
       module_info.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W ||
-      module_info.assembly.name == "Sigil.Emit.DynamicAssembly"_W) {
+      module_info.assembly.name == "Sigil.Emit.DynamicAssembly"_W ||
+      module_info.assembly.name ==
+          "Anonymously Hosted DynamicMethods Assembly"_W) {
     // We cannot obtain writable metadata interfaces on Windows Runtime modules
     // or instrument their IL. We must never try to add assembly references to
     // mscorlib or netstandard.
