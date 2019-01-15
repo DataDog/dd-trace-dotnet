@@ -64,6 +64,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     }
   }
 
+  // get path to integration definition JSON files
   const WSTRING integrations_paths =
       GetEnvironmentValue(environment::integrations_path);
 
@@ -73,11 +74,12 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  // load all available integrations from JSON files
+  integrations_ = LoadIntegrationsFromEnvironment();
+
+  // get list of disabled integration names
   const std::vector<WSTRING> disabled_integration_names =
       GetEnvironmentValues(environment::disabled_integrations);
-
-  // load all available integrations from json files
-  integrations_ = LoadIntegrationsFromEnvironment();
 
   // remove disabled integrations
   std::vector<Integration> enabled_integrations =
