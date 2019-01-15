@@ -75,7 +75,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // load all available integrations from JSON files
-  std::vector<Integration> all_integrations = LoadIntegrationsFromEnvironment();
+  const std::vector<Integration> all_integrations =
+      LoadIntegrationsFromEnvironment();
 
   // get list of disabled integration names
   const std::vector<WSTRING> disabled_integration_names =
@@ -135,18 +136,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  const std::vector<WSTRING> disabled_integration_names =
-      GetEnvironmentValues(environment::disabled_integrations);
   std::vector<Integration> enabled_integrations =
-      FilterIntegrationsByName(integrations_, disabled_integration_names);
-  if (enabled_integrations.empty()) {
-    // we don't need to instrument anything in this module, skip it
-    Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-         ". Skipping (no enabled integrations).");
-    return S_OK;
-  }
-
-  enabled_integrations =
       FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
   if (enabled_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
