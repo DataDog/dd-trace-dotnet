@@ -40,6 +40,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
   }
 
+  // check if tracing is completely disabled
   const WSTRING tracing_enabled =
       GetEnvironmentValue(environment::tracing_enabled);
 
@@ -48,6 +49,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  // check if there is a whitelist of process names
   const auto allowed_process_names =
       GetEnvironmentValues(environment::process_names);
 
@@ -62,14 +64,35 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     }
   }
 
-  integrations_ = LoadIntegrationsFromEnvironment();
+  // get path to integration definition JSON files
+  const WSTRING integrations_paths =
+      GetEnvironmentValue(environment::integrations_path);
 
-  if (integrations_.empty()) {
+  if (integrations_paths.empty()) {
     Warn("Profiler disabled: ", environment::integrations_path,
          " environment variable not set.");
     return E_FAIL;
   }
 
+  // load all available integrations from JSON files
+  const std::vector<Integration> all_integrations =
+      LoadIntegrationsFromEnvironment();
+
+  // get list of disabled integration names
+  const std::vector<WSTRING> disabled_integration_names =
+      GetEnvironmentValues(environment::disabled_integrations);
+
+  // remove disabled integrations
+  integrations_ =
+      FilterIntegrationsByName(all_integrations, disabled_integration_names);
+
+  // check if there are any enabled integrations left
+  if (integrations_.empty()) {
+    Warn("Profiler disabled: no enabled integrations found.");
+    return E_FAIL;
+  }
+
+  // get Profiler interface
   HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
       &this->info_);
   if (FAILED(hr)) {
@@ -77,6 +100,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  // set event mask to subscribe to events and disable NGEN images
   hr = this->info_->SetEventMask(kEventMask);
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
@@ -112,20 +136,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  const std::vector<WSTRING> disabled_integration_names =
-      GetEnvironmentValues(environment::disabled_integrations);
-  std::vector<Integration> enabled_integrations =
-      FilterIntegrationsByName(integrations_, disabled_integration_names);
-  if (enabled_integrations.empty()) {
-    // we don't need to instrument anything in this module, skip it
-    Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-         ". Skipping (no enabled integrations).");
-    return S_OK;
-  }
-
-  enabled_integrations =
+  std::vector<Integration> filtered_integrations =
       FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
-  if (enabled_integrations.empty()) {
+  if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
          ". Skipping (filtered by caller).");
@@ -152,9 +165,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  enabled_integrations =
-      FilterIntegrationsByTarget(enabled_integrations, assembly_import);
-  if (enabled_integrations.empty()) {
+  filtered_integrations =
+      FilterIntegrationsByTarget(filtered_integrations, assembly_import);
+  if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
          ". Skipping (filtered by target).");
@@ -170,13 +183,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   ModuleMetadata* module_metadata =
       new ModuleMetadata(metadata_import, metadata_emit,
-                         module_info.assembly.name, enabled_integrations);
+                         module_info.assembly.name, filtered_integrations);
 
   MetadataBuilder metadata_builder(*module_metadata, module, metadata_import,
                                    metadata_emit, assembly_import,
                                    assembly_emit);
 
-  for (const auto& integration : enabled_integrations) {
+  for (const auto& integration : filtered_integrations) {
     for (const auto& method_replacement : integration.method_replacements) {
       // for each wrapper assembly, emit an assembly reference
       hr = metadata_builder.EmitAssemblyRef(
