@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net45;net461</TargetFrameworks>
-    <Version>0.6.0-beta</Version>
+    <Version>0.7.0-beta</Version>
 
     <!-- NuGet -->
     <Title>Datadog APM</Title>
