@@ -7,8 +7,7 @@
         "target": {
           "assembly": "System.Data",
           "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteDbDataReader",
-          "signature": "20 01"
+          "method": "ExecuteDbDataReader"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -22,8 +21,7 @@
         "target": {
           "assembly": "System.Data.Common",
           "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteDbDataReader",
-          "signature": "20 01"
+          "method": "ExecuteDbDataReader"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -37,8 +35,7 @@
         "target": {
           "assembly": "System.Data",
           "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteDbDataReaderAsync",
-          "signature": "20 02"
+          "method": "ExecuteDbDataReaderAsync"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -52,8 +49,7 @@
         "target": {
           "assembly": "System.Data.Common",
           "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteDbDataReaderAsync",
-          "signature": "20 02"
+          "method": "ExecuteDbDataReaderAsync"
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",

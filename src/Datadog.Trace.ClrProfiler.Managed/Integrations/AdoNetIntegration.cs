@@ -20,12 +20,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
-            TargetType = "System.Data.Common.DbCommand",
-            TargetSignature = "20 01")]
+            TargetType = "System.Data.Common.DbCommand")]
         [InterceptMethod(
             TargetAssembly = "System.Data.Common", // .NET Core
-            TargetType = "System.Data.Common.DbCommand",
-            TargetSignature = "20 01")]
+            TargetType = "System.Data.Common.DbCommand")]
         public static object ExecuteDbDataReader(object @this, int behavior)
         {
             var command = (DbCommand)@this;
@@ -59,12 +57,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
-            TargetType = "System.Data.Common.DbCommand",
-            TargetSignature = "20 02")]
+            TargetType = "System.Data.Common.DbCommand")]
         [InterceptMethod(
             TargetAssembly = "System.Data.Common", // .NET Core
-            TargetType = "System.Data.Common.DbCommand",
-            TargetSignature = "20 02")]
+            TargetType = "System.Data.Common.DbCommand")]
         public static object ExecuteDbDataReaderAsync(object @this, int behavior, object cancellationTokenSource)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
