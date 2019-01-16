@@ -271,12 +271,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     return S_OK;
   }
 
-  /*
-  Info("JITCompilationStarted(): ", caller.type.name, ".", caller.name, "<",
-       caller.signature.NumberOfTypeArguments(), ">", "(",
-       caller.signature.NumberOfArguments(), ")");
-  */
-
   auto method_replacements =
       module_metadata->GetMethodReplacementsForCaller(caller);
   if (method_replacements.empty()) {
