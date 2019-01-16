@@ -18,7 +18,6 @@ namespace Samples.Npgsql
             {
                 conn.Open();
 
-                /*
                 // Insert some data
                 using (var cmd = conn.CreateCommand())
                 {
@@ -29,7 +28,6 @@ namespace Samples.Npgsql
                     int count = cmd.ExecuteNonQuery();
                     Console.WriteLine($"{count} rows inserted.");
                 }
-                */
 
                 // Retrieve all rows
                 using (var cmd = conn.CreateCommand())
@@ -68,7 +66,6 @@ namespace Samples.Npgsql
                     Console.WriteLine($"{rows:N0} rows returned from async query.");
                 }
 
-                /*
                 // Delete all data
                 using (var cmd = conn.CreateCommand())
                 {
@@ -77,7 +74,6 @@ namespace Samples.Npgsql
                     int count = cmd.ExecuteNonQuery();
                     Console.WriteLine($"{count} rows deleted.");
                 }
-                */
             }
         }
     }
