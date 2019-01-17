@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // TResult MongoDB.Driver.Core.WireProtocol.IWireProtocol<TResult>.Execute(IConnection connection, CancellationToken cancellationToken)
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 
-            var execute = DynamicMethodBuilder<Func<object, object, object, object>>
+            var execute = DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
                .GetOrCreateMethodCallDelegate(
                     wireProtocol.GetType(),
                     "Execute");
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 
-            var executeAsync = DynamicMethodBuilder<Func<object, object, object, Task<object>>>
+            var executeAsync = DynamicMethodBuilder<Func<object, object, CancellationToken, Task<object>>>
                .GetOrCreateMethodCallDelegate(
                     wireProtocol.GetType(),
                     "ExecuteAsync");

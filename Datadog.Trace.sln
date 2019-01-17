@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28407.52
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace", "src\Datadog.Trace\Datadog.Trace.csproj", "{5DFDF781-F24C-45B1-82EF-9125875A80A4}"
 EndProject
@@ -62,7 +62,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5", "sampl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc2", "samples\Samples.AspNetCoreMvc2\Samples.AspNetCoreMvc2.csproj", "{9951A03A-AD1B-48D8-A96D-B85532BEDADD}"
 	ProjectSection(ProjectDependencies) = postProject
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
 	EndProjectSection
 EndProject
@@ -86,14 +85,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibraryTracer", "samples\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj", "{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.ConsoleFramework", "samples\Samples.ConsoleFramework\Samples.ConsoleFramework.csproj", "{F40F73F0-95CA-43B5-9881-DC58F0AE8BC3}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ConsoleCore", "samples\Samples.ConsoleCore\Samples.ConsoleCore.csproj", "{BC7B3216-9C37-4570-8A4A-5D716AB98E9C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.IntegrationTests", "test\Datadog.Trace.ClrProfiler.IntegrationTests\Datadog.Trace.ClrProfiler.IntegrationTests.csproj", "{0D546118-B70A-44D0-B675-39EDB99FCEEE}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -106,9 +99,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.I
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer", "samples\Samples.SqlServer\Samples.SqlServer.csproj", "{086FF8A0-9CEE-470A-9751-78B0F1340649}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.RedisCore", "samples\Samples.RedisCore\Samples.RedisCore.csproj", "{F5B27CC4-1DF6-4ECD-A4FD-8200152F9A5A}"
 EndProject
@@ -136,6 +126,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Tests", "test\Datadog.Trace.ClrProfiler.Managed.Tests\Datadog.Trace.ClrProfiler.Managed.Tests.csproj", "{5B52C0C0-A554-4E53-9D17-B121E78FF919}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MongoDB", "samples\Samples.MongoDB\Samples.MongoDB.csproj", "{3493346B-44F6-4F50-8FB4-51D0090DF544}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Npgsql", "samples\Samples.Npgsql\Samples.Npgsql.csproj", "{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -447,6 +439,18 @@ Global
 		{3493346B-44F6-4F50-8FB4-51D0090DF544}.Release|x64.Build.0 = Release|Any CPU
 		{3493346B-44F6-4F50-8FB4-51D0090DF544}.Release|x86.ActiveCfg = Release|Any CPU
 		{3493346B-44F6-4F50-8FB4-51D0090DF544}.Release|x86.Build.0 = Release|Any CPU
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Debug|x64.ActiveCfg = Debug|x64
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Debug|x64.Build.0 = Debug|x64
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Debug|x86.ActiveCfg = Debug|x86
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Debug|x86.Build.0 = Debug|x86
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Release|x64.ActiveCfg = Release|x64
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Release|x64.Build.0 = Release|x64
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Release|x86.ActiveCfg = Release|x86
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -478,6 +482,7 @@ Global
 		{5B844A49-CA3C-42CB-AD31-E44CD73FD1A3} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{5B52C0C0-A554-4E53-9D17-B121E78FF919} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{3493346B-44F6-4F50-8FB4-51D0090DF544} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

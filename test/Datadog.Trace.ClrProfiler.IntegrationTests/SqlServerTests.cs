@@ -30,8 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count > 0, "expected at least one span");
                 foreach (var span in spans)
                 {
-                    Assert.Equal(SqlServerIntegration.OperationName, span.Name);
-                    Assert.Equal($"Samples.SqlServer-{SqlServerIntegration.ServiceName}", span.Service);
+                    Assert.Equal("sql-server.query", span.Name);
+                    Assert.Equal($"Samples.SqlServer-sql-server", span.Service);
                     Assert.Equal(SpanTypes.Sql, span.Type);
                 }
             }

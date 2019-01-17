@@ -1,5 +1,66 @@
 [
   {
+    "name": "AdoNet",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteDbDataReader"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteDbDataReader",
+          "signature": "00 02 1C 1C 08"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteDbDataReader"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteDbDataReader",
+          "signature": "00 02 1C 1C 08"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteDbDataReaderAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteDbDataReaderAsync",
+          "signature": "00 03 1C 1C 08 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteDbDataReaderAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteDbDataReaderAsync",
+          "signature": "00 03 1C 1C 08 1C"
+        }
+      }
+    ]
+  },
+  {
     "name": "AspNetCoreMvc2",
     "method_replacements": [
       {
@@ -207,44 +268,6 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStackRedisIntegration",
           "method": "SendReceive",
           "signature": "10 01 05 1E 00 1C 1D 1D 05 1C 1C 02"
-        }
-      }
-    ]
-  },
-  {
-    "name": "SqlServer",
-    "method_replacements": [
-      {
-        "caller": {
-          "assembly": "System.Data",
-          "type": "System.Data.SqlClient.SqlCommand"
-        },
-        "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.SqlClient.SqlCommand",
-          "method": "ExecuteReader",
-          "signature": "20 02 0C 52 08 0B 52 5B 0E"
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServerIntegration",
-          "method": "ExecuteReaderWithMethod",
-          "signature": "00 03 1C 1C 08 0E"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data.SqlClient",
-          "type": "System.Data.SqlClient.SqlCommand",
-          "method": "ExecuteReader",
-          "signature": "20 01 0C 57 0C 0B 5C"
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.SqlServerIntegration",
-          "method": "ExecuteReader",
-          "signature": "00 02 1C 1C 08"
         }
       }
     ]
