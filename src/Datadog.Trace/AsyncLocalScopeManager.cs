@@ -1,12 +1,12 @@
-﻿using Datadog.Trace.Logging;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
     internal class AsyncLocalScopeManager
     {
-        private static ILog _log = LogProvider.For<AsyncLocalScopeManager>();
+        private static readonly ILog _log = LogProvider.For<AsyncLocalScopeManager>();
 
-        private AsyncLocalCompat<Scope> _currentSpan = new AsyncLocalCompat<Scope>();
+        private readonly AsyncLocalCompat<Scope> _currentSpan = new AsyncLocalCompat<Scope>();
 
         public Scope Active => _currentSpan.Get();
 
