@@ -5,7 +5,6 @@ namespace Datadog.Trace
     using System.Runtime.Remoting;
     using System.Runtime.Remoting.Messaging;
 
-    // TODO:bertrand revisit this when we want to support multiple AppDomains
     internal class AsyncLocalCompat<T>
     {
         private readonly string _name = "__Datadog_Scope_Current__" + Guid.NewGuid();
