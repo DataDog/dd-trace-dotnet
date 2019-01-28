@@ -6,7 +6,7 @@
 namespace trace {
 namespace environment {
 
-// Sets whether the profiler is enabled. Detault is true.
+// Sets whether the profiler is enabled. Default is true.
 // Setting this to false disabled the profiler entirely.
 const WSTRING tracing_enabled = "DD_TRACE_ENABLED"_W;
 
@@ -15,7 +15,7 @@ const WSTRING debug_enabled = "DD_TRACE_DEBUG"_W;
 
 // Sets the paths to integration definition JSON files.
 // Supports multiple values separated with semi-colons, for example:
-// "C:\Program Files\Datadog .NET tracer\integrations.json;D:\temp\test_integrations.json"
+// "C:\Program Files\Datadog .NET Tracer\integrations.json;D:\temp\test_integrations.json"
 const WSTRING integrations_path = "DD_INTEGRATIONS"_W;
 
 // Sets the filename of executables the profiler will attach to.
@@ -41,7 +41,7 @@ const WSTRING service_name = "DD_SERVICE_NAME"_W;
 // Sets a list of integrations to disable. All other integrations will remain enabled.
 // If not set (default), all integrations are enabled.
 // Supports multiple values separated with semi-colons, for example:
-// "ElastichsearchNet;AspNetWebApi2"
+// "ElasticsearchNet;AspNetWebApi2"
 const WSTRING disabled_integrations = "DD_DISABLED_INTEGRATIONS"_W;
 
 // Sets the path for the profiler's log file.
