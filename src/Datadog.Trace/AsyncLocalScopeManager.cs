@@ -21,17 +21,19 @@ namespace Datadog.Trace
         public void Close(Scope scope)
         {
             var current = _currentSpan.Get();
+
             if (current == null)
             {
-                _log.Error("Trying to close a null scope");
+                _log.Error("Trying to close a null scope.");
             }
-
-            if (current != scope)
+            else if (current != scope)
             {
-                _log.Warn("Current span doesn't match deactivate span");
+                _log.Warn("Specified scope is not the active scope.");
             }
-
-            _currentSpan.Set(current.Parent);
+            else
+            {
+                _currentSpan.Set(current.Parent);
+            }
         }
     }
 }
