@@ -12,7 +12,10 @@ namespace Datadog.Trace
         public T Get()
         {
             var handle = CallContext.LogicalGetData(_name) as ObjectHandle;
-            return handle == null ? default(T) : (T)handle.Unwrap();
+
+            return handle == null
+                       ? default(T)
+                       : (T)handle.Unwrap();
         }
 
         public void Set(T value)
