@@ -26,11 +26,7 @@ namespace Datadog.Trace
 
     internal class AsyncLocalCompat<T>
     {
-        private AsyncLocal<T> _asyncLocal = new AsyncLocal<T>();
-
-        public AsyncLocalCompat()
-        {
-        }
+        private readonly AsyncLocal<T> _asyncLocal = new AsyncLocal<T>();
 
         public T Get()
         {
