@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Datadog.Trace
 {
@@ -11,7 +11,7 @@ namespace Datadog.Trace
     public class Scope : IDisposable
     {
         private readonly AsyncLocalScopeManager _scopeManager;
-        private bool _finishOnClose;
+        private readonly bool _finishOnClose;
 
         internal Scope(Scope parent, Span span,  AsyncLocalScopeManager scopeManager, bool finishOnClose)
         {
