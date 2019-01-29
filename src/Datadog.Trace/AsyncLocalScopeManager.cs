@@ -25,15 +25,15 @@ namespace Datadog.Trace
             if (current == null)
             {
                 _log.Error("Trying to close a null scope.");
+                return;
             }
-            else if (current != scope)
+
+            if (current != scope)
             {
                 _log.Warn("Specified scope is not the active scope.");
             }
-            else
-            {
-                _currentSpan.Set(current.Parent);
-            }
+
+            _currentSpan.Set(current.Parent);
         }
     }
 }
