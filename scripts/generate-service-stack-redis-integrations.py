@@ -5,7 +5,7 @@ import urllib.request
 import json
 
 
-VERSION = "0.7.0.0"
+VERSION = "0.7.1.0"
 
 
 class Signature(object):
