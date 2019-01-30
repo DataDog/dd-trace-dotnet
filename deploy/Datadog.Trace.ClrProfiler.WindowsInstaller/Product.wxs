@@ -37,7 +37,7 @@
       <ComponentGroupRef Id="Files.Managed.Net45"/>
       <ComponentGroupRef Id="Registry"/>
       <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
-      <ComponentGroupRef Id="EnvironmentVariables.User"/>
+      <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
     </Feature>
   </Product>
 
@@ -114,7 +114,7 @@
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="EnvironmentVariables.User" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="EnvironmentVariables.IIS" Directory="INSTALLFOLDER">
       <Component Id="Registry.EnvironmentVariables.W3SVC" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}" Win64="$(var.Win64)">
         <CreateFolder/>
         <RegistryKey Root="HKLM"
