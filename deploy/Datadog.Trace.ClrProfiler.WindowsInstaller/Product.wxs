@@ -35,6 +35,7 @@
       <ComponentGroupRef Id="Files"/>
       <ComponentGroupRef Id="Files.Native"/>
       <ComponentGroupRef Id="Files.Managed.Net45"/>
+      <ComponentGroupRef Id="EmptyFolders"/>
       <ComponentGroupRef Id="Registry"/>
       <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
@@ -49,13 +50,20 @@
           </Directory>
         </Directory>
       </Directory>
+
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="CommonAppDataFolder.DatadogDotNetTracer" Name="Datadog .NET Tracer">
+          <Directory Id="CommonAppDataFolder.DatadogDotNetTracer.logs" Name="logs">
+          </Directory>
+        </Directory>
+      </Directory>
     </Directory>
   </Fragment>
 
   <Fragment>
     <ComponentGroup Id="Files" Directory="INSTALLFOLDER">
       <Component Win64="$(var.Win64)">
-          <File Id="integrations.json" Source="..\..\integrations.json" />
+        <File Id="integrations.json" Source="..\..\integrations.json" />
       </Component>
     </ComponentGroup>
 
@@ -94,6 +102,14 @@
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductName)"/>
         </File>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
+      <Component Id="EmptyFolders.Logs" Guid="0A9B510D-44F6-41A9-9EFE-E2CEB7314CF3">
+        <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
+          <Permission User="Everyone" GenericAll="yes" />
+        </CreateFolder>
       </Component>
     </ComponentGroup>
 
