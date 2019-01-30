@@ -108,8 +108,11 @@
 
     <ComponentGroup Id="EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
       <Component Id="EmptyFolders.Logs" Guid="0A9B510D-44F6-41A9-9EFE-E2CEB7314CF3">
+        <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer">
+          <!-- inherit permissions from parent, C:\ProgramData -->
+        </CreateFolder>
         <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
-          <Permission User="Everyone" GenericAll="yes" />
+          <util:PermissionEx User="Everyone" GenericAll="yes" />
         </CreateFolder>
       </Component>
     </ComponentGroup>
