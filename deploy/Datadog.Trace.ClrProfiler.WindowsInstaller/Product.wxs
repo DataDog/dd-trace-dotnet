@@ -112,7 +112,7 @@
           <!-- inherit permissions from parent, C:\ProgramData -->
         </CreateFolder>
         <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
-          <util:PermissionEx User="Everyone" GenericAll="yes" />
+          <util:PermissionEx User="Everyone" GenericWrite="yes" />
         </CreateFolder>
       </Component>
     </ComponentGroup>
