@@ -8,7 +8,7 @@ using Datadog.Trace.ExtensionMethods;
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    /// SqlServer handles tracing System.Data.SqlClient
+    /// AdoNetIntegration provides methods that add tracing to ADO.NET calls.
     /// </summary>
     public static class AdoNetIntegration
     {
