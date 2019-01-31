@@ -14,13 +14,13 @@ namespace Datadog.Trace.Propagators
         /// <returns>The <see cref="SpanContext"/></returns>
         public static SpanContext Extract(this IHeaderCollection headers)
         {
-            var parentIdHeader = headers.Get(HttpHeaderNames.HttpHeaderParentId);
+            var parentIdHeader = headers.Get(HttpHeaderNames.ParentId);
             if (parentIdHeader == null)
             {
                 return null;
             }
 
-            var traceIdHeader = headers.Get(HttpHeaderNames.HttpHeaderTraceId);
+            var traceIdHeader = headers.Get(HttpHeaderNames.TraceId);
             if (traceIdHeader == null)
             {
                 return null;
@@ -56,8 +56,8 @@ namespace Datadog.Trace.Propagators
         /// <param name="context">The context.</param>
         public static void Inject(this IHeaderCollection headers, SpanContext context)
         {
-            headers.Set(HttpHeaderNames.HttpHeaderParentId, context.SpanId.ToString());
-            headers.Set(HttpHeaderNames.HttpHeaderTraceId, context.TraceId.ToString());
+            headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString());
+            headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString());
         }
     }
 }

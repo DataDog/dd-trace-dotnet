@@ -2,8 +2,8 @@ namespace Datadog.Trace
 {
     internal static class HttpHeaderNames
     {
-        public const string HttpHeaderTraceId = "x-datadog-trace-id";
-        public const string HttpHeaderParentId = "x-datadog-parent-id";
-        public const string HttpHeaderSamplingPriority = "x-datadog-sampling-priority";
+        public const string TraceId = "x-datadog-trace-id";
+        public const string ParentId = "x-datadog-parent-id";
+        public const string SamplingPriority = "x-datadog-sampling-priority";
     }
 }
