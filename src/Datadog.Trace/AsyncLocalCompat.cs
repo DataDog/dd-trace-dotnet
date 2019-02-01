@@ -2,26 +2,25 @@ namespace Datadog.Trace
 {
 #if NET45
     using System;
+    using System.Runtime.Remoting;
     using System.Runtime.Remoting.Messaging;
 
-    // TODO:bertrand revisit this when we want to support multiple AppDomains
     internal class AsyncLocalCompat<T>
     {
-        private string _name;
-
-        public AsyncLocalCompat()
-        {
-            _name = Guid.NewGuid().ToString();
-        }
+        private readonly string _name = "__Datadog_Scope_Current__" + Guid.NewGuid();
 
         public T Get()
         {
-            return (T)CallContext.LogicalGetData(_name);
+            var handle = CallContext.LogicalGetData(_name) as ObjectHandle;
+
+            return handle == null
+                       ? default(T)
+                       : (T)handle.Unwrap();
         }
 
         public void Set(T value)
         {
-            CallContext.LogicalSetData(_name, value);
+            CallContext.LogicalSetData(_name, new ObjectHandle(value));
         }
     }
 
@@ -30,11 +29,7 @@ namespace Datadog.Trace
 
     internal class AsyncLocalCompat<T>
     {
-        private AsyncLocal<T> _asyncLocal = new AsyncLocal<T>();
-
-        public AsyncLocalCompat()
-        {
-        }
+        private readonly AsyncLocal<T> _asyncLocal = new AsyncLocal<T>();
 
         public T Get()
         {

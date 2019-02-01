@@ -1,12 +1,12 @@
-﻿using Datadog.Trace.Logging;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
     internal class AsyncLocalScopeManager
     {
-        private static ILog _log = LogProvider.For<AsyncLocalScopeManager>();
+        private static readonly ILog _log = LogProvider.For<AsyncLocalScopeManager>();
 
-        private AsyncLocalCompat<Scope> _currentSpan = new AsyncLocalCompat<Scope>();
+        private readonly AsyncLocalCompat<Scope> _currentSpan = new AsyncLocalCompat<Scope>();
 
         public Scope Active => _currentSpan.Get();
 
@@ -21,14 +21,16 @@ namespace Datadog.Trace
         public void Close(Scope scope)
         {
             var current = _currentSpan.Get();
+
             if (current == null)
             {
-                _log.Error("Trying to close a null scope");
+                _log.Error("Trying to close a null scope.");
+                return;
             }
 
             if (current != scope)
             {
-                _log.Warn("Current span doesn't match desactivated span");
+                _log.Warn("Specified scope is not the active scope.");
             }
 
             _currentSpan.Set(current.Parent);

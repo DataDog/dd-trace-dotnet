@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Product Id="*"
            Name="$(var.ProductName)"
@@ -35,19 +36,31 @@
       <ComponentGroupRef Id="Files"/>
       <ComponentGroupRef Id="Files.Native"/>
       <ComponentGroupRef Id="Files.Managed.Net45"/>
+      <ComponentGroupRef Id="EmptyFolders"/>
       <ComponentGroupRef Id="Registry"/>
       <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
-      <ComponentGroupRef Id="EnvironmentVariables.User"/>
+      <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
     </Feature>
   </Product>
 
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="$(var.PlatformProgramFilesFolder)">
+        <!-- "C:\Program Files" or "C:\Program Files (x86)"-->
         <Directory Id="ProgramFilesFolder.Datadog" Name="$(var.Company)">
+          <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
-            <Directory Id="INSTALLFOLDER_NET45" Name="net45"/>
-            <Directory Id="INSTALLFOLDER_NETCOREAPP20" Name="netcoreapp2.0"/>
+            <!-- ".\.NET Tracer" -->
+          </Directory>
+        </Directory>
+      </Directory>
+
+      <Directory Id="CommonAppDataFolder">
+        <!-- "C:\ProgramData" -->
+        <Directory Id="CommonAppDataFolder.DatadogDotNetTracer" Name="Datadog .NET Tracer">
+          <!-- ".\Datadog .NET Tracer" -->
+          <Directory Id="CommonAppDataFolder.DatadogDotNetTracer.logs" Name="logs">
+            <!-- ".\logs" -->
           </Directory>
         </Directory>
       </Directory>
@@ -57,10 +70,11 @@
   <Fragment>
     <ComponentGroup Id="Files" Directory="INSTALLFOLDER">
       <Component Win64="$(var.Win64)">
-          <File Id="integrations.json" Source="..\..\integrations.json" />
+        <File Id="integrations.json" Source="..\..\integrations.json" />
       </Component>
     </ComponentGroup>
-    <ComponentGroup Id="Files.Managed.Net45" Directory="INSTALLFOLDER_NET45">
+
+    <ComponentGroup Id="Files.Managed.Net45" Directory="INSTALLFOLDER">
       <Component Win64="$(var.Win64)">
         <File Id="net45_Datadog.Trace.ClrProfiler.Managed.dll"
               Source="$(var.ManagedDllPath)\Datadog.Trace.ClrProfiler.Managed.dll"
@@ -98,6 +112,15 @@
       </Component>
     </ComponentGroup>
 
+    <ComponentGroup Id="EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
+      <Component Id="EmptyFolders.Logs" Guid="0A9B510D-44F6-41A9-9EFE-E2CEB7314CF3">
+        <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer"/>
+        <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
+          <util:PermissionEx User="Everyone" GenericWrite="yes" />
+        </CreateFolder>
+      </Component>
+    </ComponentGroup>
+
     <ComponentGroup Id="Registry" Directory="INSTALLFOLDER">
       <Component Win64="$(var.Win64)">
         <CreateFolder/>
@@ -114,7 +137,7 @@
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="EnvironmentVariables.User" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="EnvironmentVariables.IIS" Directory="INSTALLFOLDER">
       <Component Id="Registry.EnvironmentVariables.W3SVC" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}" Win64="$(var.Win64)">
         <CreateFolder/>
         <RegistryKey Root="HKLM"

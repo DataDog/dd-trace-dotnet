@@ -12,7 +12,8 @@
         "CORECLR_PROFILER_PATH": "%UserProfile%\\source\\repos\\dd-trace-csharp\\src\\Datadog.Trace.ClrProfiler.Native\\bin\\Debug\\x64\\Datadog.Trace.ClrProfiler.Native.dll",
 
         "DD_INTEGRATIONS": "%UserProfile%\\source\\repos\\dd-trace-csharp\\integrations.json"
-      }
+      },
+      "nativeDebugging": true
     }
   }
 }

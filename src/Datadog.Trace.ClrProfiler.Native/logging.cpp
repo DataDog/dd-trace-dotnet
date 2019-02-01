@@ -17,7 +17,23 @@ void Log(const std::string& str) {
   auto line = ss.str();
 
   try {
-    std::ofstream out(ToString(DatadogLogFilePath()), std::ios::app);
+    const auto path = ToString(DatadogLogFilePath());
+
+#ifdef _WIN32
+    // on VC++, use std::filesystem (C++ 17) to
+    // create directory if missing
+    const auto log_path = std::filesystem::path(path);
+
+    if (log_path.has_parent_path()) {
+      const auto parent_path = log_path.parent_path();
+
+      if (!std::filesystem::exists(parent_path)) {
+        std::filesystem::create_directories(parent_path);
+      }
+    }
+#endif
+
+    std::ofstream out(path, std::ios::app);
     out << line;
   } catch (...) {
   }

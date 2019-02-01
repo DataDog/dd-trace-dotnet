@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Datadog.Trace
 {
@@ -6,12 +6,12 @@ namespace Datadog.Trace
     /// A scope is a handle used to manage the concept of an active span.
     /// Meaning that at a given time at most one span is considered active and
     /// all newly created spans that are not created with the ignoreActiveSpan
-    /// parameter will be automically children of the active span.
+    /// parameter will be automatically children of the active span.
     /// </summary>
     public class Scope : IDisposable
     {
         private readonly AsyncLocalScopeManager _scopeManager;
-        private bool _finishOnClose;
+        private readonly bool _finishOnClose;
 
         internal Scope(Scope parent, Span span,  AsyncLocalScopeManager scopeManager, bool finishOnClose)
         {
