@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reactive.Linq;
@@ -12,10 +11,8 @@ namespace Samples.HttpMessageHandler
     public static class Program
     {
         private const string Url = "http://localhost:9000/Samples.HttpMessageHandler/";
-        private const string RequestValue = "PING";
-        private const string ResponseValue = "PONG";
-        private const string RequestHeader = "x-datadog-request";
-        private const string ResponseHeader = "x-datadog-response";
+        private const string RequestContent = "PING";
+        private const string ResponseContent = "PONG";
 
         private static readonly Encoding Encoding = Encoding.UTF8;
 
@@ -39,45 +36,48 @@ namespace Samples.HttpMessageHandler
 
         private static async Task SendHttpRequest()
         {
-            var clientRequestContent = new StringContent(RequestValue, Encoding);
+            var clientRequestContent = new StringContent(RequestContent, Encoding);
 
             using (var client = new HttpClient())
+            using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
             {
-                client.DefaultRequestHeaders.Add(RequestHeader, RequestValue);
+                // read response content and headers
+                var responseContent = await responseMessage.Content.ReadAsStringAsync();
 
-                using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
+                Console.WriteLine($"[client] response content: {responseContent}");
+
+                foreach (var responseHeader in responseMessage.Headers)
                 {
-                    var responseContent = await responseMessage.Content.ReadAsStringAsync();
-                    var responseHeader = responseMessage.Headers.GetValues(ResponseHeader).Single();
-
-                    Console.WriteLine($"[client] response header: {responseHeader}");
-                    Console.WriteLine($"[client] response content: {responseContent}");
+                    var name = responseHeader.Key;
+                    var values = string.Join(",", responseHeader.Value);
+                    Console.WriteLine($"[client] response header: {name}={values}");
                 }
             }
         }
 
         private static async Task HandleHttpRequest(HttpListenerContext context)
         {
-            // read request content and header
+            // read request content and headers
             using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
             {
                 string requestContent = await reader.ReadToEndAsync();
-                string header = context.Request.Headers[RequestHeader];
-
-                Console.WriteLine($"[server] request header: {header}");
                 Console.WriteLine($"[server] request content: {requestContent}");
+
+                foreach (string headerName in context.Request.Headers)
+                {
+                    string headerValue = context.Request.Headers[headerName];
+                    Console.WriteLine($"[server] request header: {headerName}={headerValue}");
+                }
             }
 
-            // add response header first, then write content
-            context.Response.Headers[ResponseHeader] = ResponseValue;
-
-            byte[] responseBytes = Encoding.GetBytes(ResponseValue);
+            // write response content
+            byte[] responseBytes = Encoding.GetBytes(ResponseContent);
             context.Response.ContentEncoding = Encoding;
             context.Response.ContentLength64 = responseBytes.Length;
             await context.Response.OutputStream.WriteAsync(responseBytes, 0, responseBytes.Length);
 
-            // we must close output stream
-            context.Response.OutputStream.Close();
+            // we must close the response
+            context.Response.Close();
         }
     }
 }
