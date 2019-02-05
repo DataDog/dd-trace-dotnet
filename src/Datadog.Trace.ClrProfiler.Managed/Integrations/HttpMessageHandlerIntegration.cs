@@ -77,6 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             span.SetTag(Tags.HttpMethod, httpMethod);
             span.SetTag(Tags.HttpUrl, url);
+            span.SetTag("handler.type", handler.GetType().FullName);
 
             return scope;
         }
