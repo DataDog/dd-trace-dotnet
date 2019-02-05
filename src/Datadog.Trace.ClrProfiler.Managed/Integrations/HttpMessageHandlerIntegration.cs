@@ -1,7 +1,9 @@
 using System;
+using System.Globalization;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -52,6 +54,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
+                    // add distributed tracing headers
+                    request.Headers.Inject(scope.Span.Context);
+
                     return await executeAsync(handler, request, cancellationToken);
                 }
                 catch (Exception ex)
@@ -77,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             span.SetTag(Tags.HttpMethod, httpMethod);
             span.SetTag(Tags.HttpUrl, url);
-            span.SetTag("handler.type", handler.GetType().FullName);
+            span.SetTag("handler-type", handler.GetType().FullName);
 
             return scope;
         }
