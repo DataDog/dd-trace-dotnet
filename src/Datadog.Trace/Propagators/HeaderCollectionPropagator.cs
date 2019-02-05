@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Globalization;
 
 namespace Datadog.Trace.Propagators
 {
@@ -56,8 +57,8 @@ namespace Datadog.Trace.Propagators
         /// <param name="context">The context.</param>
         public static void Inject(this IHeaderCollection headers, SpanContext context)
         {
-            headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString());
-            headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString());
+            headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(CultureInfo.InvariantCulture));
+            headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(CultureInfo.InvariantCulture));
         }
     }
 }
