@@ -1,4 +1,3 @@
-﻿using System.Linq;
 using System.Net.Http.Headers;
 
 namespace Datadog.Trace
@@ -14,8 +13,9 @@ namespace Datadog.Trace
 
         public string Get(string name)
         {
-            _headers.TryGetValues(name, out var values);
-            return values?.FirstOrDefault();
+            return _headers.TryGetValues(name, out var values)
+                       ? string.Join(",", values)
+                       : null;
         }
 
         public void Set(string name, string value)
