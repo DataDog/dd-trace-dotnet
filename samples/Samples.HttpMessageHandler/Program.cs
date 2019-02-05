@@ -11,9 +11,9 @@ namespace Samples.HttpMessageHandler
 {
     public static class Program
     {
+        private const string Url = "http://localhost:9000/Samples.HttpMessageHandler/";
         private const string RequestValue = "PING";
         private const string ResponseValue = "PONG";
-        private const string Url = "http://localhost:9000/Samples.HttpMessageHandler/";
         private const string RequestHeader = "x-datadog-request";
         private const string ResponseHeader = "x-datadog-response";
 
@@ -26,9 +26,11 @@ namespace Samples.HttpMessageHandler
                 listener.Prefixes.Add(Url);
                 listener.Start();
 
-                var observable = Observable.FromAsync(listener.GetContextAsync);
-                observable.Subscribe(async context => await HandleHttpRequest(context));
+                // subscribe to http requests events
+                Observable.FromAsync(listener.GetContextAsync)
+                          .Subscribe(async context => await HandleHttpRequest(context));
 
+                // send an http request
                 await SendHttpRequest();
 
                 listener.Stop();
@@ -57,21 +59,22 @@ namespace Samples.HttpMessageHandler
         private static async Task HandleHttpRequest(HttpListenerContext context)
         {
             // read request content and header
-            var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
-            string requestContent = await reader.ReadToEndAsync();
+            using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+            {
+                string requestContent = await reader.ReadToEndAsync();
+                string header = context.Request.Headers[RequestHeader];
 
-            string header = context.Request.Headers[RequestHeader];
+                Console.WriteLine($"[server] request header: {header}");
+                Console.WriteLine($"[server] request content: {requestContent}");
+            }
 
-            Console.WriteLine($"[server] request header: {header}");
-            Console.WriteLine($"[server] request content: {requestContent}");
-
-            // add response header first then write content
+            // add response header first, then write content
             context.Response.Headers[ResponseHeader] = ResponseValue;
 
             byte[] responseBytes = Encoding.GetBytes(ResponseValue);
             context.Response.ContentEncoding = Encoding;
             context.Response.ContentLength64 = responseBytes.Length;
-            await context.Response.OutputStream.WriteAsync(responseBytes);
+            await context.Response.OutputStream.WriteAsync(responseBytes, 0, responseBytes.Length);
 
             // we must close output stream
             context.Response.OutputStream.Close();
