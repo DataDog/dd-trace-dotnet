@@ -191,6 +191,25 @@
     ]
   },
   {
+    "name": "HttpMessageHandler",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Http",
+          "type": "System.Net.Http.HttpMessageHandler",
+          "method": "SendAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "SendAsync",
+          "signature": "00 03 1C 1C 1C 1C"
+        }
+      }
+    ]
+  },
+  {
     "name": "MongoDb",
     "method_replacements": [
       {
