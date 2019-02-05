@@ -6,12 +6,12 @@ namespace Datadog.Trace
     public static class SpanTypes
     {
         /// <summary>
-        /// The span type for a redis database.
+        /// The span type for a Redis client integration.
         /// </summary>
         public const string Redis = "redis";
 
         /// <summary>
-        /// The span type for a sql database.
+        /// The span type for a SQL client integration.
         /// </summary>
         public const string Sql = "sql";
 
