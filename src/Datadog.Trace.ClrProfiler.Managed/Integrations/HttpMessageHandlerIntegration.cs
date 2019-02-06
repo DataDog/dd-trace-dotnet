@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +7,7 @@ using Datadog.Trace.Propagators;
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    /// Tracing integration for HttpMessageHandler.
+    /// Tracer integration for HttpMessageHandler.
     /// </summary>
     public static class HttpMessageHandlerIntegration
     {
@@ -24,6 +23,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.Net.Http",
             TargetType = "System.Net.Http.HttpMessageHandler")]
+        [InterceptMethod(
+            TargetAssembly = "System.Net.Http",
+            TargetType = "System.Net.Http.HttpClientHandler")]
         public static object SendAsync(
             object handler,
             object request,
@@ -45,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            var executeAsync = DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
+            var executeAsync = DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
                .GetOrCreateMethodCallDelegate(
                     handler.GetType(),
                     nameof(SendAsync));
