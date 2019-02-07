@@ -46,9 +46,9 @@ namespace Datadog.Trace.Agent
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
             // TODO:bertrand add header for os version
-            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang", ".NET");
-            _client.DefaultRequestHeaders.Add("Datadog-Meta-Lang-Interpreter", RuntimeInformation.FrameworkDescription);
-            _client.DefaultRequestHeaders.Add("Datadog-Meta-Tracer-Version", this.GetType().Assembly.GetName().Version.ToString());
+            _client.DefaultRequestHeaders.Add(HttpHeaderNames.Language, ".NET");
+            _client.DefaultRequestHeaders.Add(HttpHeaderNames.LanguageInterpreter, RuntimeInformation.FrameworkDescription);
+            _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracerVersion, this.GetType().Assembly.GetName().Version.ToString());
         }
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
