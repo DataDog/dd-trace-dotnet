@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -9,31 +10,36 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class WebRequestIntegration
     {
+        internal const string OperationName = "http.request";
+
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.
         /// </summary>
         /// <param name="request">The <see cref="WebRequest"/> instance to instrument.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-            TargetAssembly = "System.Net",
+            TargetAssembly = "System", // .NET Framework
+            TargetType = "System.Net.WebRequest")]
+        [InterceptMethod(
+            TargetAssembly = "System.Net.Requests", // .NET Core
             TargetType = "System.Net.WebRequest")]
         public static object GetResponse(object request)
         {
-            var executeAsync = DynamicMethodBuilder<Func<WebRequest, WebResponse>>
-               .GetOrCreateMethodCallDelegate(
-                    request.GetType(),
-                    nameof(GetResponse));
-
             var webRequest = (WebRequest)request;
+
+            if (IsTracingDisabled(webRequest))
+            {
+                return webRequest.GetResponse();
+            }
 
             using (var scope = CreateScope(webRequest))
             {
                 try
                 {
                     // add distributed tracing headers
-                    // request.Headers.Inject(scope.Span.Context);
+                    webRequest.Headers.Inject(scope.Span.Context);
 
-                    return executeAsync(webRequest);
+                    return webRequest.GetResponse();
                 }
                 catch (Exception ex)
                 {
@@ -58,19 +64,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static async Task<WebResponse> GetResponseAsyncInternal(WebRequest request)
         {
-            var executeAsync = DynamicMethodBuilder<Func<WebRequest, Task<WebResponse>>>
-               .GetOrCreateMethodCallDelegate(
-                    request.GetType(),
-                    nameof(GetResponseAsync));
+            if (IsTracingDisabled(request))
+            {
+                return await request.GetResponseAsync().ConfigureAwait(false);
+            }
 
             using (var scope = CreateScope(request))
             {
                 try
                 {
                     // add distributed tracing headers
-                    // request.Headers.Inject(scope.Span.Context);
+                    request.Headers.Inject(scope.Span.Context);
 
-                    return await executeAsync(request);
+                    return await request.GetResponseAsync()
+                                        .ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -80,9 +87,32 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        private static bool IsTracingDisabled(WebRequest request)
+        {
+            // check if tracing is disabled for this request via http header
+            string value = request.Headers[HttpHeaderNames.TracingDisabled];
+            return string.Equals(value, "true", StringComparison.InvariantCultureIgnoreCase);
+        }
+
         private static Scope CreateScope(WebRequest request)
         {
-            throw new NotImplementedException();
+            string httpMethod = request.Method.ToUpperInvariant();
+            string url = request.RequestUri.OriginalString;
+            string resourceName = $"{httpMethod} {url}";
+
+            var tracer = Tracer.Instance;
+            var scope = tracer.StartActive(OperationName, serviceName: tracer.DefaultServiceName);
+            var span = scope.Span;
+
+            span.Type = SpanTypes.Http;
+            span.ResourceName = resourceName;
+
+            span.SetTag(Tags.HttpMethod, httpMethod);
+            span.SetTag(Tags.HttpUrl, url);
+            span.SetTag(Tags.IntegrationType, nameof(WebRequestIntegration));
+            span.SetTag("web-request-type", request.GetType().FullName);
+
+            return scope;
         }
     }
 }

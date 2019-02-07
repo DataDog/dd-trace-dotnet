@@ -11,6 +11,11 @@ namespace Datadog.Trace
         public const string Env = "env";
 
         /// <summary>
+        /// The type of the integration that generated a span.
+        /// </summary>
+        public const string IntegrationType = "integration-type";
+
+        /// <summary>
         /// The URL of an HTTP request
         /// </summary>
         public const string HttpUrl = "http.url";

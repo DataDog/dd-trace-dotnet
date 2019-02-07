@@ -1,8 +1,9 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Propagators;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -52,6 +53,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     handler.GetType(),
                     nameof(SendAsync));
 
+            if (IsTracingDisabled(request))
+            {
+                return await executeAsync(handler, request, cancellationToken);
+            }
+
             using (var scope = CreateScope(handler, request))
             {
                 try
@@ -69,6 +75,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        private static bool IsTracingDisabled(HttpRequestMessage request)
+        {
+            if (request.Headers.TryGetValues(HttpHeaderNames.TracingDisabled, out var headerValues))
+            {
+                if (headerValues.Any(s => string.Equals(s, "true", StringComparison.InvariantCultureIgnoreCase)))
+                {
+                    // tracing is disabled for this request via http header
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static Scope CreateScope(HttpMessageHandler handler, HttpRequestMessage request)
         {
             string httpMethod = request.Method.ToString().ToUpperInvariant();
@@ -84,7 +104,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             span.SetTag(Tags.HttpMethod, httpMethod);
             span.SetTag(Tags.HttpUrl, url);
-            span.SetTag("handler-type", handler.GetType().FullName);
+            span.SetTag(Tags.IntegrationType, nameof(HttpMessageHandlerIntegration));
+            span.SetTag("http-message-handler-type", handler.GetType().FullName);
 
             return scope;
         }

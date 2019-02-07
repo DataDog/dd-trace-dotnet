@@ -206,6 +206,20 @@
           "method": "SendAsync",
           "signature": "00 03 1C 1C 1C 1C"
         }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Http",
+          "type": "System.Net.Http.HttpClientHandler",
+          "method": "SendAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
+          "method": "SendAsync",
+          "signature": "00 03 1C 1C 1C 1C"
+        }
       }
     ]
   },
@@ -340,6 +354,53 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch",
           "method": "ExecuteAsync",
           "signature": "10 01 04 1C 1C 1C 1C 1C"
+        }
+      }
+    ]
+  },
+  {
+    "name": "WebRequest",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System",
+          "type": "System.Net.WebRequest",
+          "method": "GetResponse"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
+          "method": "GetResponse",
+          "signature": "00 01 1C 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Requests",
+          "type": "System.Net.WebRequest",
+          "method": "GetResponse"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
+          "method": "GetResponse",
+          "signature": "00 01 1C 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net",
+          "type": "System.Net.WebRequest",
+          "method": "GetResponseAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
+          "method": "GetResponseAsync",
+          "signature": "00 01 1C 1C"
         }
       }
     ]
