@@ -18,10 +18,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public const string TargetFramework = "net452";
 #elif NET461
         public const string TargetFramework = "net461";
-#elif NET47
-        public const string TargetFramework = "net47";
-#elif NETCOREAPP2_0
-        public const string TargetFramework = "netcoreapp2.0";
+#elif NETCOREAPP2_1
+        public const string TargetFramework = "netcoreapp2.1";
 #endif
     }
 }
