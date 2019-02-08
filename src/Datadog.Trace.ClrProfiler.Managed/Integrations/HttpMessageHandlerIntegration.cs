@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         internal const string OperationName = "http.request";
 
+        // internal readonly  string Name = nameof(HttpMessageHandlerIntegration).Substring(0, )
+
         /// <summary>
         /// Instrumentation wrapper for <see cref="HttpMessageHandler.SendAsync"/>.
         /// </summary>
@@ -101,11 +103,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             span.Type = SpanTypes.Http;
             span.ResourceName = resourceName;
-
             span.SetTag(Tags.HttpMethod, httpMethod);
             span.SetTag(Tags.HttpUrl, url);
-            span.SetTag(Tags.IntegrationType, nameof(HttpMessageHandlerIntegration));
-            span.SetTag("http-message-handler-type", handler.GetType().FullName);
+            span.SetTag(Tags.InstrumentationName, nameof(HttpMessageHandlerIntegration).TrimEnd("Integration"));
+            span.SetTag(Tags.InstrumentationMethod, $"{handler.GetType().FullName}.{nameof(SendAsync)}");
 
             return scope;
         }

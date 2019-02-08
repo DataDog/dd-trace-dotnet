@@ -1,7 +1,7 @@
 namespace Datadog.Trace
 {
     /// <summary>
-    /// This class contains a set of standard tags that can be used by integrations
+    /// Standard span tags used by integrations.
     /// </summary>
     public static class Tags
     {
@@ -11,9 +11,14 @@ namespace Datadog.Trace
         public const string Env = "env";
 
         /// <summary>
-        /// The type of the integration that generated a span.
+        /// The name of the integration that generated the span.
         /// </summary>
-        public const string IntegrationType = "integration-type";
+        public const string InstrumentationName = "instrumentation.name";
+
+        /// <summary>
+        /// The name of the method that was instrumented to generate the span.
+        /// </summary>
+        public const string InstrumentationMethod = "instrumentation.method";
 
         /// <summary>
         /// The URL of an HTTP request

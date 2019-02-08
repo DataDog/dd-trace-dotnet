@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return webRequest.GetResponse();
             }
 
-            using (var scope = CreateScope(webRequest))
+            using (var scope = CreateScope(webRequest, nameof(GetResponse)))
             {
                 try
                 {
@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return await request.GetResponseAsync().ConfigureAwait(false);
             }
 
-            using (var scope = CreateScope(request))
+            using (var scope = CreateScope(request, nameof(GetResponseAsync)))
             {
                 try
                 {
@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return string.Equals(value, "true", StringComparison.InvariantCultureIgnoreCase);
         }
 
-        private static Scope CreateScope(WebRequest request)
+        private static Scope CreateScope(WebRequest request, string methodName)
         {
             string httpMethod = request.Method.ToUpperInvariant();
             string url = request.RequestUri.OriginalString;
@@ -106,11 +106,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             span.Type = SpanTypes.Http;
             span.ResourceName = resourceName;
-
             span.SetTag(Tags.HttpMethod, httpMethod);
             span.SetTag(Tags.HttpUrl, url);
-            span.SetTag(Tags.IntegrationType, nameof(WebRequestIntegration));
-            span.SetTag("web-request-type", request.GetType().FullName);
+            span.SetTag(Tags.InstrumentationName, nameof(WebRequestIntegration).TrimEnd("Integration"));
+            span.SetTag(Tags.InstrumentationMethod, $"{request.GetType().FullName}.{methodName}");
 
             return scope;
         }
