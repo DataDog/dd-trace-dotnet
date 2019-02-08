@@ -1,5 +1,5 @@
-﻿using System.Net.Http;
-using Datadog.Trace.Propagators;
+using System.Net.Http;
+using Datadog.Trace.ExtensionMethods;
 using Xunit;
 
 namespace Datadog.Trace.Tests
