@@ -30,7 +30,7 @@ namespace Samples.HttpMessageHandler
                               .Subscribe(async context => await HandleHttpRequest(context));
 
                     // send an http request using HttpClient
-                    // SendHttpClientRequest().GetAwaiter().GetResult();
+                    SendHttpClientRequest().GetAwaiter().GetResult();
                 }
 
                 if (args.Length == 0 || args[0].Equals("WebClient", StringComparison.InvariantCultureIgnoreCase))
@@ -104,7 +104,7 @@ namespace Samples.HttpMessageHandler
                 }
             }
 
-            var delay = TimeSpan.FromSeconds(3);
+            var delay = TimeSpan.FromSeconds(1);
             Console.WriteLine($"[HttpListener] Faking it for {delay}");
             await Task.Delay(delay);
 
