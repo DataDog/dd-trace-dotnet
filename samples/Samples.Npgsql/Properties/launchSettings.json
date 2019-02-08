@@ -13,7 +13,7 @@
 
         "DD_INTEGRATIONS": "%UserProfile%\\source\\repos\\dd-trace-csharp\\integrations.json"
       },
-      "nativeDebugging": false
+      "nativeDebugging": true
     }
   }
 }
