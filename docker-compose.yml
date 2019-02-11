@@ -49,12 +49,6 @@ services:
     volumes:
     - ./:/project
 
-  Samples.ConsoleCore:
-    image: microsoft/dotnet:2.1-sdk
-    command: bash -c "/project/docker/with-profiler-logs.bash /project/docker/with-profiler.bash dotnet /project/samples/Samples.ConsoleCore/bin/Release/netcoreapp2.1/publish/Samples.ConsoleCore.dll"
-    volumes:
-    - ./:/project
-
   Samples.RedisCore:
     build:
       context: ./
