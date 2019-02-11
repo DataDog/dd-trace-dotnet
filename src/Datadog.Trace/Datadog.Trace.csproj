@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45;net461</TargetFrameworks>
+    <TargetFrameworks>net45;net461;netstandard2.0;</TargetFrameworks>
     <Version>0.7.1-beta</Version>
 
     <!-- NuGet -->
@@ -27,6 +27,10 @@
     <PackageReference Include="MsgPack.Cli" Version="1.0.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Services\" />
   </ItemGroup>
 
 </Project>

@@ -29,15 +29,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 dynamic actionDescriptor = actionDescriptorObj;
-                string controllerName = (actionDescriptor.ControllerName as string)?.ToLowerInvariant();
-                string actionName = (actionDescriptor.ActionName as string)?.ToLowerInvariant();
+                var controllerName = (actionDescriptor.ControllerName as string)?.ToLowerInvariant();
+                var actionName = (actionDescriptor.ActionName as string)?.ToLowerInvariant();
 
                 _httpContext = httpContextObj;
                 string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
                 string url = GetDisplayUrl(_httpContext.Request).ToLowerInvariant();
 
                 _scope = Tracer.Instance.StartActive(OperationName);
-                Span span = _scope.Span;
+                var span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
                 span.SetTag(Tags.HttpMethod, httpMethod);
@@ -63,10 +63,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
         public static void BeforeAction(
-            object diagnosticSource,
-            object actionDescriptor,
-            dynamic httpContext,
-            object routeData)
+                                        object diagnosticSource,
+                                        object actionDescriptor,
+                                        dynamic httpContext,
+                                        object routeData)
         {
             AspNetCoreMvc2Integration integration = null;
 
@@ -85,12 +85,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (_beforeAction == null)
                 {
-                    Assembly assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
-                    Type type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
+                    var assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
+                    var type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
                     _beforeAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                        type,
-                        "BeforeAction");
+                                                                                                                          type,
+                                                                                                                          "BeforeAction");
                 }
             }
             catch
@@ -107,6 +107,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 integration?.SetException(ex);
+
                 throw;
             }
         }
@@ -123,10 +124,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
         public static void AfterAction(
-            object diagnosticSource,
-            object actionDescriptor,
-            dynamic httpContext,
-            object routeData)
+                                       object diagnosticSource,
+                                       object actionDescriptor,
+                                       dynamic httpContext,
+                                       object routeData)
         {
             AspNetCoreMvc2Integration integration = null;
 
@@ -144,11 +145,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (_afterAction == null)
                 {
-                    Type type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
+                    var type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
                     _afterAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                        type,
-                        "AfterAction");
+                                                                                                                         type,
+                                                                                                                         "AfterAction");
                 }
             }
             catch
@@ -165,6 +166,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 integration?.SetException(ex);
+
                 throw;
             }
             finally

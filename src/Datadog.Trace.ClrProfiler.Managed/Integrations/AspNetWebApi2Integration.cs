@@ -44,9 +44,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>A task with the result</returns>
         private static async Task<HttpResponseMessage> ExecuteAsyncInternal(object apiController, object controllerContext, CancellationToken cancellationToken)
         {
-            Type controllerType = apiController.GetType();
+            var controllerType = apiController.GetType();
 
-            // in some cases, ExecuteAsync() is an explicit interface implementation,
+            // in some cases, ExecuteAsync() is an explicit interface imple7mentation,
             // which is not public and has a different name, so try both
             var executeAsyncFunc =
                 DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
@@ -54,10 +54,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
                    .GetOrCreateMethodCallDelegate(controllerType, "System.Web.Http.Controllers.IHttpController.ExecuteAsync");
 
-            using (Scope scope = CreateScope(controllerContext))
+            using (var scope = Tracer.Instance.StartActive(OperationName))
             {
                 try
                 {
+                    UpdateSpan(controllerContext, scope.Span);
+
                     var responseMessage = await executeAsyncFunc(apiController, controllerContext, cancellationToken).ConfigureAwait(false);
 
                     // some fields aren't set till after execution, so populate anything missing
@@ -71,13 +73,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     throw;
                 }
             }
-        }
-
-        private static Scope CreateScope(object controllerContext)
-        {
-            var scope = Tracer.Instance.StartActive(OperationName);
-            UpdateSpan(controllerContext, scope.Span);
-            return scope;
         }
 
         private static void UpdateSpan(dynamic controllerContext, Span span)

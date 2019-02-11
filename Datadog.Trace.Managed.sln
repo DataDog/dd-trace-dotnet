@@ -40,6 +40,29 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Coffeehouse.Api.Loc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Coffeehouse.Core.Local", "..\dd-trace-demo\dotnet-coffeehouse\Datadog.Coffeehouse.Core\Datadog.Coffeehouse.Core.Local.csproj", "{9C6B6018-7A55-4381-9D10-0BF563C8DE78}"
 EndProject
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Datadog.Coffeehouse.WebForms", "..\dd-trace-demo\dotnet-coffeehouse\Datadog.Coffeehouse.WebForms\", "{8BBEEF09-61C6-49A4-940B-3A33B2F76732}"
+	ProjectSection(WebsiteProperties) = preProject
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5"
+		ProjectReferences = "{9c6b6018-7a55-4381-9d10-0bf563c8de78}|Datadog.Coffeehouse.Core.Local.dll;{5dfdf781-f24c-45b1-82ef-9125875a80a4}|Datadog.Trace.dll;{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}|Datadog.Trace.ClrProfiler.Managed.dll;"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_53611"
+		Debug.AspNetCompiler.PhysicalPath = "..\dd-trace-demo\dotnet-coffeehouse\Datadog.Coffeehouse.WebForms\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_53611\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_53611"
+		Release.AspNetCompiler.PhysicalPath = "..\dd-trace-demo\dotnet-coffeehouse\Datadog.Coffeehouse.WebForms\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_53611\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "53611"
+		SlnRelativePath = "..\dd-trace-demo\dotnet-coffeehouse\Datadog.Coffeehouse.WebForms\"
+		DefaultWebSiteLanguage = "Visual C#"
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -94,6 +117,10 @@ Global
 		{9C6B6018-7A55-4381-9D10-0BF563C8DE78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C6B6018-7A55-4381-9D10-0BF563C8DE78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C6B6018-7A55-4381-9D10-0BF563C8DE78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BBEEF09-61C6-49A4-940B-3A33B2F76732}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BBEEF09-61C6-49A4-940B-3A33B2F76732}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BBEEF09-61C6-49A4-940B-3A33B2F76732}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BBEEF09-61C6-49A4-940B-3A33B2F76732}.Release|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -111,6 +138,7 @@ Global
 		{5B52C0C0-A554-4E53-9D17-B121E78FF919} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{A371DD82-4682-4DA3-8D33-7FF43361278C} = {EE5EFBBE-D805-4ABB-BC4E-53BEF4748093}
 		{9C6B6018-7A55-4381-9D10-0BF563C8DE78} = {EE5EFBBE-D805-4ABB-BC4E-53BEF4748093}
+		{8BBEEF09-61C6-49A4-940B-3A33B2F76732} = {EE5EFBBE-D805-4ABB-BC4E-53BEF4748093}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

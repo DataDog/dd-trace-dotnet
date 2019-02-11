@@ -183,13 +183,17 @@ namespace Datadog.Trace.ClrProfiler
                 dynamicMethod.CallVirtual(methodInfo);
             }
 
-            if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
+            // Non-void return type?
+            if (returnType != null)
             {
-                dynamicMethod.Box(methodInfo.ReturnType);
-            }
-            else if (methodInfo.ReturnType != returnType)
-            {
-                dynamicMethod.CastClass(returnType);
+                if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
+                {
+                    dynamicMethod.Box(methodInfo.ReturnType);
+                }
+                else if (methodInfo.ReturnType != returnType)
+                {
+                    dynamicMethod.CastClass(returnType);
+                }
             }
 
             dynamicMethod.Return();

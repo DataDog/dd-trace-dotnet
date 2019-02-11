@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.Interfaces;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -12,7 +12,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public class Span : IDisposable
+    public class Span : IDisposable, ISpan<Span>
     {
         private static readonly ILog _log = LogProvider.For<Span>();
 
@@ -152,6 +152,15 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Proxy to SetTag without return value
+        /// See <see cref="Span.SetTag(string, string)"/> for more information
+        /// </summary>
+        /// <param name="key">The tag's key</param>
+        /// <param name="value">The tag's value</param>
+        public void Tag(string key, string value)
+            => SetTag(key, value);
+
+        /// <summary>
         /// Record the end time of the span and flushes it to the backend.
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
@@ -220,9 +229,12 @@ namespace Datadog.Trace
             SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
         }
 
-        internal string GetTag(string key)
-        {
-            return _tags.TryGetValue(key, out string value) ? value : null;
-        }
+        /// <summary>
+        /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed
+        /// </summary>
+        /// <param name="key">The tag's key</param>
+        /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
+        public string GetTag(string key)
+            => _tags.TryGetValue(key, out var value) ? value : null;
     }
 }

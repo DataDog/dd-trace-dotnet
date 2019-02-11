@@ -4,6 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Web;
 using System.Web.Routing;
+using Datadog.Trace.ClrProfiler.ExtensionMethods;
+using Datadog.Trace.ClrProfiler.Models;
+using Datadog.Trace.ClrProfiler.Services;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -16,8 +19,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal const string OperationName = "aspnet-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
 
-        private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
-        private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
+        private static readonly Type _controllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
+        private static readonly Type _routeCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
 
         private readonly HttpContextBase _httpContext;
         private readonly Scope _scope;
@@ -28,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="controllerContextObj">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
         public AspNetMvcIntegration(object controllerContextObj)
         {
-            if (controllerContextObj == null || ControllerContextType == null)
+            if (controllerContextObj == null || _controllerContextType == null)
             {
                 // bail out early
                 return;
@@ -36,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (controllerContextObj.GetType() != ControllerContextType)
+                if (controllerContextObj.GetType() != _controllerContextType)
                 {
                     return;
                 }
@@ -51,15 +54,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return;
                 }
 
-                string host = _httpContext.Request.Headers.Get("Host");
-                string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
-                string url = _httpContext.Request.RawUrl.ToLowerInvariant();
-
-                RouteData routeData = controllerContext.RouteData as RouteData;
-                Route route = routeData?.Route as Route;
+                var routeData = controllerContext.RouteData as RouteData;
+                var route = routeData?.Route as Route;
                 RouteValueDictionary routeValues = routeData?.Values;
 
-                if (route == null && routeData?.Route.GetType() == RouteCollectionRouteType)
+                if (route == null && routeData?.Route.GetType() == _routeCollectionRouteType)
                 {
                     var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
 
@@ -72,20 +71,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                string resourceName = $"{httpMethod} {controllerName}.{actionName}";
+                var controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+                var actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+
+                var contextAdapter = HttpContextBaseTagAdapter.Create(_httpContext);
+
+                var decorator = DefaultSpanDecorationBuilder.Create()
+                                                            .With(contextAdapter.AllWebSpanDecorator())
+                                                            .Build();
 
                 _scope = Tracer.Instance.StartActive(OperationName);
-                Span span = _scope.Span;
-                span.Type = SpanTypes.Web;
-                span.ResourceName = resourceName;
-                span.SetTag(Tags.HttpRequestHeadersHost, host);
-                span.SetTag(Tags.HttpMethod, httpMethod);
-                span.SetTag(Tags.HttpUrl, url);
-                span.SetTag(Tags.AspNetRoute, route?.Url);
-                span.SetTag(Tags.AspNetController, controllerName);
-                span.SetTag(Tags.AspNetAction, actionName);
+
+                _scope.Span.DecorateWith(decorator);
+
+                var resourceName = $"{_scope.Span.GetHttpMethod()} {controllerName}.{actionName}";
+
+                _scope.Span.ResourceName = resourceName;
+                _scope.Span.SetTag(Tags.AspNetRoute, route?.Url);
+                _scope.Span.SetTag(Tags.AspNetController, controllerName);
+                _scope.Span.SetTag(Tags.AspNetAction, actionName);
             }
             catch
             {
