@@ -51,7 +51,7 @@ services:
 
   Samples.ConsoleCore:
     image: microsoft/dotnet:2.1-sdk
-    command: bash -c "/project/docker/with-profiler-logs.bash /project/docker/with-profiler.bash dotnet /project/samples/Samples.ConsoleCore/bin/Release/netcoreapp2.0/publish/Samples.ConsoleCore.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash /project/docker/with-profiler.bash dotnet /project/samples/Samples.ConsoleCore/bin/Release/netcoreapp2.1/publish/Samples.ConsoleCore.dll"
     volumes:
     - ./:/project
 
@@ -60,7 +60,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it redis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.RedisCore/bin/Release/netcoreapp2.0/publish/Samples.RedisCore.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it redis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.RedisCore/bin/Release/netcoreapp2.1/publish/Samples.RedisCore.dll"
     volumes:
     - ./:/project
     environment:
@@ -73,7 +73,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/Release/netcoreapp2.0/publish/Samples.Elasticsearch.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/Release/netcoreapp2.1/publish/Samples.Elasticsearch.dll"
     volumes:
     - ./:/project
     environment:
@@ -86,7 +86,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/Release/netcoreapp2.0/publish/Samples.SqlServer.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/Release/netcoreapp2.1/publish/Samples.SqlServer.dll"
     volumes:
     - ./:/project
     environment:
