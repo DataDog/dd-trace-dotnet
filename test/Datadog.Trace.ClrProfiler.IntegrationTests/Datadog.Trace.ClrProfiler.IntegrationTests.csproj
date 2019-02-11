@@ -13,9 +13,6 @@
     <Content Include="..\..\integrations.json" Link="integrations.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\..\test-integrations.json" Link="test-integrations.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
