@@ -1,21 +1,19 @@
-using System;
-using System.Threading;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Interfaces;
+using Datadog.Trace.Services;
 
 namespace Datadog.Trace
 {
     /// <summary>
-    /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
+    ///     The SpanContext contains all the information needed to express relationships between spans inside or outside the
+    ///     process boundaries.
     /// </summary>
     public class SpanContext
     {
-        private static ILog _log = LogProvider.For<SpanContext>();
-        private static ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
+        private static readonly IIdProvider _idProvider = SimpleDependencyFactory.IdProvider();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class.
-        /// This is useful to implement custom context propagation
+        ///     Initializes a new instance of the <see cref="SpanContext" /> class.
+        ///     This is useful to implement custom context propagation
         /// </summary>
         /// <param name="traceId">The trace identifier.</param>
         /// <param name="spanId">The span identifier.</param>
@@ -37,11 +35,11 @@ namespace Datadog.Trace
             }
             else
             {
-                TraceId = _random.Value.NextUInt63();
+                TraceId = _idProvider.GetUInt63Id();
                 TraceContext = new TraceContext(tracer);
             }
 
-            SpanId = _random.Value.NextUInt63();
+            SpanId = _idProvider.GetUInt63Id();
             ServiceName = serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName;
         }
 
@@ -54,22 +52,22 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the SpanContext of the parent span (if any)
+        ///     Gets the SpanContext of the parent span (if any)
         /// </summary>
         public SpanContext Parent { get; }
 
         /// <summary>
-        /// Gets the trace id
+        ///     Gets the trace id
         /// </summary>
         public ulong TraceId { get; }
 
         /// <summary>
-        /// Gets the span id of the parent span
+        ///     Gets the span id of the parent span
         /// </summary>
         public ulong? ParentId => Parent?.SpanId;
 
         /// <summary>
-        /// Gets the span id
+        ///     Gets the span id
         /// </summary>
         public ulong SpanId { get; }
 

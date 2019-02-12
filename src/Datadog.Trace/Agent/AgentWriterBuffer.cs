@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using Datadog.Trace.Services;
 
 namespace Datadog.Trace.Agent
 {
@@ -7,14 +8,15 @@ namespace Datadog.Trace.Agent
     {
         private readonly object _lock = new object();
         private readonly int _maxSize;
+        private readonly Random _random;
+
         private List<T> _items;
-        private Random _random;
 
         public AgentWriterBuffer(int maxSize)
         {
             _maxSize = maxSize;
             _items = new List<T>();
-            _random = new Random();
+            _random = SimpleDependencyFactory.RandomProvider().GetRandom();
         }
 
         public bool Push(T item)
@@ -24,13 +26,13 @@ namespace Datadog.Trace.Agent
                 if (_items.Count < _maxSize)
                 {
                     _items.Add(item);
+
                     return true;
                 }
-                else
-                {
-                    _items[_random.Next(_items.Count)] = item;
-                    return false;
-                }
+
+                _items[_random.Next(_items.Count)] = item;
+
+                return false;
             }
         }
 
@@ -40,6 +42,7 @@ namespace Datadog.Trace.Agent
             {
                 var ret = _items;
                 _items = new List<T>();
+
                 return ret;
             }
         }
