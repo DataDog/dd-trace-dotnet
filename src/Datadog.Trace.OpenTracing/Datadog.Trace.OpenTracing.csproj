@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net45;net461</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">netstandard2.0;net45;net461</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0</TargetFrameworks>
     <Version>0.7.1-beta</Version>
 
     <!-- NuGet -->
@@ -9,10 +10,6 @@
     <Description>Provides OpenTracing support for Datadog APM</Description>
     <Authors>lucas.pimentel.datadog;bmermet</Authors>
     <PackageTags>$(PackageTags);OpenTracing</PackageTags>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
