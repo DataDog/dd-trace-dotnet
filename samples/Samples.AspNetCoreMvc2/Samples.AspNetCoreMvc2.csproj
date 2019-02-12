@@ -17,8 +17,4 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.4" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-  </ItemGroup>
-
 </Project>
