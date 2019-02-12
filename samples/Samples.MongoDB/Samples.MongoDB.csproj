@@ -4,6 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+    <PlatformTarget>$(Platform)</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
