@@ -11,8 +11,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AspNetWebFormsIntegration
     {
-        private static readonly AspNetHttpModule _aspNetHttpModule = new AspNetWebFormsHttpModule();
-        private static readonly ILog _log = LogProvider.GetLogger(typeof(AspNetWebFormsIntegration));
+        private static readonly AspNetHttpModule AspNetHttpModule = new AspNetWebFormsHttpModule();
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebFormsIntegration));
 
         /// <summary>
         ///     Calls the underlying Init() For an HttpApplication and traces the request.
@@ -35,11 +35,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 // Register the IHttpModule
-                _aspNetHttpModule.Init(httpApplication);
+                AspNetHttpModule.Init(httpApplication);
             }
             catch (Exception ex)
             {
-                _log.ErrorException("AspNetWebFormsIntegration Init exception - APM data not being captured", ex);
+                Log.ErrorException("AspNetWebFormsIntegration Init exception - APM data not being captured", ex);
             }
         }
     }

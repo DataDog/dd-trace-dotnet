@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule";
 
-        private static readonly ILog _log = LogProvider.GetLogger(typeof(AspNetHttpModule));
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetHttpModule));
 
         private readonly string _operationName;
 
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 context.Context.AddError(new ApplicationException("Datadog Profiler not attached to current process."));
 #endif
 
-                _log.Warn("Datadog ASP.NET HttpModule Profiler not attached");
+                Log.Warn("Datadog ASP.NET HttpModule Profiler not attached");
 
                 return;
             }
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
                 scope?.TryDispose();
 
-                _log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
+                Log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
             }
         }
 
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                _log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
+                Log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
             }
         }
 
@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                _log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
+                Log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
             }
         }
 
