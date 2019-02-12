@@ -15,10 +15,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public class AspNetHttpModule : IHttpModule
     {
-        private const string OperationName = "aspnet-web-forms.request";
-        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration";
+        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule";
 
         private static readonly ILog _log = LogProvider.GetLogger(typeof(AspNetHttpModule));
+
+        private readonly string _operationName;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AspNetHttpModule"/> class.
+        /// </summary>
+        public AspNetHttpModule()
+            : this(operationName: null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AspNetHttpModule"/> class.
+        /// </summary>
+        /// <param name="operationName">The operation name to be used for the trace/span data generated</param>
+        public AspNetHttpModule(string operationName)
+        {
+            _operationName = operationName ?? "aspnet.request";
+        }
 
         /// <inheritdoc />
         public void Init(HttpApplication context)
@@ -56,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return;
                 }
 
-                scope = Tracer.Instance.StartActive(OperationName);
+                scope = Tracer.Instance.StartActive(_operationName);
 
                 var contextAdapter = HttpContextTagAdapter.Create(httpContext);
 

@@ -11,7 +11,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AspNetWebFormsIntegration
     {
-        private static readonly AspNetHttpModule _aspNetHttpModule = new AspNetHttpModule();
+        internal const string OperationName = "aspnet-web-forms.request";
+
+        private static readonly AspNetHttpModule _aspNetHttpModule = new AspNetHttpModule(OperationName);
         private static readonly ILog _log = LogProvider.GetLogger(typeof(AspNetWebFormsIntegration));
 
         /// <summary>
@@ -31,7 +33,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (!(thisObj is HttpApplication httpApplication))
                 {
-                    // TODO: Log this...
                     return;
                 }
 

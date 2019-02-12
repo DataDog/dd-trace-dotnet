@@ -1,0 +1,34 @@
+Log start: 2019-02-11 15:44:08.8040| On Machine: notauth::
+2019-02-11 15:44:08.5830|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Entered AspNetWebFormsIntegration.Init()|
+2019-02-11 15:44:08.9820|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Built AspNetWebFormsIntegration initMethodAction|
+2019-02-11 15:44:08.9940|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Executed AspNetWebFormsIntegration initMethodAction|
+2019-02-11 15:44:08.9940|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Registering IHttpModule|
+2019-02-11 15:44:09.0029|Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule|Trace|Entered AspNetHttpModule.Init()|
+2019-02-11 15:44:09.5580|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Entered AspNetWebFormsIntegration.Init()|
+2019-02-11 15:44:09.5629|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Built AspNetWebFormsIntegration initMethodAction|
+2019-02-11 15:44:09.5629|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Executed AspNetWebFormsIntegration initMethodAction|
+2019-02-11 15:44:09.5629|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Registering IHttpModule|
+2019-02-11 15:44:09.5629|Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule|Trace|Entered AspNetHttpModule.Init()|
+2019-02-11 15:44:09.8300|Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule|Trace|Entered AspNetHttpModule.OnBeginRequest()|
+2019-02-11 15:56:58.2720|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Entered AspNetWebFormsIntegration.Init()|
+2019-02-11 15:56:58.6420|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Built AspNetWebFormsIntegration initMethodAction|
+2019-02-11 15:56:58.6420|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Executed AspNetWebFormsIntegration initMethodAction|
+2019-02-11 15:56:58.6420|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Registering IHttpModule|
+2019-02-11 15:56:58.6609|Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule|Trace|Entered AspNetHttpModule.Init()|
+2019-02-11 15:56:59.2039|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Entered AspNetWebFormsIntegration.Init()|
+2019-02-11 15:56:59.2039|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Built AspNetWebFormsIntegration initMethodAction|
+2019-02-11 15:56:59.2039|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Executed AspNetWebFormsIntegration initMethodAction|
+2019-02-11 15:56:59.2190|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Registering IHttpModule|
+2019-02-11 15:56:59.2190|Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule|Trace|Entered AspNetHttpModule.Init()|
+2019-02-11 15:56:59.4799|Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule|Trace|Entered AspNetHttpModule.OnBeginRequest()|
+2019-02-11 16:03:43.0969|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Entered AspNetWebFormsIntegration.Init()|
+2019-02-11 16:03:43.4640|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Built AspNetWebFormsIntegration initMethodAction|
+2019-02-11 16:03:43.4729|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Executed AspNetWebFormsIntegration initMethodAction|
+2019-02-11 16:03:43.4729|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Registering IHttpModule|
+2019-02-11 16:03:43.4839|Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule|Trace|Entered AspNetHttpModule.Init()|
+2019-02-11 16:03:44.0370|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Entered AspNetWebFormsIntegration.Init()|
+2019-02-11 16:03:44.0370|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Built AspNetWebFormsIntegration initMethodAction|
+2019-02-11 16:03:44.0480|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Executed AspNetWebFormsIntegration initMethodAction|
+2019-02-11 16:03:44.0480|Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration|Trace|Registering IHttpModule|
+2019-02-11 16:03:44.0480|Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule|Trace|Entered AspNetHttpModule.Init()|
+2019-02-11 16:03:44.3130|Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule|Trace|Entered AspNetHttpModule.OnBeginRequest()|

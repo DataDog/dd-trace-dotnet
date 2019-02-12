@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28407.52
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.329
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace", "src\Datadog.Trace\Datadog.Trace.csproj", "{5DFDF781-F24C-45B1-82EF-9125875A80A4}"
 EndProject
@@ -128,6 +128,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MongoDB", "samples\Samples.MongoDB\Samples.MongoDB.csproj", "{3493346B-44F6-4F50-8FB4-51D0090DF544}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Npgsql", "samples\Samples.Npgsql\Samples.Npgsql.csproj", "{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WebForms", "samples\Samples.WebForms\Samples.WebForms.csproj", "{99A62CCF-8E7F-4D57-8383-D38C371C8087}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -451,6 +453,18 @@ Global
 		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Release|x64.Build.0 = Release|x64
 		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Release|x86.ActiveCfg = Release|x86
 		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0}.Release|x86.Build.0 = Release|x86
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x64.Build.0 = Debug|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x86.Build.0 = Debug|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x64.ActiveCfg = Release|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x64.Build.0 = Release|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x86.ActiveCfg = Release|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -483,6 +497,7 @@ Global
 		{5B52C0C0-A554-4E53-9D17-B121E78FF919} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{3493346B-44F6-4F50-8FB4-51D0090DF544} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{DD3E8ED8-A0E4-482E-A5ED-115E21D543C0} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

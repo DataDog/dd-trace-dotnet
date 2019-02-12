@@ -15,6 +15,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class TestHelper
     {
+        protected TestHelper(string sampleAppName, string relativePathToSampleFromSln, ITestOutputHelper output)
+            : this(sampleAppName, output)
+        {
+            PathToSample = Path.GetFullPath(Path.Combine(GetSolutionDirectory(), relativePathToSampleFromSln));
+        }
+
         protected TestHelper(string sampleAppName, ITestOutputHelper output)
         {
             SampleAppName = sampleAppName;
@@ -29,6 +35,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         protected string SampleAppName { get; }
+
+        protected string PathToSample { get; }
 
         protected ITestOutputHelper Output { get; }
 
@@ -163,10 +171,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw new Exception($"profiler not found: {profilerDllPath}");
             }
 
-            var sampleDir = Path.Combine(
-                GetSolutionDirectory(),
-                "samples",
-                $"Samples.{SampleAppName}");
+            var sampleDir = string.IsNullOrEmpty(PathToSample)
+                                ? Path.Combine(
+                                               GetSolutionDirectory(),
+                                               "samples",
+                                               $"Samples.{SampleAppName}")
+                                : PathToSample;
 
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
