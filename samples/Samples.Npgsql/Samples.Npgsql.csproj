@@ -2,17 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
-    <Platforms>AnyCPU;x64;x86</Platforms>
-    <RuntimeIdentifiers>win-x64;win-x86;linux-x64</RuntimeIdentifiers>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)' != 'netcoreapp2.1'">
-    <RuntimeIdentifier>win-$(Platform)</RuntimeIdentifier>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
