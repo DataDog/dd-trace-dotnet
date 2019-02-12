@@ -7,11 +7,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public class AspNetWebFormsHttpModule : AspNetHttpModule
     {
+        internal const string OperationName = "aspnet-web-forms.request";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetWebFormsHttpModule" /> class.
         /// </summary>
         public AspNetWebFormsHttpModule()
-            : base(AspNetWebFormsIntegration.OperationName)
+            : base(OperationName)
         {
         }
     }

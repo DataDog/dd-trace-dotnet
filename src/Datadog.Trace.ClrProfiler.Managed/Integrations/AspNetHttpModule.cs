@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     ///     IHttpModule used to trace within an ASP.NET HttpApplication request
     /// </summary>
-    public class AspNetHttpModule : IHttpModule
+    public abstract class AspNetHttpModule : IHttpModule
     {
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule";
 
@@ -24,18 +24,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetHttpModule"/> class.
         /// </summary>
-        public AspNetHttpModule()
-            : this(operationName: null)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AspNetHttpModule"/> class.
-        /// </summary>
         /// <param name="operationName">The operation name to be used for the trace/span data generated</param>
-        public AspNetHttpModule(string operationName)
+        protected AspNetHttpModule(string operationName)
         {
-            _operationName = operationName ?? "aspnet.request";
+            _operationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
         }
 
         /// <inheritdoc />
