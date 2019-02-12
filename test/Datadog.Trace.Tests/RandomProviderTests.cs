@@ -12,7 +12,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void VerifyRandomProviderDoesNotProduceDuplicatesInConcurrentExecutions()
         {
-            const int times = 100;
+            const int times = 250;
             const int threads = 5;
 
             var duplicates = 0;
@@ -22,10 +22,10 @@ namespace Datadog.Trace.Tests
             // var randomProvider = ThreadLocalNewRandomProvider.Instance;
 
             // The AsyncLocalGuidSeedRandomProvider version never produces duplicates, at least on my test runs...
-            var randomProvider = AsyncLocalGuidSeedRandomProvider.Instance;
+            // var randomProvider = AsyncLocalGuidSeedRandomProvider.Instance;
 
-            // NOTE: Test should be changed to this once we pick the method to use
-            // var randomProvider = SimpleDependencyFactory.RandomProvider();
+            // NOTE: Test should be left at this to ensure we're testing the implementation we actually use
+            var randomProvider = SimpleDependencyFactory.RandomProvider();
 
             for (var i = 0; i < times; i++)
             {
