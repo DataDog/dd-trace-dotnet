@@ -1,13 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
-    <Platforms>AnyCPU;x64;x86</Platforms>
-    <PlatformTarget>$(Platform)</PlatformTarget>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Elasticsearch.Net" Version="6.1.0" />
     <PackageReference Include="NEST" Version="6.1.0" />

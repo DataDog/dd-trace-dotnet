@@ -2,10 +2,12 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
-    <Platforms>AnyCPU;x64;x86</Platforms>
+    <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
+    <RuntimeIdentifiers Condition="'$(TargetFramework)' == 'netcoreapp2.1'">win-x64;win-x86;linux-x64</RuntimeIdentifiers>
+    <RuntimeIdentifier Condition="'$(TargetFramework)' != 'netcoreapp2.1'">win-$(Platform)</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
