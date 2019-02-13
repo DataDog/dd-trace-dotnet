@@ -12,20 +12,6 @@ namespace Samples.WebForms
             // Code that runs on application startup
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
-            RegisterCustomRoutes(RouteTable.Routes);
-        }
-
-        private void RegisterCustomRoutes(RouteCollection routes)
-        {
-            routes.MapPageRoute(
-                                "ProductsByCategoryRoute",
-                                "Category/{categoryName}",
-                                "~/ProductList.aspx");
-
-            routes.MapPageRoute(
-                                "ProductByNameRoute",
-                                "Product/{productName}",
-                                "~/ProductDetails.aspx");
         }
     }
 }

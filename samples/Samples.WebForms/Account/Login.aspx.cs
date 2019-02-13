@@ -1,7 +1,6 @@
 using System;
 using System.Web;
 using System.Web.UI;
-using Microsoft.AspNet.Identity;
 
 namespace Samples.WebForms.Account
 {
@@ -23,20 +22,8 @@ namespace Samples.WebForms.Account
         {
             if (IsValid)
             {
-                var manager = new ApplicationUserManager(new CoffeehouseApiUserStore());
-
-                var user = manager.Find(UserName.Text, Password.Text);
-
-                if (user != null)
-                {
-                    IdentityHelper.SignIn(manager, user, RememberMe.Checked);
-                    IdentityHelper.RedirectToReturnUrl(Request.QueryString["ReturnUrl"], Response);
-                }
-                else
-                {
-                    FailureText.Text = "Invalid username or password.";
-                    ErrorMessage.Visible = true;
-                }
+                FailureText.Text = "Invalid username or password.";
+                ErrorMessage.Visible = true;
             }
         }
     }
