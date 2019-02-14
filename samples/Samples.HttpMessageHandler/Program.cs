@@ -108,10 +108,6 @@ namespace Samples.HttpMessageHandler
                         }
                     }
 
-                    var delay = TimeSpan.FromSeconds(1);
-                    Console.WriteLine($"[HttpListener] Faking it for {delay}");
-                    Thread.Sleep(delay);
-
                     // write response content
                     byte[] responseBytes = Utf8.GetBytes(ResponseContent);
                     context.Response.ContentEncoding = Utf8;
