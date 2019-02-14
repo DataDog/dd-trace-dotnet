@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,8 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("http.request", span.Name);
                     Assert.Equal("Samples.HttpMessageHandler", span.Service);
                     Assert.Equal(SpanTypes.Http, span.Type);
-
-                    var instrumentationName = span.Tags[Tags.InstrumentationName];
+                    Assert.Equal(nameof(HttpMessageHandler), span.Tags[Tags.InstrumentationName]);
                 }
             }
         }
@@ -53,8 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("http.request", span.Name);
                     Assert.Equal("Samples.HttpMessageHandler", span.Service);
                     Assert.Equal(SpanTypes.Http, span.Type);
-
-                    var instrumentationName = span.Tags[Tags.InstrumentationName];
+                    Assert.Equal(nameof(WebRequest), span.Tags[Tags.InstrumentationName]);
                 }
             }
         }
