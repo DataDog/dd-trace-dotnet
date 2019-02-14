@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static bool IsTracingDisabled(WebRequest request)
         {
             // check if tracing is disabled for this request via http header
-            string value = request.Headers[HttpHeaderNames.TracingDisabled];
+            string value = request.Headers[HttpHeaderNames.TracingEnabled];
             return string.Equals(value, "true", StringComparison.InvariantCultureIgnoreCase);
         }
 

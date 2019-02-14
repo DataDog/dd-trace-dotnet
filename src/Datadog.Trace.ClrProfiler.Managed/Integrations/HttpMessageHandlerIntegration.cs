@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     handler.GetType(),
                     nameof(SendAsync));
 
-            if (IsTracingDisabled(request))
+            if (!IsTracingEnabled(request))
             {
                 return await executeAsync(handler, request, cancellationToken);
             }
@@ -77,18 +77,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static bool IsTracingDisabled(HttpRequestMessage request)
+        private static bool IsTracingEnabled(HttpRequestMessage request)
         {
-            if (request.Headers.TryGetValues(HttpHeaderNames.TracingDisabled, out var headerValues))
+            if (request.Headers.TryGetValues(HttpHeaderNames.TracingEnabled, out var headerValues))
             {
-                if (headerValues.Any(s => string.Equals(s, "true", StringComparison.InvariantCultureIgnoreCase)))
+                if (headerValues.Any(s => string.Equals(s, "false", StringComparison.InvariantCultureIgnoreCase)))
                 {
                     // tracing is disabled for this request via http header
-                    return true;
+                    return false;
                 }
             }
 
-            return false;
+            return true;
         }
 
         private static Scope CreateScope(HttpMessageHandler handler, HttpRequestMessage request)

@@ -51,7 +51,7 @@ namespace Datadog.Trace.Agent
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracerVersion, this.GetType().Assembly.GetName().Version.ToString());
 
             // don't add automatic instrumentation to this http request
-            _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingDisabled, "true");
+            _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
