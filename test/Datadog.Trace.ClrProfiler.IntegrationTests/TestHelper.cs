@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -270,7 +271,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string expectedOperationName,
             string expectedResourceName)
         {
-            List<MockTracerAgent.Span> spans;
+            IImmutableList<MockTracerAgent.Span> spans;
 
             using (var agent = new MockTracerAgent(agentPort))
             using (var httpClient = new HttpClient())
