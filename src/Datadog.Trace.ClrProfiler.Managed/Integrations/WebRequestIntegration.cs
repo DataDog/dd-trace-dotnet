@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var webRequest = (WebRequest)request;
 
-            if (IsTracingEnabled(webRequest))
+            if (!IsTracingEnabled(webRequest))
             {
                 return webRequest.GetResponse();
             }
