@@ -145,31 +145,19 @@ namespace Datadog.Trace.TestHelpers
             {
                 while (listener.IsListening)
                 {
-                    try
-                    {
-                        var ctx = listener.GetContext();
-                        try
-                        {
-                            var rawSpans = MessagePackSerializer.Deserialize<dynamic>(ctx.Request.InputStream);
-                            var spans = ToSpans(rawSpans);
-                            lock (this)
-                            {
-                                _spans.AddRange(spans);
-                            }
+                    var ctx = listener.GetContext();
+                    var rawSpans = MessagePackSerializer.Deserialize<dynamic>(ctx.Request.InputStream);
+                    var spans = ToSpans(rawSpans);
 
-                            ctx.Response.ContentType = "application/json";
-                            var buffer = Encoding.UTF8.GetBytes("{}");
-                            ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
-                            ctx.Response.Close();
-                        }
-                        catch
-                        {
-                        }
-                    }
-                    catch
+                    lock (this)
                     {
-                        return;
+                        _spans.AddRange(spans);
                     }
+
+                    ctx.Response.ContentType = "application/json";
+                    var buffer = Encoding.UTF8.GetBytes("{}");
+                    ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                    ctx.Response.Close();
                 }
             }
         }
