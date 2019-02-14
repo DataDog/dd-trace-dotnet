@@ -9,8 +9,4 @@
     <PackageReference Include="System.Reactive" Version="4.1.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-  </ItemGroup>
-
 </Project>
