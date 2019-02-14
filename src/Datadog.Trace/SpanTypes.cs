@@ -16,7 +16,7 @@ namespace Datadog.Trace
         public const string Sql = "sql";
 
         /// <summary>
-        /// The span type for a web integration.
+        /// The span type for a web framework integration (incoming HTTP requests).
         /// </summary>
         public const string Web = "web";
 
@@ -26,7 +26,7 @@ namespace Datadog.Trace
         public const string MongoDb = "mongodb";
 
          /// <summary>
-        /// The span type for an HTTP integration.
+        /// The span type for an outgoing HTTP integration.
         /// </summary>
         public const string Http = "http";
     }
