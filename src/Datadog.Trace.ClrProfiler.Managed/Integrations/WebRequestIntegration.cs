@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var webRequest = (WebRequest)request;
 
-            if (IsTracingDisabled(webRequest))
+            if (IsTracingEnabled(webRequest))
             {
                 return webRequest.GetResponse();
             }
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static async Task<WebResponse> GetResponseAsyncInternal(WebRequest request)
         {
-            if (IsTracingDisabled(request))
+            if (!IsTracingEnabled(request))
             {
                 return await request.GetResponseAsync().ConfigureAwait(false);
             }
@@ -87,11 +87,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static bool IsTracingDisabled(WebRequest request)
+        private static bool IsTracingEnabled(WebRequest request)
         {
             // check if tracing is disabled for this request via http header
             string value = request.Headers[HttpHeaderNames.TracingEnabled];
-            return string.Equals(value, "true", StringComparison.InvariantCultureIgnoreCase);
+            return !string.Equals(value, "false", StringComparison.InvariantCultureIgnoreCase);
         }
 
         private static Scope CreateScope(WebRequest request, string methodName)
