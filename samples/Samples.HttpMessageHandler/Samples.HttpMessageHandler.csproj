@@ -1,18 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
-    <Platforms>AnyCPU;x64;x86</Platforms>
-    <RuntimeIdentifiers>win-x64;win-x86;linux-x64</RuntimeIdentifiers>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' ">
-    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)' != 'netcoreapp2.0'">
-    <RuntimeIdentifier>win-$(Platform)</RuntimeIdentifier>
+    <!-- override to remove net452 -->
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
