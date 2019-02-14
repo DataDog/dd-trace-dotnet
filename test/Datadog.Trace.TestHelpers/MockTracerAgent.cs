@@ -23,10 +23,7 @@ namespace Datadog.Trace.TestHelpers
             Port = port;
         }
 
-        public int Port
-        {
-            get; private set;
-        }
+        public int Port { get; }
 
         public List<Span> GetSpans()
         {
