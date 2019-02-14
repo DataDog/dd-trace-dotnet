@@ -14,7 +14,7 @@ namespace Datadog.Trace.TestHelpers
         private readonly HttpListener _listener;
         private readonly SpanCollector _collector;
 
-        public MockTracerAgent(int port)
+        public MockTracerAgent(int port = 8126)
         {
             _listener = new HttpListener();
             _listener.Prefixes.Add($"http://localhost:{port}/");
