@@ -10,22 +10,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
     public class SpanTests
     {
-        private const string _defaultHost = "SpanTests.TestHost.DataDogDemo.com";
+        private const string DefaultHost = "SpanTests.TestHost.DataDogDemo.com";
 
-        private static readonly Dictionary<string, string> _defaultHeaders = new Dictionary<string, string>
-                                                                             {
-                                                                                 { "Host", _defaultHost },
-                                                                                 { "Content-Type", "application/json" },
-                                                                                 { "ETag", "8675309eyine8675309eyine" },
-                                                                                 { "X-Datadog-Test", "thisIsATest" },
-                                                                             };
+        private static readonly Dictionary<string, string> DefaultHeaders = new Dictionary<string, string>
+                                                                            {
+                                                                                { "Host", DefaultHost },
+                                                                                { "Content-Type", "application/json" },
+                                                                                { "ETag", "8675309eyine8675309eyine" },
+                                                                                { "X-Datadog-Test", "thisIsATest" }
+                                                                            };
 
         [Fact]
         public void DefaultContextDecoratorWithValidValuesIsSuccessfull()
         {
             const string testUrl = "https://demotest.DataDogDemo.com/PathSegment1/PathSegment2?queryStringParam1=qsp1Val";
 
-            var contextAdapter = new TestHttpContextAdapter(testUrl, "gEt", _defaultHeaders);
+            var contextAdapter = new TestHttpContextAdapter(testUrl, "gEt", DefaultHeaders);
 
             var decorator = DefaultSpanDecorationBuilder.Create()
                                                         .With(contextAdapter.AllWebSpanDecorator())
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.True(span.Type.Equals(SpanTypes.Web, StringComparison.Ordinal), "Type");
             Assert.True(span.Tags[Tags.HttpMethod].Equals("GET", StringComparison.Ordinal), $"HttpMethod is [{span.Tags[Tags.HttpMethod]}]");
             Assert.True(span.GetHttpMethod().Equals("GET", StringComparison.Ordinal), $"GetHttpMethod is [{span.Tags[Tags.HttpMethod]}]");
-            Assert.True(span.Tags[Tags.HttpRequestHeadersHost].Equals(_defaultHost, StringComparison.Ordinal), "HttpRequestHeadersHost");
+            Assert.True(span.Tags[Tags.HttpRequestHeadersHost].Equals(DefaultHost, StringComparison.Ordinal), "HttpRequestHeadersHost");
             Assert.True(span.Tags[Tags.HttpUrl].Equals(testUrl.ToLowerInvariant(), StringComparison.Ordinal), "HttpUrl");
         }
 
@@ -47,10 +47,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             const string testUrl = "https://demotest.DataDogDemo.com/PathSegment1/PathSegment2?queryStringParam1=qsp1Val";
 
-            var headers = _defaultHeaders;
+            var headers = DefaultHeaders;
             headers.Remove("Host");
 
-            var contextAdapter = new TestHttpContextAdapter(testUrl, "GET", _defaultHeaders);
+            var contextAdapter = new TestHttpContextAdapter(testUrl, "GET", headers);
 
             var decorator = DefaultSpanDecorationBuilder.Create()
                                                         .With(contextAdapter.AllWebSpanDecorator())

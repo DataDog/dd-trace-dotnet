@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.ExtensionMethods
             => new ActionBlockSpanDecorator(span => span.Tag(Tags.HttpMethod, methodSource.GetHttpMethod()?.ToUpperInvariant() ?? "GET"));
 
         public static ISpanDecorator HttpHostHeaderDecorator(this IHasHttpHeaders headerSource)
-            => new ActionBlockSpanDecorator(span => span.Tag(Tags.HttpRequestHeadersHost, headerSource.GetHeaderValue("Host") ?? string.Empty));
+            => new ActionBlockSpanDecorator(span => span.Tag(Tags.HttpRequestHeadersHost, headerSource.GetHeaderValue("Host")));
 
         public static ISpanDecorator HttpUrlDecorator(this IHasHttpUrl urlSource)
             => new ActionBlockSpanDecorator(span => span.Tag(Tags.HttpUrl, urlSource.GetRawUrl()?.ToLowerInvariant() ?? string.Empty));

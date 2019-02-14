@@ -7,12 +7,12 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    ///     AspNetWebFormsIntegration used to inject AspNetHttpModule IHttpModule into the application pipeline on startup
+    ///     AspNetIntegration used to inject AspNetHttpModule IHttpModule into the application pipeline on startup
     /// </summary>
-    public static class AspNetWebFormsIntegration
+    public static class AspNetIntegration
     {
-        private static readonly AspNetHttpModule AspNetHttpModule = new AspNetWebFormsHttpModule();
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebFormsIntegration));
+        private static readonly AspNetHttpModule AspNetHttpModule = new AspNetHttpModule("aspnet.request");
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetIntegration));
 
         /// <summary>
         ///     Calls the underlying Init() For an HttpApplication and traces the request.
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("AspNetWebFormsIntegration Init exception - APM data not being captured", ex);
+                Log.ErrorException("AspNetIntegration Init exception - APM data not being captured", ex);
             }
         }
     }

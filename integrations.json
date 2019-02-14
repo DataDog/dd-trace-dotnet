@@ -61,6 +61,25 @@
     ]
   },
   {
+    "name": "AspNet",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Web",
+          "type": "System.Web.HttpApplication",
+          "method": "Init"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetIntegration",
+          "method": "Init",
+          "signature": "00 01 01 1C"
+        }
+      }
+    ]
+  },
+  {
     "name": "AspNetCoreMvc2",
     "method_replacements": [
       {
@@ -149,25 +168,6 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration",
           "method": "ExecuteAsync",
           "signature": "00 03 1C 1C 1C 1C"
-        }
-      }
-    ]
-  },
-  {
-    "name": "AspNetWebForms",
-    "method_replacements": [
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Web",
-          "type": "System.Web.HttpApplication",
-          "method": "Init"
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebFormsIntegration",
-          "method": "Init",
-          "signature": "00 01 01 1C"
         }
       }
     ]

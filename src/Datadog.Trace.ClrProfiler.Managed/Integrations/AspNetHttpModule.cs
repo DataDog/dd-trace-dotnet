@@ -13,21 +13,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     ///     IHttpModule used to trace within an ASP.NET HttpApplication request
     /// </summary>
-    public abstract class AspNetHttpModule : IHttpModule
+    public class AspNetHttpModule : IHttpModule
     {
-        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule";
-
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetHttpModule));
 
+        private readonly string _httpContextKey;
         private readonly string _operationName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetHttpModule"/> class.
         /// </summary>
         /// <param name="operationName">The operation name to be used for the trace/span data generated</param>
-        protected AspNetHttpModule(string operationName)
+        public AspNetHttpModule(string operationName)
         {
             _operationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
+
+            _httpContextKey = string.Concat("__Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule-", _operationName);
         }
 
         /// <inheritdoc />
@@ -77,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 scope.Span.DecorateWith(decorator);
 
-                httpContext.Items[HttpContextKey] = scope;
+                httpContext.Items[_httpContextKey] = scope;
             }
             catch (Exception ex)
             {
@@ -93,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 if (!TryGetContext(sender, out var httpContext) ||
-                    !httpContext.Items.TryGetValueOrDefaultAs<Scope>(HttpContextKey, out var scope))
+                    !httpContext.Items.TryGetValueOrDefaultAs<Scope>(_httpContextKey, out var scope))
                 {
                     return;
                 }
@@ -118,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 if (!TryGetContext(sender, out var httpContext) || httpContext.Error == null ||
-                    !httpContext.Items.TryGetValueOrDefaultAs<Scope>(HttpContextKey, out var scope))
+                    !httpContext.Items.TryGetValueOrDefaultAs<Scope>(_httpContextKey, out var scope))
                 {
                     return;
                 }
