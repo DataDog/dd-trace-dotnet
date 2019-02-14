@@ -20,7 +20,7 @@ namespace Datadog.Trace.TestHelpers
             _listener.Prefixes.Add($"http://localhost:{port}/");
             _listener.Start();
 
-            _listenerThread = new Thread(HandleRequest);
+            _listenerThread = new Thread(HandleHttpRequests);
             _listenerThread.Start();
         }
 
@@ -84,7 +84,7 @@ namespace Datadog.Trace.TestHelpers
             return new List<Span>();
         }
 
-        private void HandleRequest()
+        private void HandleHttpRequests()
         {
             while (_listener.IsListening)
             {
