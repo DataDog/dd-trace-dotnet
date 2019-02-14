@@ -43,6 +43,11 @@ namespace Samples.HttpMessageHandler
 
                 listener.Stop();
             }
+
+            // Force process to end, otherwise the background listener thread lives forever in .NET Core.
+            // Apparently listener.GetContext() doesn't throw an exception if listener.Stop() is called,
+            // like it does in .NET Framework.
+            Environment.Exit(0);
         }
 
         private static async Task SendHttpClientRequest()
