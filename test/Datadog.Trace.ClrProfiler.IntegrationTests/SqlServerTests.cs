@@ -3,7 +3,7 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-// EFCore targets netstandard2.0, so it requires net461 or higher or netcoreapp2.0 or higher
+// EFCore targets netstandard2.0, so it requires net461+ or netcoreapp2.0+
 #if !NET452
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
