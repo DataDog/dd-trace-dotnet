@@ -33,6 +33,8 @@ namespace Samples.HttpMessageHandler
                     SendHttpClientRequest().GetAwaiter().GetResult();
                 }
 
+                Console.WriteLine("--------------------");
+
                 if (args.Length == 0 || args[0].Equals("WebClient", StringComparison.InvariantCultureIgnoreCase))
                 {
                     // send an http request using WebClient
@@ -72,7 +74,7 @@ namespace Samples.HttpMessageHandler
             {
                 webClient.Encoding = Utf8;
 
-                var responseContent = webClient.DownloadString(Url);
+                var responseContent = webClient.UploadString(Url, RequestContent);
                 Console.WriteLine($"[WebClient] response content: {responseContent}");
 
                 foreach (string headerName in webClient.ResponseHeaders)
