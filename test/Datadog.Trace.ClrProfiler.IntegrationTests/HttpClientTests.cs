@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using Datadog.Trace.TestHelpers;
@@ -49,7 +50,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1);
                 Assert.True(spans.Count > 0, "expected at least one span");
 
-                foreach (var span in spans)
+                // inspect the top-level span, underlying spans can be HttpMessageHandler in .NET Core
+                foreach (var span in spans.Take(1))
                 {
                     Assert.Equal("http.request", span.Name);
                     Assert.Equal("Samples.HttpMessageHandler", span.Service);
