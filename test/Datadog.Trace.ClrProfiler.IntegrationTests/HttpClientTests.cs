@@ -15,10 +15,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Fact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        public void SubmitsTracesWithHttpClient()
         {
             using (var agent = new MockTracerAgent(AgentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(AgentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(AgentPort, "HttpClient"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -27,9 +27,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("sql-server.query", span.Name);
-                    Assert.Equal($"Samples.SqlServer-sql-server", span.Service);
-                    Assert.Equal(SpanTypes.Sql, span.Type);
+                    Assert.Equal("http.request", span.Name);
+                    Assert.Equal("Samples.HttpMessageHandler", span.Service);
+                    Assert.Equal(SpanTypes.Http, span.Type);
+
+                    var instrumentationName = span.Tags[Tags.InstrumentationName];
+                }
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "EndToEnd")]
+        public void SubmitsTracesWithWebClient()
+        {
+            using (var agent = new MockTracerAgent(AgentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(AgentPort, "WebClient"))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
+
+                var spans = agent.WaitForSpans(1);
+                Assert.True(spans.Count > 0, "expected at least one span");
+
+                foreach (var span in spans)
+                {
+                    Assert.Equal("http.request", span.Name);
+                    Assert.Equal("Samples.HttpMessageHandler", span.Service);
+                    Assert.Equal(SpanTypes.Http, span.Type);
+
+                    var instrumentationName = span.Tags[Tags.InstrumentationName];
                 }
             }
         }
