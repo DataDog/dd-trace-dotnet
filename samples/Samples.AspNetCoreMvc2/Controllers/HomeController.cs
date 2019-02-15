@@ -38,5 +38,11 @@ namespace Samples.AspNetCoreMvc2.Controllers
             await Task.Delay(TimeSpan.FromSeconds(seconds));
             return View("Delay", seconds);
         }
+
+        [Route("exception")]
+        public IActionResult Exception()
+        {
+            throw new Exception("this is a test");
+        }
     }
 }
