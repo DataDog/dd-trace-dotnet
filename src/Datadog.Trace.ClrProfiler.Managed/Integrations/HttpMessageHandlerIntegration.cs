@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (!IsTracingEnabled(request))
             {
-                return await executeAsync(handler, request, cancellationToken);
+                return await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
             }
 
             using (var scope = CreateScope(handler, request))
@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // add distributed tracing headers
                     request.Headers.Inject(scope.Span.Context);
 
-                    return await executeAsync(handler, request, cancellationToken);
+                    return await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
