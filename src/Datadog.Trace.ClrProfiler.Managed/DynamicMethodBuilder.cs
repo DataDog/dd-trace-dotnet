@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler
             else if (delegateType.Name.StartsWith("Action`"))
             {
                 parameterTypes = genericTypeArguments;
-                returnType = null;
+                returnType = typeof(void);
             }
             else
             {
