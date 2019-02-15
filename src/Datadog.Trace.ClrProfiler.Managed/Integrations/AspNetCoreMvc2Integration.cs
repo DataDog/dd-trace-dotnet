@@ -144,6 +144,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
             span.SetTag(Tags.HttpMethod, httpMethod);
             span.SetTag(Tags.HttpUrl, url);
+            span.SetTag(Tags.AspNetRoute, (string)actionDescriptor.AttributeRouteInfo?.Template);
             span.SetTag(Tags.AspNetController, controllerName);
             span.SetTag(Tags.AspNetAction, actionName);
 
