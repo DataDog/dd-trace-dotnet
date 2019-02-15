@@ -1,55 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
     /// The ASP.NET Core MVC 2 integration.
     /// </summary>
-    public sealed class AspNetCoreMvc2Integration : IDisposable
+    public static class AspNetCoreMvc2Integration
     {
         internal const string OperationName = "aspnet-core-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
+        private const string TypeName = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions";
+        private const string AssemblyName = "Microsoft.AspNetCore.Mvc.Core";
 
-        private static Action<object, object, object, object> _beforeAction;
-        private static Action<object, object, object, object> _afterAction;
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
-        private readonly dynamic _httpContext;
-        private readonly Scope _scope;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AspNetCoreMvc2Integration"/> class.
-        /// </summary>
-        /// <param name="actionDescriptorObj">An ActionDescriptor with information about the current action.</param>
-        /// <param name="httpContextObj">The HttpContext for the current request.</param>
-        public AspNetCoreMvc2Integration(object actionDescriptorObj, object httpContextObj)
-        {
-            try
-            {
-                dynamic actionDescriptor = actionDescriptorObj;
-                string controllerName = (actionDescriptor.ControllerName as string)?.ToLowerInvariant();
-                string actionName = (actionDescriptor.ActionName as string)?.ToLowerInvariant();
-
-                _httpContext = httpContextObj;
-                string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
-                string url = GetDisplayUrl(_httpContext.Request).ToLowerInvariant();
-
-                _scope = Tracer.Instance.StartActive(OperationName);
-                Span span = _scope.Span;
-                span.Type = SpanTypes.Web;
-                span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
-                span.SetTag(Tags.HttpMethod, httpMethod);
-                span.SetTag(Tags.HttpUrl, url);
-                span.SetTag(Tags.AspNetController, controllerName);
-                span.SetTag(Tags.AspNetAction, actionName);
-            }
-            catch
-            {
-                // TODO: logging
-            }
-        }
+        private static Type _targetType;
 
         /// <summary>
         /// Wrapper method used to instrument Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.BeforeAction()
@@ -59,55 +27,50 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="httpContext">The HttpContext for the current request.</param>
         /// <param name="routeData">A RouteData with information about the current route.</param>
         [InterceptMethod(
-            CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
+            CallerAssembly = AssemblyName,
+            TargetAssembly = AssemblyName,
+            TargetType = TypeName)]
         public static void BeforeAction(
             object diagnosticSource,
             object actionDescriptor,
-            dynamic httpContext,
+            object httpContext,
             object routeData)
         {
-            AspNetCoreMvc2Integration integration = null;
+            if (_targetType == null)
+            {
+                _targetType = actionDescriptor.GetType()
+                                              .GetTypeInfo()
+                                              .Assembly
+                                              .GetType(TypeName);
+            }
+
+            // get delegate for target method
+            var target = DynamicMethodBuilder<Action<object, object, object, object>>.GetOrCreateMethodCallDelegate(
+                _targetType,
+                nameof(BeforeAction));
+
+            if (target == null)
+            {
+                // we cannot call target method, but profiled app should continue working
+                var fullMethodName = $"{TypeName}.{nameof(BeforeAction)}()";
+                Log.WarnFormat("Could not create delegate for {0}", fullMethodName);
+                return;
+            }
+
+            // save the scope se we can access it in AfterAction()
+            var scope = CreateScope(actionDescriptor, httpContext);
+            SetHttpContextItem(httpContext, HttpContextKey, scope);
 
             try
             {
-                integration = new AspNetCoreMvc2Integration(actionDescriptor, httpContext);
-                IDictionary<object, object> contextItems = httpContext.Items;
-                contextItems[HttpContextKey] = integration;
-            }
-            catch
-            {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
-            }
-
-            try
-            {
-                if (_beforeAction == null)
-                {
-                    Assembly assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
-                    Type type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
-
-                    _beforeAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                        type,
-                        "BeforeAction");
-                }
-            }
-            catch
-            {
-                // TODO: log this as an instrumentation error, we cannot call instrumented method,
-                // profiled app will continue working without DiagnosticSource
-            }
-
-            try
-            {
-                // call the original method, catching and rethrowing any unhandled exceptions
-                _beforeAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
+                // execute target method
+                target(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
             catch (Exception ex)
             {
-                integration?.SetException(ex);
-                throw;
+                // don't add this exception to span, it was not thrown by controller action,
+                // profiled app should continue working
+                Log.ErrorException("Error executing target method.", ex);
             }
         }
 
@@ -119,101 +82,101 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="httpContext">The HttpContext for the current request.</param>
         /// <param name="routeData">A RouteData with information about the current route.</param>
         [InterceptMethod(
-            CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
+            CallerAssembly = AssemblyName,
+            TargetAssembly = AssemblyName,
+            TargetType = TypeName)]
         public static void AfterAction(
             object diagnosticSource,
             object actionDescriptor,
             dynamic httpContext,
             object routeData)
         {
-            AspNetCoreMvc2Integration integration = null;
-
-            try
+            if (_targetType == null)
             {
-                IDictionary<object, object> contextItems = httpContext?.Items;
-                integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
-            }
-            catch
-            {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
+                _targetType = actionDescriptor.GetType()
+                                              .GetTypeInfo()
+                                              .Assembly
+                                              .GetType(TypeName);
             }
 
-            try
+            var target = DynamicMethodBuilder<Action<object, object, object, object>>.GetOrCreateMethodCallDelegate(
+                _targetType,
+                nameof(AfterAction));
+
+            if (target == null)
             {
-                if (_afterAction == null)
+                // we cannot call target method, but profiled app should continue working
+                var fullMethodName = $"{TypeName}.{nameof(BeforeAction)}()";
+                Log.WarnFormat("Could not create delegate for {0}", fullMethodName);
+                return;
+            }
+
+            using (var scope = GetHttpContextItem(httpContext, HttpContextKey) as Scope)
+            {
+                try
                 {
-                    Type type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
-
-                    _afterAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                        type,
-                        "AfterAction");
+                    target.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
                 }
-            }
-            catch
-            {
-                // TODO: log this as an instrumentation error, we cannot call instrumented method,
-                // profiled app will continue working without DiagnosticSource
-            }
+                catch (Exception ex)
+                {
+                    // don't add this exception to span, it was not thrown by controller action,
+                    // profiled app should continue working
+                    Log.ErrorException("Error executing target method.", ex);
+                }
 
-            try
-            {
-                // call the original method, catching and rethrowing any unhandled exceptions
-                _afterAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
-            }
-            catch (Exception ex)
-            {
-                integration?.SetException(ex);
-                throw;
-            }
-            finally
-            {
-                integration?.Dispose();
+                // add tags that are only available after MVC action is executed
+                scope?.Span?.SetTag("http.status_code", httpContext?.Response.StatusCode.ToString());
             }
         }
 
-        /// <summary>
-        /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
-        /// </summary>
-        /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
-        public void SetException(Exception ex)
+        private static Scope CreateScope(dynamic actionDescriptor, dynamic httpContext)
         {
-            _scope?.Span?.SetException(ex);
+            string controllerName = (actionDescriptor.ControllerName as string)?.ToLowerInvariant();
+            string actionName = (actionDescriptor.ActionName as string)?.ToLowerInvariant();
+
+            string httpMethod = httpContext.Request.Method.ToUpperInvariant();
+            string url = GetDisplayUrl(httpContext.Request).ToLowerInvariant();
+
+            Scope scope = Tracer.Instance.StartActive(OperationName);
+            Span span = scope.Span;
+
+            span.Type = SpanTypes.Web;
+            span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
+            span.SetTag(Tags.HttpMethod, httpMethod);
+            span.SetTag(Tags.HttpUrl, url);
+            span.SetTag(Tags.AspNetController, controllerName);
+            span.SetTag(Tags.AspNetAction, actionName);
+
+            return scope;
         }
 
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
+        private static void SetHttpContextItem(object httpContext, object key, object value)
         {
-            try
+            if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> items))
             {
-                if (_httpContext != null)
-                {
-                    _scope?.Span?.SetTag("http.status_code", _httpContext.Response.StatusCode.ToString());
-                }
+                items[key] = value;
             }
-            finally
+        }
+
+        private static object GetHttpContextItem(object httpContext, object key)
+        {
+            if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> items))
             {
-                _scope?.Dispose();
+                return items[key];
             }
+
+            return null;
         }
 
         private static string GetDisplayUrl(dynamic request)
         {
+            string scheme = request.Scheme;
             string host = request.Host.Value;
             string pathBase = request.PathBase.Value;
             string path = request.Path.Value;
             string queryString = request.QueryString.Value;
 
-            return new StringBuilder(request.Scheme.Length + "://".Length + host.Length + pathBase.Length + path.Length + queryString.Length).Append(request.Scheme)
-                                                                                                                                             .Append("://")
-                                                                                                                                             .Append(host)
-                                                                                                                                             .Append(pathBase)
-                                                                                                                                             .Append(path)
-                                                                                                                                             .Append(queryString)
-                                                                                                                                             .ToString();
+            return $"{scheme}://{host}{pathBase}{path}{queryString}";
         }
     }
 }
