@@ -9,8 +9,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class HttpClientTests : TestHelper
     {
-        private const int AgentPort = 9002;
-
         public HttpClientTests(ITestOutputHelper output)
             : base("HttpMessageHandler", output)
         {
@@ -20,8 +18,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTracesWithHttpClient()
         {
-            using (var agent = new MockTracerAgent(AgentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(AgentPort, "HttpClient"))
+            const int agentPort = 9006;
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, "HttpClient"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -42,8 +42,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTracesWithWebClient()
         {
-            using (var agent = new MockTracerAgent(AgentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(AgentPort, "WebClient"))
+            const int agentPort = 9007;
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, "WebClient"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
