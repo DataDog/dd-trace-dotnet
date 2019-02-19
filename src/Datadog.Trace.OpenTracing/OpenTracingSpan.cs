@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Datadog.Trace.Logging;
 using OpenTracing;
 using OpenTracing.Tag;
 
@@ -9,8 +8,6 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpan : ISpan
     {
-        private static ILog _log = LogProvider.For<OpenTracingSpan>();
-
         internal OpenTracingSpan(Span span)
         {
             Span = span;
@@ -31,41 +28,17 @@ namespace Datadog.Trace.OpenTracing
 
         internal TimeSpan Duration => Span.Duration;
 
-        public string GetBaggageItem(string key)
-        {
-            _log.Debug("ISpan.GetBaggageItem is not implemented by Datadog.Trace");
-            return null;
-        }
+        public string GetBaggageItem(string key) => null;
 
-        public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields)
-        {
-            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
-            return this;
-        }
+        public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields) => this;
 
-        public ISpan Log(string eventName)
-        {
-            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
-            return this;
-        }
+        public ISpan Log(string eventName) => this;
 
-        public ISpan Log(DateTimeOffset timestamp, string eventName)
-        {
-            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
-            return this;
-        }
+        public ISpan Log(DateTimeOffset timestamp, string eventName) => this;
 
-        public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields)
-        {
-            _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
-            return this;
-        }
+        public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields) => this;
 
-        public ISpan SetBaggageItem(string key, string value)
-        {
-            _log.Debug("ISpan.SetBaggageItem is not implemented by Datadog.Trace");
-            return this;
-        }
+        public ISpan SetBaggageItem(string key, string value) => this;
 
         public ISpan SetOperationName(string operationName)
         {
