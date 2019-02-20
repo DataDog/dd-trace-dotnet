@@ -40,7 +40,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Coffeehouse.Api.Loc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Coffeehouse.Core.Local", "..\dd-trace-demo\dotnet-coffeehouse\Datadog.Coffeehouse.Core\Datadog.Coffeehouse.Core.Local.csproj", "{9C6B6018-7A55-4381-9D10-0BF563C8DE78}"
 EndProject
-
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,10 +78,8 @@ Global
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{0D546118-B70A-44D0-B675-39EDB99FCEEE}.Release|Any CPU.ActiveCfg = Release|x86
 		{5B52C0C0-A554-4E53-9D17-B121E78FF919}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5B52C0C0-A554-4E53-9D17-B121E78FF919}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B52C0C0-A554-4E53-9D17-B121E78FF919}.Release|Any CPU.ActiveCfg = Release|Any CPU

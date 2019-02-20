@@ -9,7 +9,7 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpan : ISpan
     {
-        private static ILog _log = LogProvider.For<OpenTracingSpan>();
+        private static readonly ILog _log = LogProvider.For<OpenTracingSpan>();
 
         internal OpenTracingSpan(Span span)
         {
@@ -34,42 +34,49 @@ namespace Datadog.Trace.OpenTracing
         public string GetBaggageItem(string key)
         {
             _log.Debug("ISpan.GetBaggageItem is not implemented by Datadog.Trace");
+
             return null;
         }
 
         public ISpan Log(DateTimeOffset timestamp, IEnumerable<KeyValuePair<string, object>> fields)
         {
             _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
+
             return this;
         }
 
         public ISpan Log(string eventName)
         {
             _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
+
             return this;
         }
 
         public ISpan Log(DateTimeOffset timestamp, string eventName)
         {
             _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
+
             return this;
         }
 
         public ISpan Log(IEnumerable<KeyValuePair<string, object>> fields)
         {
             _log.Debug("ISpan.Log is not implemented by Datadog.Trace");
+
             return this;
         }
 
         public ISpan SetBaggageItem(string key, string value)
         {
             _log.Debug("ISpan.SetBaggageItem is not implemented by Datadog.Trace");
+
             return this;
         }
 
         public ISpan SetOperationName(string operationName)
         {
             Span.OperationName = operationName;
+
             return this;
         }
 
@@ -121,22 +128,27 @@ namespace Datadog.Trace.OpenTracing
             {
                 case DatadogTags.ResourceName:
                     Span.ResourceName = value;
+
                     return this;
                 case DatadogTags.SpanType:
                     Span.Type = value;
+
                     return this;
-                 case DatadogTags.ServiceName:
-                     Span.ServiceName = value;
-                     return this;
+                case DatadogTags.ServiceName:
+                    Span.ServiceName = value;
+
+                    return this;
             }
 
             if (key == global::OpenTracing.Tag.Tags.Error.Key)
             {
                 Span.Error = value == bool.TrueString;
+
                 return this;
             }
 
             Span.SetTag(key, value);
+
             return this;
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.ExtensionMethods;
 using Moq;
 using Xunit;
 

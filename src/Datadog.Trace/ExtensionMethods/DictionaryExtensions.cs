@@ -7,14 +7,9 @@ namespace Datadog.Trace.ExtensionMethods
     internal static class DictionaryExtensions
     {
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
-        {
-            if (dictionary.TryGetValue(key, out TValue value))
-            {
-                return value;
-            }
-
-            return default(TValue);
-        }
+            => dictionary.TryGetValue(key, out TValue value)
+                   ? value
+                   : default(TValue);
 
         public static bool TryGetValueOrDefaultAs<TAs>(this IDictionary dictionary, object key, out TAs valueAs)
         {

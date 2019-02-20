@@ -1,47 +1,47 @@
-using System.Data.Common;
+using System;
+using Datadog.Trace.Interfaces;
 
 namespace Datadog.Trace.ExtensionMethods
 {
-    /// <summary>
-    /// Common helper
-    /// </summary>
-    public static class SpanExtensions
+    internal static class SpanExtensions
     {
-        /// <summary>
-        /// Adds standard tags to a span with values taken from the specified <see cref="DbCommand"/>.
-        /// </summary>
-        /// <param name="span">The span to add the tags to.</param>
-        /// <param name="command">The db command to get tags values from.</param>
-        public static void AddTagsFromDbCommand(this Span span, DbCommand command)
+        internal static string GetHttpMethod(this ISpan span)
+            => span.GetTag(Tags.HttpMethod);
+
+        internal static void SetException(this ISpan span, Exception exception)
         {
-            span.ResourceName = command.CommandText;
-            span.Type = SpanTypes.Sql;
+            span.Error = true;
 
-            // parse the connection string
-            var builder = new DbConnectionStringBuilder { ConnectionString = command.Connection.ConnectionString };
-
-            string database = GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog");
-            span.SetTag(Tags.DbName, database);
-
-            string user = GetConnectionStringValue(builder, "User ID", "UserID");
-            span.SetTag(Tags.DbUser, user);
-
-            string server = GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host");
-            span.SetTag(Tags.OutHost, server);
-        }
-
-        private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)
-        {
-            foreach (string name in names)
+            // for AggregateException, use the first inner exception until we can support multiple errors.
+            // there will be only one error in most cases, and even if there are more and we lose
+            // the other ones, it's still better than the generic "one or more errors occurred" message.
+            if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
             {
-                if (builder.TryGetValue(name, out object valueObj) &&
-                    valueObj is string value)
-                {
-                    return value;
-                }
+                exception = aggregateException.InnerExceptions[0];
             }
 
-            return null;
+            span.Tag(Tags.ErrorMsg, exception.Message);
+            span.Tag(Tags.ErrorStack, exception.StackTrace);
+            span.Tag(Tags.ErrorType, exception.GetType().ToString());
+        }
+
+        internal static bool SetExceptionAndReturnFalse(this ISpan span, Exception exception)
+        {
+            // Why would you have a method that always just returns false you may ask...it's useful for one scenario, and
+            // that is using this as an exception filter to actually effect that handling of setting the exception info in
+            // the span in question while not unwinding the call stack in a catch block, and letting the exception simply
+            // propogate back out to the caller naturally.
+
+            if (span == null)
+            {
+                // Purposely handle null here to avoid having to null-coalesce a static "SetExceptionAndReturnFalse(x) ?? false" everywhere
+                // this would ever get used (as trying to use this without it would result in a bool? and not a bool....
+                return false;
+            }
+
+            SetException(span, exception);
+
+            return false;
         }
     }
 }

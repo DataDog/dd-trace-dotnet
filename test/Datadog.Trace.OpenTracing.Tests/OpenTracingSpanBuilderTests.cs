@@ -1,5 +1,6 @@
 using System;
 using Datadog.Trace.Agent;
+using Datadog.Trace.ExtensionMethods;
 using Moq;
 using OpenTracing;
 using Xunit;

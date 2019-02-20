@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 

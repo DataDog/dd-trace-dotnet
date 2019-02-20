@@ -1,6 +1,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ClrProfiler.Interfaces;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
 
 namespace Datadog.Trace.ClrProfiler.Services

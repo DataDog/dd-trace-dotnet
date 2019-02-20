@@ -57,6 +57,146 @@
           "method": "ExecuteDbDataReaderAsync",
           "signature": "00 03 1C 1C 08 1C"
         }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQuery"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteNonQuery",
+          "signature": "00 01 08 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQuery"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteNonQuery",
+          "signature": "00 01 08 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQueryAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteNonQueryAsync",
+          "signature": "00 01 1C 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQueryAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteNonQueryAsync",
+          "signature": "00 01 1C 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQueryAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteNonQueryAsync",
+          "signature": "00 02 1C 1C 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQueryAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteNonQueryAsync",
+          "signature": "00 02 1C 1C 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteScalar"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteScalar",
+          "signature": "00 01 1C 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteScalar"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteScalar",
+          "signature": "00 01 1C 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteScalarAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteScalarAsync",
+          "signature": "00 02 1C 1C 1C"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteScalarAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.7.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteScalarAsync",
+          "signature": "00 02 1C 1C 1C"
+        }
       }
     ]
   },

@@ -1,3 +1,5 @@
+using Datadog.Trace.ExtensionMethods;
+
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     internal static class RedisHelper

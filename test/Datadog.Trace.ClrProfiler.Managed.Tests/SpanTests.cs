@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ClrProfiler.Interfaces;
 using Datadog.Trace.ClrProfiler.Services;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
 using Xunit;
 
@@ -90,28 +92,29 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         private class TestSpan : ISpan
         {
+            public bool Error { get; set; }
+
             public string ResourceName { get; set; }
 
             public string Type { get; set; }
 
-            public Dictionary<string, string> Tags { get; } = new Dictionary<string, string>();
+            internal ConcurrentDictionary<string, string> Tags { get; } = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            public string GetTag(string key) => Tags.TryGetValue(key, out var value)
+                                                    ? value
+                                                    : null;
 
             public void Tag(string key, string value)
             {
                 if (value == null)
                 {
-                    Tags.Remove(key);
+                    Tags.TryRemove(key, out value);
                 }
                 else
                 {
                     Tags[key] = value;
                 }
             }
-
-            public string GetTag(string key)
-                => Tags.TryGetValue(key, out var tagValue)
-                       ? tagValue
-                       : null;
         }
     }
 }

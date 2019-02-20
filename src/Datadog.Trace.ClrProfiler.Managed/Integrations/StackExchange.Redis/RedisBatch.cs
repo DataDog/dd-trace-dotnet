@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {

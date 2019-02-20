@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -193,7 +194,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (_httpContext != null)
                 {
-                    _scope?.Span?.SetTag("http.status_code", _httpContext.Response.StatusCode.ToString());
+                    var tagValue = _httpContext.Response.StatusCode.ToString() as string;
+                    _scope?.Span?.SetTag("http.status_code", tagValue);
                 }
             }
             finally
