@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations

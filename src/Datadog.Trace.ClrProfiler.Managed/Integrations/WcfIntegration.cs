@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.ServiceModel.Channels;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ClrProfiler.Models;
 
