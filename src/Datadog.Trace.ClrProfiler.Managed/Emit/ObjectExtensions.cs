@@ -46,6 +46,18 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return false;
         }
 
+        public static MemberResult<TResult> CallMethod<TArg1, TResult>(this object source, string methodName, TArg1 arg1)
+        {
+            return source.TryCallMethod(methodName, arg1, out TResult result)
+                       ? new MemberResult<TResult>(result)
+                       : MemberResult<TResult>.NotFound;
+        }
+
+        public static MemberResult<object> CallMethod<TArg1>(this object source, string methodName, TArg1 arg1)
+        {
+            return CallMethod<TArg1, object>(source, methodName, arg1);
+        }
+
         /// <summary>
         /// Tries to get the value of an instance property with the specified name.
         /// </summary>
@@ -72,6 +84,18 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return false;
         }
 
+        public static MemberResult<TResult> GetProperty<TResult>(this object source, string propertyName)
+        {
+            return source.TryGetPropertyValue(propertyName, out TResult result)
+                       ? new MemberResult<TResult>(result)
+                       : MemberResult<TResult>.NotFound;
+        }
+
+        public static MemberResult<object> GetProperty(this object source, string propertyName)
+        {
+            return GetProperty<object>(source, propertyName);
+        }
+
         /// <summary>
         /// Tries to get the value of an instance field with the specified name.
         /// </summary>
@@ -96,6 +120,18 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             value = default;
             return false;
+        }
+
+        public static MemberResult<TResult> GetField<TResult>(this object source, string fieldName)
+        {
+            return source.TryGetFieldValue(fieldName, out TResult result)
+                       ? new MemberResult<TResult>(result)
+                       : MemberResult<TResult>.NotFound;
+        }
+
+        public static MemberResult<object> GetField(this object source, string fieldName)
+        {
+            return GetField<object>(source, fieldName);
         }
 
         private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
