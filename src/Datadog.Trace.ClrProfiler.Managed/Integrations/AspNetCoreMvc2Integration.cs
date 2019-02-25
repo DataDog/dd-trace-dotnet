@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
@@ -19,7 +17,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
-        private static Type _targetType;
+        private static readonly Type TargetType = Type.GetType(
+            $"{TypeName}, {AssemblyName}",
+            throwOnError: false,
+            ignoreCase: false);
 
         /// <summary>
         /// Wrapper method used to instrument Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.BeforeAction()
@@ -38,17 +39,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object httpContext,
             object routeData)
         {
-            if (_targetType == null)
-            {
-                _targetType = actionDescriptor.GetType()
-                                              .GetTypeInfo()
-                                              .Assembly
-                                              .GetType(TypeName);
-            }
-
             // get delegate for target method
             var target = DynamicMethodBuilder<Action<object, object, object, object>>.GetOrCreateMethodCallDelegate(
-                _targetType,
+                TargetType,
                 nameof(BeforeAction));
 
             if (target == null)
@@ -93,16 +86,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             dynamic httpContext,
             object routeData)
         {
-            if (_targetType == null)
-            {
-                _targetType = actionDescriptor.GetType()
-                                              .GetTypeInfo()
-                                              .Assembly
-                                              .GetType(TypeName);
-            }
-
             var target = DynamicMethodBuilder<Action<object, object, object, object>>.GetOrCreateMethodCallDelegate(
-                _targetType,
+                TargetType,
                 nameof(AfterAction));
 
             if (target == null)
@@ -131,13 +116,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScope(dynamic actionDescriptor, dynamic httpContext)
+        private static Scope CreateScope(object actionDescriptor, object httpContext)
         {
-            string controllerName = (actionDescriptor.ControllerName as string)?.ToLowerInvariant();
-            string actionName = (actionDescriptor.ActionName as string)?.ToLowerInvariant();
+            string controllerName = actionDescriptor.GetProperty<string>("ControllerName").GetValueOrDefault();
+            string actionName = actionDescriptor.GetProperty<string>("ActionName").GetValueOrDefault();
+            string routeTemplate = actionDescriptor.GetProperty("AttributeRouteInfo").GetProperty<string>("Template").GetValueOrDefault();
 
-            string httpMethod = httpContext.Request.Method.ToUpperInvariant();
-            string url = GetDisplayUrl(httpContext.Request).ToLowerInvariant();
+            var request = httpContext.GetProperty("Request");
+            string httpMethod = request.GetProperty<string>("Method").ToString().ToUpperInvariant();
+            string url = GetDisplayUrl(request).ToLowerInvariant();
 
             Scope scope = Tracer.Instance.StartActive(OperationName);
             Span span = scope.Span;
@@ -146,7 +133,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
             span.SetTag(Tags.HttpMethod, httpMethod);
             span.SetTag(Tags.HttpUrl, url);
-            span.SetTag(Tags.AspNetRoute, (string)actionDescriptor.AttributeRouteInfo?.Template);
+            span.SetTag(Tags.AspNetRoute, routeTemplate);
             span.SetTag(Tags.AspNetController, controllerName);
             span.SetTag(Tags.AspNetAction, actionName);
 
@@ -171,13 +158,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return null;
         }
 
-        private static string GetDisplayUrl(dynamic request)
+        private static string GetDisplayUrl(MemberResult<object> request)
         {
-            string scheme = request.Scheme;
-            string host = request.Host.Value;
-            string pathBase = request.PathBase.Value;
-            string path = request.Path.Value;
-            string queryString = request.QueryString.Value;
+            string scheme = request.GetProperty<string>("Scheme").ToString();
+            string host = request.GetProperty("Host").GetProperty<string>("Value").ToString();
+            string pathBase = request.GetProperty("PathBase").GetProperty<string>("Value").ToString();
+            string path = request.GetProperty("Path").GetProperty<string>("Value").ToString();
+            string queryString = request.GetProperty("QueryString").GetProperty<string>("Value").ToString();
 
             return $"{scheme}://{host}{pathBase}{path}{queryString}";
         }
