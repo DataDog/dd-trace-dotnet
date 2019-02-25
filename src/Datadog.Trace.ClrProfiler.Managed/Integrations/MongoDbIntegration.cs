@@ -109,10 +109,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (wireProtocol.TryGetFieldValue("_databaseNamespace", out object databaseNamespace))
-                {
-                    databaseNamespace?.TryGetPropertyValue("DatabaseName", out databaseName);
-                }
+                databaseName = wireProtocol.GetField("_databaseNamespace").GetProperty<string>("DatabaseName").GetValueOrDefault();
             }
             catch (Exception ex)
             {
@@ -121,18 +118,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (connection != null && connection.TryGetPropertyValue("EndPoint", out object endpoint))
+                var endpoint = connection?.GetProperty("EndPoint").GetValueOrDefault();
+
+                if (endpoint is IPEndPoint ipEndPoint)
                 {
-                    if (endpoint is IPEndPoint ipEndPoint)
-                    {
-                        host = ipEndPoint.Address.ToString();
-                        port = ipEndPoint.Port.ToString();
-                    }
-                    else if (endpoint is DnsEndPoint dnsEndPoint)
-                    {
-                        host = dnsEndPoint.Host;
-                        port = dnsEndPoint.Port.ToString();
-                    }
+                    host = ipEndPoint.Address.ToString();
+                    port = ipEndPoint.Port.ToString();
+                }
+                else if (endpoint is DnsEndPoint dnsEndPoint)
+                {
+                    host = dnsEndPoint.Host;
+                    port = dnsEndPoint.Port.ToString();
                 }
             }
             catch (Exception ex)
@@ -147,34 +143,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (wireProtocol.TryGetFieldValue("_command", out object command) && command != null)
+                var command = wireProtocol.GetField("_command");
+
+                // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
+                // and its value is the collection name
+                var firstElement = command.CallMethod("GetElement", 0);
+                operationName = firstElement.GetProperty<string>("Name").GetValueOrDefault();
+                collectionName = firstElement.GetProperty("Value").GetValueOrDefault()?.ToString();
+
+                // get the "query" element from the command BsonDocument, if it exists
+                bool found = command.CallMethod<string, bool>("Contains", "query").GetValueOrDefault();
+
+                if (found)
                 {
-                    // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
-                    // and its value is the collection name
-                    if (command.TryCallMethod("GetElement", 0, out object firstElement) && firstElement != null)
-                    {
-                        firstElement.TryGetPropertyValue("Name", out operationName);
-
-                        if (firstElement.TryGetPropertyValue("Value", out object collectionNameObj) && collectionNameObj != null)
-                        {
-                            collectionName = collectionNameObj.ToString();
-                        }
-                    }
-
-                    // get the "query" element from the command BsonDocument, if it exists
-                    if (command.TryCallMethod("Contains", "query", out bool found) && found)
-                    {
-                        if (command.TryCallMethod("GetElement", "query", out object queryElement) && queryElement != null)
-                        {
-                            if (queryElement.TryGetPropertyValue("Value", out object queryValue) && queryValue != null)
-                            {
-                                query = queryValue.ToString();
-                            }
-                        }
-                    }
-
-                    resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"} {query ?? "query"}";
+                    query = command.CallMethod("GetElement", "query").GetProperty("Value").GetValueOrDefault()?.ToString();
                 }
+
+                resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"} {query ?? "query"}";
             }
             catch (Exception ex)
             {
