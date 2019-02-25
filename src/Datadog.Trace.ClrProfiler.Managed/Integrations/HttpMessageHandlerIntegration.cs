@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -13,8 +14,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class HttpMessageHandlerIntegration
     {
         internal const string OperationName = "http.request";
-
-        // internal readonly  string Name = nameof(HttpMessageHandlerIntegration).Substring(0, )
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="HttpMessageHandler.SendAsync"/>.
