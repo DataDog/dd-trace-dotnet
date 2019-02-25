@@ -3,12 +3,12 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using Sigil;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.ClrProfiler.Emit
 {
     /// <summary>
     /// Provides helper methods to access object members by emitting IL dynamically.
     /// </summary>
-    public static class MemberAccessor
+    internal static class ObjectExtensions
     {
         private static readonly ConcurrentDictionary<string, object> Cache = new ConcurrentDictionary<string, object>();
 

@@ -6,13 +6,13 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Sigil;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.ClrProfiler.Emit
 {
     /// <summary>
     /// Helper class to instances of <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/>.
     /// </summary>
     /// <typeparam name="TDelegate">The type of delegate</typeparam>
-    public static class DynamicMethodBuilder<TDelegate>
+    internal static class DynamicMethodBuilder<TDelegate>
         where TDelegate : Delegate
     {
         private static readonly ConcurrentDictionary<Key, TDelegate> _cached = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler
             else if (delegateType.Name.StartsWith("Action`"))
             {
                 parameterTypes = genericTypeArguments;
-                returnType = null;
+                returnType = typeof(void);
             }
             else
             {
