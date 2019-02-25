@@ -37,7 +37,7 @@ namespace Samples.MongoDB
                 var collection = database.GetCollection<BsonDocument>("employees");
 
                 Run(collection, newDocument);
-                RunAsync(collection, newDocument).Wait();
+                RunAsync(collection, newDocument).GetAwaiter().GetResult();
             }
         }
 

@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    return await executeAsync(wireProtocol, connection, cancellationToken);
+                    return await executeAsync(wireProtocol, connection, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
