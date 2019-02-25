@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
                 catch (Exception ex)
                 {
-                    scope.Span.SetException(ex);
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
@@ -150,6 +150,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var firstElement = command.CallMethod("GetElement", 0);
                 operationName = firstElement.GetProperty<string>("Name").GetValueOrDefault();
                 collectionName = firstElement.GetProperty("Value").GetValueOrDefault()?.ToString();
+
+                if (operationName == "buildInfo" || operationName == "isMaster" || operationName == "getLastError")
+                {
+                    // don't create a scope for these internal (non-application) queries
+                    // made automatically by the client
+                    return null;
+                }
 
                 // get the "query" element from the command BsonDocument, if it exists
                 bool found = command.CallMethod<string, bool>("Contains", "query").GetValueOrDefault();
