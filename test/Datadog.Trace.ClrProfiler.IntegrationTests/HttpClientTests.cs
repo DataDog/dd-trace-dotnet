@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 foreach (var span in spans)
                 {
                     Assert.Equal("http.request", span.Name);
-                    Assert.Equal("Samples.HttpMessageHandler", span.Service);
+                    Assert.Equal("Samples.HttpMessageHandler-http-client", span.Service);
                     Assert.Equal(SpanTypes.Http, span.Type);
                     Assert.Equal(nameof(HttpMessageHandler), span.Tags[Tags.InstrumentationName]);
                 }
@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 foreach (var span in spans.Take(1))
                 {
                     Assert.Equal("http.request", span.Name);
-                    Assert.Equal("Samples.HttpMessageHandler", span.Service);
+                    Assert.Equal("Samples.HttpMessageHandler-http-client", span.Service);
                     Assert.Equal(SpanTypes.Http, span.Type);
                     Assert.Equal(nameof(WebRequest), span.Tags[Tags.InstrumentationName]);
                 }

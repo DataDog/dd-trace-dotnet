@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class WebRequestIntegration
     {
         internal const string OperationName = "http.request";
+        internal const string ServiceName = "http-client";
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.
@@ -96,14 +97,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(WebRequest request, string methodName)
         {
+            var tracer = Tracer.Instance;
+
             string httpMethod = request.Method.ToUpperInvariant();
             string url = request.RequestUri.OriginalString;
             string resourceName = $"{httpMethod} {url}";
+            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
-            var tracer = Tracer.Instance;
-            var scope = tracer.StartActive(OperationName, serviceName: tracer.DefaultServiceName);
+            var scope = tracer.StartActive(OperationName, serviceName: serviceName);
             var span = scope.Span;
-
             span.Type = SpanTypes.Http;
             span.ResourceName = resourceName;
             span.SetTag(Tags.HttpMethod, httpMethod);
