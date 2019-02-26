@@ -4,7 +4,7 @@
     <CsharpTestProject Include="test\**\*.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <SampleProject Include="samples\**\*.csproj"/>
+    <SampleProject Include="samples*\**\*.csproj"/>
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
   </ItemGroup>
 
