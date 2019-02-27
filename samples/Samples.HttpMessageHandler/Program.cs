@@ -37,6 +37,9 @@ namespace Samples.HttpMessageHandler
             bool useWebClient = args.Any(arg => arg.Equals("WebClient", StringComparison.InvariantCultureIgnoreCase));
             PrintSettingMessage("WebClient", useWebClient);
 
+            Console.WriteLine();
+            Console.WriteLine("Starting HTTP listener.");
+
             using (var listener = new HttpListener())
             {
                 listener.Prefixes.Add(Url);
@@ -49,17 +52,21 @@ namespace Samples.HttpMessageHandler
                 if (args.Length == 0 || args.Any(arg => arg.Equals("HttpClient", StringComparison.InvariantCultureIgnoreCase)))
                 {
                     // send an http request using HttpClient
-                    Console.WriteLine("Sending request with HttpClient");
+                    Console.WriteLine();
+                    Console.WriteLine("Sending request with HttpClient.");
                     SendHttpClientRequestAsync(tracingDisabled).GetAwaiter().GetResult();
                 }
 
                 if (args.Length == 0 || args.Any(arg => arg.Equals("WebClient", StringComparison.InvariantCultureIgnoreCase)))
                 {
                     // send an http request using WebClient
-                    Console.WriteLine("Sending request with WebClient");
+                    Console.WriteLine();
+                    Console.WriteLine("Sending request with WebClient.");
                     SendWebClientRequest(tracingDisabled);
                 }
 
+                Console.WriteLine();
+                Console.WriteLine("Stopping HTTP listener.");
                 listener.Stop();
             }
 
