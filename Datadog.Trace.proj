@@ -4,17 +4,16 @@
     <CsharpTestProject Include="test\**\*.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <SampleProject Include="samples\**\*.csproj"/>
-    <BenchmarkProject Include="benchmarks\**\*.csproj"/>
+    <SampleProject Include="samples*\**\*.csproj"/>
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
   </ItemGroup>
 
   <Target Name="Restore">
-    <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject);@(BenchmarkProject)"/>
+    <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject)"/>
   </Target>
 
   <Target Name="Clean">
-    <MSBuild Targets="Clean" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject);@(BenchmarkProject);@(WindowsInstallerProject)"/>
+    <MSBuild Targets="Clean" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject);@(WindowsInstallerProject)"/>
   </Target>
 
   <!-- default target -->
@@ -50,12 +49,6 @@
 
   <Target Name="BuildSamples">
     <MSBuild Targets="Build" Projects="@(SampleProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildBenchmarks">
-    <MSBuild Targets="Build" Projects="@(BenchmarkProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
