@@ -46,9 +46,9 @@ namespace Datadog.Trace.Agent
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
             // TODO:bertrand add header for os version
-            _client.DefaultRequestHeaders.Add(HttpHeaderNames.Language, ".NET");
-            _client.DefaultRequestHeaders.Add(HttpHeaderNames.LanguageInterpreter, RuntimeInformation.FrameworkDescription);
-            _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracerVersion, this.GetType().Assembly.GetName().Version.ToString());
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, RuntimeInformation.FrameworkDescription);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, this.GetType().Assembly.GetName().Version.ToString());
 
             // don't add automatic instrumentation to this http request
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
