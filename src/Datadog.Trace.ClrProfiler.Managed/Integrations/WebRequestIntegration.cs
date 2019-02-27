@@ -40,7 +40,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // add distributed tracing headers
                     webRequest.Headers.Inject(scope.Span.Context);
 
-                    return webRequest.GetResponse();
+                    WebResponse response = webRequest.GetResponse();
+
+                    if (response is HttpWebResponse webResponse)
+                    {
+                        scope.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
+                    }
+
+                    return response;
                 }
                 catch (Exception ex)
                 {
@@ -77,8 +84,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // add distributed tracing headers
                     request.Headers.Inject(scope.Span.Context);
 
-                    return await request.GetResponseAsync()
-                                        .ConfigureAwait(false);
+                    WebResponse response = await request.GetResponseAsync().ConfigureAwait(false);
+
+                    if (response is HttpWebResponse webResponse)
+                    {
+                        scope.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
+                    }
+
+                    return response;
                 }
                 catch (Exception ex)
                 {

@@ -68,7 +68,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // add distributed tracing headers
                     request.Headers.Inject(scope.Span.Context);
 
-                    return await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
+                    HttpResponseMessage response = await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
+                    scope.Span.SetTag(Tags.HttpStatusCode, ((int)response.StatusCode).ToString());
+                    return response;
                 }
                 catch (Exception ex)
                 {
