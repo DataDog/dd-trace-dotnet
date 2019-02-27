@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Fact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithHttpClient()
+        public void HttpClient()
         {
             const int agentPort = 9006;
 
@@ -48,9 +48,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Fact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithWebClient()
+        public void HttpClient_TracingDisabled()
         {
             const int agentPort = 9007;
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, "HttpClient TracingDisabled"))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
+
+                var spans = agent.WaitForSpans(1, 500);
+                Assert.Equal(0, spans.Count);
+
+                var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var tracingEnabled = GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+
+                Assert.Null(traceId);
+                Assert.Null(parentSpanId);
+                Assert.Equal("false", tracingEnabled);
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "EndToEnd")]
+        public void WebClient()
+        {
+            const int agentPort = 9008;
 
             using (var agent = new MockTracerAgent(agentPort))
             using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, "WebClient"))
@@ -71,9 +95,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        [Fact]
+        [Trait("Category", "EndToEnd")]
+        public void WebClient_TracingDisabled()
+        {
+            const int agentPort = 9009;
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, "WebClient TracingDisabled"))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
+
+                var spans = agent.WaitForSpans(1, 500);
+                Assert.Equal(0, spans.Count);
+
+                var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var tracingEnabled = GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+
+                Assert.Null(traceId);
+                Assert.Null(parentSpanId);
+                Assert.Equal("false", tracingEnabled);
+            }
+        }
+
         private string GetHeader(string stdout, string name)
         {
-            var pattern = $@"^\[HttpListener\] request header: {name}=(\d+)\r?$";
+            var pattern = $@"^\[HttpListener\] request header: {name}=(\w+)\r?$";
             var match = Regex.Match(stdout, pattern, RegexOptions.Multiline);
 
             return match.Success

@@ -1,10 +1,12 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace;
 
 namespace Samples.HttpMessageHandler
 {
@@ -16,8 +18,25 @@ namespace Samples.HttpMessageHandler
 
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
+        public static void PrintSettingMessage(string settingName, bool settingEnabled)
+        {
+            var msg = settingName + (settingEnabled
+                                         ? " enabled."
+                                         : " disabled.");
+            Console.WriteLine(msg);
+        }
+
         public static void Main(string[] args)
         {
+            bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.InvariantCultureIgnoreCase));
+            PrintSettingMessage("Tracing", !tracingDisabled);
+
+            bool useHttpClient = args.Any(arg => arg.Equals("HttpClient", StringComparison.InvariantCultureIgnoreCase));
+            PrintSettingMessage("HttpClient", useHttpClient);
+
+            bool useWebClient = args.Any(arg => arg.Equals("WebClient", StringComparison.InvariantCultureIgnoreCase));
+            PrintSettingMessage("WebClient", useWebClient);
+
             using (var listener = new HttpListener())
             {
                 listener.Prefixes.Add(Url);
@@ -27,18 +46,18 @@ namespace Samples.HttpMessageHandler
                 var listenerThread = new Thread(HandleHttpRequests);
                 listenerThread.Start(listener);
 
-                if (args.Length == 0 || args[0].Equals("HttpClient", StringComparison.InvariantCultureIgnoreCase))
+                if (args.Length == 0 || args.Any(arg => arg.Equals("HttpClient", StringComparison.InvariantCultureIgnoreCase)))
                 {
                     // send an http request using HttpClient
-                    SendHttpClientRequest().GetAwaiter().GetResult();
+                    Console.WriteLine("Sending request with HttpClient");
+                    SendHttpClientRequestAsync(tracingDisabled).GetAwaiter().GetResult();
                 }
 
-                Console.WriteLine("--------------------");
-
-                if (args.Length == 0 || args[0].Equals("WebClient", StringComparison.InvariantCultureIgnoreCase))
+                if (args.Length == 0 || args.Any(arg => arg.Equals("WebClient", StringComparison.InvariantCultureIgnoreCase)))
                 {
                     // send an http request using WebClient
-                    SendWebClientRequest();
+                    Console.WriteLine("Sending request with WebClient");
+                    SendWebClientRequest(tracingDisabled);
                 }
 
                 listener.Stop();
@@ -50,34 +69,46 @@ namespace Samples.HttpMessageHandler
             Environment.Exit(0);
         }
 
-        private static async Task SendHttpClientRequest()
+        private static async Task SendHttpClientRequestAsync(bool tracingDisabled)
         {
             Console.WriteLine($"[HttpClient] sending request to {Url}");
             var clientRequestContent = new StringContent(RequestContent, Utf8);
 
             using (var client = new HttpClient())
-            using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
             {
-                // read response content and headers
-                var responseContent = await responseMessage.Content.ReadAsStringAsync();
-                Console.WriteLine($"[HttpClient] response content: {responseContent}");
-
-                foreach (var header in responseMessage.Headers)
+                if (tracingDisabled)
                 {
-                    var name = header.Key;
-                    var values = string.Join(",", header.Value);
-                    Console.WriteLine($"[HttpClient] response header: {name}={values}");
+                    client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                }
+
+                using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
+                {
+                    // read response content and headers
+                    var responseContent = await responseMessage.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[HttpClient] response content: {responseContent}");
+
+                    foreach (var header in responseMessage.Headers)
+                    {
+                        var name = header.Key;
+                        var values = string.Join(",", header.Value);
+                        Console.WriteLine($"[HttpClient] response header: {name}={values}");
+                    }
                 }
             }
         }
 
-        private static void SendWebClientRequest()
+        private static void SendWebClientRequest(bool tracingDisabled)
         {
             Console.WriteLine($"[WebClient] sending request to {Url}");
 
             using (var webClient = new WebClient())
             {
                 webClient.Encoding = Utf8;
+
+                if (tracingDisabled)
+                {
+                    webClient.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                }
 
                 var responseContent = webClient.UploadString(Url, RequestContent);
                 Console.WriteLine($"[WebClient] response content: {responseContent}");
