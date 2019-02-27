@@ -1,5 +1,6 @@
+using System.Globalization;
+using System.Linq;
 using System.Net.Http.Headers;
-using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -15,8 +16,22 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns>The <see cref="SpanContext"/></returns>
         public static SpanContext Extract(this HttpHeaders headers)
         {
-            var propagator = new HttpHeadersPropagator(headers);
-            return propagator.Extract();
+            ulong? traceId = null;
+            ulong? parentId = null;
+
+            if (headers.TryGetValues(HttpHeaderNames.TraceId, out var traceIds))
+            {
+                traceId = traceIds.FirstOrDefault()?.TryParseUInt64(NumberStyles.Integer, CultureInfo.InvariantCulture);
+            }
+
+            if (headers.TryGetValues(HttpHeaderNames.ParentId, out var parentIds))
+            {
+                parentId = parentIds.FirstOrDefault()?.TryParseUInt64(NumberStyles.Integer, CultureInfo.InvariantCulture);
+            }
+
+            return traceId != null && parentId != null
+                       ? new SpanContext(traceId.Value, parentId.Value)
+                       : null;
         }
 
         /// <summary>
@@ -26,8 +41,11 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="context">The context.</param>
         public static void Inject(this HttpHeaders headers, SpanContext context)
         {
-            var propagator = new HttpHeadersPropagator(headers);
-            propagator.Inject(context);
+            headers.Remove(HttpHeaderNames.TraceId);
+            headers.Add(HttpHeaderNames.TraceId, context.TraceId.ToString(CultureInfo.InvariantCulture));
+
+            headers.Remove(HttpHeaderNames.ParentId);
+            headers.Add(HttpHeaderNames.ParentId, context.SpanId.ToString(CultureInfo.InvariantCulture));
         }
     }
 }

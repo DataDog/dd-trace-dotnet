@@ -1,5 +1,5 @@
 using System.Collections.Specialized;
-using Datadog.Trace.Propagators;
+using System.Globalization;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -15,8 +15,12 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns>The <see cref="SpanContext"/></returns>
         public static SpanContext Extract(this NameValueCollection headers)
         {
-            var propagator = new NameValueCollectionPropagator(headers);
-            return propagator.Extract();
+            ulong? traceId = headers[HttpHeaderNames.TraceId]?.TryParseUInt64(NumberStyles.Integer, CultureInfo.InvariantCulture);
+            ulong? parentId = headers[HttpHeaderNames.ParentId]?.TryParseUInt64(NumberStyles.Integer, CultureInfo.InvariantCulture);
+
+            return traceId != null && parentId != null
+                       ? new SpanContext(traceId.Value, parentId.Value)
+                       : null;
         }
 
         /// <summary>
@@ -26,8 +30,8 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="context">The context.</param>
         public static void Inject(this NameValueCollection headers, SpanContext context)
         {
-            var propagator = new NameValueCollectionPropagator(headers);
-            propagator.Inject(context);
+            headers[HttpHeaderNames.TraceId] = context.TraceId.ToString(CultureInfo.InvariantCulture);
+            headers[HttpHeaderNames.ParentId] = context.SpanId.ToString(CultureInfo.InvariantCulture);
         }
     }
 }
