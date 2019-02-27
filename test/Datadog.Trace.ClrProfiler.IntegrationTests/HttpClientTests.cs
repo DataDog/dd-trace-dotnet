@@ -84,6 +84,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1);
                 Assert.True(spans.Count > 0, "expected at least one span");
 
+                var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+
                 // inspect the top-level span, underlying spans can be HttpMessageHandler in .NET Core
                 foreach (var span in spans.Take(1))
                 {
@@ -91,6 +94,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("Samples.HttpMessageHandler-http-client", span.Service);
                     Assert.Equal(SpanTypes.Http, span.Type);
                     Assert.Equal(nameof(WebRequest), span.Tags[Tags.InstrumentationName]);
+
+                    Assert.Equal(span.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
+                    Assert.Equal(span.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
                 }
             }
         }
