@@ -20,13 +20,13 @@ namespace Samples.HttpMessageHandler
 
         public static void Main(string[] args)
         {
-            bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.InvariantCultureIgnoreCase));
+            bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
             Console.WriteLine($"TracingDisabled {tracingDisabled}");
 
-            bool useHttpClient = args.Any(arg => arg.Equals("HttpClient", StringComparison.InvariantCultureIgnoreCase));
+            bool useHttpClient = args.Any(arg => arg.Equals("HttpClient", StringComparison.OrdinalIgnoreCase));
             Console.WriteLine($"HttpClient {useHttpClient}");
 
-            bool useWebClient = args.Any(arg => arg.Equals("WebClient", StringComparison.InvariantCultureIgnoreCase));
+            bool useWebClient = args.Any(arg => arg.Equals("WebClient", StringComparison.OrdinalIgnoreCase));
             Console.WriteLine($"WebClient {useWebClient}");
 
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
@@ -46,7 +46,7 @@ namespace Samples.HttpMessageHandler
                 var listenerThread = new Thread(HandleHttpRequests);
                 listenerThread.Start(listener);
 
-                if (args.Length == 0 || args.Any(arg => arg.Equals("HttpClient", StringComparison.InvariantCultureIgnoreCase)))
+                if (args.Length == 0 || args.Any(arg => arg.Equals("HttpClient", StringComparison.OrdinalIgnoreCase)))
                 {
                     // send an http request using HttpClient
                     Console.WriteLine();
@@ -54,7 +54,7 @@ namespace Samples.HttpMessageHandler
                     SendHttpClientRequestAsync(tracingDisabled).GetAwaiter().GetResult();
                 }
 
-                if (args.Length == 0 || args.Any(arg => arg.Equals("WebClient", StringComparison.InvariantCultureIgnoreCase)))
+                if (args.Length == 0 || args.Any(arg => arg.Equals("WebClient", StringComparison.OrdinalIgnoreCase)))
                 {
                     // send an http request using WebClient
                     Console.WriteLine();

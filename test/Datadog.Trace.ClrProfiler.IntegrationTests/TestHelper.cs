@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string currentDirectory = Environment.CurrentDirectory;
 
             int index = currentDirectory.Replace('\\', '/')
-                                        .LastIndexOf("/test/", StringComparison.InvariantCultureIgnoreCase);
+                                        .LastIndexOf("/test/", StringComparison.OrdinalIgnoreCase);
 
             return currentDirectory.Substring(0, index);
         }

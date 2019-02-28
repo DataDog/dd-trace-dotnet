@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using OpenTracing;
 using OpenTracing.Propagation;
 
@@ -22,12 +22,12 @@ namespace Datadog.Trace.OpenTracing
             string traceIdHeader = null;
             foreach (var keyVal in map)
             {
-                if (keyVal.Key.Equals(HttpHeaderNames.ParentId, StringComparison.InvariantCultureIgnoreCase))
+                if (keyVal.Key.Equals(HttpHeaderNames.ParentId, StringComparison.OrdinalIgnoreCase))
                 {
                     parentIdHeader = keyVal.Value;
                 }
 
-                if (keyVal.Key.Equals(HttpHeaderNames.TraceId, StringComparison.InvariantCultureIgnoreCase))
+                if (keyVal.Key.Equals(HttpHeaderNames.TraceId, StringComparison.OrdinalIgnoreCase))
                 {
                     traceIdHeader = keyVal.Value;
                 }
