@@ -166,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var sampleDir = Path.Combine(
                 GetSolutionDirectory(),
-                "samples",
+                "samples-aspnet",
                 $"Samples.{SampleAppName}");
 
             // get full paths to integration definitions
