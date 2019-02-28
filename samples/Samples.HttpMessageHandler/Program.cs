@@ -12,33 +12,30 @@ namespace Samples.HttpMessageHandler
 {
     public static class Program
     {
-        private const string Url = "http://localhost:9000/Samples.HttpMessageHandler/";
         private const string RequestContent = "PING";
         private const string ResponseContent = "PONG";
-
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
-        public static void PrintSettingMessage(string settingName, bool settingEnabled)
-        {
-            var msg = settingName + (settingEnabled
-                                         ? " enabled."
-                                         : " disabled.");
-            Console.WriteLine(msg);
-        }
+        private static string Url;
 
         public static void Main(string[] args)
         {
             bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.InvariantCultureIgnoreCase));
-            PrintSettingMessage("Tracing", !tracingDisabled);
+            Console.WriteLine($"TracingDisabled {tracingDisabled}");
 
             bool useHttpClient = args.Any(arg => arg.Equals("HttpClient", StringComparison.InvariantCultureIgnoreCase));
-            PrintSettingMessage("HttpClient", useHttpClient);
+            Console.WriteLine($"HttpClient {useHttpClient}");
 
             bool useWebClient = args.Any(arg => arg.Equals("WebClient", StringComparison.InvariantCultureIgnoreCase));
-            PrintSettingMessage("WebClient", useWebClient);
+            Console.WriteLine($"WebClient {useWebClient}");
+
+            string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
+            Console.WriteLine($"Port {port}");
+
+            Url = $"http://localhost:{port}/Samples.HttpMessageHandler/";
 
             Console.WriteLine();
-            Console.WriteLine("Starting HTTP listener.");
+            Console.WriteLine($"Starting HTTP listener at {Url}");
 
             using (var listener = new HttpListener())
             {
@@ -117,7 +114,7 @@ namespace Samples.HttpMessageHandler
                     webClient.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
                 }
 
-                var responseContent = webClient.UploadString(Url, RequestContent);
+                var responseContent = webClient.DownloadString(Url);
                 Console.WriteLine($"[WebClient] response content: {responseContent}");
 
                 foreach (string headerName in webClient.ResponseHeaders)
