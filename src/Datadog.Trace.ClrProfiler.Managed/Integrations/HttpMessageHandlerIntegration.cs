@@ -61,7 +61,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
             }
 
-            using (var scope = CreateScope(handler, request))
+            string httpMethod = request.Method.ToString().ToUpperInvariant();
+
+            using (var scope = ScopeHelper.CreateOutboundHttpScope(httpMethod, request.RequestUri, typeof(HttpMessageHandlerIntegration)))
             {
                 try
                 {
@@ -92,27 +94,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             return true;
-        }
-
-        private static Scope CreateScope(HttpMessageHandler handler, HttpRequestMessage request)
-        {
-            var tracer = Tracer.Instance;
-
-            string httpMethod = request.Method.ToString().ToUpperInvariant();
-            string url = request.RequestUri.OriginalString;
-            string resourceName = $"{httpMethod}";
-            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
-
-            var scope = tracer.StartActive(OperationName, serviceName: serviceName);
-            var span = scope.Span;
-            span.Type = SpanTypes.Http;
-            span.ResourceName = resourceName;
-            span.SetTag(Tags.HttpMethod, httpMethod);
-            span.SetTag(Tags.HttpUrl, url);
-            span.SetTag(Tags.InstrumentationName, nameof(HttpMessageHandlerIntegration).TrimEnd("Integration"));
-            span.SetTag(Tags.InstrumentationMethod, $"{handler.GetType().FullName}.{nameof(SendAsync)}");
-
-            return scope;
         }
     }
 }

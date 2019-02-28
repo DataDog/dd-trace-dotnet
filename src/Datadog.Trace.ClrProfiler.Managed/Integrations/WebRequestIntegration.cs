@@ -33,7 +33,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return webRequest.GetResponse();
             }
 
-            using (var scope = CreateScope(webRequest, nameof(GetResponse)))
+            string httpMethod = webRequest.Method.ToUpperInvariant();
+
+            using (var scope = ScopeHelper.CreateOutboundHttpScope(httpMethod, webRequest.RequestUri, typeof(WebRequestIntegration)))
             {
                 try
                 {
@@ -77,7 +79,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return await request.GetResponseAsync().ConfigureAwait(false);
             }
 
-            using (var scope = CreateScope(request, nameof(GetResponseAsync)))
+            string httpMethod = request.Method.ToUpperInvariant();
+
+            using (var scope = ScopeHelper.CreateOutboundHttpScope(httpMethod, request.RequestUri, typeof(WebRequestIntegration)))
             {
                 try
                 {
@@ -106,27 +110,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // check if tracing is disabled for this request via http header
             string value = request.Headers[HttpHeaderNames.TracingEnabled];
             return !string.Equals(value, "false", StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        private static Scope CreateScope(WebRequest request, string methodName)
-        {
-            var tracer = Tracer.Instance;
-
-            string httpMethod = request.Method.ToUpperInvariant();
-            string url = request.RequestUri.OriginalString;
-            string resourceName = $"{httpMethod}";
-            string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
-
-            var scope = tracer.StartActive(OperationName, serviceName: serviceName);
-            var span = scope.Span;
-            span.Type = SpanTypes.Http;
-            span.ResourceName = resourceName;
-            span.SetTag(Tags.HttpMethod, httpMethod);
-            span.SetTag(Tags.HttpUrl, url);
-            span.SetTag(Tags.InstrumentationName, nameof(WebRequestIntegration).TrimEnd("Integration"));
-            span.SetTag(Tags.InstrumentationMethod, $"{request.GetType().FullName}.{methodName}");
-
-            return scope;
         }
     }
 }
