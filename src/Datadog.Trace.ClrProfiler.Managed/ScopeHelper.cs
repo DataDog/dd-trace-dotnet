@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler
             span.ResourceName = httpMethod;
             span.SetTag(Tags.HttpMethod, httpMethod);
             span.SetTag(Tags.HttpUrl, url);
-            span.SetTag(Tags.InstrumentationName, type.Name.TrimEnd("Integration"));
+            span.SetTag(Tags.InstrumentationName, type.Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase));
 
             return scope;
         }
