@@ -1,3 +1,4 @@
+using System;
 using Datadog.Trace.ExtensionMethods;
 using Xunit;
 
@@ -16,7 +17,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData("", "", "")]
         public void TrimEnd(string original, string suffix, string expected)
         {
-            string actual = original.TrimEnd(suffix);
+            string actual = original.TrimEnd(suffix, StringComparison.Ordinal);
             Assert.Equal(expected, actual);
         }
     }
