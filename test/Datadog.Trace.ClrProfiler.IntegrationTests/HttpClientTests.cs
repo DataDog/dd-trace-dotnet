@@ -20,10 +20,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void HttpClient()
         {
-            const int agentPort = 9006;
+            int agentPort = TcpPortProvider.GetOpenPort();
+            int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, "HttpClient"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, $"HttpClient Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -50,10 +51,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void HttpClient_TracingDisabled()
         {
-            const int agentPort = 9007;
+            int agentPort = TcpPortProvider.GetOpenPort();
+            int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, "HttpClient TracingDisabled"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, $"HttpClient TracingDisabled Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -74,10 +76,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void WebClient()
         {
-            const int agentPort = 9008;
+            int agentPort = TcpPortProvider.GetOpenPort();
+            int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, "WebClient"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, $"WebClient Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -105,10 +108,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void WebClient_TracingDisabled()
         {
-            const int agentPort = 9009;
+            int agentPort = TcpPortProvider.GetOpenPort();
+            int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, "WebClient TracingDisabled"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agentPort, $"WebClient TracingDisabled Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
