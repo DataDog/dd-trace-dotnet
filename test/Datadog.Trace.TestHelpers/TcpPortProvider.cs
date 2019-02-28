@@ -16,19 +16,20 @@ namespace Datadog.Trace.TestHelpers
     {
         private static readonly ConcurrentBag<int> ReturnedPorts = new ConcurrentBag<int>();
 
-        // multiply by 100 so each process gets a built-in 100-port buffer
-        private static readonly int MinPort = 10000 + ((Process.GetCurrentProcess().Id * 100) % 10000);
+        // Get a starting port between 10,000 and 59,900 for this process.
+        // Multiply by 100 so each process gets a built-in 100-port buffer.
+        private static readonly int MinPort = 10000 + ((Process.GetCurrentProcess().Id * 100) % 50000);
 
-        public static int GetOpenPort(int minPort = 0, int maxPort = ushort.MaxValue)
+        public static int GetOpenPort()
         {
             var usedPorts = GetUsedPorts();
 
-            for (int port = Math.Max(MinPort, minPort); port < maxPort; port++)
+            for (int port = MinPort; port < ushort.MaxValue; port++)
             {
                 if (!ReturnedPorts.Contains(port) && !usedPorts.Contains(port))
                 {
                     // don't return a port that was previously returned,
-                    // even if it is not in use (if could still be used
+                    // even if it is not in use (it could still be used
                     // by the code that is was returned to)
                     ReturnedPorts.Add(port);
                     return port;
