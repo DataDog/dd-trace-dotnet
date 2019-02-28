@@ -10,10 +10,10 @@ namespace Datadog.Trace.ExtensionMethods
     public static class HttpHeadersExtensions
     {
         /// <summary>
-        /// Extracts a <see cref="SpanContext"/> from the specified headers.
+        /// Creates a <see cref="SpanContext"/> from the values found in this <see cref="HttpHeaders"/>.
         /// </summary>
-        /// <param name="headers">The headers.</param>
-        /// <returns>The <see cref="SpanContext"/></returns>
+        /// <param name="headers">The HTTP headers that contain the values to be extracted.</param>
+        /// <returns>A new <see cref="SpanContext"/> that contains values extracted from <paramref name="headers"/>.</returns>
         public static SpanContext Extract(this HttpHeaders headers)
         {
             if (headers.TryGetValues(HttpHeaderNames.TraceId, out var traceIds) &&
@@ -28,10 +28,10 @@ namespace Datadog.Trace.ExtensionMethods
         }
 
         /// <summary>
-        /// Injects the specified <see cref="SpanContext"/> in the <see cref="HttpHeaders"/>.
+        /// Adds new HTTP headers to this <see cref="HttpHeaders"/> with the values found in the specified <see cref="SpanContext"/>.
         /// </summary>
-        /// <param name="headers">The headers.</param>
-        /// <param name="context">The context.</param>
+        /// <param name="headers">The <see cref="HttpHeaders"/> to add new headers to.</param>
+        /// <param name="context">The <see cref="SpanContext"/> that contains the values to be added as HTTP headers.</param>
         public static void Inject(this HttpHeaders headers, SpanContext context)
         {
             headers.Remove(HttpHeaderNames.TraceId);

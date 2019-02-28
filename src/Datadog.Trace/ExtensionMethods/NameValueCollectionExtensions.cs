@@ -9,14 +9,14 @@ namespace Datadog.Trace.ExtensionMethods
     public static class NameValueCollectionExtensions
     {
         /// <summary>
-        /// Extracts a <see cref="SpanContext"/> from the specified <see cref="NameValueCollection"/>.
+        /// Creates a <see cref="SpanContext"/> from the values found in this <see cref="NameValueCollection"/>.
         /// </summary>
-        /// <param name="headers">A collection of string names and value, such as HTTP headers.</param>
-        /// <returns>The <see cref="SpanContext"/></returns>
-        public static SpanContext Extract(this NameValueCollection headers)
+        /// <param name="collection">The name/value pairs that contain the values to be extracted.</param>
+        /// <returns>A new <see cref="SpanContext"/> that contains values extracted from <paramref name="collection"/>.</returns>
+        public static SpanContext Extract(this NameValueCollection collection)
         {
-            if (ulong.TryParse(headers[HttpHeaderNames.TraceId], NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId) &&
-                ulong.TryParse(headers[HttpHeaderNames.ParentId], NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId))
+            if (ulong.TryParse(collection[HttpHeaderNames.TraceId], NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId) &&
+                ulong.TryParse(collection[HttpHeaderNames.ParentId], NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId))
             {
                 return new SpanContext(traceId, parentId);
             }
@@ -25,14 +25,14 @@ namespace Datadog.Trace.ExtensionMethods
         }
 
         /// <summary>
-        /// Injects a <see cref="SpanContext"/> into the specified <see cref="NameValueCollection"/>.
+        /// Adds new name/value pairs to this <see cref="NameValueCollection"/> with the values found in the specified <see cref="SpanContext"/>.
         /// </summary>
-        /// <param name="headers">A collection of string names and value, such as HTTP headers.</param>
-        /// <param name="context">The context.</param>
-        public static void Inject(this NameValueCollection headers, SpanContext context)
+        /// <param name="collection">The <see cref="NameValueCollection"/> to add new name/value pairs to.</param>
+        /// <param name="context">The <see cref="SpanContext"/> that contains the values to be added as name/value pairs.</param>
+        public static void Inject(this NameValueCollection collection, SpanContext context)
         {
-            headers[HttpHeaderNames.TraceId] = context.TraceId.ToString(CultureInfo.InvariantCulture);
-            headers[HttpHeaderNames.ParentId] = context.SpanId.ToString(CultureInfo.InvariantCulture);
+            collection[HttpHeaderNames.TraceId] = context.TraceId.ToString(CultureInfo.InvariantCulture);
+            collection[HttpHeaderNames.ParentId] = context.SpanId.ToString(CultureInfo.InvariantCulture);
         }
     }
 }
