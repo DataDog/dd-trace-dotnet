@@ -16,22 +16,15 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns>The <see cref="SpanContext"/></returns>
         public static SpanContext Extract(this HttpHeaders headers)
         {
-            ulong? traceId = null;
-            ulong? parentId = null;
-
-            if (headers.TryGetValues(HttpHeaderNames.TraceId, out var traceIds))
+            if (headers.TryGetValues(HttpHeaderNames.TraceId, out var traceIds) &&
+                headers.TryGetValues(HttpHeaderNames.ParentId, out var parentIds) &&
+                ulong.TryParse(traceIds.FirstOrDefault(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId) &&
+                ulong.TryParse(parentIds.FirstOrDefault(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId))
             {
-                traceId = traceIds.FirstOrDefault()?.TryParseUInt64(NumberStyles.Integer, CultureInfo.InvariantCulture);
+                return new SpanContext(traceId, parentId);
             }
 
-            if (headers.TryGetValues(HttpHeaderNames.ParentId, out var parentIds))
-            {
-                parentId = parentIds.FirstOrDefault()?.TryParseUInt64(NumberStyles.Integer, CultureInfo.InvariantCulture);
-            }
-
-            return traceId != null && parentId != null
-                       ? new SpanContext(traceId.Value, parentId.Value)
-                       : null;
+            return null;
         }
 
         /// <summary>

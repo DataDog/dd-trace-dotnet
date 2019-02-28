@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -19,24 +18,6 @@ namespace Datadog.Trace.ExtensionMethods
             return !string.IsNullOrEmpty(suffix) && value.EndsWith(suffix, comparisonType)
                        ? value.Substring(0, value.Length - suffix.Length)
                        : value;
-        }
-
-        public static ulong? TryParseUInt64(this string value)
-        {
-            if (value == null) { throw new ArgumentNullException(nameof(value)); }
-
-            return ulong.TryParse(value, out var result)
-                       ? result
-                       : default;
-        }
-
-        public static ulong? TryParseUInt64(this string value, NumberStyles style, IFormatProvider provider)
-        {
-            if (value == null) { throw new ArgumentNullException(nameof(value)); }
-
-            return ulong.TryParse(value, style, provider, out var result)
-                       ? result
-                       : default;
         }
     }
 }
