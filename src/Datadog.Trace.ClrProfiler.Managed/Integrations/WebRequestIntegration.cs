@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             string httpMethod = request.Method.ToUpperInvariant();
             string url = request.RequestUri.OriginalString;
-            string resourceName = $"{httpMethod} {url}";
+            string resourceName = $"{httpMethod}";
             string serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
             var scope = tracer.StartActive(OperationName, serviceName: serviceName);
