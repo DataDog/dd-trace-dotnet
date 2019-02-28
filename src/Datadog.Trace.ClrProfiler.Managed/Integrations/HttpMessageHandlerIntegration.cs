@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             if (request.Headers.TryGetValues(HttpHeaderNames.TracingEnabled, out var headerValues))
             {
-                if (headerValues.Any(s => string.Equals(s, "false", StringComparison.InvariantCultureIgnoreCase)))
+                if (headerValues.Any(s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
                 {
                     // tracing is disabled for this request via http header
                     return false;

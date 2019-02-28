@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             // check if tracing is disabled for this request via http header
             string value = request.Headers[HttpHeaderNames.TracingEnabled];
-            return !string.Equals(value, "false", StringComparison.InvariantCultureIgnoreCase);
+            return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
