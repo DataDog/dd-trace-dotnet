@@ -39,13 +39,13 @@ namespace Datadog.Trace.TestHelpers
             throw new Exception("No open TCP port found.");
         }
 
-        public static List<int> GetUsedPorts()
+        public static HashSet<int> GetUsedPorts()
         {
-            return IPGlobalProperties.GetIPGlobalProperties()
-                                     .GetActiveTcpListeners()
-                                     .Select(ipEndPoint => ipEndPoint.Port)
-                                     .OrderBy(p => p)
-                                     .ToList();
+            var usedPorts = IPGlobalProperties.GetIPGlobalProperties()
+                                              .GetActiveTcpListeners()
+                                              .Select(ipEndPoint => ipEndPoint.Port);
+
+            return new HashSet<int>(usedPorts);
         }
     }
 }
