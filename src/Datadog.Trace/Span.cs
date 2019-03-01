@@ -223,6 +223,12 @@ namespace Datadog.Trace
             }
         }
 
+        internal bool SetExceptionForFilter(Exception exception)
+        {
+            SetException(exception);
+            return false;
+        }
+
         internal string GetTag(string key)
         {
             return _tags.TryGetValue(key, out string value) ? value : null;
