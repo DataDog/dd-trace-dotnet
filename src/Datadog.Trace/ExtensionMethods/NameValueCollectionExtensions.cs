@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Specialized;
 using System.Globalization;
 
@@ -15,6 +16,11 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns>A new <see cref="SpanContext"/> that contains values extracted from <paramref name="collection"/>.</returns>
         public static SpanContext Extract(this NameValueCollection collection)
         {
+            if (collection == null)
+            {
+                throw new ArgumentNullException(nameof(collection));
+            }
+
             if (ulong.TryParse(collection[HttpHeaderNames.TraceId], NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId) &&
                 ulong.TryParse(collection[HttpHeaderNames.ParentId], NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId))
             {
@@ -31,8 +37,21 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="context">The <see cref="SpanContext"/> that contains the values to be added as name/value pairs.</param>
         public static void Inject(this NameValueCollection collection, SpanContext context)
         {
-            collection[HttpHeaderNames.TraceId] = context.TraceId.ToString(CultureInfo.InvariantCulture);
-            collection[HttpHeaderNames.ParentId] = context.SpanId.ToString(CultureInfo.InvariantCulture);
+            if (collection == null)
+            {
+                throw new ArgumentNullException(nameof(collection));
+            }
+
+            if (context == null)
+            {
+                collection.Remove(HttpHeaderNames.TraceId);
+                collection.Remove(HttpHeaderNames.ParentId);
+            }
+            else
+            {
+                collection[HttpHeaderNames.TraceId] = context.TraceId.ToString(CultureInfo.InvariantCulture);
+                collection[HttpHeaderNames.ParentId] = context.SpanId.ToString(CultureInfo.InvariantCulture);
+            }
         }
     }
 }
