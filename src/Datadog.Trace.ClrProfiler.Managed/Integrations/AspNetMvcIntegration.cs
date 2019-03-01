@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -18,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
         private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
+        private static readonly ILog Log = LogProvider.For<AspNetMvcIntegration>();
 
         private readonly HttpContextBase _httpContext;
         private readonly Scope _scope;
@@ -34,66 +36,59 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return;
             }
 
-            try
+            if (controllerContextObj.GetType() != ControllerContextType)
             {
-                if (controllerContextObj.GetType() != ControllerContextType)
+                return;
+            }
+
+            // access the controller context without referencing System.Web.Mvc directly
+            dynamic controllerContext = controllerContextObj;
+
+            _httpContext = controllerContext.HttpContext;
+
+            if (_httpContext == null)
+            {
+                return;
+            }
+
+            string host = _httpContext.Request.Headers.Get("Host");
+            string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
+            string url = _httpContext.Request.RawUrl.ToLowerInvariant();
+
+            RouteData routeData = controllerContext.RouteData as RouteData;
+            Route route = routeData?.Route as Route;
+            RouteValueDictionary routeValues = routeData?.Values;
+
+            if (route == null && routeData?.Route.GetType() == RouteCollectionRouteType)
+            {
+                var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
+
+                if (routeMatches?.Count > 0)
                 {
-                    return;
+                    // route was defined using attribute routing i.e. [Route("/path/{id}")]
+                    // get route and routeValues from the RouteData in routeMatches
+                    route = routeMatches[0].Route as Route;
+                    routeValues = routeMatches[0].Values;
                 }
+            }
 
-                // access the controller context without referencing System.Web.Mvc directly
-                dynamic controllerContext = controllerContextObj;
-
-                _httpContext = controllerContext.HttpContext;
-
-                if (_httpContext == null)
-                {
-                    return;
-                }
-
-                string host = _httpContext.Request.Headers.Get("Host");
-                string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
-                string url = _httpContext.Request.RawUrl.ToLowerInvariant();
-
-                RouteData routeData = controllerContext.RouteData as RouteData;
-                Route route = routeData?.Route as Route;
-                RouteValueDictionary routeValues = routeData?.Values;
-
-                if (route == null && routeData?.Route.GetType() == RouteCollectionRouteType)
-                {
-                    var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
-
-                    if (routeMatches?.Count > 0)
-                    {
-                        // route was defined using attribute routing i.e. [Route("/path/{id}")]
-                        // get route and routeValues from the RouteData in routeMatches
-                        route = routeMatches[0].Route as Route;
-                        routeValues = routeMatches[0].Values;
-                    }
-                }
-
-                string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                string resourceName = $"{httpMethod} {controllerName}.{actionName}";
+            string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+            string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+            string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
             // extract distributed tracing values
             var spanContext = _httpContext.Request.Headers.Extract();
 
             _scope = Tracer.Instance.StartActive(OperationName, spanContext);
-                Span span = _scope.Span;
-                span.Type = SpanTypes.Web;
-                span.ResourceName = resourceName;
-                span.SetTag(Tags.HttpRequestHeadersHost, host);
-                span.SetTag(Tags.HttpMethod, httpMethod);
-                span.SetTag(Tags.HttpUrl, url);
-                span.SetTag(Tags.AspNetRoute, route?.Url);
-                span.SetTag(Tags.AspNetController, controllerName);
-                span.SetTag(Tags.AspNetAction, actionName);
-            }
-            catch
-            {
-                // TODO: logging
-            }
+            Span span = _scope.Span;
+            span.Type = SpanTypes.Web;
+            span.ResourceName = resourceName;
+            span.SetTag(Tags.HttpRequestHeadersHost, host);
+            span.SetTag(Tags.HttpMethod, httpMethod);
+            span.SetTag(Tags.HttpUrl, url);
+            span.SetTag(Tags.AspNetRoute, route?.Url);
+            span.SetTag(Tags.AspNetController, controllerName);
+            span.SetTag(Tags.AspNetAction, actionName);
         }
 
         /// <summary>
@@ -126,9 +121,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     HttpContext.Current.Items[HttpContextKey] = integration;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
+                Log.ErrorException("Error instrumenting method {0}", ex, "System.Web.Mvc.Async.IAsyncActionInvoker.BeginInvokeAction()");
             }
 
             try
@@ -136,9 +131,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 return asyncControllerActionInvoker.BeginInvokeAction(controllerContext, actionName, callback, state);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
-                integration?.SetException(ex);
+                // unreachable code
                 throw;
             }
         }
@@ -159,14 +154,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (HttpContext.Current != null)
-                {
-                    integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvcIntegration;
-                }
+                integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvcIntegration;
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
+                Log.ErrorException("Error instrumenting method {0}", ex, "System.Web.Mvc.Async.IAsyncActionInvoker.EndInvokeAction()");
             }
 
             try
@@ -174,9 +166,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 return asyncControllerActionInvoker.EndInvokeAction(asyncResult);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
-                integration?.SetException(ex);
+                // unreachable code
                 throw;
             }
             finally
@@ -189,9 +181,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
         /// </summary>
         /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
-        public void SetException(Exception ex)
+        /// <returns>Always returns <c>false</c>.</returns>
+        public bool SetException(Exception ex)
         {
             _scope?.Span?.SetException(ex);
+            return false;
         }
 
         /// <summary>
