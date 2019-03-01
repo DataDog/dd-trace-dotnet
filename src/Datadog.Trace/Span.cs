@@ -207,17 +207,20 @@ namespace Datadog.Trace
         {
             Error = true;
 
-            // for AggregateException, use the first inner exception until we can support multiple errors.
-            // there will be only one error in most cases, and even if there are more and we lose
-            // the other ones, it's still better than the generic "one or more errors occurred" message.
-            if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+            if (exception != null)
             {
-                exception = aggregateException.InnerExceptions[0];
-            }
+                // for AggregateException, use the first inner exception until we can support multiple errors.
+                // there will be only one error in most cases, and even if there are more and we lose
+                // the other ones, it's still better than the generic "one or more errors occurred" message.
+                if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+                {
+                    exception = aggregateException.InnerExceptions[0];
+                }
 
-            SetTag(Trace.Tags.ErrorMsg, exception.Message);
-            SetTag(Trace.Tags.ErrorStack, exception.StackTrace);
-            SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+                SetTag(Trace.Tags.ErrorMsg, exception.Message);
+                SetTag(Trace.Tags.ErrorStack, exception.StackTrace);
+                SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+            }
         }
 
         internal string GetTag(string key)
