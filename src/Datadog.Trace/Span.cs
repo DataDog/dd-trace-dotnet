@@ -48,8 +48,10 @@ namespace Datadog.Trace
         public string ResourceName { get; set; }
 
         /// <summary>
-        /// Gets or sets the type of request this span represents (ex: web, db)
+        /// Gets or sets the type of request this span represents (ex: web, db).
+        /// Not to be confused with span kind.
         /// </summary>
+        /// <seealso cref="SpanTypes"/>
         public string Type { get; set; }
 
         /// <summary>

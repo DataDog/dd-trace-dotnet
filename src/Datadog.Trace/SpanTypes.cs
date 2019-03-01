@@ -1,8 +1,10 @@
 namespace Datadog.Trace
 {
     /// <summary>
-    /// Contains a set of standard span types that can be used by integrations.
+    /// A set of standard span types that can be used by integrations.
+    /// Not to be confused with span kinds.
     /// </summary>
+    /// <seealso cref="SpanKinds"/>
     public static class SpanTypes
     {
         /// <summary>
@@ -25,7 +27,7 @@ namespace Datadog.Trace
         /// </summary>
         public const string MongoDb = "mongodb";
 
-         /// <summary>
+        /// <summary>
         /// The span type for an outgoing HTTP integration.
         /// </summary>
         public const string Http = "http";
