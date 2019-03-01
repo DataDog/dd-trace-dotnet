@@ -39,21 +39,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    // add distributed tracing headers
-                    webRequest.Headers.Inject(scope.Span.Context);
+                    if (scope != null)
+                    {
+                        // add distributed tracing headers
+                        webRequest.Headers.Inject(scope.Span.Context);
+                    }
 
                     WebResponse response = webRequest.GetResponse();
 
                     if (response is HttpWebResponse webResponse)
                     {
-                        scope.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
+                        scope?.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
                     }
 
                     return response;
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -85,21 +88,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    // add distributed tracing headers
-                    request.Headers.Inject(scope.Span.Context);
+                    if (scope != null)
+                    {
+                        // add distributed tracing headers
+                        request.Headers.Inject(scope.Span.Context);
+                    }
 
                     WebResponse response = await request.GetResponseAsync().ConfigureAwait(false);
 
                     if (response is HttpWebResponse webResponse)
                     {
-                        scope.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
+                        scope?.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
                     }
 
                     return response;
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }

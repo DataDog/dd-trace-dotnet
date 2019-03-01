@@ -67,16 +67,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    // add distributed tracing headers
-                    request.Headers.Inject(scope.Span.Context);
+                    if (scope != null)
+                    {
+                        // add distributed tracing headers
+                        request.Headers.Inject(scope.Span.Context);
+                    }
 
                     HttpResponseMessage response = await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
-                    scope.Span.SetTag(Tags.HttpStatusCode, ((int)response.StatusCode).ToString());
+
+                    scope?.Span.SetTag(Tags.HttpStatusCode, ((int)response.StatusCode).ToString());
                     return response;
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
