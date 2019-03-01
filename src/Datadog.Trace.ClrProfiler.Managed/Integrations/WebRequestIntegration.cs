@@ -34,8 +34,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             string httpMethod = webRequest.Method.ToUpperInvariant();
+            string integrationName = typeof(WebRequestIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
 
-            using (var scope = ScopeHelper.CreateOutboundHttpScope(httpMethod, webRequest.RequestUri, typeof(WebRequestIntegration)))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(httpMethod, webRequest.RequestUri, integrationName))
             {
                 try
                 {
@@ -83,8 +84,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             string httpMethod = request.Method.ToUpperInvariant();
+            string integrationName = typeof(WebRequestIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
 
-            using (var scope = ScopeHelper.CreateOutboundHttpScope(httpMethod, request.RequestUri, typeof(WebRequestIntegration)))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(httpMethod, request.RequestUri, integrationName))
             {
                 try
                 {

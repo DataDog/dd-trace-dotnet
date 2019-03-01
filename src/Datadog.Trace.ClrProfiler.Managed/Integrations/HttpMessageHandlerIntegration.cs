@@ -62,8 +62,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             string httpMethod = request.Method.ToString().ToUpperInvariant();
+            string integrationName = typeof(HttpMessageHandlerIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
 
-            using (var scope = ScopeHelper.CreateOutboundHttpScope(httpMethod, request.RequestUri, typeof(HttpMessageHandlerIntegration)))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(httpMethod, request.RequestUri, integrationName))
             {
                 try
                 {

@@ -4,11 +4,21 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
 {
-    internal static class ScopeHelper
+    /// <summary>
+    /// Convenience class that creates scopes and populates them with some standard details.
+    /// </summary>
+    internal static class ScopeFactory
     {
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(ScopeHelper));
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(ScopeFactory));
 
-        public static Scope CreateOutboundHttpScope(string httpMethod, Uri requestUri, Type type)
+        /// <summary>
+        /// Creates a scope for outbound http requests and populates some common details.
+        /// </summary>
+        /// <param name="httpMethod">The HTTP method used by the request.</param>
+        /// <param name="requestUri">The URI requested by the request.</param>
+        /// <param name="integrationName">The name of the integration creating this scope.</param>
+        /// <returns>A new prepopulated scope.</returns>
+        public static Scope CreateOutboundHttpScope(string httpMethod, Uri requestUri, string integrationName)
         {
             Scope scope = null;
 
@@ -21,9 +31,10 @@ namespace Datadog.Trace.ClrProfiler
                 span.Type = SpanTypes.Http;
                 span.ServiceName = $"{tracer.DefaultServiceName}-http-client";
                 span.ResourceName = httpMethod;
+                span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, requestUri.OriginalString);
-                span.SetTag(Tags.InstrumentationName, type.Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase));
+                span.SetTag(Tags.InstrumentationName, integrationName);
             }
             catch (Exception ex)
             {
