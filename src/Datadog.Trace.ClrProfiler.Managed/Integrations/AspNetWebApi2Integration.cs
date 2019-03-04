@@ -73,19 +73,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScope(object controllerContext)
+        private static Scope CreateScope(dynamic controllerContext)
         {
-            var scope = Tracer.Instance.StartActive(OperationName);
+            var request = controllerContext?.Request as HttpRequestMessage;
+
+            // extract distributed tracing values
+            var spanContext = request?.Headers.Extract();
+
+            var scope = Tracer.Instance.StartActive(OperationName, spanContext);
             UpdateSpan(controllerContext, scope.Span);
             return scope;
         }
 
         private static void UpdateSpan(dynamic controllerContext, Span span)
         {
-            var req = controllerContext?.Request;
+            var req = controllerContext?.Request as HttpRequestMessage;
 
             string host = req?.Headers?.Host ?? string.Empty;
-            string rawUrl = req?.RequestUri?.ToString()?.ToLowerInvariant() ?? string.Empty;
+            string rawUrl = req?.RequestUri?.ToString().ToLowerInvariant() ?? string.Empty;
             string method = controllerContext?.Request?.Method?.Method?.ToUpperInvariant() ?? "GET";
             string route = null;
             try

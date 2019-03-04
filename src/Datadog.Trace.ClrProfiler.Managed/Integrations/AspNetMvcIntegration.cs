@@ -71,7 +71,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
-                scope = Tracer.Instance.StartActive(OperationName);
+                // extract distributed tracing values
+                var spanContext = httpContext.Request.Headers.Extract();
+
+                scope = Tracer.Instance.StartActive(OperationName, spanContext);
                 Span span = scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
