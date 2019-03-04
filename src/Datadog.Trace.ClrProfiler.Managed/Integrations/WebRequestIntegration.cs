@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (scope != null)
                     {
-                        // add distributed tracing headers
+                        // add distributed tracing and sampling priority headers
                         webRequest.Headers.Inject(scope.Span.Context);
                     }
 
@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (scope != null)
                     {
-                        // add distributed tracing headers
+                        // add distributed tracing and sampling priority headers
                         request.Headers.Inject(scope.Span.Context);
                     }
 

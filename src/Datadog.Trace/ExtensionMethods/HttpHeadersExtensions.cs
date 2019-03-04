@@ -52,6 +52,12 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 headers.Add(HttpHeaderNames.TraceId, context.TraceId.ToString(CultureInfo.InvariantCulture));
                 headers.Add(HttpHeaderNames.ParentId, context.SpanId.ToString(CultureInfo.InvariantCulture));
+
+                if (context.SamplingPriority != null)
+                {
+                    var samplingPriority = (int)context.SamplingPriority;
+                    headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority.ToString(CultureInfo.InvariantCulture));
+                }
             }
         }
     }
