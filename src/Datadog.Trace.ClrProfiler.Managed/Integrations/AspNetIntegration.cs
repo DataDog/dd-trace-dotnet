@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AspNetIntegration
     {
-        private static readonly AspNetHttpModule AspNetHttpModule = new AspNetHttpModule("aspnet.request");
+        private static readonly AspNetHttpModule AspNetHttpModule = new AspNetHttpModule();
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetIntegration));
 
         /// <summary>

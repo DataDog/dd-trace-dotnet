@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler
             else if (delegateType.Name.StartsWith("Action`"))
             {
                 parameterTypes = genericTypeArguments;
-                returnType = null;
+                returnType = typeof(void);
             }
             else
             {
@@ -184,16 +184,13 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             // Non-void return type?
-            if (returnType != null)
+            if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
             {
-                if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
-                {
-                    dynamicMethod.Box(methodInfo.ReturnType);
-                }
-                else if (methodInfo.ReturnType != returnType)
-                {
-                    dynamicMethod.CastClass(returnType);
-                }
+                dynamicMethod.Box(methodInfo.ReturnType);
+            }
+            else if (methodInfo.ReturnType != returnType)
+            {
+                dynamicMethod.CastClass(returnType);
             }
 
             dynamicMethod.Return();

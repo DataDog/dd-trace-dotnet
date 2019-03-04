@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AspNetWebApi2Integration
     {
-        internal const string OperationName = "aspnet-web-api.request";
+        internal const string OperationName = "aspnet-webapi.request";
 
         /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.

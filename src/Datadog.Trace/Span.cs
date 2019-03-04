@@ -12,7 +12,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public class Span : IDisposable, ISpan<Span>
+    public class Span : IDisposable, ISpan
     {
         private static readonly ILog _log = LogProvider.For<Span>();
 
@@ -157,7 +157,8 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="key">The tag's key</param>
         /// <param name="value">The tag's value</param>
-        public void Tag(string key, string value)
+        /// <returns> The ISpan object itself</returns>
+        ISpan ISpan.SetTag(string key, string value)
             => SetTag(key, value);
 
         /// <summary>
@@ -228,6 +229,14 @@ namespace Datadog.Trace
             SetTag(Trace.Tags.ErrorStack, exception.StackTrace);
             SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
         }
+
+        /// <summary>
+        /// Proxy to SetException without return value
+        /// See <see cref="Span.SetException(Exception)"/> for more information
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        void ISpan.SetException(Exception exception)
+            => SetException(exception);
 
         /// <summary>
         /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed
