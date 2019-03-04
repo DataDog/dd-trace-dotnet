@@ -130,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                // call the original method, catching and rethrowing any unhandled exceptions
+                // call the original method, inspecting (but not catching) any unhandled exceptions
                 return asyncControllerActionInvoker.BeginInvokeAction(controllerContext, actionName, callback, state);
             }
             catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
@@ -166,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                // call the original method, catching and rethrowing any unhandled exceptions
+                // call the original method, inspecting (but not catching) any unhandled exceptions
                 return (bool)asyncControllerActionInvoker.EndInvokeAction(asyncResult);
             }
             catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
