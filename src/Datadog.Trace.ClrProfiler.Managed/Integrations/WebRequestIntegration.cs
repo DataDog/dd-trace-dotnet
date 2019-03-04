@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -43,7 +44,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     if (scope != null)
                     {
                         // add distributed tracing and sampling priority headers
-                        webRequest.Headers.Inject(scope.Span.Context);
+                        IHeadersCollection headers = HeadersFactory.Wrap(webRequest.Headers);
+                        headers.InjectSpanContext(scope.Span.Context);
                     }
 
                     WebResponse response = webRequest.GetResponse();
@@ -93,7 +95,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     if (scope != null)
                     {
                         // add distributed tracing and sampling priority headers
-                        request.Headers.Inject(scope.Span.Context);
+                        IHeadersCollection headers = HeadersFactory.Wrap(request.Headers);
+                        headers.InjectSpanContext(scope.Span.Context);
                     }
 
                     WebResponse response = await request.GetResponseAsync().ConfigureAwait(false);
