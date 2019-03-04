@@ -1,7 +1,7 @@
 namespace Datadog.Trace
 {
     /// <summary>
-    /// This class contains a set of standard tags that can be used by integrations
+    /// Standard span tags used by integrations.
     /// </summary>
     public static class Tags
     {
@@ -9,6 +9,23 @@ namespace Datadog.Trace
         /// The environment of the profiled service.
         /// </summary>
         public const string Env = "env";
+
+        /// <summary>
+        /// The name of the integration that generated the span.
+        /// Use OpenTracing tag "component"
+        /// </summary>
+        public const string InstrumentationName = "component";
+
+        /// <summary>
+        /// The name of the method that was instrumented to generate the span.
+        /// </summary>
+        public const string InstrumentedMethod = "instrumented.method";
+
+        /// <summary>
+        /// The kind of span (e.g. client, server). Not to be confused with <see cref="Span.Type"/>.
+        /// </summary>
+        /// <seealso cref="SpanKinds"/>
+        public const string SpanKind = "span.kind";
 
         /// <summary>
         /// The URL of an HTTP request

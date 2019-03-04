@@ -11,7 +11,7 @@ namespace Samples.AspNetMvc5
             string enableSystemDiagnosticsTracing = ConfigurationManager.AppSettings["EnableSystemDiagnosticsTracing"] ??
                                                     Environment.GetEnvironmentVariable("EnableSystemDiagnosticsTracing");
 
-            if (string.Equals(enableSystemDiagnosticsTracing, "true", StringComparison.InvariantCultureIgnoreCase))
+            if (string.Equals(enableSystemDiagnosticsTracing, "true", StringComparison.OrdinalIgnoreCase))
             {
                 config.EnableSystemDiagnosticsTracing();
             }

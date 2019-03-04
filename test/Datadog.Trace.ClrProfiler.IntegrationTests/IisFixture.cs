@@ -1,14 +1,12 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using Datadog.Trace.TestHelpers;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public sealed class IisFixture : IDisposable
     {
-        // start handing out ports at 9500 and keep going up
-        private static int _nextPort = 9500;
-
         private Process _iisExpress;
 
         public int AgentPort { get; private set; }
@@ -21,8 +19,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 if (_iisExpress == null)
                 {
-                    AgentPort = Interlocked.Increment(ref _nextPort);
-                    HttpPort = Interlocked.Increment(ref _nextPort);
+                    AgentPort = TcpPortProvider.GetOpenPort();
+                    HttpPort = TcpPortProvider.GetOpenPort();
 
                     // start IIS Express and give it a few seconds to boot up
                     _iisExpress = helper.StartIISExpress(AgentPort, HttpPort);

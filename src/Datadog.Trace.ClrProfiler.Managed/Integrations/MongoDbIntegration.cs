@@ -184,7 +184,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
             var scope = tracer.StartActive(OperationName, serviceName: serviceName);
-            scope.Span.Type = SpanTypes.MongoDB;
+            scope.Span.Type = SpanTypes.MongoDb;
             scope.Span.ResourceName = resourceName;
             scope.Span.SetTag(Tags.DbName, databaseName);
             scope.Span.SetTag(Tags.MongoDbQuery, query);

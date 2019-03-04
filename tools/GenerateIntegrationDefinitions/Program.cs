@@ -85,7 +85,7 @@ namespace GenerateIntegrationDefinitions
             const string integrations = "Integration";
             var typeName = wrapperType.Name;
 
-            if (typeName.EndsWith(integrations, StringComparison.InvariantCultureIgnoreCase))
+            if (typeName.EndsWith(integrations, StringComparison.OrdinalIgnoreCase))
             {
                 return typeName.Substring(startIndex: 0, length: typeName.Length - integrations.Length);
             }
