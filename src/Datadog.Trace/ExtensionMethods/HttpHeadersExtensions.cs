@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -16,6 +17,11 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns>A new <see cref="SpanContext"/> that contains values extracted from <paramref name="headers"/>.</returns>
         public static SpanContext Extract(this HttpHeaders headers)
         {
+            if (headers == null)
+            {
+                throw new ArgumentNullException(nameof(headers));
+            }
+
             if (headers.TryGetValues(HttpHeaderNames.TraceId, out var traceIds) &&
                 headers.TryGetValues(HttpHeaderNames.ParentId, out var parentIds) &&
                 ulong.TryParse(traceIds.FirstOrDefault(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId) &&
@@ -34,11 +40,19 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="context">The <see cref="SpanContext"/> that contains the values to be added as HTTP headers.</param>
         public static void Inject(this HttpHeaders headers, SpanContext context)
         {
-            headers.Remove(HttpHeaderNames.TraceId);
-            headers.Add(HttpHeaderNames.TraceId, context.TraceId.ToString(CultureInfo.InvariantCulture));
+            if (headers == null)
+            {
+                throw new ArgumentNullException(nameof(headers));
+            }
 
+            headers.Remove(HttpHeaderNames.TraceId);
             headers.Remove(HttpHeaderNames.ParentId);
-            headers.Add(HttpHeaderNames.ParentId, context.SpanId.ToString(CultureInfo.InvariantCulture));
+
+            if (context != null)
+            {
+                headers.Add(HttpHeaderNames.TraceId, context.TraceId.ToString(CultureInfo.InvariantCulture));
+                headers.Add(HttpHeaderNames.ParentId, context.SpanId.ToString(CultureInfo.InvariantCulture));
+            }
         }
     }
 }
