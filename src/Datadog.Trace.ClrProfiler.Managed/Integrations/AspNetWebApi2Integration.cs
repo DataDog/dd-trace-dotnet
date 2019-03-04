@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -15,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class AspNetWebApi2Integration
     {
         internal const string OperationName = "aspnet-webapi.request";
+
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebApi2Integration));
 
         /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.
@@ -60,14 +63,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     var responseMessage = await executeAsyncFunc(apiController, controllerContext, cancellationToken).ConfigureAwait(false);
 
-                    // some fields aren't set till after execution, so populate anything missing
-                    UpdateSpan(controllerContext, scope.Span);
+                    if (scope != null)
+                    {
+                        // some fields aren't set till after execution, so populate anything missing
+                        UpdateSpan(controllerContext, scope.Span);
+                    }
 
                     return responseMessage;
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -75,60 +81,77 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(dynamic controllerContext)
         {
-            var request = controllerContext?.Request as HttpRequestMessage;
+            Scope scope = null;
 
-            // extract distributed tracing values
-            var spanContext = request?.Headers.Extract();
+            try
+            {
+                var request = controllerContext?.Request as HttpRequestMessage;
 
-            var scope = Tracer.Instance.StartActive(OperationName, spanContext);
-            UpdateSpan(controllerContext, scope.Span);
+                // extract distributed tracing values
+                var spanContext = request?.Headers.Extract();
+
+                scope = Tracer.Instance.StartActive(OperationName, spanContext);
+                UpdateSpan(controllerContext, scope.Span);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException("Error creating scope.", ex);
+            }
+
             return scope;
         }
 
         private static void UpdateSpan(dynamic controllerContext, Span span)
         {
-            var req = controllerContext?.Request as HttpRequestMessage;
-
-            string host = req?.Headers?.Host ?? string.Empty;
-            string rawUrl = req?.RequestUri?.ToString().ToLowerInvariant() ?? string.Empty;
-            string method = controllerContext?.Request?.Method?.Method?.ToUpperInvariant() ?? "GET";
-            string route = null;
             try
             {
-                route = controllerContext?.RouteData?.Route?.RouteTemplate;
-            }
-            catch
-            {
-            }
+                var req = controllerContext?.Request as HttpRequestMessage;
 
-            string resourceName = $"{method} {rawUrl}";
-            if (route != null)
-            {
-                resourceName = $"{method} {route}";
-            }
-
-            string controller = string.Empty;
-            string action = string.Empty;
-            try
-            {
-                if (controllerContext?.RouteData?.Values is IDictionary<string, object> routeValues)
+                string host = req?.Headers?.Host ?? string.Empty;
+                string rawUrl = req?.RequestUri?.ToString().ToLowerInvariant() ?? string.Empty;
+                string method = controllerContext?.Request?.Method?.Method?.ToUpperInvariant() ?? "GET";
+                string route = null;
+                try
                 {
-                    controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                    action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                    route = controllerContext?.RouteData?.Route?.RouteTemplate;
                 }
-            }
-            catch
-            {
-            }
+                catch
+                {
+                }
 
-            span.ResourceName = resourceName;
-            span.Type = SpanTypes.Web;
-            span.SetTag(Tags.AspNetAction, action);
-            span.SetTag(Tags.AspNetController, controller);
-            span.SetTag(Tags.AspNetRoute, route);
-            span.SetTag(Tags.HttpMethod, method);
-            span.SetTag(Tags.HttpRequestHeadersHost, host);
-            span.SetTag(Tags.HttpUrl, rawUrl);
+                string resourceName = $"{method} {rawUrl}";
+                if (route != null)
+                {
+                    resourceName = $"{method} {route}";
+                }
+
+                string controller = string.Empty;
+                string action = string.Empty;
+                try
+                {
+                    if (controllerContext?.RouteData?.Values is IDictionary<string, object> routeValues)
+                    {
+                        controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+                        action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                    }
+                }
+                catch
+                {
+                }
+
+                span.ResourceName = resourceName;
+                span.Type = SpanTypes.Web;
+                span.SetTag(Tags.AspNetAction, action);
+                span.SetTag(Tags.AspNetController, controller);
+                span.SetTag(Tags.AspNetRoute, route);
+                span.SetTag(Tags.HttpMethod, method);
+                span.SetTag(Tags.HttpRequestHeadersHost, host);
+                span.SetTag(Tags.HttpUrl, rawUrl);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException("Error populating scope data.", ex);
+            }
         }
     }
 }
