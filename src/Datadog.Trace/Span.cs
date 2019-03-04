@@ -48,8 +48,10 @@ namespace Datadog.Trace
         public string ResourceName { get; set; }
 
         /// <summary>
-        /// Gets or sets the type of request this span represents (ex: web, db)
+        /// Gets or sets the type of request this span represents (ex: web, db).
+        /// Not to be confused with span kind.
         /// </summary>
+        /// <seealso cref="SpanTypes"/>
         public string Type { get; set; }
 
         /// <summary>
@@ -207,17 +209,26 @@ namespace Datadog.Trace
         {
             Error = true;
 
-            // for AggregateException, use the first inner exception until we can support multiple errors.
-            // there will be only one error in most cases, and even if there are more and we lose
-            // the other ones, it's still better than the generic "one or more errors occurred" message.
-            if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+            if (exception != null)
             {
-                exception = aggregateException.InnerExceptions[0];
-            }
+                // for AggregateException, use the first inner exception until we can support multiple errors.
+                // there will be only one error in most cases, and even if there are more and we lose
+                // the other ones, it's still better than the generic "one or more errors occurred" message.
+                if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+                {
+                    exception = aggregateException.InnerExceptions[0];
+                }
 
-            SetTag(Trace.Tags.ErrorMsg, exception.Message);
-            SetTag(Trace.Tags.ErrorStack, exception.StackTrace);
-            SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+                SetTag(Trace.Tags.ErrorMsg, exception.Message);
+                SetTag(Trace.Tags.ErrorStack, exception.StackTrace);
+                SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+            }
+        }
+
+        internal bool SetExceptionForFilter(Exception exception)
+        {
+            SetException(exception);
+            return false;
         }
 
         internal string GetTag(string key)

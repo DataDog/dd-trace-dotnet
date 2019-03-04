@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -55,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string currentDirectory = Environment.CurrentDirectory;
 
             int index = currentDirectory.Replace('\\', '/')
-                                        .LastIndexOf("/test/", StringComparison.InvariantCultureIgnoreCase);
+                                        .LastIndexOf("/test/", StringComparison.OrdinalIgnoreCase);
 
             return currentDirectory.Substring(0, index);
         }
@@ -165,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var sampleDir = Path.Combine(
                 GetSolutionDirectory(),
-                "samples",
+                "samples-aspnet",
                 $"Samples.{SampleAppName}");
 
             // get full paths to integration definitions
@@ -270,7 +271,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string expectedOperationName,
             string expectedResourceName)
         {
-            List<MockTracerAgent.Span> spans;
+            IImmutableList<MockTracerAgent.Span> spans;
 
             using (var agent = new MockTracerAgent(agentPort))
             using (var httpClient = new HttpClient())

@@ -1,4 +1,3 @@
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,8 +20,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            using (var agent = new MockTracerAgent(9002))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(9002))
+            using (var agent = new MockTracerAgent(AgentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(AgentPort))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
