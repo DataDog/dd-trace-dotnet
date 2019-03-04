@@ -24,11 +24,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Creates a scope used to instrument an MVC action and populates some common details.
         /// </summary>
-        /// <param name="controllerContextObj">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
+        /// <param name="controllerContext">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
         /// <returns>A new scope used to instrument an MVC action.</returns>
-        public static Scope CreateScope(object controllerContextObj)
+        public static Scope CreateScope(dynamic controllerContext)
         {
-            if (ControllerContextType == null || controllerContextObj == null || controllerContextObj.GetType() != ControllerContextType)
+            if (ControllerContextType == null ||
+                controllerContext == null ||
+                ((object)controllerContext)?.GetType() != ControllerContextType)
             {
                 // bail out early
                 return null;
@@ -38,7 +40,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                dynamic controllerContext = controllerContextObj;
                 var httpContext = controllerContext.HttpContext as HttpContextBase;
 
                 if (httpContext == null)
@@ -94,9 +95,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Wrapper method used to instrument System.Web.Mvc.Async.AsyncControllerActionInvoker.BeginInvokeAction().
+        /// Wrapper method used to instrument System.Web.Mvc.Async.IAsyncActionInvoker.BeginInvokeAction().
         /// </summary>
-        /// <param name="asyncControllerActionInvoker">The AsyncControllerActionInvoker instance.</param>
+        /// <param name="asyncControllerActionInvoker">The IAsyncActionInvoker instance.</param>
         /// <param name="controllerContext">The ControllerContext for the current request.</param>
         /// <param name="actionName">The name of the controller action.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate.</param>
@@ -108,10 +109,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker")]
         public static object BeginInvokeAction(
             dynamic asyncControllerActionInvoker,
-            object controllerContext,
-            object actionName,
-            object callback,
-            object state)
+            dynamic controllerContext,
+            dynamic actionName,
+            dynamic callback,
+            dynamic state)
         {
             Scope scope = null;
 
@@ -141,16 +142,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Wrapper method used to instrument System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeAction().
+        /// Wrapper method used to instrument System.Web.Mvc.Async.IAsyncActionInvoker.EndInvokeAction().
         /// </summary>
-        /// <param name="asyncControllerActionInvoker">The AsyncControllerActionInvoker instance.</param>
+        /// <param name="asyncControllerActionInvoker">The IAsyncActionInvoker instance.</param>
         /// <param name="asyncResult">The <see cref="IAsyncResult"/> returned by <see cref="BeginInvokeAction"/>.</param>
         /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
         [InterceptMethod(
             CallerAssembly = "System.Web.Mvc",
             TargetAssembly = "System.Web.Mvc",
             TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker")]
-        public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, object asyncResult)
+        public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
         {
             Scope scope = null;
             var httpContext = HttpContext.Current;
