@@ -19,39 +19,25 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="traceId">The trace identifier.</param>
         /// <param name="spanId">The span identifier.</param>
-        public SpanContext(ulong traceId, ulong spanId)
+        /// <param name="samplingPriority">The <see cref="SamplingPriority"/> value for this span context.</param>
+        public SpanContext(ulong traceId, ulong spanId, SamplingPriority? samplingPriority)
         {
             TraceId = traceId;
             SpanId = spanId;
+            SamplingPriority = samplingPriority;
         }
 
         internal SpanContext(IDatadogTracer tracer, SpanContext parent, string serviceName)
         {
-            if (parent != null)
-            {
-                Parent = parent;
-                TraceId = parent.TraceId;
-                SamplingPriority = parent.SamplingPriority;
+            TraceId = parent != null && parent.TraceId > 0
+                          ? parent.TraceId
+                          : _random.Value.NextUInt63();
 
-                // TraceContext may be null if SpanContext was extracted from another process context
-                TraceContext = parent.TraceContext ?? new TraceContext(tracer);
-            }
-            else
-            {
-                TraceId = _random.Value.NextUInt63();
-                TraceContext = new TraceContext(tracer);
-            }
-
+            TraceContext = parent?.TraceContext ?? new TraceContext(tracer);
+            Parent = parent;
             SpanId = _random.Value.NextUInt63();
+            SamplingPriority = parent?.SamplingPriority;
             ServiceName = serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName;
-        }
-
-        internal SpanContext(SpanContext spanContext)
-        {
-            TraceId = spanContext.TraceId;
-            SpanId = spanContext.SpanId;
-            ServiceName = spanContext.ServiceName;
-            TraceContext = spanContext.TraceContext;
         }
 
         /// <summary>
