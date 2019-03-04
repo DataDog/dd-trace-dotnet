@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -18,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
         private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
+        private static readonly ILog Log = LogProvider.For<AspNetMvcIntegration>();
 
         private readonly HttpContextBase _httpContext;
         private readonly Scope _scope;
@@ -123,9 +125,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     HttpContext.Current.Items[HttpContextKey] = integration;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
+                Log.ErrorException("Error instrumenting method {0}", ex, "System.Web.Mvc.Async.IAsyncActionInvoker.BeginInvokeAction()");
             }
 
             try
@@ -133,9 +135,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 return asyncControllerActionInvoker.BeginInvokeAction(controllerContext, actionName, callback, state);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
-                integration?.SetException(ex);
+                // unreachable code
                 throw;
             }
         }
@@ -156,14 +158,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (HttpContext.Current != null)
-                {
-                    integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvcIntegration;
-                }
+                integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvcIntegration;
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
+                Log.ErrorException("Error instrumenting method {0}", ex, "System.Web.Mvc.Async.IAsyncActionInvoker.EndInvokeAction()");
             }
 
             try
@@ -171,9 +170,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 return asyncControllerActionInvoker.EndInvokeAction(asyncResult);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
-                integration?.SetException(ex);
+                // unreachable code
                 throw;
             }
             finally
@@ -186,9 +185,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
         /// </summary>
         /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
-        public void SetException(Exception ex)
+        /// <returns>Always returns <c>false</c>.</returns>
+        public bool SetException(Exception ex)
         {
             _scope?.Span?.SetException(ex);
+            return false;
         }
 
         /// <summary>
