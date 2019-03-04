@@ -31,6 +31,7 @@ namespace Datadog.Trace
             {
                 Parent = parent;
                 TraceId = parent.TraceId;
+                SamplingPriority = parent.SamplingPriority;
 
                 // TraceContext may be null if SpanContext was extracted from another process context
                 TraceContext = parent.TraceContext ?? new TraceContext(tracer);
@@ -72,6 +73,11 @@ namespace Datadog.Trace
         /// Gets the span id
         /// </summary>
         public ulong SpanId { get; }
+
+        /// <summary>
+        /// Gets this span's sampling priority, which determines whether a trace should be sampled or not.
+        /// </summary>
+        public SamplingPriority? SamplingPriority { get; }
 
         internal string ServiceName { get; set; }
 
