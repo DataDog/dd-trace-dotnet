@@ -117,6 +117,12 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hrStatus) {
+  if (FAILED(hrStatus)) {
+    // if module failed to load, skip it entirely,
+    // otherwise we can crash the process if module is not valid
+    return S_OK;
+  }
+
   auto module_info = GetModuleInfo(this->info_, module_id);
   if (!module_info.IsValid()) {
     return S_OK;
