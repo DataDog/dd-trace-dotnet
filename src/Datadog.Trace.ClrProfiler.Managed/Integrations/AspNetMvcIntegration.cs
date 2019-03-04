@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// The ASP.NET MVC integration.
     /// </summary>
-    internal static class AspNetMvcIntegration
+    public static class AspNetMvcIntegration
     {
         internal const string OperationName = "aspnet-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
