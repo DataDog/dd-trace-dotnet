@@ -12,50 +12,43 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// The ASP.NET MVC integration.
     /// </summary>
-    public sealed class AspNetMvcIntegration : IDisposable
+    internal static class AspNetMvcIntegration
     {
         internal const string OperationName = "aspnet-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
 
         private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
         private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
-        private static readonly ILog Log = LogProvider.For<AspNetMvcIntegration>();
-
-        private readonly HttpContextBase _httpContext;
-        private readonly Scope _scope;
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetMvcIntegration));
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AspNetMvcIntegration"/> class.
+        /// Creates a scope used to instrument an MVC action and populates some common details.
         /// </summary>
         /// <param name="controllerContextObj">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
-        public AspNetMvcIntegration(object controllerContextObj)
+        /// <returns>A new scope used to instrument an MVC action.</returns>
+        public static Scope CreateScope(object controllerContextObj)
         {
-            if (controllerContextObj == null || ControllerContextType == null)
+            if (ControllerContextType == null || controllerContextObj == null || controllerContextObj.GetType() != ControllerContextType)
             {
                 // bail out early
-                return;
+                return null;
             }
+
+            Scope scope = null;
 
             try
             {
-                if (controllerContextObj.GetType() != ControllerContextType)
-                {
-                    return;
-                }
-
-                // access the controller context without referencing System.Web.Mvc directly
                 dynamic controllerContext = controllerContextObj;
+                var httpContext = controllerContext.HttpContext as HttpContextBase;
 
-                _httpContext = controllerContext.HttpContext;
-
-                if (_httpContext == null)
+                if (httpContext == null)
                 {
-                    return;
+                    return null;
                 }
 
-                string host = _httpContext.Request.Headers.Get("Host");
-                string httpMethod = _httpContext.Request.HttpMethod.ToUpperInvariant();
-                string url = _httpContext.Request.RawUrl.ToLowerInvariant();
+                string host = httpContext.Request.Headers.Get("Host");
+                string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
+                string url = httpContext.Request.RawUrl.ToLowerInvariant();
 
                 RouteData routeData = controllerContext.RouteData as RouteData;
                 Route route = routeData?.Route as Route;
@@ -78,8 +71,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
-                _scope = Tracer.Instance.StartActive(OperationName);
-                Span span = _scope.Span;
+                scope = Tracer.Instance.StartActive(OperationName);
+                Span span = scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
                 span.SetTag(Tags.HttpRequestHeadersHost, host);
@@ -89,10 +82,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: logging
+                Log.ErrorException("Error creating or populating scope.", ex);
             }
+
+            return scope;
         }
 
         /// <summary>
@@ -110,19 +105,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker")]
         public static object BeginInvokeAction(
             dynamic asyncControllerActionInvoker,
-            dynamic controllerContext,
-            dynamic actionName,
-            dynamic callback,
-            dynamic state)
+            object controllerContext,
+            object actionName,
+            object callback,
+            object state)
         {
-            AspNetMvcIntegration integration = null;
+            Scope scope = null;
 
             try
             {
                 if (HttpContext.Current != null)
                 {
-                    integration = new AspNetMvcIntegration((object)controllerContext);
-                    HttpContext.Current.Items[HttpContextKey] = integration;
+                    scope = CreateScope(controllerContext);
+                    HttpContext.Current.Items[HttpContextKey] = scope;
                 }
             }
             catch (Exception ex)
@@ -135,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 return asyncControllerActionInvoker.BeginInvokeAction(controllerContext, actionName, callback, state);
             }
-            catch (Exception ex) when (integration?.SetException(ex) ?? false)
+            catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
             {
                 // unreachable code
                 throw;
@@ -152,13 +147,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "System.Web.Mvc",
             TargetAssembly = "System.Web.Mvc",
             TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker")]
-        public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
+        public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, object asyncResult)
         {
-            AspNetMvcIntegration integration = null;
+            Scope scope = null;
+            var httpContext = HttpContext.Current;
 
             try
             {
-                integration = HttpContext.Current?.Items[HttpContextKey] as AspNetMvcIntegration;
+                scope = httpContext?.Items[HttpContextKey] as Scope;
             }
             catch (Exception ex)
             {
@@ -168,51 +164,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                return asyncControllerActionInvoker.EndInvokeAction(asyncResult);
+                return (bool)asyncControllerActionInvoker.EndInvokeAction(asyncResult);
             }
-            catch (Exception ex) when (integration?.SetException(ex) ?? false)
+            catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
             {
                 // unreachable code
                 throw;
             }
             finally
             {
-                integration?.Dispose();
-            }
-        }
-
-        /// <summary>
-        /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
-        /// </summary>
-        /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
-        /// <returns>Always returns <c>false</c>.</returns>
-        public bool SetException(Exception ex)
-        {
-            _scope?.Span?.SetException(ex);
-            return false;
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            try
-            {
-                // sometimes, if an exception was unhandled in user code, status code is set to 500 later in the pipeline,
-                // so it is still 200 here. if there was an unhandled exception, always set status code to 500.
-                if (_scope?.Span?.Error == true)
-                {
-                    _scope?.Span?.SetTag(Tags.HttpStatusCode, "500");
-                }
-                else if (_httpContext != null)
-                {
-                    _scope?.Span?.SetTag(Tags.HttpStatusCode, _httpContext.Response.StatusCode.ToString());
-                }
-            }
-            finally
-            {
-                _scope?.Dispose();
+                scope?.Dispose();
             }
         }
     }
