@@ -120,9 +120,12 @@ namespace Datadog.Trace.Tests
             Assert.True(child.Span.IsRootSpan);
             Assert.Equal(traceId, parent.TraceId);
             Assert.Equal(parentId, parent.SpanId);
+            Assert.Equal(samplingPriority, parent.SamplingPriority);
             Assert.Null(parent.TraceContext);
             Assert.Equal(parent, child.Span.Context.Parent);
+            Assert.Equal(parentId, child.Span.Context.ParentId);
             Assert.NotNull(child.Span.TraceContext);
+            Assert.Equal(samplingPriority, child.Span.Context.SamplingPriority);
         }
 
         [Fact]
