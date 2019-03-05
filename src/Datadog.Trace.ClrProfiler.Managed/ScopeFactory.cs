@@ -1,5 +1,4 @@
 using System;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
@@ -9,6 +8,9 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     internal static class ScopeFactory
     {
+        internal const string OperationName = "http.request";
+        internal const string ServiceName = "http-client";
+
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ScopeFactory));
 
         /// <summary>
@@ -25,11 +27,11 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 var tracer = Tracer.Instance;
-                scope = tracer.StartActive("http.request");
+                scope = tracer.StartActive(OperationName);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
-                span.ServiceName = $"{tracer.DefaultServiceName}-http-client";
+                span.ServiceName = $"{tracer.DefaultServiceName}-{ServiceName}";
                 span.ResourceName = httpMethod;
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(Tags.HttpMethod, httpMethod);

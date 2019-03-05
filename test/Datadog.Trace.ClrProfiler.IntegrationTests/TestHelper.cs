@@ -276,6 +276,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = new MockTracerAgent(agentPort))
             using (var httpClient = new HttpClient())
             {
+                // disable tracing for this HttpClient request
+                httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+
                 var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
                 var content = await response.Content.ReadAsStringAsync();
                 Output.WriteLine($"[http] {response.StatusCode} {content}");

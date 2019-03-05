@@ -13,9 +13,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class HttpMessageHandlerIntegration
     {
-        internal const string OperationName = "http.request";
-        internal const string ServiceName = "http-client";
-
         // internal readonly  string Name = nameof(HttpMessageHandlerIntegration).Substring(0, )
 
         /// <summary>
