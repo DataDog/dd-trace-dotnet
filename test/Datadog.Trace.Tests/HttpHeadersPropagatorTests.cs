@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -12,12 +14,14 @@ namespace Datadog.Trace.Tests
         {
             const int traceId = 9;
             const int spanId = 7;
-            var headers = new HttpRequestMessage().Headers;
-            var context = new SpanContext(traceId, spanId);
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
 
-            headers.Inject(context);
+            HttpRequestHeaders httpHeaders = new HttpRequestMessage().Headers;
+            var context = new SpanContext(traceId, spanId, samplingPriority);
 
-            var resultContext = headers.Extract();
+            IHeadersCollection headersWrapper = HeadersFactory.Wrap(httpHeaders);
+            headersWrapper.InjectSpanContext(context);
+            var resultContext = headersWrapper.ExtractSpanContext();
 
             Assert.Equal(context.SpanId, resultContext.SpanId);
             Assert.Equal(context.TraceId, resultContext.TraceId);
@@ -28,12 +32,14 @@ namespace Datadog.Trace.Tests
         {
             const int traceId = 9;
             const int spanId = 7;
-            var headers = WebRequest.CreateHttp("http://localhost").Headers;
-            var context = new SpanContext(traceId, spanId);
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
 
-            headers.Inject(context);
+            WebHeaderCollection webHeaders = WebRequest.CreateHttp("http://localhost").Headers;
+            var context = new SpanContext(traceId, spanId, samplingPriority);
 
-            var resultContext = headers.Extract();
+            IHeadersCollection headersWrapper = HeadersFactory.Wrap(webHeaders);
+            headersWrapper.InjectSpanContext(context);
+            var resultContext = headersWrapper.ExtractSpanContext();
 
             Assert.Equal(context.SpanId, resultContext.SpanId);
             Assert.Equal(context.TraceId, resultContext.TraceId);

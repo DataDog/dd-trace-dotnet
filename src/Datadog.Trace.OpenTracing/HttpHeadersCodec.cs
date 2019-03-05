@@ -1,5 +1,5 @@
 using System;
-using OpenTracing;
+using System.Globalization;
 using OpenTracing.Propagation;
 
 namespace Datadog.Trace.OpenTracing
@@ -23,24 +23,21 @@ namespace Datadog.Trace.OpenTracing
                 if (keyVal.Key.Equals(HttpHeaderNames.ParentId, StringComparison.OrdinalIgnoreCase))
                 {
                     parentIdHeader = keyVal.Value;
-                    break;
                 }
 
                 if (keyVal.Key.Equals(HttpHeaderNames.TraceId, StringComparison.OrdinalIgnoreCase))
                 {
                     traceIdHeader = keyVal.Value;
-                    break;
                 }
 
                 if (keyVal.Key.Equals(HttpHeaderNames.SamplingPriority, StringComparison.OrdinalIgnoreCase))
                 {
                     samplingPriorityHeader = keyVal.Value;
-                    break;
                 }
             }
 
-            ulong.TryParse(parentIdHeader, out var parentId);
-            ulong.TryParse(traceIdHeader, out var traceId);
+            ulong.TryParse(parentIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId);
+            ulong.TryParse(traceIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId);
 
             var samplingPriority = int.TryParse(samplingPriorityHeader, out int samplingPriorityValue)
                                                      ? (SamplingPriority?)samplingPriorityValue
@@ -58,8 +55,14 @@ namespace Datadog.Trace.OpenTracing
                 throw new NotSupportedException("Carrier should have type ITextMap");
             }
 
-            map.Set(HttpHeaderNames.ParentId, spanContext.Context.SpanId.ToString());
-            map.Set(HttpHeaderNames.TraceId, spanContext.Context.TraceId.ToString());
+            map.Set(HttpHeaderNames.ParentId, spanContext.Context.SpanId.ToString(CultureInfo.InvariantCulture));
+            map.Set(HttpHeaderNames.TraceId, spanContext.Context.TraceId.ToString(CultureInfo.InvariantCulture));
+
+            if (spanContext.Context.SamplingPriority != null)
+            {
+                var samplingPriority = (int)spanContext.Context.SamplingPriority;
+                map.Set(HttpHeaderNames.SamplingPriority, samplingPriority.ToString(CultureInfo.InvariantCulture));
+            }
         }
     }
 }

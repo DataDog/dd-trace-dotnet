@@ -113,7 +113,8 @@ namespace Datadog.Trace.Tests
         {
             const ulong traceId = 11;
             const ulong parentId = 7;
-            var parent = new SpanContext(traceId, parentId);
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            var parent = new SpanContext(traceId, parentId, samplingPriority);
             var child = _tracer.StartActive("Child", childOf: parent);
 
             Assert.True(child.Span.IsRootSpan);
