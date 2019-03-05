@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">netstandard2.0;net45;net461</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0</TargetFrameworks>
-    <Version>0.8.0-beta</Version>
 
     <!-- NuGet -->
     <Title>Datadog APM</Title>
