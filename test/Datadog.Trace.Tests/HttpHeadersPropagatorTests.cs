@@ -25,6 +25,7 @@ namespace Datadog.Trace.Tests
 
             Assert.Equal(context.SpanId, resultContext.SpanId);
             Assert.Equal(context.TraceId, resultContext.TraceId);
+            Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
         }
 
         [Fact]
@@ -43,6 +44,7 @@ namespace Datadog.Trace.Tests
 
             Assert.Equal(context.SpanId, resultContext.SpanId);
             Assert.Equal(context.TraceId, resultContext.TraceId);
+            Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
         }
     }
 }
