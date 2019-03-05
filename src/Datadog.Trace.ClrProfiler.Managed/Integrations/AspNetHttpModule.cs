@@ -1,6 +1,7 @@
 #if !NETSTANDARD2_0
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Web;
 using Datadog.Trace.ClrProfiler.Interfaces;
 using Datadog.Trace.ClrProfiler.Models;
@@ -120,6 +121,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1119:StatementMustNotUseUnnecessaryParenthesis", Justification = "Actually Needed")]
         private bool TryGetContext(object sender, out HttpContext httpContext)
         {
             if (sender == null || !(sender is HttpApplication httpApp) || httpApp?.Context?.Items == null)

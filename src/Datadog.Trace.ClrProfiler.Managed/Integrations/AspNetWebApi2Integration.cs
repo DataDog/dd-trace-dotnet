@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var controllerType = apiController.GetType();
 
-            // in some cases, ExecuteAsync() is an explicit interface imple7mentation,
+            // in some cases, ExecuteAsync() is an explicit interface implementation,
             // which is not public and has a different name, so try both
             var executeAsyncFunc =
                 DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>

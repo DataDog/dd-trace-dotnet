@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.ClrProfiler.Interfaces;
 using Datadog.Trace.ClrProfiler.Models;
 
@@ -9,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Services
     {
         private static readonly Dictionary<Type, ISpanDecorationService> SpanDecorationServiceMap = new Dictionary<Type, ISpanDecorationService>();
 
+        [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:ParameterMustNotSpanMultipleLines", Justification = "Yes it does")]
         static DependencyFactory()
         {
 #if !NETSTANDARD2_0

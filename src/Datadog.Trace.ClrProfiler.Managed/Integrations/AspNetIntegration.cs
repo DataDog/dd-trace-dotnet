@@ -1,6 +1,7 @@
 #if !NETSTANDARD2_0
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Web;
 using Datadog.Trace.Logging;
 
@@ -21,18 +22,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.Web",
             TargetType = "System.Web.HttpApplication")]
+        [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1119:StatementMustNotUseUnnecessaryParenthesis", Justification = "Actually Needed")]
         public static void Init(object thisObj)
         {
             try
             {
-                var initMethodAction = DynamicMethodBuilder<Action<object>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "Init");
-
-                initMethodAction(thisObj);
-
                 if (!(thisObj is HttpApplication httpApplication))
                 {
+                    var initMethodAction = DynamicMethodBuilder<Action<object>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "Init");
+
+                    initMethodAction(thisObj);
+
                     return;
                 }
+
+                httpApplication.Init();
 
                 // Register the IHttpModule
                 AspNetHttpModule.Init(httpApplication);

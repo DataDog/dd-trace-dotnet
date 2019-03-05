@@ -235,12 +235,6 @@ namespace Datadog.Trace
             }
         }
 
-        internal bool SetExceptionForFilter(Exception exception)
-        {
-            SetException(exception);
-            return false;
-        }
-
         /// <summary>
         /// Proxy to SetException without return value
         /// See <see cref="Span.SetException(Exception)"/> for more information
@@ -256,5 +250,11 @@ namespace Datadog.Trace
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
         public string GetTag(string key)
             => _tags.TryGetValue(key, out var value) ? value : null;
+
+        internal bool SetExceptionForFilter(Exception exception)
+        {
+            SetException(exception);
+            return false;
+        }
     }
 }
