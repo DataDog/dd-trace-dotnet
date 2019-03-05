@@ -1,15 +1,11 @@
 using System;
-using OpenTracing;
+using System.Globalization;
 using OpenTracing.Propagation;
 
 namespace Datadog.Trace.OpenTracing
 {
     internal class HttpHeadersCodec : ICodec
     {
-        public HttpHeadersCodec()
-        {
-        }
-
         public OpenTracingSpanContext Extract(object carrier)
         {
             ITextMap map = carrier as ITextMap;
@@ -20,6 +16,8 @@ namespace Datadog.Trace.OpenTracing
 
             string parentIdHeader = null;
             string traceIdHeader = null;
+            string samplingPriorityHeader = null;
+
             foreach (var keyVal in map)
             {
                 if (keyVal.Key.Equals(HttpHeaderNames.ParentId, StringComparison.OrdinalIgnoreCase))
@@ -31,39 +29,27 @@ namespace Datadog.Trace.OpenTracing
                 {
                     traceIdHeader = keyVal.Value;
                 }
+
+                if (keyVal.Key.Equals(HttpHeaderNames.SamplingPriority, StringComparison.OrdinalIgnoreCase))
+                {
+                    samplingPriorityHeader = keyVal.Value;
+                }
             }
 
-            if (parentIdHeader == null)
+            if (!ulong.TryParse(traceIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId) ||
+                traceId == 0)
             {
-                throw new ArgumentException($"{HttpHeaderNames.ParentId} should be set.");
+                // if traceId is not provided or is zero, there is no span context
+                return null;
             }
 
-            if (traceIdHeader == null)
-            {
-                throw new ArgumentException($"{HttpHeaderNames.TraceId} should be set.");
-            }
+            ulong.TryParse(parentIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId);
 
-            ulong parentId;
-            try
-            {
-                parentId = Convert.ToUInt64(parentIdHeader);
-            }
-            catch (FormatException)
-            {
-                throw new FormatException($"{HttpHeaderNames.ParentId} should contain an unsigned integer value");
-            }
+            var samplingPriority = int.TryParse(samplingPriorityHeader, out int samplingPriorityValue)
+                                       ? (SamplingPriority?)samplingPriorityValue
+                                       : null;
 
-            ulong traceId;
-            try
-            {
-                traceId = Convert.ToUInt64(traceIdHeader);
-            }
-            catch (FormatException)
-            {
-                throw new FormatException($"{HttpHeaderNames.TraceId} should contain an unsigned integer value");
-            }
-
-            SpanContext ddSpanContext = new SpanContext(traceId, parentId);
+            SpanContext ddSpanContext = new SpanContext(traceId, parentId, samplingPriority);
             return new OpenTracingSpanContext(ddSpanContext);
         }
 
@@ -75,8 +61,14 @@ namespace Datadog.Trace.OpenTracing
                 throw new NotSupportedException("Carrier should have type ITextMap");
             }
 
-            map.Set(HttpHeaderNames.ParentId, spanContext.Context.SpanId.ToString());
-            map.Set(HttpHeaderNames.TraceId, spanContext.Context.TraceId.ToString());
+            map.Set(HttpHeaderNames.ParentId, spanContext.Context.SpanId.ToString(CultureInfo.InvariantCulture));
+            map.Set(HttpHeaderNames.TraceId, spanContext.Context.TraceId.ToString(CultureInfo.InvariantCulture));
+
+            if (spanContext.Context.SamplingPriority != null)
+            {
+                var samplingPriority = (int)spanContext.Context.SamplingPriority;
+                map.Set(HttpHeaderNames.SamplingPriority, samplingPriority.ToString(CultureInfo.InvariantCulture));
+            }
         }
     }
 }

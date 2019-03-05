@@ -113,15 +113,19 @@ namespace Datadog.Trace.Tests
         {
             const ulong traceId = 11;
             const ulong parentId = 7;
-            var parent = new SpanContext(traceId, parentId);
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            var parent = new SpanContext(traceId, parentId, samplingPriority);
             var child = _tracer.StartActive("Child", childOf: parent);
 
             Assert.True(child.Span.IsRootSpan);
             Assert.Equal(traceId, parent.TraceId);
             Assert.Equal(parentId, parent.SpanId);
+            Assert.Equal(samplingPriority, parent.SamplingPriority);
             Assert.Null(parent.TraceContext);
             Assert.Equal(parent, child.Span.Context.Parent);
+            Assert.Equal(parentId, child.Span.Context.ParentId);
             Assert.NotNull(child.Span.TraceContext);
+            Assert.Equal(samplingPriority, child.Span.Context.SamplingPriority);
         }
 
         [Fact]

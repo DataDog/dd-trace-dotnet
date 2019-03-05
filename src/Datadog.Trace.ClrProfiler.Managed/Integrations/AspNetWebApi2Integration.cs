@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -87,9 +88,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 var request = controllerContext?.Request as HttpRequestMessage;
+                SpanContext spanContext = null;
 
-                // extract distributed tracing values
-                var spanContext = request?.Headers.Extract();
+                if (request != null)
+                {
+                    try
+                    {
+                        // extract distributed tracing context from http headers
+                        spanContext = request.Headers.Wrap().ExtractSpanContext();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.ErrorException("Error extracting span context from http headers.", ex);
+                    }
+                }
 
                 scope = Tracer.Instance.StartActive(OperationName, spanContext);
                 UpdateSpan(controllerContext, scope.Span);

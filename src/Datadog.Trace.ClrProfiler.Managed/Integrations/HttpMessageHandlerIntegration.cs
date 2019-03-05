@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -67,8 +68,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (scope != null)
                     {
-                        // add distributed tracing headers
-                        request.Headers.Inject(scope.Span.Context);
+                        // add distributed tracing and sampling priority headers
+                        request.Headers.Wrap().InjectSpanContext(scope.Span.Context);
                     }
 
                     HttpResponseMessage response = await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);

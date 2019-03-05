@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -72,8 +73,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
-                // extract distributed tracing values
-                var spanContext = httpContext.Request.Headers.Extract();
+                SpanContext spanContext;
+
+                try
+                {
+                    // extract distributed tracing context from http headers
+                    spanContext = httpContext.Request.Headers.Wrap().ExtractSpanContext();
+                }
+                catch (Exception ex)
+                {
+                    spanContext = null;
+                    Log.ErrorException("Error extracting span context from http headers.", ex);
+                }
 
                 scope = Tracer.Instance.StartActive(OperationName, spanContext);
                 Span span = scope.Span;
