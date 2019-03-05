@@ -31,6 +31,13 @@ namespace Datadog.Trace.ExtensionMethods
             }
 
             ulong traceId = ParseUInt64(headers, HttpHeaderNames.TraceId);
+
+            if (traceId == 0)
+            {
+                // a valid traceId is required to use distributed tracing
+                return null;
+            }
+
             ulong parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
             int samplingPriority = ParseInt32(headers, HttpHeaderNames.SamplingPriority);
 
