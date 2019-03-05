@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.Linq;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -12,7 +14,9 @@ namespace Datadog.Trace.ExtensionMethods
     public static class HeadersCollectionExtensions
     {
         private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
+
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(HeadersCollectionExtensions));
 
         /// <summary>
         /// Creates a <see cref="SpanContext"/> from the values found in the specified headers.
@@ -26,9 +30,9 @@ namespace Datadog.Trace.ExtensionMethods
                 throw new ArgumentNullException(nameof(headers));
             }
 
-            ulong traceId = ParseUInt64(headers.GetValues(HttpHeaderNames.TraceId));
-            ulong parentId = ParseUInt64(headers.GetValues(HttpHeaderNames.ParentId));
-            int samplingPriority = ParseInt32(headers.GetValues(HttpHeaderNames.SamplingPriority));
+            ulong traceId = ParseUInt64(headers, HttpHeaderNames.TraceId);
+            ulong parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
+            int samplingPriority = ParseInt32(headers, HttpHeaderNames.SamplingPriority);
 
             return new SpanContext(traceId, parentId, (SamplingPriority)samplingPriority);
         }
@@ -58,27 +62,41 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        private static ulong ParseUInt64(IEnumerable<string> values)
+        private static ulong ParseUInt64(IHeadersCollection headers, string headerName)
         {
-            foreach (string value in values)
+            var headerValues = headers.GetValues(headerName).ToList();
+
+            if (headerValues.Count > 0)
             {
-                if (ulong.TryParse(value, NumberStyles, InvariantCulture, out var result))
+                foreach (string headerValue in headerValues)
                 {
-                    return result;
+                    if (ulong.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
+                    {
+                        return result;
+                    }
                 }
+
+                Log.InfoFormat("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
             }
 
             return 0;
         }
 
-        private static int ParseInt32(IEnumerable<string> values)
+        private static int ParseInt32(IHeadersCollection headers, string headerName)
         {
-            foreach (string value in values)
+            var headerValues = headers.GetValues(headerName).ToList();
+
+            if (headerValues.Count > 0)
             {
-                if (int.TryParse(value, NumberStyles, InvariantCulture, out var result))
+                foreach (string headerValue in headerValues)
                 {
-                    return result;
+                    if (int.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
+                    {
+                        return result;
+                    }
                 }
+
+                Log.InfoFormat("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
             }
 
             return 0;
