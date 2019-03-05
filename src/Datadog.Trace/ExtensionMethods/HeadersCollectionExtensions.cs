@@ -30,7 +30,7 @@ namespace Datadog.Trace.ExtensionMethods
                 throw new ArgumentNullException(nameof(headers));
             }
 
-            ulong traceId = ParseUInt64(headers, HttpHeaderNames.TraceId);
+            var traceId = ParseUInt64(headers, HttpHeaderNames.TraceId);
 
             if (traceId == 0)
             {
@@ -38,10 +38,10 @@ namespace Datadog.Trace.ExtensionMethods
                 return null;
             }
 
-            ulong parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
-            int samplingPriority = ParseInt32(headers, HttpHeaderNames.SamplingPriority);
+            var parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
+            var samplingPriority = ParseEnum<SamplingPriority>(headers, HttpHeaderNames.SamplingPriority);
 
-            return new SpanContext(traceId, parentId, (SamplingPriority)samplingPriority);
+            return new SpanContext(traceId, parentId, samplingPriority);
         }
 
         /// <summary>
@@ -89,7 +89,8 @@ namespace Datadog.Trace.ExtensionMethods
             return 0;
         }
 
-        private static int ParseInt32(IHeadersCollection headers, string headerName)
+        private static T? ParseEnum<T>(IHeadersCollection headers, string headerName)
+            where T : struct
         {
             var headerValues = headers.GetValues(headerName).ToList();
 
@@ -97,16 +98,17 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 foreach (string headerValue in headerValues)
                 {
-                    if (int.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
+                    if (int.TryParse(headerValue, NumberStyles, InvariantCulture, out var result) &&
+                        Enum.IsDefined(typeof(T), result))
                     {
-                        return result;
+                        return (T)Enum.ToObject(typeof(T), result);
                     }
                 }
 
                 Log.InfoFormat("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
             }
 
-            return 0;
+            return default;
         }
     }
 }
