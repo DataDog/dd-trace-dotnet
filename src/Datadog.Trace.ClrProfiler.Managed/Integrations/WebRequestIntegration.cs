@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // add distributed tracing and sampling priority headers
                         IHeadersCollection headers = HeadersFactory.Wrap(webRequest.Headers);
-                        headers.InjectSpanContext(scope.Span.Context);
+                        headers?.InjectSpanContext(scope.Span.Context);
                     }
 
                     WebResponse response = webRequest.GetResponse();
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // add distributed tracing and sampling priority headers
                         IHeadersCollection headers = HeadersFactory.Wrap(request.Headers);
-                        headers.InjectSpanContext(scope.Span.Context);
+                        headers?.InjectSpanContext(scope.Span.Context);
                     }
 
                     WebResponse response = await request.GetResponseAsync().ConfigureAwait(false);

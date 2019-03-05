@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // add distributed tracing and sampling priority headers
                         IHeadersCollection headers = HeadersFactory.Wrap(request.Headers);
-                        headers.InjectSpanContext(scope.Span.Context);
+                        headers?.InjectSpanContext(scope.Span.Context);
                     }
 
                     HttpResponseMessage response = await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);

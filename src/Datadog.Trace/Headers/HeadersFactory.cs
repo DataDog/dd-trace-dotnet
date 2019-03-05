@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Specialized;
 using System.Net.Http.Headers;
 
@@ -15,6 +16,11 @@ namespace Datadog.Trace.Headers
         /// <returns>An object that implements <see cref="IHeadersCollection"/>.</returns>
         public static IHeadersCollection Wrap(HttpHeaders headers)
         {
+            if (headers == null)
+            {
+                throw new ArgumentNullException(nameof(headers));
+            }
+
             return new HttpHeadersCollection(headers);
         }
 
@@ -25,6 +31,11 @@ namespace Datadog.Trace.Headers
         /// <returns>An object that implements <see cref="IHeadersCollection"/>.</returns>
         public static IHeadersCollection Wrap(NameValueCollection collection)
         {
+            if (collection == null)
+            {
+                throw new ArgumentNullException(nameof(collection));
+            }
+
             return new NameValueHeadersCollection(collection);
         }
     }
