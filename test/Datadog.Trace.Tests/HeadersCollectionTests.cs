@@ -12,7 +12,7 @@ namespace Datadog.Trace.Tests
     // - NameValueHeadersCollection wrapper over NameValueCollection (Get, Set, Add, Remove)
     // - IHeadersCollection.InjectSpanContext() extension method
     // - IHeadersCollection.ExtractSpanContext() extension method
-    public class HttpHeadersPropagatorTests
+    public class HeadersCollectionTests
     {
         [Fact]
         public void HttpRequestMessage_InjectExtract_Identity()
