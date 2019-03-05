@@ -10,9 +10,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class WebRequestIntegration
     {
-        internal const string OperationName = "http.request";
-        internal const string ServiceName = "http-client";
-
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.
         /// </summary>
