@@ -6,10 +6,6 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class HttpHeadersCodec : ICodec
     {
-        public HttpHeadersCodec()
-        {
-        }
-
         public OpenTracingSpanContext Extract(object carrier)
         {
             ITextMap map = carrier as ITextMap;
@@ -20,50 +16,37 @@ namespace Datadog.Trace.OpenTracing
 
             string parentIdHeader = null;
             string traceIdHeader = null;
+            string samplingPriorityHeader = null;
+
             foreach (var keyVal in map)
             {
                 if (keyVal.Key.Equals(HttpHeaderNames.ParentId, StringComparison.OrdinalIgnoreCase))
                 {
                     parentIdHeader = keyVal.Value;
+                    break;
                 }
 
                 if (keyVal.Key.Equals(HttpHeaderNames.TraceId, StringComparison.OrdinalIgnoreCase))
                 {
                     traceIdHeader = keyVal.Value;
+                    break;
+                }
+
+                if (keyVal.Key.Equals(HttpHeaderNames.SamplingPriority, StringComparison.OrdinalIgnoreCase))
+                {
+                    samplingPriorityHeader = keyVal.Value;
+                    break;
                 }
             }
 
-            if (parentIdHeader == null)
-            {
-                throw new ArgumentException($"{HttpHeaderNames.ParentId} should be set.");
-            }
+            ulong.TryParse(parentIdHeader, out var parentId);
+            ulong.TryParse(traceIdHeader, out var traceId);
 
-            if (traceIdHeader == null)
-            {
-                throw new ArgumentException($"{HttpHeaderNames.TraceId} should be set.");
-            }
+            var samplingPriority = int.TryParse(samplingPriorityHeader, out int samplingPriorityValue)
+                                                     ? (SamplingPriority?)samplingPriorityValue
+                                                     : null;
 
-            ulong parentId;
-            try
-            {
-                parentId = Convert.ToUInt64(parentIdHeader);
-            }
-            catch (FormatException)
-            {
-                throw new FormatException($"{HttpHeaderNames.ParentId} should contain an unsigned integer value");
-            }
-
-            ulong traceId;
-            try
-            {
-                traceId = Convert.ToUInt64(traceIdHeader);
-            }
-            catch (FormatException)
-            {
-                throw new FormatException($"{HttpHeaderNames.TraceId} should contain an unsigned integer value");
-            }
-
-            SpanContext ddSpanContext = new SpanContext(traceId, parentId);
+            SpanContext ddSpanContext = new SpanContext(traceId, parentId, samplingPriority);
             return new OpenTracingSpanContext(ddSpanContext);
         }
 
