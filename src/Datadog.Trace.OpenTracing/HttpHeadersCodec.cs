@@ -36,12 +36,18 @@ namespace Datadog.Trace.OpenTracing
                 }
             }
 
+            if (!ulong.TryParse(traceIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId) ||
+                traceId == 0)
+            {
+                // if traceId is not provided or is zero, there is no span context
+                return null;
+            }
+
             ulong.TryParse(parentIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId);
-            ulong.TryParse(traceIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId);
 
             var samplingPriority = int.TryParse(samplingPriorityHeader, out int samplingPriorityValue)
-                                                     ? (SamplingPriority?)samplingPriorityValue
-                                                     : null;
+                                       ? (SamplingPriority?)samplingPriorityValue
+                                       : null;
 
             SpanContext ddSpanContext = new SpanContext(traceId, parentId, samplingPriority);
             return new OpenTracingSpanContext(ddSpanContext);
