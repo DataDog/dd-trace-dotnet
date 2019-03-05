@@ -19,9 +19,9 @@ namespace Datadog.Trace.Tests
             HttpRequestHeaders httpHeaders = new HttpRequestMessage().Headers;
             var context = new SpanContext(traceId, spanId, samplingPriority);
 
-            IHeadersCollection headersWrapper = HeadersFactory.Wrap(httpHeaders);
-            headersWrapper.InjectSpanContext(context);
-            var resultContext = headersWrapper.ExtractSpanContext();
+            IHeadersCollection headers = httpHeaders.Wrap();
+            headers.InjectSpanContext(context);
+            var resultContext = headers.ExtractSpanContext();
 
             Assert.Equal(context.SpanId, resultContext.SpanId);
             Assert.Equal(context.TraceId, resultContext.TraceId);
@@ -38,9 +38,9 @@ namespace Datadog.Trace.Tests
             WebHeaderCollection webHeaders = WebRequest.CreateHttp("http://localhost").Headers;
             var context = new SpanContext(traceId, spanId, samplingPriority);
 
-            IHeadersCollection headersWrapper = HeadersFactory.Wrap(webHeaders);
-            headersWrapper.InjectSpanContext(context);
-            var resultContext = headersWrapper.ExtractSpanContext();
+            IHeadersCollection headers = webHeaders.Wrap();
+            headers.InjectSpanContext(context);
+            var resultContext = headers.ExtractSpanContext();
 
             Assert.Equal(context.SpanId, resultContext.SpanId);
             Assert.Equal(context.TraceId, resultContext.TraceId);
