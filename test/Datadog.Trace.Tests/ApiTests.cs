@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests
         public ApiTests()
         {
             _writerMock = new Mock<IAgentWriter>();
-            _tracer = new Tracer(_writerMock.Object);
+            _tracer = new Tracer(_writerMock.Object, null);
         }
 
         [Fact]

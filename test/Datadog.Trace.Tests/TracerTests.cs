@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests
         public TracerTests()
         {
             _writerMock = new Mock<IAgentWriter>();
-            _tracer = new Tracer(_writerMock.Object);
+            _tracer = new Tracer(_writerMock.Object, null);
         }
 
         [Fact]
@@ -315,7 +315,7 @@ namespace Datadog.Trace.Tests
             string originalEnv = Environment.GetEnvironmentVariable(name);
             Environment.SetEnvironmentVariable(name, envServiceName);
 
-            var tracer = new Tracer(_writerMock.Object, defaultServiceName: tracerServiceName);
+            var tracer = new Tracer(_writerMock.Object, null, tracerServiceName);
             Span span = tracer.StartSpan("operationName", serviceName: spanServiceName);
 
             if (expectedServiceName == null)

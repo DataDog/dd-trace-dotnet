@@ -13,7 +13,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         public OpenTracingSpanTests()
         {
             var writerMock = new Mock<IAgentWriter>();
-            var datadogTracer = new Tracer(writerMock.Object);
+            var datadogTracer = new Tracer(writerMock.Object, null);
             _tracer = new OpenTracingTracer(datadogTracer);
         }
 
