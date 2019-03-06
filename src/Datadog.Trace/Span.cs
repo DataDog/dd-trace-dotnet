@@ -18,8 +18,6 @@ namespace Datadog.Trace
 
         private readonly object _lock = new object();
 
-        private bool _samplingPriorityLocked;
-
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
         {
             // TODO:bertrand should we throw an exception if operationName is null or empty?
@@ -69,27 +67,14 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's unique identifier.
         /// </summary>
+        [Obsolete("This property will be removed in future versions of this library. Use Span.Context.TraceId instead.")]
         public ulong TraceId => Context.TraceId;
 
         /// <summary>
         /// Gets the span's unique identifier.
         /// </summary>
+        [Obsolete("This property will be removed in future versions of this library. Use Span.Context.SpanId instead.")]
         public ulong SpanId => Context.SpanId;
-
-        /// <summary>
-        /// Gets or sets the sampling priority value for this span.
-        /// </summary>
-        public SamplingPriority? SamplingPriority
-        {
-            get => Context.SamplingPriority;
-            set
-            {
-                if (!_samplingPriorityLocked)
-                {
-                    Context.SamplingPriority = value;
-                }
-            }
-        }
 
         internal SpanContext Context { get; }
 
