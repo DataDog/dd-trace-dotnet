@@ -14,19 +14,18 @@ namespace Datadog.Trace.Agent
 
         private static readonly ILog _log = LogProvider.For<Api>();
         private static readonly SerializationContext _serializationContext = new SerializationContext();
+        private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(_serializationContext);
 
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
 
         static Api()
         {
-            var spanSerializer = new SpanMessagePackSerializer(_serializationContext);
-
             _serializationContext.ResolveSerializer += (sender, eventArgs) =>
             {
                 if (eventArgs.TargetType == typeof(Span))
                 {
-                    eventArgs.SetSerializer(spanSerializer);
+                    eventArgs.SetSerializer(Serializer);
                 }
             };
         }
