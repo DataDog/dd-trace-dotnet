@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace
 {
@@ -42,6 +43,7 @@ namespace Datadog.Trace
 
         private readonly AsyncLocalScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
+        private readonly ISampler _sampler;
         private readonly bool _isDebugEnabled;
 
         static Tracer()
@@ -53,10 +55,11 @@ namespace Datadog.Trace
             Instance = Create();
         }
 
-        internal Tracer(IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
+        internal Tracer(IAgentWriter agentWriter, ISampler sampler, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
+            _sampler = sampler;
             DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
@@ -174,7 +177,8 @@ namespace Datadog.Trace
         {
             var api = new Api(agentEndpoint, delegatingHandler);
             var agentWriter = new AgentWriter(api);
-            var tracer = new Tracer(agentWriter, serviceName, isDebugEnabled);
+            var sampler = new RateByServiceSampler();
+            var tracer = new Tracer(agentWriter, sampler, serviceName, isDebugEnabled);
             return tracer;
         }
 
@@ -194,6 +198,12 @@ namespace Datadog.Trace
                                                             ?.Trim() ?? DefaultTraceAgentPort;
 
             return new Uri($"http://{host}:{port}");
+        }
+
+        internal void LockSamplingPriority(Span span)
+        {
+            var samplingPriority = _sampler.GetSamplingPriority(span.ServiceName, span.GetTag(Tags.Env), span.TraceId);
+            span.LockSamplingPriority(samplingPriority);
         }
 
         /// <summary>
