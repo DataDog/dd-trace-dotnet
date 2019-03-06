@@ -18,7 +18,7 @@ namespace Datadog.Trace.Agent
         public AgentWriter(IApi api)
         {
             _api = api;
-            _flushTask = Task.Run(FlushTracesTaskLoop);
+            _flushTask = Task.Run(FlushTracesTaskLoopAsync);
         }
 
         public void WriteTrace(List<Span> trace)
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private async Task FlushTracesTaskLoop()
+        private async Task FlushTracesTaskLoopAsync()
         {
             while (true)
             {
