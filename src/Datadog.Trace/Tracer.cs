@@ -43,7 +43,6 @@ namespace Datadog.Trace
 
         private readonly AsyncLocalScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
-        private readonly ISampler _sampler;
         private readonly bool _isDebugEnabled;
 
         static Tracer()
@@ -59,7 +58,7 @@ namespace Datadog.Trace
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
-            _sampler = sampler;
+            Sampler = sampler;
             DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
@@ -94,6 +93,8 @@ namespace Datadog.Trace
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
         /// </summary>
         AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
+
+        internal ISampler Sampler { get; }
 
         /// <summary>
         /// Create a new Tracer with the given parameters
@@ -214,7 +215,7 @@ namespace Datadog.Trace
                 // if sampling priority has not been set yet,
                 // use sampler to determine a value before locking
                 string env = span.GetTag(Trace.Tags.Env);
-                span.SamplingPriority = _sampler.GetSamplingPriority(span.ServiceName, env, span.TraceId);
+                span.SamplingPriority = Sampler.GetSamplingPriority(span.ServiceName, env, span.TraceId);
             }
 
             span.LockSamplingPriority();

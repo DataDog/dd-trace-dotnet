@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using MsgPack.Serialization;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent
 {
@@ -70,8 +71,14 @@ namespace Datadog.Trace.Agent
             {
                 try
                 {
-                    var response = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
-                    response.EnsureSuccessStatusCode();
+                    var responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+                    responseMessage.EnsureSuccessStatusCode();
+
+                    // build the sample rate map from the response json
+                    var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var response = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+
+                    Tracer.Instance.Sampler.SetSampleRates(response.RateByService);
                     return;
                 }
                 catch (Exception ex)
@@ -88,6 +95,12 @@ namespace Datadog.Trace.Agent
                 retryCount++;
                 sleepDuration *= 2;
             }
+        }
+
+        internal class ApiResponse
+        {
+            [JsonProperty("rate_by_service")]
+            public Dictionary<string, float> RateByService { get; set; }
         }
     }
 }
