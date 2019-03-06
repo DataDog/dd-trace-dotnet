@@ -1,4 +1,4 @@
-#if !NETSTANDARD2_0
+#if NET461 || NET452
 
 using System.Net;
 using System.Threading.Tasks;
