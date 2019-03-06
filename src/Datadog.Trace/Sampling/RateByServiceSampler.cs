@@ -25,12 +25,11 @@ namespace Datadog.Trace.Sampling
 
             if (_sampleRates.TryGetValue(key, out float sampleRate))
             {
-                bool sample = (traceId * KnuthFactor) % MaxTraceId <= sampleRate * MaxTraceId;
+                var sample = ((traceId * KnuthFactor) % MaxTraceId) <= (sampleRate * MaxTraceId);
 
-                if (sample)
-                {
-                    return SamplingPriority.AutoKeep;
-                }
+                return sample
+                           ? SamplingPriority.AutoKeep
+                           : SamplingPriority.AutoReject;
             }
 
             return SamplingPriority.AutoKeep;
