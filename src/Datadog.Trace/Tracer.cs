@@ -210,7 +210,7 @@ namespace Datadog.Trace
 
         internal void LockSamplingPriority(Span span)
         {
-            if (span.SamplingPriority == null)
+            if (span.SamplingPriority == null && Sampler != null)
             {
                 // if sampling priority has not been set yet,
                 // use sampler to determine a value before locking
