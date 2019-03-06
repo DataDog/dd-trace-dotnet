@@ -77,8 +77,6 @@ namespace Datadog.Trace
 
         internal SpanContext Context { get; }
 
-        internal ITraceContext TraceContext => Context.TraceContext;
-
         internal DateTimeOffset StartTime { get; }
 
         internal TimeSpan Duration { get; private set; }

@@ -124,7 +124,7 @@ namespace Datadog.Trace.Tests
             Assert.Null(parent.TraceContext);
             Assert.Equal(parent, child.Span.Context.Parent);
             Assert.Equal(parentId, child.Span.Context.ParentId);
-            Assert.NotNull(child.Span.TraceContext);
+            Assert.NotNull(child.Span.Context.TraceContext);
             Assert.Equal(samplingPriority, child.Span.Context.SamplingPriority);
         }
 
@@ -214,9 +214,9 @@ namespace Datadog.Trace.Tests
             child1.Dispose();
             var child2 = _tracer.StartActive("Child2");
 
-            Assert.Equal(root.Span.TraceContext, child1.Span.TraceContext);
+            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child1.Span.Context.TraceContext);
             Assert.Equal(root.Span.Context.SpanId, child1.Span.Context.ParentId);
-            Assert.Equal(root.Span.TraceContext, child2.Span.TraceContext);
+            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child2.Span.Context.TraceContext);
             Assert.Equal(root.Span.Context.SpanId, child2.Span.Context.ParentId);
         }
 
@@ -227,9 +227,9 @@ namespace Datadog.Trace.Tests
             var child1 = _tracer.StartActive("Child1");
             var child2 = _tracer.StartActive("Child2");
 
-            Assert.Equal(root.Span.TraceContext, child1.Span.TraceContext);
+            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child1.Span.Context.TraceContext);
             Assert.Equal(root.Span.Context.SpanId, child1.Span.Context.ParentId);
-            Assert.Equal(root.Span.TraceContext, child2.Span.TraceContext);
+            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child2.Span.Context.TraceContext);
             Assert.Equal(child1.Span.Context.SpanId, child2.Span.Context.ParentId);
         }
 
@@ -250,12 +250,12 @@ namespace Datadog.Trace.Tests
             var syncChild = _tracer.StartActive("SyncChild");
             tcs.SetResult(true);
 
-            Assert.Equal(root.Span.TraceContext, syncChild.Span.TraceContext);
+            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)syncChild.Span.Context.TraceContext);
             Assert.Equal(root.Span.Context.SpanId, syncChild.Span.Context.ParentId);
             foreach (var task in tasks)
             {
                 var span = await task;
-                Assert.Equal(root.Span.TraceContext, span.Span.TraceContext);
+                Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)span.Span.Context.TraceContext);
                 Assert.Equal(root.Span.Context.SpanId, span.Span.Context.ParentId);
             }
         }

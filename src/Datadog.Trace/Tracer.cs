@@ -168,7 +168,7 @@ namespace Datadog.Trace
                 span.LockSamplingPriority();
             }
 
-            span.TraceContext.AddSpan(span);
+            span.Context.TraceContext.AddSpan(span);
             return span;
         }
 
