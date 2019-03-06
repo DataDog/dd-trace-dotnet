@@ -278,14 +278,10 @@ namespace Datadog.Trace
 
         internal void LockSamplingPriority()
         {
-            _samplingPriorityLocked = true;
-
-            var samplingPriority = Context.SamplingPriority;
-
             // only set this metric on root spans
-            if (Context.ParentId > 0 && samplingPriority != null)
+            if (Context.ParentId > 0 && Context.SamplingPriority != null)
             {
-                SetMetric(Trace.Metrics.SamplingPriority, (int)samplingPriority.Value);
+                SetMetric(Trace.Metrics.SamplingPriority, (int)Context.SamplingPriority.Value);
             }
         }
     }
