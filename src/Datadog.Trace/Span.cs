@@ -88,6 +88,8 @@ namespace Datadog.Trace
 
         internal ConcurrentDictionary<string, string> Tags { get; } = new ConcurrentDictionary<string, string>();
 
+        internal ConcurrentDictionary<string, int> Metrics { get; } = new ConcurrentDictionary<string, int>();
+
         internal bool IsFinished { get; private set; }
 
         /// <summary>
@@ -109,11 +111,21 @@ namespace Datadog.Trace
             sb.AppendLine($"Start: {StartTime}");
             sb.AppendLine($"Duration: {Duration}");
             sb.AppendLine($"Error: {Error}");
-            sb.AppendLine($"Meta:");
+            sb.AppendLine("Meta:");
 
             if (Tags != null)
             {
                 foreach (var kv in Tags)
+                {
+                    sb.Append($"\t{kv.Key}:{kv.Value}");
+                }
+            }
+
+            sb.AppendLine("Metrics:");
+
+            if (Metrics != null && Metrics.Count > 0)
+            {
+                foreach (var kv in Metrics)
                 {
                     sb.Append($"\t{kv.Key}:{kv.Value}");
                 }
@@ -138,7 +150,7 @@ namespace Datadog.Trace
 
             if (value == null)
             {
-                Tags.TryRemove(key, out value);
+                Tags.TryRemove(key, out _);
             }
             else
             {
@@ -228,7 +240,36 @@ namespace Datadog.Trace
 
         internal string GetTag(string key)
         {
-            return Tags.TryGetValue(key, out string value) ? value : null;
+            return Tags.TryGetValue(key, out string value)
+                       ? value
+                       : null;
+        }
+
+        internal int? GetMetric(string key)
+        {
+            return Metrics.TryGetValue(key, out int value)
+                       ? value
+                       : default;
+        }
+
+        internal Span SetMetric(string key, int? value)
+        {
+            if (IsFinished)
+            {
+                _log.Debug("SetMetric should not be called after the span was closed");
+                return this;
+            }
+
+            if (value == null)
+            {
+                Metrics.TryRemove(key, out _);
+            }
+            else
+            {
+                Metrics[key] = value.Value;
+            }
+
+            return this;
         }
     }
 }

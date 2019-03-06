@@ -66,6 +66,12 @@ namespace Datadog.Trace.Agent
                 packer.PackString("meta");
                 packer.Pack(value.Tags);
             }
+
+            if (value.Metrics != null)
+            {
+                packer.PackString("metrics");
+                packer.Pack(value.Tags);
+            }
         }
 
         protected override Span UnpackFromCore(Unpacker unpacker)
