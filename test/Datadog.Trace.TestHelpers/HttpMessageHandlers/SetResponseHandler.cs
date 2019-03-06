@@ -2,11 +2,11 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.TestHelpers.HttpMessageHandlers
 {
     public class SetResponseHandler : DelegatingHandler
     {
-        private HttpResponseMessage _response;
+        private readonly HttpResponseMessage _response;
 
         public SetResponseHandler(HttpResponseMessage response)
         {

@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.TestHelpers.HttpMessageHandlers;
 using Moq;
 using Xunit;
 

@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MsgPack;
 
-namespace Datadog.Trace.TestHelpers
+namespace Datadog.Trace.TestHelpers.HttpMessageHandlers
 {
     /// <summary>
     /// This class implements a handler that can be passed as parameter of a new HttpClient
