@@ -37,7 +37,9 @@ namespace Datadog.Trace.Agent
                 return;
             }
 
-            await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)));
+            await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)))
+                      .ConfigureAwait(false);
+
             if (!_flushTask.IsCompleted)
             {
                 _log.Warn("Could not flush all traces before process exit");
@@ -49,7 +51,7 @@ namespace Datadog.Trace.Agent
             var traces = _tracesBuffer.Pop();
             if (traces.Any())
             {
-                await _api.SendTracesAsync(traces);
+                await _api.SendTracesAsync(traces).ConfigureAwait(false);
             }
         }
 
@@ -59,15 +61,17 @@ namespace Datadog.Trace.Agent
             {
                 try
                 {
-                    await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(1)), _processExit.Task);
+                    await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(1)), _processExit.Task)
+                              .ConfigureAwait(false);
+
                     if (_processExit.Task.IsCompleted)
                     {
-                        await FlushTracesAsync();
+                        await FlushTracesAsync().ConfigureAwait(false);
                         return;
                     }
                     else
                     {
-                        await FlushTracesAsync();
+                        await FlushTracesAsync().ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)

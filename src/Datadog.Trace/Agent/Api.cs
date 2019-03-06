@@ -56,7 +56,7 @@ namespace Datadog.Trace.Agent
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
         {
-            await SendAsync(traces, _tracesEndpoint);
+            await SendAsync(traces, _tracesEndpoint).ConfigureAwait(false);
         }
 
         private async Task SendAsync<T>(T value, Uri endpoint)
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Agent
             {
                 try
                 {
-                    var response = await _client.PostAsync(endpoint, content);
+                    var response = await _client.PostAsync(endpoint, content).ConfigureAwait(false);
                     response.EnsureSuccessStatusCode();
                     return;
                 }
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Agent
                     }
                 }
 
-                await Task.Delay(sleepDuration);
+                await Task.Delay(sleepDuration).ConfigureAwait(false);
 
                 retryCount++;
                 sleepDuration *= 2;
