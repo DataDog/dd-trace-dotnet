@@ -50,15 +50,11 @@ namespace Datadog.Trace.Agent
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
         {
-            await SendAsync(traces, _tracesEndpoint).ConfigureAwait(false);
-        }
+            MsgPackContent<IList<List<Span>>> content;
 
-        private async Task SendAsync<T>(T value, Uri endpoint)
-        {
-            MsgPackContent<T> content;
             try
             {
-                content = new MsgPackContent<T>(value, _serializationContext);
+                content = new MsgPackContent<IList<List<Span>>>(traces, _serializationContext);
             }
             catch (Exception ex)
             {
@@ -75,7 +71,7 @@ namespace Datadog.Trace.Agent
             {
                 try
                 {
-                    var response = await _client.PostAsync(endpoint, content).ConfigureAwait(false);
+                    var response = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
                     response.EnsureSuccessStatusCode();
                     return;
                 }
@@ -83,7 +79,7 @@ namespace Datadog.Trace.Agent
                 {
                     if (retryCount >= retryLimit)
                     {
-                        _log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}", ex, endpoint);
+                        _log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
                         return;
                     }
                 }
