@@ -294,6 +294,8 @@ namespace Datadog.Trace
 
         internal void LockSamplingPriority()
         {
+            _samplingPriorityLocked = true;
+
             var samplingPriority = Context.SamplingPriority;
 
             // only set this metric on root spans
@@ -301,8 +303,6 @@ namespace Datadog.Trace
             {
                 SetMetric(Trace.Metrics.SamplingPriority, (int)samplingPriority.Value);
             }
-
-            _samplingPriorityLocked = true;
         }
     }
 }
