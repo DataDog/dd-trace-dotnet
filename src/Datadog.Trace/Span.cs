@@ -22,14 +22,7 @@ namespace Datadog.Trace
             // TODO:bertrand should we throw an exception if operationName is null or empty?
             Context = new SpanContext(tracer, parent, serviceName);
             OperationName = operationName;
-            if (start.HasValue)
-            {
-                StartTime = start.Value;
-            }
-            else
-            {
-                StartTime = Context.TraceContext.UtcNow();
-            }
+            StartTime = start ?? Context.TraceContext.UtcNow;
         }
 
         /// <summary>
@@ -165,7 +158,7 @@ namespace Datadog.Trace
         /// </summary>
         public void Finish()
         {
-            Finish(Context.TraceContext.UtcNow());
+            Finish(Context.TraceContext.UtcNow);
         }
 
         /// <summary>

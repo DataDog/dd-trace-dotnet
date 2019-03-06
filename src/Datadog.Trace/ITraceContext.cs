@@ -8,6 +8,6 @@ namespace Datadog.Trace
 
         void CloseSpan(Span span);
 
-        DateTimeOffset UtcNow();
+        DateTimeOffset UtcNow { get; }
     }
 }

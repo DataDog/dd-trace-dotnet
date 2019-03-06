@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tests
         {
             var traceContext = new TraceContext(_tracerMock.Object);
 
-            var now = traceContext.UtcNow();
+            var now = traceContext.UtcNow;
             var expectedNow = DateTimeOffset.UtcNow;
 
             Assert.True(expectedNow.Subtract(now) < TimeSpan.FromMilliseconds(30));
@@ -24,8 +24,8 @@ namespace Datadog.Trace.Tests
         {
             var traceContext = new TraceContext(_tracerMock.Object);
 
-            var t1 = traceContext.UtcNow();
-            var t2 = traceContext.UtcNow();
+            var t1 = traceContext.UtcNow;
+            var t2 = traceContext.UtcNow;
 
             Assert.True(t2.Subtract(t1) > TimeSpan.Zero);
         }
