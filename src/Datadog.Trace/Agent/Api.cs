@@ -10,7 +10,7 @@ namespace Datadog.Trace.Agent
 {
     internal class Api : IApi
     {
-        private const string TracesPath = "/v0.3/traces";
+        private const string TracesPath = "/v0.4/traces";
 
         private static readonly ILog _log = LogProvider.For<Api>();
         private static readonly SerializationContext _serializationContext = new SerializationContext();
