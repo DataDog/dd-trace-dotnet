@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     {
         private const string DefaultHost = "SpanTests.TestHost.DataDogDemo.com";
 
-        private static readonly Dictionary<string, string> DefaultHeaders = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> DefaultHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                                                                             {
                                                                                 { "Host", DefaultHost },
                                                                                 { "Content-Type", "application/json" },
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             const string testUrl = "https://demotest.DataDogDemo.com/PathSegment1/PathSegment2?queryStringParam1=qsp1Val";
 
-            var headers = DefaultHeaders;
+            var headers = new Dictionary<string, string>(DefaultHeaders, StringComparer.OrdinalIgnoreCase);
             headers.Remove("Host");
 
             var decorationSource = new TestHttpDecorationSource(testUrl, null, headers);
