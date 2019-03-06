@@ -13,15 +13,15 @@ namespace Datadog.Trace.Agent
         private const string TracesPath = "/v0.3/traces";
 
         private static readonly ILog _log = LogProvider.For<Api>();
-        private static readonly SerializationContext _serializationContext;
+        private static readonly SerializationContext _serializationContext = new SerializationContext();
 
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
 
         static Api()
         {
-            _serializationContext = new SerializationContext();
             var spanSerializer = new SpanMessagePackSerializer(_serializationContext);
+
             _serializationContext.ResolveSerializer += (sender, eventArgs) =>
             {
                 if (eventArgs.TargetType == typeof(Span))
@@ -33,14 +33,9 @@ namespace Datadog.Trace.Agent
 
         public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler = null)
         {
-            if (delegatingHandler != null)
-            {
-                _client = new HttpClient(delegatingHandler);
-            }
-            else
-            {
-                _client = new HttpClient();
-            }
+            _client = delegatingHandler == null
+                          ? new HttpClient()
+                          : new HttpClient(delegatingHandler);
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
@@ -49,7 +44,7 @@ namespace Datadog.Trace.Agent
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, RuntimeInformation.FrameworkDescription);
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, this.GetType().Assembly.GetName().Version.ToString());
 
-            // don't add automatic instrumentation to this http request
+            // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 

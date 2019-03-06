@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -18,12 +18,12 @@ namespace Datadog.Trace.Agent
             _serializationContext = serializationContext;
         }
 
-        public T Value { get; private set; }
+        public T Value { get; }
 
-        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
-            var serializer = _serializationContext.GetSerializer<T>();
-            await serializer.PackAsync(stream, Value);
+            return _serializationContext.GetSerializer<T>()
+                                        .PackAsync(stream, Value);
         }
 
         protected override bool TryComputeLength(out long length)
