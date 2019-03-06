@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using System.Timers;
 using Datadog.Trace.Logging;
 using MsgPack.Serialization;
 
@@ -13,11 +12,11 @@ namespace Datadog.Trace.Agent
     {
         private const string TracesPath = "/v0.3/traces";
 
-        private static ILog _log = LogProvider.For<Api>();
-        private static SerializationContext _serializationContext;
+        private static readonly ILog _log = LogProvider.For<Api>();
+        private static readonly SerializationContext _serializationContext;
 
-        private Uri _tracesEndpoint;
-        private HttpClient _client;
+        private readonly Uri _tracesEndpoint;
+        private readonly HttpClient _client;
 
         static Api()
         {
