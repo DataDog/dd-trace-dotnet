@@ -160,6 +160,13 @@ namespace Datadog.Trace
                 span.SetTag(Tags.Env, env);
             }
 
+            // lock sampling priority when a span is started from a propagated trace
+            if (childOf?.SpanId > 0 && childOf.SamplingPriority != null)
+            {
+                span.SamplingPriority = childOf.SamplingPriority;
+                span.LockSamplingPriority();
+            }
+
             span.TraceContext.AddSpan(span);
             return span;
         }
@@ -202,8 +209,15 @@ namespace Datadog.Trace
 
         internal void LockSamplingPriority(Span span)
         {
-            var samplingPriority = _sampler.GetSamplingPriority(span.ServiceName, span.GetTag(Tags.Env), span.TraceId);
-            span.LockSamplingPriority(samplingPriority);
+            if (span.SamplingPriority == null)
+            {
+                // if sampling priority has not been set yet,
+                // use sampler to determine a value before locking
+                string env = span.GetTag(Trace.Tags.Env);
+                span.SamplingPriority = _sampler.GetSamplingPriority(span.ServiceName, env, span.TraceId);
+            }
+
+            span.LockSamplingPriority();
         }
 
         /// <summary>

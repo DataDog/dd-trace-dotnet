@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Text;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace
 {
@@ -213,6 +214,9 @@ namespace Datadog.Trace
             if (shouldCloseSpan)
             {
                 Context.TraceContext.CloseSpan(this);
+
+                // lock sampling priority when span finishes
+                LockSamplingPriority();
             }
         }
 
@@ -289,9 +293,8 @@ namespace Datadog.Trace
             return this;
         }
 
-        internal void LockSamplingPriority(SamplingPriority samplingPriority)
+        internal void LockSamplingPriority()
         {
-            SamplingPriority = samplingPriority;
             _samplingPriorityLocked = true;
         }
     }
