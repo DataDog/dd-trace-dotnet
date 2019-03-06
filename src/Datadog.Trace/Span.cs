@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Text;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace
 {
@@ -14,7 +13,7 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable
     {
-        private static readonly ILog _log = LogProvider.For<Span>();
+        private static readonly ILog Log = LogProvider.For<Span>();
 
         private readonly object _lock = new object();
 
@@ -146,7 +145,7 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
-                _log.Debug("SetTag should not be called after the span was closed");
+                Log.Debug("SetTag should not be called after the span was closed");
                 return this;
             }
 
@@ -261,7 +260,7 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
-                _log.Debug("SetMetric should not be called after the span was closed");
+                Log.Debug("SetMetric should not be called after the span was closed");
                 return this;
             }
 
