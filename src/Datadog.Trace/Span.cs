@@ -80,12 +80,13 @@ namespace Datadog.Trace
         /// </summary>
         public SamplingPriority? SamplingPriority
         {
-            get => (SamplingPriority?)GetMetric(Datadog.Trace.Metrics.SamplingPriority);
+            get => Context.SamplingPriority;
             set
             {
                 if (!_samplingPriorityLocked)
                 {
-                    SetMetric(Datadog.Trace.Metrics.SamplingPriority, (int?)value);
+                    Context.SamplingPriority = value;
+                    SetMetric(Trace.Metrics.SamplingPriority, (int?)value);
                 }
             }
         }

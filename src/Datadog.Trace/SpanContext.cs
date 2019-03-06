@@ -63,7 +63,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets this span's sampling priority, which determines whether a trace should be sampled or not.
         /// </summary>
-        public SamplingPriority? SamplingPriority { get; }
+        public SamplingPriority? SamplingPriority { get; internal set; }
 
         internal string ServiceName { get; set; }
 
