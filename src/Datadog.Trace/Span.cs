@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Logging;
 
@@ -17,6 +16,8 @@ namespace Datadog.Trace
         private static readonly ILog _log = LogProvider.For<Span>();
 
         private readonly object _lock = new object();
+
+        private bool _samplingPriorityLocked;
 
         internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
         {
@@ -73,6 +74,21 @@ namespace Datadog.Trace
         /// Gets the span's unique identifier.
         /// </summary>
         public ulong SpanId => Context.SpanId;
+
+        /// <summary>
+        /// Gets or sets the sampling priority value for this span.
+        /// </summary>
+        public SamplingPriority? SamplingPriority
+        {
+            get => (SamplingPriority?)GetMetric(Datadog.Trace.Metrics.SamplingPriority);
+            set
+            {
+                if (!_samplingPriorityLocked)
+                {
+                    SetMetric(Datadog.Trace.Metrics.SamplingPriority, (int?)value);
+                }
+            }
+        }
 
         internal SpanContext Context { get; }
 
@@ -270,6 +286,12 @@ namespace Datadog.Trace
             }
 
             return this;
+        }
+
+        internal void LockSamplingPriority(SamplingPriority samplingPriority)
+        {
+            SamplingPriority = samplingPriority;
+            _samplingPriorityLocked = true;
         }
     }
 }
