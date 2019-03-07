@@ -53,9 +53,9 @@ namespace Datadog.Trace
 
                     if (_samplingPriority == null)
                     {
-                    // determine an initial sampling priority for this trace, but don't lock it yet
-                    string env = _rootSpan.GetTag(Tags.Env);
-                    _samplingPriority = Tracer.Sampler.GetSamplingPriority(_rootSpan.ServiceName, env, _rootSpan.Context.TraceId);
+                        // determine an initial sampling priority for this trace, but don't lock it yet
+                        string env = _rootSpan.GetTag(Tags.Env);
+                        _samplingPriority = Tracer.Sampler.GetSamplingPriority(_rootSpan.ServiceName, env, _rootSpan.Context.TraceId);
                     }
                 }
 
@@ -86,18 +86,14 @@ namespace Datadog.Trace
 
         public void LockSamplingPriority()
         {
-            if (_rootSpan == null)
+            if (_samplingPriority == null)
             {
-                throw new InvalidOperationException("Cannot lock sampling priority on an empty trace (no spans).");
+                Log.Warn("Cannot lock sampling priority before it has been set.");
             }
-
-            if (_samplingPriorityLocked && _samplingPriority == null)
+            else
             {
-                // this should never happen
-                throw new InvalidOperationException("Sampling priority was locked before it was set.");
+                _samplingPriorityLocked = true;
             }
-
-            _samplingPriorityLocked = true;
         }
     }
 }
