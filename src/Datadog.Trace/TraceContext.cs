@@ -26,8 +26,9 @@ namespace Datadog.Trace
         public IDatadogTracer Tracer { get; }
 
         /// <summary>
-        /// Gets or sets sampling priority set by user code.
-        /// Once the sampling priority is locked, setting this is a no-op.
+        /// Gets or sets sampling priority.
+        /// Once the sampling priority is locked with <see cref="LockSamplingPriority"/>,
+        /// further attempts to set this are ignored.
         /// </summary>
         public SamplingPriority? SamplingPriority
         {
@@ -47,7 +48,12 @@ namespace Datadog.Trace
             {
                 if (_openSpans == 0)
                 {
+                    // first span is the root span
                     _rootSpan = span;
+
+                    // determine an initial sampling priority for this trace, but don't lock it yet
+                    string env = _rootSpan.GetTag(Tags.Env);
+                    _samplingPriority = Tracer.Sampler.GetSamplingPriority(_rootSpan.ServiceName, env, _rootSpan.Context.TraceId);
                 }
 
                 _spans.Add(span);
@@ -60,8 +66,8 @@ namespace Datadog.Trace
             if (span == _rootSpan)
             {
                 // lock sampling priority and set metric when root span finishes
-                SamplingPriority priority = LockSamplingPriority();
-                span.SetMetric(Metrics.SamplingPriority, (int)priority);
+                LockSamplingPriority();
+                span.SetMetric(Metrics.SamplingPriority, (int)_samplingPriority);
             }
 
             lock (_lock)
@@ -75,28 +81,20 @@ namespace Datadog.Trace
             }
         }
 
-        public SamplingPriority LockSamplingPriority()
+        public void LockSamplingPriority()
         {
             if (_rootSpan == null)
             {
                 throw new InvalidOperationException("Cannot lock sampling priority on an empty trace (no spans).");
             }
 
-            if (_samplingPriority == null)
+            if (_samplingPriorityLocked && _samplingPriority == null)
             {
-                if (_samplingPriorityLocked)
-                {
-                    // this should never happen
-                    throw new InvalidOperationException("Sampling priority was locked before it was set.");
-                }
-
-                // if the sampling priority hasn't been set yet, determine a value now before locking it
-                string env = _rootSpan.GetTag(Tags.Env);
-                _samplingPriority = Tracer.Sampler.GetSamplingPriority(_rootSpan.ServiceName, env, _rootSpan.Context.TraceId);
+                // this should never happen
+                throw new InvalidOperationException("Sampling priority was locked before it was set.");
             }
 
             _samplingPriorityLocked = true;
-            return _samplingPriority.Value;
         }
     }
 }
