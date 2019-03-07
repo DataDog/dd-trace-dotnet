@@ -31,20 +31,19 @@ namespace Datadog.Trace
 
             if (headers == null) { throw new ArgumentNullException(nameof(headers)); }
 
+            // lock sampling priority when span propagates.
+            // if sampling priority is not set yet, this will determine
+            // a value using a Sampler.
+            context.TraceContext.LockSamplingPriority();
+
             headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
             headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
 
-            var traceContext = context.TraceContext;
-            var samplingPriority = (int?)traceContext.SamplingPriority;
+            var samplingPriority = (int?)context.TraceContext.SamplingPriority;
 
             headers.Set(
                 HttpHeaderNames.SamplingPriority,
                 samplingPriority?.ToString(InvariantCulture));
-
-            // lock sampling priority when span propagates.
-            // if sampling priority is not set yet, this will determine
-            // a value using a Sampler.
-            traceContext.LockSamplingPriority();
         }
 
         /// <summary>
