@@ -249,9 +249,9 @@ std::vector<Integration> FilterIntegrationsByTarget(
       }
       for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
         auto ref_name = GetAssemblyName(assembly_import, assembly_ref);
-        // LOG_APPEND(L"-- assembly ref: " << assembly_name << " to " <<
-        // ref_name);
+        // Info(L"-- assembly ref: " , assembly_name , " to " , ref_name);
         if (mr.target_method.assembly.name == ref_name) {
+          // Info(L"FOUND IT! -- assembly ref: " , assembly_name , " to " , ref_name);
           found = true;
           break;
         }

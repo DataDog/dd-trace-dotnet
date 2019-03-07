@@ -8,28 +8,34 @@ rem Set default values
 set profiler_platform=x64
 set profiler_configuration=Debug
 set start_visual_studio=true
+set vs_sln_name=Datadog.Trace.sln
 
 :next_argument
-if not "%1" == "" (
-    if /i "%1" == "--help" goto show_usage
-    if /i "%1" == "-h" goto show_usage
-    if "%1" == "/?" goto show_usage
+set devenv_arg1=%1
+set devenv_arg1_sub7=%devenv_arg1:~0,7%
 
-    if /i "%1" == "Debug" set profiler_configuration=Debug
-    if /i "%1" == "Release" set profiler_configuration=Release
+if not "%devenv_arg1%" == "" (
+    if /i "%devenv_arg1%" == "--help" goto show_usage
+    if /i "%devenv_arg1%" == "-h" goto show_usage
+    if "%devenv_arg1%" == "/?" goto show_usage
 
-    if /i "%1" == "x64" set profiler_platform=x64
-    if /i "%1" == "x86" set profiler_platform=x86
+    if /i "%devenv_arg1%" == "Debug" set profiler_configuration=Debug
+    if /i "%devenv_arg1%" == "Release" set profiler_configuration=Release
 
-    if /i "%1" == "vs+" set start_visual_studio=true
-    if /i "%1" == "vs-" set start_visual_studio=false
+    if /i "%devenv_arg1%" == "x64" set profiler_platform=x64
+    if /i "%devenv_arg1%" == "x86" set profiler_platform=x86
 
+    if /i "%devenv_arg1%" == "vs+" set start_visual_studio=true
+    if /i "%devenv_arg1%" == "vs-" set start_visual_studio=false
+
+    if /i "%devenv_arg1_sub7%" == "Datadog" set vs_sln_name=%devenv_arg1%
+    
     rem A "goto" gets around premature variable expansion
     goto check_valid_argument
     :check_valid_argument
-    if "%profiler_configuration%" == "" if "%profiler_platform%" == "" if "%start_visual_studio%" == "" (
+    if "%profiler_configuration%" == "" if "%profiler_platform%" == "" if "%start_visual_studio%" == "" if "%vs_sln_name%" == "" (
         rem If neither option was set
-        echo Invalid option: "%1".
+        echo Invalid option: "%devenv_arg1%".
         goto show_usage
     )
 
@@ -58,9 +64,9 @@ SET DD_INTEGRATIONS=%~dp0\integrations.json;%~dp0\test-integrations.json
 if "%start_visual_studio%" == "true" (
     echo Starting Visual Studio...
     IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" (
-    START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" "%~dp0\Datadog.Trace.sln"
+    START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     ) ELSE (
-    START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe" "%~dp0\Datadog.Trace.sln"
+    START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     )
 )
 goto end
@@ -78,3 +84,6 @@ rem Clear temporary values
 set profiler_platform=
 set profiler_configuration=
 set start_visual_studio=
+set vs_sln_name=
+set devenv_arg1=
+set devenv_arg1_sub7=
