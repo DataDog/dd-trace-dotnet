@@ -73,14 +73,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
-                SpanContext propagatedContext = null;
-                SamplingPriority? propagatedSamplingPriority = null;
+                PropagationContext propagatedContext = null;
 
                 try
                 {
                     // extract propagated http headers
-                    IHeadersCollection headers = httpContext.Request.Headers.Wrap();
-                    SpanContextPropagator.Instance.Extract(headers, out propagatedContext, out propagatedSamplingPriority);
+                    var headers = httpContext.Request.Headers.Wrap();
+                    propagatedContext = SpanContextPropagator.Instance.Extract(headers);
                 }
                 catch (Exception ex)
                 {
@@ -97,14 +96,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
-
-                if (propagatedContext != null)
-                {
-                    // lock sampling priority when a span is started from a propagated trace
-                    var traceContext = span.Context.TraceContext;
-                    traceContext.SamplingPriority = propagatedSamplingPriority;
-                    traceContext.LockSamplingPriority();
-                }
             }
             catch (Exception ex)
             {
