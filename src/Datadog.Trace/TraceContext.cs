@@ -51,9 +51,12 @@ namespace Datadog.Trace
                     // first span is the root span
                     _rootSpan = span;
 
+                    if (_samplingPriority == null)
+                    {
                     // determine an initial sampling priority for this trace, but don't lock it yet
                     string env = _rootSpan.GetTag(Tags.Env);
                     _samplingPriority = Tracer.Sampler.GetSamplingPriority(_rootSpan.ServiceName, env, _rootSpan.Context.TraceId);
+                    }
                 }
 
                 _spans.Add(span);
