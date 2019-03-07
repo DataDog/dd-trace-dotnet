@@ -8,39 +8,32 @@ namespace Datadog.Trace
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
     /// </summary>
-    public class SpanContext
+    public class SpanContext : ISpanContext
     {
         private static ILog _log = LogProvider.For<SpanContext>();
         private static ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class.
-        /// This constructor is used to create a propagated context.
-        /// </summary>
-        /// <param name="traceId">The trace identifier.</param>
-        /// <param name="spanId">The span identifier.</param>
-        public SpanContext(ulong traceId, ulong spanId)
+        internal SpanContext(IDatadogTracer tracer, ISpanContext parent)
+            : this(GetTraceContext(tracer, parent), parent)
         {
-            TraceId = traceId;
-            SpanId = spanId;
         }
 
-        internal SpanContext(IDatadogTracer tracer, SpanContext parent, string serviceName)
+        internal SpanContext(TraceContext traceContext, ISpanContext parent)
         {
-            TraceId = parent != null && parent.TraceId > 0
+            TraceContext = traceContext;
+            Parent = parent;
+
+            TraceId = parent?.TraceId > 0
                           ? parent.TraceId
                           : _random.Value.NextUInt63();
 
-            TraceContext = parent?.TraceContext ?? new TraceContext(tracer);
-            Parent = parent;
             SpanId = _random.Value.NextUInt63();
-            ServiceName = serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName;
         }
 
         /// <summary>
         /// Gets the SpanContext of the parent span (if any)
         /// </summary>
-        public SpanContext Parent { get; }
+        public ISpanContext Parent { get; }
 
         /// <summary>
         /// Gets the trace id
@@ -57,9 +50,29 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId { get; }
 
-        internal string ServiceName { get; set; }
-
         // This may be null if SpanContext was extracted from another process context
         internal TraceContext TraceContext { get; }
+
+        internal static TraceContext GetTraceContext(IDatadogTracer tracer, ISpanContext parent)
+        {
+            TraceContext traceContext;
+
+            switch (parent)
+            {
+                case SpanContext context:
+                    traceContext = context.TraceContext ?? new TraceContext(tracer);
+                    break;
+                case PropagationContext propagatedContext:
+                    traceContext = new TraceContext(tracer)
+                    {
+                        SamplingPriority = propagatedContext.SamplingPriority
+                    };
+                    break;
+                default:
+                    throw new ArgumentException("Type of parent is not a supported.", nameof(parent));
+            }
+
+            return traceContext;
+        }
     }
 }

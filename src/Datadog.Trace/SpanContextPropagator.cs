@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Headers;
@@ -47,14 +47,11 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Extracts a propagated <see cref="SpanContext"/> and a <see cref="SamplingPriority"/>
-        /// from the values found in the specified headers,
+        /// Extracts a <see cref="PropagationContext"/> from the values found in the specified headers.
         /// </summary>
         /// <param name="headers">The headers that contain the values to be extracted.</param>
-        /// <param name="spanContext">The extracted <see cref="SpanContext"/>.</param>
-        /// <param name="samplingPriority">The extracted <see cref="SamplingPriority"/>.</param>
-        /// <returns><c>true</c> if values where extracted successfully, otherwise <c>false</c>.</returns>
-        public bool Extract(IHeadersCollection headers, out SpanContext spanContext, out SamplingPriority? samplingPriority)
+        /// <returns>A new <see cref="PropagationContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
+        public PropagationContext Extract(IHeadersCollection headers)
         {
             if (headers == null)
             {
@@ -66,16 +63,13 @@ namespace Datadog.Trace
             if (traceId == 0)
             {
                 // a valid traceId is required to use distributed tracing
-                spanContext = null;
-                samplingPriority = null;
-                return false;
+                return null;
             }
 
             var parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
+            var samplingPriority = ParseEnum<SamplingPriority>(headers, HttpHeaderNames.SamplingPriority);
 
-            spanContext = new SpanContext(traceId, parentId);
-            samplingPriority = ParseEnum<SamplingPriority>(headers, HttpHeaderNames.SamplingPriority);
-            return true;
+            return new PropagationContext(traceId, parentId, samplingPriority);
         }
 
         private static ulong ParseUInt64(IHeadersCollection headers, string headerName)

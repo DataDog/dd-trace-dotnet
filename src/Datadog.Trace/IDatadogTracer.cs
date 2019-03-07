@@ -14,7 +14,7 @@ namespace Datadog.Trace
 
         ISampler Sampler { get; }
 
-        Span StartSpan(string operationName, SpanContext childOf, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
+        Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
 
         void Write(List<Span> span);
     }

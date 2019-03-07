@@ -53,9 +53,20 @@ namespace Datadog.Trace
 
                     if (_samplingPriority == null)
                     {
-                        // determine an initial sampling priority for this trace, but don't lock it yet
-                        string env = _rootSpan.GetTag(Tags.Env);
-                        _samplingPriority = Tracer.Sampler.GetSamplingPriority(_rootSpan.ServiceName, env, _rootSpan.Context.TraceId);
+                        if (span.Context.Parent is PropagationContext context && context.SamplingPriority != null)
+                        {
+                            // this is a root span create from a propagated context.
+                            // lock sampling priority when a span is started from a propagated trace
+                            _samplingPriority = context.SamplingPriority;
+                            LockSamplingPriority();
+                        }
+                        else
+                        {
+                            // this is a local root span.
+                            // determine an initial sampling priority for this trace, but don't lock it yet
+                            string env = _rootSpan.GetTag(Tags.Env);
+                            _samplingPriority = Tracer.Sampler.GetSamplingPriority(_rootSpan.ServiceName, env, _rootSpan.Context.TraceId);
+                        }
                     }
                 }
 

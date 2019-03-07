@@ -17,11 +17,10 @@ namespace Datadog.Trace
 
         private readonly object _lock = new object();
 
-        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
+        internal Span(IDatadogTracer tracer, ISpanContext parent, DateTimeOffset? start)
         {
             // TODO:bertrand should we throw an exception if operationName is null or empty?
-            Context = new SpanContext(tracer, parent, serviceName);
-            OperationName = operationName;
+            Context = new SpanContext(tracer, parent);
             StartTime = start ?? Context.TraceContext.UtcNow;
         }
 
@@ -50,11 +49,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the service name
         /// </summary>
-        public string ServiceName
-        {
-            get => Context.ServiceName;
-            set => Context.ServiceName = value;
-        }
+        public string ServiceName { get; set; }
 
         /// <summary>
         /// Gets the trace's unique identifier.
@@ -92,7 +87,7 @@ namespace Datadog.Trace
             sb.AppendLine($"TraceId: {Context.TraceId}");
             sb.AppendLine($"ParentId: {Context.ParentId}");
             sb.AppendLine($"SpanId: {Context.SpanId}");
-            sb.AppendLine($"ServiceName: {Context.ServiceName}");
+            sb.AppendLine($"ServiceName: {ServiceName}");
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
             sb.AppendLine($"Type: {Type}");
