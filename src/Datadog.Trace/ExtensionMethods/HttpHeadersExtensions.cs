@@ -7,7 +7,7 @@ namespace Datadog.Trace.ExtensionMethods
     /// <summary>
     /// Extension methods for <see cref="HttpHeaders"/> objects.
     /// </summary>
-    public static class HttpHeadersExtensions
+    internal static class HttpHeadersExtensions
     {
         /// <summary>
         /// Provides an <see cref="IHeadersCollection"/> implementation that wraps the specified <see cref="HttpHeaders"/>.

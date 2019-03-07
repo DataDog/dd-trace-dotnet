@@ -7,7 +7,7 @@ namespace Datadog.Trace.ExtensionMethods
     /// <summary>
     /// Extension methods for <see cref="NameValueCollection"/> objects.
     /// </summary>
-    public static class NameValueCollectionExtensions
+    internal static class NameValueCollectionExtensions
     {
         /// <summary>
         /// Provides an <see cref="IHeadersCollection"/> implementation that wraps the specified <see cref="NameValueCollection"/>.
