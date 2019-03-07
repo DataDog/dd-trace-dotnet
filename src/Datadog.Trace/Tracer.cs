@@ -94,6 +94,11 @@ namespace Datadog.Trace
         /// </summary>
         AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
+        /// <summary>
+        /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
+        /// </summary>
+        ISampler IDatadogTracer.Sampler => Sampler;
+
         internal ISampler Sampler { get; }
 
         /// <summary>
@@ -161,13 +166,6 @@ namespace Datadog.Trace
                 span.SetTag(Tags.Env, env);
             }
 
-            // lock sampling priority when a span is started from a propagated trace
-            if (childOf?.SpanId > 0 && childOf.SamplingPriority != null)
-            {
-                span.Context.SamplingPriority = childOf.SamplingPriority;
-                span.LockSamplingPriority();
-            }
-
             span.Context.TraceContext.AddSpan(span);
             return span;
         }
@@ -206,19 +204,6 @@ namespace Datadog.Trace
                                                             ?.Trim() ?? DefaultTraceAgentPort;
 
             return new Uri($"http://{host}:{port}");
-        }
-
-        internal void LockSamplingPriority(Span span)
-        {
-            if (span.Context.SamplingPriority == null && Sampler != null)
-            {
-                // if sampling priority has not been set yet,
-                // use sampler to determine a value before locking
-                string env = span.GetTag(Trace.Tags.Env);
-                span.Context.SamplingPriority = Sampler.GetSamplingPriority(span.ServiceName, env, span.Context.TraceId);
-            }
-
-            span.LockSamplingPriority();
         }
 
         /// <summary>

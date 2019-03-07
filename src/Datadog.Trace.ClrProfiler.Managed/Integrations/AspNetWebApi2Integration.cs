@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -88,23 +87,35 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 var request = controllerContext?.Request as HttpRequestMessage;
-                SpanContext spanContext = null;
+                SpanContext propagatedContext = null;
+                SamplingPriority? propagatedSamplingPriority = null;
 
                 if (request != null)
                 {
                     try
                     {
-                        // extract distributed tracing context from http headers
-                        spanContext = request.Headers.Wrap().ExtractSpanContext();
+                        // extract propagated http headers
+                        var headers = request.Headers.Wrap();
+                        SpanContextPropagator.Instance.Extract(headers, out propagatedContext, out propagatedSamplingPriority);
                     }
                     catch (Exception ex)
                     {
-                        Log.ErrorException("Error extracting span context from http headers.", ex);
+                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
                     }
                 }
 
-                scope = Tracer.Instance.StartActive(OperationName, spanContext);
-                UpdateSpan(controllerContext, scope.Span);
+                scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
+                Span span = scope.Span;
+
+                UpdateSpan(controllerContext, span);
+
+                if (propagatedContext != null)
+                {
+                    // lock sampling priority when a span is started from a propagated trace
+                    var traceContext = span.Context.TraceContext;
+                    traceContext.SamplingPriority = propagatedSamplingPriority;
+                    traceContext.LockSamplingPriority();
+                }
             }
             catch (Exception ex)
             {

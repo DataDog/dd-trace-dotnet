@@ -9,9 +9,10 @@ namespace Datadog.Trace.OpenTracing
         public OpenTracingSpanContext Extract(object carrier)
         {
             ITextMap map = carrier as ITextMap;
+
             if (map == null)
             {
-                throw new NotSupportedException("Carrier should have type ITextMap");
+                throw new ArgumentException("Carrier should have type ITextMap", nameof(carrier));
             }
 
             string parentIdHeader = null;
@@ -45,30 +46,35 @@ namespace Datadog.Trace.OpenTracing
 
             ulong.TryParse(parentIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId);
 
-            var samplingPriority = int.TryParse(samplingPriorityHeader, out int samplingPriorityValue)
-                                       ? (SamplingPriority?)samplingPriorityValue
-                                       : null;
-
-            SpanContext ddSpanContext = new SpanContext(traceId, parentId, samplingPriority);
+            SpanContext ddSpanContext = new SpanContext(traceId, parentId);
             return new OpenTracingSpanContext(ddSpanContext);
         }
 
-        public void Inject(OpenTracingSpanContext spanContext, object carrier)
+        public void Inject(OpenTracingSpanContext otSpanContext, object carrier)
         {
             ITextMap map = carrier as ITextMap;
+
             if (map == null)
             {
-                throw new NotSupportedException("Carrier should have type ITextMap");
+                throw new ArgumentException("Carrier should have type ITextMap", nameof(carrier));
             }
 
-            map.Set(HttpHeaderNames.ParentId, spanContext.Context.SpanId.ToString(CultureInfo.InvariantCulture));
-            map.Set(HttpHeaderNames.TraceId, spanContext.Context.TraceId.ToString(CultureInfo.InvariantCulture));
+            var spanContext = otSpanContext.Context;
+            var traceContext = spanContext.TraceContext;
 
-            if (spanContext.Context.SamplingPriority != null)
+            map.Set(HttpHeaderNames.ParentId, spanContext.SpanId.ToString(CultureInfo.InvariantCulture));
+            map.Set(HttpHeaderNames.TraceId, spanContext.TraceId.ToString(CultureInfo.InvariantCulture));
+
+            if (traceContext.SamplingPriority != null)
             {
-                var samplingPriority = (int)spanContext.Context.SamplingPriority;
+                var samplingPriority = (int)traceContext.SamplingPriority;
                 map.Set(HttpHeaderNames.SamplingPriority, samplingPriority.ToString(CultureInfo.InvariantCulture));
             }
+
+            // lock sampling priority when span propagates.
+            // if sampling priority is not set yet, this will determine
+            // a value using a Sampler.
+            traceContext.LockSamplingPriority();
         }
     }
 }

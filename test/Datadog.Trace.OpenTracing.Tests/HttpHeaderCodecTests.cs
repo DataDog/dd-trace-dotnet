@@ -17,19 +17,16 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             const ulong traceId = 10;
             const ulong parentId = 120;
-            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
 
             var headers = new MockTextMap();
             headers.Set(HttpHeaderTraceId, traceId.ToString());
             headers.Set(HttpHeaderParentId, parentId.ToString());
-            headers.Set(HttpHeaderSamplingPriority, ((int)samplingPriority).ToString());
 
             var spanContext = _codec.Extract(headers);
 
             Assert.NotNull(spanContext);
             Assert.Equal(traceId, spanContext.Context.TraceId);
             Assert.Equal(parentId, spanContext.Context.SpanId);
-            Assert.Equal(samplingPriority, spanContext.Context.SamplingPriority);
         }
 
         [Fact]
@@ -49,7 +46,6 @@ namespace Datadog.Trace.OpenTracing.Tests
             Assert.NotNull(spanContext);
             Assert.Equal(traceId, spanContext.Context.TraceId);
             Assert.Equal(parentId, spanContext.Context.SpanId);
-            Assert.Equal(samplingPriority, spanContext.Context.SamplingPriority);
         }
 
         [Fact]
@@ -57,9 +53,8 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             const ulong spanId = 10;
             const ulong traceId = 7;
-            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
 
-            var ddSpanContext = new SpanContext(traceId, spanId, samplingPriority);
+            var ddSpanContext = new SpanContext(traceId, spanId);
             var spanContext = new OpenTracingSpanContext(ddSpanContext);
             var headers = new MockTextMap();
 
@@ -67,7 +62,6 @@ namespace Datadog.Trace.OpenTracing.Tests
 
             Assert.Equal(spanId.ToString(), headers.Get(HttpHeaderParentId));
             Assert.Equal(traceId.ToString(), headers.Get(HttpHeaderTraceId));
-            Assert.Equal(((int)samplingPriority).ToString(), headers.Get(HttpHeaderSamplingPriority));
         }
     }
 }

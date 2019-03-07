@@ -23,10 +23,10 @@ namespace Datadog.Trace.Tests
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
 
             IHeadersCollection headers = new HttpRequestMessage().Headers.Wrap();
-            var context = new SpanContext(traceId, spanId, samplingPriority);
+            var context = new SpanContext(traceId, spanId);
 
-            headers.InjectSpanContext(context);
-            var resultContext = headers.ExtractSpanContext();
+            SpanContextPropagator.Instance.Inject(context, headers);
+            bool success = SpanContextPropagator.Instance.Extract(headers, out SpanContext resultContext, out SamplingPriority? priority);
 
             Assert.NotNull(resultContext);
             Assert.Equal(context.SpanId, resultContext.SpanId);
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
             var context = new SpanContext(traceId, spanId, samplingPriority);
 
-            headers.InjectSpanContext(context);
+            HeadersCollectionExtensions.Inject(headers, context);
             var resultContext = headers.ExtractSpanContext();
 
             Assert.NotNull(resultContext);

@@ -74,10 +74,6 @@ namespace Datadog.Trace
 
         internal TimeSpan Duration { get; private set; }
 
-        // In case we inject a context from another process,
-        // the _context.Parent will not be null but TraceContext will be null.
-        internal bool IsRootSpan => Context.Parent?.TraceContext == null;
-
         internal ConcurrentDictionary<string, string> Tags { get; } = new ConcurrentDictionary<string, string>();
 
         internal ConcurrentDictionary<string, int> Metrics { get; } = new ConcurrentDictionary<string, int>();
@@ -188,9 +184,6 @@ namespace Datadog.Trace
             if (shouldCloseSpan)
             {
                 Context.TraceContext.CloseSpan(this);
-
-                // lock sampling priority when span finishes
-                LockSamplingPriority();
             }
         }
 
@@ -265,15 +258,6 @@ namespace Datadog.Trace
             }
 
             return this;
-        }
-
-        internal void LockSamplingPriority()
-        {
-            // only set this metric on root spans
-            if (Context.ParentId > 0 && Context.SamplingPriority != null)
-            {
-                SetMetric(Trace.Metrics.SamplingPriority, (int)Context.SamplingPriority.Value);
-            }
         }
     }
 }

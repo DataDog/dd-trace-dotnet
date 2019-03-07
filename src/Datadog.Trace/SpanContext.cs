@@ -15,16 +15,14 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class.
-        /// This is useful to implement custom context propagation
+        /// This constructor is used to create a propagated context.
         /// </summary>
         /// <param name="traceId">The trace identifier.</param>
         /// <param name="spanId">The span identifier.</param>
-        /// <param name="samplingPriority">The <see cref="SamplingPriority"/> value for this span context.</param>
-        public SpanContext(ulong traceId, ulong spanId, SamplingPriority? samplingPriority)
+        public SpanContext(ulong traceId, ulong spanId)
         {
             TraceId = traceId;
             SpanId = spanId;
-            SamplingPriority = samplingPriority;
         }
 
         internal SpanContext(IDatadogTracer tracer, SpanContext parent, string serviceName)
@@ -36,7 +34,6 @@ namespace Datadog.Trace
             TraceContext = parent?.TraceContext ?? new TraceContext(tracer);
             Parent = parent;
             SpanId = _random.Value.NextUInt63();
-            SamplingPriority = parent?.SamplingPriority;
             ServiceName = serviceName ?? parent?.ServiceName ?? tracer.DefaultServiceName;
         }
 
@@ -59,11 +56,6 @@ namespace Datadog.Trace
         /// Gets the span id
         /// </summary>
         public ulong SpanId { get; }
-
-        /// <summary>
-        /// Gets this span's sampling priority, which determines whether a trace should be sampled or not.
-        /// </summary>
-        public SamplingPriority? SamplingPriority { get; internal set; }
 
         internal string ServiceName { get; set; }
 

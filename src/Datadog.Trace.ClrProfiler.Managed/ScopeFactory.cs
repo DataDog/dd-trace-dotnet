@@ -1,4 +1,7 @@
 using System;
+using System.Globalization;
+using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
@@ -37,9 +40,6 @@ namespace Datadog.Trace.ClrProfiler
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, requestUri.OriginalString);
                 span.SetTag(Tags.InstrumentationName, integrationName);
-
-                // lock sampling priority when span propagates
-                tracer.LockSamplingPriority(span);
             }
             catch (Exception ex)
             {

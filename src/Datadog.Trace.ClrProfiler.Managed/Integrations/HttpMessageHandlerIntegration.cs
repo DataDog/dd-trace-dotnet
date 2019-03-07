@@ -68,13 +68,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (scope != null)
                     {
-                        // add distributed tracing and sampling priority headers
-                        request.Headers.Wrap().InjectSpanContext(scope.Span.Context);
+                        // add distributed tracing headers to the HTTP request
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
 
                     HttpResponseMessage response = await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
 
+                    // this tag can only be set after the response is returned
                     scope?.Span.SetTag(Tags.HttpStatusCode, ((int)response.StatusCode).ToString());
+
                     return response;
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)

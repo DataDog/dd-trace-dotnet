@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                var httpContext = controllerContext.HttpContext as HttpContextBase;
+                var httpContext = controllerContext?.HttpContext as HttpContextBase;
 
                 if (httpContext == null)
                 {
@@ -73,20 +73,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
-                SpanContext spanContext;
+                SpanContext propagatedContext = null;
+                SamplingPriority? propagatedSamplingPriority = null;
 
                 try
                 {
-                    // extract distributed tracing context from http headers
-                    spanContext = httpContext.Request.Headers.Wrap().ExtractSpanContext();
+                    // extract propagated http headers
+                    IHeadersCollection headers = httpContext.Request.Headers.Wrap();
+                    SpanContextPropagator.Instance.Extract(headers, out propagatedContext, out propagatedSamplingPriority);
                 }
                 catch (Exception ex)
                 {
-                    spanContext = null;
-                    Log.ErrorException("Error extracting span context from http headers.", ex);
+                    Log.ErrorException("Error extracting propagated HTTP headers.", ex);
                 }
 
-                scope = Tracer.Instance.StartActive(OperationName, spanContext);
+                scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
                 Span span = scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = resourceName;
@@ -96,6 +97,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
+
+                if (propagatedContext != null)
+                {
+                    // lock sampling priority when a span is started from a propagated trace
+                    var traceContext = span.Context.TraceContext;
+                    traceContext.SamplingPriority = propagatedSamplingPriority;
+                    traceContext.LockSamplingPriority();
+                }
             }
             catch (Exception ex)
             {
