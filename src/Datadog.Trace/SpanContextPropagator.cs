@@ -32,7 +32,7 @@ namespace Datadog.Trace
             if (headers == null) { throw new ArgumentNullException(nameof(headers)); }
 
             headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
-            headers.Set(HttpHeaderNames.ParentId, context.ParentId?.ToString(InvariantCulture));
+            headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
 
             var traceContext = context.TraceContext;
             var samplingPriority = (int?)traceContext.SamplingPriority;
