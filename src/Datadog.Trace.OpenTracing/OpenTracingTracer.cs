@@ -40,31 +40,25 @@ namespace Datadog.Trace.OpenTracing
             return new OpenTracingSpanBuilder(this, operationName);
         }
 
-        public ISpanContext Extract<TCarrier>(IFormat<TCarrier> format, TCarrier carrier)
+        public global::OpenTracing.ISpanContext Extract<TCarrier>(IFormat<TCarrier> format, TCarrier carrier)
         {
             _codecs.TryGetValue(format.ToString(), out ICodec codec);
+
             if (codec != null)
             {
                 return codec.Extract(carrier);
             }
-            else
-            {
-                throw new NotSupportedException($"Tracer.Extract is not implemented for {format} by Datadog.Trace");
-            }
+
+            throw new NotSupportedException($"Tracer.Extract is not implemented for {format} by Datadog.Trace");
         }
 
-        public void Inject<TCarrier>(ISpanContext spanContext, IFormat<TCarrier> format, TCarrier carrier)
+        public void Inject<TCarrier>(global::OpenTracing.ISpanContext spanContext, IFormat<TCarrier> format, TCarrier carrier)
         {
             _codecs.TryGetValue(format.ToString(), out ICodec codec);
+
             if (codec != null)
             {
-                var ddSpanContext = spanContext as OpenTracingSpanContext;
-                if (ddSpanContext == null)
-                {
-                    throw new ArgumentException("Inject should be called with a Datadog.Trace.OpenTracing.OpenTracingSpanContext argument");
-                }
-
-                codec.Inject(ddSpanContext, carrier);
+                codec.Inject(spanContext, carrier);
             }
             else
             {

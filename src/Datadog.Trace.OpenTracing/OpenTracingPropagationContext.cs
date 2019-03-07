@@ -1,15 +1,15 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.OpenTracing
 {
-    internal class OpenTracingSpanContext : global::OpenTracing.ISpanContext
+    internal class OpenTracingPropagationContext : global::OpenTracing.ISpanContext
     {
-        private static ILog _log = LogProvider.For<OpenTracingSpanContext>();
+        private static ILog _log = LogProvider.For<OpenTracingPropagationContext>();
 
-        public OpenTracingSpanContext(ISpanContext context)
+        public OpenTracingPropagationContext(PropagationContext context)
         {
             Context = context;
         }
@@ -18,7 +18,7 @@ namespace Datadog.Trace.OpenTracing
 
         public string SpanId => Context.SpanId.ToString(CultureInfo.InvariantCulture);
 
-        internal ISpanContext Context { get; }
+        internal PropagationContext Context { get; }
 
         public IEnumerable<KeyValuePair<string, string>> GetBaggageItems()
         {
