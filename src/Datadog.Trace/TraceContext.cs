@@ -106,5 +106,27 @@ namespace Datadog.Trace
                 _samplingPriorityLocked = true;
             }
         }
+
+        internal static TraceContext GetTraceContext(IDatadogTracer tracer, ISpanContext parent)
+        {
+            TraceContext traceContext;
+
+            switch (parent)
+            {
+                case SpanContext context:
+                    traceContext = context.TraceContext ?? new TraceContext(tracer);
+                    break;
+                case PropagationContext propagatedContext:
+                    traceContext = new TraceContext(tracer)
+                    {
+                        SamplingPriority = propagatedContext.SamplingPriority
+                    };
+                    break;
+                default:
+                    throw new ArgumentException("Type of parent is not a supported.", nameof(parent));
+            }
+
+            return traceContext;
+        }
     }
 }

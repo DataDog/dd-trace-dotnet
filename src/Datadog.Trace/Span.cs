@@ -17,10 +17,9 @@ namespace Datadog.Trace
 
         private readonly object _lock = new object();
 
-        internal Span(IDatadogTracer tracer, ISpanContext parent, DateTimeOffset? start)
+        internal Span(SpanContext context, DateTimeOffset? start)
         {
-            // TODO:bertrand should we throw an exception if operationName is null or empty?
-            Context = new SpanContext(tracer, parent);
+            Context = context;
             StartTime = start ?? Context.TraceContext.UtcNow;
         }
 

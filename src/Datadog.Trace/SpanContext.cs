@@ -13,21 +13,15 @@ namespace Datadog.Trace
         private static ILog _log = LogProvider.For<SpanContext>();
         private static ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
 
-        internal SpanContext(IDatadogTracer tracer, ISpanContext parent)
-            : this(GetTraceContext(tracer, parent), parent)
-        {
-        }
-
-        internal SpanContext(TraceContext traceContext, ISpanContext parent)
+        internal SpanContext(ISpanContext parent, TraceContext traceContext)
         {
             TraceContext = traceContext;
             Parent = parent;
+            SpanId = _random.Value.NextUInt63();
 
             TraceId = parent?.TraceId > 0
                           ? parent.TraceId
                           : _random.Value.NextUInt63();
-
-            SpanId = _random.Value.NextUInt63();
         }
 
         /// <summary>
@@ -52,27 +46,5 @@ namespace Datadog.Trace
 
         // This may be null if SpanContext was extracted from another process context
         internal TraceContext TraceContext { get; }
-
-        internal static TraceContext GetTraceContext(IDatadogTracer tracer, ISpanContext parent)
-        {
-            TraceContext traceContext;
-
-            switch (parent)
-            {
-                case SpanContext context:
-                    traceContext = context.TraceContext ?? new TraceContext(tracer);
-                    break;
-                case PropagationContext propagatedContext:
-                    traceContext = new TraceContext(tracer)
-                    {
-                        SamplingPriority = propagatedContext.SamplingPriority
-                    };
-                    break;
-                default:
-                    throw new ArgumentException("Type of parent is not a supported.", nameof(parent));
-            }
-
-            return traceContext;
-        }
     }
 }

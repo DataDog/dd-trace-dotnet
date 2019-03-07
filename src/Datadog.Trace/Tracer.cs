@@ -156,7 +156,10 @@ namespace Datadog.Trace
                 parent = _scopeManager.Active?.Span?.Context;
             }
 
-            var span = new Span(this, parent, startTime)
+            var traceContext = TraceContext.GetTraceContext(this, parent);
+            var spanContext = new SpanContext(parent, traceContext);
+
+            var span = new Span(spanContext, startTime)
             {
                 OperationName = operationName,
                 ServiceName = serviceName ?? DefaultServiceName
