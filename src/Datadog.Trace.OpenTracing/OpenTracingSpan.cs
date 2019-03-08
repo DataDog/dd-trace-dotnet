@@ -14,7 +14,9 @@ namespace Datadog.Trace.OpenTracing
             Context = new OpenTracingSpanContext(span.Context);
         }
 
-        public global::OpenTracing.ISpanContext Context { get; }
+        public OpenTracingSpanContext Context { get; }
+
+        global::OpenTracing.ISpanContext ISpan.Context => Context;
 
         internal Span Span { get; }
 

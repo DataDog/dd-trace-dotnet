@@ -110,16 +110,16 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Context_TwoCalls_ContextStaysEqual()
         {
-            OpenTracingSpan span;
-            ISpanContext firstContext;
+            ISpan span;
+            global::OpenTracing.ISpanContext firstContext;
 
             using (IScope scope = GetScope("Op1"))
             {
-                span = (OpenTracingSpan)scope.Span;
+                span = scope.Span;
                 firstContext = span.Context;
             }
 
-            ISpanContext secondContext = span.Context;
+            var secondContext = span.Context;
 
             Assert.Same(firstContext, secondContext);
         }
