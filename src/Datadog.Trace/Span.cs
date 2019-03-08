@@ -21,6 +21,7 @@ namespace Datadog.Trace
         internal Span(SpanContext context, DateTimeOffset? start)
         {
             Context = context;
+            ServiceName = context.ServiceName;
             StartTime = start ?? Context.TraceContext.UtcNow;
         }
 
@@ -47,9 +48,9 @@ namespace Datadog.Trace
         public bool Error { get; set; }
 
         /// <summary>
-        /// Gets or sets the service name
+        /// Gets the service name.
         /// </summary>
-        public string ServiceName { get; set; }
+        public string ServiceName { get; }
 
         /// <summary>
         /// Gets the trace's unique identifier.

@@ -1,7 +1,7 @@
 namespace Datadog.Trace
 {
     /// <summary>
-    /// A common interface for different type of span contexts.
+    /// Span context interface.
     /// </summary>
     public interface ISpanContext
     {
@@ -14,5 +14,10 @@ namespace Datadog.Trace
         /// Gets the span identifier.
         /// </summary>
         ulong SpanId { get; }
+
+        /// <summary>
+        /// Gets the service name to propagate to child spans.
+        /// </summary>
+        string ServiceName { get; }
     }
 }

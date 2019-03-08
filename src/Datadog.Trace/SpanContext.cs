@@ -21,8 +21,9 @@ namespace Datadog.Trace
         /// <param name="traceId">The propagated trace id.</param>
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="samplingPriority">The propagated sampling priority.</param>
-        public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority)
-            : this(traceId)
+        /// <param name="serviceName">The service name to propagate to child spans.</param>
+        public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority, string serviceName = null)
+            : this(traceId, serviceName)
         {
             SpanId = spanId;
             SamplingPriority = samplingPriority;
@@ -34,19 +35,22 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="parent">The parent context.</param>
         /// <param name="traceContext">The trace context.</param>
-        internal SpanContext(ISpanContext parent, ITraceContext traceContext)
-            : this(parent?.TraceId)
+        /// <param name="serviceName">The service name to propagate to child spans.</param>
+        internal SpanContext(ISpanContext parent, ITraceContext traceContext, string serviceName)
+            : this(parent?.TraceId, serviceName)
         {
             SpanId = _random.Value.NextUInt63();
             Parent = parent;
             TraceContext = traceContext;
         }
 
-        private SpanContext(ulong? traceId)
+        private SpanContext(ulong? traceId, string serviceName)
         {
             TraceId = traceId > 0
                           ? traceId.Value
                           : _random.Value.NextUInt63();
+
+            ServiceName = serviceName;
         }
 
         /// <summary>
@@ -68,6 +72,11 @@ namespace Datadog.Trace
         /// Gets the span id
         /// </summary>
         public ulong SpanId { get; }
+
+        /// <summary>
+        /// Gets the service name to propagate to child spans.
+        /// </summary>
+        public string ServiceName { get; }
 
         /// <summary>
         /// Gets the trace context.

@@ -174,12 +174,12 @@ namespace Datadog.Trace
                 traceContext = new TraceContext(this);
             }
 
-            var spanContext = new SpanContext(parent, traceContext);
+            var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;
+            var spanContext = new SpanContext(parent, traceContext, finalServiceName);
 
             var span = new Span(spanContext, startTime)
             {
                 OperationName = operationName,
-                ServiceName = serviceName ?? DefaultServiceName
             };
 
             var env = Environment.GetEnvironmentVariable(EnvVariableName);
