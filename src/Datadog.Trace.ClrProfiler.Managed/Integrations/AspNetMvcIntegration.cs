@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations

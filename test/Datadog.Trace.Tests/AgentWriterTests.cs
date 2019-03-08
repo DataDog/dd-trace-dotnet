@@ -12,22 +12,19 @@ namespace Datadog.Trace.Tests
     {
         private readonly AgentWriter _agentWriter;
         private readonly Mock<IApi> _api;
-        private readonly Mock<IDatadogTracer> _tracer;
-        private readonly Mock<ITraceContext> _traceContext;
-        private readonly Mock<ISpanContext> _parentSpanContext;
         private readonly SpanContext _spanContext;
 
         public AgentWriterTests()
         {
-            _tracer = new Mock<IDatadogTracer>();
-            _tracer.Setup(x => x.DefaultServiceName).Returns("Default");
+            var tracer = new Mock<IDatadogTracer>();
+            tracer.Setup(x => x.DefaultServiceName).Returns("Default");
 
             _api = new Mock<IApi>();
             _agentWriter = new AgentWriter(_api.Object);
 
-            _traceContext = new Mock<ITraceContext>();
-            _parentSpanContext = new Mock<ISpanContext>();
-            _spanContext = new SpanContext(_parentSpanContext.Object, _traceContext.Object);
+            var parentSpanContext = new Mock<ISpanContext>();
+            var traceContext = new Mock<ITraceContext>();
+            _spanContext = new SpanContext(parentSpanContext.Object, traceContext.Object, serviceName: null);
         }
 
         [Fact]
