@@ -44,7 +44,6 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId { get; }
 
-        // This may be null if SpanContext was extracted from another process context
         internal ITraceContext TraceContext { get; }
     }
 }
