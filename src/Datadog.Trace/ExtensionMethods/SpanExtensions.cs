@@ -1,12 +1,28 @@
+using System;
 using System.Data.Common;
 
 namespace Datadog.Trace.ExtensionMethods
 {
     /// <summary>
-    /// Common helper
+    /// Extension methods for the <see cref="Span"/> class.
     /// </summary>
     public static class SpanExtensions
     {
+        /// <summary>
+        /// Sets the sampling priority for the trace that the specified <see cref="Span"/> belongs to.
+        /// </summary>
+        /// <param name="span">A span that belongs to the trace.</param>
+        /// <param name="samplingPriority">The new sampling priority for the trace.</param>
+        public static void SetTraceSamplingPriority(this Span span, SamplingPriority samplingPriority)
+        {
+            if (span == null) { throw new ArgumentNullException(nameof(span)); }
+
+            if (span.Context.TraceContext != null)
+            {
+                span.Context.TraceContext.SamplingPriority = samplingPriority;
+            }
+        }
+
         /// <summary>
         /// Adds standard tags to a span with values taken from the specified <see cref="DbCommand"/>.
         /// </summary>
