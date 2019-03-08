@@ -17,19 +17,25 @@ namespace Datadog.Trace.Agent
             // First, pack array length (or map length).
             // It should be the number of members of the object to be serialized.
             var len = 8;
+
             if (value.Context.ParentId != null)
             {
-                len += 1;
+                len++;
             }
 
             if (value.Error)
             {
-                len += 1;
+                len++;
             }
 
             if (value.Tags != null)
             {
-                len += 1;
+                len++;
+            }
+
+            if (value.Metrics != null)
+            {
+                len++;
             }
 
             packer.PackMapHeader(len);
@@ -70,7 +76,7 @@ namespace Datadog.Trace.Agent
             if (value.Metrics != null)
             {
                 packer.PackString("metrics");
-                packer.Pack(value.Metrics);
+                packer.PackDictionary(value.Metrics);
             }
         }
 
