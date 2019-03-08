@@ -74,9 +74,9 @@ namespace Datadog.Trace
         public ulong SpanId { get; }
 
         /// <summary>
-        /// Gets the service name to propagate to child spans.
+        /// Gets or sets the service name to propagate to child spans.
         /// </summary>
-        public string ServiceName { get; }
+        public string ServiceName { get; set; }
 
         /// <summary>
         /// Gets the trace context.

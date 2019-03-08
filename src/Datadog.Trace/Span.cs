@@ -50,7 +50,11 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the service name.
         /// </summary>
-        public string ServiceName { get; set; }
+        public string ServiceName
+        {
+            get => Context.ServiceName;
+            set => Context.ServiceName = value;
+        }
 
         /// <summary>
         /// Gets the trace's unique identifier.
