@@ -70,7 +70,7 @@ namespace Datadog.Trace.Agent
             if (value.Metrics != null)
             {
                 packer.PackString("metrics");
-                packer.Pack(value.Tags);
+                packer.Pack(value.Metrics);
             }
         }
 
