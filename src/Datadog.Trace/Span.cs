@@ -48,9 +48,9 @@ namespace Datadog.Trace
         public bool Error { get; set; }
 
         /// <summary>
-        /// Gets the service name.
+        /// Gets or sets the service name.
         /// </summary>
-        public string ServiceName { get; }
+        public string ServiceName { get; set; }
 
         /// <summary>
         /// Gets the trace's unique identifier.
@@ -240,7 +240,9 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
         public string GetTag(string key)
-            => Tags.TryGetValue(key, out var value) ? value : null;
+            => Tags.TryGetValue(key, out var value)
+                   ? value
+                   : null;
 
         internal bool SetExceptionForFilter(Exception exception)
         {
