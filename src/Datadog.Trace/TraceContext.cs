@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -10,6 +11,8 @@ namespace Datadog.Trace
 
         private readonly object _lock = new object();
         private readonly List<Span> _spans = new List<Span>();
+        private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
+        private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
 
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
@@ -22,7 +25,7 @@ namespace Datadog.Trace
 
         public Span RootSpan { get; private set; }
 
-        public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
+        public DateTimeOffset UtcNow => _utcStart.AddTicks(_stopwatch.ElapsedTicks);
 
         public IDatadogTracer Tracer { get; }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Moq;
 using Xunit;
 
@@ -6,7 +6,7 @@ namespace Datadog.Trace.Tests
 {
     public class TraceContextTests
     {
-        private Mock<IDatadogTracer> _tracerMock = new Mock<IDatadogTracer>();
+        private readonly Mock<IDatadogTracer> _tracerMock = new Mock<IDatadogTracer>();
 
         [Fact]
         public void UtcNow_GivesLegitTime()
