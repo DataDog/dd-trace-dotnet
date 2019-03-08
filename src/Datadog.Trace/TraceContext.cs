@@ -115,9 +115,9 @@ namespace Datadog.Trace
             }
         }
 
-        internal static TraceContext GetTraceContext(IDatadogTracer tracer, ISpanContext parent)
+        internal static ITraceContext GetTraceContext(IDatadogTracer tracer, ISpanContext parent)
         {
-            TraceContext traceContext;
+            ITraceContext traceContext;
 
             switch (parent)
             {

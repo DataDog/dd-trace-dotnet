@@ -13,7 +13,7 @@ namespace Datadog.Trace
         private static ILog _log = LogProvider.For<SpanContext>();
         private static ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
 
-        internal SpanContext(ISpanContext parent, TraceContext traceContext)
+        internal SpanContext(ISpanContext parent, ITraceContext traceContext)
         {
             TraceContext = traceContext;
             Parent = parent;
@@ -25,7 +25,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the SpanContext of the parent span (if any)
+        /// Gets the parent context.
         /// </summary>
         public ISpanContext Parent { get; }
 
@@ -45,6 +45,6 @@ namespace Datadog.Trace
         public ulong SpanId { get; }
 
         // This may be null if SpanContext was extracted from another process context
-        internal TraceContext TraceContext { get; }
+        internal ITraceContext TraceContext { get; }
     }
 }
