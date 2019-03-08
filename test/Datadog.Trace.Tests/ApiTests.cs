@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.HttpMessageHandlers;
 using Moq;
 using Xunit;
@@ -13,13 +14,13 @@ namespace Datadog.Trace.Tests
 {
     public class ApiTests
     {
-        private Mock<IAgentWriter> _writerMock;
-        private Tracer _tracer;
+        private readonly Tracer _tracer;
 
         public ApiTests()
         {
-            _writerMock = new Mock<IAgentWriter>();
-            _tracer = new Tracer(_writerMock.Object, null);
+            var writerMock = new Mock<IAgentWriter>();
+            var sampler = new SimpleSampler(SamplingPriority.UserKeep);
+            _tracer = new Tracer(writerMock.Object, sampler);
         }
 
         [Fact]
