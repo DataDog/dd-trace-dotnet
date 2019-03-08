@@ -156,7 +156,24 @@ namespace Datadog.Trace
                 parent = _scopeManager.Active?.Span?.Context;
             }
 
-            var traceContext = TraceContext.GetTraceContext(this, parent);
+            ITraceContext traceContext;
+
+            // try to get the trace context (from local spans) or
+            // sampling priority (from propagated spans),
+            // otherwise start a new trace context
+            if (parent is SpanContext parentSpanContext)
+            {
+                traceContext = parentSpanContext.TraceContext ??
+                               new TraceContext(this)
+                               {
+                                   SamplingPriority = parentSpanContext.SamplingPriority
+                               };
+            }
+            else
+            {
+                traceContext = new TraceContext(this);
+            }
+
             var spanContext = new SpanContext(parent, traceContext);
 
             var span = new Span(spanContext, startTime)

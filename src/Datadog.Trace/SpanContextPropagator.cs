@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Headers;
@@ -45,11 +45,11 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Extracts a <see cref="PropagationContext"/> from the values found in the specified headers.
+        /// Extracts a <see cref="SpanContext"/> from the values found in the specified headers.
         /// </summary>
         /// <param name="headers">The headers that contain the values to be extracted.</param>
-        /// <returns>A new <see cref="PropagationContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
-        public PropagationContext Extract(IHeadersCollection headers)
+        /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
+        public SpanContext Extract(IHeadersCollection headers)
         {
             if (headers == null)
             {
@@ -67,7 +67,7 @@ namespace Datadog.Trace
             var parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
             var samplingPriority = ParseEnum<SamplingPriority>(headers, HttpHeaderNames.SamplingPriority);
 
-            return new PropagationContext(traceId, parentId, samplingPriority);
+            return new SpanContext(traceId, parentId, samplingPriority);
         }
 
         private static ulong ParseUInt64(IHeadersCollection headers, string headerName)

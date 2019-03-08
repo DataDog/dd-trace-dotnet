@@ -54,19 +54,21 @@ namespace Datadog.Trace
 
                     if (_samplingPriority == null)
                     {
-                        if (span.Context.Parent is PropagationContext context && context.SamplingPriority != null)
+                        if (span.Context.Parent is SpanContext context && context.SamplingPriority != null)
                         {
-                            // this is a root span created from a propagated context.
-                            // lock sampling priority when a span is started from a propagated trace
+                            // this is a root span created from a propagated context that contains a sampling priority.
+                            // lock sampling priority when a span is started from a propagated trace.
                             _samplingPriority = context.SamplingPriority;
                             LockSamplingPriority();
                         }
                         else
                         {
-                            // this is a local root span.
-                            // determine an initial sampling priority for this trace, but don't lock it yet
+                            // this is a local root span (i.e. not propagated).
                             string env = RootSpan.GetTag(Tags.Env);
-                            _samplingPriority = Tracer.Sampler.GetSamplingPriority(RootSpan.ServiceName, env, RootSpan.Context.TraceId);
+
+                            // determine an initial sampling priority for this trace, but don't lock it yet
+                            _samplingPriority =
+                                Tracer.Sampler.GetSamplingPriority(RootSpan.ServiceName, env, RootSpan.Context.TraceId);
                         }
                     }
                 }
@@ -114,28 +116,6 @@ namespace Datadog.Trace
             {
                 _samplingPriorityLocked = true;
             }
-        }
-
-        internal static ITraceContext GetTraceContext(IDatadogTracer tracer, ISpanContext parent)
-        {
-            ITraceContext traceContext;
-
-            switch (parent)
-            {
-                case SpanContext context:
-                    traceContext = context.TraceContext ?? new TraceContext(tracer);
-                    break;
-                case PropagationContext propagatedContext:
-                    traceContext = new TraceContext(tracer)
-                    {
-                        SamplingPriority = propagatedContext.SamplingPriority
-                    };
-                    break;
-                default:
-                    throw new ArgumentException("Type of parent is not a supported.", nameof(parent));
-            }
-
-            return traceContext;
         }
     }
 }

@@ -13,15 +13,43 @@ namespace Datadog.Trace
         private static ILog _log = LogProvider.For<SpanContext>();
         private static ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// that is the child of the specified parent context.
+        /// </summary>
+        /// <param name="parent">The parent context.</param>
+        /// <param name="traceContext">The trace context.</param>
         internal SpanContext(ISpanContext parent, ITraceContext traceContext)
+            : this(parent, parent?.TraceId, spanId: null)
         {
             TraceContext = traceContext;
-            Parent = parent;
-            SpanId = _random.Value.NextUInt63();
+        }
 
-            TraceId = parent?.TraceId > 0
-                          ? parent.TraceId
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// from a propagated context. <see cref="Parent"/> will be null
+        /// since this is a root context locally.
+        /// </summary>
+        /// <param name="traceId">The propagated trace id.</param>
+        /// <param name="spanId">The propagated span id.</param>
+        /// <param name="samplingPriority">The propagated sampling priority.</param>
+        internal SpanContext(ulong? traceId, ulong? spanId, SamplingPriority? samplingPriority)
+            : this(null, traceId, spanId)
+        {
+            SamplingPriority = samplingPriority;
+        }
+
+        private SpanContext(ISpanContext parent, ulong? traceId, ulong? spanId)
+        {
+            Parent = parent;
+
+            TraceId = traceId > 0
+                          ? traceId.Value
                           : _random.Value.NextUInt63();
+
+            SpanId = spanId > 0
+                         ? spanId.Value
+                         : _random.Value.NextUInt63();
         }
 
         /// <summary>
@@ -44,6 +72,16 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId { get; }
 
+        /// <summary>
+        /// Gets the trace context.
+        /// Returns null for contexts created from incoming propagated context.
+        /// </summary>
         internal ITraceContext TraceContext { get; }
+
+        /// <summary>
+        /// Gets the sampling priority for contexts created from incoming propagated context.
+        /// Returns null for local contexts.
+        /// </summary>
+        internal SamplingPriority? SamplingPriority { get; }
     }
 }
