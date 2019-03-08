@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Text;
+using Datadog.Trace.Interfaces;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -11,7 +12,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public class Span : IDisposable
+    public class Span : IDisposable, ISpan
     {
         private static readonly ILog Log = LogProvider.For<Span>();
 
@@ -145,6 +146,16 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Proxy to SetTag without return value
+        /// See <see cref="Span.SetTag(string, string)"/> for more information
+        /// </summary>
+        /// <param name="key">The tag's key</param>
+        /// <param name="value">The tag's value</param>
+        /// <returns> The ISpan object itself</returns>
+        ISpan ISpan.SetTag(string key, string value)
+            => SetTag(key, value);
+
+        /// <summary>
         /// Record the end time of the span and flushes it to the backend.
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
@@ -216,17 +227,26 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// Proxy to SetException without return value
+        /// See <see cref="Span.SetException(Exception)"/> for more information
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        void ISpan.SetException(Exception exception)
+            => SetException(exception);
+
+        /// <summary>
+        /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed
+        /// </summary>
+        /// <param name="key">The tag's key</param>
+        /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
+        public string GetTag(string key)
+            => Tags.TryGetValue(key, out var value) ? value : null;
+
         internal bool SetExceptionForFilter(Exception exception)
         {
             SetException(exception);
             return false;
-        }
-
-        internal string GetTag(string key)
-        {
-            return Tags.TryGetValue(key, out string value)
-                       ? value
-                       : null;
         }
 
         internal int? GetMetric(string key)

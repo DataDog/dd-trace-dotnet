@@ -96,6 +96,7 @@ struct AssemblyReference {
 
 // A MethodSignature is a byte array. The format is:
 // [calling convention, number of parameters, return type, parameter type...]
+// For types see CorElementType
 struct MethodSignature {
  public:
   const std::vector<BYTE> data;

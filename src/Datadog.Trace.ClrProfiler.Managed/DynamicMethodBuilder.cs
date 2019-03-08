@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler
             else if (delegateType.Name.StartsWith("Action`"))
             {
                 parameterTypes = genericTypeArguments;
-                returnType = null;
+                returnType = typeof(void);
             }
             else
             {
@@ -183,6 +183,7 @@ namespace Datadog.Trace.ClrProfiler
                 dynamicMethod.CallVirtual(methodInfo);
             }
 
+            // Non-void return type?
             if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
             {
                 dynamicMethod.Box(methodInfo.ReturnType);

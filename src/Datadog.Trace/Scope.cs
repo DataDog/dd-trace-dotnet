@@ -1,4 +1,4 @@
-using System;
+using Datadog.Trace.Interfaces;
 
 namespace Datadog.Trace
 {
@@ -8,7 +8,7 @@ namespace Datadog.Trace
     /// all newly created spans that are not created with the ignoreActiveSpan
     /// parameter will be automatically children of the active span.
     /// </summary>
-    public class Scope : IDisposable
+    public class Scope : IScope
     {
         private readonly AsyncLocalScopeManager _scopeManager;
         private readonly bool _finishOnClose;
@@ -26,6 +26,12 @@ namespace Datadog.Trace
         /// </summary>
         public Span Span { get; }
 
+        /// <summary>
+        /// Gets the active span wrapped in this scope
+        /// Proxy to Span without concrete return value
+        /// </summary>
+        ISpan IScope.Span => Span;
+
         internal Scope Parent { get; }
 
         /// <summary>
@@ -34,6 +40,7 @@ namespace Datadog.Trace
         public void Close()
         {
             _scopeManager.Close(this);
+
             if (_finishOnClose)
             {
                 Span.Finish();
@@ -45,7 +52,15 @@ namespace Datadog.Trace
         /// </summary>
         public void Dispose()
         {
-            Close();
+            try
+            {
+                Close();
+            }
+            catch
+            {
+                // Ignore disposal exceptions here...
+                // TODO: Log? only in test/debug? How should Close() concerns be handled (i.e. independent?)
+            }
         }
     }
 }
