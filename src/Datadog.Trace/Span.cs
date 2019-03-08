@@ -54,13 +54,11 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the trace's unique identifier.
         /// </summary>
-        [Obsolete("This property will be removed in future versions of this library. Use Span.Context.TraceId instead.")]
         public ulong TraceId => Context.TraceId;
 
         /// <summary>
         /// Gets the span's unique identifier.
         /// </summary>
-        [Obsolete("This property will be removed in future versions of this library. Use Span.Context.SpanId instead.")]
         public ulong SpanId => Context.SpanId;
 
         internal SpanContext Context { get; }
