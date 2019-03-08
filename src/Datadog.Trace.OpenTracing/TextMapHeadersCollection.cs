@@ -18,7 +18,7 @@ namespace Datadog.Trace.OpenTracing
         {
             foreach (var pair in _textMap)
             {
-                if (pair.Key == name)
+                if (string.Equals(pair.Key, name, StringComparison.OrdinalIgnoreCase))
                 {
                     yield return pair.Value;
                 }
