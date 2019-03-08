@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 var request = controllerContext?.Request as HttpRequestMessage;
-                PropagationContext propagationContext = null;
+                SpanContext propagatedContext = null;
 
                 if (request != null)
                 {
@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // extract propagated http headers
                         var headers = request.Headers.Wrap();
-                        propagationContext = SpanContextPropagator.Instance.Extract(headers);
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headers);
                     }
                     catch (Exception ex)
                     {
@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                scope = Tracer.Instance.StartActive(OperationName, propagationContext);
+                scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
                 UpdateSpan(controllerContext, scope.Span);
             }
             catch (Exception ex)

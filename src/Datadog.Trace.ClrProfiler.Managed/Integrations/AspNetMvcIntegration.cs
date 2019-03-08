@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
-                PropagationContext propagatedContext = null;
+                SpanContext propagatedContext = null;
 
                 try
                 {
