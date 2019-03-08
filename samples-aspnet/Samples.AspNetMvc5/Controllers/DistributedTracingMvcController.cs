@@ -25,13 +25,17 @@ namespace Samples.AspNetMvc5.Controllers
         [Route("distributed")]
         public async Task<ActionResult> Distributed()
         {
+            var scope = Tracer.Instance.ActiveScope;
+
             using (var client = new HttpClient())
             {
                 var model = await client.GetAsync<DistributedTracingModel>("http://localhost:50449/api/distributed");
-                var scope = Tracer.Instance.ActiveScope;
 
                 model.AddSpan(
                     $"{typeof(DistributedTracingMvcController).FullName}.{nameof(Distributed)}",
+                    scope?.Span.ServiceName,
+                    scope?.Span.OperationName,
+                    scope?.Span.ResourceName,
                     scope?.Span.TraceId,
                     scope?.Span.SpanId);
 

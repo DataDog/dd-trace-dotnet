@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using Datadog.Trace;
+using Datadog.Trace.ExtensionMethods;
 using Microsoft.AspNetCore.Mvc;
 using Samples.AspNetCoreMvc2.Extensions;
 using Samples.Shared.Web;
@@ -25,16 +25,24 @@ namespace Samples.AspNetCoreMvc2.Controllers
         [Route("api/distributed/last")]
         public IActionResult Distributed()
         {
-            var spanContext = Request.Headers.Extract();
+            var propagatedContext = Request.Headers.Extract();
 
             // this scope is a placeholder so we don't break the distributed
             // tracing chain because we don't support ASP.NET Core MVC yet
-            using (var scope = Tracer.Instance.StartActive("manual", spanContext))
+            using (var scope = Tracer.Instance.StartActive("manual", propagatedContext))
             {
+                if (propagatedContext == null)
+                {
+                    scope.Span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
+                }
+
                 var model = new DistributedTracingModel();
 
                 model.AddSpan(
                     $"{typeof(DistributedTracingApiController).FullName}.{nameof(Distributed)}",
+                    scope?.Span.ServiceName,
+                    scope?.Span.OperationName,
+                    scope?.Span.ResourceName,
                     scope?.Span.TraceId,
                     scope?.Span.SpanId);
 
