@@ -81,7 +81,15 @@ namespace Datadog.Trace
             {
                 // lock sampling priority and set metric when root span finishes
                 LockSamplingPriority();
-                span.SetMetric(Metrics.SamplingPriority, (int)_samplingPriority);
+
+                if (_samplingPriority == null)
+                {
+                    Log.Warn("Cannot set span metric for sampling priority before it has been set.");
+                }
+                else
+                {
+                    span.SetMetric(Metrics.SamplingPriority, (int)_samplingPriority);
+                }
             }
 
             lock (_lock)

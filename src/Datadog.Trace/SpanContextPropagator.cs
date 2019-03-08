@@ -32,8 +32,6 @@ namespace Datadog.Trace
             if (headers == null) { throw new ArgumentNullException(nameof(headers)); }
 
             // lock sampling priority when span propagates.
-            // if sampling priority is not set yet, this will determine
-            // a value using a Sampler.
             context.TraceContext.LockSamplingPriority();
 
             headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
