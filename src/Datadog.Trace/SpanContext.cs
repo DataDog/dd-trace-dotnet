@@ -15,6 +15,20 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// from a propagated context. <see cref="Parent"/> will be null
+        /// since this is a root context locally.
+        /// </summary>
+        /// <param name="traceId">The propagated trace id.</param>
+        /// <param name="spanId">The propagated span id.</param>
+        /// <param name="samplingPriority">The propagated sampling priority.</param>
+        public SpanContext(ulong? traceId, ulong? spanId, SamplingPriority? samplingPriority)
+            : this(null, traceId, spanId)
+        {
+            SamplingPriority = samplingPriority;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContext"/> class
         /// that is the child of the specified parent context.
         /// </summary>
         /// <param name="parent">The parent context.</param>
@@ -23,20 +37,6 @@ namespace Datadog.Trace
             : this(parent, parent?.TraceId, spanId: null)
         {
             TraceContext = traceContext;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class
-        /// from a propagated context. <see cref="Parent"/> will be null
-        /// since this is a root context locally.
-        /// </summary>
-        /// <param name="traceId">The propagated trace id.</param>
-        /// <param name="spanId">The propagated span id.</param>
-        /// <param name="samplingPriority">The propagated sampling priority.</param>
-        internal SpanContext(ulong? traceId, ulong? spanId, SamplingPriority? samplingPriority)
-            : this(null, traceId, spanId)
-        {
-            SamplingPriority = samplingPriority;
         }
 
         private SpanContext(ISpanContext parent, ulong? traceId, ulong? spanId)

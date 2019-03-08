@@ -20,7 +20,7 @@ namespace Samples.AspNetCoreMvc2.Extensions
                 ulong.TryParse(traceIds.FirstOrDefault(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId) &&
                 ulong.TryParse(parentIds.FirstOrDefault(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId))
             {
-                return new SpanContext(traceId, parentId);
+                return new SpanContext(traceId, parentId, SamplingPriority.UserKeep);
             }
 
             return null;
