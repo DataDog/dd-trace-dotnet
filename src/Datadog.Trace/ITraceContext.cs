@@ -6,8 +6,12 @@ namespace Datadog.Trace
     {
         DateTimeOffset UtcNow { get; }
 
+        SamplingPriority? SamplingPriority { get; }
+
         void AddSpan(Span span);
 
         void CloseSpan(Span span);
+
+        void LockSamplingPriority();
     }
 }
