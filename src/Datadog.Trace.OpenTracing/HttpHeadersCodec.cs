@@ -33,8 +33,18 @@ namespace Datadog.Trace.OpenTracing
             }
 
             IHeadersCollection headers = new TextMapHeadersCollection(map);
-            headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
-            headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
+
+            if (context is OpenTracingSpanContext otSpanContext && otSpanContext.Context is SpanContext ddSpanContext)
+            {
+                // this is a Datadog context
+                SpanContextPropagator.Instance.Inject(ddSpanContext, headers);
+            }
+            else
+            {
+                // any other OpenTracing.ISpanContext
+                headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
+                headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
+            }
         }
     }
 }
