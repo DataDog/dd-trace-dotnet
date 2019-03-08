@@ -74,13 +74,13 @@ namespace Datadog.Trace.Agent
                     var responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
                     responseMessage.EnsureSuccessStatusCode();
 
-                    if (responseMessage.Content != null)
+                    if (responseMessage.Content != null && Tracer.Instance.Sampler != null)
                     {
                         // build the sample rate map from the response json
                         var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
                         var response = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
 
-                        Tracer.Instance.Sampler?.SetSampleRates(response.RateByService);
+                        Tracer.Instance.Sampler.SetSampleRates(response.RateByService);
                     }
 
                     return;

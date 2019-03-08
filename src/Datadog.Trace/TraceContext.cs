@@ -71,7 +71,7 @@ namespace Datadog.Trace
 
                             // determine an initial sampling priority for this trace, but don't lock it yet
                             _samplingPriority =
-                                Tracer.Sampler.GetSamplingPriority(RootSpan.ServiceName, env, RootSpan.Context.TraceId);
+                                Tracer.Sampler?.GetSamplingPriority(RootSpan.ServiceName, env, RootSpan.Context.TraceId);
                         }
                     }
                 }
