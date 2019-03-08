@@ -21,9 +21,10 @@ namespace Datadog.Trace
         /// <param name="traceId">The propagated trace id.</param>
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="samplingPriority">The propagated sampling priority.</param>
-        public SpanContext(ulong? traceId, ulong? spanId, SamplingPriority? samplingPriority)
-            : this(null, traceId, spanId)
+        public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority)
+            : this(traceId)
         {
+            SpanId = spanId;
             SamplingPriority = samplingPriority;
         }
 
@@ -34,22 +35,18 @@ namespace Datadog.Trace
         /// <param name="parent">The parent context.</param>
         /// <param name="traceContext">The trace context.</param>
         internal SpanContext(ISpanContext parent, ITraceContext traceContext)
-            : this(parent, parent?.TraceId, spanId: null)
+            : this(parent?.TraceId)
         {
+            SpanId = _random.Value.NextUInt63();
+            Parent = parent;
             TraceContext = traceContext;
         }
 
-        private SpanContext(ISpanContext parent, ulong? traceId, ulong? spanId)
+        private SpanContext(ulong? traceId)
         {
-            Parent = parent;
-
             TraceId = traceId > 0
                           ? traceId.Value
                           : _random.Value.NextUInt63();
-
-            SpanId = spanId > 0
-                         ? spanId.Value
-                         : _random.Value.NextUInt63();
         }
 
         /// <summary>
