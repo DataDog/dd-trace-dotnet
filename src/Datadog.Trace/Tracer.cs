@@ -190,7 +190,7 @@ namespace Datadog.Trace
                 span.SetTag(Tags.Env, env);
             }
 
-            span.Context.TraceContext.AddSpan(span);
+            traceContext.AddSpan(span);
             return span;
         }
 
