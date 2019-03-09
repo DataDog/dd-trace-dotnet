@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -27,7 +26,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Net.Http.HttpMessageHandler")]
         [InterceptMethod(
             TargetAssembly = "System.Net.Http",
-            TargetType = "System.Net.Http.HttpClientHandler")]
+            TargetType = "System.Net.Http.SocketsHttpHandler")] // .NET Core 2.1 and later
+        [InterceptMethod(
+            TargetAssembly = "System.Net.Http",
+            TargetType = "System.Net.Http.HttpClientHandler")] // .NET Framework and .NET Core 2.0 and earlier
         public static object SendAsync(
             object handler,
             object request,
@@ -54,8 +56,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     handler.GetType(),
                     nameof(SendAsync));
 
-            if (!IsTracingEnabled(request))
+            var handlerTypeName = handler.GetType().FullName;
+
+            if ((handlerTypeName != "System.Net.Http.SocketsHttpHandler" && handlerTypeName != "System.Net.Http.HttpClientHandler") ||
+                !IsTracingEnabled(request))
             {
+                // skip instrumentation
                 return await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
             }
 
@@ -70,6 +76,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // add distributed tracing headers to the HTTP request
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
+
+                        scope.Span.Context.TraceContext.SamplingPriority = SamplingPriority.UserKeep;
                     }
 
                     HttpResponseMessage response = await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
