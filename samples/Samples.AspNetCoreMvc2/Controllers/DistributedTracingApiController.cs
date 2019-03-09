@@ -1,3 +1,5 @@
+using System;
+using System.Threading;
 using Datadog.Trace;
 using Datadog.Trace.ExtensionMethods;
 using Microsoft.AspNetCore.Mvc;
@@ -31,10 +33,8 @@ namespace Samples.AspNetCoreMvc2.Controllers
             // tracing chain because we don't support ASP.NET Core MVC yet
             using (var scope = Tracer.Instance.StartActive("manual", propagatedContext))
             {
-                if (propagatedContext == null)
-                {
-                    scope.Span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
-                }
+                // don't return too fast so it's more visible in the UI
+                Thread.Sleep(TimeSpan.FromSeconds(1));
 
                 var model = new DistributedTracingModel();
 
