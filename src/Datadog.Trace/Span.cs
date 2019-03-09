@@ -263,12 +263,6 @@ namespace Datadog.Trace
 
         internal Span SetMetric(string key, int? value)
         {
-            if (IsFinished)
-            {
-                Log.Debug("SetMetric should not be called after the span was closed");
-                return this;
-            }
-
             if (value == null)
             {
                 Metrics.TryRemove(key, out _);
