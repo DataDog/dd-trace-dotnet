@@ -26,10 +26,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Net.Http.HttpMessageHandler")]
         [InterceptMethod(
             TargetAssembly = "System.Net.Http",
-            TargetType = "System.Net.Http.SocketsHttpHandler")] // .NET Core 2.1 and later
+            TargetType = "System.Net.Http.HttpClientHandler")] // .NET Framework and .NET Core 2.0 and earlier
+        /*
         [InterceptMethod(
             TargetAssembly = "System.Net.Http",
-            TargetType = "System.Net.Http.HttpClientHandler")] // .NET Framework and .NET Core 2.0 and earlier
+            TargetType = "System.Net.Http.SocketsHttpHandler")] // .NET Core 2.1 and later
+        */
         public static object SendAsync(
             object handler,
             object request,
@@ -58,8 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             var handlerTypeName = handler.GetType().FullName;
 
-            if ((handlerTypeName != "System.Net.Http.SocketsHttpHandler" && handlerTypeName != "System.Net.Http.HttpClientHandler") ||
-                !IsTracingEnabled(request))
+            if (handlerTypeName != "System.Net.Http.HttpClientHandler" || !IsTracingEnabled(request))
             {
                 // skip instrumentation
                 return await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
