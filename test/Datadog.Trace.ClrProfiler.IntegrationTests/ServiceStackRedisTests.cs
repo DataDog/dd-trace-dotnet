@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.Integrations;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(RedisHelper.OperationName, span.Name);
                     Assert.Equal($"Samples.RedisCore-{RedisHelper.ServiceName}", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
-                    Assert.Equal(host, span.Tags.Get<string>("out.host"));
+                    Assert.Equal(host, span.Tags.GetValueOrDefault("out.host"));
                     Assert.Equal("6379", span.Tags.Get<string>("out.port"));
                 }
 
@@ -58,11 +59,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     var e1 = expected[i].Item1;
                     var e2 = expected[i].Item2;
 
-                    var a1 = i < spans.Count ? spans[i].Resource : string.Empty;
-                    var a2 = i < spans.Count ? spans[i].Tags.Get<string>("redis.raw_command") : string.Empty;
+                    var a1 = i < spans.Count
+                                 ? spans[i].Resource
+                                 : string.Empty;
+                    var a2 = i < spans.Count
+                                 ? spans[i].Tags.GetValueOrDefault("redis.raw_command")
+                                 : string.Empty;
 
-                    Assert.True(e1 == a1, $"invalid resource name for span {i}, {e1} != {a1}");
-                    Assert.True(e2 == a2, $"invalid raw command for span {i}, {e2} != {a2}");
+                    Assert.True(e1 == a1, $@"invalid resource name for span #{i}, expected ""{e1}"", actual ""{a1}""");
+                    Assert.True(e2 == a2, $@"invalid raw command for span #{i}, expected ""{e2}"" != ""{a2}""");
                 }
             }
         }
