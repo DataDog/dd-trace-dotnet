@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -12,8 +9,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class ServiceStackRedisTests : TestHelper
     {
-        private const int AgentPort = 9004;
-
         public ServiceStackRedisTests(ITestOutputHelper output)
             : base("RedisCore", output)
         {
@@ -23,9 +18,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
+            int agentPort = TcpPortProvider.GetOpenPort();
+
             var prefix = $"{BuildParameters.Configuration}.{BuildParameters.TargetFramework}.";
-            using (var agent = new MockTracerAgent(AgentPort))
-            using (var processResult = RunSampleAndWaitForExit(AgentPort, arguments: $"ServiceStack {prefix}"))
+            using (var agent = new MockTracerAgent(agentPort))
+            using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: $"ServiceStack {prefix}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
