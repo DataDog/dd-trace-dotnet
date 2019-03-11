@@ -19,9 +19,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         ///     Calls the underlying Init() For an HttpApplication and traces the request.
         /// </summary>
         /// <param name="thisObj">The HttpApplication instance ref.</param>
-        [InterceptMethod(
-            TargetAssembly = "System.Web",
-            TargetType = "System.Web.HttpApplication")]
+        // [InterceptMethod(
+        //    TargetAssembly = "System.Web",
+        //    TargetType = "System.Web.HttpApplication")]
         [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1119:StatementMustNotUseUnnecessaryParenthesis", Justification = "Actually Needed")]
         public static void Init(object thisObj)
         {
