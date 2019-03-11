@@ -2,6 +2,7 @@
   <Import Project="..\Directory.Build.props" />
 
   <PropertyGroup>
+    <Version>0.8.0-beta</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <!-- NuGet package -->
@@ -14,7 +15,7 @@
     <PackageTags>Datadog;APM;tracing;profiling;instrumentation</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/DataDog/dd-trace-csharp.git</RepositoryUrl>
-    <Copyright>Datadog, Inc. 2017-2018</Copyright>
+    <Copyright>Datadog, Inc. 2017-2019</Copyright>
   </PropertyGroup>
 
   <!-- StyleCop -->
