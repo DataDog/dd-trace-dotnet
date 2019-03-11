@@ -69,35 +69,46 @@ namespace Datadog.Trace.Agent
 
             while (true)
             {
+                HttpResponseMessage responseMessage;
+
                 try
                 {
-                    var responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+                    responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
                     responseMessage.EnsureSuccessStatusCode();
+                }
+                catch (Exception ex)
+                {
+                    if (retryCount >= retryLimit)
+                    {
+                        // stop retrying
+                        _log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
+                        return;
+                    }
 
+                    // retry
+                    await Task.Delay(sleepDuration).ConfigureAwait(false);
+                    retryCount++;
+                    sleepDuration *= 2;
+                    continue;
+                }
+
+                try
+                {
                     if (responseMessage.Content != null && Tracer.Instance.Sampler != null)
                     {
                         // build the sample rate map from the response json
                         var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
                         var response = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
 
-                        Tracer.Instance.Sampler.SetSampleRates(response.RateByService);
+                        Tracer.Instance.Sampler.SetSampleRates(response?.RateByService);
                     }
-
-                    return;
                 }
                 catch (Exception ex)
                 {
-                    if (retryCount >= retryLimit)
-                    {
-                        _log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
-                        return;
-                    }
+                    _log.ErrorException("Traces sent successfully to the Agent at {Endpoint}, but an error occurred deserializing the response.", ex, _tracesEndpoint);
                 }
 
-                await Task.Delay(sleepDuration).ConfigureAwait(false);
-
-                retryCount++;
-                sleepDuration *= 2;
+                return;
             }
         }
 
