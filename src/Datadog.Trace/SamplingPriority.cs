@@ -1,8 +1,7 @@
 namespace Datadog.Trace
 {
     /// <summary>
-    /// Valid values for <see cref="SpanContext.SamplingPriority"/>.
-    /// These values determine whether a trace should be sampled or not.
+    /// A traces sampling priority determines whether is should be kept and stored.
     /// </summary>
     public enum SamplingPriority
     {

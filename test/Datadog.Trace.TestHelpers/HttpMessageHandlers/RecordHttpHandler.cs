@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MsgPack;
 
-namespace Datadog.Trace.TestHelpers
+namespace Datadog.Trace.TestHelpers.HttpMessageHandlers
 {
     /// <summary>
     /// This class implements a handler that can be passed as parameter of a new HttpClient
@@ -30,12 +30,12 @@ namespace Datadog.Trace.TestHelpers
         public List<Tuple<HttpRequestMessage, byte[]>> Requests { get; set; }
 
         public List<IList<MessagePackObject>> Traces => Requests
-            .Where(x => x.Item1.RequestUri.ToString().Contains("/v0.3/traces"))
+            .Where(x => x.Item1.RequestUri.ToString().Contains("/v0.4/traces"))
             .Select(x => Unpacking.UnpackObject(x.Item2).Value.AsList())
             .ToList();
 
         public List<MessagePackObjectDictionary> Services => Requests
-            .Where(x => x.Item1.RequestUri.ToString().Contains("/v0.3/services"))
+            .Where(x => x.Item1.RequestUri.ToString().Contains("/v0.4/services"))
             .Select(x => Unpacking.UnpackObject(x.Item2).Value.AsDictionary())
             .ToList();
 

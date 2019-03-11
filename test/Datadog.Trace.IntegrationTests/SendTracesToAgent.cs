@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.HttpMessageHandlers;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests

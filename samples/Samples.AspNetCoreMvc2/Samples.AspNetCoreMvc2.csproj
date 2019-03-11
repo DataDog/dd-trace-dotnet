@@ -17,4 +17,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\sample-libs\Samples.Shared\Samples.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.Agent
@@ -7,14 +7,13 @@ namespace Datadog.Trace.Agent
     {
         private readonly object _lock = new object();
         private readonly int _maxSize;
+        private readonly Random _random = new Random();
         private List<T> _items;
-        private Random _random;
 
         public AgentWriterBuffer(int maxSize)
         {
             _maxSize = maxSize;
             _items = new List<T>();
-            _random = new Random();
         }
 
         public bool Push(T item)

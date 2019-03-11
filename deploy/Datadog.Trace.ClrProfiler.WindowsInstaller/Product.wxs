@@ -91,6 +91,11 @@
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net45_Newtonsoft.Json.dll"
+              Source="$(var.ManagedDllPath)\Newtonsoft.Json.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net45_Sigil.dll"
               Source="$(var.ManagedDllPath)\Sigil.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>

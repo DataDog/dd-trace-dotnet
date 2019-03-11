@@ -17,7 +17,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         public OpenTracingTracerTests()
         {
             var writerMock = new Mock<IAgentWriter>();
-            var datadogTracer = new Tracer(writerMock.Object);
+            var datadogTracer = new Tracer(writerMock.Object, null);
             _tracer = new OpenTracingTracer(datadogTracer);
         }
 
@@ -44,7 +44,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             Span rootDatadogSpan = ((OpenTracingSpan)root.Span).Span;
             Span childDatadogSpan = ((OpenTracingSpan)child.Span).Span;
 
-            Assert.Equal(rootDatadogSpan.TraceContext, childDatadogSpan.TraceContext);
+            Assert.Equal(rootDatadogSpan.Context.TraceContext, (ITraceContext)childDatadogSpan.Context.TraceContext);
             Assert.Equal(rootDatadogSpan.Context.SpanId, childDatadogSpan.Context.ParentId);
         }
 
@@ -69,9 +69,9 @@ namespace Datadog.Trace.OpenTracing.Tests
             Span child1DatadogSpan = ((OpenTracingSpan)child1.Span).Span;
             Span child2DatadogSpan = ((OpenTracingSpan)child2.Span).Span;
 
-            Assert.Same(rootDatadogSpan.TraceContext, child1DatadogSpan.TraceContext);
+            Assert.Same(rootDatadogSpan.Context.TraceContext, child1DatadogSpan.Context.TraceContext);
             Assert.Equal(rootDatadogSpan.Context.SpanId, child1DatadogSpan.Context.ParentId);
-            Assert.Same(rootDatadogSpan.TraceContext, child2DatadogSpan.TraceContext);
+            Assert.Same(rootDatadogSpan.Context.TraceContext, child2DatadogSpan.Context.TraceContext);
             Assert.Equal(rootDatadogSpan.Context.SpanId, child2DatadogSpan.Context.ParentId);
         }
 
@@ -92,9 +92,9 @@ namespace Datadog.Trace.OpenTracing.Tests
             Span child1DatadogSpan = ((OpenTracingSpan)child1.Span).Span;
             Span child2DatadogSpan = ((OpenTracingSpan)child2.Span).Span;
 
-            Assert.Same(rootDatadogSpan.TraceContext, child1DatadogSpan.TraceContext);
+            Assert.Same(rootDatadogSpan.Context.TraceContext, child1DatadogSpan.Context.TraceContext);
             Assert.Equal(rootDatadogSpan.Context.SpanId, child1DatadogSpan.Context.ParentId);
-            Assert.Same(rootDatadogSpan.TraceContext, child2DatadogSpan.TraceContext);
+            Assert.Same(rootDatadogSpan.Context.TraceContext, child2DatadogSpan.Context.TraceContext);
             Assert.Equal(child1DatadogSpan.Context.SpanId, child2DatadogSpan.Context.ParentId);
         }
 
@@ -119,13 +119,13 @@ namespace Datadog.Trace.OpenTracing.Tests
 
             Span rootDatadogSpan = ((OpenTracingSpan)root.Span).Span;
 
-            Assert.Equal(rootDatadogSpan.TraceContext, syncChild.DDSpan.TraceContext);
+            Assert.Equal(rootDatadogSpan.Context.TraceContext, (ITraceContext)syncChild.DDSpan.Context.TraceContext);
             Assert.Equal(rootDatadogSpan.Context.SpanId, syncChild.DDSpan.Context.ParentId);
 
             foreach (var task in tasks)
             {
                 var span = await task;
-                Assert.Equal(rootDatadogSpan.TraceContext, span.DDSpan.TraceContext);
+                Assert.Equal(rootDatadogSpan.Context.TraceContext, (ITraceContext)span.DDSpan.Context.TraceContext);
                 Assert.Equal(rootDatadogSpan.Context.SpanId, span.DDSpan.Context.ParentId);
             }
         }

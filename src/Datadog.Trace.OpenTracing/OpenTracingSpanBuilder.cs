@@ -14,7 +14,7 @@ namespace Datadog.Trace.OpenTracing
         private readonly OpenTracingTracer _tracer;
         private readonly object _lock = new object();
         private readonly string _operationName;
-        private OpenTracingSpanContext _parent;
+        private global::OpenTracing.ISpanContext _parent;
         private DateTimeOffset? _start;
         private Dictionary<string, string> _tags;
         private string _serviceName;
@@ -26,13 +26,13 @@ namespace Datadog.Trace.OpenTracing
             _operationName = operationName;
         }
 
-        public ISpanBuilder AddReference(string referenceType, ISpanContext referencedContext)
+        public ISpanBuilder AddReference(string referenceType, global::OpenTracing.ISpanContext referencedContext)
         {
             lock (_lock)
             {
                 if (referenceType == References.ChildOf)
                 {
-                    _parent = (OpenTracingSpanContext)referencedContext;
+                    _parent = referencedContext;
                     return this;
                 }
             }
@@ -45,16 +45,16 @@ namespace Datadog.Trace.OpenTracing
         {
             lock (_lock)
             {
-                _parent = (OpenTracingSpanContext)parent.Context;
+                _parent = parent.Context;
                 return this;
             }
         }
 
-        public ISpanBuilder AsChildOf(ISpanContext parent)
+        public ISpanBuilder AsChildOf(global::OpenTracing.ISpanContext parent)
         {
             lock (_lock)
             {
-                _parent = (OpenTracingSpanContext)parent;
+                _parent = parent;
                 return this;
             }
         }
@@ -69,7 +69,7 @@ namespace Datadog.Trace.OpenTracing
         {
             lock (_lock)
             {
-                SpanContext parentContext = GetParentContext();
+                ISpanContext parentContext = GetParentContext();
                 Span ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, _serviceName, _start, _ignoreActiveSpan);
                 var otSpan = new OpenTracingSpan(ddSpan);
 
@@ -160,9 +160,10 @@ namespace Datadog.Trace.OpenTracing
             }
         }
 
-        private SpanContext GetParentContext()
+        private ISpanContext GetParentContext()
         {
-            SpanContext parentContext = _parent?.Context;
+            var openTracingSpanContext = _parent as OpenTracingSpanContext;
+            var parentContext = openTracingSpanContext?.Context;
 
             if (parentContext == null && !_ignoreActiveSpan)
             {

@@ -11,12 +11,12 @@ namespace Datadog.Trace.OpenTracing
         internal OpenTracingSpan(Span span)
         {
             Span = span;
-            Context = new OpenTracingSpanContext(Span.Context);
+            Context = new OpenTracingSpanContext(span.Context);
         }
 
         public OpenTracingSpanContext Context { get; }
 
-        ISpanContext ISpan.Context => Context;
+        global::OpenTracing.ISpanContext ISpan.Context => Context;
 
         internal Span Span { get; }
 
@@ -98,9 +98,9 @@ namespace Datadog.Trace.OpenTracing
                 case DatadogTags.SpanType:
                     Span.Type = value;
                     return this;
-                 case DatadogTags.ServiceName:
-                     Span.ServiceName = value;
-                     return this;
+                case DatadogTags.ServiceName:
+                    Span.ServiceName = value;
+                    return this;
             }
 
             if (key == global::OpenTracing.Tag.Tags.Error.Key)

@@ -1,29 +1,55 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ExtensionMethods
+namespace Datadog.Trace
 {
-    /// <summary>
-    /// Extension methods for <see cref="IHeadersCollection"/>.
-    /// </summary>
-    public static class HeadersCollectionExtensions
+    internal class SpanContextPropagator
     {
         private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(HeadersCollectionExtensions));
+        private static readonly ILog Log = LogProvider.For<SpanContextPropagator>();
+
+        private SpanContextPropagator()
+        {
+        }
+
+        public static SpanContextPropagator Instance { get; } = new SpanContextPropagator();
 
         /// <summary>
-        /// Creates a <see cref="SpanContext"/> from the values found in the specified headers.
+        /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
+        /// This locks the sampling priority for <paramref name="context"/>.
+        /// </summary>
+        /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="headers"/>.</param>
+        /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
+        public void Inject(SpanContext context, IHeadersCollection headers)
+        {
+            if (context == null) { throw new ArgumentNullException(nameof(context)); }
+
+            if (headers == null) { throw new ArgumentNullException(nameof(headers)); }
+
+            // lock sampling priority when span propagates.
+            context.TraceContext?.LockSamplingPriority();
+
+            headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
+            headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
+
+            var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
+
+            headers.Set(
+                HttpHeaderNames.SamplingPriority,
+                samplingPriority?.ToString(InvariantCulture));
+        }
+
+        /// <summary>
+        /// Extracts a <see cref="SpanContext"/> from the values found in the specified headers.
         /// </summary>
         /// <param name="headers">The headers that contain the values to be extracted.</param>
-        /// <returns>A new <see cref="SpanContext"/> that contains values extracted from <paramref name="headers"/>.</returns>
-        public static SpanContext ExtractSpanContext(this IHeadersCollection headers)
+        /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
+        public SpanContext Extract(IHeadersCollection headers)
         {
             if (headers == null)
             {
@@ -42,31 +68,6 @@ namespace Datadog.Trace.ExtensionMethods
             var samplingPriority = ParseEnum<SamplingPriority>(headers, HttpHeaderNames.SamplingPriority);
 
             return new SpanContext(traceId, parentId, samplingPriority);
-        }
-
-        /// <summary>
-        /// Adds new name/value pairs to this <see cref="NameValueCollection"/> with the values found in the specified <see cref="SpanContext"/>.
-        /// </summary>
-        /// <param name="headers">The <see cref="NameValueCollection"/> to add new name/value pairs to.</param>
-        /// <param name="context">The <see cref="SpanContext"/> that contains the values to be added as name/value pairs.</param>
-        public static void InjectSpanContext(this IHeadersCollection headers, SpanContext context)
-        {
-            if (headers == null)
-            {
-                throw new ArgumentNullException(nameof(headers));
-            }
-
-            if (context != null)
-            {
-                headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
-                headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
-
-                if (context.SamplingPriority != null)
-                {
-                    var samplingPriority = (int)context.SamplingPriority;
-                    headers.Set(HttpHeaderNames.SamplingPriority, samplingPriority.ToString(InvariantCulture));
-                }
-            }
         }
 
         private static ulong ParseUInt64(IHeadersCollection headers, string headerName)

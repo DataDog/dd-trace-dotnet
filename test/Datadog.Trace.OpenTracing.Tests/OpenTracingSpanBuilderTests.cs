@@ -15,7 +15,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         public OpenTracingSpanBuilderTests()
         {
             var writerMock = new Mock<IAgentWriter>(MockBehavior.Strict);
-            var datadogTracer = new Tracer(writerMock.Object, defaultServiceName: DefaultServiceName);
+            var datadogTracer = new Tracer(writerMock.Object, null, DefaultServiceName);
             _tracer = new OpenTracingTracer(datadogTracer);
         }
 
@@ -31,8 +31,9 @@ namespace Datadog.Trace.OpenTracing.Tests
         public void Start_NoParentProvided_RootSpan()
         {
             var span = (OpenTracingSpan)_tracer.BuildSpan(null).Start();
-            SpanContext ddSpanContext = span.Context.Context;
+            var ddSpanContext = span.Context.Context as SpanContext;
 
+            Assert.NotNull(ddSpanContext);
             Assert.Null(ddSpanContext.ParentId);
             Assert.NotEqual<ulong>(0, ddSpanContext.SpanId);
             Assert.NotEqual<ulong>(0, ddSpanContext.TraceId);

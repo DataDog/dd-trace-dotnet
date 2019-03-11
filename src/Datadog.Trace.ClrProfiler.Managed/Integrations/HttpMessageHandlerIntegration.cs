@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -27,7 +26,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Net.Http.HttpMessageHandler")]
         [InterceptMethod(
             TargetAssembly = "System.Net.Http",
-            TargetType = "System.Net.Http.HttpClientHandler")]
+            TargetType = "System.Net.Http.HttpClientHandler")] // .NET Framework and .NET Core 2.0 and earlier
+        /*
+        [InterceptMethod(
+            TargetAssembly = "System.Net.Http",
+            TargetType = "System.Net.Http.SocketsHttpHandler")] // .NET Core 2.1 and later
+        */
         public static object SendAsync(
             object handler,
             object request,
@@ -54,8 +58,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     handler.GetType(),
                     nameof(SendAsync));
 
-            if (!IsTracingEnabled(request))
+            var handlerTypeName = handler.GetType().FullName;
+
+            if (handlerTypeName != "System.Net.Http.HttpClientHandler" || !IsTracingEnabled(request))
             {
+                // skip instrumentation
                 return await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
             }
 
@@ -68,13 +75,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (scope != null)
                     {
-                        // add distributed tracing and sampling priority headers
-                        request.Headers.Wrap().InjectSpanContext(scope.Span.Context);
+                        // add distributed tracing headers to the HTTP request
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
 
                     HttpResponseMessage response = await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
 
+                    // this tag can only be set after the response is returned
                     scope?.Span.SetTag(Tags.HttpStatusCode, ((int)response.StatusCode).ToString());
+
                     return response;
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)

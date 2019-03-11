@@ -3,45 +3,39 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using System.Timers;
 using Datadog.Trace.Logging;
 using MsgPack.Serialization;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent
 {
     internal class Api : IApi
     {
-        private const string TracesPath = "/v0.3/traces";
+        private const string TracesPath = "/v0.4/traces";
 
-        private static ILog _log = LogProvider.For<Api>();
-        private static SerializationContext _serializationContext;
+        private static readonly ILog _log = LogProvider.For<Api>();
+        private static readonly SerializationContext _serializationContext = new SerializationContext();
+        private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(_serializationContext);
 
-        private Uri _tracesEndpoint;
-        private HttpClient _client;
+        private readonly Uri _tracesEndpoint;
+        private readonly HttpClient _client;
 
         static Api()
         {
-            _serializationContext = new SerializationContext();
-            var spanSerializer = new SpanMessagePackSerializer(_serializationContext);
             _serializationContext.ResolveSerializer += (sender, eventArgs) =>
             {
                 if (eventArgs.TargetType == typeof(Span))
                 {
-                    eventArgs.SetSerializer(spanSerializer);
+                    eventArgs.SetSerializer(Serializer);
                 }
             };
         }
 
         public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler = null)
         {
-            if (delegatingHandler != null)
-            {
-                _client = new HttpClient(delegatingHandler);
-            }
-            else
-            {
-                _client = new HttpClient();
-            }
+            _client = delegatingHandler == null
+                          ? new HttpClient()
+                          : new HttpClient(delegatingHandler);
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
@@ -50,21 +44,17 @@ namespace Datadog.Trace.Agent
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, RuntimeInformation.FrameworkDescription);
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, this.GetType().Assembly.GetName().Version.ToString());
 
-            // don't add automatic instrumentation to this http request
+            // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
         {
-            await SendAsync(traces, _tracesEndpoint);
-        }
+            MsgPackContent<IList<List<Span>>> content;
 
-        private async Task SendAsync<T>(T value, Uri endpoint)
-        {
-            MsgPackContent<T> content;
             try
             {
-                content = new MsgPackContent<T>(value, _serializationContext);
+                content = new MsgPackContent<IList<List<Span>>>(traces, _serializationContext);
             }
             catch (Exception ex)
             {
@@ -79,26 +69,53 @@ namespace Datadog.Trace.Agent
 
             while (true)
             {
+                HttpResponseMessage responseMessage;
+
                 try
                 {
-                    var response = await _client.PostAsync(endpoint, content);
-                    response.EnsureSuccessStatusCode();
-                    return;
+                    responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+                    responseMessage.EnsureSuccessStatusCode();
                 }
                 catch (Exception ex)
                 {
                     if (retryCount >= retryLimit)
                     {
-                        _log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}", ex, endpoint);
+                        // stop retrying
+                        _log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
                         return;
                     }
+
+                    // retry
+                    await Task.Delay(sleepDuration).ConfigureAwait(false);
+                    retryCount++;
+                    sleepDuration *= 2;
+                    continue;
                 }
 
-                await Task.Delay(sleepDuration);
+                try
+                {
+                    if (responseMessage.Content != null && Tracer.Instance.Sampler != null)
+                    {
+                        // build the sample rate map from the response json
+                        var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        var response = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
 
-                retryCount++;
-                sleepDuration *= 2;
+                        Tracer.Instance.Sampler.SetSampleRates(response?.RateByService);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.ErrorException("Traces sent successfully to the Agent at {Endpoint}, but an error occurred deserializing the response.", ex, _tracesEndpoint);
+                }
+
+                return;
             }
+        }
+
+        internal class ApiResponse
+        {
+            [JsonProperty("rate_by_service")]
+            public Dictionary<string, float> RateByService { get; set; }
         }
     }
 }

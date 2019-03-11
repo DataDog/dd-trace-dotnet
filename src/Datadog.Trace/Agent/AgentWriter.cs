@@ -8,7 +8,7 @@ namespace Datadog.Trace.Agent
 {
     internal class AgentWriter : IAgentWriter
     {
-        private static ILog _log = LogProvider.For<AgentWriter>();
+        private static readonly ILog _log = LogProvider.For<AgentWriter>();
 
         private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(1000);
         private readonly IApi _api;
@@ -18,7 +18,7 @@ namespace Datadog.Trace.Agent
         public AgentWriter(IApi api)
         {
             _api = api;
-            _flushTask = Task.Run(FlushTracesTaskLoop);
+            _flushTask = Task.Run(FlushTracesTaskLoopAsync);
         }
 
         public void WriteTrace(List<Span> trace)
@@ -37,7 +37,9 @@ namespace Datadog.Trace.Agent
                 return;
             }
 
-            await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)));
+            await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)))
+                      .ConfigureAwait(false);
+
             if (!_flushTask.IsCompleted)
             {
                 _log.Warn("Could not flush all traces before process exit");
@@ -49,25 +51,27 @@ namespace Datadog.Trace.Agent
             var traces = _tracesBuffer.Pop();
             if (traces.Any())
             {
-                await _api.SendTracesAsync(traces);
+                await _api.SendTracesAsync(traces).ConfigureAwait(false);
             }
         }
 
-        private async Task FlushTracesTaskLoop()
+        private async Task FlushTracesTaskLoopAsync()
         {
             while (true)
             {
                 try
                 {
-                    await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(1)), _processExit.Task);
+                    await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(1)), _processExit.Task)
+                              .ConfigureAwait(false);
+
                     if (_processExit.Task.IsCompleted)
                     {
-                        await FlushTracesAsync();
+                        await FlushTracesAsync().ConfigureAwait(false);
                         return;
                     }
                     else
                     {
-                        await FlushTracesAsync();
+                        await FlushTracesAsync().ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)

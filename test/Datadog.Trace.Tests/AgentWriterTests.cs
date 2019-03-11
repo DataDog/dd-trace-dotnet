@@ -10,29 +10,33 @@ namespace Datadog.Trace.Tests
 {
     public class AgentWriterTests
     {
-        private AgentWriter _agentWriter;
-        private Mock<IApi> _api;
-        private Mock<IDatadogTracer> _tracer;
+        private readonly AgentWriter _agentWriter;
+        private readonly Mock<IApi> _api;
+        private readonly SpanContext _spanContext;
 
         public AgentWriterTests()
         {
-            _tracer = new Mock<IDatadogTracer>();
-            _tracer.Setup(x => x.DefaultServiceName).Returns("Default");
-            var context = new Mock<ITraceContext>();
+            var tracer = new Mock<IDatadogTracer>();
+            tracer.Setup(x => x.DefaultServiceName).Returns("Default");
+
             _api = new Mock<IApi>();
             _agentWriter = new AgentWriter(_api.Object);
+
+            var parentSpanContext = new Mock<ISpanContext>();
+            var traceContext = new Mock<ITraceContext>();
+            _spanContext = new SpanContext(parentSpanContext.Object, traceContext.Object, serviceName: null);
         }
 
         [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
         {
             // TODO:bertrand it is too complicated to setup such a simple test
-            var trace = new List<Span> { new Span(_tracer.Object, null, "Operation", "Service", null) };
+            var trace = new List<Span> { new Span(_spanContext, start: null) };
             _agentWriter.WriteTrace(trace);
             await Task.Delay(TimeSpan.FromSeconds(1.5));
             _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
 
-            trace = new List<Span> { new Span(_tracer.Object, null, "Operation2", "AnotherService", null) };
+            trace = new List<Span> { new Span(_spanContext, start: null) };
             _agentWriter.WriteTrace(trace);
             await Task.Delay(TimeSpan.FromSeconds(1.5));
             _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);

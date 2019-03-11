@@ -13,7 +13,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         public OpenTracingSpanTests()
         {
             var writerMock = new Mock<IAgentWriter>();
-            var datadogTracer = new Tracer(writerMock.Object);
+            var datadogTracer = new Tracer(writerMock.Object, null);
             _tracer = new OpenTracingTracer(datadogTracer);
         }
 
@@ -110,16 +110,16 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Context_TwoCalls_ContextStaysEqual()
         {
-            OpenTracingSpan span;
-            ISpanContext firstContext;
+            ISpan span;
+            global::OpenTracing.ISpanContext firstContext;
 
             using (IScope scope = GetScope("Op1"))
             {
-                span = (OpenTracingSpan)scope.Span;
+                span = scope.Span;
                 firstContext = span.Context;
             }
 
-            ISpanContext secondContext = span.Context;
+            var secondContext = span.Context;
 
             Assert.Same(firstContext, secondContext);
         }

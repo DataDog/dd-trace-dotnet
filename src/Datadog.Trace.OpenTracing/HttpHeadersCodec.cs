@@ -1,73 +1,49 @@
 using System;
 using System.Globalization;
+using Datadog.Trace.Headers;
 using OpenTracing.Propagation;
 
 namespace Datadog.Trace.OpenTracing
 {
     internal class HttpHeadersCodec : ICodec
     {
-        public OpenTracingSpanContext Extract(object carrier)
+        private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
+
+        public global::OpenTracing.ISpanContext Extract(object carrier)
         {
-            ITextMap map = carrier as ITextMap;
+            var map = carrier as ITextMap;
+
             if (map == null)
             {
-                throw new NotSupportedException("Carrier should have type ITextMap");
+                throw new ArgumentException("Carrier should have type ITextMap", nameof(carrier));
             }
 
-            string parentIdHeader = null;
-            string traceIdHeader = null;
-            string samplingPriorityHeader = null;
-
-            foreach (var keyVal in map)
-            {
-                if (keyVal.Key.Equals(HttpHeaderNames.ParentId, StringComparison.OrdinalIgnoreCase))
-                {
-                    parentIdHeader = keyVal.Value;
-                }
-
-                if (keyVal.Key.Equals(HttpHeaderNames.TraceId, StringComparison.OrdinalIgnoreCase))
-                {
-                    traceIdHeader = keyVal.Value;
-                }
-
-                if (keyVal.Key.Equals(HttpHeaderNames.SamplingPriority, StringComparison.OrdinalIgnoreCase))
-                {
-                    samplingPriorityHeader = keyVal.Value;
-                }
-            }
-
-            if (!ulong.TryParse(traceIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var traceId) ||
-                traceId == 0)
-            {
-                // if traceId is not provided or is zero, there is no span context
-                return null;
-            }
-
-            ulong.TryParse(parentIdHeader, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parentId);
-
-            var samplingPriority = int.TryParse(samplingPriorityHeader, out int samplingPriorityValue)
-                                       ? (SamplingPriority?)samplingPriorityValue
-                                       : null;
-
-            SpanContext ddSpanContext = new SpanContext(traceId, parentId, samplingPriority);
-            return new OpenTracingSpanContext(ddSpanContext);
+            IHeadersCollection headers = new TextMapHeadersCollection(map);
+            var propagationContext = SpanContextPropagator.Instance.Extract(headers);
+            return new OpenTracingSpanContext(propagationContext);
         }
 
-        public void Inject(OpenTracingSpanContext spanContext, object carrier)
+        public void Inject(global::OpenTracing.ISpanContext context, object carrier)
         {
-            ITextMap map = carrier as ITextMap;
+            var map = carrier as ITextMap;
+
             if (map == null)
             {
-                throw new NotSupportedException("Carrier should have type ITextMap");
+                throw new ArgumentException("Carrier should have type ITextMap", nameof(carrier));
             }
 
-            map.Set(HttpHeaderNames.ParentId, spanContext.Context.SpanId.ToString(CultureInfo.InvariantCulture));
-            map.Set(HttpHeaderNames.TraceId, spanContext.Context.TraceId.ToString(CultureInfo.InvariantCulture));
+            IHeadersCollection headers = new TextMapHeadersCollection(map);
 
-            if (spanContext.Context.SamplingPriority != null)
+            if (context is OpenTracingSpanContext otSpanContext && otSpanContext.Context is SpanContext ddSpanContext)
             {
-                var samplingPriority = (int)spanContext.Context.SamplingPriority;
-                map.Set(HttpHeaderNames.SamplingPriority, samplingPriority.ToString(CultureInfo.InvariantCulture));
+                // this is a Datadog context
+                SpanContextPropagator.Instance.Inject(ddSpanContext, headers);
+            }
+            else
+            {
+                // any other OpenTracing.ISpanContext
+                headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
+                headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
             }
         }
     }

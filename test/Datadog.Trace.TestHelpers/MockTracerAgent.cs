@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -114,6 +115,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        [DebuggerDisplay("TraceId={TraceId}, SpanId={SpanId}, Service={Service}, Name={Name}, Resource={Resource}")]
         public struct Span
         {
             public ulong TraceId { get; set; }

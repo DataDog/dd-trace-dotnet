@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Sampling;
 using OpenTracing;
 
 namespace Datadog.Trace.OpenTracing
@@ -29,7 +30,8 @@ namespace Datadog.Trace.OpenTracing
         {
             var api = new Api(agentEndpoint, delegatingHandler);
             var agentWriter = new AgentWriter(api);
-            var ddTracer = new Tracer(agentWriter, defaultServiceName, isDebugEnabled);
+            var sampler = new RateByServiceSampler();
+            var ddTracer = new Tracer(agentWriter, sampler, defaultServiceName, isDebugEnabled);
             var tracer = new OpenTracingTracer(ddTracer);
             return tracer;
         }

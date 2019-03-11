@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace
 {
@@ -11,7 +12,9 @@ namespace Datadog.Trace
 
         AsyncLocalScopeManager ScopeManager { get; }
 
-        Span StartSpan(string operationName, SpanContext childOf, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
+        ISampler Sampler { get; }
+
+        Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
 
         void Write(List<Span> span);
     }

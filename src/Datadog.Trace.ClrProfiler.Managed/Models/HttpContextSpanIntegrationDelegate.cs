@@ -112,11 +112,7 @@ namespace Datadog.Trace.ClrProfiler.Models
             }
             catch (Exception x)
             {
-#if DEBUG
                 Log.WarnException("Disposal exception", x);
-#endif
-
-                // Nothing else to do
             }
         }
     }

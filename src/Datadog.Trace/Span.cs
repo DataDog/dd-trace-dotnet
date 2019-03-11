@@ -14,27 +14,15 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable, ISpan
     {
-        private static readonly ILog _log = LogProvider.For<Span>();
+        private static readonly ILog Log = LogProvider.For<Span>();
 
         private readonly object _lock = new object();
-        private readonly SpanContext _context;
-        private readonly IDatadogTracer _tracer;
-        private readonly ConcurrentDictionary<string, string> _tags = new ConcurrentDictionary<string, string>();
 
-        internal Span(IDatadogTracer tracer, SpanContext parent, string operationName, string serviceName, DateTimeOffset? start)
+        internal Span(SpanContext context, DateTimeOffset? start)
         {
-            // TODO:bertrand should we throw an exception if operationName is null or empty?
-            _tracer = tracer;
-            _context = new SpanContext(tracer, parent, serviceName);
-            OperationName = operationName;
-            if (start.HasValue)
-            {
-                StartTime = start.Value;
-            }
-            else
-            {
-                StartTime = _context.TraceContext.UtcNow();
-            }
+            Context = context;
+            ServiceName = context.ServiceName;
+            StartTime = start ?? Context.TraceContext.UtcNow;
         }
 
         /// <summary>
@@ -60,41 +48,37 @@ namespace Datadog.Trace
         public bool Error { get; set; }
 
         /// <summary>
-        /// Gets or sets the service name
+        /// Gets or sets the service name.
         /// </summary>
         public string ServiceName
         {
-            get => _context.ServiceName;
-            set => _context.ServiceName = value;
+            get => Context.ServiceName;
+            set => Context.ServiceName = value;
         }
 
         /// <summary>
         /// Gets the trace's unique identifier.
         /// </summary>
-        public ulong TraceId => _context.TraceId;
+        public ulong TraceId => Context.TraceId;
 
         /// <summary>
         /// Gets the span's unique identifier.
         /// </summary>
-        public ulong SpanId => _context.SpanId;
+        public ulong SpanId => Context.SpanId;
 
-        internal SpanContext Context => _context;
-
-        internal ITraceContext TraceContext => _context.TraceContext;
+        internal SpanContext Context { get; }
 
         internal DateTimeOffset StartTime { get; }
 
         internal TimeSpan Duration { get; private set; }
 
-        // In case we inject a context from another process,
-        // the _context.Parent will not be null but TraceContext will be null.
-        internal bool IsRootSpan => _context.Parent?.TraceContext == null;
+        internal ConcurrentDictionary<string, string> Tags { get; } = new ConcurrentDictionary<string, string>();
 
-        // This is threadsafe only if used after the span has been closed.
-        // It is acceptable because this property is internal. But if we were to make it public we would need to add some checks.
-        internal ConcurrentDictionary<string, string> Tags => _tags;
+        internal ConcurrentDictionary<string, int> Metrics { get; } = new ConcurrentDictionary<string, int>();
 
         internal bool IsFinished { get; private set; }
+
+        internal bool IsRootSpan => Context?.TraceContext?.RootSpan == this;
 
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
@@ -105,20 +89,31 @@ namespace Datadog.Trace
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"TraceId: {_context.TraceId}");
-            sb.AppendLine($"ParentId: {_context.ParentId}");
-            sb.AppendLine($"SpanId: {_context.SpanId}");
-            sb.AppendLine($"ServiceName: {_context.ServiceName}");
+            sb.AppendLine($"TraceId: {Context.TraceId}");
+            sb.AppendLine($"ParentId: {Context.ParentId}");
+            sb.AppendLine($"SpanId: {Context.SpanId}");
+            sb.AppendLine($"ServiceName: {ServiceName}");
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
             sb.AppendLine($"Type: {Type}");
             sb.AppendLine($"Start: {StartTime}");
             sb.AppendLine($"Duration: {Duration}");
             sb.AppendLine($"Error: {Error}");
-            sb.AppendLine($"Meta:");
+            sb.AppendLine("Meta:");
+
             if (Tags != null)
             {
                 foreach (var kv in Tags)
+                {
+                    sb.Append($"\t{kv.Key}:{kv.Value}");
+                }
+            }
+
+            sb.AppendLine("Metrics:");
+
+            if (Metrics != null && Metrics.Count > 0)
+            {
+                foreach (var kv in Metrics)
                 {
                     sb.Append($"\t{kv.Key}:{kv.Value}");
                 }
@@ -137,17 +132,17 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
-                _log.Debug("SetTag should not be called after the span was closed");
+                Log.Debug("SetTag should not be called after the span was closed");
                 return this;
             }
 
             if (value == null)
             {
-                _tags.TryRemove(key, out value);
+                Tags.TryRemove(key, out _);
             }
             else
             {
-                _tags[key] = value;
+                Tags[key] = value;
             }
 
             return this;
@@ -169,7 +164,7 @@ namespace Datadog.Trace
         /// </summary>
         public void Finish()
         {
-            Finish(_context.TraceContext.UtcNow());
+            Finish(Context.TraceContext.UtcNow);
         }
 
         /// <summary>
@@ -198,7 +193,7 @@ namespace Datadog.Trace
 
             if (shouldCloseSpan)
             {
-                _context.TraceContext.CloseSpan(this);
+                Context.TraceContext.CloseSpan(this);
             }
         }
 
@@ -249,12 +244,35 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
         public string GetTag(string key)
-            => _tags.TryGetValue(key, out var value) ? value : null;
+            => Tags.TryGetValue(key, out var value)
+                   ? value
+                   : null;
 
         internal bool SetExceptionForFilter(Exception exception)
         {
             SetException(exception);
             return false;
+        }
+
+        internal int? GetMetric(string key)
+        {
+            return Metrics.TryGetValue(key, out int value)
+                       ? value
+                       : default;
+        }
+
+        internal Span SetMetric(string key, int? value)
+        {
+            if (value == null)
+            {
+                Metrics.TryRemove(key, out _);
+            }
+            else
+            {
+                Metrics[key] = value.Value;
+            }
+
+            return this;
         }
     }
 }

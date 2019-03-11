@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.
         /// </summary>
-        /// <param name="request">The <see cref="WebRequest"/> instance to instrument.</param>
+        /// <param name="webRequest">The <see cref="WebRequest"/> instance to instrument.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System", // .NET Framework
@@ -22,29 +22,29 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.Net.Requests", // .NET Core
             TargetType = "System.Net.WebRequest")]
-        public static object GetResponse(object request)
+        public static object GetResponse(object webRequest)
         {
-            var webRequest = (WebRequest)request;
+            var request = (WebRequest)webRequest;
 
-            if (!IsTracingEnabled(webRequest))
+            if (!IsTracingEnabled(request))
             {
-                return webRequest.GetResponse();
+                return request.GetResponse();
             }
 
-            string httpMethod = webRequest.Method.ToUpperInvariant();
+            string httpMethod = request.Method.ToUpperInvariant();
             string integrationName = typeof(WebRequestIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(httpMethod, webRequest.RequestUri, integrationName))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(httpMethod, request.RequestUri, integrationName))
             {
                 try
                 {
                     if (scope != null)
                     {
-                        // add distributed tracing and sampling priority headers
-                        webRequest.Headers.Wrap().InjectSpanContext(scope.Span.Context);
+                        // add distributed tracing headers to the HTTP request
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
 
-                    WebResponse response = webRequest.GetResponse();
+                    WebResponse response = request.GetResponse();
 
                     if (response is HttpWebResponse webResponse)
                     {
@@ -90,8 +90,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (scope != null)
                     {
-                        // add distributed tracing and sampling priority headers
-                        request.Headers.Wrap().InjectSpanContext(scope.Span.Context);
+                        // add distributed tracing headers to the HTTP request
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
 
                     WebResponse response = await request.GetResponseAsync().ConfigureAwait(false);

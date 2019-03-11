@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace
 {
@@ -53,10 +54,11 @@ namespace Datadog.Trace
             Instance = Create();
         }
 
-        internal Tracer(IAgentWriter agentWriter, string defaultServiceName = null, bool isDebugEnabled = false)
+        internal Tracer(IAgentWriter agentWriter, ISampler sampler, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             _isDebugEnabled = isDebugEnabled;
             _agentWriter = agentWriter;
+            Sampler = sampler;
             DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
@@ -93,6 +95,13 @@ namespace Datadog.Trace
         AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
         /// <summary>
+        /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
+        /// </summary>
+        ISampler IDatadogTracer.Sampler => Sampler;
+
+        internal ISampler Sampler { get; }
+
+        /// <summary>
         /// Create a new Tracer with the given parameters
         /// </summary>
         /// <param name="agentEndpoint">The agent endpoint where the traces will be sent (default is http://localhost:8126).</param>
@@ -119,35 +128,59 @@ namespace Datadog.Trace
         /// This is a shortcut for <see cref="StartSpan"/> and <see cref="ActivateSpan"/>, it creates a new span with the given parameters and makes it active.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
-        /// <param name="childOf">The span's parent</param>
+        /// <param name="parent">The span's parent</param>
         /// <param name="serviceName">The span's service name</param>
         /// <param name="startTime">An explicit start time for that span</param>
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
         /// <returns>A scope wrapping the newly created span</returns>
-        public Scope StartActive(string operationName, SpanContext childOf = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
+        public Scope StartActive(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
         {
-            var span = StartSpan(operationName, childOf, serviceName, startTime, ignoreActiveScope);
+            var span = StartSpan(operationName, parent, serviceName, startTime, ignoreActiveScope);
             return _scopeManager.Activate(span, finishOnClose);
         }
 
         /// <summary>
-        /// This create a Span with the given parameters
+        /// Creates a new <see cref="Span"/> with the specified parameters.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
-        /// <param name="childOf">The span's parent</param>
+        /// <param name="parent">The span's parent</param>
         /// <param name="serviceName">The span's service name</param>
         /// <param name="startTime">An explicit start time for that span</param>
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <returns>The newly created span</returns>
-        public Span StartSpan(string operationName, SpanContext childOf = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
+        public Span StartSpan(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
         {
-            if (childOf == null && !ignoreActiveScope)
+            if (parent == null && !ignoreActiveScope)
             {
-                childOf = _scopeManager.Active?.Span?.Context;
+                parent = _scopeManager.Active?.Span?.Context;
             }
 
-            var span = new Span(this, childOf, operationName, serviceName, startTime);
+            ITraceContext traceContext;
+
+            // try to get the trace context (from local spans) or
+            // sampling priority (from propagated spans),
+            // otherwise start a new trace context
+            if (parent is SpanContext parentSpanContext)
+            {
+                traceContext = parentSpanContext.TraceContext ??
+                               new TraceContext(this)
+                               {
+                                   SamplingPriority = parentSpanContext.SamplingPriority
+                               };
+            }
+            else
+            {
+                traceContext = new TraceContext(this);
+            }
+
+            var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;
+            var spanContext = new SpanContext(parent, traceContext, finalServiceName);
+
+            var span = new Span(spanContext, startTime)
+            {
+                OperationName = operationName,
+            };
 
             var env = Environment.GetEnvironmentVariable(EnvVariableName);
 
@@ -157,7 +190,7 @@ namespace Datadog.Trace
                 span.SetTag(Tags.Env, env);
             }
 
-            span.TraceContext.AddSpan(span);
+            traceContext.AddSpan(span);
             return span;
         }
 
@@ -174,7 +207,8 @@ namespace Datadog.Trace
         {
             var api = new Api(agentEndpoint, delegatingHandler);
             var agentWriter = new AgentWriter(api);
-            var tracer = new Tracer(agentWriter, serviceName, isDebugEnabled);
+            var sampler = new RateByServiceSampler();
+            var tracer = new Tracer(agentWriter, sampler, serviceName, isDebugEnabled);
             return tracer;
         }
 

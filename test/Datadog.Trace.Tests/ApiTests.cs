@@ -3,45 +3,24 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.HttpMessageHandlers;
 using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-#pragma warning disable SA1402 // File may only contain a single class
-#pragma warning disable SA1649 // File name must match first type name
-    public class SetResponseHandler : DelegatingHandler
-#pragma warning restore SA1649 // File name must match first type name
-#pragma warning restore SA1402 // File may only contain a single class
-    {
-        private HttpResponseMessage _response;
-
-        public SetResponseHandler(HttpResponseMessage response)
-        {
-            _response = response;
-        }
-
-        public int RequestsCount { get; set; }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            RequestsCount++;
-            return Task.FromResult(_response);
-        }
-    }
-
     public class ApiTests
     {
-        private Mock<IAgentWriter> _writerMock;
-        private Tracer _tracer;
+        private readonly Tracer _tracer;
 
         public ApiTests()
         {
-            _writerMock = new Mock<IAgentWriter>();
-            _tracer = new Tracer(_writerMock.Object);
+            var writerMock = new Mock<IAgentWriter>();
+            var sampler = new SimpleSampler(SamplingPriority.UserKeep);
+            _tracer = new Tracer(writerMock.Object, sampler);
         }
 
         [Fact]
@@ -54,7 +33,9 @@ namespace Datadog.Trace.Tests
             var handler = new SetResponseHandler(response);
             var api = new Api(new Uri("http://localhost:1234"), handler);
 
-            await api.SendTracesAsync(new List<List<Span>> { new List<Span> { _tracer.StartSpan("Operation") } });
+            var span = _tracer.StartSpan("Operation");
+            var traces = new List<List<Span>> { new List<Span> { span } };
+            await api.SendTracesAsync(traces);
 
             Assert.Equal(1, handler.RequestsCount);
         }
@@ -71,7 +52,9 @@ namespace Datadog.Trace.Tests
 
             var sw = new Stopwatch();
             sw.Start();
-            await api.SendTracesAsync(new List<List<Span>> { new List<Span> { _tracer.StartSpan("Operation") } });
+            var span = _tracer.StartSpan("Operation");
+            var traces = new List<List<Span>> { new List<Span> { span } };
+            await api.SendTracesAsync(traces);
             sw.Stop();
 
             Assert.Equal(5, handler.RequestsCount);
