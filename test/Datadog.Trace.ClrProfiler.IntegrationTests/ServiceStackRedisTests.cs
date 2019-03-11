@@ -27,7 +27,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(11).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
+                // note: ignore the INFO command because it's timing is unpredictable (on Linux?)
+                var spans = agent.WaitForSpans(11)
+                                 .Where(s => s.Type == "redis" && s.Resource != "INFO")
+                                 .OrderBy(s => s.Start)
+                                 .ToList();
+
                 var host = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
 
                 foreach (var span in spans)
@@ -36,12 +41,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal($"Samples.RedisCore-{RedisHelper.ServiceName}", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, span.Tags.GetValueOrDefault("out.host"));
-                    Assert.Equal("6379", span.Tags.Get<string>("out.port"));
+                    Assert.Equal("6379", span.Tags.GetValueOrDefault("out.port"));
                 }
 
                 var expected = new TupleList<string, string>
                 {
-                    { "INFO", "INFO" },
                     { "ROLE", "ROLE" },
                     { "SET", $"SET {prefix}ServiceStack.Redis.INCR 0" },
                     { "PING", "PING" },
