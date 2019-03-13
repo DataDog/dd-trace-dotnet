@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -12,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AdoNetIntegration
     {
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AdoNetIntegration));
+
         /// <summary>
         /// Wrapper method that instruments <see cref="System.Data.Common.DbCommand.ExecuteDbDataReader"/>.
         /// </summary>
@@ -95,15 +98,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(DbCommand command)
         {
-            string dbType = GetDbType(command.GetType().Name);
+            Scope scope = null;
 
-            Tracer tracer = Tracer.Instance;
-            string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
-            string operationName = $"{dbType}.query";
+            try
+            {
+                string dbType = GetDbType(command.GetType().Name);
 
-            var scope = tracer.StartActive(operationName, serviceName: serviceName);
-            scope.Span.SetTag(Tags.DbType, dbType);
-            scope.Span.AddTagsFromDbCommand(command);
+                Tracer tracer = Tracer.Instance;
+                string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
+                string operationName = $"{dbType}.query";
+
+                scope = tracer.StartActive(operationName, serviceName: serviceName);
+                scope.Span.SetTag(Tags.DbType, dbType);
+                scope.Span.AddTagsFromDbCommand(command);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException("Error creating or populating scope.", ex);
+            }
+
             return scope;
         }
 
