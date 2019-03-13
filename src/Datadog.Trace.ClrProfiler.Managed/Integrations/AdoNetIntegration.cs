@@ -104,6 +104,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 string dbType = GetDbType(command.GetType().Name);
 
+                if (dbType == null)
+                {
+                    return null;
+                }
+
                 Tracer tracer = Tracer.Instance;
                 string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
                 string operationName = $"{dbType}.query";
@@ -128,6 +133,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return "sql-server";
                 case "NpgsqlCommand":
                     return "postgres";
+                case "InterceptableDbCommand":
+                case "ProfiledDbCommand":
+                    // don't create spans for these
+                    return null;
                 default:
                     const string commandSuffix = "Command";
 
