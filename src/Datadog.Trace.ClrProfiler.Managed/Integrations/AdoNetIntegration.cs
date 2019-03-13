@@ -40,9 +40,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     return executeReader(command, commandBehavior);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -85,9 +85,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     return await executeReader(command, behavior, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
