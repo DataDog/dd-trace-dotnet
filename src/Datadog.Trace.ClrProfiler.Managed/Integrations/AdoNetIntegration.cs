@@ -106,6 +106,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (dbType == null)
                 {
+                    // don't create a scope, skip this trace
                     return null;
                 }
 
