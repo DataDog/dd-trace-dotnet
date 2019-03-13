@@ -43,6 +43,7 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
     return CLASS_E_NOAGGREGATION;
   }
 
+  trace::Info("Datadog CLR Profiler v0.8.1");
   trace::Info("ClassFactory::CreateInstance");
 
   auto profiler = new trace::CorProfiler();
