@@ -22,6 +22,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
             TargetType = "StackExchange.Redis.RedisBase")]
+        [InterceptMethod(
+            Integration = "StackExchangeRedis",
+            CallerAssembly = "StackExchange.Redis.StrongName",
+            TargetAssembly = "StackExchange.Redis.StrongName",
+            TargetType = "StackExchange.Redis.RedisBase")]
         public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server)
         {
             return ExecuteAsyncInternal<T>(redisBase, message, processor, server);

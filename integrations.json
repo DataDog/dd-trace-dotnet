@@ -326,6 +326,22 @@
       },
       {
         "caller": {
+          "assembly": "StackExchange.Redis.StrongName"
+        },
+        "target": {
+          "assembly": "StackExchange.Redis.StrongName",
+          "type": "StackExchange.Redis.ConnectionMultiplexer",
+          "method": "ExecuteSyncImpl"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.8.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer",
+          "method": "ExecuteSyncImpl",
+          "signature": "10 01 04 1E 00 1C 1C 1C 1C"
+        }
+      },
+      {
+        "caller": {
           "assembly": "StackExchange.Redis"
         },
         "target": {
@@ -342,10 +358,42 @@
       },
       {
         "caller": {
+          "assembly": "StackExchange.Redis.StrongName"
+        },
+        "target": {
+          "assembly": "StackExchange.Redis.StrongName",
+          "type": "StackExchange.Redis.ConnectionMultiplexer",
+          "method": "ExecuteAsyncImpl"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.8.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer",
+          "method": "ExecuteAsyncImpl",
+          "signature": "10 01 05 1C 1C 1C 1C 1C 1C"
+        }
+      },
+      {
+        "caller": {
           "assembly": "StackExchange.Redis"
         },
         "target": {
           "assembly": "StackExchange.Redis",
+          "type": "StackExchange.Redis.RedisBase",
+          "method": "ExecuteAsync"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.8.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch",
+          "method": "ExecuteAsync",
+          "signature": "10 01 04 1C 1C 1C 1C 1C"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "StackExchange.Redis.StrongName"
+        },
+        "target": {
+          "assembly": "StackExchange.Redis.StrongName",
           "type": "StackExchange.Redis.RedisBase",
           "method": "ExecuteAsync"
         },
