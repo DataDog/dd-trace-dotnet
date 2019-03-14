@@ -19,7 +19,25 @@ namespace Datadog.Trace.TestHelpers
         {
             _listener = new HttpListener();
             _listener.Prefixes.Add($"http://localhost:{port}/");
-            _listener.Start();
+
+            bool listening = false;
+            int retriesLeft = 5;
+
+            // try up to 5 consecutive ports before giving up
+            while (!listening)
+            {
+                try
+                {
+                    _listener.Start();
+                    listening = true;
+                }
+                catch (HttpListenerException) when (retriesLeft > 0)
+                {
+                    // only catch the exception if there are retries left
+                    port++;
+                    retriesLeft--;
+                }
+            }
 
             _listenerThread = new Thread(HandleHttpRequests);
             _listenerThread.Start();
