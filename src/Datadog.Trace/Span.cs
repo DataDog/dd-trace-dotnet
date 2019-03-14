@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Text;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
 using Datadog.Trace.Logging;
 
@@ -123,11 +124,11 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Add a tag metadata to the span
+        /// Add a the specified tag to this span.
         /// </summary>
-        /// <param name="key">The tag's key</param>
-        /// <param name="value">The tag's value</param>
-        /// <returns> The span object itself</returns>
+        /// <param name="key">The tag's key.</param>
+        /// <param name="value">The tag's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
         public Span SetTag(string key, string value)
         {
             if (IsFinished)
@@ -166,7 +167,7 @@ namespace Datadog.Trace
                     break;
                 default:
                     // if not a special tag, just add it to the tag bag
-                Tags[key] = value;
+                    Tags[key] = value;
                     break;
             }
 
@@ -174,12 +175,11 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Proxy to SetTag without return value
-        /// See <see cref="Span.SetTag(string, string)"/> for more information
+        /// Add a the specified tag to this span.
         /// </summary>
-        /// <param name="key">The tag's key</param>
-        /// <param name="value">The tag's value</param>
-        /// <returns> The ISpan object itself</returns>
+        /// <param name="key">The tag's key.</param>
+        /// <param name="value">The tag's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
         ISpan ISpan.SetTag(string key, string value)
             => SetTag(key, value);
 
