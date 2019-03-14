@@ -126,5 +126,15 @@ namespace Datadog.Trace
         /// A MongoDB collection name.
         /// </summary>
         public const string MongoDbCollection = "mongodb.collection";
+
+        /// <summary>
+        /// The sampling priority for the entire trace.
+        /// </summary>
+        public const string SamplingPriority = "sampling.priority";
+
+        /// <summary>
+        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserKeep"/>.
+        /// </summary>
+        public const string ForceKeep = "force.keep";
     }
 }
