@@ -138,11 +138,36 @@ namespace Datadog.Trace
 
             if (value == null)
             {
+                // Agent doesn't accept null tag values,
+                // remove them instead
                 Tags.TryRemove(key, out _);
+                return this;
             }
-            else
+
+            // some tags have special meaning
+            switch (key)
             {
+                case Trace.Tags.SamplingPriority:
+                    if (Enum.TryParse(value, out SamplingPriority samplingPriority) &&
+                        Enum.IsDefined(typeof(SamplingPriority), samplingPriority))
+                    {
+                        // allow setting the sampling priority via a tag
+                        Context.TraceContext.SamplingPriority = samplingPriority;
+                    }
+
+                    break;
+                case Trace.Tags.ForceKeep:
+                    if (value.ToBoolean() ?? false)
+                    {
+                        // user-friendly tag to set UserKeep priority
+                        Context.TraceContext.SamplingPriority = SamplingPriority.UserKeep;
+                    }
+
+                    break;
+                default:
+                    // if not a special tag, just add it to the tag bag
                 Tags[key] = value;
+                    break;
             }
 
             return this;
