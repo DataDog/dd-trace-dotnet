@@ -16,9 +16,7 @@ namespace Datadog.Trace.TestHelpers
     {
         private static readonly ConcurrentBag<int> ReturnedPorts = new ConcurrentBag<int>();
 
-        // Get a starting port between 10,000 and 59,900 for this process.
-        // Multiply by 100 so each process gets a built-in 100-port buffer.
-        private static readonly int MinPort = 10000 + ((Process.GetCurrentProcess().Id * 100) % 50000);
+        private static readonly int MinPort = GetStartingPort();
 
         public static int GetOpenPort()
         {
@@ -46,6 +44,12 @@ namespace Datadog.Trace.TestHelpers
                                               .Select(ipEndPoint => ipEndPoint.Port);
 
             return new HashSet<int>(usedPorts);
+        }
+
+        private static int GetStartingPort()
+        {
+            // pick a starting port from the ephemeral port range (49152 – 65535) based on process id
+            return (Process.GetCurrentProcess().Id % (65535 - 49152)) + 49152;
         }
     }
 }
