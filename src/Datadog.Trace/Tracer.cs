@@ -67,10 +67,14 @@ namespace Datadog.Trace
             _agentWriter = agentWriter ?? throw new ArgumentNullException(nameof(agentWriter));
             Sampler = sampler ?? throw new ArgumentNullException(nameof(sampler));
 
-            DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
             _isDebugEnabled = isDebugEnabled;
             _configurationSource = configurationSource ?? CreateDefaultConfigurationSource();
             _scopeManager = new AsyncLocalScopeManager();
+
+            DefaultServiceName = defaultServiceName ??
+                                 _configurationSource.GetString(ServiceNameVariableName) ??
+                                 GetApplicationName() ??
+                                 UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
@@ -281,22 +285,14 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Determines the default service name for the executing application by looking at
-        /// environment variables, hosted app name (.NET Framework on IIS only), assembly name, and process name.
+        /// Gets an " application name" for the executing application by looking at
+        /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
         /// </summary>
         /// <returns>The default service name.</returns>
-        private static string CreateDefaultServiceName()
+        private static string GetApplicationName()
         {
             try
             {
-                // allow users to override this with an environment variable
-                var serviceName = Environment.GetEnvironmentVariable(ServiceNameVariableName);
-
-                if (!string.IsNullOrWhiteSpace(serviceName))
-                {
-                    return serviceName;
-                }
-
 #if !NETSTANDARD2_0
                 // System.Web.dll is only available on .NET Framework
                 if (System.Web.Hosting.HostingEnvironment.IsHosted)
