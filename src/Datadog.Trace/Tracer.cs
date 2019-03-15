@@ -59,12 +59,14 @@ namespace Datadog.Trace
 
         internal Tracer(
             IAgentWriter agentWriter,
+            ISampler sampler,
             string defaultServiceName = null,
             bool isDebugEnabled = false,
             IConfigurationSource configurationSource = null)
         {
             _agentWriter = agentWriter ?? throw new ArgumentNullException(nameof(agentWriter));
-            Sampler = sampler;
+            Sampler = sampler ?? throw new ArgumentNullException(nameof(sampler));
+
             DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
             _isDebugEnabled = isDebugEnabled;
             _configurationSource = configurationSource ?? CreateDefaultConfigurationSource();
