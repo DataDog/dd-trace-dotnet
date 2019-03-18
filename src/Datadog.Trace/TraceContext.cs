@@ -29,6 +29,8 @@ namespace Datadog.Trace
 
         public IDatadogTracer Tracer { get; }
 
+        public bool IsDistributed { get; private set; }
+
         /// <summary>
         /// Gets or sets sampling priority.
         /// Once the sampling priority is locked with <see cref="LockSamplingPriority"/>,
@@ -50,9 +52,9 @@ namespace Datadog.Trace
         {
             lock (_lock)
             {
-                if (_openSpans == 0)
+                if (RootSpan == null)
                 {
-                    // first span is the root span
+                    // first span added is the root span
                     RootSpan = span;
 
                     if (_samplingPriority == null)
