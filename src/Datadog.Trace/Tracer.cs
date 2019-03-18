@@ -32,7 +32,17 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/> class using the specified <see cref="IConfigurationSource"/>.
+        /// Initializes a new instance of the <see cref="Tracer"/>
+        /// class with the default <see cref="IConfigurationSource"/>.
+        /// </summary>
+        public Tracer()
+            : this(configurationSource: null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Tracer"/>
+        /// class using the specified <see cref="IConfigurationSource"/>.
         /// </summary>
         /// <param name="configurationSource">A <see cref="IConfigurationSource"/> instance that contains the new Tracer's configuration.</param>
         public Tracer(IConfigurationSource configurationSource)
@@ -41,11 +51,13 @@ namespace Datadog.Trace
 
             var agentEndpoint = CreateAgentUri(_configuration);
             var api = new Api(agentEndpoint);
-
             _agentWriter = new AgentWriter(api);
+
+            // these are not configurable for now
             Sampler = new RateByServiceSampler();
             _scopeManager = new AsyncLocalScopeManager();
 
+            // if not configure, try to determine an appropriate service name
             DefaultServiceName = _configuration.ServiceName ??
                                  GetApplicationName() ??
                                  UnknownServiceName;
