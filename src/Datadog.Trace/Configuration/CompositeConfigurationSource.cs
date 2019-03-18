@@ -8,7 +8,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Represents one or more configuration sources.
     /// </summary>
-    public class AggregateConfigurationSource : IConfigurationSource, IEnumerable<IConfigurationSource>
+    public class CompositeConfigurationSource : IConfigurationSource, IEnumerable<IConfigurationSource>
     {
         private readonly List<IConfigurationSource> _sources = new List<IConfigurationSource>();
 

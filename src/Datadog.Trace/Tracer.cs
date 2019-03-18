@@ -227,7 +227,7 @@ namespace Datadog.Trace
         private static IConfigurationSource CreateDefaultConfigurationSource()
         {
             // env > appSettings (local) > datadog.json/yaml (local)
-            var configurationSource = new AggregateConfigurationSource
+            var configurationSource = new CompositeConfigurationSource
             {
                 new EnvironmentConfigurationSource()
             };
