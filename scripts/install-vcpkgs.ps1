@@ -41,9 +41,9 @@ if (Test-Path $vcpkgExe) {
 }
 
 $packages = @("nlohmann-json")
-$platforms = @("x86", "x64")
+$platforms = if("$env:BUILDPLATFORM") {"$env:BUILDPLATFORM"} else {"x64,x86"}
 
-foreach ($platform in $platforms) {
+foreach ($platform in $platforms.split(",")) {
     foreach ($package in $packages) {
         Write-Host "installing $($package):$($platform)-windows-static"
         $p = Run $vcpkgExe "install","$($package):$($platform)-windows-static" $vcpkgRoot
