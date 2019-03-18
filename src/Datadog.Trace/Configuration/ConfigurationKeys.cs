@@ -6,6 +6,12 @@ namespace Datadog.Trace.Configuration
     public static class ConfigurationKeys
     {
         /// <summary>
+        /// Sets the path to the configuration file.
+        /// Can only be set with an environment variable.
+        /// </summary>
+        public const string ConfigurationFileName = "DD_DOTNET_TRACER_CONFIGURATION_FILE";
+
+        /// <summary>
         /// The application's environment. Sets the "env" tag on every <see cref="Span"/>.
         /// </summary>
         public const string Environment = "DD_ENV";

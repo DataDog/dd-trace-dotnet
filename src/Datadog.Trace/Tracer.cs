@@ -238,7 +238,7 @@ namespace Datadog.Trace
 
         private static IConfigurationSource CreateDefaultConfigurationSource()
         {
-            // env > appSettings (local) > datadog.json/yaml (local)
+            // env > AppSettings > datadog.json
             var configurationSource = new CompositeConfigurationSource
             {
                 new EnvironmentConfigurationSource()
@@ -249,10 +249,10 @@ namespace Datadog.Trace
             configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
 #endif
             // if environment variable is not set, look for default file name in the current directory
-            var configurationFileName = configurationSource.GetString("DD_DOTNET_TRACER_CONFIGURATION_FILE") ??
+            var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
                                         Path.Combine(Environment.CurrentDirectory, "datadog.json");
 
-            if (Path.GetExtension(configurationFileName).ToLowerInvariant() == ".json" &&
+            if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
                 File.Exists(configurationFileName))
             {
                 configurationSource.Add(JsonConfigurationSource.LoadFile(configurationFileName));
@@ -262,7 +262,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets an " application name" for the executing application by looking at
+        /// Gets an "application name" for the executing application by looking at
         /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
         /// </summary>
         /// <returns>The default service name.</returns>
