@@ -19,8 +19,8 @@ namespace Datadog.Trace.Tests
         public ApiTests()
         {
             var writerMock = new Mock<IAgentWriter>();
-            var sampler = new SimpleSampler(SamplingPriority.UserKeep);
-            _tracer = new Tracer(writerMock.Object, sampler);
+            var samplerMock = new Mock<ISampler>();
+            _tracer = new Tracer(writerMock.Object, samplerMock.Object);
         }
 
         [Fact]

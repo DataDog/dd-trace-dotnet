@@ -69,6 +69,17 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="Tracer"/> class for testing purposes only
+        /// </summary>
+        /// <param name="agentWriter">The <see cref="IAgentWriter"/> to use when sending traces.</param>
+        /// <param name="sampler">The <see cref="ISampler"/> to use when making sampling decisions.</param>
+        internal Tracer(IAgentWriter agentWriter, ISampler sampler)
+        {
+            _agentWriter = agentWriter;
+            Sampler = sampler;
+        }
+
+        /// <summary>
         /// Gets or sets the global tracer object
         /// </summary>
         public static Tracer Instance { get; set; }
