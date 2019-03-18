@@ -13,14 +13,20 @@ namespace Datadog.Trace.Configuration
         public virtual int? GetInt32(string key)
         {
             string value = GetString(key);
-            return int.TryParse(value, out int result) ? result : (int?)null;
+
+            return int.TryParse(value, out int result)
+                       ? result
+                       : default;
         }
 
         /// <inheritdoc />
         public virtual bool? GetBool(string key)
         {
             string value = GetString(key);
-            return bool.TryParse(value, out bool result) ? result : (bool?)null;
+
+            return bool.TryParse(value, out bool result)
+                       ? result
+                       : default;
         }
     }
 }
