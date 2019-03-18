@@ -26,9 +26,7 @@
     <VCPKG_PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</VCPKG_PLATFORM>
     <VCPKG_PLATFORM Condition="'$(Platform)'=='x64'">x64</VCPKG_PLATFORM>
     <VCPKG_DIR>..\..\..\vcpkg\</VCPKG_DIR>
-    <VCPKG_INCLUDES>$(VCPKG_DIR)packages\fmt_$(VCPKG_PLATFORM)-windows-static\include;$(VCPKG_DIR)packages\spdlog_$(VCPKG_PLATFORM)-windows-static\include;$(VCPKG_DIR)packages\nlohmann-json_$(VCPKG_PLATFORM)-windows-static\include</VCPKG_INCLUDES>
-    <VCPKG_LIBS Condition="'$(Configuration)'=='Release'">$(VCPKG_DIR)packages\fmt_$(VCPKG_PLATFORM)-windows-static\lib\fmt.lib</VCPKG_LIBS>
-    <VCPKG_LIBS Condition="'$(Configuration)'=='Debug'">$(VCPKG_DIR)packages\fmt_$(VCPKG_PLATFORM)-windows-static\debug\lib\fmtd.lib</VCPKG_LIBS>
+    <VCPKG_INCLUDES>$(VCPKG_DIR)packages\nlohmann-json_$(VCPKG_PLATFORM)-windows-static\include</VCPKG_INCLUDES>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
