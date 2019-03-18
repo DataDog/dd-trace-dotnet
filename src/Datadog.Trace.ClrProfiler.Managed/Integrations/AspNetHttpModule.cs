@@ -69,15 +69,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 SpanContext propagatedContext = null;
 
-                try
+                if (Tracer.Instance.ActiveScope == null)
                 {
-                    // extract propagated http headers
-                    var headers = httpContext.Request.Headers.Wrap();
-                    propagatedContext = SpanContextPropagator.Instance.Extract(headers);
-                }
-                catch (Exception ex)
-                {
-                    Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                    try
+                    {
+                        // extract propagated http headers
+                        var headers = httpContext.Request.Headers.Wrap();
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                    }
                 }
 
                 scope = Tracer.Instance.StartActive(_operationName, propagatedContext);

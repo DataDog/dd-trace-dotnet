@@ -29,8 +29,6 @@ namespace Datadog.Trace
 
         public IDatadogTracer Tracer { get; }
 
-        public bool IsDistributed { get; private set; }
-
         /// <summary>
         /// Gets or sets sampling priority.
         /// Once the sampling priority is locked with <see cref="LockSamplingPriority"/>,
