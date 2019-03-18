@@ -121,8 +121,8 @@ namespace Datadog.Trace
         /// <returns>The newly created tracer</returns>
         public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            // Keep supporting this older public method by creating
-            // a IConfigurationSource and passing that to the constructor.
+            // Keep supporting this older public method by creating a default configuration source,
+            // adding a few custom settings, and passing that to the constructor.
             var settings = new NameValueCollection();
 
             if (agentEndpoint != null)
@@ -142,7 +142,9 @@ namespace Datadog.Trace
                 settings[ConfigurationKeys.DebugEnabled] = bool.TrueString;
             }
 
-            var configurationSource = new NameValueConfigurationSource(settings);
+            // insert custom configuration at first position so it has highest precedence
+            var configurationSource = CreateDefaultConfigurationSource();
+            configurationSource.Insert(0, new NameValueConfigurationSource(settings));
             return new Tracer(configurationSource);
         }
 
@@ -247,7 +249,7 @@ namespace Datadog.Trace
             return new Uri($"http://{configuration.AgentHost}:{configuration.AgentPort}");
         }
 
-        private static IConfigurationSource CreateDefaultConfigurationSource()
+        private static CompositeConfigurationSource CreateDefaultConfigurationSource()
         {
             // env > AppSettings > datadog.json
             var configurationSource = new CompositeConfigurationSource

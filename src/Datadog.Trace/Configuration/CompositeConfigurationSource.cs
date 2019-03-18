@@ -18,7 +18,21 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The configuration source to add.</param>
         public void Add(IConfigurationSource source)
         {
+            if (source == null) { throw new ArgumentNullException(nameof(source)); }
+
             _sources.Add(source);
+        }
+
+        /// <summary>
+        /// Inserts an element into the <see cref="CompositeConfigurationSource"/> at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
+        /// <param name="item">The configuration source to insert.</param>
+        public void Insert(int index, IConfigurationSource item)
+        {
+            if (item == null) { throw new ArgumentNullException(nameof(item)); }
+
+            _sources.Insert(index, item);
         }
 
         /// <summary>
