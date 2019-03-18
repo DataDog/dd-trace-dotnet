@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -18,61 +18,35 @@ namespace Datadog.Trace
     public class Tracer : IDatadogTracer
     {
         private const string UnknownServiceName = "UnknownService";
-        private const string DefaultTraceAgentHost = "localhost";
-        private const string DefaultTraceAgentPort = "8126";
-        private const string EnvVariableName = "DD_ENV";
-        private const string ServiceNameVariableName = "DD_SERVICE_NAME";
-
-        private static readonly string[] TraceAgentHostEnvironmentVariableNames =
-        {
-            // officially documented name
-            "DD_AGENT_HOST",
-            // backwards compatibility for names used in the past
-            "DD_TRACE_AGENT_HOSTNAME",
-            "DATADOG_TRACE_AGENT_HOSTNAME"
-        };
-
-        private static readonly string[] TraceAgentPortEnvironmentVariableNames =
-        {
-            // officially documented name
-            "DD_TRACE_AGENT_PORT",
-            // backwards compatibility for names used in the past
-            "DATADOG_TRACE_AGENT_PORT"
-        };
 
         private static readonly ILog Log = LogProvider.For<Tracer>();
-        private static readonly Uri DefaultAgentUri;
 
         private readonly AsyncLocalScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
-        private readonly IConfigurationSource _configurationSource;
-        private readonly bool _isDebugEnabled;
+        private readonly Configuration.Configuration _configuration;
 
         static Tracer()
         {
-            // create Agent uri once and save it
-            DefaultAgentUri = CreateAgentUri();
-
             // create the default global Tracer
             Instance = Create();
         }
 
-        internal Tracer(
-            IAgentWriter agentWriter,
-            ISampler sampler,
-            string defaultServiceName = null,
-            bool isDebugEnabled = false,
-            IConfigurationSource configurationSource = null)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Tracer"/> class using the specified <see cref="IConfigurationSource"/>.
+        /// </summary>
+        /// <param name="configurationSource">A <see cref="IConfigurationSource"/> instance that contains the new Tracer's configuration.</param>
+        public Tracer(IConfigurationSource configurationSource)
         {
-            _agentWriter = agentWriter ?? throw new ArgumentNullException(nameof(agentWriter));
-            Sampler = sampler ?? throw new ArgumentNullException(nameof(sampler));
+            _configuration = new Configuration.Configuration(configurationSource ?? CreateDefaultConfigurationSource());
 
-            _isDebugEnabled = isDebugEnabled;
-            _configurationSource = configurationSource ?? CreateDefaultConfigurationSource();
+            var agentEndpoint = CreateAgentUri(_configuration);
+            var api = new Api(agentEndpoint);
+
+            _agentWriter = new AgentWriter(api);
+            Sampler = new RateByServiceSampler();
             _scopeManager = new AsyncLocalScopeManager();
 
-            DefaultServiceName = defaultServiceName ??
-                                 _configurationSource.GetString(ServiceNameVariableName) ??
+            DefaultServiceName = _configuration.ServiceName ??
                                  GetApplicationName() ??
                                  UnknownServiceName;
 
@@ -96,7 +70,7 @@ namespace Datadog.Trace
         /// Gets a value indicating whether debugging mode is enabled.
         /// </summary>
         /// <value><c>true</c> is debugging is enabled, otherwise <c>false</c>.</value>
-        bool IDatadogTracer.IsDebugEnabled => _isDebugEnabled;
+        bool IDatadogTracer.IsDebugEnabled => _configuration.DebugEnabled;
 
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
@@ -124,7 +98,29 @@ namespace Datadog.Trace
         /// <returns>The newly created tracer</returns>
         public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            return Create(agentEndpoint ?? DefaultAgentUri, defaultServiceName, null, isDebugEnabled);
+            // Keep supporting this older public method by creating
+            // a IConfigurationSource and passing that to the constructor.
+            var settings = new NameValueCollection();
+
+            if (agentEndpoint != null)
+            {
+                // changing the path or the schema (http/s) is not supported, to take only the host and port
+                settings[ConfigurationKeys.AgentHost] = agentEndpoint.Host;
+                settings[ConfigurationKeys.AgentPort] = agentEndpoint.Port.ToString(CultureInfo.InvariantCulture);
+            }
+
+            if (defaultServiceName != null)
+            {
+                settings[ConfigurationKeys.ServiceName] = defaultServiceName;
+            }
+
+            if (isDebugEnabled)
+            {
+                settings[ConfigurationKeys.DebugEnabled] = bool.TrueString;
+            }
+
+            var configurationSource = new NameValueConfigurationSource(settings);
+            return new Tracer(configurationSource);
         }
 
         /// <summary>
@@ -196,9 +192,9 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
-            var env = Environment.GetEnvironmentVariable(EnvVariableName);
+            var env = _configuration.Environment;
 
-            // automatically add the "env" tag if environment variable is defined
+            // automatically add the "env" tag if defined
             if (!string.IsNullOrWhiteSpace(env))
             {
                 span.SetTag(Tags.Env, env);
@@ -217,36 +213,20 @@ namespace Datadog.Trace
             _agentWriter.WriteTrace(trace);
         }
 
-        internal static Tracer Create(Uri agentEndpoint, string serviceName, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
-        {
-            var api = new Api(agentEndpoint, delegatingHandler);
-            var agentWriter = new AgentWriter(api);
-            var sampler = new RateByServiceSampler();
-            var tracer = new Tracer(agentWriter, sampler, serviceName, isDebugEnabled);
-            return tracer;
-        }
-
         /// <summary>
         /// Create an Uri to the Agent using host and port from
-        /// environment variables or defaults if not set.
+        /// the specified <paramref name="configuration"/>.
         /// </summary>
+        /// <param name="configuration">A <see cref="Configuration"/> object </param>
         /// <returns>An Uri that can be used to send traces to the Agent.</returns>
-        internal static Uri CreateAgentUri()
+        internal static Uri CreateAgentUri(Configuration.Configuration configuration)
         {
-            var host = TraceAgentHostEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
-                                                             .FirstOrDefault(str => !string.IsNullOrEmpty(str))
-                                                            ?.Trim() ?? DefaultTraceAgentHost;
-
-            var port = TraceAgentPortEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
-                                                             .FirstOrDefault(str => !string.IsNullOrEmpty(str))
-                                                            ?.Trim() ?? DefaultTraceAgentPort;
-
-            return new Uri($"http://{host}:{port}");
+            return new Uri($"http://{configuration.AgentHost}:{configuration.AgentPort}");
         }
 
         private static IConfigurationSource CreateDefaultConfigurationSource()
         {
-            // env > appSettings (local) > datadog.yaml/datadog.json (local)
+            // env > appSettings (local) > datadog.json/yaml (local)
             var configurationSource = new AggregateConfigurationSource
             {
                 new EnvironmentConfigurationSource()
@@ -256,29 +236,14 @@ namespace Datadog.Trace
             // on .NET Framework only, also read from app.config/web.config
             configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
 #endif
+            // if environment variable is not set, look for default file name in the current directory
+            var configurationFileName = configurationSource.GetString("DD_DOTNET_TRACER_CONFIGURATION_FILE") ??
+                                        Path.Combine(Environment.CurrentDirectory, "datadog.json");
 
-            var configurationFileNames = configurationSource.GetString("DD_DOTNET_TRACER_CONFIGURATION_FILE");
-
-            if (configurationFileNames == null)
+            if (Path.GetExtension(configurationFileName).ToLowerInvariant() == ".json" &&
+                File.Exists(configurationFileName))
             {
-                // if environment variable is not set, look for default file names in the current directory
-                var defaultYamlFile = Path.Combine(Environment.CurrentDirectory, "datadog.yaml");
-                var defaultJsonFile = Path.Combine(Environment.CurrentDirectory, "datadog.json");
-                configurationFileNames = string.Join(";", defaultYamlFile, defaultJsonFile);
-            }
-
-            foreach (var configurationFileName in configurationFileNames.Split(';'))
-            {
-                var configurationFileNameExtension = Path.GetExtension(configurationFileName)?.ToLowerInvariant();
-
-                if (configurationFileNameExtension == ".yaml" && File.Exists(configurationFileName))
-                {
-                    // configurationSource.AddSource(YamlConfigurationSource.LoadFile(configurationFileName));
-                }
-                else if (configurationFileNameExtension == ".json" && File.Exists(configurationFileName))
-                {
-                    configurationSource.Add(JsonConfigurationSource.LoadFile(configurationFileName));
-                }
+                configurationSource.Add(JsonConfigurationSource.LoadFile(configurationFileName));
             }
 
             return configurationSource;
