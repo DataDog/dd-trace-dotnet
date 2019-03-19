@@ -51,7 +51,7 @@ namespace Datadog.Trace
 
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager)
         {
-            // fall back to default implementations of each dependency
+            // fall back to default implementations of each dependency if not provided
             _settings = settings ?? TracerSettings.FromDefaultSources();
             _agentWriter = agentWriter ?? new AgentWriter(new Api(GetAgentUri(_settings)));
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
@@ -111,7 +111,7 @@ namespace Datadog.Trace
         public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             // Keep supporting this older public method by creating a TracerConfiguration
-            // with from default sources, overwriting the specified settings, and passing that to the constructor.
+            // from default sources, overwriting the specified settings, and passing that to the constructor.
             var configuration = TracerSettings.FromDefaultSources();
             configuration.DebugEnabled = isDebugEnabled;
 
