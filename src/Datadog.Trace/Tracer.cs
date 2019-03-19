@@ -49,7 +49,7 @@ namespace Datadog.Trace
         {
             _configuration = new Configuration.Configuration(configurationSource ?? CreateDefaultConfigurationSource());
 
-            var agentEndpoint = CreateAgentUri(_configuration);
+            var agentEndpoint = GetAgentUri(_configuration);
             var api = new Api(agentEndpoint);
             _agentWriter = new AgentWriter(api);
 
@@ -244,7 +244,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="configuration">A <see cref="Configuration"/> object </param>
         /// <returns>An Uri that can be used to send traces to the Agent.</returns>
-        internal static Uri CreateAgentUri(Configuration.Configuration configuration)
+        internal static Uri GetAgentUri(Configuration.Configuration configuration)
         {
             return new Uri($"http://{configuration.AgentHost}:{configuration.AgentPort}");
         }
