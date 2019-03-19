@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Moq;
 using Xunit;
@@ -15,9 +16,11 @@ namespace Datadog.Trace.Tests
 
         public SpanTests()
         {
-            var sampler = new SimpleSampler(SamplingPriority.UserKeep);
+            var settings = new TracerSettings();
             _writerMock = new Mock<IAgentWriter>();
-            _tracer = new Tracer(_writerMock.Object, sampler);
+            var samplerMock = new Mock<ISampler>();
+
+            _tracer = new Tracer(settings, _writerMock.Object, samplerMock.Object, null);
         }
 
         [Fact]

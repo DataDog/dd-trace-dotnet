@@ -16,9 +16,11 @@ namespace Datadog.Trace.Tests
 
         public TracerTests()
         {
+            var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ISampler>();
-            _tracer = new Tracer(writerMock.Object, samplerMock.Object);
+
+            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, null);
         }
 
         [Fact]
