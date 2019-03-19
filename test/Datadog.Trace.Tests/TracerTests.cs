@@ -276,7 +276,7 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable("DD_AGENT_HOST", host);
             Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", port);
 
-            var configuration = new Configuration.TracerSettings(new EnvironmentConfigurationSource());
+            var configuration = new TracerSettings(new EnvironmentConfigurationSource());
             Uri uri = Tracer.GetAgentUri(configuration);
             Assert.Equal(new Uri(expectedUri), uri);
 
@@ -293,8 +293,11 @@ namespace Datadog.Trace.Tests
             var name = "DD_ENV";
             string originalEnv = Environment.GetEnvironmentVariable(name);
 
+            // Tracer reads settings when created,
+            // so create a new one after setting the env var
             Environment.SetEnvironmentVariable(name, env);
-            Span span = Tracer.Instance.StartSpan("operation");
+            var tracer = new Tracer();
+            Span span = tracer.StartSpan("operation");
 
             Assert.Equal(env, span.GetTag(Tags.Env));
 
