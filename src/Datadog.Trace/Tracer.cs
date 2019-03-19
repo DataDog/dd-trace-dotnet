@@ -239,7 +239,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="configuration">A <see cref="TracerConfiguration"/> object </param>
         /// <returns>An Uri that can be used to send traces to the Agent.</returns>
-        internal static Uri GetAgentUri(Configuration.TracerConfiguration configuration)
+        internal static Uri GetAgentUri(TracerConfiguration configuration)
         {
             return new Uri($"http://{configuration.AgentHost}:{configuration.AgentPort}");
         }
