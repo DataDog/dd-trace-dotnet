@@ -18,7 +18,7 @@ namespace Datadog.Trace
 
         private static readonly ILog Log = LogProvider.For<Tracer>();
 
-        private readonly AsyncLocalScopeManager _scopeManager;
+        private readonly IScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
         private readonly TracerConfiguration _configuration;
 
@@ -102,7 +102,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
         /// </summary>
-        AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
+        IScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
         /// <summary>
         /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
