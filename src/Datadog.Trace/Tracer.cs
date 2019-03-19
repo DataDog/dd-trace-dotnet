@@ -25,14 +25,14 @@ namespace Datadog.Trace
         static Tracer()
         {
             // create the default global Tracer
-            Instance = Create();
+            Instance = new Tracer();
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Tracer"/> class with default settings.
         /// </summary>
         public Tracer()
-            : this(settings: null)
+            : this(settings: null, agentWriter: null, sampler: null, scopeManager: null)
         {
         }
 
