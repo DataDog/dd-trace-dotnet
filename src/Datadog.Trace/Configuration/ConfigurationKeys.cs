@@ -9,7 +9,7 @@ namespace Datadog.Trace.Configuration
         /// Sets the path to the configuration file.
         /// Can only be set with an environment variable.
         /// </summary>
-        public const string ConfigurationFileName = "DD_DOTNET_TRACER_CONFIGURATION_FILE";
+        public const string ConfigurationFileName = "DD_DOTNET_TRACER_CONFIG_FILE";
 
         /// <summary>
         /// The application's environment. Sets the "env" tag on every <see cref="Span"/>.
@@ -23,17 +23,29 @@ namespace Datadog.Trace.Configuration
         public const string ServiceName = "DD_SERVICE_NAME";
 
         /// <summary>
-        /// Enables the Tracer's debug mode.
+        /// Enables or disabled the Tracer. Default is enabled.
+        /// </summary>
+        public const string TraceEnabled = "DD_TRACE_DEBUG";
+
+        /// <summary>
+        /// Enables or disables the Tracer's debug mode. Default is disabled.
         /// </summary>
         public const string DebugEnabled = "DD_TRACE_DEBUG";
 
         /// <summary>
-        /// Sets the Agent host where the Tracer can send traces.
+        /// Sets a list of integrations to disable. All other integrations remain enabled.
+        /// Default is empty (all integrations are enabled).
+        /// Supports multiple values separated with semi-colons.
+        /// </summary>
+        public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
+
+        /// <summary>
+        /// Sets the Agent host where the Tracer can send traces. Default is "localhost".
         /// </summary>
         public const string AgentHost = "DD_AGENT_HOST";
 
         /// <summary>
-        /// Sets the Agent port where the Tracer can send traces.
+        /// Sets the Agent port where the Tracer can send traces. Default is 8126.
         /// </summary>
         public const string AgentPort = "DD_TRACE_AGENT_PORT";
     }

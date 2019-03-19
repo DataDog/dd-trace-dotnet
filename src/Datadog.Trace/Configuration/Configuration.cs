@@ -30,11 +30,25 @@ namespace Datadog.Trace.Configuration
         public string ServiceName => _source.GetString(ConfigurationKeys.ServiceName);
 
         /// <summary>
+        /// Gets a value indicating whether tracing is enabled.
+        /// </summary>
+        public bool TraceEnabled => _source.GetBool(ConfigurationKeys.DebugEnabled) ??
+                                    // default value
+                                    false;
+
+        /// <summary>
         /// Gets a value indicating whether debug mode is enabled.
         /// </summary>
         public bool DebugEnabled => _source.GetBool(ConfigurationKeys.DebugEnabled) ??
                                     // default value
                                     false;
+
+        /// <summary>
+        /// Gets the names of disabled integrations.
+        /// </summary>
+        public string[] DisabledIntegrationNames => _source.GetString(ConfigurationKeys.DisabledIntegrations)
+                                                          ?.Split(';')
+                                                 ?? new string[0];
 
         /// <summary>
         /// Gets the host where the Tracer can connect to the Agent.
