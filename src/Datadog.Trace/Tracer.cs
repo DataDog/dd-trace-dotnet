@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
 using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -43,10 +40,13 @@ namespace Datadog.Trace
         /// Initializes a new instance of the <see cref="Tracer"/>
         /// class using the specified <see cref="IConfigurationSource"/>.
         /// </summary>
-        /// <param name="configuration">A <see cref="TracerConfiguration"/> instance with the desired settings.</param>
+        /// <param name="configuration">
+        /// A <see cref="TracerConfiguration"/> instance with the desired settings,
+        /// or null to use the default configuration sources.
+        /// </param>
         public Tracer(TracerConfiguration configuration)
         {
-            _configuration = configuration ?? new TracerConfiguration(CreateDefaultConfigurationSource());
+            _configuration = configuration ?? TracerConfiguration.FromDefaultSources();
 
             var agentEndpoint = GetAgentUri(_configuration);
             var api = new Api(agentEndpoint);
@@ -121,13 +121,9 @@ namespace Datadog.Trace
         public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             // Keep supporting this older public method by creating a TracerConfiguration
-            // with default settings, setting a few custom settings, and passing that to the constructor.
-            var configurationSource = CreateDefaultConfigurationSource();
-
-            var configuration = new TracerConfiguration(configurationSource)
-            {
-                DebugEnabled = isDebugEnabled
-            };
+            // with from default sources, overwriting the specified settings, and passing that to the constructor.
+            var configuration = TracerConfiguration.FromDefaultSources();
+            configuration.DebugEnabled = isDebugEnabled;
 
             if (agentEndpoint != null)
             {
@@ -140,7 +136,7 @@ namespace Datadog.Trace
                 configuration.ServiceName = defaultServiceName;
             }
 
-            return new Tracer();
+            return new Tracer(configuration);
         }
 
         /// <summary>

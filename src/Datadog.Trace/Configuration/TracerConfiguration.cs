@@ -90,6 +90,17 @@ namespace Datadog.Trace.Configuration
         public int AgentPort { get; set; }
 
         /// <summary>
+        /// Create a <see cref="TracerConfiguration"/> populated from the default sources
+        /// returned by <see cref="CreateDefaultConfigurationSource"/>.
+        /// </summary>
+        /// <returns>A <see cref="TracerConfiguration"/> populated from the default sources.</returns>
+        public static TracerConfiguration FromDefaultSources()
+        {
+            var source = CreateDefaultConfigurationSource();
+            return new TracerConfiguration(source);
+        }
+
+        /// <summary>
         /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
         /// AppSettings where available, and a local datadog.json file, if present.
         /// </summary>
