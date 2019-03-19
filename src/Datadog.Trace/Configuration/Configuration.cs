@@ -8,65 +8,84 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class Configuration
     {
-        private readonly IConfigurationSource _source;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Configuration"/> class with default values.
+        /// </summary>
+        public Configuration()
+            : this(null)
+        {
+        }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Configuration"/> class.
+        /// Initializes a new instance of the <see cref="Configuration"/> class
+        /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public Configuration(IConfigurationSource source)
         {
-            _source = source ?? throw new ArgumentNullException(nameof(source));
+            Environment = source?.GetString(ConfigurationKeys.Environment);
+
+            ServiceName = source?.GetString(ConfigurationKeys.ServiceName);
+
+            TraceEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
+                           // default value
+                           false;
+
+            DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
+                           // default value
+                           false;
+
+            DisabledIntegrationNames = source?.GetString(ConfigurationKeys.DisabledIntegrations)
+                                             ?.Split(';')
+                                    ?? new string[0];
+
+            AgentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
+                        // backwards compatibility for names used in the past
+                        source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
+                        source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
+                        // default value
+                        "localhost";
+
+            AgentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
+                        // backwards compatibility for names used in the past
+                        source?.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
+                        // default value
+                        8126;
         }
 
         /// <summary>
-        /// Gets the default environment name applied to all spans.
+        /// Gets or sets the default environment name applied to all spans.
         /// </summary>
-        public string Environment => _source.GetString(ConfigurationKeys.Environment);
+        public string Environment { get; set; }
 
         /// <summary>
-        /// Gets the service name applied to top-level spans and used to build derived service names.
+        /// Gets or sets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
-        public string ServiceName => _source.GetString(ConfigurationKeys.ServiceName);
+        public string ServiceName { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether tracing is enabled.
+        /// Gets or sets a value indicating whether tracing is enabled.
         /// </summary>
-        public bool TraceEnabled => _source.GetBool(ConfigurationKeys.DebugEnabled) ??
-                                    // default value
-                                    false;
+        public bool TraceEnabled { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether debug mode is enabled.
+        /// Gets or sets a value indicating whether debug mode is enabled.
         /// </summary>
-        public bool DebugEnabled => _source.GetBool(ConfigurationKeys.DebugEnabled) ??
-                                    // default value
-                                    false;
+        public bool DebugEnabled { get; set; }
 
         /// <summary>
-        /// Gets the names of disabled integrations.
+        /// Gets or sets the names of disabled integrations.
         /// </summary>
-        public string[] DisabledIntegrationNames => _source.GetString(ConfigurationKeys.DisabledIntegrations)
-                                                          ?.Split(';')
-                                                 ?? new string[0];
+        public string[] DisabledIntegrationNames { get; set; }
 
         /// <summary>
-        /// Gets the host where the Tracer can connect to the Agent.
+        /// Gets or sets the host where the Tracer can connect to the Agent.
         /// </summary>
-        public string AgentHost => _source.GetString(ConfigurationKeys.AgentHost) ??
-                                   // backwards compatibility for names used in the past
-                                   _source.GetString("DD_TRACE_AGENT_HOSTNAME") ??
-                                   _source.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
-                                   // default value
-                                   "localhost";
+        public string AgentHost { get; set; }
 
         /// <summary>
-        /// Gets the TCP port where the Tracer can connect to the Agent.
+        /// Gets or sets the TCP port where the Tracer can connect to the Agent.
         /// </summary>
-        public int AgentPort => _source.GetInt32(ConfigurationKeys.AgentPort) ??
-                                // backwards compatibility for names used in the past
-                                _source.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
-                                // default value
-                                8126;
+        public int AgentPort { get; set; }
     }
 }
