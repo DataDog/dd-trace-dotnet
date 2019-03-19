@@ -32,11 +32,10 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/>
-        /// class with the default <see cref="IConfigurationSource"/>.
+        /// Initializes a new instance of the <see cref="Tracer"/> class with default settings.
         /// </summary>
         public Tracer()
-            : this(configurationSource: null)
+            : this(configuration: null)
         {
         }
 
@@ -44,20 +43,20 @@ namespace Datadog.Trace
         /// Initializes a new instance of the <see cref="Tracer"/>
         /// class using the specified <see cref="IConfigurationSource"/>.
         /// </summary>
-        /// <param name="configurationSource">A <see cref="IConfigurationSource"/> instance that contains the new Tracer's configuration.</param>
-        public Tracer(IConfigurationSource configurationSource)
+        /// <param name="configuration">A <see cref="TracerConfiguration"/> instance with the desired settings.</param>
+        public Tracer(TracerConfiguration configuration)
         {
-            _configuration = new TracerConfiguration(configurationSource ?? CreateDefaultConfigurationSource());
+            _configuration = configuration ?? new TracerConfiguration(CreateDefaultConfigurationSource());
 
             var agentEndpoint = GetAgentUri(_configuration);
             var api = new Api(agentEndpoint);
             _agentWriter = new AgentWriter(api);
 
-            // these are not configurable for now
+            // these are not configurable (for now)
             Sampler = new RateByServiceSampler();
             _scopeManager = new AsyncLocalScopeManager();
 
-            // if not configure, try to determine an appropriate service name
+            // if not configured, try to determine an appropriate service name
             DefaultServiceName = _configuration.ServiceName ??
                                  GetApplicationName() ??
                                  UnknownServiceName;
@@ -121,31 +120,27 @@ namespace Datadog.Trace
         /// <returns>The newly created tracer</returns>
         public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            // Keep supporting this older public method by creating a default configuration source,
-            // adding a few custom settings, and passing that to the constructor.
-            var settings = new NameValueCollection();
+            // Keep supporting this older public method by creating a TracerConfiguration
+            // with default settings, setting a few custom settings, and passing that to the constructor.
+            var configurationSource = CreateDefaultConfigurationSource();
+
+            var configuration = new TracerConfiguration(configurationSource)
+            {
+                DebugEnabled = isDebugEnabled
+            };
 
             if (agentEndpoint != null)
             {
-                // changing the path or the schema (http/s) is not supported, to take only the host and port
-                settings[ConfigurationKeys.AgentHost] = agentEndpoint.Host;
-                settings[ConfigurationKeys.AgentPort] = agentEndpoint.Port.ToString(CultureInfo.InvariantCulture);
+                configuration.AgentHost = agentEndpoint.Host;
+                configuration.AgentPort = agentEndpoint.Port;
             }
 
             if (defaultServiceName != null)
             {
-                settings[ConfigurationKeys.ServiceName] = defaultServiceName;
+                configuration.ServiceName = defaultServiceName;
             }
 
-            if (isDebugEnabled)
-            {
-                settings[ConfigurationKeys.DebugEnabled] = bool.TrueString;
-            }
-
-            // insert custom configuration at first position so it has highest precedence
-            var configurationSource = CreateDefaultConfigurationSource();
-            configurationSource.Insert(0, new NameValueConfigurationSource(settings));
-            return new Tracer(configurationSource);
+            return new Tracer();
         }
 
         /// <summary>
@@ -254,13 +249,14 @@ namespace Datadog.Trace
             // env > AppSettings > datadog.json
             var configurationSource = new CompositeConfigurationSource
             {
-                new EnvironmentConfigurationSource()
-            };
+                new EnvironmentConfigurationSource(),
 
 #if !NETSTANDARD2_0
-            // on .NET Framework only, also read from app.config/web.config
-            configurationSource.Add(new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings));
+                // on .NET Framework only, also read from app.config/web.config
+                new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
 #endif
+            };
+
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
                                         Path.Combine(Environment.CurrentDirectory, "datadog.json");
