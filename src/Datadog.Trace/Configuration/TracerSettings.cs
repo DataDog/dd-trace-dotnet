@@ -10,6 +10,16 @@ namespace Datadog.Trace.Configuration
     public class TracerSettings
     {
         /// <summary>
+        /// The default value for <see cref="AgentHost"/>.
+        /// </summary>
+        public const string DefaultAgentHost = "localhost";
+
+        /// <summary>
+        /// The default value for <see cref="AgentPort"/>.
+        /// </summary>
+        public const int DefaultAgentPort = 8126;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
         public TracerSettings()
@@ -44,14 +54,12 @@ namespace Datadog.Trace.Configuration
                         // backwards compatibility for names used in the past
                         source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
                         source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
-                        // default value
-                        "localhost";
+                        DefaultAgentHost;
 
             AgentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
                         // backwards compatibility for names used in the past
                         source?.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
-                        // default value
-                        8126;
+                        DefaultAgentPort;
         }
 
         /// <summary>
