@@ -6,22 +6,22 @@ namespace Datadog.Trace.Configuration
     /// Wraps a <see cref="IConfigurationSource"/> with strongly-typed
     /// properties for standard Datadog configuration values.
     /// </summary>
-    public class Configuration
+    public class TracerConfiguration
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="Configuration"/> class with default values.
+        /// Initializes a new instance of the <see cref="TracerConfiguration"/> class with default values.
         /// </summary>
-        public Configuration()
+        public TracerConfiguration()
             : this(null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Configuration"/> class
+        /// Initializes a new instance of the <see cref="TracerConfiguration"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public Configuration(IConfigurationSource source)
+        public TracerConfiguration(IConfigurationSource source)
         {
             Environment = source?.GetString(ConfigurationKeys.Environment);
 

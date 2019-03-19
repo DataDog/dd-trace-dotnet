@@ -23,7 +23,7 @@ namespace Datadog.Trace
 
         private readonly AsyncLocalScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
-        private readonly Configuration.Configuration _configuration;
+        private readonly TracerConfiguration _configuration;
 
         static Tracer()
         {
@@ -47,7 +47,7 @@ namespace Datadog.Trace
         /// <param name="configurationSource">A <see cref="IConfigurationSource"/> instance that contains the new Tracer's configuration.</param>
         public Tracer(IConfigurationSource configurationSource)
         {
-            _configuration = new Configuration.Configuration(configurationSource ?? CreateDefaultConfigurationSource());
+            _configuration = new TracerConfiguration(configurationSource ?? CreateDefaultConfigurationSource());
 
             var agentEndpoint = GetAgentUri(_configuration);
             var api = new Api(agentEndpoint);
@@ -242,9 +242,9 @@ namespace Datadog.Trace
         /// Create an Uri to the Agent using host and port from
         /// the specified <paramref name="configuration"/>.
         /// </summary>
-        /// <param name="configuration">A <see cref="Configuration"/> object </param>
+        /// <param name="configuration">A <see cref="TracerConfiguration"/> object </param>
         /// <returns>An Uri that can be used to send traces to the Agent.</returns>
-        internal static Uri GetAgentUri(Configuration.Configuration configuration)
+        internal static Uri GetAgentUri(Configuration.TracerConfiguration configuration)
         {
             return new Uri($"http://{configuration.AgentHost}:{configuration.AgentPort}");
         }
