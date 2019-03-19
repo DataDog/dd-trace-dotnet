@@ -74,11 +74,13 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets or sets a value indicating whether tracing is enabled.
+        /// Default is <c>true</c>.
         /// </summary>
         public bool TraceEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether debug mode is enabled.
+        /// Default is <c>false</c>.
         /// </summary>
         public bool DebugEnabled { get; set; }
 
@@ -89,11 +91,13 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets or sets the host where the Tracer can connect to the Agent.
+        /// Default is <c>"localhost"</c>.
         /// </summary>
         public string AgentHost { get; set; }
 
         /// <summary>
         /// Gets or sets the TCP port where the Tracer can connect to the Agent.
+        /// Default is <c>8126</c>.
         /// </summary>
         public int AgentPort { get; set; }
 
