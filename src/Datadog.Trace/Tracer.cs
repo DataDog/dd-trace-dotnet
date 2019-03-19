@@ -20,7 +20,7 @@ namespace Datadog.Trace
 
         private readonly IScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
-        private readonly TracerConfiguration _configuration;
+        private readonly TracerSettings _settings;
 
         static Tracer()
         {
@@ -32,7 +32,7 @@ namespace Datadog.Trace
         /// Initializes a new instance of the <see cref="Tracer"/> class with default settings.
         /// </summary>
         public Tracer()
-            : this(configuration: null)
+            : this(settings: null)
         {
         }
 
@@ -40,25 +40,25 @@ namespace Datadog.Trace
         /// Initializes a new instance of the <see cref="Tracer"/>
         /// class using the specified <see cref="IConfigurationSource"/>.
         /// </summary>
-        /// <param name="configuration">
-        /// A <see cref="TracerConfiguration"/> instance with the desired settings,
+        /// <param name="settings">
+        /// A <see cref="TracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources.
         /// </param>
-        public Tracer(TracerConfiguration configuration)
-            : this(configuration, agentWriter: null, sampler: null, scopeManager: null)
+        public Tracer(TracerSettings settings)
+            : this(settings, agentWriter: null, sampler: null, scopeManager: null)
         {
         }
 
-        internal Tracer(TracerConfiguration configuration, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager)
+        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager)
         {
             // fall back to default implementations of each dependency
-            _configuration = configuration ?? TracerConfiguration.FromDefaultSources();
-            _agentWriter = agentWriter ?? new AgentWriter(new Api(GetAgentUri(_configuration)));
+            _settings = settings ?? TracerSettings.FromDefaultSources();
+            _agentWriter = agentWriter ?? new AgentWriter(new Api(GetAgentUri(_settings)));
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RateByServiceSampler();
 
             // if not configured, try to determine an appropriate service name
-            DefaultServiceName = _configuration.ServiceName ??
+            DefaultServiceName = _settings.ServiceName ??
                                  GetApplicationName() ??
                                  UnknownServiceName;
 
@@ -82,7 +82,7 @@ namespace Datadog.Trace
         /// Gets a value indicating whether debugging mode is enabled.
         /// </summary>
         /// <value><c>true</c> is debugging is enabled, otherwise <c>false</c>.</value>
-        bool IDatadogTracer.IsDebugEnabled => _configuration.DebugEnabled;
+        bool IDatadogTracer.IsDebugEnabled => _settings.DebugEnabled;
 
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
@@ -112,7 +112,7 @@ namespace Datadog.Trace
         {
             // Keep supporting this older public method by creating a TracerConfiguration
             // with from default sources, overwriting the specified settings, and passing that to the constructor.
-            var configuration = TracerConfiguration.FromDefaultSources();
+            var configuration = TracerSettings.FromDefaultSources();
             configuration.DebugEnabled = isDebugEnabled;
 
             if (agentEndpoint != null)
@@ -198,7 +198,7 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
-            var env = _configuration.Environment;
+            var env = _settings.Environment;
 
             // automatically add the "env" tag if defined
             if (!string.IsNullOrWhiteSpace(env))
@@ -221,13 +221,13 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Create an Uri to the Agent using host and port from
-        /// the specified <paramref name="configuration"/>.
+        /// the specified <paramref name="settings"/>.
         /// </summary>
-        /// <param name="configuration">A <see cref="TracerConfiguration"/> object </param>
+        /// <param name="settings">A <see cref="TracerSettings"/> object </param>
         /// <returns>An Uri that can be used to send traces to the Agent.</returns>
-        internal static Uri GetAgentUri(TracerConfiguration configuration)
+        internal static Uri GetAgentUri(TracerSettings settings)
         {
-            return new Uri($"http://{configuration.AgentHost}:{configuration.AgentPort}");
+            return new Uri($"http://{settings.AgentHost}:{settings.AgentPort}");
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.HttpMessageHandlers;
 using Xunit;

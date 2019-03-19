@@ -7,22 +7,22 @@ namespace Datadog.Trace.Configuration
     /// Wraps a <see cref="IConfigurationSource"/> with strongly-typed
     /// properties for standard Datadog configuration values.
     /// </summary>
-    public class TracerConfiguration
+    public class TracerSettings
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TracerConfiguration"/> class with default values.
+        /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
-        public TracerConfiguration()
+        public TracerSettings()
             : this(null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TracerConfiguration"/> class
+        /// Initializes a new instance of the <see cref="TracerSettings"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public TracerConfiguration(IConfigurationSource source)
+        public TracerSettings(IConfigurationSource source)
         {
             Environment = source?.GetString(ConfigurationKeys.Environment);
 
@@ -90,14 +90,14 @@ namespace Datadog.Trace.Configuration
         public int AgentPort { get; set; }
 
         /// <summary>
-        /// Create a <see cref="TracerConfiguration"/> populated from the default sources
+        /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.
         /// </summary>
-        /// <returns>A <see cref="TracerConfiguration"/> populated from the default sources.</returns>
-        public static TracerConfiguration FromDefaultSources()
+        /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
+        public static TracerSettings FromDefaultSources()
         {
             var source = CreateDefaultConfigurationSource();
-            return new TracerConfiguration(source);
+            return new TracerSettings(source);
         }
 
         /// <summary>
