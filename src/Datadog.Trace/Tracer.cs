@@ -53,7 +53,7 @@ namespace Datadog.Trace
         {
             // fall back to default implementations of each dependency if not provided
             _settings = settings ?? TracerSettings.FromDefaultSources();
-            _agentWriter = agentWriter ?? new AgentWriter(new Api(GetAgentUri(_settings)));
+            _agentWriter = agentWriter ?? new AgentWriter(new Api(_settings.AgentUri));
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RateByServiceSampler();
 
@@ -117,8 +117,7 @@ namespace Datadog.Trace
 
             if (agentEndpoint != null)
             {
-                configuration.AgentHost = agentEndpoint.Host;
-                configuration.AgentPort = agentEndpoint.Port;
+                configuration.AgentUri = agentEndpoint;
             }
 
             if (defaultServiceName != null)
@@ -227,7 +226,7 @@ namespace Datadog.Trace
         /// <returns>An Uri that can be used to send traces to the Agent.</returns>
         internal static Uri GetAgentUri(TracerSettings settings)
         {
-            return new Uri($"http://{settings.AgentHost}:{settings.AgentPort}");
+            return settings.AgentUri;
         }
 
         /// <summary>

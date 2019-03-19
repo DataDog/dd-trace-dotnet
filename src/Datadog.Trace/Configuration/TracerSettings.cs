@@ -10,12 +10,12 @@ namespace Datadog.Trace.Configuration
     public class TracerSettings
     {
         /// <summary>
-        /// The default value for <see cref="AgentHost"/>.
+        /// The default host value for <see cref="AgentUri"/>.
         /// </summary>
         public const string DefaultAgentHost = "localhost";
 
         /// <summary>
-        /// The default value for <see cref="AgentPort"/>.
+        /// The default port value for <see cref="AgentUri"/>.
         /// </summary>
         public const int DefaultAgentPort = 8126;
 
@@ -50,16 +50,21 @@ namespace Datadog.Trace.Configuration
                                              ?.Split(';')
                                     ?? new string[0];
 
-            AgentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
-                        // backwards compatibility for names used in the past
-                        source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
-                        source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
-                        DefaultAgentHost;
+            var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
+                            // backwards compatibility for names used in the past
+                            source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
+                            source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
+                            DefaultAgentHost;
 
-            AgentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
-                        // backwards compatibility for names used in the past
-                        source?.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
-                        DefaultAgentPort;
+            var agentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
+                            // backwards compatibility for names used in the past
+                            source?.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
+                            DefaultAgentPort;
+
+            var agentUri = source?.GetString(ConfigurationKeys.AgentUri) ??
+                           $"http://{agentHost}:{agentPort}";
+
+            AgentUri = new Uri(agentUri);
         }
 
         /// <summary>
@@ -88,18 +93,6 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the names of disabled integrations.
         /// </summary>
         public string[] DisabledIntegrationNames { get; set; }
-
-        /// <summary>
-        /// Gets or sets the host where the Tracer can connect to the Agent.
-        /// Default is <c>"localhost"</c>.
-        /// </summary>
-        public string AgentHost { get; set; }
-
-        /// <summary>
-        /// Gets or sets the TCP port where the Tracer can connect to the Agent.
-        /// Default is <c>8126</c>.
-        /// </summary>
-        public int AgentPort { get; set; }
 
         /// <summary>
         /// Gets or sets the Uri where the Tracer can connect to the Agent.

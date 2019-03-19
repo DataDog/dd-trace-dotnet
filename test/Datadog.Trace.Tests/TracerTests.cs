@@ -276,9 +276,8 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable("DD_AGENT_HOST", host);
             Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", port);
 
-            var configuration = new TracerSettings(new EnvironmentConfigurationSource());
-            Uri uri = Tracer.GetAgentUri(configuration);
-            Assert.Equal(new Uri(expectedUri), uri);
+            var settings = new TracerSettings(new EnvironmentConfigurationSource());
+            Assert.Equal(new Uri(expectedUri), settings.AgentUri);
 
             // reset the environment variables to their original values (if any) when done
             Environment.SetEnvironmentVariable("DD_AGENT_HOST", originalHost);
