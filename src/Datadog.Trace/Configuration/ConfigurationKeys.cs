@@ -53,5 +53,11 @@ namespace Datadog.Trace.Configuration
         /// Default is 8126.
         /// </summary>
         public const string AgentPort = "DD_TRACE_AGENT_PORT";
+
+        /// <summary>
+        /// Configuration key for the Agent URL where the Tracer can send traces.
+        /// Default is "http://localhost:8126".
+        /// </summary>
+        public const string AgentUri = "DD_TRACE_AGENT_URL";
     }
 }
