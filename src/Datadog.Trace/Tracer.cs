@@ -45,16 +45,17 @@ namespace Datadog.Trace
         /// or null to use the default configuration sources.
         /// </param>
         public Tracer(TracerConfiguration configuration)
+            : this(configuration, agentWriter: null, sampler: null, scopeManager: null)
         {
+        }
+
+        internal Tracer(TracerConfiguration configuration, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager)
+        {
+            // fall back to default implementations of each dependency
             _configuration = configuration ?? TracerConfiguration.FromDefaultSources();
-
-            var agentEndpoint = GetAgentUri(_configuration);
-            var api = new Api(agentEndpoint);
-            _agentWriter = new AgentWriter(api);
-
-            // these are not configurable (for now)
-            Sampler = new RateByServiceSampler();
-            _scopeManager = new AsyncLocalScopeManager();
+            _agentWriter = agentWriter ?? new AgentWriter(new Api(GetAgentUri(_configuration)));
+            _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
+            Sampler = sampler ?? new RateByServiceSampler();
 
             // if not configured, try to determine an appropriate service name
             DefaultServiceName = _configuration.ServiceName ??
@@ -65,17 +66,6 @@ namespace Datadog.Trace
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/> class for testing purposes only
-        /// </summary>
-        /// <param name="agentWriter">The <see cref="IAgentWriter"/> to use when sending traces.</param>
-        /// <param name="sampler">The <see cref="ISampler"/> to use when making sampling decisions.</param>
-        internal Tracer(IAgentWriter agentWriter, ISampler sampler)
-        {
-            _agentWriter = agentWriter;
-            Sampler = sampler;
         }
 
         /// <summary>
