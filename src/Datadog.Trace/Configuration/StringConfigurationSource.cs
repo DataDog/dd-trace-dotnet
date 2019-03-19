@@ -14,9 +14,9 @@ namespace Datadog.Trace.Configuration
         {
             string value = GetString(key);
 
-            return int.TryParse(value, out int result)
-                       ? result
-                       : default;
+            return int.TryParse(value, out int result1)
+                       ? result1
+                       : (int?)null;
         }
 
         /// <inheritdoc />
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Configuration
 
             return bool.TryParse(value, out bool result)
                        ? result
-                       : default;
+                       : (bool?)null;
         }
     }
 }
