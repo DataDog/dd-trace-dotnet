@@ -244,32 +244,6 @@ namespace Datadog.Trace
             return new Uri($"http://{configuration.AgentHost}:{configuration.AgentPort}");
         }
 
-        private static CompositeConfigurationSource CreateDefaultConfigurationSource()
-        {
-            // env > AppSettings > datadog.json
-            var configurationSource = new CompositeConfigurationSource
-            {
-                new EnvironmentConfigurationSource(),
-
-#if !NETSTANDARD2_0
-                // on .NET Framework only, also read from app.config/web.config
-                new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
-#endif
-            };
-
-            // if environment variable is not set, look for default file name in the current directory
-            var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
-                                        Path.Combine(Environment.CurrentDirectory, "datadog.json");
-
-            if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
-                File.Exists(configurationFileName))
-            {
-                configurationSource.Add(JsonConfigurationSource.LoadFile(configurationFileName));
-            }
-
-            return configurationSource;
-        }
-
         /// <summary>
         /// Gets an "application name" for the executing application by looking at
         /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.

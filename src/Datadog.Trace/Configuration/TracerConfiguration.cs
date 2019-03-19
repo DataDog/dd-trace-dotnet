@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 namespace Datadog.Trace.Configuration
 {
@@ -87,5 +88,36 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the TCP port where the Tracer can connect to the Agent.
         /// </summary>
         public int AgentPort { get; set; }
+
+        /// <summary>
+        /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
+        /// AppSettings where available, and a local datadog.json file, if present.
+        /// </summary>
+        /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
+        public static CompositeConfigurationSource CreateDefaultConfigurationSource()
+        {
+            // env > AppSettings > datadog.json
+            var configurationSource = new CompositeConfigurationSource
+            {
+                new EnvironmentConfigurationSource(),
+
+#if !NETSTANDARD2_0
+                // on .NET Framework only, also read from app.config/web.config
+                new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
+#endif
+            };
+
+            // if environment variable is not set, look for default file name in the current directory
+            var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
+                                        Path.Combine(System.Environment.CurrentDirectory, "datadog.json");
+
+            if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
+                File.Exists(configurationFileName))
+            {
+                configurationSource.Add(JsonConfigurationSource.LoadFile(configurationFileName));
+            }
+
+            return configurationSource;
+        }
     }
 }
