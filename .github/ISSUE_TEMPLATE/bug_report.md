@@ -22,7 +22,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Runtime environment (please complete the following information):**
 - Instrumentation mode: [e.g. automatic with msi installer or manual with NuGet package]
-- Tracer version: [e.g. 0.8.0]
+- Tracer version: [e.g. 0.8.1]
 - OS: [e.g. Windows Server 2012 R2 ]
 - CLR: [e.g. .NET Framework 4.6.2, .NET Core 2.1]
 
