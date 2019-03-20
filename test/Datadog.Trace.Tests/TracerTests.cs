@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Moq;
 using Xunit;
@@ -10,13 +12,15 @@ namespace Datadog.Trace.Tests
 {
     public class TracerTests
     {
-        private Mock<IAgentWriter> _writerMock;
-        private Tracer _tracer;
+        private readonly Tracer _tracer;
 
         public TracerTests()
         {
-            _writerMock = new Mock<IAgentWriter>();
-            _tracer = new Tracer(_writerMock.Object, null);
+            var settings = new TracerSettings();
+            var writerMock = new Mock<IAgentWriter>();
+            var samplerMock = new Mock<ISampler>();
+
+            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, null);
         }
 
         [Fact]
@@ -272,8 +276,8 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable("DD_AGENT_HOST", host);
             Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", port);
 
-            Uri uri = Tracer.CreateAgentUri();
-            Assert.Equal(new Uri(expectedUri), uri);
+            var settings = new TracerSettings(new EnvironmentConfigurationSource());
+            Assert.Equal(new Uri(expectedUri), settings.AgentUri);
 
             // reset the environment variables to their original values (if any) when done
             Environment.SetEnvironmentVariable("DD_AGENT_HOST", originalHost);
@@ -288,8 +292,11 @@ namespace Datadog.Trace.Tests
             var name = "DD_ENV";
             string originalEnv = Environment.GetEnvironmentVariable(name);
 
+            // Tracer reads settings when created,
+            // so create a new one after setting the env var
             Environment.SetEnvironmentVariable(name, env);
-            Span span = Tracer.Instance.StartSpan("operation");
+            var tracer = new Tracer();
+            Span span = tracer.StartSpan("operation");
 
             Assert.Equal(env, span.GetTag(Tags.Env));
 
@@ -315,7 +322,7 @@ namespace Datadog.Trace.Tests
             string originalEnv = Environment.GetEnvironmentVariable(name);
             Environment.SetEnvironmentVariable(name, envServiceName);
 
-            var tracer = new Tracer(_writerMock.Object, null, tracerServiceName);
+            var tracer = Tracer.Create(defaultServiceName: tracerServiceName);
             Span span = tracer.StartSpan("operationName", serviceName: spanServiceName);
 
             if (expectedServiceName == null)
