@@ -23,12 +23,6 @@
     <ProjectGuid>{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}</ProjectGuid>
     <RootNamespace>DatadogTraceClrProfilerNativeDLL</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
-    <VCPKG_PLATFORM Condition="'$(Platform)'=='Win32' OR '$(Platform)'=='x86'">x86</VCPKG_PLATFORM>
-    <VCPKG_PLATFORM Condition="'$(Platform)'=='x64'">x64</VCPKG_PLATFORM>
-    <VCPKG_DIR>..\..\..\vcpkg\</VCPKG_DIR>
-    <VCPKG_INCLUDES>$(VCPKG_DIR)packages\fmt_$(VCPKG_PLATFORM)-windows-static\include;$(VCPKG_DIR)packages\spdlog_$(VCPKG_PLATFORM)-windows-static\include;$(VCPKG_DIR)packages\nlohmann-json_$(VCPKG_PLATFORM)-windows-static\include</VCPKG_INCLUDES>
-    <VCPKG_LIBS Condition="'$(Configuration)'=='Release'">$(VCPKG_DIR)packages\fmt_$(VCPKG_PLATFORM)-windows-static\lib\fmt.lib</VCPKG_LIBS>
-    <VCPKG_LIBS Condition="'$(Configuration)'=='Debug'">$(VCPKG_DIR)packages\fmt_$(VCPKG_PLATFORM)-windows-static\debug\lib\fmtd.lib</VCPKG_LIBS>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -107,13 +101,11 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(VCPKG_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(VCPKG_LIBS);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -124,13 +116,11 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(VCPKG_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(VCPKG_LIBS);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,7 +132,6 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(VCPKG_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -150,7 +139,6 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(VCPKG_LIBS);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -162,7 +150,6 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(VCPKG_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -170,7 +157,6 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
-      <AdditionalDependencies>$(VCPKG_LIBS);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
