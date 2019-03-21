@@ -18,13 +18,14 @@ namespace Datadog.Trace.TestHelpers
         public MockTracerAgent(int port = 8126, int retries = 5)
         {
             _listener = new HttpListener();
-            _listener.Prefixes.Add($"http://localhost:{port}/");
-
             bool listening = false;
 
             // try up to 5 consecutive ports before giving up
             while (!listening)
             {
+                _listener.Prefixes.Clear();
+                _listener.Prefixes.Add($"http://localhost:{port}/");
+
                 try
                 {
                     _listener.Start();
