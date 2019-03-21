@@ -1,5 +1,7 @@
 using System;
 using System.Net.Http;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Sampling;
 using OpenTracing;
 
 namespace Datadog.Trace.OpenTracing
@@ -9,6 +11,8 @@ namespace Datadog.Trace.OpenTracing
     /// </summary>
     public static class OpenTracingTracerFactory
     {
+        private static Uri _defaultUri = new Uri("http://localhost:8126");
+
         /// <summary>
         /// Create a new Datadog compatible ITracer implementation with the given parameters
         /// </summary>
@@ -18,13 +22,18 @@ namespace Datadog.Trace.OpenTracing
         /// <returns>A Datadog compatible ITracer implementation</returns>
         public static ITracer CreateTracer(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
+            agentEndpoint = agentEndpoint ?? _defaultUri;
             return CreateTracer(agentEndpoint, defaultServiceName, null, isDebugEnabled);
         }
 
-        internal static OpenTracingTracer CreateTracer(Uri agentEndpoint, string defaultServiceName, DelegatingHandler delegatingHandler, bool isDebugEnabled)
+        internal static OpenTracingTracer CreateTracer(Uri agentEndpoint, string defaultServiceName = null, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
         {
-            var tracer = Tracer.Create(agentEndpoint, defaultServiceName, isDebugEnabled);
-            return new OpenTracingTracer(tracer);
+            var api = new Api(agentEndpoint, delegatingHandler);
+            var agentWriter = new AgentWriter(api);
+            var sampler = new RateByServiceSampler();
+            var ddTracer = new Tracer(agentWriter, sampler, defaultServiceName, isDebugEnabled);
+            var tracer = new OpenTracingTracer(ddTracer);
+            return tracer;
         }
     }
 }

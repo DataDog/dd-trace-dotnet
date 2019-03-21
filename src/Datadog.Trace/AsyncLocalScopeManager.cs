@@ -2,7 +2,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    internal class AsyncLocalScopeManager : IScopeManager
+    internal class AsyncLocalScopeManager
     {
         private static readonly ILog Log = LogProvider.For<AsyncLocalScopeManager>();
 
@@ -10,7 +10,7 @@ namespace Datadog.Trace
 
         public Scope Active => _activeScope.Get();
 
-        public Scope Activate(Span span, bool finishOnClose)
+        public Scope Activate(Span span, bool finishOnClose = true)
         {
             var activeScope = _activeScope.Get();
             var scope = new Scope(activeScope, span, this, finishOnClose);

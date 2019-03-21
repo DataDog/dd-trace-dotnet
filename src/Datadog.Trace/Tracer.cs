@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 
@@ -15,57 +16,56 @@ namespace Datadog.Trace
     public class Tracer : IDatadogTracer
     {
         private const string UnknownServiceName = "UnknownService";
+        private const string DefaultTraceAgentHost = "localhost";
+        private const string DefaultTraceAgentPort = "8126";
+        private const string EnvVariableName = "DD_ENV";
+        private const string ServiceNameVariableName = "DD_SERVICE_NAME";
+
+        private static readonly string[] TraceAgentHostEnvironmentVariableNames =
+        {
+            // officially documented name
+            "DD_AGENT_HOST",
+            // backwards compatibility for names used in the past
+            "DD_TRACE_AGENT_HOSTNAME",
+            "DATADOG_TRACE_AGENT_HOSTNAME"
+        };
+
+        private static readonly string[] TraceAgentPortEnvironmentVariableNames =
+        {
+            // officially documented name
+            "DD_TRACE_AGENT_PORT",
+            // backwards compatibility for names used in the past
+            "DATADOG_TRACE_AGENT_PORT"
+        };
 
         private static readonly ILog Log = LogProvider.For<Tracer>();
+        private static readonly Uri DefaultAgentUri;
 
-        private readonly IScopeManager _scopeManager;
+        private readonly AsyncLocalScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
-        private readonly TracerSettings _settings;
+        private readonly bool _isDebugEnabled;
 
         static Tracer()
         {
+            // create Agent uri once and save it
+            DefaultAgentUri = CreateAgentUri();
+
             // create the default global Tracer
-            Instance = new Tracer();
+            Instance = Create();
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/> class with default settings.
-        /// </summary>
-        public Tracer()
-            : this(settings: null, agentWriter: null, sampler: null, scopeManager: null)
+        internal Tracer(IAgentWriter agentWriter, ISampler sampler, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/>
-        /// class using the specified <see cref="IConfigurationSource"/>.
-        /// </summary>
-        /// <param name="settings">
-        /// A <see cref="TracerSettings"/> instance with the desired settings,
-        /// or null to use the default configuration sources.
-        /// </param>
-        public Tracer(TracerSettings settings)
-            : this(settings, agentWriter: null, sampler: null, scopeManager: null)
-        {
-        }
-
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager)
-        {
-            // fall back to default implementations of each dependency if not provided
-            _settings = settings ?? TracerSettings.FromDefaultSources();
-            _agentWriter = agentWriter ?? new AgentWriter(new Api(_settings.AgentUri));
-            _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
-            Sampler = sampler ?? new RateByServiceSampler();
-
-            // if not configured, try to determine an appropriate service name
-            DefaultServiceName = _settings.ServiceName ??
-                                 GetApplicationName() ??
-                                 UnknownServiceName;
+            _isDebugEnabled = isDebugEnabled;
+            _agentWriter = agentWriter;
+            Sampler = sampler;
+            DefaultServiceName = defaultServiceName ?? CreateDefaultServiceName() ?? UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
+            _scopeManager = new AsyncLocalScopeManager();
         }
 
         /// <summary>
@@ -82,7 +82,7 @@ namespace Datadog.Trace
         /// Gets a value indicating whether debugging mode is enabled.
         /// </summary>
         /// <value><c>true</c> is debugging is enabled, otherwise <c>false</c>.</value>
-        bool IDatadogTracer.IsDebugEnabled => _settings.DebugEnabled;
+        bool IDatadogTracer.IsDebugEnabled => _isDebugEnabled;
 
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
@@ -92,7 +92,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
         /// </summary>
-        IScopeManager IDatadogTracer.ScopeManager => _scopeManager;
+        AsyncLocalScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
         /// <summary>
         /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
@@ -110,22 +110,7 @@ namespace Datadog.Trace
         /// <returns>The newly created tracer</returns>
         public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            // Keep supporting this older public method by creating a TracerConfiguration
-            // from default sources, overwriting the specified settings, and passing that to the constructor.
-            var configuration = TracerSettings.FromDefaultSources();
-            configuration.DebugEnabled = isDebugEnabled;
-
-            if (agentEndpoint != null)
-            {
-                configuration.AgentUri = agentEndpoint;
-            }
-
-            if (defaultServiceName != null)
-            {
-                configuration.ServiceName = defaultServiceName;
-            }
-
-            return new Tracer(configuration);
+            return Create(agentEndpoint ?? DefaultAgentUri, defaultServiceName, null, isDebugEnabled);
         }
 
         /// <summary>
@@ -197,9 +182,9 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
-            var env = _settings.Environment;
+            var env = Environment.GetEnvironmentVariable(EnvVariableName);
 
-            // automatically add the "env" tag if defined
+            // automatically add the "env" tag if environment variable is defined
             if (!string.IsNullOrWhiteSpace(env))
             {
                 span.SetTag(Tags.Env, env);
@@ -218,31 +203,55 @@ namespace Datadog.Trace
             _agentWriter.WriteTrace(trace);
         }
 
-        /// <summary>
-        /// Create an Uri to the Agent using host and port from
-        /// the specified <paramref name="settings"/>.
-        /// </summary>
-        /// <param name="settings">A <see cref="TracerSettings"/> object </param>
-        /// <returns>An Uri that can be used to send traces to the Agent.</returns>
-        internal static Uri GetAgentUri(TracerSettings settings)
+        internal static Tracer Create(Uri agentEndpoint, string serviceName, DelegatingHandler delegatingHandler = null, bool isDebugEnabled = false)
         {
-            return settings.AgentUri;
+            var api = new Api(agentEndpoint, delegatingHandler);
+            var agentWriter = new AgentWriter(api);
+            var sampler = new RateByServiceSampler();
+            var tracer = new Tracer(agentWriter, sampler, serviceName, isDebugEnabled);
+            return tracer;
         }
 
         /// <summary>
-        /// Gets an "application name" for the executing application by looking at
-        /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
+        /// Create an Uri to the Agent using host and port from
+        /// environment variables or defaults if not set.
+        /// </summary>
+        /// <returns>An Uri that can be used to send traces to the Agent.</returns>
+        internal static Uri CreateAgentUri()
+        {
+            var host = TraceAgentHostEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
+                                                             .FirstOrDefault(str => !string.IsNullOrEmpty(str))
+                                                            ?.Trim() ?? DefaultTraceAgentHost;
+
+            var port = TraceAgentPortEnvironmentVariableNames.Select(Environment.GetEnvironmentVariable)
+                                                             .FirstOrDefault(str => !string.IsNullOrEmpty(str))
+                                                            ?.Trim() ?? DefaultTraceAgentPort;
+
+            return new Uri($"http://{host}:{port}");
+        }
+
+        /// <summary>
+        /// Determines the default service name for the executing application by looking at
+        /// environment variables, hosted app name (.NET Framework on IIS only), assembly name, and process name.
         /// </summary>
         /// <returns>The default service name.</returns>
-        private static string GetApplicationName()
+        private static string CreateDefaultServiceName()
         {
             try
             {
+                // allow users to override this with an environment variable
+                var serviceName = Environment.GetEnvironmentVariable(ServiceNameVariableName);
+
+                if (!string.IsNullOrWhiteSpace(serviceName))
+                {
+                    return serviceName;
+                }
+
 #if !NETSTANDARD2_0
                 // System.Web.dll is only available on .NET Framework
                 if (System.Web.Hosting.HostingEnvironment.IsHosted)
                 {
-                    // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
+                    // if we are hosted as an ASP.NET application, return "SiteName/ApplicationVirtualPath".
                     // note that ApplicationVirtualPath includes a leading slash.
                     return (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
                 }

@@ -1,7 +1,5 @@
 using System;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
 using Moq;
 using OpenTracing;
 using Xunit;
@@ -10,15 +8,12 @@ namespace Datadog.Trace.OpenTracing.Tests
 {
     public class OpenTracingSpanTests
     {
-        private readonly OpenTracingTracer _tracer;
+        private OpenTracingTracer _tracer;
 
         public OpenTracingSpanTests()
         {
-            var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
-            var samplerMock = new Mock<ISampler>();
-
-            var datadogTracer = new Tracer(settings, writerMock.Object, samplerMock.Object, null);
+            var datadogTracer = new Tracer(writerMock.Object, null);
             _tracer = new OpenTracingTracer(datadogTracer);
         }
 

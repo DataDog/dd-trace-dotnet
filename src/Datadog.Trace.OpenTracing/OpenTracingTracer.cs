@@ -17,7 +17,7 @@ namespace Datadog.Trace.OpenTracing
         {
         }
 
-        public OpenTracingTracer(IDatadogTracer datadogTracer, global::OpenTracing.IScopeManager scopeManager)
+        public OpenTracingTracer(IDatadogTracer datadogTracer, IScopeManager scopeManager)
         {
             DatadogTracer = datadogTracer;
             DefaultServiceName = datadogTracer.DefaultServiceName;
@@ -29,7 +29,7 @@ namespace Datadog.Trace.OpenTracing
 
         public string DefaultServiceName { get; }
 
-        public global::OpenTracing.IScopeManager ScopeManager { get; }
+        public IScopeManager ScopeManager { get; }
 
         public OpenTracingSpan ActiveSpan => (OpenTracingSpan)ScopeManager.Active?.Span;
 

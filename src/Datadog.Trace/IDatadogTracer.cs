@@ -10,7 +10,7 @@ namespace Datadog.Trace
 
         bool IsDebugEnabled { get; }
 
-        IScopeManager ScopeManager { get; }
+        AsyncLocalScopeManager ScopeManager { get; }
 
         ISampler Sampler { get; }
 

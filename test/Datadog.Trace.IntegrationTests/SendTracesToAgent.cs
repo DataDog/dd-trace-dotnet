@@ -1,8 +1,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.HttpMessageHandlers;
 using Xunit;
@@ -11,19 +9,13 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class SendTracesToAgent
     {
-        private readonly Tracer _tracer;
-        private readonly RecordHttpHandler _httpRecorder;
+        private Tracer _tracer;
+        private RecordHttpHandler _httpRecorder;
 
         public SendTracesToAgent()
         {
-            var settings = new TracerSettings();
-
-            var endpoint = new Uri("http://localhost:8126");
             _httpRecorder = new RecordHttpHandler();
-            var api = new Api(endpoint, _httpRecorder);
-            var agentWriter = new AgentWriter(api);
-
-            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null);
+            _tracer = Tracer.Create(new Uri("http://localhost:8126"), null, _httpRecorder);
         }
 
         [Fact]
@@ -46,6 +38,8 @@ namespace Datadog.Trace.IntegrationTests
         public async void CustomServiceName()
         {
             const string ServiceName = "MyService";
+            _httpRecorder = new RecordHttpHandler();
+            _tracer = Tracer.Create(new Uri("http://localhost:8126"), null, _httpRecorder);
 
             var scope = _tracer.StartActive("Operation", serviceName: ServiceName);
             scope.Span.ResourceName = "This is a resource";
@@ -103,7 +97,7 @@ namespace Datadog.Trace.IntegrationTests
             // This test does not check anything it validates that this codepath runs without exceptions
             var tracer = Tracer.Create();
             tracer.StartActive("Operation")
-                  .Dispose();
+                .Dispose();
         }
 
         [Fact]
@@ -111,7 +105,7 @@ namespace Datadog.Trace.IntegrationTests
         {
             // This test does not check anything it validates that this codepath runs without exceptions
             Tracer.Instance.StartActive("Operation")
-                  .Dispose();
+                .Dispose();
         }
     }
 }
