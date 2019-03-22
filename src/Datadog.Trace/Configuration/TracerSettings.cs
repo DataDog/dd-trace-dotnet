@@ -4,8 +4,7 @@ using System.IO;
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
-    /// Wraps a <see cref="IConfigurationSource"/> with strongly-typed
-    /// properties for standard Datadog configuration values.
+    /// Contains Tracer settings.
     /// </summary>
     public class TracerSettings
     {
@@ -70,34 +69,42 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the default environment name applied to all spans.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.Environment"/>
         public string Environment { get; set; }
 
         /// <summary>
         /// Gets or sets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.ServiceName"/>
         public string ServiceName { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether tracing is enabled.
         /// Default is <c>true</c>.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
         public bool TraceEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether debug mode is enabled.
         /// Default is <c>false</c>.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
         public bool DebugEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
         public string[] DisabledIntegrationNames { get; set; }
 
         /// <summary>
         /// Gets or sets the Uri where the Tracer can connect to the Agent.
         /// Default is <c>"http://localhost:8126"</c>.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.AgentUri"/>
+        /// <seealso cref="ConfigurationKeys.AgentHost"/>
+        /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; set; }
 
         /// <summary>

@@ -12,7 +12,7 @@ namespace Datadog.Trace.Configuration
         /// the setting with the specified key.
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         string GetString(string key);
 
         /// <summary>
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Configuration
         /// the setting with the specified key.
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         int? GetInt32(string key);
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Configuration
         /// the setting with the specified key.
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         bool? GetBool(string key);
     }
 }
