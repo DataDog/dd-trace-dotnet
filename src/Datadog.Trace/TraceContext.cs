@@ -25,7 +25,7 @@ namespace Datadog.Trace
 
         public Span RootSpan { get; private set; }
 
-        public DateTimeOffset UtcNow => _utcStart.AddTicks(_stopwatch.ElapsedTicks);
+        public DateTimeOffset UtcNow => _utcStart.Add(_stopwatch.Elapsed);
 
         public IDatadogTracer Tracer { get; }
 
