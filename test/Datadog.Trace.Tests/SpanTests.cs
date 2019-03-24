@@ -1,20 +1,25 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Sampling;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
     public class SpanTests
     {
+        private readonly ITestOutputHelper _output;
         private readonly Mock<IAgentWriter> _writerMock;
         private readonly Tracer _tracer;
 
-        public SpanTests()
+        public SpanTests(ITestOutputHelper output)
         {
+            _output = output;
+
             var sampler = new SimpleSampler(SamplingPriority.UserKeep);
             _writerMock = new Mock<IAgentWriter>();
             _tracer = new Tracer(_writerMock.Object, sampler);
@@ -79,6 +84,41 @@ namespace Datadog.Trace.Tests
             span.Finish(endTime);
 
             Assert.Equal(TimeSpan.Zero, span.Duration);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(10)]
+        [InlineData(100)]
+        public void Accurate_Duration(int expectedDurationMilliseconds)
+        {
+            const int iterations = 10;
+            const int threshold = 10;
+            double totalElapsedTime = 0;
+            Span span;
+
+            // execute once to ensure JIT compilation
+            using (span = _tracer.StartSpan("Operation"))
+            {
+                Thread.Sleep(0);
+                var elapsedTime = span.Duration.TotalMilliseconds;
+            }
+
+            // execute multiple times and average the results
+            for (int x = 0; x < iterations; x++)
+            {
+                using (span = _tracer.StartSpan("Operation"))
+                {
+                    Thread.Sleep(expectedDurationMilliseconds);
+                }
+
+                totalElapsedTime += span.Duration.TotalMilliseconds;
+            }
+
+            var averageElapsedTime = totalElapsedTime / iterations;
+            var diff = Math.Abs(averageElapsedTime - expectedDurationMilliseconds);
+            _output.WriteLine($"Expected duration: {expectedDurationMilliseconds}ms, average duration: {averageElapsedTime}ms");
+            Assert.True(diff < threshold, "Span duration outside of allowed threshold");
         }
     }
 }
