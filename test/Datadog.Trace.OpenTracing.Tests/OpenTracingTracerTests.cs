@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Moq;
 using OpenTracing;
@@ -12,12 +14,16 @@ namespace Datadog.Trace.OpenTracing.Tests
 {
     public class OpenTracingTracerTests
     {
-        private OpenTracingTracer _tracer;
+        private readonly OpenTracingTracer _tracer;
 
         public OpenTracingTracerTests()
         {
+            var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
-            var datadogTracer = new Tracer(writerMock.Object, null);
+            var samplerMock = new Mock<ISampler>();
+
+            var datadogTracer = new Tracer(settings, writerMock.Object, samplerMock.Object, null);
+
             _tracer = new OpenTracingTracer(datadogTracer);
         }
 
@@ -35,11 +41,11 @@ namespace Datadog.Trace.OpenTracing.Tests
         public void BuildSpan_OneChild_ChildParentProperlySet()
         {
             IScope root = _tracer
-                .BuildSpan("Root")
-                .StartActive(finishSpanOnDispose: true);
+                         .BuildSpan("Root")
+                         .StartActive(finishSpanOnDispose: true);
             IScope child = _tracer
-                .BuildSpan("Child")
-                .StartActive(finishSpanOnDispose: true);
+                          .BuildSpan("Child")
+                          .StartActive(finishSpanOnDispose: true);
 
             Span rootDatadogSpan = ((OpenTracingSpan)root.Span).Span;
             Span childDatadogSpan = ((OpenTracingSpan)child.Span).Span;
@@ -52,18 +58,18 @@ namespace Datadog.Trace.OpenTracing.Tests
         public void BuildSpan_2ChildrenOfRoot_ChildrenParentProperlySet()
         {
             IScope root = _tracer
-                .BuildSpan("Root")
-                .StartActive(finishSpanOnDispose: true);
+                         .BuildSpan("Root")
+                         .StartActive(finishSpanOnDispose: true);
 
             IScope child1 = _tracer
-                .BuildSpan("Child1")
-                .StartActive(finishSpanOnDispose: true);
+                           .BuildSpan("Child1")
+                           .StartActive(finishSpanOnDispose: true);
 
             child1.Dispose();
 
             IScope child2 = _tracer
-                .BuildSpan("Child2")
-                .StartActive(finishSpanOnDispose: true);
+                           .BuildSpan("Child2")
+                           .StartActive(finishSpanOnDispose: true);
 
             Span rootDatadogSpan = ((OpenTracingSpan)root.Span).Span;
             Span child1DatadogSpan = ((OpenTracingSpan)child1.Span).Span;
@@ -79,14 +85,14 @@ namespace Datadog.Trace.OpenTracing.Tests
         public void BuildSpan_2LevelChildren_ChildrenParentProperlySet()
         {
             IScope root = _tracer
-                .BuildSpan("Root")
-                .StartActive(finishSpanOnDispose: true);
+                         .BuildSpan("Root")
+                         .StartActive(finishSpanOnDispose: true);
             IScope child1 = _tracer
-                .BuildSpan("Child1")
-                .StartActive(finishSpanOnDispose: true);
+                           .BuildSpan("Child1")
+                           .StartActive(finishSpanOnDispose: true);
             IScope child2 = _tracer
-                .BuildSpan("Child2")
-                .StartActive(finishSpanOnDispose: true);
+                           .BuildSpan("Child2")
+                           .StartActive(finishSpanOnDispose: true);
 
             Span rootDatadogSpan = ((OpenTracingSpan)root.Span).Span;
             Span child1DatadogSpan = ((OpenTracingSpan)child1.Span).Span;
@@ -104,8 +110,8 @@ namespace Datadog.Trace.OpenTracing.Tests
             var tcs = new TaskCompletionSource<bool>();
 
             IScope root = _tracer
-                .BuildSpan("Root")
-                .StartActive(finishSpanOnDispose: true);
+                         .BuildSpan("Root")
+                         .StartActive(finishSpanOnDispose: true);
 
             Func<OpenTracingTracer, Task<OpenTracingSpan>> createSpanAsync = async (t) =>
             {

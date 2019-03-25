@@ -17,6 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
   </ItemGroup>
 
