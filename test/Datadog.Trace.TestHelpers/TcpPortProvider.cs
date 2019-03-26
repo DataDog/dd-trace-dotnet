@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Threading;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -48,8 +49,22 @@ namespace Datadog.Trace.TestHelpers
 
         private static int GetStartingPort()
         {
-            // pick a starting port from the ephemeral port range (49152 – 65535) based on process id
-            return (Process.GetCurrentProcess().Id % (65535 - 49152)) + 49152;
+            // pick a starting port from the ephemeral port range (49152 – 65535),
+            // use process and threads ids to try to get different ports for each thread.
+            // https://stackoverflow.com/questions/263400/what-is-the-best-algorithm-for-an-overridden-system-object-gethashcode
+            const int startPort = 49152;
+            const int endPort = 65535;
+            const int poolSize = endPort - startPort;
+            int hash = 17;
+
+            unchecked
+            {
+                hash = (hash * 23) + Process.GetCurrentProcess().Id.GetHashCode();
+                hash = (hash * 23) + Thread.CurrentThread.ManagedThreadId.GetHashCode();
+            }
+
+            int offset = hash % poolSize;
+            return startPort + offset;
         }
     }
 }
