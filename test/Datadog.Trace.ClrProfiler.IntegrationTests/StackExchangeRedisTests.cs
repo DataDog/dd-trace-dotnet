@@ -10,8 +10,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class StackExchangeRedisTests : TestHelper
     {
-        private const int AgentPort = 9003;
-
         public StackExchangeRedisTests(ITestOutputHelper output)
             : base("RedisCore", output)
         {
@@ -21,9 +19,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
+            int agentPort = TcpPortProvider.GetOpenPort();
             var prefix = $"{BuildParameters.Configuration}.{BuildParameters.TargetFramework}.";
-            using (var agent = new MockTracerAgent(AgentPort))
-            using (var processResult = RunSampleAndWaitForExit(AgentPort, arguments: $"StackExchange {prefix}"))
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: $"StackExchange {prefix}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "PFCOUNT", $"PFCOUNT {batchPrefix}HyperLogLogLengthAsync" },
                     { "PFMERGE", $"PFMERGE {batchPrefix}HyperLogLogMergeAsync" },
                     { "PING", $"PING" },
-                    { "DEL", $"DEL key" },
+                    // { "DEL", $"DEL key" },
                     { "DUMP", $"DUMP key" },
                     { "EXISTS", $"EXISTS key" },
                     { "PEXPIREAT", $"PEXPIREAT key" },
@@ -161,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "PFADD", $"PFADD {dbPrefix}HyperLogLog" },
                     { "PFCOUNT", $"PFCOUNT {dbPrefix}HyperLogLog" },
                     { "PFMERGE", $"PFMERGE {dbPrefix}HyperLogLog2" },
-                    { "DEL", $"DEL {dbPrefix}Key" },
+                    // { "DEL", $"DEL {dbPrefix}Key" },
                     { "DUMP", $"DUMP {dbPrefix}Key" },
                     { "EXISTS", $"EXISTS {dbPrefix}Key" },
                     { "PEXPIREAT", $"PEXPIREAT {dbPrefix}Key" },
