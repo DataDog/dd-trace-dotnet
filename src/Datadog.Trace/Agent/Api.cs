@@ -50,18 +50,6 @@ namespace Datadog.Trace.Agent
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
         {
-            MsgPackContent<IList<List<Span>>> content;
-
-            try
-            {
-                content = new MsgPackContent<IList<List<Span>>>(traces, _serializationContext);
-            }
-            catch (Exception ex)
-            {
-                _log.ErrorException("An error occurred while serializing traces", ex);
-                return;
-            }
-
             // retry up to 5 times with exponential backoff
             var retryLimit = 5;
             var retryCount = 1;
@@ -73,8 +61,12 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
-                    responseMessage.EnsureSuccessStatusCode();
+                    // re-create content on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
+                    using (var content = new MsgPackContent<IList<List<Span>>>(traces, _serializationContext))
+                    {
+                        responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+                        responseMessage.EnsureSuccessStatusCode();
+                    }
                 }
                 catch (Exception ex)
                 {
