@@ -161,6 +161,7 @@
     <ClInclude Include="pal.h" />
     <ClInclude Include="string.h" />
     <ClInclude Include="util.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="class_factory.cpp" />
