@@ -92,8 +92,9 @@ namespace Datadog.Trace.Tests
         [InlineData(100)]
         public void Accurate_Duration(int expectedDurationMilliseconds)
         {
+            // TODO: refactor how we measure time so we can lower this threshold
             const int iterations = 10;
-            const int threshold = 10;
+            const int threshold = 15;
             double totalElapsedTime = 0;
             Span span;
 
