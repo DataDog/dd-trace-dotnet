@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Datadog.Trace.Configuration
 {
@@ -50,9 +52,11 @@ namespace Datadog.Trace.Configuration
                            // default value
                            false;
 
-            DisabledIntegrationNames = source.GetString(ConfigurationKeys.DisabledIntegrations)
-                                             ?.Split(';')
-                                    ?? new string[0];
+            var disabledIntegrationNames = source.GetString(ConfigurationKeys.DisabledIntegrations)
+                                                ?.Split(';') ??
+                                           Enumerable.Empty<string>();
+
+            DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
             var agentHost = source.GetString(ConfigurationKeys.AgentHost) ??
                             // backwards compatibility for names used in the past
@@ -101,7 +105,7 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the names of disabled integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
-        public string[] DisabledIntegrationNames { get; set; }
+        public HashSet<string> DisabledIntegrationNames { get; set; }
 
         /// <summary>
         /// Gets or sets the Uri where the Tracer can connect to the Agent.
