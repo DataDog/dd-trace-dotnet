@@ -2,7 +2,6 @@
   <Import Project="..\Directory.Build.props" />
 
   <PropertyGroup>
-    <Version>0.8.0-beta</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <!-- NuGet package -->

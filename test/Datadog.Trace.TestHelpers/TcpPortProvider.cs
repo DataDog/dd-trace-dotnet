@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Threading;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -16,9 +17,7 @@ namespace Datadog.Trace.TestHelpers
     {
         private static readonly ConcurrentBag<int> ReturnedPorts = new ConcurrentBag<int>();
 
-        // Get a starting port between 10,000 and 59,900 for this process.
-        // Multiply by 100 so each process gets a built-in 100-port buffer.
-        private static readonly int MinPort = 10000 + ((Process.GetCurrentProcess().Id * 100) % 50000);
+        private static readonly int MinPort = GetStartingPort();
 
         public static int GetOpenPort()
         {
@@ -46,6 +45,26 @@ namespace Datadog.Trace.TestHelpers
                                               .Select(ipEndPoint => ipEndPoint.Port);
 
             return new HashSet<int>(usedPorts);
+        }
+
+        private static int GetStartingPort()
+        {
+            // pick a starting port from the ephemeral port range (49152 – 65535),
+            // use process and threads ids to try to get different ports for each thread.
+            // https://stackoverflow.com/questions/263400/what-is-the-best-algorithm-for-an-overridden-system-object-gethashcode
+            const int startPort = 49152;
+            const int endPort = 65535;
+            const int poolSize = endPort - startPort;
+            int hash = 17;
+
+            unchecked
+            {
+                hash = (hash * 23) + Process.GetCurrentProcess().Id.GetHashCode();
+                hash = (hash * 23) + Thread.CurrentThread.ManagedThreadId.GetHashCode();
+            }
+
+            int offset = hash % poolSize;
+            return startPort + offset;
         }
     }
 }

@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var request = controllerContext?.Request as HttpRequestMessage;
                 SpanContext propagatedContext = null;
 
-                if (request != null)
+                if (request != null && Tracer.Instance.ActiveScope == null)
                 {
                     try
                     {
