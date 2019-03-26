@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -12,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AdoNetIntegration
     {
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AdoNetIntegration));
+
         /// <summary>
         /// Wrapper method that instruments <see cref="System.Data.Common.DbCommand.ExecuteDbDataReader"/>.
         /// </summary>
@@ -40,9 +43,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     return executeReader(command, commandBehavior);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -85,9 +88,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     return await executeReader(command, behavior, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -95,15 +98,31 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(DbCommand command)
         {
-            string dbType = GetDbType(command.GetType().Name);
+            Scope scope = null;
 
-            Tracer tracer = Tracer.Instance;
-            string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
-            string operationName = $"{dbType}.query";
+            try
+            {
+                string dbType = GetDbType(command.GetType().Name);
 
-            var scope = tracer.StartActive(operationName, serviceName: serviceName);
-            scope.Span.SetTag(Tags.DbType, dbType);
-            scope.Span.AddTagsFromDbCommand(command);
+                if (dbType == null)
+                {
+                    // don't create a scope, skip this trace
+                    return null;
+                }
+
+                Tracer tracer = Tracer.Instance;
+                string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
+                string operationName = $"{dbType}.query";
+
+                scope = tracer.StartActive(operationName, serviceName: serviceName);
+                scope.Span.SetTag(Tags.DbType, dbType);
+                scope.Span.AddTagsFromDbCommand(command);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException("Error creating or populating scope.", ex);
+            }
+
             return scope;
         }
 
@@ -115,6 +134,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return "sql-server";
                 case "NpgsqlCommand":
                     return "postgres";
+                case "InterceptableDbCommand":
+                case "ProfiledDbCommand":
+                    // don't create spans for these
+                    return null;
                 default:
                     const string commandSuffix = "Command";
 

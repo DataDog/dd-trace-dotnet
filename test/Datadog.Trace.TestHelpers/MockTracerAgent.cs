@@ -15,11 +15,29 @@ namespace Datadog.Trace.TestHelpers
         private readonly HttpListener _listener;
         private readonly Thread _listenerThread;
 
-        public MockTracerAgent(int port = 8126)
+        public MockTracerAgent(int port = 8126, int retries = 5)
         {
             _listener = new HttpListener();
-            _listener.Prefixes.Add($"http://localhost:{port}/");
-            _listener.Start();
+            bool listening = false;
+
+            // try up to 5 consecutive ports before giving up
+            while (!listening)
+            {
+                _listener.Prefixes.Clear();
+                _listener.Prefixes.Add($"http://localhost:{port}/");
+
+                try
+                {
+                    _listener.Start();
+                    listening = true;
+                }
+                catch (HttpListenerException) when (retries > 0)
+                {
+                    // only catch the exception if there are retries left
+                    port++;
+                    retries--;
+                }
+            }
 
             _listenerThread = new Thread(HandleHttpRequests);
             _listenerThread.Start();
