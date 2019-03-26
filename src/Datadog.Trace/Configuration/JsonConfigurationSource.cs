@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -92,7 +94,10 @@ namespace Datadog.Trace.Configuration
         public T GetValue<T>(string key)
         {
             JToken token = _configuration.SelectToken(key, errorWhenNoMatch: false);
-            return token == null ? default(T) : token.Value<T>();
+
+            return token == null
+                       ? default
+                       : token.Value<T>();
         }
     }
 }
