@@ -6,20 +6,16 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Sampling;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
     public class SpanTests
     {
-        private readonly ITestOutputHelper _output;
         private readonly Mock<IAgentWriter> _writerMock;
         private readonly Tracer _tracer;
 
-        public SpanTests(ITestOutputHelper output)
+        public SpanTests()
         {
-            _output = output;
-
             var sampler = new SimpleSampler(SamplingPriority.UserKeep);
             _writerMock = new Mock<IAgentWriter>();
             _tracer = new Tracer(_writerMock.Object, sampler);
@@ -118,8 +114,7 @@ namespace Datadog.Trace.Tests
 
             var averageElapsedTime = totalElapsedTime / iterations;
             var diff = Math.Abs(averageElapsedTime - expectedDurationMilliseconds);
-            _output.WriteLine($"Expected duration: {expectedDurationMilliseconds}ms, average duration: {averageElapsedTime}ms");
-            Assert.True(diff < threshold, "Span duration outside of allowed threshold");
+            Assert.True(diff < threshold, $"Span duration outside of allowed threshold. Expected: {expectedDurationMilliseconds}ms, actual average: {averageElapsedTime}ms");
         }
     }
 }
