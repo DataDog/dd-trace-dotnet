@@ -68,6 +68,12 @@ namespace Datadog.Trace.Configuration
                            $"http://{agentHost}:{agentPort}";
 
             AgentUri = new Uri(agentUri);
+
+            AnalyticsEnabled = source.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
+                               false;
+
+            AnalyticsSampleRate = source.GetDouble(ConfigurationKeys.GlobalAnalyticsSampleRate) ??
+                                  1.0;
         }
 
         /// <summary>
@@ -110,6 +116,23 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentHost"/>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether default Analytics are enabled.
+        /// Settings this value is a shortcut for setting
+        /// <see cref="Configuration.IntegrationSettings.AnalyticsEnabled"/> on some predetermined integrations.
+        /// See the documentation for more details.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
+        public bool AnalyticsEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value between 0 and 1 (inclusive) that determines
+        /// the default sampling rate for all integrations where
+        /// <see cref="Configuration.IntegrationSettings.AnalyticsSampleRate"/> is not explicitly set.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GlobalAnalyticsSampleRate"/>
+        public double AnalyticsSampleRate { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
