@@ -1,5 +1,3 @@
-using System;
-
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
@@ -22,6 +20,14 @@ namespace Datadog.Trace.Configuration
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         int? GetInt32(string key);
+
+        /// <summary>
+        /// Gets the <see cref="double"/> value of
+        /// the setting with the specified key.
+        /// </summary>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        double? GetDouble(string key);
 
         /// <summary>
         /// Gets the <see cref="bool"/> value of
