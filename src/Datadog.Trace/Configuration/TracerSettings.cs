@@ -148,7 +148,7 @@ namespace Datadog.Trace.Configuration
             if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
                 File.Exists(configurationFileName))
             {
-                configurationSource.Add(JsonConfigurationSource.LoadFile(configurationFileName));
+                configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
             }
 
             return configurationSource;

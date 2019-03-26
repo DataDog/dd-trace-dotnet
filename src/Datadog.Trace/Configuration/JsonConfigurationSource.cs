@@ -28,7 +28,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="filename">A JSON file that contains configuration values.</param>
         /// <returns>The newly created configuration source.</returns>
-        public static JsonConfigurationSource LoadFile(string filename)
+        public static JsonConfigurationSource FromFile(string filename)
         {
             string json = File.ReadAllText(filename);
             return new JsonConfigurationSource(json);
