@@ -20,7 +20,6 @@ namespace Datadog.Trace
 
         private readonly IScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
-        private readonly TracerSettings _settings;
 
         static Tracer()
         {
@@ -52,13 +51,13 @@ namespace Datadog.Trace
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager)
         {
             // fall back to default implementations of each dependency if not provided
-            _settings = settings ?? TracerSettings.FromDefaultSources();
-            _agentWriter = agentWriter ?? new AgentWriter(new Api(_settings.AgentUri));
+            Settings = settings ?? TracerSettings.FromDefaultSources();
+            _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri));
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RateByServiceSampler();
 
             // if not configured, try to determine an appropriate service name
-            DefaultServiceName = _settings.ServiceName ??
+            DefaultServiceName = Settings.ServiceName ??
                                  GetApplicationName() ??
                                  UnknownServiceName;
 
@@ -82,12 +81,17 @@ namespace Datadog.Trace
         /// Gets a value indicating whether debugging mode is enabled.
         /// </summary>
         /// <value><c>true</c> is debugging is enabled, otherwise <c>false</c>.</value>
-        bool IDatadogTracer.IsDebugEnabled => _settings.DebugEnabled;
+        bool IDatadogTracer.IsDebugEnabled => Settings.DebugEnabled;
 
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
         public string DefaultServiceName { get; }
+
+        /// <summary>
+        /// Gets this tracer's settings.
+        /// </summary>
+        public TracerSettings Settings { get; }
 
         /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
@@ -197,7 +201,7 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
-            var env = _settings.Environment;
+            var env = Settings.Environment;
 
             // automatically add the "env" tag if defined
             if (!string.IsNullOrWhiteSpace(env))
