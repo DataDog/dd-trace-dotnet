@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string httpMethod = request.Method.ToString().ToUpperInvariant();
             string integrationName = typeof(HttpMessageHandlerIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(httpMethod, request.RequestUri, integrationName))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, request.RequestUri, integrationName))
             {
                 try
                 {
