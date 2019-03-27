@@ -18,10 +18,9 @@ namespace Datadog.Trace.TestHelpers
         public MockTracerAgent(int port = 8126, int retries = 5)
         {
             _listener = new HttpListener();
-            bool listening = false;
 
             // try up to 5 consecutive ports before giving up
-            while (!listening)
+            while (true)
             {
                 _listener.Prefixes.Clear();
                 _listener.Prefixes.Add($"http://localhost:{port}/");
@@ -29,7 +28,7 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     _listener.Start();
-                    listening = true;
+                    break;
                 }
                 catch (HttpListenerException) when (retries > 0)
                 {
@@ -39,9 +38,18 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
 
+            Port = port;
+
             _listenerThread = new Thread(HandleHttpRequests);
             _listenerThread.Start();
         }
+
+        /// <summary>
+        /// Gets the TCP port that this Agent is listening on.
+        /// Can be different from <see cref="MockTracerAgent(int, int)"/>'s <c>initialPort</c>
+        /// parameter if listening on that port fails.
+        /// </summary>
+        public int Port { get; }
 
         public IImmutableList<Span> Spans { get; private set; } = ImmutableList<Span>.Empty;
 
