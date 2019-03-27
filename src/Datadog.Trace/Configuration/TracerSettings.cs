@@ -74,6 +74,8 @@ namespace Datadog.Trace.Configuration
 
             AnalyticsSampleRate = source.GetDouble(ConfigurationKeys.GlobalAnalyticsSampleRate) ??
                                   1.0;
+
+            IntegrationSettings = new IntegrationSettingsCollection(source);
         }
 
         /// <summary>
@@ -135,6 +137,11 @@ namespace Datadog.Trace.Configuration
         public double AnalyticsSampleRate { get; set; }
 
         /// <summary>
+        /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
+        /// </summary>
+        public IntegrationSettingsCollection IntegrationSettings { get; }
+
+        /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.
         /// </summary>
@@ -174,6 +181,22 @@ namespace Datadog.Trace.Configuration
             }
 
             return configurationSource;
+        }
+
+        internal bool IsIntegrationEnabled(string name)
+        {
+            return (IntegrationSettings[name].Enabled ?? TraceEnabled) && !DisabledIntegrationNames.Contains(name);
+        }
+
+        internal double? GetIntegrationAnalyticsSampleRate(string name, bool enabledWithGlobalSetting)
+        {
+            var integrationSettings = IntegrationSettings[name];
+            var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
+            var sampleRate = integrationSettings.AnalyticsSampleRate ?? AnalyticsSampleRate;
+
+            return analyticsEnabled
+                       ? sampleRate
+                       : (double?)null;
         }
     }
 }
