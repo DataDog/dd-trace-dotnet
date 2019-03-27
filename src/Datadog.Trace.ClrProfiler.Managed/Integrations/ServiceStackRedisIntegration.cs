@@ -10,6 +10,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class ServiceStackRedisIntegration
     {
+        private const string IntegrationName = "ServiceStackRedis";
+
         /// <summary>
         /// Traces SendReceive.
         /// </summary>
@@ -32,7 +34,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     "SendReceive",
                     methodGenericArguments: new[] { typeof(T) });
 
-            using (var scope = RedisHelper.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
+            using (var scope = RedisHelper.CreateScope(
+                Tracer.Instance,
+                IntegrationName,
+                GetHost(redisNativeClient),
+                GetPort(redisNativeClient),
+                GetRawCommand(cmdWithBinaryArgs)))
             {
                 try
                 {

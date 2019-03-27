@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AspNetMvcIntegration
     {
+        private const string IntegrationName = "AspNetMvc";
         private const string OperationName = "aspnet-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
 
@@ -40,6 +41,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
+                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+                {
+                    // integration disabled, don't create a scope, skip this trace
+                    return null;
+                }
+
                 var httpContext = controllerContext?.HttpContext as HttpContextBase;
 
                 if (httpContext == null)
@@ -73,8 +80,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string resourceName = $"{httpMethod} {controllerName}.{actionName}";
 
                 SpanContext propagatedContext = null;
+                var tracer = Tracer.Instance;
 
-                if (Tracer.Instance.ActiveScope == null)
+                if (tracer.ActiveScope == null)
                 {
                     try
                     {
@@ -98,6 +106,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
             }
             catch (Exception ex)
             {

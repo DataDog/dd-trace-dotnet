@@ -23,6 +23,12 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>A new prepopulated scope.</returns>
         public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, string integrationName)
         {
+            if (!tracer.Settings.IsIntegrationEnabled(integrationName))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             Scope scope = null;
 
             try
@@ -37,6 +43,10 @@ namespace Datadog.Trace.ClrProfiler
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, requestUri.OriginalString);
                 span.SetTag(Tags.InstrumentationName, integrationName);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
             }
             catch (Exception ex)
             {

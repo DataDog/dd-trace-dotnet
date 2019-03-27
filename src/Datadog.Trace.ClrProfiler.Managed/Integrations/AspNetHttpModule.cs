@@ -16,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public class AspNetHttpModule : IHttpModule
     {
+        internal const string IntegrationName = "AspNet";
+
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetHttpModule));
 
         private readonly string _httpContextDelegateKey;
@@ -56,6 +58,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
+            var tracer = Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                // integration disabled
+                return;
+            }
+
             Scope scope = null;
 
             try
@@ -67,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 SpanContext propagatedContext = null;
 
-                if (Tracer.Instance.ActiveScope == null)
+                if (tracer.ActiveScope == null)
                 {
                     try
                     {
@@ -81,7 +91,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                scope = Tracer.Instance.StartActive(_operationName, propagatedContext);
+                scope = tracer.StartActive(_operationName, propagatedContext);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+                scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
+
                 httpContext.Items[_httpContextDelegateKey] = HttpContextSpanIntegrationDelegate.CreateAndBegin(httpContext, scope);
             }
             catch (Exception ex)
@@ -95,6 +110,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                // integration disabled
+                return;
+            }
+
             try
             {
                 if (!TryGetContext(sender, out var httpContext) ||

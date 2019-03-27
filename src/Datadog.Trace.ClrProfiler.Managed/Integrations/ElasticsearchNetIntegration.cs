@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class ElasticsearchNetIntegration
     {
+        private const string IntegrationName = "ElasticsearchNet";
         private const string OperationName = "elasticsearch.query";
         private const string ServiceName = "elasticsearch";
         private const string SpanType = "elasticsearch";
@@ -117,6 +118,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(object pipeline, dynamic requestData)
         {
+            var tracer = Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             string requestName = null;
             try
             {
@@ -158,13 +167,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
             }
 
-            var serviceName = string.Join("-", Tracer.Instance.DefaultServiceName, ServiceName);
+            var serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
             Scope scope = null;
 
             try
             {
-                scope = Tracer.Instance.StartActive(OperationName, serviceName: serviceName);
+                scope = tracer.StartActive(OperationName, serviceName: serviceName);
                 var span = scope.Span;
                 span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
                 span.Type = SpanType;
@@ -173,6 +182,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(ElasticsearchActionKey, requestName);
                 span.SetTag(ElasticsearchMethodKey, method);
                 span.SetTag(ElasticsearchUrlKey, url);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
             }
             catch (Exception ex)
             {

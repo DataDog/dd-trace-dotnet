@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class MongoDbIntegration
     {
+        private const string IntegrationName = "MongoDb";
         private const string OperationName = "mongodb.query";
         private const string ServiceName = "mongodb";
 
@@ -102,6 +103,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static Scope CreateScope(object wireProtocol, object connection)
         {
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             string databaseName = null;
             string host = null;
             string port = null;
@@ -188,13 +195,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 scope = tracer.StartActive(OperationName, serviceName: serviceName);
-                scope.Span.Type = SpanTypes.MongoDb;
-                scope.Span.ResourceName = resourceName;
-                scope.Span.SetTag(Tags.DbName, databaseName);
-                scope.Span.SetTag(Tags.MongoDbQuery, query);
-                scope.Span.SetTag(Tags.MongoDbCollection, collectionName);
-                scope.Span.SetTag(Tags.OutHost, host);
-                scope.Span.SetTag(Tags.OutPort, port);
+                var span = scope.Span;
+                span.Type = SpanTypes.MongoDb;
+                span.ResourceName = resourceName;
+                span.SetTag(Tags.DbName, databaseName);
+                span.SetTag(Tags.MongoDbQuery, query);
+                span.SetTag(Tags.MongoDbCollection, collectionName);
+                span.SetTag(Tags.OutHost, host);
+                span.SetTag(Tags.OutPort, port);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
             }
             catch (Exception ex)
             {

@@ -13,7 +13,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public sealed class AspNetCoreMvc2Integration : IDisposable
     {
-        internal const string OperationName = "aspnet-coremvc.request";
+        private const string IntegrationName = "AspNetCoreMvc2";
+        private const string OperationName = "aspnet-coremvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
@@ -90,12 +91,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 _scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
                 var span = _scope.Span;
+
                 span.Type = SpanTypes.Web;
                 span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
             }
             catch (Exception) when (DisposeObject(_scope))
             {
@@ -122,6 +128,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object routeData)
         {
             AspNetCoreMvc2Integration integration = null;
+
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                return;
+            }
 
             try
             {
@@ -185,6 +196,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object routeData)
         {
             AspNetCoreMvc2Integration integration = null;
+
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                return;
+            }
 
             try
             {

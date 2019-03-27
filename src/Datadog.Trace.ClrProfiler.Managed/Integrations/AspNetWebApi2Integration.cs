@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AspNetWebApi2Integration
     {
+        private const string IntegrationName = "AspNetWebApi2";
         private const string OperationName = "aspnet-webapi.request";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebApi2Integration));
@@ -87,10 +88,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
+                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+                {
+                    // integration disabled, don't create a scope, skip this trace
+                    return null;
+                }
+
+                var tracer = Tracer.Instance;
                 var request = controllerContext?.Request as HttpRequestMessage;
                 SpanContext propagatedContext = null;
 
-                if (request != null && Tracer.Instance.ActiveScope == null)
+                if (request != null && tracer.ActiveScope == null)
                 {
                     try
                     {
@@ -104,8 +112,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
+                scope = tracer.StartActive(OperationName, propagatedContext);
                 UpdateSpan(controllerContext, scope.Span);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+                scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
             }
             catch (Exception ex)
             {
