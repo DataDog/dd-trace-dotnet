@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Sampling;
@@ -79,6 +80,41 @@ namespace Datadog.Trace.Tests
             span.Finish(endTime);
 
             Assert.Equal(TimeSpan.Zero, span.Duration);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(10)]
+        [InlineData(100)]
+        public void Accurate_Duration(int expectedDurationMilliseconds)
+        {
+            // TODO: refactor how we measure time so we can lower this threshold
+            const int iterations = 10;
+            const int threshold = 15;
+            double totalElapsedTime = 0;
+            Span span;
+
+            // execute once to ensure JIT compilation
+            using (span = _tracer.StartSpan("Operation"))
+            {
+                Thread.Sleep(0);
+                var elapsedTime = span.Duration.TotalMilliseconds;
+            }
+
+            // execute multiple times and average the results
+            for (int x = 0; x < iterations; x++)
+            {
+                using (span = _tracer.StartSpan("Operation"))
+                {
+                    Thread.Sleep(expectedDurationMilliseconds);
+                }
+
+                totalElapsedTime += span.Duration.TotalMilliseconds;
+            }
+
+            var averageElapsedTime = totalElapsedTime / iterations;
+            var diff = Math.Abs(averageElapsedTime - expectedDurationMilliseconds);
+            Assert.True(diff < threshold, $"Span duration outside of allowed threshold. Expected: {expectedDurationMilliseconds}ms, actual average: {averageElapsedTime}ms");
         }
     }
 }
