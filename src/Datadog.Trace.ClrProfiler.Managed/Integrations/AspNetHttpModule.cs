@@ -56,8 +56,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
-            var scopeActive = false;
-
             Scope scope = null;
 
             try
@@ -84,18 +82,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 scope = Tracer.Instance.StartActive(_operationName, propagatedContext);
-
-                scopeActive = true;
-
                 httpContext.Items[_httpContextDelegateKey] = HttpContextSpanIntegrationDelegate.CreateAndBegin(httpContext, scope);
             }
             catch (Exception ex)
             {
                 // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
-                if (scopeActive)
-                {
-                    scope.Dispose();
-                }
+                scope?.Dispose();
 
                 Log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
             }
