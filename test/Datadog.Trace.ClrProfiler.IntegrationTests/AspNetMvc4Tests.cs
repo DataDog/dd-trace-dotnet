@@ -31,8 +31,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.AgentPort,
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
-                SpanTypes.Web,
-                Integrations.AspNetMvcIntegration.OperationName,
+                "web",
+                "aspnet-mvc.request",
                 expectedResourceName);
         }
     }

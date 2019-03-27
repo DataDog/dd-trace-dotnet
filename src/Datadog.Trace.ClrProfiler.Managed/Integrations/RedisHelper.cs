@@ -2,8 +2,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 {
     internal static class RedisHelper
     {
-        internal const string OperationName = "redis.command";
-        internal const string ServiceName = "redis";
+        private const string OperationName = "redis.command";
+        private const string ServiceName = "redis";
 
         internal static Scope CreateScope(string host, string port, string rawCommand)
         {
