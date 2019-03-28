@@ -185,7 +185,9 @@ namespace Datadog.Trace.Configuration
 
         internal bool IsIntegrationEnabled(string name)
         {
-            return (IntegrationSettings[name].Enabled ?? TraceEnabled) && !DisabledIntegrationNames.Contains(name);
+            return TraceEnabled &&
+                   IntegrationSettings[name].Enabled != false &&
+                   !DisabledIntegrationNames.Contains(name);
         }
 
         internal double? GetIntegrationAnalyticsSampleRate(string name, bool enabledWithGlobalSetting)
