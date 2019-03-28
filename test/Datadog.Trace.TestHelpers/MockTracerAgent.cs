@@ -17,18 +17,26 @@ namespace Datadog.Trace.TestHelpers
 
         public MockTracerAgent(int port = 8126, int retries = 5)
         {
-            _listener = new HttpListener();
-
             // try up to 5 consecutive ports before giving up
             while (true)
             {
-                _listener.Prefixes.Clear();
-                _listener.Prefixes.Add($"http://localhost:{port}/");
+                // seems like we can't reuse a listener if it fails to start,
+                // so create a new listener each time we retry
+                var listener = new HttpListener();
+                listener.Prefixes.Add($"http://localhost:{port}/");
 
                 try
                 {
-                    _listener.Start();
-                    break;
+                    listener.Start();
+
+                    // successfully listening
+                    Port = port;
+                    _listener = listener;
+
+                    _listenerThread = new Thread(HandleHttpRequests);
+                    _listenerThread.Start();
+
+                    return;
                 }
                 catch (HttpListenerException) when (retries > 0)
                 {
@@ -36,12 +44,9 @@ namespace Datadog.Trace.TestHelpers
                     port++;
                     retries--;
                 }
+
+                listener.Close();
             }
-
-            Port = port;
-
-            _listenerThread = new Thread(HandleHttpRequests);
-            _listenerThread.Start();
         }
 
         /// <summary>
