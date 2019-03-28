@@ -45,6 +45,8 @@ namespace Datadog.Trace.TestHelpers
                     retries--;
                 }
 
+                // always close listener if exception is thrown,
+                // whether it was caught or not
                 listener.Close();
             }
         }
