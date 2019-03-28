@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -28,7 +30,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="filename">A JSON file that contains configuration values.</param>
         /// <returns>The newly created configuration source.</returns>
-        public static JsonConfigurationSource LoadFile(string filename)
+        public static JsonConfigurationSource FromFile(string filename)
         {
             string json = File.ReadAllText(filename);
             return new JsonConfigurationSource(json);
@@ -59,6 +61,18 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <summary>
+        /// Gets the <see cref="double"/> value of
+        /// the setting with the specified key.
+        /// Supports JPath.
+        /// </summary>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <returns>The value of the setting, or null if not found.</returns>
+        double? IConfigurationSource.GetDouble(string key)
+        {
+            return GetValue<double?>(key);
+        }
+
+        /// <summary>
         /// Gets the <see cref="bool"/> value of
         /// the setting with the specified key.
         /// Supports JPath.
@@ -70,10 +84,20 @@ namespace Datadog.Trace.Configuration
             return GetValue<bool?>(key);
         }
 
-        private T GetValue<T>(string key)
+        /// <summary>
+        /// Gets the value of the setting with the specified key and converts it into type <typeparamref name="T"/>.
+        /// Supports JPath.
+        /// </summary>
+        /// <typeparam name="T">The type to convert the setting value into.</typeparam>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <returns>The value of the setting, or the default value of T if not found.</returns>
+        public T GetValue<T>(string key)
         {
             JToken token = _configuration.SelectToken(key, errorWhenNoMatch: false);
-            return token == null ? default(T) : token.Value<T>();
+
+            return token == null
+                       ? default
+                       : token.Value<T>();
         }
     }
 }

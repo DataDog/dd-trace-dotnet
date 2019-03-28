@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
-    /// Wraps a <see cref="IConfigurationSource"/> with strongly-typed
-    /// properties for standard Datadog configuration values.
+    /// Contains Tracer settings.
     /// </summary>
     public class TracerSettings
     {
@@ -34,34 +35,41 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public TracerSettings(IConfigurationSource source)
         {
-            Environment = source?.GetString(ConfigurationKeys.Environment);
+            if (source == null)
+            {
+                return;
+            }
 
-            ServiceName = source?.GetString(ConfigurationKeys.ServiceName);
+            Environment = source.GetString(ConfigurationKeys.Environment);
 
-            TraceEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
+            ServiceName = source.GetString(ConfigurationKeys.ServiceName);
+
+            TraceEnabled = source.GetBool(ConfigurationKeys.DebugEnabled) ??
                            // default value
                            false;
 
-            DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
+            DebugEnabled = source.GetBool(ConfigurationKeys.DebugEnabled) ??
                            // default value
                            false;
 
-            DisabledIntegrationNames = source?.GetString(ConfigurationKeys.DisabledIntegrations)
-                                             ?.Split(';')
-                                    ?? new string[0];
+            var disabledIntegrationNames = source.GetString(ConfigurationKeys.DisabledIntegrations)
+                                                ?.Split(';') ??
+                                           Enumerable.Empty<string>();
 
-            var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
+            DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
+
+            var agentHost = source.GetString(ConfigurationKeys.AgentHost) ??
                             // backwards compatibility for names used in the past
-                            source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
-                            source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
+                            source.GetString("DD_TRACE_AGENT_HOSTNAME") ??
+                            source.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
                             DefaultAgentHost;
 
-            var agentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
+            var agentPort = source.GetInt32(ConfigurationKeys.AgentPort) ??
                             // backwards compatibility for names used in the past
-                            source?.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
+                            source.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
                             DefaultAgentPort;
 
-            var agentUri = source?.GetString(ConfigurationKeys.AgentUri) ??
+            var agentUri = source.GetString(ConfigurationKeys.AgentUri) ??
                            $"http://{agentHost}:{agentPort}";
 
             AgentUri = new Uri(agentUri);
@@ -70,34 +78,42 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the default environment name applied to all spans.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.Environment"/>
         public string Environment { get; set; }
 
         /// <summary>
         /// Gets or sets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.ServiceName"/>
         public string ServiceName { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether tracing is enabled.
         /// Default is <c>true</c>.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
         public bool TraceEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether debug mode is enabled.
         /// Default is <c>false</c>.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
         public bool DebugEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.
         /// </summary>
-        public string[] DisabledIntegrationNames { get; set; }
+        /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
+        public HashSet<string> DisabledIntegrationNames { get; set; }
 
         /// <summary>
         /// Gets or sets the Uri where the Tracer can connect to the Agent.
         /// Default is <c>"http://localhost:8126"</c>.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.AgentUri"/>
+        /// <seealso cref="ConfigurationKeys.AgentHost"/>
+        /// <seealso cref="ConfigurationKeys.AgentPort"/>
         public Uri AgentUri { get; set; }
 
         /// <summary>
@@ -136,7 +152,7 @@ namespace Datadog.Trace.Configuration
             if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
                 File.Exists(configurationFileName))
             {
-                configurationSource.Add(JsonConfigurationSource.LoadFile(configurationFileName));
+                configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
             }
 
             return configurationSource;

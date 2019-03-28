@@ -41,7 +41,7 @@ namespace Datadog.Trace.Configuration
         /// Sources are queried in the order in which they were added.
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         public string GetString(string key)
         {
             return _sources.Select(source => source.GetString(key))
@@ -54,10 +54,23 @@ namespace Datadog.Trace.Configuration
         /// Sources are queried in the order in which they were added.
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         public int? GetInt32(string key)
         {
             return _sources.Select(source => source.GetInt32(key))
+                           .FirstOrDefault(value => value != null);
+        }
+
+        /// <summary>
+        /// Gets the <see cref="double"/> value of the first setting found with
+        /// the specified key from the current list of configuration sources.
+        /// Sources are queried in the order in which they were added.
+        /// </summary>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        public double? GetDouble(string key)
+        {
+            return _sources.Select(source => source.GetDouble(key))
                            .FirstOrDefault(value => value != null);
         }
 
@@ -67,7 +80,7 @@ namespace Datadog.Trace.Configuration
         /// Sources are queried in the order in which they were added.
         /// </summary>
         /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         public bool? GetBool(string key)
         {
             return _sources.Select(source => source.GetBool(key))
