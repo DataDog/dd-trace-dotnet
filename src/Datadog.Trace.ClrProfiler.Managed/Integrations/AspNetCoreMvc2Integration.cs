@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -13,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         internal const string OperationName = "aspnet-coremvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
+
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
         private static Action<object, object, object, object> _beforeAction;
         private static Action<object, object, object, object> _afterAction;
@@ -37,7 +41,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
                 string url = GetDisplayUrl(_httpContext.Request).ToLowerInvariant();
 
-                _scope = Tracer.Instance.StartActive(OperationName);
+                SpanContext propagatedContext = null;
+
+                if (Tracer.Instance.ActiveScope == null)
+                {
+                    try
+                    {
+                        // extract propagated http headers
+                        IEnumerable requestHeaders = _httpContext.Request.Headers;
+                        int headerCount = _httpContext.Request.Headers.Count;
+                        var headersCollection = new DictionaryHeadersCollection(headerCount);
+
+                        foreach (dynamic header in requestHeaders)
+                        {
+                            string key = header.Key;
+                            string[] values = header.Value.ToArray();
+                            headersCollection.Add(key, values);
+                        }
+
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                    }
+                }
+
+                _scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
                 var span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
@@ -65,17 +95,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
         public static void BeforeAction(
-                                        object diagnosticSource,
-                                        object actionDescriptor,
-                                        dynamic httpContext,
-                                        object routeData)
+            object diagnosticSource,
+            object actionDescriptor,
+            object httpContext,
+            object routeData)
         {
             AspNetCoreMvc2Integration integration = null;
 
             try
             {
                 integration = new AspNetCoreMvc2Integration(actionDescriptor, httpContext);
-                IDictionary<object, object> contextItems = httpContext.Items;
+                IDictionary<object, object> contextItems = ((dynamic)httpContext).Items;
                 contextItems[HttpContextKey] = integration;
             }
             catch (Exception ex)
@@ -91,8 +121,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     var type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
                     _beforeAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                                                                                                                          type,
-                                                                                                                          "BeforeAction");
+                        type,
+                        "BeforeAction");
                 }
             }
             catch (Exception ex)
@@ -125,16 +155,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
         public static void AfterAction(
-                                       object diagnosticSource,
-                                       object actionDescriptor,
-                                       dynamic httpContext,
-                                       object routeData)
+            object diagnosticSource,
+            object actionDescriptor,
+            object httpContext,
+            object routeData)
         {
             AspNetCoreMvc2Integration integration = null;
 
             try
             {
-                IDictionary<object, object> contextItems = httpContext?.Items;
+                IDictionary<object, object> contextItems = ((dynamic)httpContext)?.Items;
                 integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
             }
             catch (Exception ex)
@@ -149,8 +179,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     var type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
                     _afterAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                                                                                                                         type,
-                                                                                                                         "AfterAction");
+                        type,
+                        "AfterAction");
                 }
             }
             catch
