@@ -105,8 +105,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 integration = new AspNetCoreMvc2Integration(actionDescriptor, httpContext);
-                IDictionary<object, object> contextItems = ((dynamic)httpContext).Items;
-                contextItems[HttpContextKey] = integration;
+
+                if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                {
+                    contextItems[HttpContextKey] = integration;
+                }
             }
             catch (Exception ex)
             {
@@ -164,8 +167,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                IDictionary<object, object> contextItems = ((dynamic)httpContext)?.Items;
-                integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                {
+                    integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                }
             }
             catch (Exception ex)
             {
