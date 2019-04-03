@@ -34,7 +34,7 @@ namespace Samples.AspNetCoreMvc2.Controllers
             using (var scope = Tracer.Instance.StartActive("manual", propagatedContext))
             {
                 // don't return too fast so it's more visible in the UI
-                Thread.Sleep(TimeSpan.FromSeconds(1));
+            Thread.Sleep(100);
 
                 var model = new DistributedTracingModel();
 
