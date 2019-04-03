@@ -46,6 +46,7 @@ namespace Datadog.Trace.Headers
             if (!_headers.TryGetValue(name, out var list))
             {
                 list = new List<string>();
+                _headers[name] = list;
             }
 
             foreach (var value in values)
