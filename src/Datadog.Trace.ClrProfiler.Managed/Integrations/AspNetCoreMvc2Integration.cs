@@ -21,25 +21,43 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static Action<object, object, object, object> _beforeAction;
         private static Action<object, object, object, object> _afterAction;
 
-        private readonly dynamic _httpContext;
+        private readonly object _httpContext;
         private readonly Scope _scope;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetCoreMvc2Integration"/> class.
         /// </summary>
-        /// <param name="actionDescriptorObj">An ActionDescriptor with information about the current action.</param>
-        /// <param name="httpContextObj">The HttpContext for the current request.</param>
-        public AspNetCoreMvc2Integration(object actionDescriptorObj, object httpContextObj)
+        /// <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
+        /// <param name="httpContext">The HttpContext for the current request.</param>
+        public AspNetCoreMvc2Integration(object actionDescriptor, object httpContext)
         {
             try
             {
-                dynamic actionDescriptor = actionDescriptorObj;
-                var controllerName = (actionDescriptor.ControllerName as string)?.ToLowerInvariant();
-                var actionName = (actionDescriptor.ActionName as string)?.ToLowerInvariant();
+                _httpContext = httpContext;
+                string httpMethod = null;
 
-                _httpContext = httpContextObj;
-                string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
-                string url = GetDisplayUrl(_httpContext.Request).ToLowerInvariant();
+                if (actionDescriptor.TryGetPropertyValue("ControllerName", out string controllerName))
+                {
+                    controllerName = controllerName?.ToLowerInvariant();
+                }
+
+                if (actionDescriptor.TryGetPropertyValue("ActionName", out string actionName))
+                {
+                    actionName = actionName?.ToLowerInvariant();
+                }
+
+                if (_httpContext.TryGetPropertyValue("Request", out object request) &&
+                    request.TryGetPropertyValue("Method", out httpMethod))
+                {
+                    httpMethod = httpMethod?.ToUpperInvariant();
+                }
+
+                if (httpMethod == null)
+                {
+                    httpMethod = "UNKNOWN";
+                }
+
+                string url = GetDisplayUrl(request).ToLowerInvariant();
 
                 SpanContext propagatedContext = null;
 
@@ -48,18 +66,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     try
                     {
                         // extract propagated http headers
-                        IEnumerable requestHeaders = _httpContext.Request.Headers;
-                        int headerCount = _httpContext.Request.Headers.Count;
-                        var headersCollection = new DictionaryHeadersCollection(headerCount);
-
-                        foreach (dynamic header in requestHeaders)
+                        if (request.TryGetPropertyValue("Headers", out IEnumerable requestHeaders))
                         {
-                            string key = header.Key;
-                            string[] values = header.Value.ToArray();
-                            headersCollection.Add(key, values);
-                        }
+                            var headersCollection = new DictionaryHeadersCollection();
 
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
+                            foreach (object header in requestHeaders)
+                            {
+                                if (header.TryGetPropertyValue("Key", out string key) &&
+                                    header.TryGetPropertyValue("Value", out IList<string> values))
+                                {
+                                    headersCollection.Add(key, values);
+                                }
+                            }
+
+                            propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -229,9 +250,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
-                if (_httpContext != null)
+                if (_httpContext != null &&
+                    _httpContext.TryGetPropertyValue("Response", out object response) &&
+                    response.TryGetPropertyValue("StatusCode", out object statusCode))
                 {
-                    _scope?.Span?.SetTag("http.status_code", _httpContext.Response.StatusCode.ToString());
+                    _scope?.Span?.SetTag("http.status_code", statusCode.ToString());
                 }
             }
             finally
@@ -240,20 +263,38 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static string GetDisplayUrl(dynamic request)
+        private static string GetDisplayUrl(object request)
         {
-            string host = request.Host.Value;
-            string pathBase = request.PathBase.Value;
-            string path = request.Path.Value;
-            string queryString = request.QueryString.Value;
+            if (!request.TryGetPropertyValue("Host", out object hostObject) ||
+                !hostObject.TryGetPropertyValue("Value", out string host))
+            {
+                host = string.Empty;
+            }
 
-            return new StringBuilder(request.Scheme.Length + "://".Length + host.Length + pathBase.Length + path.Length + queryString.Length).Append(request.Scheme)
-                                                                                                                                             .Append("://")
-                                                                                                                                             .Append(host)
-                                                                                                                                             .Append(pathBase)
-                                                                                                                                             .Append(path)
-                                                                                                                                             .Append(queryString)
-                                                                                                                                             .ToString();
+            if (!request.TryGetPropertyValue("PathBase", out object pathBaseObject) ||
+                !pathBaseObject.TryGetPropertyValue("Value", out string pathBase))
+            {
+                pathBase = string.Empty;
+            }
+
+            if (!request.TryGetPropertyValue("Path", out object pathObject) ||
+                !pathObject.TryGetPropertyValue("Value", out string path))
+            {
+                path = string.Empty;
+            }
+
+            if (!request.TryGetPropertyValue("QueryString", out object queryStringObject) ||
+                !queryStringObject.TryGetPropertyValue("Value", out string queryString))
+            {
+                queryString = string.Empty;
+            }
+
+            if (!request.TryGetPropertyValue("Scheme", out string scheme))
+            {
+                scheme = string.Empty;
+            }
+
+            return $"{scheme}://{host}{pathBase}{path}{queryString}";
         }
 
         private bool DisposeObject(IDisposable disposable)
