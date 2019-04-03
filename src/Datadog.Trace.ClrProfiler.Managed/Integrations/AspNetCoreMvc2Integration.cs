@@ -263,22 +263,38 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static string GetDisplayUrl(dynamic request)
+        private static string GetDisplayUrl(object request)
         {
-            string host = request.Host.Value;
-            string pathBase = request.PathBase.Value;
-            string path = request.Path.Value;
-            string queryString = request.QueryString.Value;
-            string scheme = request.Scheme;
-            int totalLength = scheme.Length + "://".Length + host.Length + pathBase.Length + path.Length + queryString.Length;
+            if (!request.TryGetPropertyValue("Host", out object hostObject) ||
+                !hostObject.TryGetPropertyValue("Value", out string host))
+            {
+                host = string.Empty;
+            }
 
-            return new StringBuilder(totalLength).Append(scheme)
-                                                 .Append("://")
-                                                 .Append(host)
-                                                 .Append(pathBase)
-                                                 .Append(path)
-                                                 .Append(queryString)
-                                                 .ToString();
+            if (!request.TryGetPropertyValue("PathBase", out object pathBaseObject) ||
+                !pathBaseObject.TryGetPropertyValue("Value", out string pathBase))
+            {
+                pathBase = string.Empty;
+            }
+
+            if (!request.TryGetPropertyValue("Path", out object pathObject) ||
+                !pathObject.TryGetPropertyValue("Value", out string path))
+            {
+                path = string.Empty;
+            }
+
+            if (!request.TryGetPropertyValue("QueryString", out object queryStringObject) ||
+                !queryStringObject.TryGetPropertyValue("Value", out string queryString))
+            {
+                queryString = string.Empty;
+            }
+
+            if (!request.TryGetPropertyValue("Scheme", out string scheme))
+            {
+                scheme = string.Empty;
+            }
+
+            return $"{scheme}://{host}{pathBase}{path}{queryString}";
         }
 
         private bool DisposeObject(IDisposable disposable)
