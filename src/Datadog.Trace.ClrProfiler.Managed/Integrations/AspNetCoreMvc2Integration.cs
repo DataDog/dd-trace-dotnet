@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -45,9 +46,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
             }
-            catch
+            catch (Exception) when (DisposeObject(_scope))
             {
-                // TODO: logging
+                // unreachable code
+                throw;
             }
         }
 
@@ -76,9 +78,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 IDictionary<object, object> contextItems = httpContext.Items;
                 contextItems[HttpContextKey] = integration;
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
+                Log.ErrorExceptionForFilter($"Error creating {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
             try
@@ -93,10 +95,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                                                                                                           "BeforeAction");
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, we cannot call instrumented method,
                 // profiled app will continue working without DiagnosticSource
+                Log.ErrorException("Error calling Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.BeforeAction()", ex);
             }
 
             try
@@ -104,10 +106,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 _beforeAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
-                integration?.SetException(ex);
-
+                // unreachable code
                 throw;
             }
         }
@@ -136,9 +137,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 IDictionary<object, object> contextItems = httpContext?.Items;
                 integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
+                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
             try
@@ -179,9 +180,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
         /// </summary>
         /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
-        public void SetException(Exception ex)
+        /// <returns>Always <c>false</c>.</returns>
+        public bool SetException(Exception ex)
         {
             _scope?.Span?.SetException(ex);
+            return false;
         }
 
         /// <summary>
@@ -216,6 +219,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                                                                                                                              .Append(path)
                                                                                                                                              .Append(queryString)
                                                                                                                                              .ToString();
+        }
+
+        private bool DisposeObject(IDisposable disposable)
+        {
+            disposable?.Dispose();
+            return false;
         }
     }
 }
