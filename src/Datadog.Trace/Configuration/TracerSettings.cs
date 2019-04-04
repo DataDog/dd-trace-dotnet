@@ -48,7 +48,7 @@ namespace Datadog.Trace.Configuration
                            false;
 
             var disabledIntegrationNames = source?.GetString(ConfigurationKeys.DisabledIntegrations)
-                                                 ?.Split(';') ??
+                                                 ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                            Enumerable.Empty<string>();
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
