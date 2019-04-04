@@ -74,7 +74,7 @@ namespace Datadog.Trace
 
         internal ConcurrentDictionary<string, string> Tags { get; } = new ConcurrentDictionary<string, string>();
 
-        internal ConcurrentDictionary<string, int> Metrics { get; } = new ConcurrentDictionary<string, int>();
+        internal ConcurrentDictionary<string, double> Metrics { get; } = new ConcurrentDictionary<string, double>();
 
         internal bool IsFinished { get; private set; }
 
@@ -254,14 +254,14 @@ namespace Datadog.Trace
             return false;
         }
 
-        internal int? GetMetric(string key)
+        internal double? GetMetric(string key)
         {
-            return Metrics.TryGetValue(key, out int value)
+            return Metrics.TryGetValue(key, out double value)
                        ? value
                        : default;
         }
 
-        internal Span SetMetric(string key, int? value)
+        internal Span SetMetric(string key, double? value)
         {
             if (value == null)
             {

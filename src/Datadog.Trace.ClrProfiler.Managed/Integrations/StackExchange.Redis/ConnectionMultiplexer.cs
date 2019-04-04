@@ -49,9 +49,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 {
                     return originalMethod(multiplexer, message, processor, server);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -115,9 +115,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 {
                     return await originalMethod(multiplexer, message, processor, state, server).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
             var rawCommand = StackExchangeRedisHelper.GetRawCommand(multiplexer, message);
 
-            return Integrations.RedisHelper.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
+            return RedisHelper.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
         }
     }
 }
