@@ -19,5 +19,30 @@ namespace Datadog.Trace.ExtensionMethods
                        ? value.Substring(0, value.Length - suffix.Length)
                        : value;
         }
+
+        /// <summary>
+        /// Converts a <see cref="string"/> into a <see cref="bool"/> by comparing it to commonly used values
+        /// such as "True", "yes", or "1". Case-insensitive. Defaults to <c>false</c> if string is not recognized.
+        /// </summary>
+        /// <param name="value">The string to convert.</param>
+        /// <returns><c>true</c> if <paramref name="value"/> is one of the accepted values for <c>true</c>; <c>false</c> otherwise.</returns>
+        public static bool? ToBoolean(this string value)
+        {
+            if (value == null) { throw new ArgumentNullException(nameof(value)); }
+
+            switch (value.ToUpperInvariant())
+            {
+                case "TRUE":
+                case "YES":
+                case "1":
+                    return true;
+                case "FALSE":
+                case "NO":
+                case "0":
+                    return false;
+                default:
+                    return null;
+            }
+        }
     }
 }

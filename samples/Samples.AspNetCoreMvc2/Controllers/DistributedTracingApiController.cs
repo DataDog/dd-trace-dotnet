@@ -27,27 +27,25 @@ namespace Samples.AspNetCoreMvc2.Controllers
         [Route("api/distributed/last")]
         public IActionResult Distributed()
         {
-            var propagatedContext = Request.Headers.Extract();
+            // don't return too fast so it's more visible in the UI
+            Thread.Sleep(100);
 
-            // this scope is a placeholder so we don't break the distributed
-            // tracing chain because we don't support ASP.NET Core MVC yet
-            using (var scope = Tracer.Instance.StartActive("manual", propagatedContext))
+            var model = new DistributedTracingModel();
+
+            var span = Tracer.Instance.ActiveScope?.Span;
+
+            if (span != null)
             {
-                // don't return too fast so it's more visible in the UI
-                Thread.Sleep(TimeSpan.FromSeconds(1));
-
-                var model = new DistributedTracingModel();
-
                 model.AddSpan(
                     $"{typeof(DistributedTracingApiController).FullName}.{nameof(Distributed)}",
-                    scope?.Span.ServiceName,
-                    scope?.Span.OperationName,
-                    scope?.Span.ResourceName,
-                    scope?.Span.TraceId,
-                    scope?.Span.SpanId);
-
-                return Ok(model);
+                    span.ServiceName,
+                    span.OperationName,
+                    span.ResourceName,
+                    span.TraceId,
+                    span.SpanId);
             }
+
+            return Ok(model);
         }
     }
 }

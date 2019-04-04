@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Text;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
 using Datadog.Trace.Logging;
 
@@ -74,7 +75,7 @@ namespace Datadog.Trace
 
         internal ConcurrentDictionary<string, string> Tags { get; } = new ConcurrentDictionary<string, string>();
 
-        internal ConcurrentDictionary<string, int> Metrics { get; } = new ConcurrentDictionary<string, int>();
+        internal ConcurrentDictionary<string, double> Metrics { get; } = new ConcurrentDictionary<string, double>();
 
         internal bool IsFinished { get; private set; }
 
@@ -123,11 +124,11 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Add a tag metadata to the span
+        /// Add a the specified tag to this span.
         /// </summary>
-        /// <param name="key">The tag's key</param>
-        /// <param name="value">The tag's value</param>
-        /// <returns> The span object itself</returns>
+        /// <param name="key">The tag's key.</param>
+        /// <param name="value">The tag's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
         public Span SetTag(string key, string value)
         {
             if (IsFinished)
@@ -138,23 +139,47 @@ namespace Datadog.Trace
 
             if (value == null)
             {
+                // Agent doesn't accept null tag values,
+                // remove them instead
                 Tags.TryRemove(key, out _);
+                return this;
             }
-            else
+
+            // some tags have special meaning
+            switch (key)
             {
-                Tags[key] = value;
+                case Trace.Tags.SamplingPriority:
+                    if (Enum.TryParse(value, out SamplingPriority samplingPriority) &&
+                        Enum.IsDefined(typeof(SamplingPriority), samplingPriority))
+                    {
+                        // allow setting the sampling priority via a tag
+                        Context.TraceContext.SamplingPriority = samplingPriority;
+                    }
+
+                    break;
+                case Trace.Tags.ForceKeep:
+                    if (value.ToBoolean() ?? false)
+                    {
+                        // user-friendly tag to set UserKeep priority
+                        Context.TraceContext.SamplingPriority = SamplingPriority.UserKeep;
+                    }
+
+                    break;
+                default:
+                    // if not a special tag, just add it to the tag bag
+                    Tags[key] = value;
+                    break;
             }
 
             return this;
         }
 
         /// <summary>
-        /// Proxy to SetTag without return value
-        /// See <see cref="Span.SetTag(string, string)"/> for more information
+        /// Add a the specified tag to this span.
         /// </summary>
-        /// <param name="key">The tag's key</param>
-        /// <param name="value">The tag's value</param>
-        /// <returns> The ISpan object itself</returns>
+        /// <param name="key">The tag's key.</param>
+        /// <param name="value">The tag's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
         ISpan ISpan.SetTag(string key, string value)
             => SetTag(key, value);
 
@@ -254,14 +279,14 @@ namespace Datadog.Trace
             return false;
         }
 
-        internal int? GetMetric(string key)
+        internal double? GetMetric(string key)
         {
-            return Metrics.TryGetValue(key, out int value)
+            return Metrics.TryGetValue(key, out double value)
                        ? value
                        : default;
         }
 
-        internal Span SetMetric(string key, int? value)
+        internal Span SetMetric(string key, double? value)
         {
             if (value == null)
             {

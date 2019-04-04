@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -22,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string ElasticsearchParamsKey = "elasticsearch.params";
 
         private static readonly Type CancellationTokenType = typeof(CancellationToken);
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNetIntegration));
 
         private static Type _requestDataType;
 
@@ -50,9 +52,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     return originalMethod(pipeline, requestData);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -157,14 +159,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             var serviceName = string.Join("-", Tracer.Instance.DefaultServiceName, ServiceName);
 
-            var scope = Tracer.Instance.StartActive(OperationName, serviceName: serviceName);
-            scope.Span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
-            scope.Span.Type = SpanType;
-            scope.Span.SetTag(ComponentKey, ComponentValue);
-            scope.Span.SetTag(SpanKindKey, SpanKindValue);
-            scope.Span.SetTag(ElasticsearchActionKey, requestName);
-            scope.Span.SetTag(ElasticsearchMethodKey, method);
-            scope.Span.SetTag(ElasticsearchUrlKey, url);
+            Scope scope = null;
+
+            try
+            {
+                scope = Tracer.Instance.StartActive(OperationName, serviceName: serviceName);
+                var span = scope.Span;
+                span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
+                span.Type = SpanType;
+                span.SetTag(ComponentKey, ComponentValue);
+                span.SetTag(SpanKindKey, SpanKindValue);
+                span.SetTag(ElasticsearchActionKey, requestName);
+                span.SetTag(ElasticsearchMethodKey, method);
+                span.SetTag(ElasticsearchUrlKey, url);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException("Error creating or populating scope.", ex);
+            }
 
             return scope;
         }

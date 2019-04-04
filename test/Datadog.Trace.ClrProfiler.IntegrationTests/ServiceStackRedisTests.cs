@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var prefix = $"{BuildParameters.Configuration}.{BuildParameters.TargetFramework}.";
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: $"ServiceStack {prefix}"))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"ServiceStack {prefix}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -37,8 +37,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(RedisHelper.OperationName, span.Name);
-                    Assert.Equal($"Samples.RedisCore-{RedisHelper.ServiceName}", span.Service);
+                    Assert.Equal("redis.command", span.Name);
+                    Assert.Equal("Samples.RedisCore-redis", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, span.Tags.GetValueOrDefault("out.host"));
                     Assert.Equal("6379", span.Tags.GetValueOrDefault("out.port"));
