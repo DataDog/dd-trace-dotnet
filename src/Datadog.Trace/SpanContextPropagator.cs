@@ -91,7 +91,7 @@ namespace Datadog.Trace
         }
 
         private static T? ParseEnum<T>(IHeadersCollection headers, string headerName)
-            where T : struct
+            where T : struct, Enum
         {
             var headerValues = headers.GetValues(headerName).ToList();
 
@@ -99,14 +99,17 @@ namespace Datadog.Trace
             {
                 foreach (string headerValue in headerValues)
                 {
-                    if (int.TryParse(headerValue, NumberStyles, InvariantCulture, out var result) &&
+                    if (Enum.TryParse<T>(headerValue, out var result) &&
                         Enum.IsDefined(typeof(T), result))
                     {
-                        return (T)Enum.ToObject(typeof(T), result);
+                        return result;
                     }
                 }
 
-                Log.InfoFormat("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
+                Log.InfoFormat(
+                    "Could not parse {0} headers: {1}",
+                    headerName,
+                    string.Join(",", headerValues));
             }
 
             return default;
