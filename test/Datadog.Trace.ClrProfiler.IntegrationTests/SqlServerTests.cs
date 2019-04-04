@@ -9,8 +9,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class SqlServerTests : TestHelper
     {
-        private const int AgentPort = 9002;
-
         public SqlServerTests(ITestOutputHelper output)
             : base("SqlServer", output)
         {
@@ -20,8 +18,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            using (var agent = new MockTracerAgent(AgentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(AgentPort))
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 

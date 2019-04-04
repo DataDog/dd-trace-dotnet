@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private Process _iisExpress;
 
-        public int AgentPort { get; private set; }
+        public MockTracerAgent Agent { get; private set; }
 
         public int HttpPort { get; private set; }
 
@@ -19,11 +19,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 if (_iisExpress == null)
                 {
-                    AgentPort = TcpPortProvider.GetOpenPort();
+                    var initialAgentPort = TcpPortProvider.GetOpenPort();
+                    Agent = new MockTracerAgent(initialAgentPort);
+
                     HttpPort = TcpPortProvider.GetOpenPort();
 
                     // start IIS Express and give it a few seconds to boot up
-                    _iisExpress = helper.StartIISExpress(AgentPort, HttpPort);
+                    _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort);
                     Thread.Sleep(TimeSpan.FromSeconds(3));
                 }
             }
@@ -31,6 +33,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public void Dispose()
         {
+            Agent?.Dispose();
+
             if (_iisExpress != null)
             {
                 if (!_iisExpress.HasExited)
@@ -43,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     _iisExpress.WaitForExit();
                 }
 
-                _iisExpress?.Dispose();
+                _iisExpress.Dispose();
             }
         }
     }
