@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,8 +11,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class MongoDbIntegration
     {
-        internal const string OperationName = "mongodb.query";
-        internal const string ServiceName = "mongodb";
+        private const string OperationName = "mongodb.query";
+        private const string ServiceName = "mongodb";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(MongoDbIntegration));
 
@@ -48,9 +47,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
                     return execute(wireProtocol, connection, cancellationToken);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -90,11 +89,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    return await executeAsync(wireProtocol, connection, cancellationToken);
+                    return await executeAsync(wireProtocol, connection, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -183,14 +182,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Tracer tracer = Tracer.Instance;
             string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
-            var scope = tracer.StartActive(OperationName, serviceName: serviceName);
-            scope.Span.Type = SpanTypes.MongoDb;
-            scope.Span.ResourceName = resourceName;
-            scope.Span.SetTag(Tags.DbName, databaseName);
-            scope.Span.SetTag(Tags.MongoDbQuery, query);
-            scope.Span.SetTag(Tags.MongoDbCollection, collectionName);
-            scope.Span.SetTag(Tags.OutHost, host);
-            scope.Span.SetTag(Tags.OutPort, port);
+            Scope scope = null;
+
+            try
+            {
+                scope = tracer.StartActive(OperationName, serviceName: serviceName);
+                scope.Span.Type = SpanTypes.MongoDb;
+                scope.Span.ResourceName = resourceName;
+                scope.Span.SetTag(Tags.DbName, databaseName);
+                scope.Span.SetTag(Tags.MongoDbQuery, query);
+                scope.Span.SetTag(Tags.MongoDbCollection, collectionName);
+                scope.Span.SetTag(Tags.OutHost, host);
+                scope.Span.SetTag(Tags.OutPort, port);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException("Error creating or populating scope.", ex);
+            }
+
             return scope;
         }
     }

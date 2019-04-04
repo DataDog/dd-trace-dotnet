@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AspNetWebApi2Integration
     {
-        internal const string OperationName = "aspnet-webapi.request";
+        private const string OperationName = "aspnet-webapi.request";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebApi2Integration));
 

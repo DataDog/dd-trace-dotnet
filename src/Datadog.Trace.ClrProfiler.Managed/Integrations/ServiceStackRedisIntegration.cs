@@ -31,15 +31,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     "SendReceive",
                     methodGenericArguments: new[] { typeof(T) });
 
-            using (var scope = Integrations.RedisHelper.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
+            using (var scope = RedisHelper.CreateScope(GetHost(redisNativeClient), GetPort(redisNativeClient), GetRawCommand(cmdWithBinaryArgs)))
             {
                 try
                 {
                     return originalMethod(redisNativeClient, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
