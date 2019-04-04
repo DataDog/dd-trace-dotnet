@@ -35,41 +35,36 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public TracerSettings(IConfigurationSource source)
         {
-            if (source == null)
-            {
-                return;
-            }
+            Environment = source?.GetString(ConfigurationKeys.Environment);
 
-            Environment = source.GetString(ConfigurationKeys.Environment);
+            ServiceName = source?.GetString(ConfigurationKeys.ServiceName);
 
-            ServiceName = source.GetString(ConfigurationKeys.ServiceName);
-
-            TraceEnabled = source.GetBool(ConfigurationKeys.TraceEnabled) ??
+            TraceEnabled = source?.GetBool(ConfigurationKeys.TraceEnabled) ??
                            // default value
                            true;
 
-            DebugEnabled = source.GetBool(ConfigurationKeys.DebugEnabled) ??
+            DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
                            // default value
                            false;
 
-            var disabledIntegrationNames = source.GetString(ConfigurationKeys.DisabledIntegrations)
-                                                ?.Split(';') ??
+            var disabledIntegrationNames = source?.GetString(ConfigurationKeys.DisabledIntegrations)
+                                                 ?.Split(';') ??
                                            Enumerable.Empty<string>();
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
-            var agentHost = source.GetString(ConfigurationKeys.AgentHost) ??
+            var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
                             // backwards compatibility for names used in the past
-                            source.GetString("DD_TRACE_AGENT_HOSTNAME") ??
-                            source.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
+                            source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
+                            source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
                             DefaultAgentHost;
 
-            var agentPort = source.GetInt32(ConfigurationKeys.AgentPort) ??
+            var agentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
                             // backwards compatibility for names used in the past
-                            source.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
+                            source?.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
                             DefaultAgentPort;
 
-            var agentUri = source.GetString(ConfigurationKeys.AgentUri) ??
+            var agentUri = source?.GetString(ConfigurationKeys.AgentUri) ??
                            $"http://{agentHost}:{agentPort}";
 
             AgentUri = new Uri(agentUri);
