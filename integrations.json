@@ -1,5 +1,24 @@
 [
   {
+    "name": "Wcf",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.ServiceModel",
+          "type": "System.ServiceModel.Dispatcher.ChannelHandler",
+          "method": "HandleRequest"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=0.8.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.WcfIntegration",
+          "method": "HandleRequest",
+          "signature": "00 03 02 1C 1C 1C"
+        }
+      }
+     ]
+  },
+  {
     "name": "AdoNet",
     "method_replacements": [
       {
