@@ -132,12 +132,13 @@ namespace Datadog.Trace.ClrProfiler
                 dynamicMethod.CallVirtual(methodInfo);
             }
 
-            if (propertyInfo.PropertyType.IsValueType && typeof(TResult) == typeof(object))
+            if (propertyInfo.PropertyType != typeof(TResult))
             {
-                dynamicMethod.Box(propertyInfo.PropertyType);
-            }
-            else if (propertyInfo.PropertyType != typeof(TResult))
-            {
+                if (propertyInfo.PropertyType.IsValueType)
+                {
+                    dynamicMethod.Box(propertyInfo.PropertyType);
+                }
+
                 dynamicMethod.CastClass(typeof(TResult));
             }
 

@@ -274,7 +274,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected async Task AssertHttpSpan(
             string path,
-            int agentPort,
+            MockTracerAgent agent,
             int httpPort,
             HttpStatusCode expectedHttpStatusCode,
             string expectedSpanType,
@@ -283,7 +283,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             IImmutableList<MockTracerAgent.Span> spans;
 
-            using (var agent = new MockTracerAgent(agentPort))
             using (var httpClient = new HttpClient())
             {
                 // disable tracing for this HttpClient request

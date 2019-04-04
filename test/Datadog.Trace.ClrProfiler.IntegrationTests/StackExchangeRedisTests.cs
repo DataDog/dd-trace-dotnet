@@ -19,11 +19,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
             var prefix = $"{BuildParameters.Configuration}.{BuildParameters.TargetFramework}.";
+            int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: $"StackExchange {prefix}"))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"StackExchange {prefix}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 

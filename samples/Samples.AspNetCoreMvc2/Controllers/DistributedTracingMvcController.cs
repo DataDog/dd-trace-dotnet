@@ -26,20 +26,23 @@ namespace Samples.AspNetCoreMvc2.Controllers
         [Route("distributed")]
         public async Task<IActionResult> Distributed()
         {
-            var scope = Tracer.Instance.ActiveScope;
-            scope?.Span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
+            var span = Tracer.Instance.ActiveScope?.Span;
+            span?.SetTraceSamplingPriority(SamplingPriority.UserKeep);
 
             using (var client = new HttpClient())
             {
                 var model = await client.GetAsync<DistributedTracingModel>("http://localhost:50449/distributed");
 
-                model.AddSpan(
-                    $"{typeof(DistributedTracingMvcController).FullName}.{nameof(Distributed)}",
-                    scope?.Span.ServiceName,
-                    scope?.Span.OperationName,
-                    scope?.Span.ResourceName,
-                    scope?.Span.TraceId,
-                    scope?.Span.SpanId);
+                if (span != null)
+                {
+                    model.AddSpan(
+                        $"{typeof(DistributedTracingMvcController).FullName}.{nameof(Distributed)}",
+                        span.ServiceName,
+                        span.OperationName,
+                        span.ResourceName,
+                        span.TraceId,
+                        span.SpanId);
+                }
 
                 return Json(model);
             }

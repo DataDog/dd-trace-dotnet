@@ -1,7 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -13,30 +16,79 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal const string OperationName = "aspnet-coremvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
 
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
+
         private static Action<object, object, object, object> _beforeAction;
         private static Action<object, object, object, object> _afterAction;
 
-        private readonly dynamic _httpContext;
+        private readonly object _httpContext;
         private readonly Scope _scope;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AspNetCoreMvc2Integration"/> class.
         /// </summary>
-        /// <param name="actionDescriptorObj">An ActionDescriptor with information about the current action.</param>
-        /// <param name="httpContextObj">The HttpContext for the current request.</param>
-        public AspNetCoreMvc2Integration(object actionDescriptorObj, object httpContextObj)
+        /// <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
+        /// <param name="httpContext">The HttpContext for the current request.</param>
+        public AspNetCoreMvc2Integration(object actionDescriptor, object httpContext)
         {
             try
             {
-                dynamic actionDescriptor = actionDescriptorObj;
-                var controllerName = (actionDescriptor.ControllerName as string)?.ToLowerInvariant();
-                var actionName = (actionDescriptor.ActionName as string)?.ToLowerInvariant();
+                _httpContext = httpContext;
+                string httpMethod = null;
 
-                _httpContext = httpContextObj;
-                string httpMethod = _httpContext.Request.Method.ToUpperInvariant();
-                string url = GetDisplayUrl(_httpContext.Request).ToLowerInvariant();
+                if (actionDescriptor.TryGetPropertyValue("ControllerName", out string controllerName))
+                {
+                    controllerName = controllerName?.ToLowerInvariant();
+                }
 
-                _scope = Tracer.Instance.StartActive(OperationName);
+                if (actionDescriptor.TryGetPropertyValue("ActionName", out string actionName))
+                {
+                    actionName = actionName?.ToLowerInvariant();
+                }
+
+                if (_httpContext.TryGetPropertyValue("Request", out object request) &&
+                    request.TryGetPropertyValue("Method", out httpMethod))
+                {
+                    httpMethod = httpMethod?.ToUpperInvariant();
+                }
+
+                if (httpMethod == null)
+                {
+                    httpMethod = "UNKNOWN";
+                }
+
+                string url = GetDisplayUrl(request).ToLowerInvariant();
+
+                SpanContext propagatedContext = null;
+
+                if (Tracer.Instance.ActiveScope == null)
+                {
+                    try
+                    {
+                        // extract propagated http headers
+                        if (request.TryGetPropertyValue("Headers", out IEnumerable requestHeaders))
+                        {
+                            var headersCollection = new DictionaryHeadersCollection();
+
+                            foreach (object header in requestHeaders)
+                            {
+                                if (header.TryGetPropertyValue("Key", out string key) &&
+                                    header.TryGetPropertyValue("Value", out IList<string> values))
+                                {
+                                    headersCollection.Add(key, values);
+                                }
+                            }
+
+                            propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                    }
+                }
+
+                _scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
                 var span = _scope.Span;
                 span.Type = SpanTypes.Web;
                 span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
@@ -45,9 +97,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
             }
-            catch
+            catch (Exception) when (DisposeObject(_scope))
             {
-                // TODO: logging
+                // unreachable code
+                throw;
             }
         }
 
@@ -63,22 +116,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
         public static void BeforeAction(
-                                        object diagnosticSource,
-                                        object actionDescriptor,
-                                        dynamic httpContext,
-                                        object routeData)
+            object diagnosticSource,
+            object actionDescriptor,
+            object httpContext,
+            object routeData)
         {
             AspNetCoreMvc2Integration integration = null;
 
             try
             {
                 integration = new AspNetCoreMvc2Integration(actionDescriptor, httpContext);
-                IDictionary<object, object> contextItems = httpContext.Items;
-                contextItems[HttpContextKey] = integration;
+
+                if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                {
+                    contextItems[HttpContextKey] = integration;
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
+                Log.ErrorExceptionForFilter($"Error creating {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
             try
@@ -89,14 +145,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     var type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
                     _beforeAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                                                                                                                          type,
-                                                                                                                          "BeforeAction");
+                        type,
+                        "BeforeAction");
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, we cannot call instrumented method,
                 // profiled app will continue working without DiagnosticSource
+                Log.ErrorException("Error calling Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.BeforeAction()", ex);
             }
 
             try
@@ -104,10 +160,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 _beforeAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
-                integration?.SetException(ex);
-
+                // unreachable code
                 throw;
             }
         }
@@ -124,21 +179,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
         public static void AfterAction(
-                                       object diagnosticSource,
-                                       object actionDescriptor,
-                                       dynamic httpContext,
-                                       object routeData)
+            object diagnosticSource,
+            object actionDescriptor,
+            object httpContext,
+            object routeData)
         {
             AspNetCoreMvc2Integration integration = null;
 
             try
             {
-                IDictionary<object, object> contextItems = httpContext?.Items;
-                integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                {
+                    integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, but continue calling instrumented method
+                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
             try
@@ -148,8 +205,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     var type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
 
                     _afterAction = DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                                                                                                                         type,
-                                                                                                                         "AfterAction");
+                        type,
+                        "AfterAction");
                 }
             }
             catch
@@ -179,9 +236,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
         /// </summary>
         /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
-        public void SetException(Exception ex)
+        /// <returns>Always <c>false</c>.</returns>
+        public bool SetException(Exception ex)
         {
             _scope?.Span?.SetException(ex);
+            return false;
         }
 
         /// <summary>
@@ -191,9 +250,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
-                if (_httpContext != null)
+                if (_httpContext != null &&
+                    _httpContext.TryGetPropertyValue("Response", out object response) &&
+                    response.TryGetPropertyValue("StatusCode", out object statusCode))
                 {
-                    _scope?.Span?.SetTag("http.status_code", _httpContext.Response.StatusCode.ToString());
+                    _scope?.Span?.SetTag("http.status_code", statusCode.ToString());
                 }
             }
             finally
@@ -202,20 +263,44 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static string GetDisplayUrl(dynamic request)
+        private static string GetDisplayUrl(object request)
         {
-            string host = request.Host.Value;
-            string pathBase = request.PathBase.Value;
-            string path = request.Path.Value;
-            string queryString = request.QueryString.Value;
+            if (!request.TryGetPropertyValue("Host", out object hostObject) ||
+                !hostObject.TryGetPropertyValue("Value", out string host))
+            {
+                host = string.Empty;
+            }
 
-            return new StringBuilder(request.Scheme.Length + "://".Length + host.Length + pathBase.Length + path.Length + queryString.Length).Append(request.Scheme)
-                                                                                                                                             .Append("://")
-                                                                                                                                             .Append(host)
-                                                                                                                                             .Append(pathBase)
-                                                                                                                                             .Append(path)
-                                                                                                                                             .Append(queryString)
-                                                                                                                                             .ToString();
+            if (!request.TryGetPropertyValue("PathBase", out object pathBaseObject) ||
+                !pathBaseObject.TryGetPropertyValue("Value", out string pathBase))
+            {
+                pathBase = string.Empty;
+            }
+
+            if (!request.TryGetPropertyValue("Path", out object pathObject) ||
+                !pathObject.TryGetPropertyValue("Value", out string path))
+            {
+                path = string.Empty;
+            }
+
+            if (!request.TryGetPropertyValue("QueryString", out object queryStringObject) ||
+                !queryStringObject.TryGetPropertyValue("Value", out string queryString))
+            {
+                queryString = string.Empty;
+            }
+
+            if (!request.TryGetPropertyValue("Scheme", out string scheme))
+            {
+                scheme = string.Empty;
+            }
+
+            return $"{scheme}://{host}{pathBase}{path}{queryString}";
+        }
+
+        private bool DisposeObject(IDisposable disposable)
+        {
+            disposable?.Dispose();
+            return false;
         }
     }
 }

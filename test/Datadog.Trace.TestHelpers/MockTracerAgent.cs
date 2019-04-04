@@ -17,19 +17,26 @@ namespace Datadog.Trace.TestHelpers
 
         public MockTracerAgent(int port = 8126, int retries = 5)
         {
-            _listener = new HttpListener();
-            bool listening = false;
-
             // try up to 5 consecutive ports before giving up
-            while (!listening)
+            while (true)
             {
-                _listener.Prefixes.Clear();
-                _listener.Prefixes.Add($"http://localhost:{port}/");
+                // seems like we can't reuse a listener if it fails to start,
+                // so create a new listener each time we retry
+                var listener = new HttpListener();
+                listener.Prefixes.Add($"http://localhost:{port}/");
 
                 try
                 {
-                    _listener.Start();
-                    listening = true;
+                    listener.Start();
+
+                    // successfully listening
+                    Port = port;
+                    _listener = listener;
+
+                    _listenerThread = new Thread(HandleHttpRequests);
+                    _listenerThread.Start();
+
+                    return;
                 }
                 catch (HttpListenerException) when (retries > 0)
                 {
@@ -37,11 +44,19 @@ namespace Datadog.Trace.TestHelpers
                     port++;
                     retries--;
                 }
-            }
 
-            _listenerThread = new Thread(HandleHttpRequests);
-            _listenerThread.Start();
+                // always close listener if exception is thrown,
+                // whether it was caught or not
+                listener.Close();
+            }
         }
+
+        /// <summary>
+        /// Gets the TCP port that this Agent is listening on.
+        /// Can be different from <see cref="MockTracerAgent(int, int)"/>'s <c>initialPort</c>
+        /// parameter if listening on that port fails.
+        /// </summary>
+        public int Port { get; }
 
         public IImmutableList<Span> Spans { get; private set; } = ImmutableList<Span>.Empty;
 
