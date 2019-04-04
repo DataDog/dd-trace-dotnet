@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             await AssertHttpSpan(
                 path,
-                _iisFixture.AgentPort,
+                _iisFixture.Agent,
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
                 SpanTypes.Web,
