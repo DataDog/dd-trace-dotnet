@@ -44,9 +44,9 @@ namespace Datadog.Trace.Configuration
 
             ServiceName = source.GetString(ConfigurationKeys.ServiceName);
 
-            TraceEnabled = source.GetBool(ConfigurationKeys.DebugEnabled) ??
+            TraceEnabled = source.GetBool(ConfigurationKeys.TraceEnabled) ??
                            // default value
-                           false;
+                           true;
 
             DebugEnabled = source.GetBool(ConfigurationKeys.DebugEnabled) ??
                            // default value
