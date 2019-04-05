@@ -136,5 +136,10 @@ namespace Datadog.Trace
         /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserKeep"/>.
         /// </summary>
         public const string ForceKeep = "force.keep";
+
+        /// <summary>
+        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserReject"/>.
+        /// </summary>
+        public const string ForceDrop = "force.drop";
     }
 }
