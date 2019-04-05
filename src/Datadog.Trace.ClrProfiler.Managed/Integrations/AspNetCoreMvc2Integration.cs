@@ -59,10 +59,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 string url = GetDisplayUrl(request).ToLowerInvariant();
-
                 SpanContext propagatedContext = null;
+                var tracer = Tracer.Instance;
 
-                if (Tracer.Instance.ActiveScope == null)
+                if (tracer.ActiveScope == null)
                 {
                     try
                     {
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                _scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
+                _scope = tracer.StartActive(OperationName, propagatedContext);
                 var span = _scope.Span;
 
                 span.Type = SpanTypes.Web;
