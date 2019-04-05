@@ -174,6 +174,27 @@ namespace Datadog.Trace
                     }
 
                     break;
+                case Trace.Tags.Analytics:
+                    var boolean = value.ToBoolean();
+
+                    if (boolean == true)
+                    {
+                        SetMetric(Trace.Tags.Analytics, 1.0);
+                    }
+                    else if (boolean == false)
+                    {
+                        SetMetric(Trace.Tags.Analytics, null);
+                    }
+                    else if (double.TryParse(
+                        value,
+                        NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
+                        CultureInfo.InvariantCulture,
+                        out double analyticsSampleRate))
+                    {
+                        SetMetric(Trace.Tags.Analytics, analyticsSampleRate);
+                    }
+
+                    break;
                 default:
                     // if not a special tag, just add it to the tag bag
                     Tags[key] = value;
