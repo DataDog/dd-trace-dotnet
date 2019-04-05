@@ -1,7 +1,5 @@
 # .NET Tracer for Datadog APM
 
-**NOTE: The .NET Tracer is currently in Public Beta.**
-
 ## Installation and Usage
 
 Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for instructions on setting up .NET tracing and details about supported frameworks.
