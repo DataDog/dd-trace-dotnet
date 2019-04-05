@@ -69,10 +69,10 @@ namespace Datadog.Trace.Configuration
 
             AgentUri = new Uri(agentUri);
 
-            AnalyticsEnabled = source.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
+            AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
                                false;
 
-            AnalyticsSampleRate = source.GetDouble(ConfigurationKeys.GlobalAnalyticsSampleRate) ??
+            AnalyticsSampleRate = source?.GetDouble(ConfigurationKeys.GlobalAnalyticsSampleRate) ??
                                   1.0;
 
             IntegrationSettings = new IntegrationSettingsCollection(source);
