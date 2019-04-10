@@ -62,13 +62,6 @@ namespace Datadog.Trace.ClrProfiler.Models
             DependencyFactory.SpanDecorationService(this).Decorate(Scope.Span, this);
         }
 
-        public override void OnEnd()
-        {
-            var x = _httpRequestMessageProperty.Headers;
-
-            base.OnEnd();
-        }
-
         public override IEnumerable<KeyValuePair<string, string>> GetTags()
             => HttpSpanTagsProducer.Instance.GetTags(this);
 
