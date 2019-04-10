@@ -1,7 +1,5 @@
 # .NET Tracer for Datadog APM
 
-**NOTE: The .NET Tracer is currently in Public Beta.**
-
 ## Installation and Usage
 
 Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for instructions on setting up .NET tracing and details about supported frameworks.
@@ -28,7 +26,7 @@ Linux integration tests        | [![Build Status](https://dev.azure.com/datadog-
 
 ### The Components
 
-**[Datadog Trace Agent](https://github.com/DataDog/datadog-trace-agent)**: A service that runs on your application servers, accepting trace data from the Datadog Tracer and sending it to Datadog. The Trace Agent is not part of this repo; it's the same Trace Agent to which all Datadog tracers (e.g. Go, Python, Java, Ruby) send data.
+**[Datadog Agent](https://github.com/DataDog/datadog-agent)**: A service that runs on your application servers, accepting trace data from the Datadog Tracer and sending it to Datadog. The Agent is not part of this repo; it's the same Agent to which all Datadog tracers (e.g. Go, Python, Java, Ruby) send data.
 
 **[Datadog .NET Tracer](https://github.com/DataDog/dd-trace-dotnet)**: This repository. A set of .NET libraries that let you trace any piece of your .NET code. Supports manual instrumentation and can automatically instrument supported libraries out-of-the-box.
 
