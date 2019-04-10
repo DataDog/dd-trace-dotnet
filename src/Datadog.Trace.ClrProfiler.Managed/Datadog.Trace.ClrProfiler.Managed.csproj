@@ -25,6 +25,7 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Web" />
+    <Reference Include="System.ServiceModel" />
   </ItemGroup>
 
 </Project>
