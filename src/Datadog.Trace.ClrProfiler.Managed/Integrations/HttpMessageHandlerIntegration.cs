@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
