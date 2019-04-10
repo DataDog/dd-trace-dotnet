@@ -165,6 +165,14 @@ namespace Datadog.Trace
                     }
 
                     break;
+                case Trace.Tags.ForceDrop:
+                    if (value.ToBoolean() ?? false)
+                    {
+                        // user-friendly tag to set UserReject priority
+                        Context.TraceContext.SamplingPriority = SamplingPriority.UserReject;
+                    }
+
+                    break;
                 default:
                     // if not a special tag, just add it to the tag bag
                     Tags[key] = value;
