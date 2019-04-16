@@ -155,5 +155,10 @@ namespace Datadog.Trace
         /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserReject"/>.
         /// </summary>
         public const string ManualDrop = "manual.drop";
+
+        /// <summary>
+        /// Configures Trace Analytics.
+        /// </summary>
+        public const string Analytics = "_dd1.sr.eausr";
     }
 }

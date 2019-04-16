@@ -9,6 +9,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// </summary>
     public static class ConnectionMultiplexer
     {
+        private const string IntegrationName = "StackExchangeRedis";
+
         /// <summary>
         /// Execute a synchronous redis operation.
         /// </summary>
@@ -19,12 +21,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server to call.</param>
         /// <returns>The result</returns>
         [InterceptMethod(
-            Integration = "StackExchangeRedis",
+            Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
         [InterceptMethod(
-            Integration = "StackExchangeRedis",
+            Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis.StrongName",
             TargetAssembly = "StackExchange.Redis.StrongName",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
@@ -69,12 +71,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server to call.</param>
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
-            Integration = "StackExchangeRedis",
+            Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
         [InterceptMethod(
-            Integration = "StackExchangeRedis",
+            Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis.StrongName",
             TargetAssembly = "StackExchange.Redis.StrongName",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
@@ -130,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(config);
             var rawCommand = StackExchangeRedisHelper.GetRawCommand(multiplexer, message);
 
-            return RedisHelper.CreateScope(hostAndPort.Item1, hostAndPort.Item2, rawCommand);
+            return RedisHelper.CreateScope(Tracer.Instance, IntegrationName, hostAndPort.Item1, hostAndPort.Item2, rawCommand);
         }
     }
 }

@@ -10,9 +10,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(RedisHelper));
 
-        internal static Scope CreateScope(string host, string port, string rawCommand)
+        internal static Scope CreateScope(Tracer tracer, string integrationName, string host, string port, string rawCommand)
         {
-            Tracer tracer = Tracer.Instance;
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationName))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
             Scope scope = null;
 
@@ -31,11 +36,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     command = rawCommand;
                 }
 
-                scope.Span.Type = SpanTypes.Redis;
-                scope.Span.ResourceName = command;
-                scope.Span.SetTag(Tags.RedisRawCommand, rawCommand);
-                scope.Span.SetTag(Tags.OutHost, host);
-                scope.Span.SetTag(Tags.OutPort, port);
+                var span = scope.Span;
+                span.Type = SpanTypes.Redis;
+                span.ResourceName = command;
+                span.SetTag(Tags.RedisRawCommand, rawCommand);
+                span.SetTag(Tags.OutHost, host);
+                span.SetTag(Tags.OutPort, port);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
             }
             catch (Exception ex)
             {

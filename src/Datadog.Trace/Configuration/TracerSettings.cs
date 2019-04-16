@@ -68,6 +68,11 @@ namespace Datadog.Trace.Configuration
                            $"http://{agentHost}:{agentPort}";
 
             AgentUri = new Uri(agentUri);
+
+            AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
+                               false;
+
+            Integrations = new IntegrationSettingsCollection(source);
         }
 
         /// <summary>
@@ -112,6 +117,20 @@ namespace Datadog.Trace.Configuration
         public Uri AgentUri { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether default Analytics are enabled.
+        /// Settings this value is a shortcut for setting
+        /// <see cref="Configuration.IntegrationSettings.AnalyticsEnabled"/> on some predetermined integrations.
+        /// See the documentation for more details.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
+        public bool AnalyticsEnabled { get; set; }
+
+        /// <summary>
+        /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
+        /// </summary>
+        public IntegrationSettingsCollection Integrations { get; }
+
+        /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.
         /// </summary>
@@ -151,6 +170,20 @@ namespace Datadog.Trace.Configuration
             }
 
             return configurationSource;
+        }
+
+        internal bool IsIntegrationEnabled(string name)
+        {
+            return TraceEnabled &&
+                   Integrations[name].Enabled != false &&
+                   !DisabledIntegrationNames.Contains(name);
+        }
+
+        internal double? GetIntegrationAnalyticsSampleRate(string name, bool enabledWithGlobalSetting)
+        {
+            var integrationSettings = Integrations[name];
+            var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
+            return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : null;
         }
     }
 }

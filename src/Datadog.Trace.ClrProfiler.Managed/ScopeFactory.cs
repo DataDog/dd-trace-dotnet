@@ -16,17 +16,23 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Creates a scope for outbound http requests and populates some common details.
         /// </summary>
+        /// <param name="tracer">The tracer instance to use to create the new scope.</param>
         /// <param name="httpMethod">The HTTP method used by the request.</param>
         /// <param name="requestUri">The URI requested by the request.</param>
         /// <param name="integrationName">The name of the integration creating this scope.</param>
         /// <returns>A new prepopulated scope.</returns>
-        public static Scope CreateOutboundHttpScope(string httpMethod, Uri requestUri, string integrationName)
+        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, string integrationName)
         {
+            if (!tracer.Settings.IsIntegrationEnabled(integrationName))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
             Scope scope = null;
 
             try
             {
-                var tracer = Tracer.Instance;
                 scope = tracer.StartActive(OperationName);
                 var span = scope.Span;
 
@@ -37,6 +43,10 @@ namespace Datadog.Trace.ClrProfiler
                 span.SetTag(Tags.HttpMethod, httpMethod);
                 span.SetTag(Tags.HttpUrl, requestUri.OriginalString);
                 span.SetTag(Tags.InstrumentationName, integrationName);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
             }
             catch (Exception ex)
             {

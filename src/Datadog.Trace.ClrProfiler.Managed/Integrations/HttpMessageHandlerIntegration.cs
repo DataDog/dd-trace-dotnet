@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class HttpMessageHandlerIntegration
     {
-        // internal readonly  string Name = nameof(HttpMessageHandlerIntegration).Substring(0, )
+        private const string IntegrationName = "HttpMessageHandler";
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="HttpMessageHandler.SendAsync"/>.
@@ -68,9 +68,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             string httpMethod = request.Method.ToString().ToUpperInvariant();
-            string integrationName = typeof(HttpMessageHandlerIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(httpMethod, request.RequestUri, integrationName))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, request.RequestUri, IntegrationName))
             {
                 try
                 {

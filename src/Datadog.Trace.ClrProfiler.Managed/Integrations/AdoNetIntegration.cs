@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class AdoNetIntegration
     {
+        private const string IntegrationName = "AdoNet";
+
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AdoNetIntegration));
 
         /// <summary>
@@ -103,6 +105,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
+                Tracer tracer = Tracer.Instance;
+
+                if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+                {
+                    // integration disabled, don't create a scope, skip this trace
+                    return null;
+                }
+
                 string dbType = GetDbType(command.GetType().Name);
 
                 if (dbType == null)
@@ -111,13 +121,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return null;
                 }
 
-                Tracer tracer = Tracer.Instance;
                 string serviceName = $"{tracer.DefaultServiceName}-{dbType}";
                 string operationName = $"{dbType}.query";
 
                 scope = tracer.StartActive(operationName, serviceName: serviceName);
-                scope.Span.SetTag(Tags.DbType, dbType);
-                scope.Span.AddTagsFromDbCommand(command);
+                var span = scope.Span;
+                span.SetTag(Tags.DbType, dbType);
+                span.AddTagsFromDbCommand(command);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
             }
             catch (Exception ex)
             {

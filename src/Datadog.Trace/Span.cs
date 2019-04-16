@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
@@ -177,6 +178,38 @@ namespace Datadog.Trace
 
                     break;
 #pragma warning restore CS0618 // Type or member is obsolete
+                case Trace.Tags.Analytics:
+                    // value is a string and can represent a bool ("true") or a double ("0.5"),
+                    // so try to parse both.
+                    // note that "1" and "0" can parse as either type,
+                    // but they mean the same thing in this case, so it's fine.
+                    bool? boolean = value.ToBoolean();
+
+                    if (boolean == true)
+                    {
+                        // always sample
+                        SetMetric(Trace.Tags.Analytics, 1.0);
+                    }
+                    else if (boolean == false)
+                    {
+                        // never sample
+                        SetMetric(Trace.Tags.Analytics, 0.0);
+                    }
+                    else if (double.TryParse(
+                        value,
+                        NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite,
+                        CultureInfo.InvariantCulture,
+                        out double analyticsSampleRate))
+                    {
+                        // use specified sample rate
+                        SetMetric(Trace.Tags.Analytics, analyticsSampleRate);
+                    }
+                    else
+                    {
+                        Log.Warn("Value {0} has incorrect format for tag {1}", value, Trace.Tags.Analytics);
+                    }
+
+                    break;
                 default:
                     // if not a special tag, just add it to the tag bag
                     Tags[key] = value;

@@ -70,5 +70,32 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.AgentUri"/>
         public const string AgentUri = "DD_TRACE_AGENT_URL";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling default Analytics.
+        /// </summary>
+        /// <seealso cref="TracerSettings.AnalyticsEnabled"/>
+        public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
+
+        /// <summary>
+        /// String format patterns used to match integration-specific configuration keys.
+        /// </summary>
+        public static class Integrations
+        {
+            /// <summary>
+            /// Configuration key pattern for enabling or disabling an integration.
+            /// </summary>
+            public const string Enabled = "DD_{0}_ENABLED";
+
+            /// <summary>
+            /// Configuration key pattern for enabling or disabling Analytics in an integration.
+            /// </summary>
+            public const string AnalyticsEnabled = "DD_{0}_ANALYTICS_ENABLED";
+
+            /// <summary>
+            /// Configuration key pattern for setting Analytics sampling rate in an integration.
+            /// </summary>
+            public const string AnalyticsSampleRate = "DD_{0}_ANALYTICS_SAMPLE_RATE";
+        }
     }
 }
