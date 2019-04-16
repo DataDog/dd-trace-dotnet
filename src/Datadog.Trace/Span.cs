@@ -175,14 +175,20 @@ namespace Datadog.Trace
 
                     break;
                 case Trace.Tags.Analytics:
-                    var boolean = value.ToBoolean();
+                    // value is a string and can represent a bool ("true") or a double ("0.5"),
+                    // so try to parse both.
+                    // note that "1" and "0" can parse as either types,
+                    // but they mean the same thing in this case, so it's fine.
+                    bool? boolean = value.ToBoolean();
 
                     if (boolean == true)
                     {
+                        // always sample
                         SetMetric(Trace.Tags.Analytics, 1.0);
                     }
                     else if (boolean == false)
                     {
+                        // never sample, remove the metric
                         SetMetric(Trace.Tags.Analytics, null);
                     }
                     else if (double.TryParse(
@@ -191,6 +197,7 @@ namespace Datadog.Trace
                         CultureInfo.InvariantCulture,
                         out double analyticsSampleRate))
                     {
+                        // use specified sample rate
                         SetMetric(Trace.Tags.Analytics, analyticsSampleRate);
                     }
 

@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             if (Tracer.Instance.Settings.IsIntegrationEnabled(AspNetHttpModule.IntegrationName))
             {
+                // only register http module if integration is enabled
                 HttpApplication.RegisterModule(typeof(AspNetHttpModule));
             }
         }

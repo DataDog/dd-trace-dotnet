@@ -84,22 +84,22 @@ namespace Datadog.Trace.Configuration
         public const string GlobalAnalyticsSampleRate = "DD_TRACE_ANALYTICS_SAMPLE_RATE";
 
         /// <summary>
-        /// Regular expressions used to match integration-specific configuration keys.
+        /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations
         {
             /// <summary>
-            /// Configuration key regex for enabling or disabling an integration.
+            /// Configuration key pattern for enabling or disabling an integration.
             /// </summary>
             public const string Enabled = "DD_{0}_ENABLED";
 
             /// <summary>
-            /// Configuration key regex for enabling or disabling Analytics in an integration.
+            /// Configuration key pattern for enabling or disabling Analytics in an integration.
             /// </summary>
             public const string AnalyticsEnabled = "DD_{0}_ANALYTICS_ENABLED";
 
             /// <summary>
-            /// Configuration key regex for Analytics sampling rate in an integration.
+            /// Configuration key pattern for setting Analytics sampling rate in an integration.
             /// </summary>
             public const string AnalyticsSampleRate = "DD_{0}_ANALYTICS_SAMPLE_RATE";
         }

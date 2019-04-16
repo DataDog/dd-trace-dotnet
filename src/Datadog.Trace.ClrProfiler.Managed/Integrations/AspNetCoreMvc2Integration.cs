@@ -131,6 +131,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
+                // integration disabled
                 return;
             }
 
@@ -199,6 +200,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
+                // integration disabled
                 return;
             }
 
