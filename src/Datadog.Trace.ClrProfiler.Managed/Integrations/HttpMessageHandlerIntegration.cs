@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            var executeAsync = DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
+            var executeAsync = Emit.DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
                .GetOrCreateMethodCallDelegate(
                     handler.GetType(),
                     nameof(SendAsync));

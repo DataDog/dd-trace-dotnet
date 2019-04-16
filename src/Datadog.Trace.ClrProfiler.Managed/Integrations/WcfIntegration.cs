@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1119:StatementMustNotUseUnnecessaryParenthesis", Justification = "Actually Needed")]
         public static bool HandleRequest(object thisObj, object requestContext, object currentOperationContext)
         {
-            var handleRequestDelegate = DynamicMethodBuilder<Func<object, object, object, bool>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "HandleRequest");
+            var handleRequestDelegate = Emit.DynamicMethodBuilder<Func<object, object, object, bool>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "HandleRequest");
 
             if (!(requestContext is RequestContext castRequestContext))
             {

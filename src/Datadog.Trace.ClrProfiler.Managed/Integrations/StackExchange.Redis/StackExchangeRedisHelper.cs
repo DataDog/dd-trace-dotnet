@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             {
                 if (_getConfigurationMethod == null)
                 {
-                    _getConfigurationMethod = DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(multiplexer.GetType(), "get_Configuration");
+                    _getConfigurationMethod = Emit.DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(multiplexer.GetType(), "get_Configuration");
                 }
 
                 return _getConfigurationMethod(multiplexer);
@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 {
                     var asm = multiplexer.GetType().Assembly;
                     var messageType = asm.GetType("StackExchange.Redis.Message");
-                    _getCommandAndKeyMethod = DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(messageType, "get_CommandAndKey");
+                    _getCommandAndKeyMethod = Emit.DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(messageType, "get_CommandAndKey");
                 }
 
                 cmdAndKey = _getCommandAndKeyMethod(message);

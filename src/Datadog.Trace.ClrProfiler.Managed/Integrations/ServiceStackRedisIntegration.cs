@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "ServiceStack.Redis.RedisNativeClient")]
         public static T SendReceive<T>(object redisNativeClient, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead)
         {
-            var originalMethod = DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>
+            var originalMethod = Emit.DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>
                .GetOrCreateMethodCallDelegate(
                     redisNativeClient.GetType(),
                     "SendReceive",

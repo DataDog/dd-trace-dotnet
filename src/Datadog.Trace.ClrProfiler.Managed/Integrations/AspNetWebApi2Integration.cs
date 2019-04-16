@@ -53,9 +53,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // in some cases, ExecuteAsync() is an explicit interface implementation,
             // which is not public and has a different name, so try both
             var executeAsyncFunc =
-                DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
+                Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
                    .GetOrCreateMethodCallDelegate(controllerType, "ExecuteAsync") ??
-                DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
+                Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
                    .GetOrCreateMethodCallDelegate(controllerType, "System.Web.Http.Controllers.IHttpController.ExecuteAsync");
 
             using (Scope scope = CreateScope(controllerContext))
