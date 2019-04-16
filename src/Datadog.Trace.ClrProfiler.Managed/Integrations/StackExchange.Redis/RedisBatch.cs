@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(genericType);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, Task<T>>>
+            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, Task<T>>>
                .CreateMethodCallDelegate(
                     thisType,
                     "ExecuteAsync",

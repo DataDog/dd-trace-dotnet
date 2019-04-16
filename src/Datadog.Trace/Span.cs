@@ -158,7 +158,9 @@ namespace Datadog.Trace
                     }
 
                     break;
+#pragma warning disable CS0618 // Type or member is obsolete
                 case Trace.Tags.ForceKeep:
+                case Trace.Tags.ManualKeep:
                     if (value.ToBoolean() ?? false)
                     {
                         // user-friendly tag to set UserKeep priority
@@ -167,6 +169,7 @@ namespace Datadog.Trace
 
                     break;
                 case Trace.Tags.ForceDrop:
+                case Trace.Tags.ManualDrop:
                     if (value.ToBoolean() ?? false)
                     {
                         // user-friendly tag to set UserReject priority
@@ -174,6 +177,7 @@ namespace Datadog.Trace
                     }
 
                     break;
+#pragma warning restore CS0618 // Type or member is obsolete
                 case Trace.Tags.Analytics:
                     // value is a string and can represent a bool ("true") or a double ("0.5"),
                     // so try to parse both.

@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var command = (DbCommand)@this;
             var commandBehavior = (CommandBehavior)behavior;
 
-            var executeReader = DynamicMethodBuilder<Func<object, CommandBehavior, object>>
+            var executeReader = Emit.DynamicMethodBuilder<Func<object, CommandBehavior, object>>
                .GetOrCreateMethodCallDelegate(
                     command.GetType(),
                     "ExecuteDbDataReader");
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static async Task<object> ExecuteDbDataReaderAsyncInternal(DbCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
         {
-            var executeReader = DynamicMethodBuilder<Func<object, CommandBehavior, CancellationToken, Task<object>>>
+            var executeReader = Emit.DynamicMethodBuilder<Func<object, CommandBehavior, CancellationToken, Task<object>>>
                .GetOrCreateMethodCallDelegate(
                     command.GetType(),
                     "ExecuteDbDataReaderAsync");

@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, T>>
+            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, T>>
                .CreateMethodCallDelegate(
                     multiplexerType,
                     "ExecuteSyncImpl",
@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var stateType = typeof(object);
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>
+            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>
                .CreateMethodCallDelegate(
                     multiplexerType,
                     "ExecuteAsyncImpl",
