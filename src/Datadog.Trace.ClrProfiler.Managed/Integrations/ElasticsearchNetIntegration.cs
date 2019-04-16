@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "Elasticsearch.Net.IRequestPipeline")]
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData)
         {
-            var originalMethod = DynamicMethodBuilder<Func<object, object, TResponse>>
+            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, TResponse>>
                .GetOrCreateMethodCallDelegate(
                     pipeline.GetType(),
                     "CallElasticsearch",
@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 _requestDataType = requestData.GetType();
             }
 
-            var originalMethod = DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
+            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
                .GetOrCreateMethodCallDelegate(
                     pipeline.GetType(),
                     "CallElasticsearchAsync",
@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string requestName = null;
             try
             {
-                var requestParameters = DynamicMethodBuilder<Func<object, object>>
+                var requestParameters = Emit.DynamicMethodBuilder<Func<object, object>>
                    .GetOrCreateMethodCallDelegate(
                         pipeline.GetType(),
                         "get_RequestParameters")(pipeline);

@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 if (!(thisObj is HttpApplication httpApplication))
                 {
-                    var initMethodAction = DynamicMethodBuilder<Action<object>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "Init");
+                    var initMethodAction = Emit.DynamicMethodBuilder<Action<object>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "Init");
 
                     initMethodAction(thisObj);
 
