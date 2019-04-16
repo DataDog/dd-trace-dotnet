@@ -1,3 +1,5 @@
+using System;
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -133,13 +135,25 @@ namespace Datadog.Trace
         public const string SamplingPriority = "sampling.priority";
 
         /// <summary>
+        /// Obsolete. Use <see cref="ManualKeep"/>.
+        /// </summary>
+        [Obsolete("This field will be removed in futures versions of this library. Use ManualKeep instead.")]
+        public const string ForceKeep = "force.keep";
+
+        /// <summary>
+        /// Obsolete. Use <see cref="ManualDrop"/>.
+        /// </summary>
+        [Obsolete("This field will be removed in futures versions of this library. Use ManualDrop instead.")]
+        public const string ForceDrop = "force.drop";
+
+        /// <summary>
         /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserKeep"/>.
         /// </summary>
-        public const string ForceKeep = "force.keep";
+        public const string ManualKeep = "manual.keep";
 
         /// <summary>
         /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserReject"/>.
         /// </summary>
-        public const string ForceDrop = "force.drop";
+        public const string ManualDrop = "manual.drop";
     }
 }
