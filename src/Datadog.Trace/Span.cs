@@ -177,7 +177,7 @@ namespace Datadog.Trace
                 case Trace.Tags.Analytics:
                     // value is a string and can represent a bool ("true") or a double ("0.5"),
                     // so try to parse both.
-                    // note that "1" and "0" can parse as either types,
+                    // note that "1" and "0" can parse as either type,
                     // but they mean the same thing in this case, so it's fine.
                     bool? boolean = value.ToBoolean();
 
