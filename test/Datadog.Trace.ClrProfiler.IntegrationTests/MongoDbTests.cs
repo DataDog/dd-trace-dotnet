@@ -21,8 +21,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(3);
-                Assert.True(spans.Count >= 3, "expected at least three spans");
+                var spans = agent.WaitForSpans(3, 500);
+                Assert.True(spans.Count >= 3, $"Expecting at least 3 spans, only received {spans.Count}");
 
                 var firstSpan = spans[0];
 
