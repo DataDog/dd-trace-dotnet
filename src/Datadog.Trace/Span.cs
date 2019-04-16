@@ -188,8 +188,8 @@ namespace Datadog.Trace
                     }
                     else if (boolean == false)
                     {
-                        // never sample, remove the metric
-                        SetMetric(Trace.Tags.Analytics, null);
+                        // never sample
+                        SetMetric(Trace.Tags.Analytics, 0.0);
                     }
                     else if (double.TryParse(
                         value,
