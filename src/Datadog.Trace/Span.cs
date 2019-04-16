@@ -200,6 +200,10 @@ namespace Datadog.Trace
                         // use specified sample rate
                         SetMetric(Trace.Tags.Analytics, analyticsSampleRate);
                     }
+                    else
+                    {
+                        Log.Warn("Value {0} has incorrect format for tag {1}", value, Trace.Tags.Analytics);
+                    }
 
                     break;
                 default:
