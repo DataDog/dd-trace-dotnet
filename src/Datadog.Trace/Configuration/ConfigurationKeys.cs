@@ -78,12 +78,6 @@ namespace Datadog.Trace.Configuration
         public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
 
         /// <summary>
-        /// Configuration key for the default Analytics sampling rate.
-        /// </summary>
-        /// <seealso cref="TracerSettings.AnalyticsSampleRate"/>
-        public const string GlobalAnalyticsSampleRate = "DD_TRACE_ANALYTICS_SAMPLE_RATE";
-
-        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations

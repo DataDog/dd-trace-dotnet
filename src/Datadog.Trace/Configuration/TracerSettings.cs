@@ -72,9 +72,6 @@ namespace Datadog.Trace.Configuration
             AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
                                false;
 
-            AnalyticsSampleRate = source?.GetDouble(ConfigurationKeys.GlobalAnalyticsSampleRate) ??
-                                  1.0;
-
             Integrations = new IntegrationSettingsCollection(source);
         }
 
@@ -127,14 +124,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
         public bool AnalyticsEnabled { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value between 0 and 1 (inclusive) that determines
-        /// the default sampling rate for all integrations where
-        /// <see cref="Configuration.IntegrationSettings.AnalyticsSampleRate"/> is not explicitly set.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.GlobalAnalyticsSampleRate"/>
-        public double AnalyticsSampleRate { get; set; }
 
         /// <summary>
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
@@ -194,11 +183,7 @@ namespace Datadog.Trace.Configuration
         {
             var integrationSettings = Integrations[name];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
-            var sampleRate = integrationSettings.AnalyticsSampleRate ?? AnalyticsSampleRate;
-
-            return analyticsEnabled
-                       ? sampleRate
-                       : (double?)null;
+            return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : null;
         }
     }
 }
