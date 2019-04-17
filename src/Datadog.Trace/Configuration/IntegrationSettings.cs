@@ -25,7 +25,8 @@ namespace Datadog.Trace.Configuration
 
             AnalyticsEnabled = source.GetBool(string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName));
 
-            AnalyticsSampleRate = source.GetDouble(string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName));
+            AnalyticsSampleRate = source.GetDouble(string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName)) ??
+                                  1.0;
         }
 
         /// <summary>
@@ -49,6 +50,6 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value between 0 and 1 (inclusive)
         /// that determines the sampling rate for this integration.
         /// </summary>
-        public double? AnalyticsSampleRate { get; set; }
+        public double AnalyticsSampleRate { get; set; }
     }
 }
