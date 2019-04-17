@@ -6,11 +6,11 @@ services:
     ports:
     - "6379:6379"
 
-  mongo:
-    image: mongo
-    restart: always
+  mongosample:
+    image: mongo:4.0.9
     ports:
-    - "27017:27017"
+      - "27017:27017"
+    command: mongod
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
@@ -114,6 +114,7 @@ services:
     volumes:
     - ./:/project
     environment:
+    - MONGO_HOST=mongosample
     - REDIS_HOST=redis
     - ELASTICSEARCH_HOST=elasticsearch
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
@@ -121,4 +122,4 @@ services:
     - redis
     - elasticsearch
     - sqlserver
-    - mongo
+    - mongosample
