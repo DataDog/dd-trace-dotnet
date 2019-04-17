@@ -39,7 +39,7 @@ namespace Datadog.Trace.TestHelpers.HttpMessageHandlers
             .Select(x => Unpacking.UnpackObject(x.Item2).Value.AsDictionary())
             .ToList();
 
-        public List<HttpResponseMessage> Responses { get; set;  }
+        public List<HttpResponseMessage> Responses { get; set; }
 
         public Task<bool> WaitForCompletion(int target, TimeSpan? timeout = null)
         {
@@ -55,8 +55,8 @@ namespace Datadog.Trace.TestHelpers.HttpMessageHandlers
                 {
                     _target = target;
                     _tcs = new TaskCompletionSource<bool>();
-                    var cancelationSource = new CancellationTokenSource(timeout.Value);
-                    cancelationSource.Token.Register(() => _tcs?.SetException(new TimeoutException()));
+                    var cancellationSource = new CancellationTokenSource(timeout.Value);
+                    cancellationSource.Token.Register(() => _tcs?.SetException(new TimeoutException()));
                     return _tcs.Task;
                 }
                 else

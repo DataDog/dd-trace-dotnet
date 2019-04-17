@@ -10,6 +10,11 @@ namespace Samples.MongoDB
 {
     public static class Program
     {
+        private static string Host()
+        {
+            return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
+        }
+
         public static void Main(string[] args)
         {
             Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
@@ -32,7 +37,8 @@ namespace Samples.MongoDB
 
             using (var mainScope = Tracer.Instance.StartActive("Main()", serviceName: "Samples.MongoDB"))
             {
-                var client = new MongoClient();
+                var connectionString = $"mongodb://{Host()}:27017";
+                var client = new MongoClient(connectionString);
                 var database = client.GetDatabase("test-db");
                 var collection = database.GetCollection<BsonDocument>("employees");
 

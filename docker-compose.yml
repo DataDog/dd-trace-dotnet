@@ -6,6 +6,12 @@ services:
     ports:
     - "6379:6379"
 
+  mongosample:
+    image: mongo:4.0.9
+    ports:
+      - "27017:27017"
+    command: mongod
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
     ports:
@@ -88,6 +94,17 @@ services:
     depends_on:
     - sqlserver
 
+  Samples.MongoDB:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mongosample:27017 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/Release/netcoreapp2.1/publish/Samples.MongoDB.dll"
+    volumes:
+    - ./:/project
+    depends_on:
+    - mongosample
+
   Datadog.Trace.ClrProfiler.IntegrationTests:
     build:
       context: ./
@@ -97,6 +114,7 @@ services:
     volumes:
     - ./:/project
     environment:
+    - MONGO_HOST=mongosample
     - REDIS_HOST=redis
     - ELASTICSEARCH_HOST=elasticsearch
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
@@ -104,3 +122,4 @@ services:
     - redis
     - elasticsearch
     - sqlserver
+    - mongosample
