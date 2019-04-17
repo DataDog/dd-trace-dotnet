@@ -99,11 +99,11 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mongo:27017 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/Release/netcoreapp2.1/publish/Samples.MongoDB.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mongosample:27017 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/Release/netcoreapp2.1/publish/Samples.MongoDB.dll"
     volumes:
     - ./:/project
     depends_on:
-    - mongo
+    - mongosample
 
   Datadog.Trace.ClrProfiler.IntegrationTests:
     build:
