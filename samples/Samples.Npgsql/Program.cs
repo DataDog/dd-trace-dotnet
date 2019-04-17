@@ -8,13 +8,18 @@ namespace Samples.Npgsql
 {
     public static class Program
     {
+        private static string Host()
+        {
+            return Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
+        }
+
         public static void Main(string[] args)
         {
             Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
             Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
             Console.WriteLine();
 
-            using (var conn = new NpgsqlConnection("Host=localhost;Username=postgres;Password=postgres;Database=postgres"))
+            using (var conn = new NpgsqlConnection($"Host={Host()};Username=postgres;Password=postgres;Database=postgres"))
             {
                 conn.Open();
 

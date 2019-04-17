@@ -20,6 +20,15 @@ services:
     environment:
     - discovery.type=single-node
 
+  postgres_sample:
+    image: postgres:10.5-alpine
+    environment:
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=postgres
+    ports:
+    - "127.0.0.1:5432:5432"
+    
   sqlserver:
     image: microsoft/mssql-server-linux:latest
     ports:
@@ -93,6 +102,19 @@ services:
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
     depends_on:
     - sqlserver
+    
+  Samples.NpgSql:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it postgres_sample:5432 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.NpgSql/bin/Release/netcoreapp2.1/publish/Samples.NpgSql.dll"
+    volumes:
+    - ./:/project
+    environment:
+    - POSTGRES_HOST=postgres_sample
+    depends_on:
+    - postgres_sample
 
   Samples.MongoDB:
     build:
@@ -118,8 +140,10 @@ services:
     - REDIS_HOST=redis
     - ELASTICSEARCH_HOST=elasticsearch
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
+    - POSTGRES_HOST=postgres_sample
     depends_on:
     - redis
     - elasticsearch
     - sqlserver
     - mongosample
+    - postgres_sample
