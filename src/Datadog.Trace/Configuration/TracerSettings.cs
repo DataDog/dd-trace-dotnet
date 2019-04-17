@@ -183,7 +183,7 @@ namespace Datadog.Trace.Configuration
         {
             var integrationSettings = Integrations[name];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
-            return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : null;
+            return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }
     }
 }
