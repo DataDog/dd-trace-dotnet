@@ -8,20 +8,44 @@ namespace Samples.Npgsql
 {
     public static class Program
     {
+        private static string Host()
+        {
+            return Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
+        }
+
+        private static string ConnectionString(string database)
+        {
+            return $"Host={Host()};Username=postgres;Password=postgres;Database={database}";
+        }
+
         public static void Main(string[] args)
         {
             Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
             Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
             Console.WriteLine();
 
-            using (var conn = new NpgsqlConnection("Host=localhost;Username=postgres;Password=postgres;Database=postgres"))
+            using (var conn = new NpgsqlConnection(ConnectionString("postgres")))
             {
                 conn.Open();
+
+                using (var createTable = conn.CreateCommand())
+                {
+                    createTable.CommandText = @"
+    DROP TABLE IF EXISTS employee;
+    CREATE TABLE employee (
+        employee_id SERIAL,  
+        name varchar(45) NOT NULL,  
+        birth_date varchar(450) NOT NULL,  
+      PRIMARY KEY (employee_id)  
+    )";
+
+                    createTable.ExecuteNonQuery();
+                }
 
                 // Insert some data
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "INSERT INTO employees (name, birth_date) VALUES (@name, @birth_date);";
+                    cmd.CommandText = "INSERT INTO employee (name, birth_date) VALUES (@name, @birth_date);";
                     cmd.Parameters.AddWithValue("name", "Jane Smith");
                     cmd.Parameters.AddWithValue("@birth_date", new DateTime(1980, 2, 3));
 
@@ -32,7 +56,7 @@ namespace Samples.Npgsql
                 // Retrieve all rows
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT * FROM employees sync;";
+                    cmd.CommandText = "SELECT * FROM employee sync;";
                     int rows = 0;
 
                     using (var reader = cmd.ExecuteReader())
@@ -49,7 +73,7 @@ namespace Samples.Npgsql
                     Console.WriteLine($"{rows:N0} rows returned from sync query.");
                     Console.WriteLine();
 
-                    cmd.CommandText = "SELECT * FROM employees async;";
+                    cmd.CommandText = "SELECT * FROM employee async;";
                     rows = 0;
 
                     using (var reader = cmd.ExecuteReaderAsync().GetAwaiter().GetResult())
@@ -69,7 +93,7 @@ namespace Samples.Npgsql
                 // Delete all data
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "DELETE FROM employees;";
+                    cmd.CommandText = "DELETE FROM employee;";
 
                     int count = cmd.ExecuteNonQuery();
                     Console.WriteLine($"{count} rows deleted.");
