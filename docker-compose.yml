@@ -4,23 +4,23 @@ services:
     image: redis:4-alpine
     command: redis-server --bind 0.0.0.0
     ports:
-    - "6379:6379"
+    - "127.0.0.1:6379:6379"
 
-  mongosample:
+  mongo:
     image: mongo:4.0.9
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     command: mongod
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
     ports:
-    - "9200:9200"
-    - "9300:9300"
+    - "127.0.0.1:9200:9200"
+    - "127.0.0.1:9300:9300"
     environment:
     - discovery.type=single-node
 
-  postgres_sample:
+  postgres:
     image: postgres:10.5-alpine
     environment:
     - POSTGRES_PASSWORD=postgres
@@ -32,7 +32,7 @@ services:
   sqlserver:
     image: microsoft/mssql-server-linux:latest
     ports:
-    - "1433:1433"
+    - "127.0.0.1:1433:1433"
     environment:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
@@ -108,24 +108,24 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it postgres_sample:5432 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.NpgSql/bin/Release/netcoreapp2.1/publish/Samples.NpgSql.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it postgres:5432 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.NpgSql/bin/Release/netcoreapp2.1/publish/Samples.NpgSql.dll"
     volumes:
     - ./:/project
     environment:
-    - POSTGRES_HOST=postgres_sample
+    - POSTGRES_HOST=postgres
     depends_on:
-    - postgres_sample
+    - postgres
 
   Samples.MongoDB:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mongosample:27017 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/Release/netcoreapp2.1/publish/Samples.MongoDB.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mongo:27017 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/Release/netcoreapp2.1/publish/Samples.MongoDB.dll"
     volumes:
     - ./:/project
     depends_on:
-    - mongosample
+    - mongo
 
   Datadog.Trace.ClrProfiler.IntegrationTests:
     build:
@@ -136,14 +136,14 @@ services:
     volumes:
     - ./:/project
     environment:
-    - MONGO_HOST=mongosample
+    - MONGO_HOST=mongo
     - REDIS_HOST=redis
     - ELASTICSEARCH_HOST=elasticsearch
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
-    - POSTGRES_HOST=postgres_sample
+    - POSTGRES_HOST=postgres
     depends_on:
     - redis
     - elasticsearch
     - sqlserver
-    - mongosample
-    - postgres_sample
+    - mongo
+    - postgres
