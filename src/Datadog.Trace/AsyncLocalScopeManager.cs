@@ -24,13 +24,9 @@ namespace Datadog.Trace
 
             if (current != null && current == scope)
             {
-                // replace active scope with its parent,
-                // but only if it's the scope we were expecting
+                // if the scope that was just closed was the active scope,
+                // set its parent as the new active scope
                 _activeScope.Set(current.Parent);
-            }
-            else
-            {
-                Log.Debug("Specified scope is not the active scope.");
             }
         }
     }
