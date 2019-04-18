@@ -103,7 +103,7 @@ services:
     depends_on:
     - sqlserver
     
-  Samples.NpgSql:
+  Samples.Npgsql:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile

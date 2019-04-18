@@ -4,10 +4,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class NpgSqlTests : TestHelper
+    public class NpgsqlTests : TestHelper
     {
-        public NpgSqlTests(ITestOutputHelper output)
-            : base("SqlServer", output)
+        public NpgsqlTests(ITestOutputHelper output)
+            : base("Npgsql", output)
         {
         }
 
@@ -26,8 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count > 0, "expected at least one span");
                 foreach (var span in spans)
                 {
-                    Assert.Equal("sql-server.query", span.Name);
-                    Assert.Equal($"Samples.SqlServer-sql-server", span.Service);
+                    Assert.Equal("postgres.query", span.Name);
+                    Assert.Equal("Samples.Npgsql-postgres", span.Service);
                     Assert.Equal(SpanTypes.Sql, span.Type);
                 }
             }
