@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net452;net461</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <ProjectGuid>{7DD58777-0666-4B1A-B451-1F32951103C4}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" Version="2.8.0" />
+    <PackageReference Include="MySql.Data" Version="8.0.15" />
+    <PackageReference Include="ServiceStack.Redis" Version="5.2.0" />
+    <PackageReference Include="StackExchange.Redis" Version="1.2.6" />
+    <PackageReference Include="Npgsql" Version="4.0.4" />
+    <PackageReference Include="Elasticsearch.Net" Version="6.1.0" />
+    <PackageReference Include="NEST" Version="6.1.0" />
+  </ItemGroup>
+</Project>
