@@ -6,14 +6,14 @@
 
     <!-- NuGet package -->
     <IsPackable>true</IsPackable>
-    <PackageIconUrl>https://github.com/DataDog/dd-trace-csharp/raw/master/datadog-logo-64x64.png</PackageIconUrl>
+    <PackageIconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</PackageIconUrl>
     <PackageProjectUrl>https://docs.datadoghq.com/tracing/setup/dotnet/</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/DataDog/dd-trace-csharp/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://github.com/DataDog/dd-trace-dotnet/blob/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>See release notes at https://github.com/DataDog/dd-trace-csharp/releases</PackageReleaseNotes>
+    <PackageReleaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases</PackageReleaseNotes>
     <PackageTags>Datadog;APM;tracing;profiling;instrumentation</PackageTags>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/DataDog/dd-trace-csharp.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/DataDog/dd-trace-dotnet.git</RepositoryUrl>
     <Copyright>Datadog, Inc. 2017-2019</Copyright>
   </PropertyGroup>
 
