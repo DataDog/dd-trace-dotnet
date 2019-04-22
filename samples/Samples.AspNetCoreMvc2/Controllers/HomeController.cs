@@ -38,12 +38,5 @@ namespace Samples.AspNetCoreMvc2.Controllers
             await Task.Delay(TimeSpan.FromSeconds(seconds));
             return View("Delay", seconds);
         }
-
-        [Route("bad-request")]
-        public bool BadRequest()
-        {
-            throw new Exception("This is a bad request");
-            return true;
-        }
     }
 }
