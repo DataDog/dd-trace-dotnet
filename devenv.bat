@@ -43,23 +43,13 @@ if not "%devenv_arg1%" == "" (
     goto next_argument
 )
 
-echo Enabling profiler for "%profiler_configuration%/%profiler_platform%".
+echo Setting profiler path for "%profiler_configuration%/%profiler_platform%".
 
-rem Enable .NET Framework Profiling API
-SET COR_ENABLE_PROFILING=1
-SET COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+rem .NET Framework Profiling API
 SET COR_PROFILER_PATH=%~dp0\src\Datadog.Trace.ClrProfiler.Native\bin\%profiler_configuration%\%profiler_platform%\Datadog.Trace.ClrProfiler.Native.dll
 
-rem Enable .NET Core Profiling API
-SET CORECLR_ENABLE_PROFILING=1
-SET CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+rem .NET Core Profiling API
 SET CORECLR_PROFILER_PATH=%~dp0\src\Datadog.Trace.ClrProfiler.Native\bin\%profiler_configuration%\%profiler_platform%\Datadog.Trace.ClrProfiler.Native.dll
-
-rem Limit profiling to these processes only
-REM SET DD_PROFILER_PROCESSES=w3wp.exe;iisexpress.exe;Samples.AspNetCoreMvc2.exe;dotnet.exe;Samples.SqlServer.exe;Samples.RedisCore.exe;Samples.Elasticsearch.exe;Samples.MongoDB.exe;wcfsvchost.exe
-
-rem Set location of integration definitions
-SET DD_INTEGRATIONS=%~dp0\integrations.json;%~dp0\test-integrations.json
 
 if "%start_visual_studio%" == "true" (
     echo Starting Visual Studio...
