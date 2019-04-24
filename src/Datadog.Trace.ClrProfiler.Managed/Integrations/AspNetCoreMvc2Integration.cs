@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -17,7 +16,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string OperationName = "aspnet-coremvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
 
+        /// <summary>
+        /// Type used for catching exceptions in the Microsoft.AspNetCore.Mvc.Core incoming pipeline.
+        /// </summary>
+        private const string ExceptionHookType = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
+
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
+
+        private static readonly InterceptedMethodCache<Action<object>> RethrowCache = new InterceptedMethodCache<Action<object>>();
 
         private static Action<object, object, object, object> _beforeAction;
         private static Action<object, object, object, object> _afterAction;
@@ -247,6 +253,79 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             finally
             {
                 integration?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Wrapper method used to catch unhandled exceptions in the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
+        /// </summary>
+        /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
+        [InterceptMethod(
+            CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            TargetType = ExceptionHookType)]
+        public static void Rethrow(object context)
+        {
+            AspNetCoreMvc2Integration integration = null;
+            const string methodName = nameof(Rethrow);
+
+            try
+            {
+                if (context.TryGetPropertyValue("HttpContext", out object httpContext))
+                {
+                    if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                    {
+                        integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
+            }
+
+            Action<object> rethrow = null;
+
+            try
+            {
+                var paramTypes = new[]
+                {
+                    context.GetType()
+                };
+
+                var methodKey = RethrowCache.GetMethodKey(paramTypes);
+
+                if (!RethrowCache.TryGet(methodKey, out rethrow))
+                {
+                    var assembly = Assembly.GetCallingAssembly();
+                    var type = assembly.GetType(ExceptionHookType);
+
+                    rethrow = Emit.DynamicMethodBuilder<Action<object>>.CreateMethodCallDelegate(
+                        type,
+                        methodName,
+                        paramTypes);
+
+                    RethrowCache.Cache(methodKey, rethrow);
+                }
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this rethrow method
+                Log.ErrorException($"Error calling {ExceptionHookType}.{methodName}(object context)", ex);
+                throw;
+            }
+
+            try
+            {
+                // call the original method, catching and rethrowing any unhandled exceptions
+                rethrow.Invoke(context);
+            }
+            catch (Exception ex)
+            {
+                // Set the exception in our span
+                integration?.SetException(ex);
+                // The MVC pipeline expects this exception to bubble up.
+                throw;
             }
         }
 

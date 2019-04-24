@@ -94,6 +94,22 @@
           "method": "AfterAction",
           "signature": "00 04 01 1C 1C 1C 1C"
         }
+      },
+      {
+        "caller": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core"
+        },
+        "target": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core",
+          "type": "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker",
+          "method": "Rethrow"
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
+          "method": "Rethrow",
+          "signature": "00 01 01 1C"
+        }
       }
     ]
   },
