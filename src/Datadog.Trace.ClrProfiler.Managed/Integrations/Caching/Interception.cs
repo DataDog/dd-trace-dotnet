@@ -2,6 +2,9 @@ using System;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
+    /// <summary>
+    /// Convenience properties and methods for integration definitions.
+    /// </summary>
     internal static class Interception
     {
         internal static readonly Type[] EmptyTypes = Type.EmptyTypes;
