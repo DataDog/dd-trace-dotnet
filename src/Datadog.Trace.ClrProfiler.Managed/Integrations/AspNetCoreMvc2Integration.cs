@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
-        private static readonly InterceptedMethodCache<Action<object>> RethrowCache = new InterceptedMethodCache<Action<object>>();
+        private static readonly InterceptedMethodAccess<Action<object>> RethrowAccess = new InterceptedMethodAccess<Action<object>>();
 
         private static Action<object, object, object, object> _beforeAction;
         private static Action<object, object, object, object> _afterAction;
@@ -288,7 +288,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                rethrow = RethrowCache.GetInterceptedMethod(
+                rethrow = RethrowAccess.GetInterceptedMethod(
                     assembly: Assembly.GetCallingAssembly(),
                     owningType: ExceptionHookType,
                     methodName: nameof(Rethrow),
