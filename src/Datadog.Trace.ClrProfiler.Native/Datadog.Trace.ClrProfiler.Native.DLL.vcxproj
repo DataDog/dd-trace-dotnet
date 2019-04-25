@@ -107,6 +107,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)\pre-build-events-cpp.bat  "$(TargetPath)"  "$(TargetFileName)"  "$(TargetDir)"  "$(TargetName)"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Remove potentially locked outputs (dll/pdb/xml)</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
