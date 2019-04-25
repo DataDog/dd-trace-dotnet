@@ -4,46 +4,45 @@ using System.Reflection;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
-    internal class InterceptedMethodCache<T>
-        where T : class
+    /// <summary>
+    /// Wrapper class for retrieving instrumented methods and caching them.
+    /// Necessary because our profiling implementation treats all non <see cref="ValueType"/> types as equal for method signature purposes.
+    /// Uses the actual types of arguments from the calling method to differentiate between signatures and caches them.
+    /// </summary>
+    /// <typeparam name="TDelegate">The type of delegate being intercepted.</typeparam>
+    internal class InterceptedMethodCache<TDelegate>
+        where TDelegate : Delegate
     {
-        private readonly ConcurrentDictionary<MethodBase, string> _keyCache = new ConcurrentDictionary<MethodBase, string>();
-        private readonly ConcurrentDictionary<string, T> _methodCache = new ConcurrentDictionary<string, T>();
+        private readonly ConcurrentDictionary<string, TDelegate> _methodCache = new ConcurrentDictionary<string, TDelegate>();
 
-        internal InterceptedMethodCache()
+        internal TDelegate GetInterceptedMethod(
+            Assembly assembly,
+            string owningType,
+            string methodName,
+            Type[] generics,
+            Type[] parameters)
         {
-            bool isDelegateType = typeof(Delegate).IsAssignableFrom(typeof(T));
-            if (!isDelegateType)
+            var methodKey = Interception.MethodKey(genericTypes: generics, parameterTypes: parameters);
+
+            if (!_methodCache.TryGetValue(methodKey, out var method))
             {
-                throw new ArgumentException($"{typeof(T).Name} is not a delegate type");
+                var type = assembly.GetType(owningType);
+
+                method = Emit.DynamicMethodBuilder<TDelegate>.CreateMethodCallDelegate(
+                    type,
+                    methodName,
+                    methodParameterTypes: parameters,
+                    methodGenericArguments: generics);
+
+                AddToCache(methodKey, method);
             }
+
+            return method;
         }
 
-        internal bool TryGet(string key, out T method)
-        {
-            return _methodCache.TryGetValue(key, out method);
-        }
-
-        internal void Cache(string key, T method)
+        private void AddToCache(string key, TDelegate method)
         {
             _methodCache.AddOrUpdate(key, (k) => method, (k, m) => method);
-        }
-
-        internal string GetMethodKey(params Type[] parameterTypes)
-        {
-            return GetMethodKeyInternal(parameterTypes);
-        }
-
-        private string GetMethodKeyInternal(Type[] parameterTypes)
-        {
-            var key = "m";
-
-            for (int i = 0; i < parameterTypes.Length; i++)
-            {
-                key = string.Concat(key, $"_{parameterTypes[i].FullName}");
-            }
-
-            return key;
         }
     }
 }

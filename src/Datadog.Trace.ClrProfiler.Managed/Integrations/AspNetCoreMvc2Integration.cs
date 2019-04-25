@@ -284,29 +284,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
-            Action<object> rethrow = null;
+            Action<object> rethrow;
 
             try
             {
-                var paramTypes = new[]
-                {
-                    context.GetType()
-                };
-
-                var methodKey = RethrowCache.GetMethodKey(paramTypes);
-
-                if (!RethrowCache.TryGet(methodKey, out rethrow))
-                {
-                    var assembly = Assembly.GetCallingAssembly();
-                    var type = assembly.GetType(ExceptionHookType);
-
-                    rethrow = Emit.DynamicMethodBuilder<Action<object>>.CreateMethodCallDelegate(
-                        type,
-                        methodName,
-                        paramTypes);
-
-                    RethrowCache.Cache(methodKey, rethrow);
-                }
+                rethrow = RethrowCache.GetInterceptedMethod(
+                    assembly: Assembly.GetCallingAssembly(),
+                    owningType: ExceptionHookType,
+                    methodName: nameof(Rethrow),
+                    generics: Interception.EmptyTypes,
+                    parameters: Interception.TypeArray(context));
             }
             catch (Exception ex)
             {
