@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -25,13 +26,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var key = "m";
 
-            for (int i = 0; i < genericTypes.Length; i++)
+            for (int i = 0; i < (genericTypes?.Length ?? 0); i++)
             {
+                Debug.Assert(genericTypes != null, nameof(genericTypes) + " != null");
                 key = string.Concat(key, $"_g{genericTypes[i].FullName}");
             }
 
-            for (int i = 0; i < parameterTypes.Length; i++)
+            for (int i = 0; i < (parameterTypes?.Length ?? 0); i++)
             {
+                Debug.Assert(parameterTypes != null, nameof(parameterTypes) + " != null");
                 key = string.Concat(key, $"_p{parameterTypes[i].FullName}");
             }
 

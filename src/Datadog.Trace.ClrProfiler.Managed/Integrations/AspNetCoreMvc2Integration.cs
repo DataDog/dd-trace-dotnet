@@ -292,7 +292,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     assembly: Assembly.GetCallingAssembly(),
                     owningType: ExceptionHookType,
                     methodName: nameof(Rethrow),
-                    generics: Interception.EmptyTypes,
+                    generics: null,
                     parameters: Interception.TypeArray(context));
             }
             catch (Exception ex)
