@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -17,7 +16,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string OperationName = "aspnet-coremvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
 
+        /// <summary>
+        /// Base type used for traversing the pipeline in Microsoft.AspNetCore.Mvc.Core.
+        /// </summary>
+        private const string ResourceInvoker = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
+
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
+
+        private static readonly InterceptedMethodAccess<Action<object>> RethrowAccess = new InterceptedMethodAccess<Action<object>>();
 
         private static Action<object, object, object, object> _beforeAction;
         private static Action<object, object, object, object> _afterAction;
@@ -247,6 +253,64 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             finally
             {
                 integration?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Wrapper method used to catch unhandled exceptions in the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
+        /// </summary>
+        /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
+        [InterceptMethod(
+            CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            TargetType = ResourceInvoker)]
+        public static void Rethrow(object context)
+        {
+            AspNetCoreMvc2Integration integration = null;
+            const string methodName = nameof(Rethrow);
+
+            try
+            {
+                if (context.TryGetPropertyValue("HttpContext", out object httpContext))
+                {
+                    if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                    {
+                        integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
+            }
+
+            Action<object> rethrow;
+
+            try
+            {
+                rethrow = RethrowAccess.GetInterceptedMethod(
+                    assembly: Assembly.GetCallingAssembly(),
+                    owningType: ResourceInvoker,
+                    methodName: methodName,
+                    generics: Interception.NoArguments,
+                    parameters: Interception.TypeArray(context));
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this rethrow method
+                Log.ErrorException($"Error calling {ResourceInvoker}.{methodName}(object context)", ex);
+                throw;
+            }
+
+            try
+            {
+                // call the original method, catching and rethrowing any unhandled exceptions
+                rethrow.Invoke(context);
+            }
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
+            {
+                // unreachable code
+                throw;
             }
         }
 
