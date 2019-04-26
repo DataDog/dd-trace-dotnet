@@ -8,6 +8,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     internal static class Interception
     {
+        internal const Type[] NoArguments = null;
         internal static readonly Type[] EmptyTypes = Type.EmptyTypes;
 
         internal static Type[] TypeArray(params object[] objectsToCheck)

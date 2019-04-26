@@ -292,7 +292,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     assembly: Assembly.GetCallingAssembly(),
                     owningType: ResourceInvoker,
                     methodName: methodName,
-                    generics: null,
+                    generics: Interception.NoArguments,
                     parameters: Interception.TypeArray(context));
             }
             catch (Exception ex)
