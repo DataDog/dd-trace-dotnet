@@ -17,9 +17,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
 
         /// <summary>
-        /// Type used for catching exceptions in the Microsoft.AspNetCore.Mvc.Core incoming pipeline.
+        /// Base type used for traversing the pipeline in Microsoft.AspNetCore.Mvc.Core.
         /// </summary>
-        private const string ExceptionHookType = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
+        private const string ResourceInvoker = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
@@ -263,7 +263,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetType = ExceptionHookType)]
+            TargetType = ResourceInvoker)]
         public static void Rethrow(object context)
         {
             AspNetCoreMvc2Integration integration = null;
@@ -290,15 +290,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 rethrow = RethrowAccess.GetInterceptedMethod(
                     assembly: Assembly.GetCallingAssembly(),
-                    owningType: ExceptionHookType,
-                    methodName: nameof(Rethrow),
+                    owningType: ResourceInvoker,
+                    methodName: methodName,
                     generics: null,
                     parameters: Interception.TypeArray(context));
             }
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this rethrow method
-                Log.ErrorException($"Error calling {ExceptionHookType}.{methodName}(object context)", ex);
+                Log.ErrorException($"Error calling {ResourceInvoker}.{methodName}(object context)", ex);
                 throw;
             }
 
@@ -307,11 +307,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 rethrow.Invoke(context);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
-                // Set the exception in our span
-                integration?.SetException(ex);
-                // The MVC pipeline expects this exception to bubble up.
+                // unreachable code
                 throw;
             }
         }
