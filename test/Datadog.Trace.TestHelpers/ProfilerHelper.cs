@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using Datadog.Trace.ClrProfiler;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -11,10 +13,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Process StartProcessWithProfiler(
             string appPath,
-            bool coreClr,
             IEnumerable<string> integrationPaths,
-            string profilerClsid,
-            string profilerDllPath,
             string arguments = null,
             bool redirectStandardInput = false,
             int traceAgentPort = 9696)
@@ -29,56 +28,26 @@ namespace Datadog.Trace.TestHelpers
                 throw new ArgumentNullException(nameof(integrationPaths));
             }
 
-            if (profilerClsid == null)
-            {
-                throw new ArgumentNullException(nameof(profilerClsid));
-            }
-
             // clear all relevant environment variables to start with a clean slate
             ClearProfilerEnvironmentVariables();
 
             ProcessStartInfo startInfo;
 
-            if (coreClr)
+            if (EnvironmentMetadata.IsCoreClr())
             {
                 // .NET Core
                 startInfo = new ProcessStartInfo(dotNetCoreExecutable, $"{appPath} {arguments ?? string.Empty}");
-
-                startInfo.EnvironmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
-                startInfo.EnvironmentVariables["CORECLR_PROFILER"] = profilerClsid;
-                startInfo.EnvironmentVariables["CORECLR_PROFILER_PATH"] = profilerDllPath;
-
-                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = dotNetCoreExecutable;
+                SetEnvironmentForDotNetCore(startInfo.EnvironmentVariables, processPath: dotNetCoreExecutable);
             }
             else
             {
                 // .NET Framework
                 startInfo = new ProcessStartInfo(appPath, $"{arguments ?? string.Empty}");
-
-                startInfo.EnvironmentVariables["COR_ENABLE_PROFILING"] = "1";
-                startInfo.EnvironmentVariables["COR_PROFILER"] = profilerClsid;
-                startInfo.EnvironmentVariables["COR_PROFILER_PATH"] = profilerDllPath;
-
                 string executableFileName = Path.GetFileName(appPath);
-                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = executableFileName;
+                SetEnvironmentForDotNetFramework(startInfo.EnvironmentVariables, processPath: executableFileName);
             }
 
-            string integrations = string.Join(";", integrationPaths);
-            startInfo.EnvironmentVariables["DD_INTEGRATIONS"] = integrations;
-            startInfo.EnvironmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "localhost";
-            startInfo.EnvironmentVariables["DD_TRACE_AGENT_PORT"] = traceAgentPort.ToString();
-
-            // for ASP.NET Core sample apps, set the server's port
-            startInfo.EnvironmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{traceAgentPort}/";
-
-            foreach (var name in new string[] { "REDIS_HOST" })
-            {
-                var value = Environment.GetEnvironmentVariable(name);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    startInfo.EnvironmentVariables[name] = value;
-                }
-            }
+            SetSharedEnvironmentVariables(traceAgentPort, startInfo.EnvironmentVariables, integrationPaths);
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
@@ -87,6 +56,66 @@ namespace Datadog.Trace.TestHelpers
             startInfo.RedirectStandardInput = redirectStandardInput;
 
             return Process.Start(startInfo);
+        }
+
+        public static void SetSharedEnvironmentVariables(int traceAgentPort, StringDictionary environmentVariables, IEnumerable<string> integrationPaths)
+        {
+            string integrations = string.Join(";", integrationPaths);
+            environmentVariables["DD_INTEGRATIONS"] = integrations;
+            environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "localhost";
+            environmentVariables["DD_TRACE_AGENT_PORT"] = traceAgentPort.ToString();
+
+            // for ASP.NET Core sample apps, set the server's port
+            environmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{traceAgentPort}/";
+
+            foreach (var name in new string[] { "REDIS_HOST" })
+            {
+                var value = Environment.GetEnvironmentVariable(name);
+                if (!string.IsNullOrEmpty(value))
+                {
+                    environmentVariables[name] = value;
+                }
+            }
+        }
+
+        public static string GetProfilerDllPath()
+        {
+            return Path.Combine(
+                EnvironmentMetadata.GetSolutionDirectory(),
+                "src",
+                "Datadog.Trace.ClrProfiler.Native",
+                "bin",
+                EnvironmentMetadata.GetBuildConfiguration(),
+                EnvironmentMetadata.GetPlatform(),
+                "Datadog.Trace.ClrProfiler.Native." + (EnvironmentMetadata.GetOS() == "win" ? "dll" : "so"));
+        }
+
+        public static void SetEnvironmentForDotNetCore(StringDictionary environmentVariables, string processPath)
+        {
+            string profilerDllPath = GetProfilerDllPath();
+            if (!File.Exists(profilerDllPath))
+            {
+                throw new Exception($"profiler not found: {profilerDllPath}");
+            }
+
+            environmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
+            environmentVariables["CORECLR_PROFILER"] = Instrumentation.ProfilerClsid;
+            environmentVariables["CORECLR_PROFILER_PATH"] = profilerDllPath;
+            environmentVariables["DD_PROFILER_PROCESSES"] = processPath;
+        }
+
+        public static void SetEnvironmentForDotNetFramework(StringDictionary environmentVariables, string processPath)
+        {
+            string profilerDllPath = GetProfilerDllPath();
+            if (!File.Exists(profilerDllPath))
+            {
+                throw new Exception($"profiler not found: {profilerDllPath}");
+            }
+
+            environmentVariables["COR_ENABLE_PROFILING"] = "1";
+            environmentVariables["COR_PROFILER"] = Instrumentation.ProfilerClsid;
+            environmentVariables["COR_PROFILER_PATH"] = profilerDllPath;
+            environmentVariables["DD_PROFILER_PROCESSES"] = processPath;
         }
 
         public static void ClearProfilerEnvironmentVariables()

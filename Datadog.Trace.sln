@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.329
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.156
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace", "src\Datadog.Trace\Datadog.Trace.csproj", "{5DFDF781-F24C-45B1-82EF-9125875A80A4}"
 EndProject
@@ -137,6 +137,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Shared", "sample-libs\Samples.Shared\Samples.Shared.csproj", "{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WebForms", "samples-aspnet\Samples.WebForms\Samples.WebForms.csproj", "{99A62CCF-8E7F-4D57-8383-D38C371C8087}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.FakeIntegration", "mocks\Datadog.FakeIntegration\Datadog.FakeIntegration.csproj", "{798C9A46-F316-4105-B119-B129316E7411}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "web-integrations", "web-integrations", "{40B0BA56-C20B-4064-9A70-ABA4DB17438E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNetCoreMvc2.Tests", "test\web-integrations\Datadog.Trace.AspNetCoreMvc2.Tests\Datadog.Trace.AspNetCoreMvc2.Tests.csproj", "{E91AC9E3-6A05-42FB-867E-B61833A10CCA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -456,6 +462,26 @@ Global
 		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x64.Build.0 = Release|Any CPU
 		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x86.ActiveCfg = Release|Any CPU
 		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x86.Build.0 = Release|Any CPU
+		{798C9A46-F316-4105-B119-B129316E7411}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{798C9A46-F316-4105-B119-B129316E7411}.Debug|x64.ActiveCfg = Debug|x64
+		{798C9A46-F316-4105-B119-B129316E7411}.Debug|x64.Build.0 = Debug|x64
+		{798C9A46-F316-4105-B119-B129316E7411}.Debug|x86.ActiveCfg = Debug|x86
+		{798C9A46-F316-4105-B119-B129316E7411}.Debug|x86.Build.0 = Debug|x86
+		{798C9A46-F316-4105-B119-B129316E7411}.Release|Any CPU.ActiveCfg = Release|x86
+		{798C9A46-F316-4105-B119-B129316E7411}.Release|x64.ActiveCfg = Release|x64
+		{798C9A46-F316-4105-B119-B129316E7411}.Release|x64.Build.0 = Release|x64
+		{798C9A46-F316-4105-B119-B129316E7411}.Release|x86.ActiveCfg = Release|x86
+		{798C9A46-F316-4105-B119-B129316E7411}.Release|x86.Build.0 = Release|x86
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Debug|x64.ActiveCfg = Debug|x64
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Debug|x64.Build.0 = Debug|x64
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Debug|x86.ActiveCfg = Debug|x86
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Debug|x86.Build.0 = Debug|x86
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Release|Any CPU.ActiveCfg = Release|x86
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Release|x64.ActiveCfg = Release|x64
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Release|x64.Build.0 = Release|x64
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Release|x86.ActiveCfg = Release|x86
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -489,6 +515,9 @@ Global
 		{387E25D9-6B09-4C11-ADDC-EDE1A3311728} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
 		{99A62CCF-8E7F-4D57-8383-D38C371C8087} = {65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}
+		{798C9A46-F316-4105-B119-B129316E7411} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{40B0BA56-C20B-4064-9A70-ABA4DB17438E} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{E91AC9E3-6A05-42FB-867E-B61833A10CCA} = {40B0BA56-C20B-4064-9A70-ABA4DB17438E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

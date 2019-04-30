@@ -16,10 +16,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class TestHelper
     {
+        private readonly EnvironmentMetadata _environmentMetadata;
+
         protected TestHelper(string sampleAppName, string relativePathToSampleFromSln, ITestOutputHelper output)
             : this(sampleAppName, output)
         {
-            PathToSample = Path.GetFullPath(Path.Combine(GetSolutionDirectory(), relativePathToSampleFromSln));
+            _environmentMetadata = new EnvironmentMetadata(this);
+            PathToSample = Path.GetFullPath(Path.Combine(EnvironmentMetadata.GetSolutionDirectory(), relativePathToSampleFromSln));
         }
 
         protected TestHelper(string sampleAppName, ITestOutputHelper output)
@@ -27,12 +30,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SampleAppName = sampleAppName;
             Output = output;
 
-            Output.WriteLine($"Platform: {GetPlatform()}");
-            Output.WriteLine($"Configuration: {BuildParameters.Configuration}");
-            Output.WriteLine($"TargetFramework: {BuildParameters.TargetFramework}");
-            Output.WriteLine($".NET Core: {BuildParameters.CoreClr}");
+            Output.WriteLine($"Platform: {EnvironmentMetadata.GetPlatform()}");
+            Output.WriteLine($"Configuration: {EnvironmentMetadata.GetBuildConfiguration()}");
+            Output.WriteLine($"TargetFramework: {_environmentMetadata.GetTargetFramework()}");
+            Output.WriteLine($".NET Core: {EnvironmentMetadata.IsCoreClr()}");
             Output.WriteLine($"Application: {GetSampleApplicationPath()}");
-            Output.WriteLine($"Profiler DLL: {GetProfilerDllPath()}");
+            Output.WriteLine($"Profiler DLL: {ProfilerHelper.GetProfilerDllPath()}");
         }
 
         protected string SampleAppName { get; }
@@ -41,86 +44,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
-        public static string GetPlatform()
-        {
-            return Environment.Is64BitProcess ? "x64" : "x86";
-        }
-
-        public static string GetOS()
-        {
-            return Environment.OSVersion.Platform == PlatformID.Win32NT ? "win" :
-                   Environment.OSVersion.Platform == PlatformID.Unix ? "linux" :
-                   Environment.OSVersion.Platform == PlatformID.MacOSX ? "osx" :
-                                                                          string.Empty;
-        }
-
-        public static string GetRuntimeIdentifier()
-        {
-            return BuildParameters.CoreClr ? string.Empty : $"{GetOS()}-{GetPlatform()}";
-        }
-
-        public static string GetSolutionDirectory()
-        {
-            string currentDirectory = Environment.CurrentDirectory;
-
-            int index = currentDirectory.Replace('\\', '/')
-                                        .LastIndexOf("/test/", StringComparison.OrdinalIgnoreCase);
-
-            return currentDirectory.Substring(0, index);
-        }
-
-        public static string GetProfilerDllPath()
-        {
-            return Path.Combine(
-                GetSolutionDirectory(),
-                "src",
-                "Datadog.Trace.ClrProfiler.Native",
-                "bin",
-                BuildParameters.Configuration,
-                GetPlatform(),
-                "Datadog.Trace.ClrProfiler.Native." + (GetOS() == "win" ? "dll" : "so"));
-        }
-
         public string GetSampleApplicationPath()
         {
-            string appFileName = BuildParameters.CoreClr ? $"Samples.{SampleAppName}.dll" : $"Samples.{SampleAppName}.exe";
+            string appFileName = EnvironmentMetadata.IsCoreClr() ? $"Samples.{SampleAppName}.dll" : $"Samples.{SampleAppName}.exe";
             string binDir = Path.Combine(
-                GetSolutionDirectory(),
+                EnvironmentMetadata.GetSolutionDirectory(),
                 "samples",
                 $"Samples.{SampleAppName}",
                 "bin");
 
-            if (GetOS() == "win")
+            if (EnvironmentMetadata.GetOS() == "win")
             {
                 return Path.Combine(
                                 binDir,
-                                GetPlatform(),
+                                EnvironmentMetadata.GetPlatform(),
                                 BuildParameters.Configuration,
                                 BuildParameters.TargetFramework,
-                                GetRuntimeIdentifier(),
+                                EnvironmentMetadata.GetRuntimeIdentifier(),
                                 appFileName);
             }
-            else
-            {
-                return Path.Combine(
-                                binDir,
-                                BuildParameters.Configuration,
-                                BuildParameters.TargetFramework,
-                                GetRuntimeIdentifier(),
-                                "publish",
-                                appFileName);
-            }
+
+            return Path.Combine(
+                binDir,
+                BuildParameters.Configuration,
+                BuildParameters.TargetFramework,
+                EnvironmentMetadata.GetRuntimeIdentifier(),
+                "publish",
+                appFileName);
         }
 
         public Process StartSample(int traceAgentPort, string arguments = null)
         {
-            // get path to native profiler dll
-            string profilerDllPath = GetProfilerDllPath();
-            if (!File.Exists(profilerDllPath))
-            {
-                throw new Exception($"profiler not found: {profilerDllPath}");
-            }
-
             // get path to sample app that the profiler will attach to
             string sampleAppPath = GetSampleApplicationPath();
             if (!File.Exists(sampleAppPath))
@@ -133,10 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             return ProfilerHelper.StartProcessWithProfiler(
                 sampleAppPath,
-                BuildParameters.CoreClr,
                 integrationPaths,
-                Instrumentation.ProfilerClsid,
-                profilerDllPath,
                 arguments,
                 traceAgentPort: traceAgentPort);
         }
@@ -165,16 +116,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public Process StartIISExpress(int traceAgentPort, int iisPort)
         {
-            // get path to native profiler dll
-            string profilerDllPath = GetProfilerDllPath();
-            if (!File.Exists(profilerDllPath))
-            {
-                throw new Exception($"profiler not found: {profilerDllPath}");
-            }
-
             var sampleDir = string.IsNullOrEmpty(PathToSample)
                                 ? Path.Combine(
-                                               GetSolutionDirectory(),
+                                    EnvironmentMetadata.GetSolutionDirectory(),
                                                "samples-aspnet",
                                                $"Samples.{SampleAppName}")
                                 : PathToSample;
@@ -196,10 +140,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var process = ProfilerHelper.StartProcessWithProfiler(
                 exe,
-                BuildParameters.CoreClr,
                 integrationPaths,
-                Instrumentation.ProfilerClsid,
-                profilerDllPath,
                 arguments: string.Join(" ", args),
                 redirectStandardInput: true,
                 traceAgentPort: traceAgentPort);

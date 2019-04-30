@@ -1,4 +1,3 @@
-/*
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -84,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(Integrations.AspNetWebApi2Integration.OperationName, span.Name);
+                    Assert.Equal("aspnet-webapi.request", span.Name);
                     Assert.Equal(SpanTypes.Web, span.Type);
                     Assert.Equal($"GET {path}", span.Resource);
                 }
@@ -97,4 +96,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
-*/
