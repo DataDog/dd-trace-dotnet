@@ -10,8 +10,11 @@
     <Content Include="..\..\integrations.json" Link="integrations.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\**"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />

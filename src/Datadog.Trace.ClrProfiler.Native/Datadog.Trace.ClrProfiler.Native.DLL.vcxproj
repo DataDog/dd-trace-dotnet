@@ -113,6 +113,12 @@
     <PreBuildEvent>
       <Message>Remove potentially locked outputs (dll/pdb/xml)</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>IF EXIST $(ProjectDir)\post-build-events-cpp.bat CALL $(ProjectDir)\post-build-events-cpp.bat "$(SolutionDir)"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy profiler for other projects</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
