@@ -20,4 +20,8 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="IF EXIST $(SolutionDir)copy-profiler-assemblies.bat CALL $(SolutionDir)copy-profiler-assemblies.bat &quot;$(SolutionDir)&quot; &quot;$(ProjectDir)&quot;" />
+  </Target>
 </Project>

@@ -15,4 +15,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="IF EXIST $(SolutionDir)copy-profiler-assemblies.bat CALL $(SolutionDir)copy-profiler-assemblies.bat &quot;$(SolutionDir)&quot; &quot;$(ProjectDir)&quot;" />
+  </Target>
 </Project>
