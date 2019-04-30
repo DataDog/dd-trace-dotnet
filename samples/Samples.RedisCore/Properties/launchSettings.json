@@ -12,7 +12,7 @@
 
         "A_DLL_THAT_I_WANT": "$(SolutionDir)src\\Project.Name\\bin\\$(Configuration)\\$(PlatformShortName)\\Project.Name.dll",
 
-        "DD_INTEGRATIONS": "$(SolutionDir)integrations.json"
+        "DD_INTEGRATIONS": "$(OutputRoot)integrations.json"
       },
 
       "commandName": "Project",
@@ -25,7 +25,7 @@
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
         "CORECLR_PROFILER_PATH": "$(OutputRoot)$(Configuration)\\$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
 
-        "DD_INTEGRATIONS": "$(SolutionDir)integrations.json"
+        "DD_INTEGRATIONS": "$(OutputRoot)integrations.json"
       },
       "nativeDebugging": true
     }

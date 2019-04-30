@@ -2,7 +2,7 @@
   "profiles": {
     "GenerateIntegrationDefinitions": {
       "commandName": "Project",
-      "commandLineArgs": "\"$(SolutionDir)integrations.json\""
+      "commandLineArgs": "\"$(OutputRoot)integrations.json\""
     }
   }
 }
