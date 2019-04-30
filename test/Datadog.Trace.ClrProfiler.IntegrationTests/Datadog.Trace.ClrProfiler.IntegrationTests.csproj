@@ -10,8 +10,11 @@
     <Content Include="..\..\integrations.json" Link="integrations.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\**"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
-
+  
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
@@ -20,8 +23,4 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="IF EXIST $(SolutionDir)copy-profiler-assemblies.bat CALL $(SolutionDir)copy-profiler-assemblies.bat &quot;$(SolutionDir)&quot; &quot;$(ProjectDir)&quot;" />
-  </Target>
 </Project>
