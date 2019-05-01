@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="httpMethod">The HTTP method used by the request.</param>
         /// <param name="requestUri">The URI requested by the request.</param>
         /// <param name="integrationName">The name of the integration creating this scope.</param>
-        /// <returns>A new prepopulated scope.</returns>
+        /// <returns>A new pre-populated scope.</returns>
         public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, string integrationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationName))

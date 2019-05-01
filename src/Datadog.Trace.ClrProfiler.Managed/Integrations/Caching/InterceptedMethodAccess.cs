@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="assembly">Assembly containing the method.</param>
         /// <param name="owningType">Type which owns the method.</param>
         /// <param name="methodName">Name of the method being instrumented.</param>
-        /// <param name="returnType">The ordered types of the method's generics.</param>
+        /// <param name="returnType">The return type of the method.</param>
         /// <param name="generics">The ordered types of the method's generics.</param>
         /// <param name="parameters">The ordered types of the method's parameters.</param>
         /// <returns>Delegate representing instrumented method.</returns>

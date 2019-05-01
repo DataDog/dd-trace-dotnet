@@ -25,12 +25,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var request = (WebRequest)webRequest;
 
-            if (!IsTracingEnabled(request))
+            if (!(request is HttpWebRequest) || !IsTracingEnabled(request))
             {
                 return request.GetResponse();
             }
 
-            string httpMethod = request?.Method?.ToUpperInvariant() ?? "GET"; // GET is the default
+            string httpMethod = request?.Method?.ToUpperInvariant() ?? "UNKNOWN";
             string integrationName = typeof(WebRequestIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
 
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, request.RequestUri, integrationName))
