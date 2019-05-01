@@ -37,7 +37,8 @@ struct PublicKey {
   inline WSTRING str() const {
     std::stringstream ss;
     for (int i = 0; i < kPublicKeySize; i++) {
-      ss << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(data[i]);
+      ss << std::setfill('0') << std::setw(2) << std::hex
+         << static_cast<int>(data[i]);
     }
     return ToWSTRING(ss.str());
   }
@@ -134,7 +135,8 @@ struct MethodSignature {
   WSTRING str() const {
     WSTRINGSTREAM ss;
     for (auto& b : data) {
-      ss << std::hex << std::setfill('0'_W) << std::setw(2) << static_cast<int>(b);
+      ss << std::hex << std::setfill('0'_W) << std::setw(2)
+         << static_cast<int>(b);
     }
     return ss.str();
   }
@@ -145,16 +147,20 @@ struct MethodReference {
   const WSTRING type_name;
   const WSTRING method_name;
   const MethodSignature method_signature;
+  const short min_major;
+  const short max_major;
 
-  MethodReference() {}
+  MethodReference() : min_major(0), max_major(MAXINT8) {}
 
   MethodReference(const WSTRING& assembly_name, WSTRING type_name,
-                  WSTRING method_name,
+                  WSTRING method_name, short min_major, short max_major,
                   const std::vector<BYTE>& method_signature)
       : assembly(assembly_name),
         type_name(type_name),
         method_name(method_name),
-        method_signature(method_signature) {}
+        method_signature(method_signature),
+        min_major(min_major),
+        max_major(max_major) {}
 
   inline WSTRING get_type_cache_key() const {
     return "["_W + assembly.name + "]"_W + type_name;
@@ -166,6 +172,7 @@ struct MethodReference {
 
   inline bool operator==(const MethodReference& other) const {
     return assembly == other.assembly && type_name == other.type_name &&
+           min_major == other.min_major && max_major == other.max_major &&
            method_name == other.method_name &&
            method_signature == other.method_signature;
   }

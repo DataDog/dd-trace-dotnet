@@ -83,18 +83,17 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     continue;
                 }
 
-                // TODO: are these generic type checks necessary
-                // var candidateGenericTypes = methods[i].GetGenericArguments();
+                var candidateGenericTypes = methods[i].GetGenericArguments();
 
-                // if (!TypeArraysMatch(genericTypes, candidateGenericTypes.Length, candidateGenericTypes))
-                // {
-                //     continue;
-                // }
+                if (candidateGenericTypes.Length != genericTypes.Length)
+                {
+                    continue;
+                }
 
                 var candidateParameters = methods[i].GetParameters();
                 candidateParameterTypes = candidateParameters.Select(p => p.ParameterType).ToArray();
 
-                if (!TypeArraysMatch(genericTypes, candidateParameters.Length, candidateParameterTypes))
+                if (!TypeArraysMatch(parameterTypes, candidateParameters.Length, candidateParameterTypes))
                 {
                     continue;
                 }

@@ -73,7 +73,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline")]
+            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            TargetAssemblyMinimumMajor = 6,
+            TargetAssemblyMaximumMajor = 6)]
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource)
         {
             var cancellationToken = ((CancellationTokenSource)cancellationTokenSource)?.Token ?? CancellationToken.None;

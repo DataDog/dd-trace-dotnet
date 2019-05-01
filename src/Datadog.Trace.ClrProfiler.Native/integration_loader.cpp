@@ -3,9 +3,9 @@
 #include <exception>
 #include <stdexcept>
 
+#include "environment_variables.h"
 #include "logging.h"
 #include "util.h"
-#include "environment_variables.h"
 
 namespace trace {
 
@@ -112,9 +112,12 @@ std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     return std::make_pair<MethodReplacement, bool>({}, false);
   }
 
-  const auto caller = MethodReferenceFromJson(src.value("caller", json::object()));
-  const auto target = MethodReferenceFromJson(src.value("target", json::object()));
-  const auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
+  const auto caller =
+      MethodReferenceFromJson(src.value("caller", json::object()));
+  const auto target =
+      MethodReferenceFromJson(src.value("target", json::object()));
+  const auto wrapper =
+      MethodReferenceFromJson(src.value("wrapper", json::object()));
   return std::make_pair<MethodReplacement, bool>({caller, target, wrapper},
                                                  true);
 }
@@ -123,7 +126,18 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
   if (!src.is_object()) {
     return {};
   }
+  const auto eoj = src.end();  
+  
+  short min_major = 0;
+  short max_major = MAXINT8;
 
+  if (src.find("minimum_major") != eoj) {
+    min_major = src["minimum_major"].get<short>();
+  }
+  if (src.find("maximum_major") != eoj) {
+    max_major = src["maximum_major"].get<short>();
+  }
+  
   const auto assembly = ToWSTRING(src.value("assembly", ""));
   const auto type = ToWSTRING(src.value("type", ""));
   const auto method = ToWSTRING(src.value("method", ""));
@@ -159,7 +173,8 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
       prev = b;
     }
   }
-  return MethodReference(assembly, type, method, signature);
+  return MethodReference(assembly, type, method, min_major, max_major,
+                         signature);
 }
 
 }  // namespace

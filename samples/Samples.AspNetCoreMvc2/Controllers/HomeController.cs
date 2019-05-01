@@ -44,5 +44,69 @@ namespace Samples.AspNetCoreMvc2.Controllers
         {
             throw new Exception("This was a bad request.");
         }
+
+        [Route("wee")]
+        public async Task<IActionResult> Test()
+        {
+            Exception caught;
+
+            try
+            {
+                await WeeAsync();
+            }
+            catch (AggregateException ex)
+            {
+                caught = ex;
+            }
+            catch (Exception ex)
+            {
+                caught = ex;
+            }
+
+            try
+            {
+                await WeeSync();
+            }
+            catch (AggregateException ex)
+            {
+                caught = ex;
+            }
+            catch (Exception ex)
+            {
+                caught = ex;
+            }
+
+            return View("Delay", 0);
+        }
+
+        private async Task<bool> WeeAsync()
+        {
+            await Task.Delay(1);
+            await Task.FromResult(true);
+            return await WeeNested(true);
+        }
+
+        private Task<bool> WeeSync()
+        {
+            var task = WeeNested(true);
+
+            if (task.Result == true)
+            {
+                throw new Exception("wee sync");
+            }
+
+            return task;
+        }
+
+        private async Task<bool> WeeNested(bool val)
+        {
+            await Task.Delay(1);
+            await Task.Run(
+                () =>
+                {
+                    throw new Exception("WEEEEEEE!!!!");
+                });
+            return await Task.FromResult(val);
+        }
     }
 }

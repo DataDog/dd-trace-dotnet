@@ -48,7 +48,9 @@ namespace GenerateIntegrationDefinitions
                                                                  assembly = item.attribute.TargetAssembly,
                                                                  type = item.attribute.TargetType,
                                                                  method = item.attribute.TargetMethod ?? item.wrapperMethod.Name,
-                                                                 signature = item.attribute.TargetSignature
+                                                                 signature = item.attribute.TargetSignature,
+                                                                 minimum_major = item.attribute.TargetAssemblyMinimumMajor,
+                                                                 maximum_major = item.attribute.TargetAssemblyMaximumMajor
                                                              },
                                                              wrapper = new
                                                              {
