@@ -18,7 +18,7 @@
          value is set to build constant InstallerVersion below and
          accessed as $(var.InstallerVersion) from WiX files.
          This is the default value if one is not specified when building. -->
-    <InstallerVersion Condition="'$(InstallerVersion)'==''">0.1</InstallerVersion>
+    <InstallerVersion Condition="'$(InstallerVersion)'==''">1.1</InstallerVersion>
     <OutputName>DatadogDotNetTracing-$(InstallerVersion)-$(Platform)-$(Configuration)</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
