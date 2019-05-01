@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return request.GetResponse();
             }
 
-            string httpMethod = request.Method.ToUpperInvariant();
+            string httpMethod = request?.Method?.ToUpperInvariant() ?? "GET"; // GET is the default
             string integrationName = typeof(WebRequestIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
 
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, request.RequestUri, integrationName))

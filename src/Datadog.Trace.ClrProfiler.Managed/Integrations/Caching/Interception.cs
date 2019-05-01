@@ -8,6 +8,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     internal static class Interception
     {
+        internal static Type VoidType = typeof(void);
         internal const Type[] NoArguments = null;
         internal static readonly Type[] EmptyTypes = Type.EmptyTypes;
 
@@ -23,20 +24,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return types;
         }
 
-        internal static string MethodKey(Type[] genericTypes, Type[] parameterTypes)
+        internal static string MethodKey(Type returnType, Type[] genericTypes, Type[] parameterTypes)
         {
-            var key = "m";
+            var key = $"m_r{returnType.AssemblyQualifiedName}";
+
+            var returnGenerics = returnType.GenericTypeArguments;
+
+            for (int i = 0; i < (returnGenerics?.Length ?? 0); i++)
+            {
+                Debug.Assert(returnGenerics != null, nameof(returnGenerics) + " != null");
+                key = string.Concat(key, $"_rg{returnGenerics[i].AssemblyQualifiedName}");
+            }
 
             for (int i = 0; i < (genericTypes?.Length ?? 0); i++)
             {
                 Debug.Assert(genericTypes != null, nameof(genericTypes) + " != null");
-                key = string.Concat(key, $"_g{genericTypes[i].FullName}");
+                key = string.Concat(key, $"_g{genericTypes[i].AssemblyQualifiedName}");
             }
 
             for (int i = 0; i < (parameterTypes?.Length ?? 0); i++)
             {
                 Debug.Assert(parameterTypes != null, nameof(parameterTypes) + " != null");
-                key = string.Concat(key, $"_p{parameterTypes[i].FullName}");
+                key = string.Concat(key, $"_p{parameterTypes[i].AssemblyQualifiedName}");
             }
 
             return key;

@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="requestData">The request data</param>
         /// <param name="cancellationToken">A cancellation token</param>
         /// <returns>The original result</returns>
-        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken)
+        private static object CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken)
         {
             if (_requestDataType == null)
             {
@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     "CallElasticsearchAsync",
                     methodParameterTypes: new[] { _requestDataType, CancellationTokenType },
                     methodGenericArguments: new[] { typeof(TResponse) });
-
+            
             using (var scope = CreateScope(pipeline, requestData))
             {
                 try

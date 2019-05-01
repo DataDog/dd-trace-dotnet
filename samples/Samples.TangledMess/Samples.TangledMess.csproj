@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net471</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\Debug\**" />
+    <Content Remove="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\Release\x64\**" />
+  </ItemGroup>
+
+</Project>
