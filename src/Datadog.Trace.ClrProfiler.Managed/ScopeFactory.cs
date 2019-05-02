@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
@@ -38,10 +39,11 @@ namespace Datadog.Trace.ClrProfiler
 
                 span.Type = SpanTypes.Http;
                 span.ServiceName = $"{tracer.DefaultServiceName}-{ServiceName}";
-                span.ResourceName = httpMethod;
+
+                span.ResourceName = $"{httpMethod} {CleanUri(requestUri, tryRemoveIds: true)}".Trim();
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
-                span.SetTag(Tags.HttpUrl, requestUri.OriginalString);
+                span.SetTag(Tags.HttpUrl, CleanUri(requestUri, tryRemoveIds: false));
                 span.SetTag(Tags.InstrumentationName, integrationName);
 
                 // set analytics sample rate if enabled
