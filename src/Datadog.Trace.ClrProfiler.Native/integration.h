@@ -147,32 +147,49 @@ struct MethodReference {
   const WSTRING type_name;
   const WSTRING method_name;
   const MethodSignature method_signature;
-  const USHORT min_major;
-  const USHORT max_major;
+  const USHORT min_v_major;
+  const USHORT min_v_minor;
+  const USHORT max_v_major;
+  const USHORT max_v_minor;
 
-  MethodReference() : min_major(0), max_major(USHRT_MAX) {}
+  MethodReference()
+      : min_v_major(0),
+        min_v_minor(0),
+        max_v_major(USHRT_MAX),
+        max_v_minor(USHRT_MAX) {}
 
   MethodReference(const WSTRING& assembly_name, WSTRING type_name,
-                  WSTRING method_name, short min_major, short max_major,
+                  WSTRING method_name, short min_major, short min_minor,
+                  short max_major, short max_minor,
                   const std::vector<BYTE>& method_signature)
       : assembly(assembly_name),
         type_name(type_name),
         method_name(method_name),
         method_signature(method_signature),
-        min_major(min_major),
-        max_major(max_major) {}
+        min_v_major(min_major),
+        min_v_minor(min_minor),
+        max_v_major(max_major),
+        max_v_minor(max_minor) {}
 
   inline WSTRING get_type_cache_key() const {
-    return "["_W + assembly.name + "]"_W + type_name;
+    return "["_W + assembly.name + "]"_W + type_name + "_vMin_"_W +
+           ToWSTRING(min_v_major) + "."_W + ToWSTRING(min_v_minor) +
+           "_vMax_"_W + ToWSTRING(max_v_major) + "."_W + ToWSTRING(max_v_minor);
   }
 
   inline WSTRING get_method_cache_key() const {
-    return "["_W + assembly.name + "]"_W + type_name + "."_W + method_name;
+    return "["_W + assembly.name + "]"_W + type_name + "."_W + method_name +
+           "_vMin_"_W + ToWSTRING(min_v_major) + "."_W +
+           ToWSTRING(min_v_minor) + "_vMax_"_W + ToWSTRING(max_v_major) +
+           "."_W + ToWSTRING(max_v_minor);
   }
 
   inline bool operator==(const MethodReference& other) const {
     return assembly == other.assembly && type_name == other.type_name &&
-           min_major == other.min_major && max_major == other.max_major &&
+           min_v_major == other.min_v_major &&
+           min_v_minor == other.min_v_minor &&
+           max_v_major == other.max_v_major &&
+           max_v_minor == other.max_v_minor &&
            method_name == other.method_name &&
            method_signature == other.method_signature;
   }

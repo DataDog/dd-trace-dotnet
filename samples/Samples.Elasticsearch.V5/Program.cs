@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Elasticsearch.Net;
 using Nest;
 
-namespace Samples.Elasticsearch
+namespace Samples.Elasticsearch.V5
 {
     public class Program
     {
@@ -77,16 +77,16 @@ namespace Samples.Elasticsearch
                         })
                     }
                 }),
-                () => elastic.Create<Post>(new CreateRequest<Post>(new Post
-                {
-                    Id = 2,
-                    Title = "CreateRequest",
-                }, "test_index")),
-                () => elastic.CreateDocument<Post>(new Post
-                {
-                    Id = 3,
-                    Title = "CreateDocument",
-                }),
+                 () => elastic.Create<Post>(new Post
+                 {
+                     Id = 2,
+                     Title = "Create",
+                 }), 
+                // () => elastic.CreateDocument<Post>(new Post
+                // {
+                //     Id = 3,
+                //     Title = "CreateDocument",
+                // }), // V6 Feature
                 () => elastic.Count<Post>(),
                 () => elastic.Search<Post>(s => s.MatchAll()),
                 () => elastic.DeleteByQuery(new DeleteByQueryRequest("test_index")
@@ -111,16 +111,11 @@ namespace Samples.Elasticsearch
                         })
                     }
                 }),
-                () => elastic.CreateAsync<Post>(new CreateRequest<Post>(new Post
+                () => elastic.CreateAsync<Post>(new Post
                 {
                     Id = 2,
-                    Title = "CreateRequest",
-                }, "test_index")),
-                () => elastic.CreateDocumentAsync<Post>(new Post
-                {
-                    Id = 3,
-                    Title = "CreateDocument",
-                }),
+                    Title = "Create",
+                }), 
                 () => elastic.CountAsync<Post>(),
                 () => elastic.SearchAsync<Post>(s => s.MatchAll()),
                 () => elastic.DeleteByQueryAsync(new DeleteByQueryRequest("test_index")
@@ -140,10 +135,11 @@ namespace Samples.Elasticsearch
                 {
                     IndexSettings = new IndexSettings()
                     {
-                        Sorting = new SortingSettings
-                        {
-                            Fields = new Field("Title"),
-                        },
+                        // V6 feature
+                        // Sorting = new SortingSettings
+                        // {
+                        //     Fields = new Field("Title"),
+                        // },
                     },
                 }),
                 () => elastic.Alias(new BulkAliasRequest
@@ -162,11 +158,11 @@ namespace Samples.Elasticsearch
                 }),
                 () => elastic.GetAliasesPointingToIndex("test_index_1"),
                 () => elastic.PutAlias("test_index_1", "test_index_3"),
-                () => elastic.AliasExists(new AliasExistsRequest("test_index_1")),
+                // () => elastic.AliasExists(new AliasExistsRequest("test_index_1")), // TODO: enable
                 () => elastic.DeleteAlias(new DeleteAliasRequest("test_index_1", "test_index_3")),
                 () => elastic.DeleteAlias(new DeleteAliasRequest("test_index_1", "test_index_2")),
                 () => elastic.CreateIndex("test_index_4"),
-                () => elastic.SplitIndex("test_index_1", "test_index_4"),
+                // () => elastic.SplitIndex("test_index_1", "test_index_4"), // V6 Feature
                 () => elastic.DeleteIndex("test_index_4"),
                 () => elastic.CloseIndex("test_index_1"),
                 () => elastic.OpenIndex("test_index_1"),
@@ -190,10 +186,11 @@ namespace Samples.Elasticsearch
                 {
                     IndexSettings = new IndexSettings()
                     {
-                        Sorting = new SortingSettings
-                        {
-                            Fields = new Field("Title"),
-                        },
+                        // V6 Feature
+                        // Sorting = new SortingSettings
+                        // {
+                        //     Fields = new Field("Title"),
+                        // },
                     },
                 }),
                 () => elastic.AliasAsync(new BulkAliasRequest
@@ -212,11 +209,9 @@ namespace Samples.Elasticsearch
                 }),
                 () => elastic.GetAliasesPointingToIndexAsync("test_index_1"),
                 () => elastic.PutAliasAsync("test_index_1", "test_index_3"),
-                () => elastic.AliasExistsAsync(new AliasExistsRequest("test_index_1")),
                 () => elastic.DeleteAliasAsync(new DeleteAliasRequest("test_index_1", "test_index_3")),
                 () => elastic.DeleteAliasAsync(new DeleteAliasRequest("test_index_1", "test_index_2")),
                 () => elastic.CreateIndexAsync("test_index_4"),
-                () => elastic.SplitIndexAsync("test_index_1", "test_index_4"),
                 () => elastic.DeleteIndexAsync("test_index_4"),
                 () => elastic.CloseIndexAsync("test_index_1"),
                 () => elastic.OpenIndexAsync("test_index_1"),
@@ -300,9 +295,9 @@ namespace Samples.Elasticsearch
                 () => elastic.GetJobs(new GetJobsRequest("test_job")),
                 () => elastic.GetJobStats(new GetJobStatsRequest()),
                 () => elastic.GetModelSnapshots(new GetModelSnapshotsRequest("test_job")),
-                () => elastic.GetOverallBuckets(new GetOverallBucketsRequest("test_job")),
+                // () => elastic.GetOverallBuckets(new GetOverallBucketsRequest("test_job")), // V6 Feature
                 () => elastic.FlushJob(new FlushJobRequest("test_job")),
-                () => elastic.ForecastJob(new ForecastJobRequest("test_job")),
+                // () => elastic.ForecastJob(new ForecastJobRequest("test_job")), // V6 Feature
                 () => elastic.GetAnomalyRecords(new GetAnomalyRecordsRequest("test_job")),
                 () => elastic.GetBuckets(new GetBucketsRequest("test_job")),
                 () => elastic.GetCategories(new GetCategoriesRequest("test_job")),
@@ -322,9 +317,9 @@ namespace Samples.Elasticsearch
                 () => elastic.GetJobsAsync(new GetJobsRequest("test_job")),
                 () => elastic.GetJobStatsAsync(new GetJobStatsRequest()),
                 () => elastic.GetModelSnapshotsAsync(new GetModelSnapshotsRequest("test_job")),
-                () => elastic.GetOverallBucketsAsync(new GetOverallBucketsRequest("test_job")),
+                // () => elastic.GetOverallBucketsAsync(new GetOverallBucketsRequest("test_job")), // V6 Feature
                 () => elastic.FlushJobAsync(new FlushJobRequest("test_job")),
-                () => elastic.ForecastJobAsync(new ForecastJobRequest("test_job")),
+                // () => elastic.ForecastJobAsync(new ForecastJobRequest("test_job")), // V6 Feature
                 () => elastic.GetAnomalyRecordsAsync(new GetAnomalyRecordsRequest("test_job")),
                 () => elastic.GetBucketsAsync(new GetBucketsRequest("test_job")),
                 () => elastic.GetCategoriesAsync(new GetCategoriesRequest("test_job")),
