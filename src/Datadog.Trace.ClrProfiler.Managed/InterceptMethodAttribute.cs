@@ -44,12 +44,12 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the minimum major version for <see cref="TargetAssembly"/>.
         /// </summary>
-        public short TargetAssemblyMinimumMajor { get; set; } = 0;
+        public ushort TargetAssemblyMinimumMajor { get; set; } = ushort.MinValue;
 
         /// <summary>
         /// Gets or sets the maximum major version for <see cref="TargetAssembly"/>.
         /// </summary>
-        public short TargetAssemblyMaximumMajor { get; set; } = short.MaxValue;
+        public ushort TargetAssemblyMaximumMajor { get; set; } = ushort.MaxValue;
 
         /// <summary>
         /// Gets or sets the name of the type that contains the target method to be intercepted.

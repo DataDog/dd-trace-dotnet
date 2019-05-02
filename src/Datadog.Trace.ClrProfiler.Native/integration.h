@@ -147,10 +147,10 @@ struct MethodReference {
   const WSTRING type_name;
   const WSTRING method_name;
   const MethodSignature method_signature;
-  const short min_major;
-  const short max_major;
+  const USHORT min_major;
+  const USHORT max_major;
 
-  MethodReference() : min_major(0), max_major(MAXINT8) {}
+  MethodReference() : min_major(0), max_major(USHRT_MAX) {}
 
   MethodReference(const WSTRING& assembly_name, WSTRING type_name,
                   WSTRING method_name, short min_major, short max_major,

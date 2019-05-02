@@ -19,6 +19,34 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
   return {assembly_id, WSTRING(name)};
 }
 
+trace::AssemblyMetadata GetAssemblyMetadata(
+    const ModuleID& module_id,
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
+  mdAssembly current = mdAssemblyNil;
+  auto hr = assembly_import->GetAssemblyFromScope(&current);
+  trace::AssemblyMetadata output_metadata{};
+
+  if (FAILED(hr)) {
+    return output_metadata;
+  }
+
+  WCHAR name[kNameMaxSize];
+  WSTRING assembly_name = ""_W;
+  DWORD name_len = 0;
+  ASSEMBLYMETADATA assembly_m{};
+  DWORD assembly_flags = 0;
+  hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr,
+                                         name, kNameMaxSize, &name_len, &assembly_m,
+                                         &assembly_flags);
+  if (!FAILED(hr) && name_len > 0) {
+    assembly_name = WSTRING(name);
+  }
+
+  return trace::AssemblyMetadata(module_id, assembly_name, assembly_m.usMajorVersion,
+                                 assembly_m.usMinorVersion, assembly_m.usBuildNumber,
+                                 assembly_m.usRevisionNumber);
+}
+
 WSTRING GetAssemblyName(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   mdAssembly current = mdAssemblyNil;
@@ -28,11 +56,11 @@ WSTRING GetAssemblyName(
   }
   WCHAR name[kNameMaxSize];
   DWORD name_len = 0;
-  ASSEMBLYMETADATA assembly_metadata{};
+  ASSEMBLYMETADATA ass_m{};
   DWORD assembly_flags = 0;
   hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr,
-                                         name, kNameMaxSize, &name_len,
-                                         &assembly_metadata, &assembly_flags);
+                                         name, kNameMaxSize, &name_len, &ass_m,
+                                         &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
     return ""_W;
   }
@@ -43,11 +71,11 @@ WSTRING GetAssemblyName(const ComPtr<IMetaDataAssemblyImport>& assembly_import,
                         const mdAssemblyRef& assembly_ref) {
   WCHAR name[kNameMaxSize];
   DWORD name_len = 0;
-  ASSEMBLYMETADATA assembly_metadata{};
+  ASSEMBLYMETADATA ass_m{};
   DWORD assembly_flags = 0;
   const auto hr = assembly_import->GetAssemblyRefProps(
-      assembly_ref, nullptr, nullptr, name, kNameMaxSize, &name_len,
-      &assembly_metadata, nullptr, nullptr, &assembly_flags);
+      assembly_ref, nullptr, nullptr, name, kNameMaxSize, &name_len, &ass_m,
+      nullptr, nullptr, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
     return ""_W;
   }
@@ -251,7 +279,8 @@ std::vector<Integration> FilterIntegrationsByTarget(
         auto ref_name = GetAssemblyName(assembly_import, assembly_ref);
         // Info(L"-- assembly ref: " , assembly_name , " to " , ref_name);
         if (mr.target_method.assembly.name == ref_name) {
-          // Info(L"FOUND IT! -- assembly ref: " , assembly_name , " to " , ref_name);
+          // Info(L"FOUND IT! -- assembly ref: " , assembly_name , " to " ,
+          // ref_name);
           found = true;
           break;
         }

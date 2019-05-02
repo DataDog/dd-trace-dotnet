@@ -173,9 +173,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  const short major = 0;
-  const short minor = 0;
-  const short patch = 0;
+  const auto assembly_metadata = GetAssemblyMetadata(module_id, assembly_import);
 
   filtered_integrations =
       FilterIntegrationsByTarget(filtered_integrations, assembly_import);
@@ -194,9 +192,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  ModuleMetadata* module_metadata =
-      new ModuleMetadata(metadata_import, metadata_emit,
-                         module_info.assembly.name, major, minor, patch, filtered_integrations);
+  ModuleMetadata* module_metadata = new ModuleMetadata(
+      metadata_import, metadata_emit, module_info.assembly.name,
+      assembly_metadata.majorVersion, assembly_metadata.minorVersion,
+      assembly_metadata.revisionNumber, filtered_integrations);
 
   MetadataBuilder metadata_builder(*module_metadata, module, metadata_import,
                                    metadata_emit, assembly_import,

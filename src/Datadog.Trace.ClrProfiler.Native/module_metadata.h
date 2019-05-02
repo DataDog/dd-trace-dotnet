@@ -20,17 +20,17 @@ class ModuleMetadata {
   const ComPtr<IMetaDataImport2> metadata_import{};
   const ComPtr<IMetaDataEmit2> metadata_emit{};
   WSTRING assemblyName = ""_W;
-  const short major_version = 0;
-  const short minor_version = 0;
-  const short patch_version = 0;
+  const USHORT major_version = 0;
+  const USHORT minor_version = 0;
+  const USHORT patch_version = 0;
   std::vector<Integration> integrations = {};
  
   ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
                  ComPtr<IMetaDataEmit2> metadata_emit, 
                  WSTRING assembly_name,
-                 short major_version, 
-                 short minor_version, 
-                 short patch_version,
+                 USHORT major_version, 
+                 USHORT minor_version, 
+                 USHORT patch_version,
                  std::vector<Integration> integrations)
       : metadata_import(metadata_import),
         metadata_emit(metadata_emit),

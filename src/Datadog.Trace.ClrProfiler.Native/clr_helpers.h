@@ -176,6 +176,34 @@ struct AssemblyInfo {
   bool is_valid() const { return id != 0; }
 };
 
+struct AssemblyMetadata {
+  const ModuleID module_id;
+  const WSTRING name;
+  const USHORT majorVersion;
+  const USHORT minorVersion;
+  const USHORT buildNumber;
+  const USHORT revisionNumber;
+
+  AssemblyMetadata()
+      : module_id(0),
+        name(""_W),
+        majorVersion(0),
+        minorVersion(0),
+        buildNumber(0),
+        revisionNumber(0) {}
+
+  AssemblyMetadata(ModuleID module_id, WSTRING name, USHORT major, USHORT minor,
+                   USHORT build, USHORT revision)
+      : module_id(module_id),
+        name(name),
+        majorVersion(major),
+        minorVersion(minor),
+        buildNumber(build),
+        revisionNumber(revision) {}
+
+  bool is_valid() const { return module_id != 0; }
+};
+
 struct ModuleInfo {
   const ModuleID id;
   const WSTRING path;
@@ -219,6 +247,10 @@ struct FunctionInfo {
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id);
+
+AssemblyMetadata GetAssemblyMetadata(
+    const ModuleID& module_id,
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
 WSTRING GetAssemblyName(const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 

@@ -8,8 +8,8 @@
           "assembly": "System.Data",
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReader",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -24,8 +24,8 @@
           "assembly": "System.Data.Common",
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReader",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -40,8 +40,8 @@
           "assembly": "System.Data",
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReaderAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -56,8 +56,8 @@
           "assembly": "System.Data.Common",
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReaderAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -79,8 +79,8 @@
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
           "method": "BeforeAction",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -97,8 +97,8 @@
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
           "method": "AfterAction",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -115,8 +115,8 @@
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
           "type": "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker",
           "method": "Rethrow",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -138,8 +138,8 @@
           "assembly": "System.Web.Mvc",
           "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
           "method": "BeginInvokeAction",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -156,8 +156,8 @@
           "assembly": "System.Web.Mvc",
           "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
           "method": "EndInvokeAction",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -177,8 +177,8 @@
           "assembly": "System.Web.Http",
           "type": "System.Web.Http.Controllers.IHttpController",
           "method": "ExecuteAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -200,8 +200,8 @@
           "assembly": "Elasticsearch.Net",
           "type": "Elasticsearch.Net.IRequestPipeline",
           "method": "CallElasticsearch",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -239,8 +239,8 @@
           "assembly": "System.Net.Http",
           "type": "System.Net.Http.HttpMessageHandler",
           "method": "SendAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -255,8 +255,8 @@
           "assembly": "System.Net.Http",
           "type": "System.Net.Http.HttpClientHandler",
           "method": "SendAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -276,8 +276,8 @@
           "assembly": "MongoDB.Driver.Core",
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol",
           "method": "Execute",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -292,8 +292,8 @@
           "assembly": "MongoDB.Driver.Core",
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
           "method": "Execute",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -308,8 +308,8 @@
           "assembly": "MongoDB.Driver.Core",
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol",
           "method": "ExecuteAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -324,8 +324,8 @@
           "assembly": "MongoDB.Driver.Core",
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
           "method": "ExecuteAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -347,8 +347,8 @@
           "assembly": "ServiceStack.Redis",
           "type": "ServiceStack.Redis.RedisNativeClient",
           "method": "SendReceive",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -370,8 +370,8 @@
           "assembly": "StackExchange.Redis",
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteSyncImpl",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -388,8 +388,8 @@
           "assembly": "StackExchange.Redis.StrongName",
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteSyncImpl",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -406,8 +406,8 @@
           "assembly": "StackExchange.Redis",
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteAsyncImpl",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -424,8 +424,8 @@
           "assembly": "StackExchange.Redis.StrongName",
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteAsyncImpl",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -442,8 +442,8 @@
           "assembly": "StackExchange.Redis",
           "type": "StackExchange.Redis.RedisBase",
           "method": "ExecuteAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -460,8 +460,8 @@
           "assembly": "StackExchange.Redis.StrongName",
           "type": "StackExchange.Redis.RedisBase",
           "method": "ExecuteAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -481,8 +481,8 @@
           "assembly": "System.ServiceModel",
           "type": "System.ServiceModel.Dispatcher.ChannelHandler",
           "method": "HandleRequest",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -502,8 +502,8 @@
           "assembly": "System",
           "type": "System.Net.WebRequest",
           "method": "GetResponse",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -518,8 +518,8 @@
           "assembly": "System.Net.Requests",
           "type": "System.Net.WebRequest",
           "method": "GetResponse",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -534,8 +534,8 @@
           "assembly": "System.Net",
           "type": "System.Net.WebRequest",
           "method": "GetResponseAsync",
-          "minimum_major": -32768,
-          "maximum_major": 32767
+          "minimum_major": 0,
+          "maximum_major": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",

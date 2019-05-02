@@ -128,14 +128,14 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
   }
   const auto eoj = src.end();  
   
-  short min_major = 0;
-  short max_major = MAXINT8;
+  USHORT min_major = 0;
+  USHORT max_major = USHRT_MAX;
 
   if (src.find("minimum_major") != eoj) {
-    min_major = src["minimum_major"].get<short>();
+    min_major = src["minimum_major"].get<USHORT>();
   }
   if (src.find("maximum_major") != eoj) {
-    max_major = src["maximum_major"].get<short>();
+    max_major = src["maximum_major"].get<USHORT>();
   }
   
   const auto assembly = ToWSTRING(src.value("assembly", ""));
