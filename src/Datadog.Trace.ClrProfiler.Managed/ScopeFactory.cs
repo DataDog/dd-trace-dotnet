@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler
                 span.ServiceName = $"{tracer.DefaultServiceName}-{ServiceName}";
                 span.ResourceName = httpMethod;
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
-                span.SetTag(Tags.HttpMethod, httpMethod);
+                span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
                 span.SetTag(Tags.HttpUrl, requestUri.OriginalString);
                 span.SetTag(Tags.InstrumentationName, integrationName);
 
