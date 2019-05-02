@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static async Task<WebResponse> GetResponseAsyncInternal(WebRequest request)
         {
-            if (!IsTracingEnabled(request))
+            if (!(request is HttpWebRequest) || !IsTracingEnabled(request))
             {
                 return await request.GetResponseAsync().ConfigureAwait(false);
             }
