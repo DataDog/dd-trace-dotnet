@@ -57,5 +57,30 @@ namespace Datadog.Trace.ClrProfiler
             // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
         }
+
+        public static string CleanUri(Uri uri, bool tryRemoveIds)
+        {
+            // remove username, password
+            string schemeAndAuthority = $"{uri.Scheme}://{uri.Authority}";
+
+            // try to remove ids
+            string path = tryRemoveIds
+                              ? $"{string.Join("/", uri.Segments.Select(CleanUriSegment))}"
+                              : $"{uri.AbsolutePath}";
+
+            // remove query and fragment
+            return schemeAndAuthority + path;
+        }
+
+        public static string CleanUriSegment(string segment)
+        {
+            // remove trailing slash
+            segment = segment.TrimEnd('/');
+
+            // remove path segments that look like int or guid
+            return int.TryParse(segment, out _) || Guid.TryParse(segment, out _)
+                       ? "*"
+                       : segment;
+        }
     }
 }
