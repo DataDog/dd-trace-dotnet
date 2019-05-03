@@ -9,8 +9,9 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     internal static class ScopeFactory
     {
-        internal const string OperationName = "http.request";
-        internal const string ServiceName = "http-client";
+        public const string OperationName = "http.request";
+        public const string ServiceName = "http-client";
+        public const string UrlIdReplacement = "*";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ScopeFactory));
 
@@ -40,7 +41,11 @@ namespace Datadog.Trace.ClrProfiler
                 span.Type = SpanTypes.Http;
                 span.ServiceName = $"{tracer.DefaultServiceName}-{ServiceName}";
 
-                span.ResourceName = $"{httpMethod} {CleanUri(requestUri, tryRemoveIds: true)}".Trim();
+                span.ResourceName = string.Join(
+                    " ",
+                    httpMethod,
+                    CleanUri(requestUri, tryRemoveIds: true));
+
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
                 span.SetTag(Tags.HttpUrl, CleanUri(requestUri, tryRemoveIds: false));
@@ -62,16 +67,14 @@ namespace Datadog.Trace.ClrProfiler
 
         public static string CleanUri(Uri uri, bool tryRemoveIds)
         {
-            // remove username, password
-            string schemeAndAuthority = $"{uri.Scheme}://{uri.Authority}";
-
-            // try to remove ids
+            // try to remove segments that look like ids
             string path = tryRemoveIds
-                              ? $"{string.Join("/", uri.Segments.Select(CleanUriSegment))}"
-                              : $"{uri.AbsolutePath}";
+                              ? string.Join("/", uri.Segments.Select(CleanUriSegment))
+                              : uri.AbsolutePath;
 
-            // remove query and fragment
-            return schemeAndAuthority + path;
+            // keep only scheme, authority, and path.
+            // remove username, password, query, and fragment
+            return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
         }
 
         public static string CleanUriSegment(string segment)
@@ -81,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler
 
             // remove path segments that look like int or guid
             return int.TryParse(segment, out _) || Guid.TryParse(segment, out _)
-                       ? "*"
+                       ? UrlIdReplacement
                        : segment;
         }
     }
