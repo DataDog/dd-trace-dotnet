@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             // try to remove segments that look like ids
             string path = tryRemoveIds
-                              ? string.Join("/", uri.Segments.Select(CleanUriSegment))
+                              ? string.Concat(uri.Segments.Select(CleanUriSegment))
                               : uri.AbsolutePath;
 
             // keep only scheme, authority, and path.
@@ -79,12 +79,21 @@ namespace Datadog.Trace.ClrProfiler
 
         public static string CleanUriSegment(string segment)
         {
+            bool hasTrailingSlash = segment.EndsWith("/", StringComparison.Ordinal);
+
             // remove trailing slash
-            segment = segment.TrimEnd('/');
+            if (hasTrailingSlash)
+            {
+                segment = segment.Substring(0, segment.Length - 1);
+            }
 
             // remove path segments that look like int or guid
-            return int.TryParse(segment, out _) || Guid.TryParse(segment, out _)
-                       ? UrlIdReplacement
+            segment = int.TryParse(segment, out _) || Guid.TryParse(segment, out _)
+                          ? UrlIdReplacement
+                          : segment;
+
+            return hasTrailingSlash
+                       ? segment + "/"
                        : segment;
         }
     }
