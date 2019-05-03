@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler
     {
         public const string OperationName = "http.request";
         public const string ServiceName = "http-client";
-        public const string UrlIdReplacement = "*";
+        public const string UrlIdPlaceholder = "*";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ScopeFactory));
 
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler
 
             // remove path segments that look like int or guid
             segment = int.TryParse(segment, out _) || Guid.TryParse(segment, out _)
-                          ? UrlIdReplacement
+                          ? UrlIdPlaceholder
                           : segment;
 
             return hasTrailingSlash
