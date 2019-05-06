@@ -74,7 +74,7 @@ TEST_F(DISABLED_CLRHelperTest, EnumeratesAssemblyRefs) {
   std::vector<std::wstring> expected_assemblies = {L"System.Runtime"};
   std::vector<std::wstring> actual_assemblies;
   for (auto& ref : EnumAssemblyRefs(assembly_import_)) {
-    auto name = GetAssemblyName(assembly_import_, ref);
+    auto name = GetReferencedAssemblyMetadata(assembly_import_, ref).name;
     if (!name.empty()) {
       actual_assemblies.push_back(name);
     }

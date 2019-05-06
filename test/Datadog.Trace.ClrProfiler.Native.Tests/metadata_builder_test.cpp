@@ -80,9 +80,11 @@ class MetadataBuilderTest : public ::testing::Test {
 };
 
 TEST_F(MetadataBuilderTest, StoresWrapperMemberRef) {
-  MethodReference ref1(L"", L"", L"", {});
-  MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
-  MethodReference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
+  MethodReference ref1(L"", L"", L"", 0, 0, USHRT_MAX, USHRT_MAX, {});
+  MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", 0, 0,
+                       USHRT_MAX, USHRT_MAX, {});
+  MethodReference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", 0, 0,
+                       USHRT_MAX, USHRT_MAX, {});
   MethodReplacement mr1(ref1, ref2, ref3);
   auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);
@@ -101,9 +103,11 @@ TEST_F(MetadataBuilderTest, StoresWrapperMemberRef) {
 }
 
 TEST_F(MetadataBuilderTest, StoresWrapperMemberRefForSeparateAssembly) {
-  MethodReference ref1(L"", L"", L"", {});
-  MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", {});
-  MethodReference ref3(L"Samples.ExampleLibraryTracer", L"Class1", L"Add", {});
+  MethodReference ref1(L"", L"", L"", 0, 0, USHRT_MAX, USHRT_MAX, {});
+  MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", 0, 0,
+                       USHRT_MAX, USHRT_MAX, {});
+  MethodReference ref3(L"Samples.ExampleLibraryTracer", L"Class1", L"Add", 0, 0,
+                       USHRT_MAX, USHRT_MAX, {});
   MethodReplacement mr1(ref1, ref2, ref3);
   auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);
