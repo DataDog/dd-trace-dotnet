@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("123", Id)]
         [InlineData("E653C852-227B-4F0C-9E48-D30D83C68BF3/", Id + "/")]
         [InlineData("E653C852-227B-4F0C-9E48-D30D83C68BF3", Id)]
+        [InlineData("E653C852227B4F0C9E48D30D83C68BF3/", Id + "/")]
+        [InlineData("E653C852227B4F0C9E48D30D83C68BF3", Id)]
         public void CleanUriSegment(string segment, string expected)
         {
             string actual = ScopeFactory.CleanUriSegment(segment);
@@ -31,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("https://example.com/path/123/", "https://example.com/path/" + Id + "/")]
         [InlineData("https://example.com/path/123", "https://example.com/path/" + Id)]
         [InlineData("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "https://example.com/path/" + Id)]
+        [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "https://example.com/path/" + Id)]
         public void CleanUri_RemoveIdSegments(string uri, string expected)
         {
             string actual = ScopeFactory.CleanUri(new Uri(uri), tryRemoveIds: true);
