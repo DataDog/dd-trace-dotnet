@@ -145,7 +145,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   std::vector<Integration> filtered_integrations =
-      FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
+      FilterIntegrationsByCaller(integrations_, module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,

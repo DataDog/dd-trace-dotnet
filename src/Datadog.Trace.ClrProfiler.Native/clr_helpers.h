@@ -10,6 +10,7 @@
 #include "integration.h"
 
 namespace trace {
+class ModuleMetadata;
 
 const size_t kNameMaxSize = 1024;
 const ULONG kEnumeratorMax = 256;
@@ -176,6 +177,37 @@ struct AssemblyInfo {
   bool is_valid() const { return id != 0; }
 };
 
+struct AssemblyMetadata {
+  const ModuleID module_id;
+  const WSTRING name;
+  const mdAssembly assembly_token;
+  const USHORT majorVersion;
+  const USHORT minorVersion;
+  const USHORT buildNumber;
+  const USHORT revisionNumber;
+
+  AssemblyMetadata()
+      : module_id(0),
+        name(""_W),
+        assembly_token(mdTokenNil),
+        majorVersion(0),
+        minorVersion(0),
+        buildNumber(0),
+        revisionNumber(0) {}
+
+  AssemblyMetadata(ModuleID module_id, WSTRING name, mdAssembly assembly_token,
+                   USHORT major, USHORT minor, USHORT build, USHORT revision)
+      : module_id(module_id),
+        name(name),
+        assembly_token(assembly_token),
+        majorVersion(major),
+        minorVersion(minor),
+        buildNumber(build),
+        revisionNumber(revision) {}
+
+  bool is_valid() const { return module_id != 0; }
+};
+
 struct ModuleInfo {
   const ModuleID id;
   const WSTRING path;
@@ -198,7 +230,8 @@ struct TypeInfo {
   const WSTRING name;
 
   TypeInfo() : id(0), name(""_W) {}
-  TypeInfo(mdToken id, WSTRING name) : id(id), name(name) {}
+  TypeInfo(mdToken id, WSTRING name)
+      : id(id), name(name) {}
 
   bool IsValid() const { return id != 0; }
 };
@@ -220,10 +253,16 @@ struct FunctionInfo {
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id);
 
-WSTRING GetAssemblyName(const ComPtr<IMetaDataAssemblyImport>& assembly_import);
+AssemblyMetadata GetAssemblyMetadata(
+    const ModuleID& module_id,
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
-WSTRING GetAssemblyName(const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-                        const mdAssemblyRef& assembly_ref);
+AssemblyMetadata GetAssemblyImportMetadata(
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import);
+
+AssemblyMetadata GetReferencedAssemblyMetadata(
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+    const mdAssemblyRef& assembly_ref);
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                              const mdToken& token);
@@ -246,7 +285,8 @@ std::vector<Integration> FilterIntegrationsByName(
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
 std::vector<Integration> FilterIntegrationsByCaller(
-    const std::vector<Integration>& integrations, const WSTRING& assembly_name);
+    const std::vector<Integration>& integrations,
+    const AssemblyInfo module_metadata);
 
 // FilterIntegrationsByTarget removes any integrations which have a target not
 // referenced by the module's assembly import
