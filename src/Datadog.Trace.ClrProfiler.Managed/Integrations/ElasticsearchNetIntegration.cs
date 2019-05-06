@@ -39,7 +39,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline")]
+            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            TargetAssemblyMinimumMajor = 6,
+            TargetAssemblyMaximumMajor = 6)]
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData)
         {
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, TResponse>>

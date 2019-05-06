@@ -36,50 +36,60 @@ trace::AssemblyMetadata GetAssemblyMetadata(
   ASSEMBLYMETADATA assembly_m{};
   DWORD assembly_flags = 0;
   hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr,
-                                         name, kNameMaxSize, &name_len, &assembly_m,
-                                         &assembly_flags);
+                                         name, kNameMaxSize, &name_len,
+                                         &assembly_m, &assembly_flags);
   if (!FAILED(hr) && name_len > 0) {
     assembly_name = WSTRING(name);
   }
 
-  return trace::AssemblyMetadata(module_id, assembly_name, assembly_m.usMajorVersion,
-                                 assembly_m.usMinorVersion, assembly_m.usBuildNumber,
-                                 assembly_m.usRevisionNumber);
+  return trace::AssemblyMetadata(
+      module_id, assembly_name, current, assembly_m.usMajorVersion,
+      assembly_m.usMinorVersion, assembly_m.usBuildNumber,
+      assembly_m.usRevisionNumber);
 }
 
-WSTRING GetAssemblyName(
+AssemblyMetadata GetAssemblyImportMetadata(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   mdAssembly current = mdAssemblyNil;
   auto hr = assembly_import->GetAssemblyFromScope(&current);
   if (FAILED(hr)) {
-    return ""_W;
+    return {};
   }
   WCHAR name[kNameMaxSize];
   DWORD name_len = 0;
   ASSEMBLYMETADATA ass_m{};
   DWORD assembly_flags = 0;
+  const ModuleID placeholder_module_id = 0;
+
   hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr,
                                          name, kNameMaxSize, &name_len, &ass_m,
                                          &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
-    return ""_W;
+    return {};
   }
-  return WSTRING(name);
+  return AssemblyMetadata(placeholder_module_id, name, current,
+                          ass_m.usMajorVersion, ass_m.usMinorVersion,
+                          ass_m.usBuildNumber, ass_m.usRevisionNumber);
 }
 
-WSTRING GetAssemblyName(const ComPtr<IMetaDataAssemblyImport>& assembly_import,
-                        const mdAssemblyRef& assembly_ref) {
+AssemblyMetadata GetReferencedAssemblyMetadata(
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+    const mdAssemblyRef& assembly_ref) {
   WCHAR name[kNameMaxSize];
   DWORD name_len = 0;
   ASSEMBLYMETADATA ass_m{};
   DWORD assembly_flags = 0;
+  const ModuleID module_id_placeholder = 0;
   const auto hr = assembly_import->GetAssemblyRefProps(
       assembly_ref, nullptr, nullptr, name, kNameMaxSize, &name_len, &ass_m,
       nullptr, nullptr, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
-    return ""_W;
+    return {};
   }
-  return WSTRING(name);
+
+  return AssemblyMetadata(module_id_placeholder, name, assembly_ref,
+                          ass_m.usMajorVersion, ass_m.usMinorVersion,
+                          ass_m.usBuildNumber, ass_m.usRevisionNumber);
 }
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
@@ -160,6 +170,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
 
   HRESULT hr = E_FAIL;
   const auto token_type = TypeFromToken(token);
+
   switch (token_type) {
     case mdtTypeDef:
       hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize,
@@ -201,14 +212,15 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,
     return {};
   }
 
-  return {token, WSTRING(type_name)};
+  return {token, WSTRING(type_name), parent_token};
 }
 
 mdAssemblyRef FindAssemblyRef(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import,
     const WSTRING& assembly_name) {
   for (mdAssemblyRef assembly_ref : EnumAssemblyRefs(assembly_import)) {
-    if (GetAssemblyName(assembly_import, assembly_ref) == assembly_name) {
+    if (GetReferencedAssemblyMetadata(assembly_import, assembly_ref).name ==
+        assembly_name) {
       return assembly_ref;
     }
   }
@@ -240,15 +252,14 @@ std::vector<Integration> FilterIntegrationsByName(
 }
 
 std::vector<Integration> FilterIntegrationsByCaller(
-    const std::vector<Integration>& integrations,
-    const WSTRING& assembly_name) {
+    const std::vector<Integration>& integrations, const AssemblyInfo assembly) {
   std::vector<Integration> enabled;
 
   for (auto& i : integrations) {
     bool found = false;
     for (auto& mr : i.method_replacements) {
       if (mr.caller_method.assembly.name.empty() ||
-          mr.caller_method.assembly.name == assembly_name) {
+          mr.caller_method.assembly.name == assembly.name) {
         found = true;
         break;
       }
@@ -261,26 +272,62 @@ std::vector<Integration> FilterIntegrationsByCaller(
   return enabled;
 }
 
+bool AssemblyMeetsIntegrationRequirements(
+    const AssemblyMetadata metadata,
+    const MethodReplacement method_replacement) {
+
+  const auto target = method_replacement.target_method;
+
+  if (target.assembly.name != metadata.name) {
+    // not the expected assembly
+    return false;
+  }
+
+  if (target.min_v_major > metadata.majorVersion) {
+    // below major version requirements
+    return false;
+  }
+
+  if (target.max_v_major < metadata.majorVersion) {
+    // above major version requirements
+    return false;
+  }
+
+  if (target.min_v_major == metadata.majorVersion &&
+      target.min_v_minor > metadata.minorVersion) {
+    // below minimum version requirements
+    return false;
+  }
+
+  if (target.max_v_major == metadata.majorVersion &&
+      target.max_v_minor < metadata.minorVersion) {
+    // above minimum version requirements
+    return false;
+  }
+
+  return true;
+}
+
 std::vector<Integration> FilterIntegrationsByTarget(
     const std::vector<Integration>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   std::vector<Integration> enabled;
 
-  const auto assembly_name = GetAssemblyName(assembly_import);
+  const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
   for (auto& i : integrations) {
     bool found = false;
+    // ReSharper disable once CppRangeBasedForIncompatibleReference
     for (auto& mr : i.method_replacements) {
-      if (mr.target_method.assembly.name == assembly_name) {
+      if (AssemblyMeetsIntegrationRequirements(assembly_metadata, mr)) {
         found = true;
         break;
       }
       for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
-        auto ref_name = GetAssemblyName(assembly_import, assembly_ref);
+        const auto metadata_ref =
+            GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
         // Info(L"-- assembly ref: " , assembly_name , " to " , ref_name);
-        if (mr.target_method.assembly.name == ref_name) {
-          // Info(L"FOUND IT! -- assembly ref: " , assembly_name , " to " ,
-          // ref_name);
+        if (AssemblyMeetsIntegrationRequirements(metadata_ref, mr)) {
           found = true;
           break;
         }

@@ -20,6 +20,7 @@ typedef enum {
 struct ILInstr {
   ILInstr* m_pNext;
   ILInstr* m_pPrev;
+  LPCBYTE instruction_pointer;
 
   unsigned m_opcode;
   unsigned m_offset;

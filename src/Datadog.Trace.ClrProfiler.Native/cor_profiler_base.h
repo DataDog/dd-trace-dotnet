@@ -12,7 +12,8 @@ class CorProfilerBase : public ICorProfilerCallback8 {
   std::atomic<int> ref_count_;
 
  protected:
-  ICorProfilerInfo3* info_;
+  ICorProfilerInfo* info_;
+  ICorProfilerInfo3* info3_;
 
  public:
   CorProfilerBase();

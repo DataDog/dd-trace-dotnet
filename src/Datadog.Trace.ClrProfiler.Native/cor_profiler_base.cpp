@@ -3,12 +3,16 @@
 
 namespace trace {
 
-CorProfilerBase::CorProfilerBase() : ref_count_(0), info_(nullptr) {}
+CorProfilerBase::CorProfilerBase() : ref_count_(0), info3_(nullptr) {}
 
 CorProfilerBase::~CorProfilerBase() {
   if (this->info_ != nullptr) {
     this->info_->Release();
     this->info_ = nullptr;
+  }
+  if (this->info3_ != nullptr) {
+    this->info3_->Release();
+    this->info3_ = nullptr;
   }
 }
 

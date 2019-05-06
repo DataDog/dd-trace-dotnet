@@ -143,6 +143,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="class_factory.h" />
+    <ClInclude Include="class_metadata.h" />
     <ClInclude Include="com_ptr.h" />
     <ClInclude Include="cor_profiler.h" />
     <ClInclude Include="cor_profiler_base.h" />

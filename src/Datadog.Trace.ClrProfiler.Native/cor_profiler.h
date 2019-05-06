@@ -11,6 +11,7 @@
 #include "cor_profiler_base.h"
 #include "integration.h"
 #include "module_metadata.h"
+#include "class_metadata.h"
 
 namespace trace {
 
@@ -35,6 +36,8 @@ class CorProfiler : public CorProfilerBase {
 
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
+  std::mutex md_token_to_module_map_lock_;
+  std::unordered_map<mdToken, ModuleMetadata*> md_token_to_module_map_;
 
  public:
   CorProfiler();

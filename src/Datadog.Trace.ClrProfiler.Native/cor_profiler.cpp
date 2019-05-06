@@ -93,10 +93,10 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // get Profiler interface
-  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
-      &this->info_);
+  HRESULT hr =
+      cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo>(&this->info_);
   if (FAILED(hr)) {
-    Warn("Failed to attach profiler: interface ICorProfilerInfo3 not found.");
+    Warn("Failed to attach profiler: interface ICorProfilerInfo not found.");
     return E_FAIL;
   }
 
@@ -107,9 +107,25 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  // get Profiler3 interface
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
+      &this->info3_);
+  if (FAILED(hr)) {
+    Warn("Failed to attach profiler: interface ICorProfilerInfo3 not found.");
+    return E_FAIL;
+  }
+
+  // set event mask to subscribe to events and disable NGEN images
+  hr = this->info3_->SetEventMask(kEventMask);
+  if (FAILED(hr)) {
+    Warn("Failed to attach profiler: unable to set event mask.");
+    return E_FAIL;
+  }
+
   // we're in!
   Info("Profiler attached.");
   this->info_->AddRef();
+  this->info3_->AddRef();
   is_attached_ = true;
   profiler = this;
   return S_OK;
@@ -123,7 +139,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  auto module_info = GetModuleInfo(this->info_, module_id);
+  auto module_info = GetModuleInfo(this->info3_, module_id);
   if (!module_info.IsValid()) {
     return S_OK;
   }
@@ -145,7 +161,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   std::vector<Integration> filtered_integrations =
-      FilterIntegrationsByCaller(integrations_, module_info.assembly.name);
+      FilterIntegrationsByCaller(integrations_, module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
@@ -155,9 +171,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   ComPtr<IUnknown> metadata_interfaces;
 
-  auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
-                                           IID_IMetaDataImport2,
-                                           metadata_interfaces.GetAddressOf());
+  auto hr = this->info3_->GetModuleMetaData(module_id, ofRead | ofWrite,
+                                            IID_IMetaDataImport2,
+                                            metadata_interfaces.GetAddressOf());
 
   if (FAILED(hr)) {
     Warn("CorProfiler::ModuleLoadFinished: Failed to get metadata interface");
@@ -173,7 +189,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  const auto assembly_metadata = GetAssemblyMetadata(module_id, assembly_import);
+  const auto assembly_metadata =
+      GetAssemblyMetadata(module_id, assembly_import);
 
   filtered_integrations =
       FilterIntegrationsByTarget(filtered_integrations, assembly_import);
@@ -223,10 +240,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     }
   }
 
+  if (assembly_metadata.name.find(L"Elastic") > -1) {
+    std::cout << "Found elastic!!! ";
+  }
+
   // store module info for later lookup
   {
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
     module_id_to_info_map_[module_id] = module_metadata;
+  }
+  {
+    std::lock_guard<std::mutex> guard(md_token_to_module_map_lock_);
+    md_token_to_module_map_[assembly_metadata.assembly_token] = module_metadata;
   }
 
   Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
@@ -255,8 +280,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   ModuleID module_id;
   mdToken function_token = mdTokenNil;
 
-  HRESULT hr = this->info_->GetFunctionInfo(function_id, &class_id, &module_id,
-                                            &function_token);
+  HRESULT hr = this->info3_->GetFunctionInfo(function_id, &class_id, &module_id,
+                                             &function_token);
   RETURN_OK_IF_FAILED(hr);
 
   ModuleMetadata* module_metadata = nullptr;
@@ -268,14 +293,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   }
 
   if (module_metadata == nullptr) {
-    // we haven't stored a ModuleInfo for this module, so we can't modify its
-    // IL
+    // we haven't stored a ModuleInfo for this module
+    // so we can't modify its IL
     return S_OK;
   }
 
   // get function info
   auto caller =
       GetFunctionInfo(module_metadata->metadata_import, function_token);
+
   if (!caller.IsValid()) {
     return S_OK;
   }
@@ -286,7 +312,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     return S_OK;
   }
 
-  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  ILRewriter rewriter(this->info3_, nullptr, module_id, function_token);
   bool modified = false;
 
   // hr = rewriter.Initialize();
@@ -344,13 +370,54 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      // we need to emit a method spec to populate the generic arguments
       if (method_replacement.wrapper_method.method_signature
               .NumberOfTypeArguments() > 0) {
         wrapper_method_ref =
             DefineMethodSpec(module_metadata->metadata_emit, wrapper_method_ref,
                              target.signature);
       }
+
+      TypeInfo current_type = target.type;
+      TypeInfo* examined_type = &current_type;
+
+      // while (examined_type->parent_token != mdTokenNil &&
+      //       TypeFromToken(examined_type->id) != mdtModuleRef) {
+
+      //  auto next_type = GetTypeInfo(module_metadata->metadata_emit,
+      //                               examined_type->parent_token);
+      //  examined_type = &next_type;
+      //}
+
+      auto target_module_token = examined_type->parent_token;
+
+      // mdMethodDef target_method_md_token = target.id;
+      // FunctionID target_function_id;
+      // FunctionID the_real_function_deal;
+      // ModuleID the_real_module_id;
+      // ModuleID target_module_id = 140735199132336;
+      // auto the_real_deal =
+      // reinterpret_cast<LPCBYTE>(pInstr->instruction_pointer); auto
+      // il_instruction_location = reinterpret_cast<LPCBYTE>(pInstr->m_Arg32);
+
+      // hr = this->info_->GetFunctionFromIP(the_real_deal,
+      //                                    &the_real_function_deal);
+
+      // hr = this->info_->GetFunctionFromIP(il_instruction_location,
+      //                                    &target_function_id);
+
+      // hr = this->info_->GetFunctionInfo(target_function_id, nullptr,
+      //                                  &target_module_id, nullptr);
+
+      // hr = this->info_->GetFunctionInfo(the_real_function_deal, nullptr,
+      //                                 &the_real_module_id, nullptr);
+
+      // ModuleMetadata* target_module = nullptr;
+      //{
+      //  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+      //  if (module_id_to_info_map_.count(target_module_id) > 0) {
+      //    target_module = module_id_to_info_map_[target_module_id];
+      //  }
+      //}
 
       // replace with a call to the instrumentation wrapper
       const auto original_argument = pInstr->m_Arg32;
