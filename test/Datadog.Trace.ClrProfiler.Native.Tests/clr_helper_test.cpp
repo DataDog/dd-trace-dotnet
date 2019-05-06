@@ -83,14 +83,33 @@ TEST_F(DISABLED_CLRHelperTest, EnumeratesAssemblyRefs) {
 }
 
 TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
-  Integration i1 = {
-      L"integration-1",
-      {{{}, {L"Samples.ExampleLibrary", L"SomeType", L"SomeMethod", {}}, {}}}};
-  Integration i2 = {
-      L"integration-2",
-      {{{}, {L"Assembly.Two", L"SomeType", L"SomeMethod", {}}, {}}}};
-  Integration i3 = {L"integration-3",
-                    {{{}, {L"System.Runtime", L"", L"", {}}, {}}}};
+  Integration i1 = {L"integration-1",
+                    {{{},
+                      {L"Samples.ExampleLibrary",
+                       L"SomeType",
+                       L"SomeMethod",
+                       0,
+                       0,
+                       USHRT_MAX,
+                       USHRT_MAX,
+                       {}},
+                      {}}}};
+  Integration i2 = {L"integration-2",
+                    {{{},
+                      {L"Assembly.Two",
+                       L"SomeType",
+                       L"SomeMethod",
+                       0,
+                       0,
+                       USHRT_MAX,
+                       USHRT_MAX,
+                       {}},
+                      {}}}};
+  Integration i3 = {
+      L"integration-3",
+      {{{},
+        {L"System.Runtime", L"", L"", 0, 0, USHRT_MAX, USHRT_MAX, {}},
+        {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
   std::vector<WSTRING> disabled_integrations = {"integration-2"_W};
@@ -100,29 +119,65 @@ TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
 }
 
 TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByCaller) {
-  Integration i1 = {
-      L"integration-1",
-      {{{L"Assembly.One", L"SomeType", L"SomeMethod", {}}, {}, {}}}};
-  Integration i2 = {
-      L"integration-2",
-      {{{L"Assembly.Two", L"SomeType", L"SomeMethod", {}}, {}, {}}}};
+  Integration i1 = {L"integration-1",
+                    {{{L"Assembly.One",
+                       L"SomeType",
+                       L"SomeMethod",
+                       0,
+                       0,
+                       USHRT_MAX,
+                       USHRT_MAX,
+                       {}},
+                      {},
+                      {}}}};
+  Integration i2 = {L"integration-2",
+                    {{{L"Assembly.Two",
+                       L"SomeType",
+                       L"SomeMethod",
+                       0,
+                       0,
+                       USHRT_MAX,
+                       USHRT_MAX,
+                       {}},
+                      {},
+                      {}}}};
   Integration i3 = {L"integration-3", {{{}, {}, {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
+  trace::AssemblyInfo assembly_info = {1, L"Assembly.One"};
   std::vector<Integration> actual =
-      FilterIntegrationsByCaller(all, L"Assembly.One");
+      FilterIntegrationsByCaller(all, assembly_info);
   EXPECT_EQ(expected, actual);
 }
 
 TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByTarget) {
-  Integration i1 = {
-      L"integration-1",
-      {{{}, {L"Samples.ExampleLibrary", L"SomeType", L"SomeMethod", {}}, {}}}};
-  Integration i2 = {
-      L"integration-2",
-      {{{}, {L"Assembly.Two", L"SomeType", L"SomeMethod", {}}, {}}}};
-  Integration i3 = {L"integration-3",
-                    {{{}, {L"System.Runtime", L"", L"", {}}, {}}}};
+  Integration i1 = {L"integration-1",
+                    {{{},
+                      {L"Samples.ExampleLibrary",
+                       L"SomeType",
+                       L"SomeMethod",
+                       0,
+                       0,
+                       USHRT_MAX,
+                       USHRT_MAX,
+                       {}},
+                      {}}}};
+  Integration i2 = {L"integration-2",
+                    {{{},
+                      {L"Assembly.Two",
+                       L"SomeType",
+                       L"SomeMethod",
+                       0,
+                       0,
+                       USHRT_MAX,
+                       USHRT_MAX,
+                       {}},
+                      {}}}};
+  Integration i3 = {
+      L"integration-3",
+      {{{},
+        {L"System.Runtime", L"", L"", 0, 0, USHRT_MAX, USHRT_MAX, {}},
+        {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
   std::vector<Integration> actual =

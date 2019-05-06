@@ -157,8 +157,8 @@ struct MethodReference {
         max_v_minor(USHRT_MAX) {}
 
   MethodReference(const WSTRING& assembly_name, WSTRING type_name,
-                  WSTRING method_name, short min_major, short min_minor,
-                  short max_major, short max_minor,
+                  WSTRING method_name, USHORT min_major, USHORT min_minor,
+                  USHORT max_major, USHORT max_minor,
                   const std::vector<BYTE>& method_signature)
       : assembly(assembly_name),
         type_name(type_name),
