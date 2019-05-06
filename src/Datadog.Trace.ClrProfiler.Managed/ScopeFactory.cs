@@ -72,9 +72,8 @@ namespace Datadog.Trace.ClrProfiler
                               ? string.Concat(uri.Segments.Select(CleanUriSegment))
                               : uri.AbsolutePath;
 
-            // keep only scheme, authority, and path.
-            // remove username, password, query, and fragment
-            return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
+            // keep only host and path, remove userinfo, query, and fragment
+            return $"{uri.Authority}{path}";
         }
 
         public static string CleanUriSegment(string segment)
