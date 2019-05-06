@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler
     {
         public const string OperationName = "http.request";
         public const string ServiceName = "http-client";
-        public const string UrlIdPlaceholder = "*";
+        public const string UrlIdPlaceholder = "?";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ScopeFactory));
 

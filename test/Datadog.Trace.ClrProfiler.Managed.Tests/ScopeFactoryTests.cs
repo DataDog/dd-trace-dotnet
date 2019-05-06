@@ -5,7 +5,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
     public class ScopeFactoryTests
     {
-        private const string Id = ScopeFactory.UrlIdPlaceholder;
+        // declare here instead of using ScopeFactory.UrlIdPlaceholder so tests fails if value changes
+        private const string Id = "?";
 
         [Theory]
         [InlineData("users/", "users/")]
