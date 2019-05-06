@@ -44,11 +44,11 @@ namespace Datadog.Trace.ClrProfiler
                 span.ResourceName = string.Join(
                     " ",
                     httpMethod,
-                    CleanUri(requestUri, tryRemoveIds: true));
+                    CleanUri(requestUri, removeScheme: true, tryRemoveIds: true));
 
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
-                span.SetTag(Tags.HttpUrl, CleanUri(requestUri, tryRemoveIds: false));
+                span.SetTag(Tags.HttpUrl, CleanUri(requestUri, removeScheme: false, tryRemoveIds: false));
                 span.SetTag(Tags.InstrumentationName, integrationName);
 
                 // set analytics sample rate if enabled
@@ -65,15 +65,23 @@ namespace Datadog.Trace.ClrProfiler
             return scope;
         }
 
-        public static string CleanUri(Uri uri, bool tryRemoveIds)
+        public static string CleanUri(Uri uri, bool removeScheme, bool tryRemoveIds)
         {
             // try to remove segments that look like ids
             string path = tryRemoveIds
                               ? string.Concat(uri.Segments.Select(CleanUriSegment))
                               : uri.AbsolutePath;
 
-            // keep only host and path, remove userinfo, query, and fragment
-            return $"{uri.Authority}{path}";
+            if (removeScheme)
+            {
+                // keep only host and path.
+                // remove scheme, userinfo, query, and fragment.
+                return $"{uri.Authority}{path}";
+            }
+
+            // keep only scheme, authority, and path.
+            // remove userinfo, query, and fragment.
+            return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
         }
 
         public static string CleanUriSegment(string segment)
