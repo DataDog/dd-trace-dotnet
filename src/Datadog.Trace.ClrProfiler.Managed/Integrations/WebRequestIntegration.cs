@@ -10,6 +10,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class WebRequestIntegration
     {
+        private const string IntegrationName = "WebRequest";
+
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.
         /// </summary>
@@ -30,10 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return request.GetResponse();
             }
 
-            string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string integrationName = typeof(WebRequestIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
-
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, request.RequestUri, integrationName))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationName))
             {
                 try
                 {
@@ -45,9 +44,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     WebResponse response = request.GetResponse();
 
-                    if (response is HttpWebResponse webResponse)
+                    if (scope != null && response is HttpWebResponse webResponse)
                     {
-                        scope?.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
+                        scope.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
                     }
 
                     return response;
@@ -75,15 +74,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static async Task<WebResponse> GetResponseAsyncInternal(WebRequest request)
         {
-            if (!IsTracingEnabled(request))
+            if (!(request is HttpWebRequest) || !IsTracingEnabled(request))
             {
                 return await request.GetResponseAsync().ConfigureAwait(false);
             }
 
-            string httpMethod = request.Method.ToUpperInvariant();
-            string integrationName = typeof(WebRequestIntegration).Name.TrimEnd("Integration", StringComparison.OrdinalIgnoreCase);
-
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, request.RequestUri, integrationName))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationName))
             {
                 try
                 {
@@ -95,9 +91,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     WebResponse response = await request.GetResponseAsync().ConfigureAwait(false);
 
-                    if (response is HttpWebResponse webResponse)
+                    if (scope != null && response is HttpWebResponse webResponse)
                     {
-                        scope?.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
+                        scope.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
                     }
 
                     return response;

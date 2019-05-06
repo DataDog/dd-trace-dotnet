@@ -54,20 +54,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
+            var handlerType = handler.GetType();
+
             var executeAsync = Emit.DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
                .GetOrCreateMethodCallDelegate(
-                    handler.GetType(),
+                    handlerType,
                     nameof(SendAsync));
 
-            var handlerTypeName = handler.GetType().FullName;
-
-            if (handlerTypeName != "System.Net.Http.HttpClientHandler" || !IsTracingEnabled(request))
+            if (handlerType.FullName != "System.Net.Http.HttpClientHandler" || !IsTracingEnabled(request))
             {
                 // skip instrumentation
                 return await executeAsync(handler, request, cancellationToken).ConfigureAwait(false);
             }
 
-            string httpMethod = request.Method.ToString().ToUpperInvariant();
+            string httpMethod = request.Method?.Method;
 
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, request.RequestUri, IntegrationName))
             {

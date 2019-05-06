@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
@@ -8,8 +9,9 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     internal static class ScopeFactory
     {
-        internal const string OperationName = "http.request";
-        internal const string ServiceName = "http-client";
+        public const string OperationName = "http.request";
+        public const string ServiceName = "http-client";
+        public const string UrlIdPlaceholder = "?";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ScopeFactory));
 
@@ -38,10 +40,15 @@ namespace Datadog.Trace.ClrProfiler
 
                 span.Type = SpanTypes.Http;
                 span.ServiceName = $"{tracer.DefaultServiceName}-{ServiceName}";
-                span.ResourceName = httpMethod;
+
+                span.ResourceName = string.Join(
+                    " ",
+                    httpMethod,
+                    CleanUri(requestUri, removeScheme: true, tryRemoveIds: true));
+
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
-                span.SetTag(Tags.HttpMethod, httpMethod);
-                span.SetTag(Tags.HttpUrl, requestUri.OriginalString);
+                span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
+                span.SetTag(Tags.HttpUrl, CleanUri(requestUri, removeScheme: false, tryRemoveIds: false));
                 span.SetTag(Tags.InstrumentationName, integrationName);
 
                 // set analytics sample rate if enabled
@@ -56,6 +63,47 @@ namespace Datadog.Trace.ClrProfiler
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
+        }
+
+        public static string CleanUri(Uri uri, bool removeScheme, bool tryRemoveIds)
+        {
+            // try to remove segments that look like ids
+            string path = tryRemoveIds
+                              ? string.Concat(uri.Segments.Select(CleanUriSegment))
+                              : uri.AbsolutePath;
+
+            if (removeScheme)
+            {
+                // keep only host and path.
+                // remove scheme, userinfo, query, and fragment.
+                return $"{uri.Authority}{path}";
+            }
+
+            // keep only scheme, authority, and path.
+            // remove userinfo, query, and fragment.
+            return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
+        }
+
+        public static string CleanUriSegment(string segment)
+        {
+            bool hasTrailingSlash = segment.EndsWith("/", StringComparison.Ordinal);
+
+            // remove trailing slash
+            if (hasTrailingSlash)
+            {
+                segment = segment.Substring(0, segment.Length - 1);
+            }
+
+            // remove path segments that look like int or guid (with or without dashes)
+            segment = int.TryParse(segment, out _) ||
+                      Guid.TryParseExact(segment, "N", out _) ||
+                      Guid.TryParseExact(segment, "D", out _)
+                          ? UrlIdPlaceholder
+                          : segment;
+
+            return hasTrailingSlash
+                       ? segment + "/"
+                       : segment;
         }
     }
 }
