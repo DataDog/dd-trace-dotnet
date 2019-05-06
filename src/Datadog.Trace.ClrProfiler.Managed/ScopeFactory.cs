@@ -87,8 +87,10 @@ namespace Datadog.Trace.ClrProfiler
                 segment = segment.Substring(0, segment.Length - 1);
             }
 
-            // remove path segments that look like int or guid
-            segment = int.TryParse(segment, out _) || Guid.TryParse(segment, out _)
+            // remove path segments that look like int or guid (with or without dashes)
+            segment = int.TryParse(segment, out _) ||
+                      Guid.TryParseExact(segment, "N", out _) ||
+                      Guid.TryParseExact(segment, "D", out _)
                           ? UrlIdPlaceholder
                           : segment;
 
