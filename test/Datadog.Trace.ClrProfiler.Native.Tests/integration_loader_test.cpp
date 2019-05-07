@@ -73,7 +73,24 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMethodReplacements) {
             "name": "test-integration",
             "method_replacements": [{
                 "caller": { },
-                "target": { "assembly": "Assembly.One", "type": "Type.One", "method": "Method.One" },
+                "target": { "assembly": "Assembly.One", "type": "Type.One", "method": "Method.One", "minimum_major": 0, "minimum_minor": 1, "maximum_major": 10, "maximum_minor": 0 },
+                "wrapper": { "assembly": "Assembly.Two", "type": "Type.Two", "method": "Method.Two", "signature": [0, 1, 1, 28] }
+            }]
+        }]
+    )TEXT");
+
+  auto integrations = LoadIntegrationsFromStream(str);
+  EXPECT_EQ(1, integrations.size());
+  EXPECT_STREQ(L"test-integration", integrations[0].integration_name.c_str());
+}
+
+TEST(IntegrationLoaderTest, DoesNotCrashWithOutOfRangeVersion) {
+  std::stringstream str(R"TEXT(
+        [{
+            "name": "test-integration",
+            "method_replacements": [{
+                "caller": { },
+                "target": { "assembly": "Assembly.One", "type": "Type.One", "method": "Method.One", "minimum_major": 0, "minimum_minor": 1, "maximum_major": 75555, "maximum_minor": 0 },
                 "wrapper": { "assembly": "Assembly.Two", "type": "Type.Two", "method": "Method.Two", "signature": [0, 1, 1, 28] }
             }]
         }]
@@ -103,7 +120,7 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMissingCaller) {
         [{
             "name": "test-integration",
             "method_replacements": [{
-                "target": { "assembly": "Assembly.One", "type": "Type.One", "method": "Method.One" },
+                "target": { "assembly": "Assembly.One", "type": "Type.One", "method": "Method.One", "minimum_major": 1, "minimum_minor": 2, "maximum_major": 10, "maximum_minor": 99 },
                 "wrapper": { "assembly": "Assembly.Two", "type": "Type.Two", "method": "Method.Two", "signature": [0, 1, 1, 28] }
             }]
         }]
@@ -124,6 +141,11 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMissingCaller) {
   EXPECT_STREQ(L"Assembly.Two", mr.wrapper_method.assembly.name.c_str());
   EXPECT_STREQ(L"Type.Two", mr.wrapper_method.type_name.c_str());
   EXPECT_STREQ(L"Method.Two", mr.wrapper_method.method_name.c_str());
+  EXPECT_STREQ(L"Method.Two", mr.wrapper_method.method_name.c_str());
+  EXPECT_EQ(1, mr.target_method.min_v_major);
+  EXPECT_EQ(2, mr.target_method.min_v_minor);
+  EXPECT_EQ(10, mr.target_method.max_v_major);
+  EXPECT_EQ(99, mr.target_method.max_v_minor);
   EXPECT_EQ(std::vector<uint8_t>({0, 1, 1, 28}),
             mr.wrapper_method.method_signature.data);
 }
