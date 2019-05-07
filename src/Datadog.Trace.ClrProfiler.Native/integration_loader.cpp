@@ -128,6 +128,26 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
   const auto type = ToWSTRING(src.value("type", ""));
   const auto method = ToWSTRING(src.value("method", ""));
   auto raw_signature = src.value("signature", json::array());
+
+  const auto eoj = src.end();
+  USHORT min_major = 0;
+  USHORT min_minor = 0;
+  USHORT max_major = USHRT_MAX;
+  USHORT max_minor = USHRT_MAX;
+
+  if (src.find("minimum_major") != eoj) {
+    min_major = src["minimum_major"].get<USHORT>();
+  }
+  if (src.find("minimum_minor") != eoj) {
+    min_minor = src["minimum_minor"].get<USHORT>();
+  }
+  if (src.find("maximum_major") != eoj) {
+    max_major = src["maximum_major"].get<USHORT>();
+  }
+  if (src.find("maximum_minor") != eoj) {
+    max_minor = src["maximum_minor"].get<USHORT>();
+  }
+
   std::vector<BYTE> signature;
   if (raw_signature.is_array()) {
     for (auto& el : raw_signature) {
@@ -159,7 +179,8 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
       prev = b;
     }
   }
-  return MethodReference(assembly, type, method, signature);
+  return MethodReference(assembly, type, method, min_major, min_minor,
+                         max_major, max_minor, signature);
 }
 
 }  // namespace

@@ -20,6 +20,11 @@ WSTRING ToWSTRING(const std::string& str) {
   return WSTRING(reinterpret_cast<const WCHAR*>(ustr.c_str()));
 }
 
+WSTRING ToWSTRING(const uint64_t i) {
+  const auto ustr = ToString(i);
+  return ToWSTRING(ustr);
+}
+
 WCHAR operator"" _W(const char c) { return WCHAR(c); }
 
 WSTRING operator"" _W(const char* arr, size_t size) {
