@@ -315,7 +315,6 @@ std::vector<Integration> FilterIntegrationsByTarget(
 
   for (auto& i : integrations) {
     bool found = false;
-    // ReSharper disable once CppRangeBasedForIncompatibleReference
     for (auto& mr : i.method_replacements) {
       if (AssemblyMeetsIntegrationRequirements(assembly_metadata, mr)) {
         found = true;
