@@ -66,6 +66,26 @@ struct Version {
     ss << major << "."_W << minor << "."_W << build << "."_W << revision;
     return ss.str();
   }
+
+  inline bool operator<(const Version& other) const {
+    if (major < other.major) {
+      return true;
+    }
+    if (major == other.major && minor < other.minor) {
+      return true;
+    }
+    return false;
+  }
+
+  inline bool operator>(const Version& other) const {
+    if (major > other.major) {
+      return true;
+    }
+    if (major == other.major && minor > other.minor) {
+      return true;
+    }
+    return false;
+  }
 };
 
 // An AssemblyReference is a reference to a .Net assembly. In general it will
