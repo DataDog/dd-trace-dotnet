@@ -181,29 +181,19 @@ struct AssemblyMetadata {
   const ModuleID module_id;
   const WSTRING name;
   const mdAssembly assembly_token;
-  const USHORT majorVersion;
-  const USHORT minorVersion;
-  const USHORT buildNumber;
-  const USHORT revisionNumber;
+  const Version version;
 
   AssemblyMetadata()
       : module_id(0),
         name(""_W),
-        assembly_token(mdTokenNil),
-        majorVersion(0),
-        minorVersion(0),
-        buildNumber(0),
-        revisionNumber(0) {}
+        assembly_token(mdTokenNil) {}
 
   AssemblyMetadata(ModuleID module_id, WSTRING name, mdAssembly assembly_token,
                    USHORT major, USHORT minor, USHORT build, USHORT revision)
       : module_id(module_id),
         name(name),
         assembly_token(assembly_token),
-        majorVersion(major),
-        minorVersion(minor),
-        buildNumber(build),
-        revisionNumber(revision) {}
+        version(Version(major, minor, build, revision)) {}
 
   bool is_valid() const { return module_id != 0; }
 };

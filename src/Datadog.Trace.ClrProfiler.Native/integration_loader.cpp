@@ -3,9 +3,9 @@
 #include <exception>
 #include <stdexcept>
 
+#include "environment_variables.h"
 #include "logging.h"
 #include "util.h"
-#include "environment_variables.h"
 
 namespace trace {
 
@@ -132,8 +132,10 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
   const auto eoj = src.end();
   USHORT min_major = 0;
   USHORT min_minor = 0;
+  USHORT min_patch = 0;
   USHORT max_major = USHRT_MAX;
   USHORT max_minor = USHRT_MAX;
+  USHORT max_patch = USHRT_MAX;
 
   if (src.find("minimum_major") != eoj) {
     min_major = src["minimum_major"].get<USHORT>();
@@ -141,11 +143,17 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
   if (src.find("minimum_minor") != eoj) {
     min_minor = src["minimum_minor"].get<USHORT>();
   }
+  if (src.find("minimum_patch") != eoj) {
+    min_patch = src["minimum_patch"].get<USHORT>();
+  }
   if (src.find("maximum_major") != eoj) {
     max_major = src["maximum_major"].get<USHORT>();
   }
   if (src.find("maximum_minor") != eoj) {
     max_minor = src["maximum_minor"].get<USHORT>();
+  }
+  if (src.find("maximum_patch") != eoj) {
+    max_patch = src["maximum_patch"].get<USHORT>();
   }
 
   std::vector<BYTE> signature;
@@ -179,8 +187,9 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
       prev = b;
     }
   }
-  return MethodReference(assembly, type, method, min_major, min_minor,
-                         max_major, max_minor, signature);
+  return MethodReference(
+      assembly, type, method, Version(min_major, min_minor, min_patch, 0),
+      Version(max_major, max_minor, max_patch, USHRT_MAX), signature);
 }
 
 }  // namespace

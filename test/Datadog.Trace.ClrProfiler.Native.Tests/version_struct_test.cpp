@@ -16,6 +16,12 @@ TEST(VersionStructTest, Minor2GreaterThanMinor1) {
   ASSERT_TRUE(v0_2 > v0_1) << "Expected v0_2 to be greater than v0_1.";
 }
 
+TEST(VersionStructTest, Build1GreaterThanBuild0) {
+  const auto v0_0_0 = Version(0, 0, 0, 0);
+  const auto v0_0_1 = Version(0, 0, 1, 0);
+  ASSERT_TRUE(v0_0_1 > v0_0_0) << "Expected v0_0_1 to be greater than v0_0_0.";
+}
+
 TEST(VersionStructTest, Major1LessThanMajor2) {
   const auto v1 = Version(1, 0, 0, 0);
   const auto v2 = Version(2, 0, 0, 0);
@@ -28,13 +34,10 @@ TEST(VersionStructTest, Minor1LessThanMinor2) {
   ASSERT_TRUE(v0_1 < v0_2) << "Expected v0_1 to be less than v0_2.";
 }
 
-TEST(VersionStructTest, BuildDoesNotAffectComparison) {
-  const auto v1_2_3 = Version(1, 2, 3, 0);
-  const auto v1_2_4 = Version(1, 2, 4, 0);
-  ASSERT_FALSE(v1_2_4 > v1_2_3)
-      << "Expected v1_2_4 to not be greater than v1_2_3.";
-  ASSERT_FALSE(v1_2_3 < v1_2_4)
-      << "Expected v1_2_3 to not be less than v1_2_4.";
+TEST(VersionStructTest, Build0LessThanBuild1) {
+  const auto v0_0_0 = Version(0, 0, 0, 0);
+  const auto v0_0_1 = Version(0, 0, 1, 0);
+  ASSERT_TRUE(v0_0_0 < v0_0_1) << "Expected v0_0_0 to be less than v0_0_1.";
 }
 
 TEST(VersionStructTest, RevisionDoesNotAffectComparison) {

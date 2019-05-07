@@ -131,7 +131,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "System.Web.Mvc",
             TargetAssembly = "System.Web.Mvc",
-            TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker")]
+            TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker",
+            TargetMinimumVersion = "5.1.3",
+            TargetMaximumVersion = "5")]
         public static object BeginInvokeAction(
             dynamic asyncControllerActionInvoker,
             dynamic controllerContext,

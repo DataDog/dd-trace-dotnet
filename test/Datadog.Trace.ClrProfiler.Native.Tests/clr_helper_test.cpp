@@ -9,6 +9,8 @@ class DISABLED_CLRHelperTest : public ::testing::Test {
   IMetaDataDispenser* metadata_dispenser_;
   ComPtr<IMetaDataImport2> metadata_import_;
   ComPtr<IMetaDataAssemblyImport> assembly_import_;
+  Version min_ver_ = Version(0, 0, 0, 0);
+  Version max_ver_ = Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX);
 
   void SetUp() override {
     ICLRMetaHost* metahost = nullptr;
@@ -88,10 +90,8 @@ TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
                       {L"Samples.ExampleLibrary",
                        L"SomeType",
                        L"SomeMethod",
-                       0,
-                       0,
-                       USHRT_MAX,
-                       USHRT_MAX,
+                       min_ver_,
+                       max_ver_,
                        {}},
                       {}}}};
   Integration i2 = {L"integration-2",
@@ -99,17 +99,19 @@ TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
                       {L"Assembly.Two",
                        L"SomeType",
                        L"SomeMethod",
-                       0,
-                       0,
-                       USHRT_MAX,
-                       USHRT_MAX,
+                       min_ver_,
+                       max_ver_,
                        {}},
                       {}}}};
-  Integration i3 = {
-      L"integration-3",
-      {{{},
-        {L"System.Runtime", L"", L"", 0, 0, USHRT_MAX, USHRT_MAX, {}},
-        {}}}};
+  Integration i3 = {L"integration-3",
+                    {{{},
+                      {L"System.Runtime",
+                       L"",
+                       L"",
+                       min_ver_,
+                       max_ver_,
+                       {}},
+                      {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
   std::vector<WSTRING> disabled_integrations = {"integration-2"_W};
@@ -123,10 +125,8 @@ TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByCaller) {
                     {{{L"Assembly.One",
                        L"SomeType",
                        L"SomeMethod",
-                       0,
-                       0,
-                       USHRT_MAX,
-                       USHRT_MAX,
+                       min_ver_,
+                       max_ver_,
                        {}},
                       {},
                       {}}}};
@@ -134,10 +134,8 @@ TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByCaller) {
                     {{{L"Assembly.Two",
                        L"SomeType",
                        L"SomeMethod",
-                       0,
-                       0,
-                       USHRT_MAX,
-                       USHRT_MAX,
+                       min_ver_,
+                       max_ver_,
                        {}},
                       {},
                       {}}}};
@@ -156,10 +154,8 @@ TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByTarget) {
                       {L"Samples.ExampleLibrary",
                        L"SomeType",
                        L"SomeMethod",
-                       0,
-                       0,
-                       USHRT_MAX,
-                       USHRT_MAX,
+                       min_ver_,
+                       max_ver_,
                        {}},
                       {}}}};
   Integration i2 = {L"integration-2",
@@ -167,17 +163,19 @@ TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByTarget) {
                       {L"Assembly.Two",
                        L"SomeType",
                        L"SomeMethod",
-                       0,
-                       0,
-                       USHRT_MAX,
-                       USHRT_MAX,
+                       min_ver_,
+                       max_ver_,
                        {}},
                       {}}}};
-  Integration i3 = {
-      L"integration-3",
-      {{{},
-        {L"System.Runtime", L"", L"", 0, 0, USHRT_MAX, USHRT_MAX, {}},
-        {}}}};
+  Integration i3 = {L"integration-3",
+                    {{{},
+                      {L"System.Runtime",
+                       L"",
+                       L"",
+                       min_ver_,
+                       max_ver_,
+                       {}},
+                      {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
   std::vector<Integration> actual =

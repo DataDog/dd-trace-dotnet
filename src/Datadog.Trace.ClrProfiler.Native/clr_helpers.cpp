@@ -281,25 +281,11 @@ bool AssemblyMeetsIntegrationRequirements(
     return false;
   }
 
-  if (target.min_v_major > metadata.majorVersion) {
-    // below major version requirements
+  if (target.min_version > metadata.version) {
     return false;
   }
 
-  if (target.max_v_major < metadata.majorVersion) {
-    // above major version requirements
-    return false;
-  }
-
-  if (target.min_v_major == metadata.majorVersion &&
-      target.min_v_minor > metadata.minorVersion) {
-    // below minimum version requirements
-    return false;
-  }
-
-  if (target.max_v_major == metadata.majorVersion &&
-      target.max_v_minor < metadata.minorVersion) {
-    // above minimum version requirements
+  if (target.max_version < metadata.version) {
     return false;
   }
 
