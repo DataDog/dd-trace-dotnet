@@ -49,6 +49,9 @@
     <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
+  <PropertyGroup>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
   </ItemGroup>
