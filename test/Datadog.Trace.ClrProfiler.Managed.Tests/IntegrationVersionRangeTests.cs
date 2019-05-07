@@ -6,6 +6,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     public class IntegrationVersionRangeTests
     {
         [Fact]
+        public void MinimumVersionTwoSetsResetsDefaultsForNonSpecifiedParts()
+        {
+            var range = new IntegrationVersionRange();
+            range.MinimumVersion = "5.5.4";
+            range.MinimumVersion = "6";
+            Assert.Equal(expected: 6, actual: range.MinimumMajor);
+            Assert.Equal(expected: 0, actual: range.MinimumMinor);
+            Assert.Equal(expected: 0, actual: range.MinimumPatch);
+        }
+
+        [Fact]
         public void ParsesMinimumMajor()
         {
             var range = new IntegrationVersionRange();
@@ -30,6 +41,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(expected: 5, actual: range.MinimumMajor);
             Assert.Equal(expected: 8, actual: range.MinimumMinor);
             Assert.Equal(expected: 82, actual: range.MinimumPatch);
+        }
+
+        [Fact]
+        public void MaximumVersionTwoSetsResetsDefaultsForNonSpecifiedParts()
+        {
+            var range = new IntegrationVersionRange();
+            range.MaximumVersion = "5.5.4";
+            range.MaximumVersion = "6";
+            Assert.Equal(expected: 6, actual: range.MaximumMajor);
+            Assert.Equal(expected: ushort.MaxValue, actual: range.MaximumMinor);
+            Assert.Equal(expected: ushort.MaxValue, actual: range.MaximumPatch);
         }
 
         [Fact]
