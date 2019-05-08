@@ -8,12 +8,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Traces an Elasticsearch pipeline
     /// </summary>
-    public static class ElasticsearchNetIntegration
+    public static class ElasticsearchNet6Integration
     {
+        // NOTE: keep this name without the 6 to avoid breaking changes
         private const string IntegrationName = "ElasticsearchNet";
         private const string TargetVersion = "6";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNetIntegration));
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNet6Integration));
 
         private static Type _requestDataType;
 
