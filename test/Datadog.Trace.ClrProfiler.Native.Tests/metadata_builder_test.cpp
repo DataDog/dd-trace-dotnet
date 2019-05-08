@@ -14,9 +14,8 @@ class MetadataBuilderTest : public ::testing::Test {
 
   void SetUp() override {
     ICLRMetaHost* metahost = nullptr;
-    HRESULT hr;
-    hr = CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost,
-                           (void**)&metahost);
+    HRESULT hr = CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost,
+                                   (void**)&metahost);
     ASSERT_TRUE(SUCCEEDED(hr));
 
     IEnumUnknown* runtimes = nullptr;
@@ -56,7 +55,7 @@ class MetadataBuilderTest : public ::testing::Test {
         metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
     const std::wstring assemblyName = L"Samples.ExampleLibrary";
-    std::vector<Integration> integrations;
+    const std::vector<Integration> integrations;
     module_metadata_ =
         new ModuleMetadata(metadataImport, metadataEmit, assemblyName, integrations);
 
@@ -80,41 +79,46 @@ class MetadataBuilderTest : public ::testing::Test {
 };
 
 TEST_F(MetadataBuilderTest, StoresWrapperMemberRef) {
-  MethodReference ref1(L"", L"", L"", 0, 0, USHRT_MAX, USHRT_MAX, {});
-  MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", 0, 0,
-                       USHRT_MAX, USHRT_MAX, {});
-  MethodReference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", 0, 0,
-                       USHRT_MAX, USHRT_MAX, {});
-  MethodReplacement mr1(ref1, ref2, ref3);
+
+  const auto min_ver = Version(0, 0, 0, 0);
+  const auto max_ver = Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX);
+  const MethodReference ref1(L"", L"", L"", min_ver, max_ver, {});
+  const MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", min_ver,
+                       max_ver, {});
+  const MethodReference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", min_ver,
+                       max_ver, {});
+  const MethodReplacement mr1(ref1, ref2, ref3);
   auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);
 
   mdMemberRef tmp;
   auto ok = module_metadata_->TryGetWrapperMemberRef(
-      L"[Samples.ExampleLibrary]Class1.Add_vMin_0.0_vMax_65535.65535", tmp);
+      L"[Samples.ExampleLibrary]Class1.Add_vMin_0.0.0.0_vMax_65535.65535.65535.65535", tmp);
   EXPECT_TRUE(ok);
   EXPECT_NE(tmp, 0);
 
   tmp = 0;
   ok = module_metadata_->TryGetWrapperMemberRef(
-      L"[Samples.ExampleLibrary]Class2.Add_vMin_0.0_vMax_65535.65535", tmp);
+      L"[Samples.ExampleLibrary]Class2.Add_vMin_0.0.0.0_vMax_65535.65535.65535.65535", tmp);
   EXPECT_FALSE(ok);
   EXPECT_EQ(tmp, 0);
 }
 
 TEST_F(MetadataBuilderTest, StoresWrapperMemberRefForSeparateAssembly) {
-  MethodReference ref1(L"", L"", L"", 0, 0, USHRT_MAX, USHRT_MAX, {});
-  MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", 0, 0,
-                       USHRT_MAX, USHRT_MAX, {});
-  MethodReference ref3(L"Samples.ExampleLibraryTracer", L"Class1", L"Add", 0, 0,
-                       USHRT_MAX, USHRT_MAX, {});
-  MethodReplacement mr1(ref1, ref2, ref3);
+  const auto min_ver = Version(0, 0, 0, 0);
+  const auto max_ver = Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX);
+  const MethodReference ref1(L"", L"", L"", min_ver, max_ver, {});
+  const MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", min_ver,
+                       max_ver, {});
+  const MethodReference ref3(L"Samples.ExampleLibraryTracer", L"Class1", L"Add",
+                       min_ver, max_ver, {});
+  const MethodReplacement mr1(ref1, ref2, ref3);
   auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);
 
   mdMemberRef tmp;
   auto ok = module_metadata_->TryGetWrapperMemberRef(
-      L"[Samples.ExampleLibraryTracer]Class1.Add_vMin_0.0_vMax_65535.65535", tmp);
+      L"[Samples.ExampleLibraryTracer]Class1.Add_vMin_0.0.0.0_vMax_65535.65535.65535.65535", tmp);
   EXPECT_TRUE(ok);
   EXPECT_NE(tmp, 0);
 }

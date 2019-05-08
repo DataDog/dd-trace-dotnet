@@ -49,10 +49,12 @@ namespace GenerateIntegrationDefinitions
                                                                  type = item.attribute.TargetType,
                                                                  method = item.attribute.TargetMethod ?? item.wrapperMethod.Name,
                                                                  signature = item.attribute.TargetSignature,
-                                                                 minimum_major = item.attribute.TargetAssemblyMinimumMajor,
-                                                                 minimum_minor = item.attribute.TargetAssemblyMinimumMinor,
-                                                                 maximum_major = item.attribute.TargetAssemblyMaximumMajor,
-                                                                 maximum_minor = item.attribute.TargetAssemblyMaximumMinor
+                                                                 minimum_major = item.attribute.TargetVersionRange.MinimumMajor,
+                                                                 minimum_minor = item.attribute.TargetVersionRange.MinimumMinor,
+                                                                 minimum_patch = item.attribute.TargetVersionRange.MinimumPatch,
+                                                                 maximum_major = item.attribute.TargetVersionRange.MaximumMajor,
+                                                                 maximum_minor = item.attribute.TargetVersionRange.MaximumMinor,
+                                                                 maximum_patch = item.attribute.TargetVersionRange.MaximumPatch
                                                              },
                                                              wrapper = new
                                                              {

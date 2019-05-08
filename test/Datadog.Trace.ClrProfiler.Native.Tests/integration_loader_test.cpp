@@ -142,10 +142,12 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithMissingCaller) {
   EXPECT_STREQ(L"Type.Two", mr.wrapper_method.type_name.c_str());
   EXPECT_STREQ(L"Method.Two", mr.wrapper_method.method_name.c_str());
   EXPECT_STREQ(L"Method.Two", mr.wrapper_method.method_name.c_str());
-  EXPECT_EQ(1, mr.target_method.min_v_major);
-  EXPECT_EQ(2, mr.target_method.min_v_minor);
-  EXPECT_EQ(10, mr.target_method.max_v_major);
-  EXPECT_EQ(99, mr.target_method.max_v_minor);
+  EXPECT_EQ(1, mr.target_method.min_version.major);
+  EXPECT_EQ(2, mr.target_method.min_version.minor);
+  EXPECT_EQ(0, mr.target_method.min_version.build);
+  EXPECT_EQ(10, mr.target_method.max_version.major);
+  EXPECT_EQ(99, mr.target_method.max_version.minor);
+  EXPECT_EQ(USHRT_MAX, mr.target_method.max_version.build);
   EXPECT_EQ(std::vector<uint8_t>({0, 1, 1, 28}),
             mr.wrapper_method.method_signature.data);
 }

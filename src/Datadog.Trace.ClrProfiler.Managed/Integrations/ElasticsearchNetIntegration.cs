@@ -40,8 +40,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
             TargetType = "Elasticsearch.Net.IRequestPipeline",
-            TargetAssemblyMinimumMajor = 6,
-            TargetAssemblyMaximumMajor = 6)]
+            TargetMinimumVersion = "6",
+            TargetMaximumVersion = "6")]
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData)
         {
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, TResponse>>
@@ -76,8 +76,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
             TargetType = "Elasticsearch.Net.IRequestPipeline",
-            TargetAssemblyMinimumMajor = 6,
-            TargetAssemblyMaximumMajor = 6)]
+            TargetMinimumVersion = "6",
+            TargetMaximumVersion = "6")]
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource)
         {
             var cancellationToken = ((CancellationTokenSource)cancellationTokenSource)?.Token ?? CancellationToken.None;
