@@ -150,7 +150,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1119:StatementMustNotUseUnnecessaryParenthesis", Justification = "Actually Needed")]
         private bool TryGetContext(object sender, out HttpContext httpContext)
         {
             if (sender == null || !(sender is HttpApplication httpApp) || httpApp?.Context?.Items == null)

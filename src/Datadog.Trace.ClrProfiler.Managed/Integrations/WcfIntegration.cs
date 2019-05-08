@@ -24,7 +24,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.ServiceModel",
             TargetType = "System.ServiceModel.Dispatcher.ChannelHandler")]
-        [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1119:StatementMustNotUseUnnecessaryParenthesis", Justification = "Actually Needed")]
         public static bool HandleRequest(object thisObj, object requestContext, object currentOperationContext)
         {
             var handleRequestDelegate = Emit.DynamicMethodBuilder<Func<object, object, object, bool>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "HandleRequest");

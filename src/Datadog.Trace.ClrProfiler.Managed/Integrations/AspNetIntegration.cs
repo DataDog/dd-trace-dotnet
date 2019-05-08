@@ -23,7 +23,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         // [InterceptMethod(
         //    TargetAssembly = "System.Web",
         //    TargetType = "System.Web.HttpApplication")]
-        [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1119:StatementMustNotUseUnnecessaryParenthesis", Justification = "Actually Needed")]
         public static void Init(object thisObj)
         {
             try
