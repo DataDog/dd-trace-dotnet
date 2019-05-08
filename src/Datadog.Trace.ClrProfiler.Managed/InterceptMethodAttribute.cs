@@ -60,6 +60,11 @@ namespace Datadog.Trace.ClrProfiler
         public string TargetSignature { get; set; }
 
         /// <summary>
+        /// Gets the target version range for <see cref="TargetAssembly"/>.
+        /// </summary>
+        public IntegrationVersionRange TargetVersionRange { get; } = new IntegrationVersionRange();
+
+        /// <summary>
         /// Gets or sets the target minimum version.
         /// </summary>
         public string TargetMinimumVersion
@@ -76,10 +81,5 @@ namespace Datadog.Trace.ClrProfiler
             get => TargetVersionRange.MaximumVersion;
             set => TargetVersionRange.MaximumVersion = value;
         }
-
-        /// <summary>
-        /// Gets the target version range for <see cref="TargetAssembly"/>.
-        /// </summary>
-        public IntegrationVersionRange TargetVersionRange { get; } = new IntegrationVersionRange();
     }
 }
