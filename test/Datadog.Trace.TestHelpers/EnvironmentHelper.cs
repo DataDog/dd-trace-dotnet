@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -16,6 +17,7 @@ namespace Datadog.Trace.TestHelpers
         private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
 
+        private readonly ITestOutputHelper _output;
         private readonly int _major;
         private readonly int _minor;
         private readonly string _patch = null;
@@ -30,13 +32,18 @@ namespace Datadog.Trace.TestHelpers
         private string _integrationsFileLocation;
         private string _profilerFileLocation;
 
-        public EnvironmentHelper(string sampleName, Type anchorType, string samplesDirectory = "samples")
+        public EnvironmentHelper(
+            string sampleName,
+            Type anchorType,
+            ITestOutputHelper output,
+            string samplesDirectory = "samples")
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory;
             _anchorType = anchorType;
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = _anchorAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
+            _output = output;
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -140,15 +147,27 @@ namespace Datadog.Trace.TestHelpers
 
                 var directory = GetSampleApplicationOutputDirectory();
 
-                _profilerFileLocation = Path.Combine(
-                    directory,
+                var profilerRelativePath = Path.Combine(
                     GetBuildConfiguration(),
                     GetPlatform(),
                     fileName);
 
+                _profilerFileLocation = Path.Combine(
+                    directory,
+                    profilerRelativePath);
+
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    throw new Exception($"Missing {fileName} in output directory {directory}");
+                    _output.WriteLine($"Unable to find profiler: {_profilerFileLocation}");
+
+                    _profilerFileLocation = Path.Combine(
+                        Path.GetDirectoryName(ExecutingAssembly.Location) ?? throw new InvalidOperationException($"Executing assembly must be set within {nameof(EnvironmentHelper)}"),
+                        fileName);
+                }
+
+                if (!File.Exists(_profilerFileLocation))
+                {
+                    throw new Exception($"Unable to find profiler: {_profilerFileLocation}");
                 }
             }
 

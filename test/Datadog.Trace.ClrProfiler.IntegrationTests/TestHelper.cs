@@ -19,12 +19,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly EnvironmentHelper _environmentHelper;
 
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), samplePathOverrides), output)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
         {
         }
 
         protected TestHelper(string sampleAppName, ITestOutputHelper output)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper)), output)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output), output)
         {
         }
 
