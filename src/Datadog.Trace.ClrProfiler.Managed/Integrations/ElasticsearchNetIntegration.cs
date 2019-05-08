@@ -14,14 +14,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string OperationName = "elasticsearch.query";
         private const string ServiceName = "elasticsearch";
         private const string SpanType = "elasticsearch";
-        private const string ComponentKey = "component";
         private const string ComponentValue = "elasticsearch-net";
-        private const string SpanKindKey = "span.kind";
-        private const string SpanKindValue = "client";
         private const string ElasticsearchActionKey = "elasticsearch.action";
         private const string ElasticsearchMethodKey = "elasticsearch.method";
         private const string ElasticsearchUrlKey = "elasticsearch.url";
-        private const string ElasticsearchParamsKey = "elasticsearch.params";
 
         private static readonly Type CancellationTokenType = typeof(CancellationToken);
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNetIntegration));
@@ -180,8 +176,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var span = scope.Span;
                 span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
                 span.Type = SpanType;
-                span.SetTag(ComponentKey, ComponentValue);
-                span.SetTag(SpanKindKey, SpanKindValue);
+                span.SetTag(Tags.InstrumentationName, ComponentValue);
+                span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(ElasticsearchActionKey, requestName);
                 span.SetTag(ElasticsearchMethodKey, method);
                 span.SetTag(ElasticsearchUrlKey, url);
