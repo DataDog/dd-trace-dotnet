@@ -11,15 +11,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class ElasticsearchNetIntegration
     {
         private const string IntegrationName = "ElasticsearchNet";
-        private const string OperationName = "elasticsearch.query";
-        private const string ServiceName = "elasticsearch";
-        private const string SpanType = "elasticsearch";
-        private const string ComponentValue = "elasticsearch-net";
-        private const string ElasticsearchActionKey = "elasticsearch.action";
-        private const string ElasticsearchMethodKey = "elasticsearch.method";
-        private const string ElasticsearchUrlKey = "elasticsearch.url";
+        private const string TargetVersion = "6";
 
-        private static readonly Type CancellationTokenType = typeof(CancellationToken);
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNetIntegration));
 
         private static Type _requestDataType;
@@ -35,17 +28,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
             TargetType = "Elasticsearch.Net.IRequestPipeline",
-            TargetMinimumVersion = "6",
-            TargetMaximumVersion = "6")]
+            TargetMinimumVersion = TargetVersion,
+            TargetMaximumVersion = TargetVersion)]
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData)
         {
+            // TResponse CallElasticsearch<TResponse>(RequestData requestData) where TResponse : class, IElasticsearchResponse, new();
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, TResponse>>
-               .GetOrCreateMethodCallDelegate(
-                    pipeline.GetType(),
-                    "CallElasticsearch",
-                    methodGenericArguments: new[] { typeof(TResponse) });
+                                     .GetOrCreateMethodCallDelegate(
+                                          pipeline.GetType(),
+                                          "CallElasticsearch",
+                                          methodGenericArguments: new[] { typeof(TResponse) });
 
-            using (var scope = CreateScope(pipeline, requestData))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
             {
                 try
                 {
@@ -71,10 +65,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
             TargetType = "Elasticsearch.Net.IRequestPipeline",
-            TargetMinimumVersion = "6",
-            TargetMaximumVersion = "6")]
+            TargetMinimumVersion = TargetVersion,
+            TargetMaximumVersion = TargetVersion)]
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource)
         {
+            // Task<TResponse> CallElasticsearchAsync<TResponse>(RequestData requestData, CancellationToken cancellationToken) where TResponse : class, IElasticsearchResponse, new();
             var cancellationToken = ((CancellationTokenSource)cancellationTokenSource)?.Token ?? CancellationToken.None;
             return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken);
         }
@@ -95,13 +90,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
-               .GetOrCreateMethodCallDelegate(
-                    pipeline.GetType(),
-                    "CallElasticsearchAsync",
-                    methodParameterTypes: new[] { _requestDataType, CancellationTokenType },
-                    methodGenericArguments: new[] { typeof(TResponse) });
+                                     .GetOrCreateMethodCallDelegate(
+                                          pipeline.GetType(),
+                                          "CallElasticsearchAsync",
+                                          methodParameterTypes: new[] { _requestDataType, ElasticsearchNetCommon.CancellationTokenType },
+                                          methodGenericArguments: new[] { typeof(TResponse) });
 
-            using (var scope = CreateScope(pipeline, requestData))
+            using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
             {
                 try
                 {
@@ -113,85 +108,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     throw;
                 }
             }
-        }
-
-        private static Scope CreateScope(object pipeline, dynamic requestData)
-        {
-            var tracer = Tracer.Instance;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
-            {
-                // integration disabled, don't create a scope, skip this trace
-                return null;
-            }
-
-            string requestName = null;
-            try
-            {
-                var requestParameters = Emit.DynamicMethodBuilder<Func<object, object>>
-                   .GetOrCreateMethodCallDelegate(
-                        pipeline.GetType(),
-                        "get_RequestParameters")(pipeline);
-
-                requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
-            }
-            catch
-            {
-            }
-
-            string pathAndQuery = null;
-            try
-            {
-                pathAndQuery = requestData?.PathAndQuery;
-            }
-            catch
-            {
-            }
-
-            string method = null;
-            try
-            {
-                method = requestData?.Method?.ToString();
-            }
-            catch
-            {
-            }
-
-            string url = null;
-            try
-            {
-                url = requestData?.Uri.ToString();
-            }
-            catch
-            {
-            }
-
-            var serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
-
-            Scope scope = null;
-
-            try
-            {
-                scope = tracer.StartActive(OperationName, serviceName: serviceName);
-                var span = scope.Span;
-                span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
-                span.Type = SpanType;
-                span.SetTag(Tags.InstrumentationName, ComponentValue);
-                span.SetTag(Tags.SpanKind, SpanKinds.Client);
-                span.SetTag(ElasticsearchActionKey, requestName);
-                span.SetTag(ElasticsearchMethodKey, method);
-                span.SetTag(ElasticsearchUrlKey, url);
-
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorException("Error creating or populating scope.", ex);
-            }
-
-            return scope;
         }
     }
 }
