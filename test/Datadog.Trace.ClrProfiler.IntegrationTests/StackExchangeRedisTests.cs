@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,28 +18,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            var prefix = $"{BuildParameters.Configuration}.{BuildParameters.TargetFramework}.";
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"StackExchange {prefix}"))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"StackExchange {TestPrefix}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var expected = new TupleList<string, string>
                 {
-                    { "SET", $"SET {prefix}StackExchange.Redis.INCR" },
+                    { "SET", $"SET {TestPrefix}StackExchange.Redis.INCR" },
                     { "PING", "PING" },
                     { "DDCUSTOM", "DDCUSTOM" },
                     { "ECHO", "ECHO" },
                     { "SLOWLOG", "SLOWLOG" },
-                    { "INCR", $"INCR {prefix}StackExchange.Redis.INCR" },
-                    { "INCRBYFLOAT", $"INCRBYFLOAT {prefix}StackExchange.Redis.INCR" },
-                    { "GET", $"GET {prefix}StackExchange.Redis.INCR" },
+                    { "INCR", $"INCR {TestPrefix}StackExchange.Redis.INCR" },
+                    { "INCRBYFLOAT", $"INCRBYFLOAT {TestPrefix}StackExchange.Redis.INCR" },
+                    { "GET", $"GET {TestPrefix}StackExchange.Redis.INCR" },
                     { "TIME", "TIME" },
                 };
 
-                var batchPrefix = $"{prefix}StackExchange.Redis.Batch.";
+                var batchPrefix = $"{TestPrefix}StackExchange.Redis.Batch.";
                 expected.AddRange(new TupleList<string, string>
                 {
                     { "DEBUG", $"DEBUG {batchPrefix}DebugObjectAsync" },
@@ -136,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETRANGE", "SETRANGE key" },
                 });
 
-                var dbPrefix = $"{prefix}StackExchange.Redis.Database.";
+                var dbPrefix = $"{TestPrefix}StackExchange.Redis.Database.";
                 expected.AddRange(new TupleList<string, string>
                 {
                     { "DEBUG", $"DEBUG {dbPrefix}DebugObject" },

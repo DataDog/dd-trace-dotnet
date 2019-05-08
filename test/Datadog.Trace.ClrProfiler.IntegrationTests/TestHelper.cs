@@ -43,6 +43,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Profiler DLL: {_environmentHelper.GetProfilerPath()}");
         }
 
+        protected string TestPrefix => $"{EnvironmentHelper.GetBuildConfiguration()}.{_environmentHelper.GetTargetFramework()}";
+
         protected string SampleAppName { get; }
 
         protected string PathToSample { get; }
