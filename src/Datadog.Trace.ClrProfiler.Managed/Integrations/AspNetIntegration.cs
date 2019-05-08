@@ -1,9 +1,7 @@
 #if !NETSTANDARD2_0
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Web;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations

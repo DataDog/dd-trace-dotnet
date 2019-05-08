@@ -3,7 +3,6 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -15,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class AdoNetIntegration
     {
         private const string IntegrationName = "AdoNet";
+        private const string Major4 = "4";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AdoNetIntegration));
 
@@ -26,10 +26,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
-            TargetType = "System.Data.Common.DbCommand")]
+            TargetType = "System.Data.Common.DbCommand",
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Data.Common", // .NET Core
-            TargetType = "System.Data.Common.DbCommand")]
+            TargetType = "System.Data.Common.DbCommand",
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReader(object @this, int behavior)
         {
             var command = (DbCommand)@this;
@@ -63,10 +67,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
-            TargetType = "System.Data.Common.DbCommand")]
+            TargetType = "System.Data.Common.DbCommand",
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Data.Common", // .NET Core
-            TargetType = "System.Data.Common.DbCommand")]
+            TargetType = "System.Data.Common.DbCommand",
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReaderAsync(object @this, int behavior, object cancellationTokenSource)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;

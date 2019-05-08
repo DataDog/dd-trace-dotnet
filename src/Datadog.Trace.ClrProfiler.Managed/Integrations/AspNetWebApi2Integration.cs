@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -18,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string IntegrationName = "AspNetWebApi2";
         private const string OperationName = "aspnet-webapi.request";
+        private const string Major5Minor2 = "5.2";
+        private const string Major5 = "5";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebApi2Integration));
 
@@ -30,7 +31,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>A task with the result</returns>
         [InterceptMethod(
             TargetAssembly = "System.Web.Http",
-            TargetType = "System.Web.Http.Controllers.IHttpController")]
+            TargetType = "System.Web.Http.Controllers.IHttpController",
+            TargetMinimumVersion = Major5Minor2,
+            TargetMaximumVersion = Major5)]
         public static object ExecuteAsync(object apiController, object controllerContext, object cancellationTokenSource)
         {
             if (apiController == null) { throw new ArgumentNullException(nameof(apiController)); }

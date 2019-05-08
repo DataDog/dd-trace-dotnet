@@ -3,7 +3,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -14,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class HttpMessageHandlerIntegration
     {
         private const string IntegrationName = "HttpMessageHandler";
+        private const string Major4 = "4";
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="HttpMessageHandler.SendAsync"/>.
@@ -24,11 +24,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Net.Http",
-            TargetType = "System.Net.Http.HttpMessageHandler")]
+            TargetType = "System.Net.Http.HttpMessageHandler",
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Net.Http",
-            TargetType = "System.Net.Http.HttpClientHandler")] // .NET Framework and .NET Core 2.0 and earlier
-        /*
+            TargetType = "System.Net.Http.HttpClientHandler",
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)] // .NET Framework and .NET Core 2.0 and earlier
+            /*
         [InterceptMethod(
             TargetAssembly = "System.Net.Http",
             TargetType = "System.Net.Http.SocketsHttpHandler")] // .NET Core 2.1 and later

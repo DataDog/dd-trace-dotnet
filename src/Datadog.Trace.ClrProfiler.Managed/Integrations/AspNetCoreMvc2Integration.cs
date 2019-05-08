@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "AspNetCoreMvc2";
         private const string OperationName = "aspnet-coremvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
+        private const string Major2 = "2";
 
         /// <summary>
         /// Base type used for traversing the pipeline in Microsoft.AspNetCore.Mvc.Core.
@@ -126,7 +127,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
+            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static void BeforeAction(
             object diagnosticSource,
             object actionDescriptor,
@@ -195,7 +198,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions")]
+            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static void AfterAction(
             object diagnosticSource,
             object actionDescriptor,
@@ -263,7 +268,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetType = ResourceInvoker)]
+            TargetType = ResourceInvoker,
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major2)]
         public static void Rethrow(object context)
         {
             AspNetCoreMvc2Integration integration = null;

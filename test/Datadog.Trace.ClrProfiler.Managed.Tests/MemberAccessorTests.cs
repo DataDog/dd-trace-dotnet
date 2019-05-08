@@ -1,4 +1,3 @@
-using Datadog.Trace.ClrProfiler.Emit;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
