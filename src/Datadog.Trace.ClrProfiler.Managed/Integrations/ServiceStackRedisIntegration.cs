@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string IntegrationName = "ServiceStackRedis";
         private const string Major4 = "4";
+        private const string Major5 = "5";
 
         /// <summary>
         /// Traces SendReceive.
@@ -27,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "ServiceStack.Redis",
             TargetType = "ServiceStack.Redis.RedisNativeClient",
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
+            TargetMaximumVersion = Major5)]
         public static T SendReceive<T>(object redisNativeClient, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead)
         {
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>
