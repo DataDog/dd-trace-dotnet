@@ -12,7 +12,7 @@ namespace Samples.Elasticsearch
     {
         static void Main(string[] args)
         {
-            var host = new Uri("http://" + Host() + ":9200");
+            var host = new Uri("http://" + Host());
             var settings = new ConnectionSettings(host).DefaultIndex("elastic-net-example");
             var elastic = new ElasticClient(settings);
 
@@ -60,7 +60,7 @@ namespace Samples.Elasticsearch
 
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("ELASTICSEARCH_HOST") ?? "localhost";
+            return Environment.GetEnvironmentVariable("ELASTICSEARCH6_HOST") ?? "localhost:9200";
         }
 
         private static List<Func<object>> DocumentCommands(ElasticClient elastic)

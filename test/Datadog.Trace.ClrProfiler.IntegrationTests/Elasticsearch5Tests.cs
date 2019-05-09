@@ -6,11 +6,9 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class ElasticsearchTests : TestHelper
+    public class Elasticsearch5Tests : TestHelper
     {
-        private const int AgentPort = 9005;
-
-        public ElasticsearchTests(ITestOutputHelper output)
+        public Elasticsearch5Tests(ITestOutputHelper output)
             : base("Elasticsearch", output)
         {
         }
@@ -19,7 +17,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            using (var agent = new MockTracerAgent(AgentPort))
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = new MockTracerAgent(agentPort))
             using (var processResult = RunSampleAndWaitForExit(agent.Port))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");

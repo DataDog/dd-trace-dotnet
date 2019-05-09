@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Elasticsearch.Net;
+using Datadog.Trace.ClrProfiler;
 using Nest;
 
 namespace Samples.Elasticsearch.V5
@@ -11,22 +11,28 @@ namespace Samples.Elasticsearch.V5
     {
         static void Main(string[] args)
         {
-            var host = new Uri("http://" + Host() + ":9200");
-            var settings = new ConnectionSettings(host).DefaultIndex("elastic-net-example");
+            Console.WriteLine($"ProfilerAttached: {Instrumentation.ProfilerAttached}");
+
+            var host = new Uri("http://" + Host());
+
+            var settings = new ConnectionSettings(host)
+                          .DefaultIndex("elastic-net-example")
+                          .BasicAuthentication("elastic", "changeme");
+
             var elastic = new ElasticClient(settings);
 
             var commands = new List<Func<object>>().
-                Concat(IndexCommands(elastic)).
+                //Concat(IndexCommands(elastic)).
                 Concat(IndexCommandsAsync(elastic)).
-                Concat(DocumentCommands(elastic)).
-                Concat(DocumentCommandsAsync(elastic)).
-                Concat(CatCommands(elastic)).
-                Concat(CatCommandsAsync(elastic)).
-                Concat(ClusterCommands(elastic)).
-                Concat(ClusterCommandsAsync(elastic)).
-                Concat(UserCommands(elastic)).
-                Concat(UserCommandsAsync(elastic)).
-                Concat(WatchCommands(elastic));
+                //Concat(DocumentCommands(elastic)).
+                Concat(DocumentCommandsAsync(elastic));
+                //Concat(CatCommands(elastic)).
+                //Concat(CatCommandsAsync(elastic)).
+                //Concat(ClusterCommands(elastic)).
+                //Concat(ClusterCommandsAsync(elastic)).
+                //Concat(UserCommands(elastic)).
+                //Concat(UserCommandsAsync(elastic)).
+                //Concat(WatchCommands(elastic));
 
             var exceptions = new List<Exception>();
 
@@ -57,7 +63,7 @@ namespace Samples.Elasticsearch.V5
 
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("ELASTICSEARCH_HOST") ?? "localhost";
+            return Environment.GetEnvironmentVariable("ELASTICSEARCH5_HOST") ?? "localhost:9205";
         }
 
         private static List<Func<object>> DocumentCommands(ElasticClient elastic)
@@ -79,7 +85,7 @@ namespace Samples.Elasticsearch.V5
                  {
                      Id = 2,
                      Title = "Create",
-                 }), 
+                 }),
                 // () => elastic.CreateDocument<Post>(new Post
                 // {
                 //     Id = 3,
@@ -113,7 +119,7 @@ namespace Samples.Elasticsearch.V5
                 {
                     Id = 2,
                     Title = "Create",
-                }), 
+                }),
                 () => elastic.CountAsync<Post>(),
                 () => elastic.SearchAsync<Post>(s => s.MatchAll()),
                 () => elastic.DeleteByQueryAsync(new DeleteByQueryRequest("test_index")
