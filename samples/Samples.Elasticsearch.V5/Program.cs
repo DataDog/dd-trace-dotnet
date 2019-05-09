@@ -22,8 +22,6 @@ namespace Samples.Elasticsearch.V5
                 Concat(DocumentCommandsAsync(elastic)).
                 Concat(CatCommands(elastic)).
                 Concat(CatCommandsAsync(elastic)).
-                Concat(JobCommands(elastic)).
-                Concat(JobCommandsAsync(elastic)).
                 Concat(ClusterCommands(elastic)).
                 Concat(ClusterCommandsAsync(elastic)).
                 Concat(UserCommands(elastic)).
@@ -285,50 +283,6 @@ namespace Samples.Elasticsearch.V5
             };
         }
 
-        private static List<Func<object>> JobCommands(ElasticClient elastic)
-        {
-            return new List<Func<object>>
-            {
-                () => elastic.PutJob(new PutJobRequest("test_job")),
-                () => elastic.ValidateJob(new ValidateJobRequest()),
-                () => elastic.GetInfluencers(new GetInfluencersRequest("test_job")),
-                () => elastic.GetJobs(new GetJobsRequest("test_job")),
-                () => elastic.GetJobStats(new GetJobStatsRequest()),
-                () => elastic.GetModelSnapshots(new GetModelSnapshotsRequest("test_job")),
-                // () => elastic.GetOverallBuckets(new GetOverallBucketsRequest("test_job")), // V6 Feature
-                () => elastic.FlushJob(new FlushJobRequest("test_job")),
-                // () => elastic.ForecastJob(new ForecastJobRequest("test_job")), // V6 Feature
-                () => elastic.GetAnomalyRecords(new GetAnomalyRecordsRequest("test_job")),
-                () => elastic.GetBuckets(new GetBucketsRequest("test_job")),
-                () => elastic.GetCategories(new GetCategoriesRequest("test_job")),
-                () => elastic.CloseJob(new CloseJobRequest("test_job")),
-                () => elastic.OpenJob(new OpenJobRequest("test_job")),
-                () => elastic.DeleteJob(new DeleteJobRequest("test_job")),
-            };
-        }
-
-        private static List<Func<object>> JobCommandsAsync(ElasticClient elastic)
-        {
-            return new List<Func<object>>
-            {
-                () => elastic.PutJobAsync(new PutJobRequest("test_job")),
-                () => elastic.ValidateJobAsync(new ValidateJobRequest()),
-                () => elastic.GetInfluencersAsync(new GetInfluencersRequest("test_job")),
-                () => elastic.GetJobsAsync(new GetJobsRequest("test_job")),
-                () => elastic.GetJobStatsAsync(new GetJobStatsRequest()),
-                () => elastic.GetModelSnapshotsAsync(new GetModelSnapshotsRequest("test_job")),
-                // () => elastic.GetOverallBucketsAsync(new GetOverallBucketsRequest("test_job")), // V6 Feature
-                () => elastic.FlushJobAsync(new FlushJobRequest("test_job")),
-                // () => elastic.ForecastJobAsync(new ForecastJobRequest("test_job")), // V6 Feature
-                () => elastic.GetAnomalyRecordsAsync(new GetAnomalyRecordsRequest("test_job")),
-                () => elastic.GetBucketsAsync(new GetBucketsRequest("test_job")),
-                () => elastic.GetCategoriesAsync(new GetCategoriesRequest("test_job")),
-                () => elastic.CloseJobAsync(new CloseJobRequest("test_job")),
-                () => elastic.OpenJobAsync(new OpenJobRequest("test_job")),
-                () => elastic.DeleteJobAsync(new DeleteJobRequest("test_job")),
-            };
-        }
-
         private static List<Func<object>> ClusterCommands(ElasticClient elastic)
         {
             return new List<Func<object>>
@@ -364,10 +318,10 @@ namespace Samples.Elasticsearch.V5
             return new List<Func<object>>
             {
                 () => elastic.PutRole("test_role_1"),
-                () => elastic.PutRoleMapping("test_role_1"),
+                // () => elastic.PutRoleMapping("test_role_1"),
                 () => elastic.GetRole(new GetRoleRequest("test_role_1")),
-                () => elastic.GetRoleMapping(new GetRoleMappingRequest("test_role_1")),
-                () => elastic.DeleteRoleMapping("test_role_1"),
+                // () => elastic.GetRoleMapping(new GetRoleMappingRequest("test_role_1")),
+                // () => elastic.DeleteRoleMapping("test_role_1"),
                 () => elastic.DeleteRole("test_role_1"),
                 () => elastic.PutUser("test_user_1"),
                 () => elastic.ChangePassword(new ChangePasswordRequest("test_user_1")
@@ -385,10 +339,10 @@ namespace Samples.Elasticsearch.V5
             return new List<Func<object>>
             {
                 () => elastic.PutRoleAsync("test_role_1"),
-                () => elastic.PutRoleMappingAsync("test_role_1"),
+                // () => elastic.PutRoleMappingAsync("test_role_1"),
                 () => elastic.GetRoleAsync(new GetRoleRequest("test_role_1")),
-                () => elastic.GetRoleMappingAsync(new GetRoleMappingRequest("test_role_1")),
-                () => elastic.DeleteRoleMappingAsync("test_role_1"),
+                // () => elastic.GetRoleMappingAsync(new GetRoleMappingRequest("test_role_1")),
+                // () => elastic.DeleteRoleMappingAsync("test_role_1"),
                 () => elastic.DeleteRoleAsync("test_role_1"),
                 () => elastic.PutUserAsync("test_user_1"),
                 () => elastic.ChangePasswordAsync(new ChangePasswordRequest("test_user_1")
