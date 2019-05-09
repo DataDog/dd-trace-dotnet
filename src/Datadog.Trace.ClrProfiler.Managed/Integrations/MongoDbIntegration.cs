@@ -1,8 +1,8 @@
 using System;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -15,6 +15,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "MongoDb";
         private const string OperationName = "mongodb.query";
         private const string ServiceName = "mongodb";
+        private const string Major2Minor2 = "2.2";
+        private const string Major2 = "2";
+
+        private static readonly InterceptedMethodAccess<Action<object, object, object>> ExecuteAccess = new InterceptedMethodAccess<Action<object, object, object>>();
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(MongoDbIntegration));
 
@@ -27,19 +31,64 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetAssembly = "MongoDB.Driver.Core",
-            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol")]
+            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol",
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2)]
+        public static object ExecuteIWireProtocol(object wireProtocol, object connection, object cancellationTokenSource)
+        {
+            return Execute(
+                "MongoDB.Driver.Core.WireProtocol.IWireProtocol",
+                wireProtocol,
+                connection,
+                cancellationTokenSource);
+        }
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it.
+        /// </summary>
+        /// <param name="wireProtocol">The IWireProtocol`1 instance we are replacing.</param>
+        /// <param name="connection">The connection.</param>
+        /// <param name="cancellationTokenSource">A cancellation token source.</param>
+        /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetAssembly = "MongoDB.Driver.Core",
-            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1")]
-        public static object Execute(object wireProtocol, object connection, object cancellationTokenSource)
+            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2)]
+        public static object ExecuteIWireProtocol1(object wireProtocol, object connection, object cancellationTokenSource)
         {
-            // TResult MongoDB.Driver.Core.WireProtocol.IWireProtocol<TResult>.Execute(IConnection connection, CancellationToken cancellationToken)
+            return Execute(
+                "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
+                wireProtocol,
+                connection,
+                cancellationTokenSource);
+        }
+
+        private static object Execute(
+            string owningType,
+            object wireProtocol,
+            object connection,
+            object cancellationTokenSource)
+        {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 
-            var execute = Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, object>>
-               .GetOrCreateMethodCallDelegate(
-                    wireProtocol.GetType(),
-                    "Execute");
+            Func<object, object, object, object> execute;
+
+            try
+            {
+                execute = ExecuteAccess.GetInterceptedMethod(
+                    assembly: Assembly.GetCallingAssembly(),
+                    owningType: owningType,
+                    methodName: nameof(Execute),
+                    generics: Interception.NoArguments,
+                    parameters: Interception.TypeArray(wireProtocol, connection, cancellationTokenSource));
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this rethrow method
+                Log.ErrorException($"Error calling {owningType}.{nameof(Execute)}(object wireProtocol, object connection, object cancellationTokenSource)", ex);
+                throw;
+            }
 
             using (var scope = CreateScope(wireProtocol, connection))
             {
@@ -66,10 +115,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetAssembly = "MongoDB.Driver.Core",
-            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol")]
+            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol",
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2)]
         [InterceptMethod(
             TargetAssembly = "MongoDB.Driver.Core",
-            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1")]
+            TargetType = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource)
         {
             // TResult MongoDB.Driver.Core.WireProtocol.IWireProtocol<TResult>.Execute(IConnection connection, CancellationToken cancellationToken)
