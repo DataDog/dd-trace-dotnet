@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             params object[] parametersToPass)
         {
             var methodKey =
-                $"{owningType.AssemblyQualifiedName}_{Interception.MethodKey(returnType: taskResultType, genericTypes: Interception.NullTypeArray, parameterTypes: Interception.ParamsToTypes(parametersToPass))}";
+                Interception.MethodKey(owningType: owningType, returnType: taskResultType, genericTypes: Interception.NullTypeArray, parameterTypes: Interception.ParamsToTypes(parametersToPass));
 
             var asyncDelegate =
                 _methodCache.GetOrAdd(methodKey, GetGenericAsyncMethodInfo(taskResultType, nameOfIntegrationMethod, integrationType));

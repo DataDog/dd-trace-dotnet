@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Type[] generics,
             Type[] parameters)
         {
-            var methodKey = Interception.MethodKey(returnType: returnType, genericTypes: generics, parameterTypes: parameters);
+            var methodKey = Interception.MethodKey(null, returnType: returnType, genericTypes: generics, parameterTypes: parameters);
 
             return
                 _methodCache.GetOrAdd(
@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Type[] generics,
             Type[] parameters)
         {
-            var methodKey = Interception.MethodKey(returnType: returnType, genericTypes: generics, parameterTypes: parameters);
+            var methodKey = Interception.MethodKey(owningType: owningType, returnType: returnType, genericTypes: generics, parameterTypes: parameters);
 
             return
                 _methodCache.GetOrAdd(
