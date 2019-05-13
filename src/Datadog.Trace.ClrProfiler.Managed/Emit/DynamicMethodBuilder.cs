@@ -64,6 +64,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 throw new ArgumentNullException($"Parameter may not be null: {nameof(owningType)}");
             }
 
+            if (returnType == null)
+            {
+                throw new ArgumentNullException($"Parameter may not be null: {nameof(returnType)}");
+            }
+
             MethodInfo[] methods =
                 owningType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
 
@@ -77,13 +82,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     continue;
                 }
 
-                // We don't know the return type in many cases
-                if (returnType != null)
+                if (methods[i].ReturnType != returnType)
                 {
-                    if (methods[i].ReturnType.AssemblyQualifiedName != returnType.AssemblyQualifiedName)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 var candidateGenericTypes = methods[i].GetGenericArguments();
@@ -107,9 +108,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 for (var t = 0; t < candidateParameters.Length; t++)
                 {
                     var candidateMethodParameterType = candidateParameters[t].ParameterType;
-                    var expectedParameterType = parameterTypes[t];
+                    var passedInType = parameterTypes[t];
 
-                    if (!candidateMethodParameterType.IsAssignableFrom(expectedParameterType))
+                    if (!candidateMethodParameterType.IsAssignableFrom(passedInType))
                     {
                         paramsMatch = false;
                         break;
@@ -127,14 +128,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 break;
             }
 
-            if (genericTypes != null)
-            {
-                methods = methods.Where(
-                                      m => m.IsGenericMethodDefinition &&
-                                           m.GetGenericArguments().Length == genericTypes.Length)
-                                 .ToArray();
-            }
-
             if (candidate == null)
             {
                 return null;
@@ -146,21 +139,17 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
 
             Type[] methodParameterTypes;
-            Type[] passedParameterTypes;
+            var delegateMetadata = DelegateMetadata.Create<TDelegate>();
 
             if (candidate.IsStatic)
             {
                 methodParameterTypes = candidateParameterTypes;
-                passedParameterTypes = parameterTypes;
             }
             else
             {
                 // for instance methods, insert object's owningType as first element in array
                 methodParameterTypes = new[] { owningType }
                                       .Concat(candidateParameterTypes)
-                                      .ToArray();
-                passedParameterTypes = new[] { owningType }
-                                      .Concat(parameterTypes)
                                       .ToArray();
             }
 
@@ -171,18 +160,18 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 // load each argument and cast or unbox as necessary
                 for (ushort argumentIndex = 0; argumentIndex < methodParameterTypes.Length; argumentIndex++)
                 {
-                    Type typePassedIn = passedParameterTypes[argumentIndex];
-                    Type expectedParameterType = methodParameterTypes[argumentIndex];
+                    Type methodParameterType = methodParameterTypes[argumentIndex];
+                    Type delegateParameterType = delegateMetadata.Parameters[argumentIndex];
 
                     dynamicMethod.LoadArgument(argumentIndex);
 
-                    if (expectedParameterType.IsValueType && typePassedIn == typeof(object))
+                    if (methodParameterType.IsValueType && delegateParameterType == typeof(object))
                     {
-                        dynamicMethod.UnboxAny(expectedParameterType);
+                        dynamicMethod.UnboxAny(methodParameterType);
                     }
-                    else if (expectedParameterType != typePassedIn)
+                    else if (delegateParameterType != methodParameterType)
                     {
-                        dynamicMethod.CastClass(expectedParameterType);
+                        dynamicMethod.CastClass(methodParameterType);
                     }
                 }
             }
@@ -198,15 +187,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 dynamicMethod.CallVirtual(candidate);
             }
 
-            // TODO: this section may need to be more robust, and different now that we use fully qualified assembly names?
             // Non-void return type?
-            if (candidate.ReturnType.IsValueType && returnType == typeof(object))
+            if (candidate.ReturnType.IsValueType && delegateMetadata.ReturnType == typeof(object))
             {
                 dynamicMethod.Box(candidate.ReturnType);
             }
-            else if (candidate.ReturnType != returnType)
+            else if (candidate.ReturnType != delegateMetadata.ReturnType)
             {
-                dynamicMethod.CastClass(returnType);
+                dynamicMethod.CastClass(candidate.ReturnType);
             }
 
             dynamicMethod.Return();
