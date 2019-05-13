@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="assembly">Assembly containing the method.</param>
         /// <param name="owningType">Type which owns the method.</param>
         /// <param name="methodName">Name of the method being instrumented.</param>
+        /// <param name="returnType">The return type of the instrumented method.</param>
         /// <param name="generics">The ordered types of the method's generics.</param>
         /// <param name="parameters">The ordered types of the method's parameters.</param>
         /// <returns>Delegate representing instrumented method.</returns>
@@ -28,24 +29,51 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Assembly assembly,
             string owningType,
             string methodName,
+            Type returnType,
             Type[] generics,
             Type[] parameters)
         {
-            var methodKey = Interception.MethodKey(genericTypes: generics, parameterTypes: parameters);
+            var type = assembly.GetType(owningType);
+            var methodKey = Interception.MethodKey(type, returnType: returnType, genericTypes: generics, parameterTypes: parameters);
 
             return
                 _methodCache.GetOrAdd(
                     methodKey,
-                    key =>
-                    {
-                        var type = assembly.GetType(owningType);
+                    key => Emit.DynamicMethodBuilder<TDelegate>.CreateInstrumentedMethodDelegate(
+                        owningType: type,
+                        methodName: methodName,
+                        returnType: returnType,
+                        parameterTypes: parameters,
+                        genericTypes: generics));
+        }
 
-                        return Emit.DynamicMethodBuilder<TDelegate>.CreateMethodCallDelegate(
-                            type,
-                            methodName,
-                            methodParameterTypes: parameters,
-                            methodGenericArguments: generics);
-                    });
+        /// <summary>
+        /// Attempts to retrieve a method from cache, otherwise creates the delegate reference, adds it to the cache, and then returns it.
+        /// </summary>
+        /// <param name="owningType">Type which owns the method.</param>
+        /// <param name="methodName">Name of the method being instrumented.</param>
+        /// <param name="returnType">The return type of the instrumented method.</param>
+        /// <param name="generics">The ordered types of the method's generics.</param>
+        /// <param name="parameters">The ordered types of the method's parameters.</param>
+        /// <returns>Delegate representing instrumented method.</returns>
+        internal TDelegate GetInterceptedMethod(
+            Type owningType,
+            string methodName,
+            Type returnType,
+            Type[] generics,
+            Type[] parameters)
+        {
+            var methodKey = Interception.MethodKey(owningType: owningType, returnType: returnType, genericTypes: generics, parameterTypes: parameters);
+
+            return
+                _methodCache.GetOrAdd(
+                    methodKey,
+                    key => Emit.DynamicMethodBuilder<TDelegate>.CreateInstrumentedMethodDelegate(
+                        owningType: owningType,
+                        methodName: methodName,
+                        returnType: returnType,
+                        parameterTypes: parameters,
+                        genericTypes: generics));
         }
     }
 }

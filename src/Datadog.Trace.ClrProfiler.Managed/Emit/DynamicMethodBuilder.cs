@@ -46,6 +46,163 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// Creates a simple <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/> that
         /// calls a method with the specified name and parameter types.
         /// </summary>
+        /// <param name="owningType">The <see cref="Type"/> that contains the method to call when the returned delegate is executed..</param>
+        /// <param name="methodName">The name of the method to call when the returned delegate is executed.</param>
+        /// <param name="returnType">Use method overload that matches the specified return owningType.</param>
+        /// <param name="parameterTypes">If not null, use method overload that matches the specified parameters.</param>
+        /// <param name="genericTypes">If not null, use method overload that has the same number of generic arguments.</param>
+        /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
+        public static TDelegate CreateInstrumentedMethodDelegate(
+            Type owningType,
+            string methodName,
+            Type returnType,
+            Type[] parameterTypes,
+            Type[] genericTypes)
+        {
+            if (owningType == null)
+            {
+                throw new ArgumentNullException($"Parameter may not be null: {nameof(owningType)}");
+            }
+
+            MethodInfo[] methods =
+                owningType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+            MethodInfo candidate = null;
+            Type[] candidateParameterTypes = null;
+
+            for (ushort i = 0; i < methods.Length; i++)
+            {
+                if (methods[i].Name != methodName)
+                {
+                    continue;
+                }
+
+                if (returnType != null)
+                {
+                    if (methods[i].ReturnType != returnType)
+                    {
+                        continue;
+                    }
+                }
+
+                var candidateGenericTypes = methods[i].GetGenericArguments();
+
+                if (candidateGenericTypes.Length != (genericTypes?.Length ?? 0))
+                {
+                    continue;
+                }
+
+                var candidateParameters = methods[i].GetParameters();
+
+                if (candidateParameters.Length != parameterTypes.Length)
+                {
+                    continue;
+                }
+
+                var paramsMatch = true;
+
+                candidateParameterTypes = new Type[parameterTypes.Length];
+
+                for (var t = 0; t < candidateParameters.Length; t++)
+                {
+                    var candidateMethodParameterType = candidateParameters[t].ParameterType;
+                    var passedInType = parameterTypes[t];
+
+                    if (!candidateMethodParameterType.IsAssignableFrom(passedInType))
+                    {
+                        paramsMatch = false;
+                        break;
+                    }
+
+                    candidateParameterTypes[t] = candidateMethodParameterType;
+                }
+
+                if (!paramsMatch)
+                {
+                    continue;
+                }
+
+                candidate = methods[i];
+                break;
+            }
+
+            if (candidate == null)
+            {
+                return null;
+            }
+
+            if (genericTypes?.Length > 0)
+            {
+                candidate = candidate.MakeGenericMethod(genericTypes);
+            }
+
+            Type[] methodParameterTypes;
+            var delegateMetadata = DelegateMetadata.Create<TDelegate>();
+
+            if (candidate.IsStatic)
+            {
+                methodParameterTypes = candidateParameterTypes;
+            }
+            else
+            {
+                // for instance methods, insert object's owningType as first element in array
+                methodParameterTypes = new[] { owningType }
+                                      .Concat(candidateParameterTypes)
+                                      .ToArray();
+            }
+
+            Emit<TDelegate> dynamicMethod = Emit<TDelegate>.NewDynamicMethod(candidate.Name);
+
+            if (methodParameterTypes.Length > 0)
+            {
+                // load each argument and cast or unbox as necessary
+                for (ushort argumentIndex = 0; argumentIndex < methodParameterTypes.Length; argumentIndex++)
+                {
+                    Type methodParameterType = methodParameterTypes[argumentIndex];
+                    Type delegateParameterType = delegateMetadata.Parameters[argumentIndex];
+
+                    dynamicMethod.LoadArgument(argumentIndex);
+
+                    if (methodParameterType.IsValueType && delegateParameterType == typeof(object))
+                    {
+                        dynamicMethod.UnboxAny(methodParameterType);
+                    }
+                    else if (delegateParameterType != methodParameterType)
+                    {
+                        dynamicMethod.CastClass(methodParameterType);
+                    }
+                }
+            }
+
+            if (candidate.IsStatic)
+            {
+                dynamicMethod.Call(candidate);
+            }
+            else
+            {
+                // C# compiler always uses CALLVIRT for instance methods
+                // to get the cheap null check, even if they are not virtual
+                dynamicMethod.CallVirtual(candidate);
+            }
+
+            // Non-void return type?
+            if (candidate.ReturnType.IsValueType && delegateMetadata.ReturnType == typeof(object))
+            {
+                dynamicMethod.Box(candidate.ReturnType);
+            }
+            else if (candidate.ReturnType != delegateMetadata.ReturnType)
+            {
+                dynamicMethod.CastClass(candidate.ReturnType);
+            }
+
+            dynamicMethod.Return();
+            return dynamicMethod.CreateDelegate();
+        }
+
+        /// <summary>
+        /// Creates a simple <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/> that
+        /// calls a method with the specified name and parameter types.
+        /// </summary>
         /// <param name="type">The <see cref="Type"/> that contains the method to call when the returned delegate is executed..</param>
         /// <param name="methodName">The name of the method to call when the returned delegate is executed.</param>
         /// <param name="methodParameterTypes">If not null, use method overload that matches the specified parameters.</param>
