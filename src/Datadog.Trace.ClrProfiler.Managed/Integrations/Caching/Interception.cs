@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         internal static string MethodKey(Type returnType, Type[] genericTypes, Type[] parameterTypes)
         {
-            var key = $"m_r{returnType.AssemblyQualifiedName}";
+            var key = $"m_r{returnType?.AssemblyQualifiedName ?? "UNKNOWN"}";
 
             for (ushort i = 0; i < (genericTypes?.Length ?? 0); i++)
             {

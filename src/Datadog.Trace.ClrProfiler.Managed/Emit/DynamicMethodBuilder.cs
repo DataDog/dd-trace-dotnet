@@ -59,6 +59,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
             Type[] parameterTypes,
             Type[] genericTypes)
         {
+            if (owningType == null)
+            {
+                throw new ArgumentNullException($"Parameter may not be null: {nameof(owningType)}");
+            }
+
             MethodInfo[] methods =
                 owningType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
 
@@ -81,23 +86,39 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     }
                 }
 
-                if (genericTypes.Length > 0 && !methods[i].ContainsGenericParameters)
-                {
-                    // We expect generic parameters but this is not a generic method
-                    continue;
-                }
-
                 var candidateGenericTypes = methods[i].GetGenericArguments();
 
-                if (candidateGenericTypes.Length != genericTypes.Length)
+                if (candidateGenericTypes.Length != (genericTypes?.Length ?? 0))
                 {
                     continue;
                 }
 
                 var candidateParameters = methods[i].GetParameters();
-                candidateParameterTypes = candidateParameters.Select(p => p.ParameterType).ToArray();
 
-                if (!TypeArraysMatch(parameterTypes, candidateParameters.Length, candidateParameterTypes))
+                if (candidateParameters.Length != parameterTypes.Length)
+                {
+                    continue;
+                }
+
+                var paramsMatch = true;
+
+                candidateParameterTypes = new Type[parameterTypes.Length];
+
+                for (var t = 0; t < candidateParameters.Length; t++)
+                {
+                    var candidateMethodParameterType = candidateParameters[t].ParameterType;
+                    var expectedParameterType = parameterTypes[t];
+
+                    if (!candidateMethodParameterType.IsAssignableFrom(expectedParameterType))
+                    {
+                        paramsMatch = false;
+                        break;
+                    }
+
+                    candidateParameterTypes[t] = candidateMethodParameterType;
+                }
+
+                if (!paramsMatch)
                 {
                     continue;
                 }
@@ -341,24 +362,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             dynamicMethod.Return();
             return dynamicMethod.CreateDelegate();
-        }
-
-        private static bool TypeArraysMatch(Type[] expectedTypes, int actualCount, Type[] actualTypes)
-        {
-            if (expectedTypes.Length != actualCount)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < expectedTypes.Length; i++)
-            {
-                if (expectedTypes[i].AssemblyQualifiedName != actualTypes[i].AssemblyQualifiedName)
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         private struct Key

@@ -50,5 +50,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                             genericTypes: generics);
                     });
         }
+
+        /// <summary>
+        /// Attempts to retrieve a method from cache, otherwise creates the delegate reference, adds it to the cache, and then returns it.
+        /// </summary>
+        /// <param name="owningType">Type which owns the method.</param>
+        /// <param name="methodName">Name of the method being instrumented.</param>
+        /// <param name="returnType">The return type of the instrumented method.</param>
+        /// <param name="generics">The ordered types of the method's generics.</param>
+        /// <param name="parameters">The ordered types of the method's parameters.</param>
+        /// <returns>Delegate representing instrumented method.</returns>
+        internal TDelegate GetInterceptedMethod(
+            Type owningType,
+            string methodName,
+            Type returnType,
+            Type[] generics,
+            Type[] parameters)
+        {
+            var methodKey = Interception.MethodKey(returnType: returnType, genericTypes: generics, parameterTypes: parameters);
+
+            return
+                _methodCache.GetOrAdd(
+                    methodKey,
+                    key => Emit.DynamicMethodBuilder<TDelegate>.CreateInstrumentedMethodDelegate(
+                        owningType: owningType,
+                        methodName: methodName,
+                        returnType: returnType,
+                        parameterTypes: parameters,
+                        genericTypes: generics));
+        }
     }
 }

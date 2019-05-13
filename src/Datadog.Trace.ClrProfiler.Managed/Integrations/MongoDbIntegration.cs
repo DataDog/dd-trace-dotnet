@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -53,12 +52,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 execute = ExecuteAccess.GetInterceptedMethod(
-                    assembly: Assembly.GetCallingAssembly(),
-                    owningType: wireProtocolType.FullName,
+                    wireProtocolType,
                     returnType: null, // return type doesn't matter
                     methodName: methodName,
                     generics: Interception.NullTypeArray,
-                    parameters: Interception.ParamsToTypes(wireProtocol, connection, cancellationTokenSource));
+                    parameters: Interception.ParamsToTypes(connection, cancellationTokenSource));
             }
             catch (Exception ex)
             {
@@ -86,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.
         /// </summary>
-        /// <param name="wireProtocol">The IWireProtocol`1 instance we are replacing.</param>
+        /// <param name="wireProtocol">The IWireProtocol instance we are replacing.</param>
         /// <param name="connection">The connection.</param>
         /// <param name="cancellationTokenSource">A cancellation token source.</param>
         /// <returns>The original method's return value.</returns>
@@ -138,12 +136,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 executeAsync = ExecuteAsyncAccess.GetInterceptedMethod(
-                    assembly: Assembly.GetCallingAssembly(),
-                    owningType: wireProtocolType.FullName,
+                    owningType: wireProtocolType,
                     returnType: typeof(Task),
                     methodName: methodName,
                     generics: Interception.NullTypeArray,
-                    parameters: Interception.ParamsToTypes(wireProtocol, connection, cancellationToken));
+                    parameters: Interception.ParamsToTypes(connection, cancellationToken));
             }
             catch (Exception ex)
             {
@@ -179,12 +176,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 executeAsync = ExecuteAsyncAccess.GetInterceptedMethod(
-                    assembly: Assembly.GetCallingAssembly(),
-                    owningType: wireProtocolType.FullName,
+                    owningType: wireProtocolType,
                     returnType: null,
                     methodName: methodName,
                     generics: Interception.NullTypeArray,
-                    parameters: Interception.ParamsToTypes(wireProtocol, connection, cancellationToken));
+                    parameters: Interception.ParamsToTypes(connection, cancellationToken));
             }
             catch (Exception ex)
             {

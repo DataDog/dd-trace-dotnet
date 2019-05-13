@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentException($"Method {nameOfIntegrationMethod} on {integrationType.Name} must be static. ");
             }
 
-            if (!method.ReturnType.IsGenericParameter || method.ReturnType.GetGenericTypeDefinition() != typeof(Task<>))
+            if (method.ReturnType.Name != typeof(Task<>).Name)
             {
                 throw new ArgumentException($"Method {nameOfIntegrationMethod} on {integrationType.Name} must have a return type of Task<>. ");
             }
