@@ -38,11 +38,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
-            TargetMinimumVersion = Major2Minor2)]
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2)]
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocolGeneric,
-            TargetMinimumVersion = Major2Minor2)]
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2)]
         public static object Execute(object wireProtocol, object connection, object cancellationTokenSource)
         {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
@@ -94,7 +96,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMethod = nameof(ExecuteAsync),
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
-            TargetMinimumVersion = Major2Minor1)]
+            TargetMinimumVersion = Major2Minor1,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
@@ -113,7 +116,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMethod = nameof(ExecuteAsync),
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocolGeneric,
-            TargetMinimumVersion = Major2Minor1)]
+            TargetMinimumVersion = Major2Minor1,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteAsyncGeneric(object wireProtocol, object connection, object cancellationTokenSource)
         {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
