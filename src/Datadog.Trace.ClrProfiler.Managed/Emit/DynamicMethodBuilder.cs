@@ -145,41 +145,45 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 candidate = candidate.MakeGenericMethod(genericTypes);
             }
 
-            Type[] effectiveParameterTypes;
+            Type[] methodParameterTypes;
+            Type[] passedParameterTypes;
 
             if (candidate.IsStatic)
             {
-                effectiveParameterTypes = candidateParameterTypes;
+                methodParameterTypes = candidateParameterTypes;
+                passedParameterTypes = parameterTypes;
             }
             else
             {
                 // for instance methods, insert object's owningType as first element in array
-                effectiveParameterTypes = new[] { owningType }
-                                         .Concat(candidateParameterTypes)
-                                         .ToArray();
+                methodParameterTypes = new[] { owningType }
+                                      .Concat(candidateParameterTypes)
+                                      .ToArray();
+                passedParameterTypes = new[] { owningType }
+                                      .Concat(parameterTypes)
+                                      .ToArray();
             }
 
             Emit<TDelegate> dynamicMethod = Emit<TDelegate>.NewDynamicMethod(candidate.Name);
 
-            if (candidateParameterTypes.Length > 0)
+            if (methodParameterTypes.Length > 0)
             {
                 // load each argument and cast or unbox as necessary
-                for (ushort argumentIndex = 0; argumentIndex < candidateParameterTypes.Length; argumentIndex++)
+                for (ushort argumentIndex = 0; argumentIndex < methodParameterTypes.Length; argumentIndex++)
                 {
-                    Type delegateParameterType = parameterTypes[argumentIndex];
-                    Type underlyingParameterType = candidateParameterTypes[argumentIndex];
+                    Type typePassedIn = passedParameterTypes[argumentIndex];
+                    Type expectedParameterType = methodParameterTypes[argumentIndex];
 
                     dynamicMethod.LoadArgument(argumentIndex);
 
-                    // TODO: do we need to do any of this if they are exact matches?
-                    // if (underlyingParameterType.IsValueType && delegateParameterType == typeof(object))
-                    // {
-                    //     dynamicMethod.UnboxAny(underlyingParameterType);
-                    // }
-                    // else if (underlyingParameterType != delegateParameterType)
-                    // {
-                    //     dynamicMethod.CastClass(underlyingParameterType);
-                    // }
+                    if (expectedParameterType.IsValueType && typePassedIn == typeof(object))
+                    {
+                        dynamicMethod.UnboxAny(expectedParameterType);
+                    }
+                    else if (expectedParameterType != typePassedIn)
+                    {
+                        dynamicMethod.CastClass(expectedParameterType);
+                    }
                 }
             }
 
