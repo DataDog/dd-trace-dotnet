@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Type[] genericTypes,
             Type[] parameterTypes)
         {
-            var key = $"{owningType?.AssemblyQualifiedName}_m_r{returnType.AssemblyQualifiedName}";
+            var key = $"{owningType?.AssemblyQualifiedName}_m_r{returnType?.AssemblyQualifiedName}";
 
             for (ushort i = 0; i < (genericTypes?.Length ?? 0); i++)
             {
