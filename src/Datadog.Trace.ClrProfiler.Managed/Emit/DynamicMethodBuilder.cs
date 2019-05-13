@@ -64,11 +64,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 throw new ArgumentNullException($"Parameter may not be null: {nameof(owningType)}");
             }
 
-            if (returnType == null)
-            {
-                throw new ArgumentNullException($"Parameter may not be null: {nameof(returnType)}");
-            }
-
             MethodInfo[] methods =
                 owningType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
 
@@ -82,9 +77,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     continue;
                 }
 
-                if (methods[i].ReturnType != returnType)
+                if (returnType != null)
                 {
-                    continue;
+                    if (methods[i].ReturnType != returnType)
+                    {
+                        continue;
+                    }
                 }
 
                 var candidateGenericTypes = methods[i].GetGenericArguments();
