@@ -33,22 +33,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Type[] generics,
             Type[] parameters)
         {
-            var methodKey = Interception.MethodKey(null, returnType: returnType, genericTypes: generics, parameterTypes: parameters);
+            var type = assembly.GetType(owningType);
+            var methodKey = Interception.MethodKey(type, returnType: returnType, genericTypes: generics, parameterTypes: parameters);
 
             return
                 _methodCache.GetOrAdd(
                     methodKey,
-                    key =>
-                    {
-                        var type = assembly.GetType(owningType);
-
-                        return Emit.DynamicMethodBuilder<TDelegate>.CreateInstrumentedMethodDelegate(
-                            owningType: type,
-                            methodName: methodName,
-                            returnType: returnType,
-                            parameterTypes: parameters,
-                            genericTypes: generics);
-                    });
+                    key => Emit.DynamicMethodBuilder<TDelegate>.CreateInstrumentedMethodDelegate(
+                        owningType: type,
+                        methodName: methodName,
+                        returnType: returnType,
+                        parameterTypes: parameters,
+                        genericTypes: generics));
         }
 
         /// <summary>
