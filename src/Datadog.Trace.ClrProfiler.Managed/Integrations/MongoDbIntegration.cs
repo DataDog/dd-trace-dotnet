@@ -120,7 +120,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
             var wireProtocolType = wireProtocol.GetType();
-            var genericArgs = wireProtocolType.GetGenericArguments();
+            var interfaces = wireProtocolType.GetInterfaces();
+            Type typeWeInstrument = null;
+
+            for (var i = 0; i < interfaces.Length; i++)
+            {
+                if ($"{interfaces[i].Namespace}.{interfaces[i].Name}" == IWireProtocolGeneric)
+                {
+                    typeWeInstrument = interfaces[i];
+                    break;
+                }
+            }
+
+            if (typeWeInstrument == null)
+            {
+                throw new ArgumentException($"Unable to find the instrumented interface: {IWireProtocolGeneric}");
+            }
+
+            var genericArgs = typeWeInstrument.GetGenericArguments();
 
             if (genericArgs.Length == 0)
             {
