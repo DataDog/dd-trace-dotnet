@@ -16,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string ServiceName = "mongodb";
 
         private const string Major2 = "2";
+        private const string Major2Minor1 = "2.1";
+        private const string Major2Minor2 = "2.2"; // Synchronous methods added in 2.2
         private const string MongoDbClientAssembly = "MongoDB.Driver.Core";
         private const string IWireProtocol = "MongoDB.Driver.Core.WireProtocol.IWireProtocol";
         private const string IWireProtocolGeneric = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1";
@@ -36,11 +38,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
-            TargetMinimumVersion = Major2)]
+            TargetMinimumVersion = Major2Minor2)]
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocolGeneric,
-            TargetMinimumVersion = Major2)]
+            TargetMinimumVersion = Major2Minor2)]
         public static object Execute(object wireProtocol, object connection, object cancellationTokenSource)
         {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
@@ -92,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMethod = nameof(ExecuteAsync),
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
-            TargetMinimumVersion = Major2)]
+            TargetMinimumVersion = Major2Minor1)]
         public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
@@ -111,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMethod = nameof(ExecuteAsync),
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocolGeneric,
-            TargetMinimumVersion = Major2)]
+            TargetMinimumVersion = Major2Minor1)]
         public static object ExecuteAsyncGeneric(object wireProtocol, object connection, object cancellationTokenSource)
         {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
