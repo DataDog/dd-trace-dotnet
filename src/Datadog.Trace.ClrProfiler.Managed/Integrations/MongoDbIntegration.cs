@@ -53,6 +53,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             Func<object, object, CancellationToken, object> execute;
             var wireProtocolType = wireProtocol.GetType();
 
+            var tokenSource = cancellationTokenSource as CancellationTokenSource;
+            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             try
             {
                 execute = ExecuteAccess.GetInterceptedMethod(
@@ -60,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     returnType: null, // return type doesn't matter
                     methodName: methodName,
                     generics: Interception.NullTypeArray,
-                    parameters: Interception.ParamsToTypes(connection, cancellationTokenSource));
+                    parameters: Interception.ParamsToTypes(connection, cancellationToken));
             }
             catch (Exception ex)
             {
@@ -73,8 +75,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    var tokenSource = cancellationTokenSource as CancellationTokenSource;
-                    var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
                     return execute(wireProtocol, connection, cancellationToken);
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
