@@ -147,6 +147,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             return AsyncTargetAccess.InvokeGenericTaskDelegate(
+                wireProtocolType,
                 genericArgs[0],
                 nameof(ExecuteAsyncInternalGeneric),
                 typeof(MongoDbIntegration),

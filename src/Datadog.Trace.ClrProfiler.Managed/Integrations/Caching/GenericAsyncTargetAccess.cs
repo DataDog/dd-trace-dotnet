@@ -10,12 +10,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private readonly ConcurrentDictionary<string, MethodInfo> _methodCache = new ConcurrentDictionary<string, MethodInfo>();
 
         internal object InvokeGenericTaskDelegate(
+            Type owningType,
             Type taskResultType,
             string nameOfIntegrationMethod,
             Type integrationType,
             params object[] parametersToPass)
         {
-            var methodKey = Interception.MethodKey(returnType: taskResultType, genericTypes: Interception.NullTypeArray, parameterTypes: Interception.ParamsToTypes(parametersToPass));
+            var methodKey =
+                $"{owningType.AssemblyQualifiedName}_{Interception.MethodKey(returnType: taskResultType, genericTypes: Interception.NullTypeArray, parameterTypes: Interception.ParamsToTypes(parametersToPass))}";
 
             var asyncDelegate =
                 _methodCache.GetOrAdd(methodKey, GetGenericAsyncMethodInfo(taskResultType, nameOfIntegrationMethod, integrationType));
