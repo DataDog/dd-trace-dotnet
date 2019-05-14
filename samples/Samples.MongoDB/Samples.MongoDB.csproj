@@ -1,7 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <MongoDBDriverVersion Condition="'$(MongoDBDriverVersion)' == ''">2.8.0</MongoDBDriverVersion>
+    <DefineConstants Condition="'$(MongoDBDriverVersion)'>='2.7.0'">$(DefineConstants);MONGODB_2_7</DefineConstants>
+    <DefineConstants Condition="'$(MongoDBDriverVersion)'>='2.2.0'">$(DefineConstants);MONGODB_2_2</DefineConstants>
+  </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MongoDB.Driver" Version="2.8.0" />
+    <PackageReference Include="MongoDB.Driver" Version="$(MongoDBDriverVersion)" />
   </ItemGroup>
 
 </Project>
