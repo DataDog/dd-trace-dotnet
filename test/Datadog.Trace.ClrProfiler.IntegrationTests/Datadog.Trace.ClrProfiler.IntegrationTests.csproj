@@ -5,15 +5,14 @@
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
     <Platforms>x64;x86</Platforms>
   </PropertyGroup>
-  
+
   <ItemGroup>
-    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**"
-             CopyToOutputDirectory="Always"
-             CopyToPublishDirectory="Always"
-             Link="%(RecursiveDir)\%(Filename)%(Extension)" />
-    <Content Include="..\..\integrations.json"
-             CopyToOutputDirectory="Always"
-             CopyToPublishDirectory="Always" />
+    <Content Include="..\..\integrations.json" Link="integrations.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\**"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   
   <ItemGroup>
