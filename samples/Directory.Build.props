@@ -17,11 +17,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\**"
+    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\\$(Platform)\\**"
              CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
+             CopyToPublishDirectory="PreserveNewest"
+             Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
     <Content Include="..\..\integrations.json"
              CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest" />
+             CopyToPublishDirectory="PreserveNewest"
+             Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
