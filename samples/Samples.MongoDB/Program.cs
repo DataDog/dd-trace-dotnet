@@ -53,15 +53,21 @@ namespace Samples.MongoDB
 
             using (var syncScope = Tracer.Instance.StartActive("sync-calls", serviceName: "Samples.MongoDB"))
             {
+#if MONGODB_2_2
                 collection.DeleteMany(allFilter);
                 collection.InsertOne(newDocument);
 
+#if MONGODB_2_7
                 var count = collection.CountDocuments(new BsonDocument());
+#else
+                var count = collection.Count(new BsonDocument());
+#endif
                 Console.WriteLine($"Documents: {count}");
 
                 var find = collection.Find(allFilter);
                 var allDocuments = find.ToList();
                 Console.WriteLine(allDocuments.FirstOrDefault());
+#endif
             }
         }
 
@@ -74,7 +80,12 @@ namespace Samples.MongoDB
                 await collection.DeleteManyAsync(allFilter);
                 await collection.InsertOneAsync(newDocument);
 
+#if MONGODB_2_7
                 var count = await collection.CountDocumentsAsync(new BsonDocument());
+#else
+                var count = await collection.CountAsync(new BsonDocument());
+#endif
+
                 Console.WriteLine($"Documents: {count}");
 
                 var find = await collection.FindAsync(allFilter);
