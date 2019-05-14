@@ -17,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "AspNetMvc";
         private const string OperationName = "aspnet-mvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
+        private const string Major5Minor1 = "5.1";
+        private const string Major5 = "5";
 
         private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
         private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
@@ -132,8 +134,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "System.Web.Mvc",
             TargetAssembly = "System.Web.Mvc",
             TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker",
-            TargetMinimumVersion = "5.1.3",
-            TargetMaximumVersion = "5")]
+            TargetMinimumVersion = Major5Minor1,
+            TargetMaximumVersion = Major5)]
         public static object BeginInvokeAction(
             dynamic asyncControllerActionInvoker,
             dynamic controllerContext,
@@ -177,7 +179,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "System.Web.Mvc",
             TargetAssembly = "System.Web.Mvc",
-            TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker")]
+            TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker",
+            TargetMinimumVersion = Major5Minor1,
+            TargetMaximumVersion = Major5)]
         public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
         {
             Scope scope = null;

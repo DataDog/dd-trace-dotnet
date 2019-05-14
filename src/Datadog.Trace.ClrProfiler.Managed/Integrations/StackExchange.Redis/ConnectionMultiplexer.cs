@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.Emit;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
@@ -10,6 +9,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     public static class ConnectionMultiplexer
     {
         private const string IntegrationName = "StackExchangeRedis";
+        private const string Major1 = "1";
+        private const string Major2 = "2";
 
         /// <summary>
         /// Execute a synchronous redis operation.
@@ -24,12 +25,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
-            TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
+            TargetType = "StackExchange.Redis.ConnectionMultiplexer",
+            TargetMinimumVersion = Major1,
+            TargetMaximumVersion = Major2)]
         [InterceptMethod(
             Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis.StrongName",
             TargetAssembly = "StackExchange.Redis.StrongName",
-            TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
+            TargetType = "StackExchange.Redis.ConnectionMultiplexer",
+            TargetMinimumVersion = Major1,
+            TargetMaximumVersion = Major2)]
         public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server)
         {
             var resultType = typeof(T);
@@ -74,12 +79,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
-            TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
+            TargetType = "StackExchange.Redis.ConnectionMultiplexer",
+            TargetMinimumVersion = Major1,
+            TargetMaximumVersion = Major2)]
         [InterceptMethod(
             Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis.StrongName",
             TargetAssembly = "StackExchange.Redis.StrongName",
-            TargetType = "StackExchange.Redis.ConnectionMultiplexer")]
+            TargetType = "StackExchange.Redis.ConnectionMultiplexer",
+            TargetMinimumVersion = Major1,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
         {
             return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server);

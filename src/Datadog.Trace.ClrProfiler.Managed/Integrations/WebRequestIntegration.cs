@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class WebRequestIntegration
     {
         private const string IntegrationName = "WebRequest";
+        private const string Major4 = "4";
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.
@@ -19,10 +20,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System", // .NET Framework
-            TargetType = "System.Net.WebRequest")]
+            TargetType = "System.Net.WebRequest",
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Net.Requests", // .NET Core
-            TargetType = "System.Net.WebRequest")]
+            TargetType = "System.Net.WebRequest",
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)]
         public static object GetResponse(object webRequest)
         {
             var request = (WebRequest)webRequest;
@@ -66,7 +71,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Net",
-            TargetType = "System.Net.WebRequest")]
+            TargetType = "System.Net.WebRequest",
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)]
         public static object GetResponseAsync(object request)
         {
             return GetResponseAsyncInternal((WebRequest)request);

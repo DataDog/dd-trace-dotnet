@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.Emit;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
@@ -10,6 +9,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     public static class RedisBatch
     {
         private const string IntegrationName = "StackExchangeRedis";
+        private const string Major1 = "1";
 
         /// <summary>
         /// Execute an asynchronous redis operation.
@@ -24,12 +24,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
-            TargetType = "StackExchange.Redis.RedisBase")]
+            TargetType = "StackExchange.Redis.RedisBase",
+            TargetMinimumVersion = Major1,
+            TargetMaximumVersion = Major1)]
         [InterceptMethod(
             Integration = IntegrationName,
             CallerAssembly = "StackExchange.Redis.StrongName",
             TargetAssembly = "StackExchange.Redis.StrongName",
-            TargetType = "StackExchange.Redis.RedisBase")]
+            TargetType = "StackExchange.Redis.RedisBase",
+            TargetMinimumVersion = Major1,
+            TargetMaximumVersion = Major1)]
         public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server)
         {
             return ExecuteAsyncInternal<T>(redisBase, message, processor, server);
