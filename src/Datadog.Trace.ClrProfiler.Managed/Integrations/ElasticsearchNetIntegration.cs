@@ -10,7 +10,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class ElasticsearchNetIntegration
     {
-        // NOTE: keep this name without the 6 to avoid breaking changes
         private const string IntegrationName = "ElasticsearchNet";
         private const string Version6 = "6";
         private const string Version5 = "5";
