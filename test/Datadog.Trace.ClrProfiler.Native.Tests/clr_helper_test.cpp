@@ -112,8 +112,8 @@ TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
                        max_ver_,
                        {}},
                       {}}}};
-  auto all = {i1, i2, i3};
-  auto expected = {i1, i3};
+  std::vector<Integration> all = {i1, i2, i3};
+  std::vector<Integration> expected = {i1, i3};
   std::vector<WSTRING> disabled_integrations = {"integration-2"_W};
   auto actual =
       FilterIntegrationsByName(all, disabled_integrations);
