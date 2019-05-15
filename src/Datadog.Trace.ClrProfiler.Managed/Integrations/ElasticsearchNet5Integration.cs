@@ -96,11 +96,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The original result</returns>
         private static async Task<T> CallElasticsearchAsyncInternal<T>(object pipeline, object requestData, CancellationToken cancellationToken)
         {
+            var genericArgument = typeof(T).GetGenericArguments()[0];
+
             var executeAsync = CallElasticsearchAsyncAccess.GetInterceptedMethod(
-                owningType: pipeline.GetType(),
-                returnType: typeof(Task<T>),
+                pipeline.GetType(),
+                returnType: null,
                 methodName: nameof(CallElasticsearchAsync),
-                generics: Interception.NullTypeArray,
+                generics: new[] { genericArgument },
                 parameters: new[] { ElasticsearchNetCommon.RequestDataType, ElasticsearchNetCommon.CancellationTokenType });
 
             using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
