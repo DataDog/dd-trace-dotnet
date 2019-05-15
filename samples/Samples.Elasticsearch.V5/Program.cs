@@ -22,17 +22,17 @@ namespace Samples.Elasticsearch.V5
             var elastic = new ElasticClient(settings);
 
             var commands = new List<Func<object>>().
-                //Concat(IndexCommands(elastic)).
+                Concat(IndexCommands(elastic)).
                 Concat(IndexCommandsAsync(elastic)).
-                //Concat(DocumentCommands(elastic)).
-                Concat(DocumentCommandsAsync(elastic));
-                //Concat(CatCommands(elastic)).
-                //Concat(CatCommandsAsync(elastic)).
-                //Concat(ClusterCommands(elastic)).
-                //Concat(ClusterCommandsAsync(elastic)).
-                //Concat(UserCommands(elastic)).
-                //Concat(UserCommandsAsync(elastic)).
-                //Concat(WatchCommands(elastic));
+                Concat(DocumentCommands(elastic)).
+                Concat(DocumentCommandsAsync(elastic)).
+                Concat(CatCommands(elastic)).
+                Concat(CatCommandsAsync(elastic)).
+                Concat(ClusterCommands(elastic)).
+                Concat(ClusterCommandsAsync(elastic)).
+                Concat(UserCommands(elastic)).
+                Concat(UserCommandsAsync(elastic)).
+                Concat(WatchCommands(elastic));
 
             var exceptions = new List<Exception>();
 
