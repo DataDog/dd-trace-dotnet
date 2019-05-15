@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly InterceptedMethodAccess<Func<object, object, CancellationToken, object>> CallElasticsearchAsyncAccess = new InterceptedMethodAccess<Func<object, object, CancellationToken, object>>();
         private static readonly GenericAsyncTargetAccess AsyncTargetAccess = new GenericAsyncTargetAccess();
         private static readonly Type CancellationTokenType = typeof(CancellationToken);
+        private static readonly Type RequestPipelineType = Type.GetType("Elasticsearch.Net.IRequestPipeline, Elasticsearch.Net");
+        private static readonly Type RequestDataType = Type.GetType("Elasticsearch.Net.RequestData, Elasticsearch.Net");
 
         /// <summary>
         /// Traces a synchronous call to Elasticsearch.
@@ -133,9 +135,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
                                      .GetOrCreateMethodCallDelegate(
-                                          pipeline.GetType(),
+                                          RequestPipelineType,
                                           "CallElasticsearchAsync",
-                                          methodParameterTypes: new[] { requestData.GetType(), ElasticsearchNetCommon.CancellationTokenType },
+                                          methodParameterTypes: new[] { RequestDataType, CancellationTokenType },
                                           methodGenericArguments: new[] { typeof(TResponse) });
 
             using (var scope = CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
