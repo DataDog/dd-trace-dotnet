@@ -4,7 +4,7 @@
 
 using namespace trace;
 
-class DISABLED_CLRHelperTest : public ::testing::Test {
+class CLRHelperTest : public ::testing::Test {
  protected:
   IMetaDataDispenser* metadata_dispenser_;
   ComPtr<IMetaDataImport2> metadata_import_;
@@ -49,7 +49,7 @@ class DISABLED_CLRHelperTest : public ::testing::Test {
   }
 };
 
-TEST_F(DISABLED_CLRHelperTest, EnumeratesTypeDefs) {
+TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
   std::vector<std::wstring> expected_types = {L"Samples.ExampleLibrary.Class1",
                                               L"<>c"};
   std::vector<std::wstring> actual_types;
@@ -72,7 +72,7 @@ TEST_F(DISABLED_CLRHelperTest, EnumeratesTypeDefs) {
   EXPECT_EQ(expected_types, actual_types);
 }
 
-TEST_F(DISABLED_CLRHelperTest, EnumeratesAssemblyRefs) {
+TEST_F(CLRHelperTest, EnumeratesAssemblyRefs) {
   std::vector<std::wstring> expected_assemblies = {L"System.Runtime"};
   std::vector<std::wstring> actual_assemblies;
   for (auto& ref : EnumAssemblyRefs(assembly_import_)) {
@@ -84,7 +84,7 @@ TEST_F(DISABLED_CLRHelperTest, EnumeratesAssemblyRefs) {
   EXPECT_EQ(expected_assemblies, actual_assemblies);
 }
 
-TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
+TEST_F(CLRHelperTest, FiltersEnabledIntegrations) {
   Integration i1 = {L"integration-1",
                     {{{},
                       {L"Samples.ExampleLibrary",
@@ -120,7 +120,7 @@ TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByCaller) {
+TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
   Integration i1 = {L"integration-1",
                     {{{L"Assembly.One",
                        L"SomeType",
@@ -148,7 +148,7 @@ TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByCaller) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByTarget) {
+TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
   Integration i1 = {L"integration-1",
                     {{{},
                       {L"Samples.ExampleLibrary",
@@ -183,7 +183,32 @@ TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByTarget) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromTypeDefs) {
+TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
+  MethodReference included = {L"Samples.ExampleLibrary",
+                              L"SomeType",
+                              L"SomeMethod",
+                              min_ver_,
+                              max_ver_,
+                              {}};
+
+  MethodReference excluded = {L"Samples.ExampleLibrary", L"SomeType",
+                              L"SomeOtherMethod",        Version(0, 0, 0, 0),
+                              Version(0, 1, 0, 0),       {}};
+
+  Integration i1 = {L"integration-1", {{{}, included, {}}, {{}, excluded, {}}}};
+  auto all = FlattenIntegrations({i1});
+  auto filtered = FilterIntegrationsByTarget(all, assembly_import_);
+  bool foundExclusion = false;
+  for (auto& item : filtered) {
+    if (item.replacement.target_method == excluded) {
+      foundExclusion = true;
+    }
+  }
+  EXPECT_FALSE(foundExclusion)
+      << "Expected method within integration to be filtered by version.";
+}
+
+TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
   std::set<std::wstring> expected = {L"Samples.ExampleLibrary.Class1", L"<>c"};
   std::set<std::wstring> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
@@ -195,7 +220,7 @@ TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromTypeDefs) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromTypeRefs) {
+TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
   std::set<std::wstring> expected = {
       L"System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
       L"System.Runtime.CompilerServices.RuntimeCompatibilityAttribute",
@@ -221,7 +246,7 @@ TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromTypeRefs) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromModuleRefs) {
+TEST_F(CLRHelperTest, GetsTypeInfoFromModuleRefs) {
   // TODO(cbd): figure out how to create a module ref, for now its empty
   std::set<std::wstring> expected = {};
   std::set<std::wstring> actual;
@@ -232,7 +257,7 @@ TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromModuleRefs) {
   EXPECT_EQ(expected, actual);
 }
 
-TEST_F(DISABLED_CLRHelperTest, GetsTypeInfoFromMethods) {
+TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
   std::set<std::wstring> expected = {L"Samples.ExampleLibrary.Class1", L"<>c"};
   std::set<std::wstring> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
