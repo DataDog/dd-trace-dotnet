@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -113,6 +114,73 @@ namespace Datadog.Trace.TestHelpers
             return currentDirectory.Substring(0, index);
         }
 
+        public static void ClearProfilerEnvironmentVariables()
+        {
+            var environmentVariables = new[]
+            {
+                // .NET Core
+                "CORECLR_ENABLE_PROFILING",
+                "CORECLR_PROFILER",
+                "CORECLR_PROFILER_PATH",
+                "CORECLR_PROFILER_PATH_32",
+                "CORECLR_PROFILER_PATH_64",
+
+                // .NET Framework
+                "COR_ENABLE_PROFILING",
+                "COR_PROFILER",
+                "COR_PROFILER_PATH",
+
+                // Datadog
+                "DD_PROFILER_PROCESSES",
+                "DD_INTEGRATIONS",
+                "DATADOG_PROFILER_PROCESSES",
+                "DATADOG_INTEGRATIONS",
+            };
+
+            foreach (string variable in environmentVariables)
+            {
+                Environment.SetEnvironmentVariable(variable, null);
+            }
+        }
+
+        public void SetEnvironmentVariableDefaults(
+            int agentPort,
+            string processPath,
+            StringDictionary environmentVariables)
+        {
+            if (IsCoreClr())
+            {
+                environmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
+                environmentVariables["CORECLR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
+                environmentVariables["CORECLR_PROFILER_PATH"] = GetProfilerPath();
+            }
+            else
+            {
+                environmentVariables["COR_ENABLE_PROFILING"] = "1";
+                environmentVariables["COR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
+                environmentVariables["COR_PROFILER_PATH"] = GetProfilerPath();
+            }
+
+            environmentVariables["DD_PROFILER_PROCESSES"] = processPath;
+
+            string integrations = string.Join(";", GetIntegrationsFilePaths());
+            environmentVariables["DD_INTEGRATIONS"] = integrations;
+            environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "localhost";
+            environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
+
+            // for ASP.NET Core sample apps, set the server's port
+            environmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{agentPort}/";
+
+            foreach (var name in new string[] { "REDIS_HOST" })
+            {
+                var value = Environment.GetEnvironmentVariable(name);
+                if (!string.IsNullOrEmpty(value))
+                {
+                    environmentVariables[name] = value;
+                }
+            }
+        }
+
         public string[] GetIntegrationsFilePaths()
         {
             if (_integrationsFileLocation == null)
@@ -148,22 +216,12 @@ namespace Datadog.Trace.TestHelpers
                 var directory = GetSampleApplicationOutputDirectory();
 
                 var profilerRelativePath = Path.Combine(
-                    GetBuildConfiguration(),
-                    GetPlatform(),
+                    "integration-lib",
                     fileName);
 
                 _profilerFileLocation = Path.Combine(
                     directory,
                     profilerRelativePath);
-
-                if (!File.Exists(_profilerFileLocation))
-                {
-                    _output.WriteLine($"Unable to find profiler: {_profilerFileLocation}");
-
-                    _profilerFileLocation = Path.Combine(
-                        Path.GetDirectoryName(ExecutingAssembly.Location) ?? throw new InvalidOperationException($"Executing assembly must be set within {nameof(EnvironmentHelper)}"),
-                        fileName);
-                }
 
                 if (!File.Exists(_profilerFileLocation))
                 {
@@ -214,36 +272,6 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return outputDir;
-        }
-
-        public void SetEnvironmentVariableDefaults(int agentPort)
-        {
-            Environment.SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1");
-            Environment.SetEnvironmentVariable("CORECLR_PROFILER", ProfilerClsId);
-            Environment.SetEnvironmentVariable("CORECLR_PROFILER_PATH", GetProfilerPath());
-
-            Environment.SetEnvironmentVariable("COR_ENABLE_PROFILING", "1");
-            Environment.SetEnvironmentVariable("COR_PROFILER", ProfilerClsId);
-            Environment.SetEnvironmentVariable("COR_PROFILER_PATH", GetProfilerPath());
-
-            Environment.SetEnvironmentVariable("DD_PROFILER_PROCESSES", GetExecutingAssembly());
-
-            string integrations = string.Join(";", GetIntegrationsFilePaths());
-            Environment.SetEnvironmentVariable("DD_INTEGRATIONS", integrations);
-            Environment.SetEnvironmentVariable("DD_TRACE_AGENT_HOSTNAME", "localhost");
-            Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", agentPort.ToString());
-
-            // for ASP.NET Core sample apps, set the server's port
-            Environment.SetEnvironmentVariable("ASPNETCORE_URLS", $"http://localhost:{agentPort}/");
-
-            foreach (var name in new string[] { "REDIS_HOST" })
-            {
-                var value = Environment.GetEnvironmentVariable(name);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    Environment.SetEnvironmentVariable(name, value);
-                }
-            }
         }
 
         public string GetTargetFramework()

@@ -38,14 +38,14 @@ namespace Datadog.Trace.TestHelpers
             {
                 // .NET Core
                 startInfo = new ProcessStartInfo(DotNetCoreExecutable, $"{applicationPath} {arguments ?? string.Empty}");
-                SetEnvironmentForDotNetCore(environmentHelper, startInfo.EnvironmentVariables, processPath: DotNetCoreExecutable);
+                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, applicationPath, startInfo.EnvironmentVariables);
             }
             else
             {
                 // .NET Framework
                 startInfo = new ProcessStartInfo(applicationPath, $"{arguments ?? string.Empty}");
-                string executableFileName = Path.GetFileName(applicationPath);
-                SetEnvironmentForDotNetFramework(environmentHelper, startInfo.EnvironmentVariables, processPath: executableFileName);
+                var executableFileName = Path.GetFileName(applicationPath);
+                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, executableFileName, startInfo.EnvironmentVariables);
             }
 
             SetSharedEnvironmentVariables(traceAgentPort, startInfo.EnvironmentVariables, integrationPaths);
@@ -77,40 +77,6 @@ namespace Datadog.Trace.TestHelpers
                     environmentVariables[name] = value;
                 }
             }
-        }
-
-        public static void SetEnvironmentForDotNetCore(
-            EnvironmentHelper environmentHelper,
-            StringDictionary environmentVariables,
-            string processPath)
-        {
-            string profilerDllPath = environmentHelper.GetProfilerPath();
-            if (!File.Exists(profilerDllPath))
-            {
-                throw new Exception($"profiler not found: {profilerDllPath}");
-            }
-
-            environmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
-            environmentVariables["CORECLR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
-            environmentVariables["CORECLR_PROFILER_PATH"] = profilerDllPath;
-            environmentVariables["DD_PROFILER_PROCESSES"] = processPath;
-        }
-
-        public static void SetEnvironmentForDotNetFramework(
-            EnvironmentHelper environmentHelper,
-            StringDictionary environmentVariables,
-            string processPath)
-        {
-            string profilerDllPath = environmentHelper.GetProfilerPath();
-            if (!File.Exists(profilerDllPath))
-            {
-                throw new Exception($"profiler not found: {profilerDllPath}");
-            }
-
-            environmentVariables["COR_ENABLE_PROFILING"] = "1";
-            environmentVariables["COR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
-            environmentVariables["COR_PROFILER_PATH"] = profilerDllPath;
-            environmentVariables["DD_PROFILER_PROCESSES"] = processPath;
         }
 
         public static void ClearProfilerEnvironmentVariables()
