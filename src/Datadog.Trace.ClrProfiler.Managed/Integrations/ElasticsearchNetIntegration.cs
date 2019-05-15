@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class ElasticsearchNetIntegration
     {
+        private const string IntegrationName = "ElasticsearchNet";
         private const string OperationName = "elasticsearch.query";
         private const string ServiceName = "elasticsearch";
         private const string SpanType = "elasticsearch";
@@ -17,8 +18,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string ElasticsearchActionKey = "elasticsearch.action";
         private const string ElasticsearchMethodKey = "elasticsearch.method";
         private const string ElasticsearchUrlKey = "elasticsearch.url";
-
-        private const string IntegrationName = "ElasticsearchNet";
         private const string Version6 = "6";
         private const string Version5 = "5";
 
@@ -146,9 +145,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     return await originalMethod(pipeline, requestData, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -169,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 returnType: typeof(Task<T>),
                 methodName: nameof(CallElasticsearch5Async),
                 generics: Interception.NullTypeArray,
-                parameters: Interception.ParamsToTypes(requestData, cancellationToken));
+                parameters: new[] { RequestDataType, CancellationTokenType });
 
             using (var scope = CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
             {
@@ -199,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 var requestParameters = Emit.DynamicMethodBuilder<Func<object, object>>
                                             .GetOrCreateMethodCallDelegate(
-                                                 pipeline.GetType(),
+                                                 RequestPipelineType,
                                                  "get_RequestParameters")(pipeline);
 
                 requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
