@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNet5Integration));
         private static readonly InterceptedMethodAccess<Func<object, object, CancellationToken, object>> CallElasticsearchAsyncAccess = new InterceptedMethodAccess<Func<object, object, CancellationToken, object>>();
         private static readonly GenericAsyncTargetAccess AsyncTargetAccess = new GenericAsyncTargetAccess();
+        private static readonly Type ElasticsearchResponseType = Type.GetType("Elasticsearch.Net.ElasticsearchResponse`1, Elasticsearch.Net", throwOnError: false);
 
         /// <summary>
         /// Traces a synchronous call to Elasticsearch.
@@ -73,12 +74,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
-            var pipelineType = pipeline.GetType();
-            var responseType = pipelineType.Assembly.GetType("Elasticsearch.Net.ElasticsearchResponse`1", throwOnError: false);
-            var genericResponseType = responseType.MakeGenericType(typeof(TResponse));
+            var genericResponseType = ElasticsearchResponseType.MakeGenericType(typeof(TResponse));
 
             return AsyncTargetAccess.InvokeGenericTaskDelegate(
-                owningType: pipelineType,
+                owningType: ElasticsearchNetCommon.RequestPipelineType,
                 taskResultType: genericResponseType,
                 nameOfIntegrationMethod: nameof(CallElasticsearchAsyncInternal),
                 integrationType: typeof(ElasticsearchNet5Integration),
