@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class Elasticsearch5Tests : TestHelper
     {
         public Elasticsearch5Tests(ITestOutputHelper output)
-            : base("Elasticsearch", output)
+            : base("Elasticsearch.V5", output)
         {
         }
 
