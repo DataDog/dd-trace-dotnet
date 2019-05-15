@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -20,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNetCommon));
 
-        public static Scope CreateScope(Tracer tracer, string integrationName, object pipeline, dynamic requestData)
+        public static Scope CreateScope(Tracer tracer, string integrationName, object pipeline, object requestData)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationName))
             {
@@ -28,46 +29,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return null;
             }
 
-            string requestName = null;
-            try
-            {
-                var requestParameters = Emit.DynamicMethodBuilder<Func<object, object>>
-                                            .GetOrCreateMethodCallDelegate(
-                                                 RequestPipelineType,
-                                                 "get_RequestParameters")(pipeline);
+            string requestName = pipeline.GetProperty("RequestParameters")
+                                         .GetValueOrDefault()
+                                        ?.GetType()
+                                         .Name
+                                         .Replace("RequestParameters", string.Empty);
 
-                requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
-            }
-            catch
-            {
-            }
+            var pathAndQuery = requestData.GetProperty<string>("PathAndQuery").GetValueOrDefault() ??
+                               requestData.GetProperty<string>("Path").GetValueOrDefault();
 
-            string pathAndQuery = null;
-            try
-            {
-                pathAndQuery = requestData?.PathAndQuery;
-            }
-            catch
-            {
-            }
-
-            string method = null;
-            try
-            {
-                method = requestData?.Method?.ToString();
-            }
-            catch
-            {
-            }
-
-            string url = null;
-            try
-            {
-                url = requestData?.Uri.ToString();
-            }
-            catch
-            {
-            }
+            string method = requestData.GetProperty("Method").GetValueOrDefault()?.ToString();
+            var url = requestData.GetProperty("Uri").GetValueOrDefault()?.ToString();
 
             var serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
