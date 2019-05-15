@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Interception.MethodKey(owningType: owningType, returnType: taskResultType, genericTypes: Interception.NullTypeArray, parameterTypes: Interception.ParamsToTypes(parametersToPass));
 
             var asyncDelegate =
-                _methodCache.GetOrAdd(methodKey, GetGenericAsyncMethodInfo(taskResultType, nameOfIntegrationMethod, integrationType));
+                _methodCache.GetOrAdd(methodKey, _ => GetGenericAsyncMethodInfo(taskResultType, nameOfIntegrationMethod, integrationType));
 
             return asyncDelegate.Invoke(null, parametersToPass);
         }
