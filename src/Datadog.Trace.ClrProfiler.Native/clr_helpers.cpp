@@ -234,7 +234,6 @@ std::vector<Integration> FilterIntegrationsByName(
 
   for (auto& i : integrations) {
     bool disabled = false;
-
     for (auto& disabled_integration : integration_names) {
       if (i.integration_name == disabled_integration) {
         // this integration is disabled, skip it
@@ -256,7 +255,6 @@ std::vector<IntegrationMethod> FlattenIntegrations(
   std::vector<IntegrationMethod> flattened;
 
   for (auto& i : integrations) {
-    bool found = false;
     for (auto& mr : i.method_replacements) {
       flattened.emplace_back(i.integration_name, mr);
     }
