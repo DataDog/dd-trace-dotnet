@@ -55,7 +55,7 @@ class MetadataBuilderTest : public ::testing::Test {
         metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
     const std::wstring assemblyName = L"Samples.ExampleLibrary";
-    const std::vector<Integration> integrations;
+    const std::vector<IntegrationMethod> integrations;
     module_metadata_ =
         new ModuleMetadata(metadataImport, metadataEmit, assemblyName, integrations);
 

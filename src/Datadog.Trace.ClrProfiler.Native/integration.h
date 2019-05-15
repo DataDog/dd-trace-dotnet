@@ -3,7 +3,6 @@
 
 #include <corhlpr.h>
 #include <iomanip>
-#include <iostream>
 #include <sstream>
 #include <vector>
 
@@ -243,6 +242,21 @@ struct Integration {
   inline bool operator==(const Integration& other) const {
     return integration_name == other.integration_name &&
            method_replacements == other.method_replacements;
+  }
+};
+
+struct IntegrationMethod {
+  const WSTRING integration_name;
+  MethodReplacement replacement;
+
+  IntegrationMethod() : integration_name(""_W), replacement({}) {}
+
+  IntegrationMethod(WSTRING integration_name, MethodReplacement replacement)
+      : integration_name(integration_name), replacement(replacement) {}
+
+  inline bool operator==(const IntegrationMethod& other) const {
+    return integration_name == other.integration_name &&
+           replacement == other.replacement;
   }
 };
 

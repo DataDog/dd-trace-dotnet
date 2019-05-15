@@ -112,10 +112,10 @@ TEST_F(DISABLED_CLRHelperTest, FiltersEnabledIntegrations) {
                        max_ver_,
                        {}},
                       {}}}};
-  std::vector<Integration> all = {i1, i2, i3};
-  std::vector<Integration> expected = {i1, i3};
+  auto all = {i1, i2, i3};
+  auto expected = {i1, i3};
   std::vector<WSTRING> disabled_integrations = {"integration-2"_W};
-  std::vector<Integration> actual =
+  auto actual =
       FilterIntegrationsByName(all, disabled_integrations);
   EXPECT_EQ(expected, actual);
 }
@@ -140,10 +140,10 @@ TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByCaller) {
                       {},
                       {}}}};
   Integration i3 = {L"integration-3", {{{}, {}, {}}}};
-  std::vector<Integration> all = {i1, i2, i3};
-  std::vector<Integration> expected = {i1, i3};
+  auto all = FlattenIntegrations({i1, i2, i3});
+  auto expected = FlattenIntegrations({i1, i3});
   trace::AssemblyInfo assembly_info = {1, L"Assembly.One"};
-  std::vector<Integration> actual =
+  auto actual =
       FilterIntegrationsByCaller(all, assembly_info);
   EXPECT_EQ(expected, actual);
 }
@@ -176,9 +176,9 @@ TEST_F(DISABLED_CLRHelperTest, FiltersIntegrationsByTarget) {
                        max_ver_,
                        {}},
                       {}}}};
-  std::vector<Integration> all = {i1, i2, i3};
-  std::vector<Integration> expected = {i1, i3};
-  std::vector<Integration> actual =
+  auto all = FlattenIntegrations({i1, i2, i3});
+  auto expected = FlattenIntegrations({i1, i3});
+  auto actual =
       FilterIntegrationsByTarget(all, assembly_import_);
   EXPECT_EQ(expected, actual);
 }
