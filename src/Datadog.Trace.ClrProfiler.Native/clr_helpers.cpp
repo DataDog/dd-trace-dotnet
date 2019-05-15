@@ -269,13 +269,8 @@ std::vector<IntegrationMethod> FilterIntegrationsByCaller(
   std::vector<IntegrationMethod> enabled;
 
   for (auto& i : integrations) {
-    bool found = false;
     if (i.replacement.caller_method.assembly.name.empty() ||
         i.replacement.caller_method.assembly.name == assembly.name) {
-      found = true;
-      break;
-    }
-    if (found) {
       enabled.push_back(i);
     }
   }
@@ -316,7 +311,6 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
     if (AssemblyMeetsIntegrationRequirements(assembly_metadata,
                                              i.replacement)) {
       found = true;
-      break;
     }
     for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
       const auto metadata_ref =
@@ -324,7 +318,6 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
       // Info(L"-- assembly ref: " , assembly_name , " to " , ref_name);
       if (AssemblyMeetsIntegrationRequirements(metadata_ref, i.replacement)) {
         found = true;
-        break;
       }
     }
     if (found) {
