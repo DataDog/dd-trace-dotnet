@@ -144,8 +144,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  std::vector<Integration> filtered_integrations =
-      FilterIntegrationsByCaller(integrations_, module_info.assembly);
+  std::vector<IntegrationMethod> filtered_integrations =
+      FlattenIntegrations(integrations_);
+
+  filtered_integrations =
+      FilterIntegrationsByCaller(filtered_integrations, module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
@@ -199,10 +202,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                    assembly_emit);
 
   for (const auto& integration : filtered_integrations) {
-    for (const auto& method_replacement : integration.method_replacements) {
       // for each wrapper assembly, emit an assembly reference
       hr = metadata_builder.EmitAssemblyRef(
-          method_replacement.wrapper_method.assembly);
+          integration.replacement.wrapper_method.assembly);
       if (FAILED(hr)) {
         Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
              ". Failed to emit wrapper assembly ref.");
@@ -211,13 +213,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
       // for each method replacement in each enabled integration,
       // emit a reference to the instrumentation wrapper methods
-      hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
+      hr = metadata_builder.StoreWrapperMethodRef(integration.replacement);
       if (FAILED(hr)) {
         Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
              ". Failed to emit and store wrapper method ref.");
         return S_OK;
       }
-    }
   }
 
   // store module info for later lookup

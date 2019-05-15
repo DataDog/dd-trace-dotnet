@@ -41,10 +41,10 @@ AssemblyMetadata GetAssemblyMetadata(
     assembly_name = WSTRING(name);
   }
 
-  return AssemblyMetadata(
-      module_id, assembly_name, current, assembly_m.usMajorVersion,
-      assembly_m.usMinorVersion, assembly_m.usBuildNumber,
-      assembly_m.usRevisionNumber);
+  return AssemblyMetadata(module_id, assembly_name, current,
+                          assembly_m.usMajorVersion, assembly_m.usMinorVersion,
+                          assembly_m.usBuildNumber,
+                          assembly_m.usRevisionNumber);
 }
 
 AssemblyMetadata GetAssemblyImportMetadata(
@@ -61,14 +61,15 @@ AssemblyMetadata GetAssemblyImportMetadata(
   const ModuleID placeholder_module_id = 0;
 
   hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr,
-                                         name, kNameMaxSize, &name_len, &assembly_metadata,
-                                         &assembly_flags);
+                                         name, kNameMaxSize, &name_len,
+                                         &assembly_metadata, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
     return {};
   }
-  return AssemblyMetadata(placeholder_module_id, name, current,
-                          assembly_metadata.usMajorVersion, assembly_metadata.usMinorVersion,
-                          assembly_metadata.usBuildNumber, assembly_metadata.usRevisionNumber);
+  return AssemblyMetadata(
+      placeholder_module_id, name, current, assembly_metadata.usMajorVersion,
+      assembly_metadata.usMinorVersion, assembly_metadata.usBuildNumber,
+      assembly_metadata.usRevisionNumber);
 }
 
 AssemblyMetadata GetReferencedAssemblyMetadata(
@@ -80,14 +81,15 @@ AssemblyMetadata GetReferencedAssemblyMetadata(
   DWORD assembly_flags = 0;
   const ModuleID module_id_placeholder = 0;
   const auto hr = assembly_import->GetAssemblyRefProps(
-      assembly_ref, nullptr, nullptr, name, kNameMaxSize, &name_len, &assembly_metadata,
-      nullptr, nullptr, &assembly_flags);
+      assembly_ref, nullptr, nullptr, name, kNameMaxSize, &name_len,
+      &assembly_metadata, nullptr, nullptr, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
     return {};
   }
-  return AssemblyMetadata(module_id_placeholder, name, assembly_ref,
-                          assembly_metadata.usMajorVersion, assembly_metadata.usMinorVersion,
-                          assembly_metadata.usBuildNumber, assembly_metadata.usRevisionNumber);
+  return AssemblyMetadata(
+      module_id_placeholder, name, assembly_ref,
+      assembly_metadata.usMajorVersion, assembly_metadata.usMinorVersion,
+      assembly_metadata.usBuildNumber, assembly_metadata.usRevisionNumber);
 }
 
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
@@ -232,7 +234,6 @@ std::vector<Integration> FilterIntegrationsByName(
 
   for (auto& i : integrations) {
     bool disabled = false;
-
     for (auto& disabled_integration : integration_names) {
       if (i.integration_name == disabled_integration) {
         // this integration is disabled, skip it
@@ -249,20 +250,27 @@ std::vector<Integration> FilterIntegrationsByName(
   return enabled;
 }
 
-std::vector<Integration> FilterIntegrationsByCaller(
-    const std::vector<Integration>& integrations, const AssemblyInfo assembly) {
-  std::vector<Integration> enabled;
+std::vector<IntegrationMethod> FlattenIntegrations(
+    const std::vector<Integration>& integrations) {
+  std::vector<IntegrationMethod> flattened;
 
   for (auto& i : integrations) {
-    bool found = false;
     for (auto& mr : i.method_replacements) {
-      if (mr.caller_method.assembly.name.empty() ||
-          mr.caller_method.assembly.name == assembly.name) {
-        found = true;
-        break;
-      }
+      flattened.emplace_back(i.integration_name, mr);
     }
-    if (found) {
+  }
+
+  return flattened;
+}
+
+std::vector<IntegrationMethod> FilterIntegrationsByCaller(
+    const std::vector<IntegrationMethod>& integrations,
+    const AssemblyInfo assembly) {
+  std::vector<IntegrationMethod> enabled;
+
+  for (auto& i : integrations) {
+    if (i.replacement.caller_method.assembly.name.empty() ||
+        i.replacement.caller_method.assembly.name == assembly.name) {
       enabled.push_back(i);
     }
   }
@@ -273,7 +281,6 @@ std::vector<Integration> FilterIntegrationsByCaller(
 bool AssemblyMeetsIntegrationRequirements(
     const AssemblyMetadata metadata,
     const MethodReplacement method_replacement) {
-
   const auto target = method_replacement.target_method;
 
   if (target.assembly.name != metadata.name) {
@@ -292,28 +299,25 @@ bool AssemblyMeetsIntegrationRequirements(
   return true;
 }
 
-std::vector<Integration> FilterIntegrationsByTarget(
-    const std::vector<Integration>& integrations,
+std::vector<IntegrationMethod> FilterIntegrationsByTarget(
+    const std::vector<IntegrationMethod>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
-  std::vector<Integration> enabled;
+  std::vector<IntegrationMethod> enabled;
 
   const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
   for (auto& i : integrations) {
     bool found = false;
-    for (auto& mr : i.method_replacements) {
-      if (AssemblyMeetsIntegrationRequirements(assembly_metadata, mr)) {
+    if (AssemblyMeetsIntegrationRequirements(assembly_metadata,
+                                             i.replacement)) {
+      found = true;
+    }
+    for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
+      const auto metadata_ref =
+          GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
+      // Info(L"-- assembly ref: " , assembly_name , " to " , ref_name);
+      if (AssemblyMeetsIntegrationRequirements(metadata_ref, i.replacement)) {
         found = true;
-        break;
-      }
-      for (auto& assembly_ref : EnumAssemblyRefs(assembly_import)) {
-        const auto metadata_ref =
-            GetReferencedAssemblyMetadata(assembly_import, assembly_ref);
-        // Info(L"-- assembly ref: " , assembly_name , " to " , ref_name);
-        if (AssemblyMeetsIntegrationRequirements(metadata_ref, mr)) {
-          found = true;
-          break;
-        }
       }
     }
     if (found) {

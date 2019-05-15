@@ -183,10 +183,7 @@ struct AssemblyMetadata {
   const mdAssembly assembly_token;
   const Version version;
 
-  AssemblyMetadata()
-      : module_id(0),
-        name(""_W),
-        assembly_token(mdTokenNil) {}
+  AssemblyMetadata() : module_id(0), name(""_W), assembly_token(mdTokenNil) {}
 
   AssemblyMetadata(ModuleID module_id, WSTRING name, mdAssembly assembly_token,
                    USHORT major, USHORT minor, USHORT build, USHORT revision)
@@ -220,8 +217,7 @@ struct TypeInfo {
   const WSTRING name;
 
   TypeInfo() : id(0), name(""_W) {}
-  TypeInfo(mdToken id, WSTRING name)
-      : id(id), name(name) {}
+  TypeInfo(mdToken id, WSTRING name) : id(id), name(name) {}
 
   bool IsValid() const { return id != 0; }
 };
@@ -272,16 +268,20 @@ std::vector<Integration> FilterIntegrationsByName(
     const std::vector<Integration>& integrations,
     std::vector<WSTRING> integration_names);
 
+// FlattenIntegrations flattens integrations to per method structures
+std::vector<IntegrationMethod> FlattenIntegrations(
+    const std::vector<Integration>& integrations);
+
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
-std::vector<Integration> FilterIntegrationsByCaller(
-    const std::vector<Integration>& integrations,
+std::vector<IntegrationMethod> FilterIntegrationsByCaller(
+    const std::vector<IntegrationMethod>& integrations,
     const AssemblyInfo module_metadata);
 
 // FilterIntegrationsByTarget removes any integrations which have a target not
 // referenced by the module's assembly import
-std::vector<Integration> FilterIntegrationsByTarget(
-    const std::vector<Integration>& integrations,
+std::vector<IntegrationMethod> FilterIntegrationsByTarget(
+    const std::vector<IntegrationMethod>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
 mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,

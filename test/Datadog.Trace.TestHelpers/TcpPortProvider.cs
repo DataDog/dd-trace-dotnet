@@ -15,23 +15,26 @@ namespace Datadog.Trace.TestHelpers
     /// </summary>
     public static class TcpPortProvider
     {
+        private static readonly object PortLock = new { };
         private static readonly ConcurrentBag<int> ReturnedPorts = new ConcurrentBag<int>();
-
         private static readonly int MinPort = GetStartingPort();
 
         public static int GetOpenPort()
         {
-            var usedPorts = GetUsedPorts();
-
-            for (int port = MinPort; port < ushort.MaxValue; port++)
+            lock (PortLock)
             {
-                if (!ReturnedPorts.Contains(port) && !usedPorts.Contains(port))
+                var usedPorts = GetUsedPorts();
+
+                for (int port = MinPort; port < ushort.MaxValue; port++)
                 {
-                    // don't return a port that was previously returned,
-                    // even if it is not in use (it could still be used
-                    // by the code that is was returned to)
-                    ReturnedPorts.Add(port);
-                    return port;
+                    if (!ReturnedPorts.Contains(port) && !usedPorts.Contains(port))
+                    {
+                        // don't return a port that was previously returned,
+                        // even if it is not in use (it could still be used
+                        // by the code that is was returned to)
+                        ReturnedPorts.Add(port);
+                        return port;
+                    }
                 }
             }
 

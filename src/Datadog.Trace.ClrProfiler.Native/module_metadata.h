@@ -20,11 +20,11 @@ class ModuleMetadata {
   const ComPtr<IMetaDataImport2> metadata_import{};
   const ComPtr<IMetaDataEmit2> metadata_emit{};
   WSTRING assemblyName = ""_W;
-  std::vector<Integration> integrations = {};
+  std::vector<IntegrationMethod> integrations = {};
 
   ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
                  ComPtr<IMetaDataEmit2> metadata_emit, WSTRING assembly_name,
-                 std::vector<Integration> integrations)
+                 std::vector<IntegrationMethod> integrations)
       : metadata_import(metadata_import),
         metadata_emit(metadata_emit),
         assemblyName(assembly_name),
@@ -66,14 +66,12 @@ class ModuleMetadata {
       const trace::FunctionInfo& caller) {
     std::vector<MethodReplacement> enabled;
     for (auto& i : integrations) {
-      for (auto& mr : i.method_replacements) {
-        if ((mr.caller_method.type_name.empty() ||
-             mr.caller_method.type_name == caller.type.name) &&
-            (mr.caller_method.method_name.empty() ||
-             mr.caller_method.method_name == caller.name)) {
-          enabled.push_back(mr);
+        if ((i.replacement.caller_method.type_name.empty() ||
+             i.replacement.caller_method.type_name == caller.type.name) &&
+            (i.replacement.caller_method.method_name.empty() ||
+             i.replacement.caller_method.method_name == caller.name)) {
+          enabled.push_back(i.replacement);
         }
-      }
     }
     return enabled;
   }
