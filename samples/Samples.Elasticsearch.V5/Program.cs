@@ -335,7 +335,7 @@ namespace Samples.Elasticsearch.V5
                     Password = "supersecret",
                 }),
                 () => elastic.GetUser(new GetUserRequest("test_user_1")),
-                () => elastic.DisableUser("test_user_1"),
+                //() => elastic.DisableUser("test_user_1"),
                 () => elastic.DeleteUser("test_user_1"),
             };
         }
@@ -356,7 +356,7 @@ namespace Samples.Elasticsearch.V5
                     Password = "supersecret",
                 }),
                 () => elastic.GetUserAsync(new GetUserRequest("test_user_1")),
-                () => elastic.DisableUserAsync("test_user_1"),
+                //() => elastic.DisableUserAsync("test_user_1"),
                 () => elastic.DeleteUserAsync("test_user_1"),
             };
         }
@@ -506,15 +506,15 @@ namespace Samples.Elasticsearch.V5
 
         private static object TaskResult(Task task)
         {
-            task.Wait();
+            task.GetAwaiter().GetResult();
             var taskType = task.GetType();
 
-            bool isTaskOfT =
-                taskType.IsGenericType
-                && taskType.GetGenericTypeDefinition() == typeof(Task<>);
+            bool isTaskOfT = taskType.IsGenericType &&
+                             taskType.GetGenericTypeDefinition() == typeof(Task<>);
 
-
-            return isTaskOfT ? taskType.GetProperty("Result")?.GetValue(task) : null;
+            return isTaskOfT
+                       ? taskType.GetProperty("Result")?.GetValue(task)
+                       : null;
         }
 
         public class Post
