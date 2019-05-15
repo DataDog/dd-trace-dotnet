@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 foreach (var span in spans)
                 {
                     Assert.Equal("elasticsearch.query", span.Name);
-                    Assert.Equal("Samples.Elasticsearch-elasticsearch", span.Service);
+                    Assert.Equal("Samples.Elasticsearch.V5-elasticsearch", span.Service);
                     Assert.Equal("elasticsearch", span.Type);
                 }
 
