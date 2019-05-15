@@ -187,13 +187,19 @@ namespace Datadog.Trace.TestHelpers
             {
                 string fileName = "integrations.json";
 
-                var integrationsDirectory = GetSampleApplicationOutputDirectory();
+                var directory = GetSampleApplicationOutputDirectory();
 
-                _integrationsFileLocation = Path.Combine(integrationsDirectory, fileName);
+                var relativePath = Path.Combine(
+                    "profiler-lib",
+                    fileName);
+
+                _integrationsFileLocation = Path.Combine(
+                    directory,
+                    relativePath);
 
                 if (!File.Exists(_integrationsFileLocation))
                 {
-                    throw new Exception($"Missing {fileName} in output directory {integrationsDirectory}");
+                    throw new Exception($"Missing {relativePath} in output directory {directory}");
                 }
             }
 
@@ -216,7 +222,7 @@ namespace Datadog.Trace.TestHelpers
                 var directory = GetSampleApplicationOutputDirectory();
 
                 var profilerRelativePath = Path.Combine(
-                    "integration-lib",
+                    "profiler-lib",
                     fileName);
 
                 _profilerFileLocation = Path.Combine(
