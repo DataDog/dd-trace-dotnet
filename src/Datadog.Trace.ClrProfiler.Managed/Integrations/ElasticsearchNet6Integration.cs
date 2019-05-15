@@ -15,8 +15,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string Version6 = "6";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNet6Integration));
-        private static readonly InterceptedMethodAccess<Func<object, object, CancellationToken, object>> CallElasticsearchAsyncAccess = new InterceptedMethodAccess<Func<object, object, CancellationToken, object>>();
-        private static readonly GenericAsyncTargetAccess AsyncTargetAccess = new GenericAsyncTargetAccess();
 
         /// <summary>
         /// Traces a synchronous call to Elasticsearch.
