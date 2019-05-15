@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 owningType: pipelineType,
                 taskResultType: genericResponseType,
                 nameOfIntegrationMethod: nameof(CallElasticsearchAsyncInternal),
-                integrationType: typeof(ElasticsearchNet6Integration),
+                integrationType: typeof(ElasticsearchNet5Integration),
                 pipeline,
                 requestData,
                 cancellationToken);
