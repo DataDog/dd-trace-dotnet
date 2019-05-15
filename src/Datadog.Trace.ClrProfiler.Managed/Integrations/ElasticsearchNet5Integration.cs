@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData)
         {
             // TResponse CallElasticsearch<TResponse>(RequestData requestData) where TResponse : class, IElasticsearchResponse, new();
-            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, TResponse>>
+            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object>>
                                      .GetOrCreateMethodCallDelegate(
                                           ElasticsearchNetCommon.RequestPipelineType,
                                           "CallElasticsearch",
