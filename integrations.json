@@ -230,7 +230,56 @@
     ]
   },
   {
-    "name": "ElasticsearchNet",
+    "name": "ElasticsearchNet5",
+    "method_replacements": [
+      {
+        "caller": {
+          "assembly": "Elasticsearch.Net"
+        },
+        "target": {
+          "assembly": "Elasticsearch.Net",
+          "type": "Elasticsearch.Net.IRequestPipeline",
+          "method": "CallElasticsearch",
+          "minimum_major": 5,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet5Integration",
+          "method": "CallElasticsearch",
+          "signature": "10 01 02 1C 1C 1C"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "Elasticsearch.Net"
+        },
+        "target": {
+          "assembly": "Elasticsearch.Net",
+          "type": "Elasticsearch.Net.IRequestPipeline",
+          "method": "CallElasticsearchAsync",
+          "minimum_major": 5,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet5Integration",
+          "method": "CallElasticsearchAsync",
+          "signature": "10 01 03 1C 1C 1C 1C"
+        }
+      }
+    ]
+  },
+  {
+    "name": "ElasticsearchNet6",
     "method_replacements": [
       {
         "caller": {
@@ -249,7 +298,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNetIntegration",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet6Integration",
           "method": "CallElasticsearch",
           "signature": "10 01 02 1C 1C 1C"
         }
@@ -271,7 +320,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNetIntegration",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet6Integration",
           "method": "CallElasticsearchAsync",
           "signature": "10 01 03 1C 1C 1C 1C"
         }
