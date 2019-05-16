@@ -227,11 +227,16 @@ struct FunctionInfo {
   const WSTRING name;
   const TypeInfo type;
   const MethodSignature signature;
+  const PCCOR_SIGNATURE raw_signature;
 
-  FunctionInfo() : id(0), name(""_W), type({}), signature() {}
+  FunctionInfo() : id(0), name(""_W), type({}), signature(), raw_signature() {}
   FunctionInfo(mdToken id, WSTRING name, TypeInfo type,
-               MethodSignature signature)
-      : id(id), name(name), type(type), signature(signature) {}
+               MethodSignature signature, PCCOR_SIGNATURE raw_signature)
+      : id(id),
+        name(name),
+        type(type),
+        signature(signature),
+        raw_signature(raw_signature) {}
 
   bool IsValid() const { return id != 0; }
 };

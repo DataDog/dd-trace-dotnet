@@ -142,7 +142,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
   const auto type_info = GetTypeInfo(metadata_import, parent_token);
 
   return {token, WSTRING(function_name), type_info,
-          MethodSignature(signature_data)};
+          MethodSignature(signature_data), raw_signature};
 }
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
@@ -339,5 +339,4 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
   }
   return spec;
 }
-
 }  // namespace trace
