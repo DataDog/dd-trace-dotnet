@@ -53,7 +53,7 @@ Microsoft provides [evaluation developer VMs]((https://developer.microsoft.com/e
 
 #### Building on Windows
 
-From a _Developer Command Prompt for V S2017_:
+From a _Developer Command Prompt for VS 2017_:
 
 ```cmd
 rem Restore NuGet packages
