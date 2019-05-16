@@ -22,17 +22,17 @@ Windows integration tests      | [![Build Status](https://dev.azure.com/datadog-
 Linux C# unit tests            | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/Linux/linux-unit-tests-managed?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build?definitionId=2)     |[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/Linux/linux-unit-tests-managed?branchName=master)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build?definitionId=2)
 Linux integration tests        | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/Linux/linux-integration-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build?definitionId=13)     |[![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/Linux/linux-integration-tests?branchName=master)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build?definitionId=13)
 
-## Development
+# Development
 
-### The Components
+## Components
 
 **[Datadog Agent](https://github.com/DataDog/datadog-agent)**: A service that runs on your application servers, accepting trace data from the Datadog Tracer and sending it to Datadog. The Agent is not part of this repo; it's the same Agent to which all Datadog tracers (e.g. Go, Python, Java, Ruby) send data.
 
 **[Datadog .NET Tracer](https://github.com/DataDog/dd-trace-dotnet)**: This repository. A set of .NET libraries that let you trace any piece of your .NET code. Supports manual instrumentation and can automatically instrument supported libraries out-of-the-box.
 
-### Windows
+## Windows
 
-Minimum requirements to build the code in this repository:
+### Minimum requirements
 
 - [Visual Studio 2017](https://visualstudio.microsoft.com/downloads/) v15.7 or newer
   - Workloads
@@ -51,7 +51,7 @@ Minimum requirements to build the code in this repository:
 
 Microsoft provides [evaluation developer VMs]((https://developer.microsoft.com/en-us/windows/downloads/virtual-machines)) with Windows 10 and Visual Studio 2017 pre-installed.
 
-#### Building on Windows
+### Building from a command line
 
 From a _Developer Command Prompt for VS 2017_:
 
@@ -69,16 +69,20 @@ rem Build MSI installer (either x64 or x86)
 msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x64
 ```
 
-### Linux
+## Linux
 
-Minimum requirements to build the code in this repository:
+### Minimum requirements
 
-- [.NET Core SDK 2.1](https://www.microsoft.com/net/download) or newer
-- [Docker](https://www.docker.com/)
+To build C# projects and NuGet packages only
+- [.NET Core SDK 2.1](https://dotnet.microsoft.com/download/dotnet-core/2.1)
 
-#### Building and running tests in Linux containers
+To build everything and run integration tests
+- [Docker](https://docs.docker.com/install/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
-You can use [Docker Compose](https://docs.docker.com/compose/) with Linux containers to run the test suites. This works on both Linux and Windows hosts.
+### Building and running tests in Linux containers
+
+You can use [Docker Compose](https://docs.docker.com/compose/) with Linux containers to build Linux binaries and run the test suites. This works on both Linux and Windows hosts.
 
 ```bash
 # build C# projects
