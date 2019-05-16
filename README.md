@@ -42,7 +42,7 @@ Linux integration tests        | [![Build Status](https://dev.azure.com/datadog-
     - Optional: ASP.NET and web development (to build samples)
   - Individual components
     - .NET Framework 4.7 targeting pack
-- [.NET Core 2.1 SDK](https://www.microsoft.com/net/download) or newer
+- [.NET Core 2.1 SDK](https://dotnet.microsoft.com/download/dotnet-core/2.1)
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
   - [WiX Toolset VS2017 Extension](https://marketplace.visualstudio.com/items?itemName=RobMensching.WixToolsetVisualStudio2017Extension) to build installer from VS2017
