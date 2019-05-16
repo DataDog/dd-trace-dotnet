@@ -57,13 +57,18 @@ From a _Developer Command Prompt for VS 2017_:
 
 ```cmd
 rem Restore NuGet packages
-nuget restore Datadog.Trace.sln
-
-rem Build C++ projects (Platform: x64 or x86)
-msbuild Datadog.Trace.proj /t:BuildCpp /p:Configuration=Release;Platform=x64
+dotnet restore Datadog.Trace.sln
 
 rem Build C# projects (Platform: always AnyCPU)
 msbuild Datadog.Trace.proj /t:BuildCsharp /p:Configuration=Release;Platform=AnyCPU
+
+rem Build NuGet packages
+dotnet pack src/Datadog.Trace/Datadog.Trace.csproj
+dotnet pack src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
+dotnet pack src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+
+rem Build C++ projects (Platform: x64 or x86)
+msbuild Datadog.Trace.proj /t:BuildCpp /p:Configuration=Release;Platform=x64
 
 rem Build MSI installer (Platform: x64 or x86)
 msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x64
