@@ -46,7 +46,7 @@ Linux integration tests        | [![Build Status](https://dev.azure.com/datadog-
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
   - [WiX Toolset VS2017 Extension](https://marketplace.visualstudio.com/items?itemName=RobMensching.WixToolsetVisualStudio2017Extension) to build installer from VS2017
-- Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to build Linux binaries and run integration tests on Linux containers
+- Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to build Linux binaries and run integration tests on Linux containers. See [section on Docker Compose](#building-and-running-tests-with-docker-compose).
   - Requires Windows 10 (1607 Anniversary Update, Build 14393 or newer)
 
 Microsoft provides [evaluation developer VMs]((https://developer.microsoft.com/en-us/windows/downloads/virtual-machines)) with Windows 10 and Visual Studio 2017 pre-installed.
@@ -82,10 +82,9 @@ To build C# projects and NuGet packages only
 - [.NET Core SDK 2.1](https://dotnet.microsoft.com/download/dotnet-core/2.1)
 
 To build everything and run integration tests
-- [Docker](https://docs.docker.com/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
-### Building and running tests in Linux containers
+### Building and running tests with Docker Compose
 
 You can use [Docker Compose](https://docs.docker.com/compose/) with Linux containers to build Linux binaries and run the test suites. This works on both Linux and Windows hosts.
 
