@@ -10,6 +10,11 @@ std::string ToString(const uint64_t i) {
   ss << i;
   return ss.str();
 }
+std::string ToString(const ULONG i) {
+  std::stringstream ss;
+  ss << i;
+  return ss.str();
+}
 std::string ToString(const WSTRING& wstr) {
   std::u16string ustr(reinterpret_cast<const char16_t*>(wstr.c_str()));
   return miniutf::to_utf8(ustr);
@@ -21,6 +26,11 @@ WSTRING ToWSTRING(const std::string& str) {
 }
 
 WSTRING ToWSTRING(const uint64_t i) {
+  const auto ustr = ToString(i);
+  return ToWSTRING(ustr);
+}
+
+WSTRING ToWSTRING(const ULONG i) {
   const auto ustr = ToString(i);
   return ToWSTRING(ustr);
 }

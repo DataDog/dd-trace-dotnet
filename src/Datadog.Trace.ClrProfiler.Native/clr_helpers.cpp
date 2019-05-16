@@ -339,4 +339,230 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
   }
   return spec;
 }
+
+WSTRING getTypeName(const ComPtr<IMetaDataImport2>& metadata_import,
+                    mdToken token) {
+  WCHAR type_name[kNameMaxSize]{};
+  DWORD type_name_len = 0;
+  HRESULT hr = E_FAIL;
+  switch (TypeFromToken(token)) {
+    case mdtTypeDef:
+      hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize,
+                                            &type_name_len,
+                                            nullptr, nullptr);
+      break;
+
+    case mdtTypeRef:
+      hr = metadata_import->GetTypeRefProps(token, nullptr, type_name,
+                                            kNameMaxSize, &type_name_len);
+      break;
+
+    default:
+      break;
+  }
+
+  if (FAILED(hr)) {
+    return ""_W;
+  }
+  return {type_name, type_name_len};
+}
+
+PCCOR_SIGNATURE consumeType(PCCOR_SIGNATURE& signature) {
+  const PCCOR_SIGNATURE start = signature;
+
+  const CorElementType elementType = CorSigUncompressElementType(signature);
+  switch (elementType) {
+    case ELEMENT_TYPE_VOID:
+    case ELEMENT_TYPE_BOOLEAN:
+    case ELEMENT_TYPE_CHAR:
+    case ELEMENT_TYPE_I1:
+    case ELEMENT_TYPE_U1:
+    case ELEMENT_TYPE_I2:
+    case ELEMENT_TYPE_U2:
+    case ELEMENT_TYPE_I4:
+    case ELEMENT_TYPE_U4:
+    case ELEMENT_TYPE_I8:
+    case ELEMENT_TYPE_U8:
+    case ELEMENT_TYPE_R4:
+    case ELEMENT_TYPE_R8:
+    case ELEMENT_TYPE_STRING:
+      return start;
+
+    case ELEMENT_TYPE_VALUETYPE:
+      CorSigUncompressToken(signature);
+      return start;
+
+    case ELEMENT_TYPE_CLASS:
+      CorSigUncompressToken(signature);
+      return start;
+
+    case ELEMENT_TYPE_OBJECT:
+      return start;
+
+    case ELEMENT_TYPE_SZARRAY:
+      consumeType(signature);
+      return start;
+
+    case ELEMENT_TYPE_VAR:
+      CorSigUncompressData(signature);
+      return start;
+
+    case ELEMENT_TYPE_GENERICINST: {
+      CorSigUncompressElementType(signature);
+      CorSigUncompressToken(signature);
+
+      const ULONG genericArgumentsCount = CorSigUncompressData(signature);
+      for (size_t i = 0; i < genericArgumentsCount; ++i) {
+        consumeType(signature);
+      }
+
+      return start;
+    }
+
+    case ELEMENT_TYPE_BYREF:
+      consumeType(signature);
+      return start;
+
+    default:
+      return start;  // TODO: WHAT EVEN HAPPENS
+  }
+}
+
+void SignatureToWSTRING(const ComPtr<IMetaDataImport2>& metadata,
+                        PCCOR_SIGNATURE signature, WSTRING& result) {
+  const CorElementType elementType = CorSigUncompressElementType(signature);
+  switch (elementType) {
+    case ELEMENT_TYPE_VOID:
+      result += "Void"_W;
+      break;
+
+    case ELEMENT_TYPE_BOOLEAN:
+      result += "Boolean"_W;
+      break;
+
+    case ELEMENT_TYPE_CHAR:
+      result += "Char16"_W;
+      break;
+
+    case ELEMENT_TYPE_I1:
+      result += "Int8"_W;
+      break;
+
+    case ELEMENT_TYPE_U1:
+      result += "UInt8"_W;
+      break;
+
+    case ELEMENT_TYPE_I2:
+      result += "Int16"_W;
+      break;
+
+    case ELEMENT_TYPE_U2:
+      result += "UInt16"_W;
+      break;
+
+    case ELEMENT_TYPE_I4:
+      result += "Int32"_W;
+      break;
+
+    case ELEMENT_TYPE_U4:
+      result += "UInt32"_W;
+      break;
+
+    case ELEMENT_TYPE_I8:
+      result += "Int64"_W;
+      break;
+
+    case ELEMENT_TYPE_U8:
+      result += "UInt64"_W;
+      break;
+
+    case ELEMENT_TYPE_R4:
+      result += "Single"_W;
+      break;
+
+    case ELEMENT_TYPE_R8:
+      result += "Double"_W;
+      break;
+
+    case ELEMENT_TYPE_STRING:
+      result += "String"_W;
+      break;
+
+    case ELEMENT_TYPE_VALUETYPE: {
+      const mdToken token = CorSigUncompressToken(signature);
+      const WSTRING className = getTypeName(metadata, token);
+      if (className == "System.Guid"_W) {
+        result += "Guid"_W;
+      } else {
+        result += className;
+      }
+      break;
+    }
+
+    case ELEMENT_TYPE_CLASS: {
+      const mdToken token = CorSigUncompressToken(signature);
+      result += getTypeName(metadata, token);
+      break;
+    }
+
+    case ELEMENT_TYPE_OBJECT:
+      result += "Object"_W;
+      break;
+
+    case ELEMENT_TYPE_SZARRAY:
+      SignatureToWSTRING(metadata, signature, result);
+      result += "[]"_W;
+      break;
+
+    case ELEMENT_TYPE_VAR: {
+      const ULONG index = CorSigUncompressData(signature);
+      result += "Var!"_W;
+      result += ToWSTRING(index);
+      break;
+    }
+
+    case ELEMENT_TYPE_GENERICINST: {
+      const CorElementType genericType = CorSigUncompressElementType(signature);
+      if (genericType != ELEMENT_TYPE_CLASS) {
+        // Unexpected, let's drop out
+        break;
+      }
+
+      const mdToken token = CorSigUncompressToken(signature);
+      result += getTypeName(metadata, token);
+
+      result += "<"_W;
+
+      const ULONG genericArgumentsCount = CorSigUncompressData(signature);
+      for (size_t i = 0; i < genericArgumentsCount; ++i) {
+        PCCOR_SIGNATURE type = consumeType(signature);
+        SignatureToWSTRING(metadata, type, result);
+
+        if (i != genericArgumentsCount - 1) {
+          result += ", "_W;
+        }
+      }
+
+      result += ">"_W;
+      break;
+    }
+
+    case ELEMENT_TYPE_BYREF:
+      result += "ByRef "_W;
+      SignatureToWSTRING(metadata, signature, result);
+      break;
+
+    default:
+      // We couldn't figure out the type to inspect
+      break;
+  }
+}
+
+WSTRING SignatureToWSTRING(const ComPtr<IMetaDataImport2>& metadata,
+                           PCCOR_SIGNATURE signature) {
+  WSTRING result;
+  SignatureToWSTRING(metadata, signature, result);
+  return result;
+}
+
 }  // namespace trace
