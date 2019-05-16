@@ -46,7 +46,7 @@ Linux integration tests        | [![Build Status](https://dev.azure.com/datadog-
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
   - [WiX Toolset VS2017 Extension](https://marketplace.visualstudio.com/items?itemName=RobMensching.WixToolsetVisualStudio2017Extension) to build installer from VS2017
-- Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to run Linux tests
+- Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to build Linux binaries and run integration tests on Linux containers
   - Requires Windows 10 (1607 Anniversary Update, Build 14393 or newer)
 
 Microsoft provides [evaluation developer VMs]((https://developer.microsoft.com/en-us/windows/downloads/virtual-machines)) with Windows 10 and Visual Studio 2017 pre-installed.
