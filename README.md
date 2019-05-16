@@ -51,6 +51,24 @@ Minimum requirements to build the code in this repository:
 
 Microsoft provides [evaluation developer VMs]((https://developer.microsoft.com/en-us/windows/downloads/virtual-machines)) with Windows 10 and Visual Studio 2017 pre-installed.
 
+#### Building on Windows
+
+From a _Developer Command Prompt for V S2017_:
+
+```cmd
+rem Restore NuGet packages
+nuget restore Datadog.Trace.sln
+
+rem Build C++ code (either x64 or x86)
+msbuild Datadog.Trace.proj /t:BuildCpp /p:Configuration=Release;Platform=x64
+
+rem Build C# code (AnyCPU)
+msbuild Datadog.Trace.proj /t:BuildCsharp /p:Configuration=Release;Platform=AnyCPU
+
+rem Build MSI installer (either x64 or x86)
+msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x64
+```
+
 ### Linux
 
 Minimum requirements to build the code in this repository:
@@ -58,7 +76,7 @@ Minimum requirements to build the code in this repository:
 - [.NET Core SDK 2.1](https://www.microsoft.com/net/download) or newer
 - [Docker](https://www.docker.com/)
 
-### Running tests in Linux containers
+#### Building and running tests in Linux containers
 
 You can use [Docker Compose](https://docs.docker.com/compose/) with Linux containers to run the test suites. This works on both Linux and Windows hosts.
 
