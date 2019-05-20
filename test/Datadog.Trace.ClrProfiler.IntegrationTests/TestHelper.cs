@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -230,6 +231,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
 
             wh.WaitOne(5000);
+
+            // Wait for iis express to finish starting up
+            var retries = 5;
+            while (true)
+            {
+                var usedPorts = IPGlobalProperties.GetIPGlobalProperties()
+                                                  .GetActiveTcpListeners()
+                                                  .Select(ipEndPoint => ipEndPoint.Port);
+
+                if (usedPorts.Contains(iisPort))
+                {
+                    break;
+                }
+
+                retries--;
+
+                if (retries == 0)
+                {
+                    throw new Exception("Gave up waiting for IIS Express.");
+                }
+
+                Thread.Sleep(1500);
+            }
+
             return process;
         }
 
@@ -287,13 +312,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 // disable tracing for this HttpClient request
                 httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-
+                var testStart = DateTime.UtcNow;
                 var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
                 var content = await response.Content.ReadAsStringAsync();
                 Output.WriteLine($"[http] {response.StatusCode} {content}");
                 Assert.Equal(expectedHttpStatusCode, response.StatusCode);
 
-                spans = agent.WaitForSpans(1);
+                spans = agent.WaitForSpans(1, minDateTime: testStart);
                 Assert.True(spans.Count == 1, "expected one span");
             }
 

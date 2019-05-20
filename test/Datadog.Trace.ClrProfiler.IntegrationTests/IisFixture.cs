@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Threading;
 using Datadog.Trace.TestHelpers;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
@@ -24,9 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     HttpPort = TcpPortProvider.GetOpenPort();
 
-                    // start IIS Express and give it a few seconds to boot up
                     _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort);
-                    Thread.Sleep(TimeSpan.FromSeconds(3));
                 }
             }
         }
@@ -35,19 +32,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             Agent?.Dispose();
 
-            if (_iisExpress != null)
+            lock (this)
             {
-                if (!_iisExpress.HasExited)
+                if (_iisExpress != null)
                 {
-                    // sending "Q" to standard input does not work because
-                    // iisexpress is scanning console key press, so just kill it.
-                    // maybe try this in the future:
-                    // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
-                    _iisExpress.Kill();
-                    _iisExpress.WaitForExit();
-                }
+                    try
+                    {
+                        if (!_iisExpress.HasExited)
+                        {
+                            // sending "Q" to standard input does not work because
+                            // iisexpress is scanning console key press, so just kill it.
+                            // maybe try this in the future:
+                            // https://github.com/roryprimrose/Headless/blob/master/Headless.IntegrationTests/IisExpress.cs
+                            _iisExpress.Kill();
+                            _iisExpress.WaitForExit(8000);
+                        }
+                    }
+                    catch
+                    {
+                        // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
+                    }
 
-                _iisExpress.Dispose();
+                    _iisExpress.Dispose();
+                }
             }
         }
     }
