@@ -197,9 +197,17 @@ namespace Datadog.Trace.TestHelpers
                     directory,
                     relativePath);
 
+                if (!File.Exists(_profilerFileLocation))
+                {
+                    // Let's try the project directory, as dotnet publish ignores the Copy attributes we currently use
+                    _profilerFileLocation = Path.Combine(
+                        GetProfilerProjectDirectory(),
+                        fileName);
+                }
+
                 if (!File.Exists(_integrationsFileLocation))
                 {
-                    throw new Exception($"Missing {relativePath} in output directory {directory}");
+                    throw new Exception($"Missing {fileName}");
                 }
             }
 
@@ -228,6 +236,14 @@ namespace Datadog.Trace.TestHelpers
                 _profilerFileLocation = Path.Combine(
                     directory,
                     profilerRelativePath);
+
+                if (!File.Exists(_profilerFileLocation))
+                {
+                    // Let's try the project directory, as dotnet publish ignores the Copy attributes we currently use
+                    _profilerFileLocation = Path.Combine(
+                        GetProfilerProjectDirectory(),
+                        fileName);
+                }
 
                 if (!File.Exists(_profilerFileLocation))
                 {
@@ -288,6 +304,17 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
+        }
+
+        private static string GetProfilerProjectDirectory()
+        {
+            return Path.Combine(
+                GetSolutionDirectory(),
+                "src",
+                "Datadog.Trace.ClrProfiler.Native",
+                "bin",
+                GetBuildConfiguration(),
+                GetPlatform());
         }
     }
 }
