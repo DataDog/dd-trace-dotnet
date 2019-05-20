@@ -239,9 +239,9 @@ namespace Datadog.Trace.TestHelpers
 
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    // Let's try the project directory, as dotnet publish ignores the Copy attributes we currently use
+                    // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
                     _profilerFileLocation = Path.Combine(
-                        GetProfilerProjectDirectory(),
+                        ExecutingAssembly.Location,
                         fileName);
                 }
 
@@ -304,17 +304,6 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
-        }
-
-        private static string GetProfilerProjectDirectory()
-        {
-            return Path.Combine(
-                GetSolutionDirectory(),
-                "src",
-                "Datadog.Trace.ClrProfiler.Native",
-                "bin",
-                GetBuildConfiguration(),
-                GetPlatform());
         }
     }
 }
