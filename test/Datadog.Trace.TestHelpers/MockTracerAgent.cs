@@ -3,9 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.ExtensionMethods;
 using MessagePack;
 
 namespace Datadog.Trace.TestHelpers
@@ -65,17 +67,20 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         /// <param name="count">The expected number of spans.</param>
         /// <param name="timeoutInMilliseconds">The timeout</param>
+        /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <returns>The list of spans.</returns>
-        public IImmutableList<Span> WaitForSpans(int count, int timeoutInMilliseconds = 20000)
+        public IImmutableList<Span> WaitForSpans(int count, int timeoutInMilliseconds = 20000, DateTime? minDateTime = null)
         {
             var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
 
-            while (DateTime.Now < deadline && Spans.Count < count)
+            var minimumOffset = new DateTimeOffset(minDateTime ?? DateTime.MinValue).ToUnixTimeNanoseconds();
+
+            while (DateTime.Now < deadline && Spans.Count(s => s.Start > minimumOffset) < count)
             {
                 Thread.Sleep(500);
             }
 
-            return Spans;
+            return Spans.Where(s => s.Start > minimumOffset).ToImmutableList();
         }
 
         public void Dispose()
@@ -95,7 +100,7 @@ namespace Datadog.Trace.TestHelpers
                     Resource = dict.Get<string>("resource"),
                     Service = dict.Get<string>("service"),
                     Type = dict.Get<string>("type"),
-                    Start = dict.Get<ulong>("start"),
+                    Start = dict.Get<long>("start"),
                     Duration = dict.Get<ulong>("duration"),
                     Tags = dict.Get<Dictionary<string, string>>("meta"),
                 };
@@ -163,7 +168,7 @@ namespace Datadog.Trace.TestHelpers
 
             public string Type { get; set; }
 
-            public ulong Start { get; set; }
+            public long Start { get; set; }
 
             public ulong Duration { get; set; }
 

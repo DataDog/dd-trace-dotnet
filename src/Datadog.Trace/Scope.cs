@@ -10,10 +10,10 @@ namespace Datadog.Trace
     /// </summary>
     public class Scope : IScope
     {
-        private readonly AsyncLocalScopeManager _scopeManager;
+        private readonly IScopeManager _scopeManager;
         private readonly bool _finishOnClose;
 
-        internal Scope(Scope parent, Span span,  AsyncLocalScopeManager scopeManager, bool finishOnClose)
+        internal Scope(Scope parent, Span span, IScopeManager scopeManager, bool finishOnClose)
         {
             Parent = parent;
             Span = span;
