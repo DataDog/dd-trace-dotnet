@@ -13,7 +13,7 @@ Start-Process -NoNewWindow -Wait -FilePath "${Env:ProgramFiles(x86)}\WiX Toolset
 $args = @(
     ".\output\Product.wixobj",
     ".\output\WixUI_InstallDir_Custom.wixobj",
-    "-out", "output\dd-trace-csharp.msi",
+    "-out", "output\dd-trace-dotnet.msi",
     "-ext", "WixUIExtension"
 )
 

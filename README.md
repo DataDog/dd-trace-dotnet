@@ -43,6 +43,7 @@ Linux integration tests        | [![Build Status](https://dev.azure.com/datadog-
   - Individual components
     - .NET Framework 4.7 targeting pack
 - [.NET Core 2.1 SDK](https://dotnet.microsoft.com/download/dotnet-core/2.1)
+- Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v3.4.4 or newer
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
   - [WiX Toolset VS2017 Extension](https://marketplace.visualstudio.com/items?itemName=RobMensching.WixToolsetVisualStudio2017Extension) to build installer from VS2017
@@ -57,15 +58,17 @@ From a _Developer Command Prompt for VS 2017_:
 
 ```cmd
 rem Restore NuGet packages
-dotnet restore Datadog.Trace.sln
+rem nuget.exe is required for command line restore because msbuild doesn't support packages.config
+rem (see https://github.com/NuGet/Home/issues/7386)
+nuget restore Datadog.Trace.sln
 
 rem Build C# projects (Platform: always AnyCPU)
 msbuild Datadog.Trace.proj /t:BuildCsharp /p:Configuration=Release;Platform=AnyCPU
 
 rem Build NuGet packages
-dotnet pack src/Datadog.Trace/Datadog.Trace.csproj
-dotnet pack src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
-dotnet pack src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+dotnet pack src\Datadog.Trace\Datadog.Trace.csproj
+dotnet pack src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj
+dotnet pack src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj
 
 rem Build C++ projects (Platform: x64 or x86)
 msbuild Datadog.Trace.proj /t:BuildCpp /p:Configuration=Release;Platform=x64
