@@ -145,6 +145,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpenseItDemo", "reproducti
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.V5", "samples\Samples.Elasticsearch.V5\Samples.Elasticsearch.V5.csproj", "{AD119B05-A092-41AD-B68E-4AE2DB5A96D9}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomapperTest", "reproductions\AutomapperTest\AutomapperTest.csproj", "{2AD18622-9A02-41B4-915E-798BD64044D5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -485,6 +490,16 @@ Global
 		{AD119B05-A092-41AD-B68E-4AE2DB5A96D9}.Release|x64.Build.0 = Release|x64
 		{AD119B05-A092-41AD-B68E-4AE2DB5A96D9}.Release|x86.ActiveCfg = Release|x86
 		{AD119B05-A092-41AD-B68E-4AE2DB5A96D9}.Release|x86.Build.0 = Release|x86
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Debug|x64.ActiveCfg = Debug|x64
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Debug|x64.Build.0 = Debug|x64
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Debug|x86.ActiveCfg = Debug|x86
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Debug|x86.Build.0 = Debug|x86
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Release|Any CPU.ActiveCfg = Release|x86
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Release|x64.ActiveCfg = Release|x64
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Release|x64.Build.0 = Release|x64
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Release|x86.ActiveCfg = Release|x86
+		{2AD18622-9A02-41B4-915E-798BD64044D5}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -520,6 +535,7 @@ Global
 		{99A62CCF-8E7F-4D57-8383-D38C371C8087} = {65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}
 		{D1729F17-99A5-45AF-AB38-72FA6ECCE609} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{AD119B05-A092-41AD-B68E-4AE2DB5A96D9} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{2AD18622-9A02-41B4-915E-798BD64044D5} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

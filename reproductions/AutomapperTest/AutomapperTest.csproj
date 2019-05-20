@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp2.2;netcoreapp2.1;netcoreapp2.0</TargetFrameworks>
+    <Platforms>x64;x86</Platforms>
+    <PlatformTarget>$(Platform)</PlatformTarget>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="8.1.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.7.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**"
+          CopyToOutputDirectory="Always"
+          CopyToPublishDirectory="Always"
+          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <Content Include="..\..\integrations.json"
+             CopyToOutputDirectory="Always"
+             CopyToPublishDirectory="Always"
+             Link="profiler-lib\integrations.json" />
+  </ItemGroup>
+</Project>
