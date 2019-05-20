@@ -202,7 +202,7 @@ namespace Datadog.Trace.TestHelpers
                     // Let's try the tests directory, as dotnet publish ignores the Copy attributes we currently use
                     _profilerFileLocation = Path.Combine(
                         ExecutingAssembly.Location,
-                        fileName);
+                        relativePath);
                 }
 
                 if (!File.Exists(_integrationsFileLocation))
@@ -242,7 +242,7 @@ namespace Datadog.Trace.TestHelpers
                     // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
                     _profilerFileLocation = Path.Combine(
                         ExecutingAssembly.Location,
-                        fileName);
+                        profilerRelativePath);
                 }
 
                 if (!File.Exists(_profilerFileLocation))
