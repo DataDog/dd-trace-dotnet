@@ -199,9 +199,9 @@ namespace Datadog.Trace.TestHelpers
 
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    // Let's try the project directory, as dotnet publish ignores the Copy attributes we currently use
+                    // Let's try the tests directory, as dotnet publish ignores the Copy attributes we currently use
                     _profilerFileLocation = Path.Combine(
-                        GetProfilerProjectDirectory(),
+                        ExecutingAssembly.Location,
                         fileName);
                 }
 
