@@ -69,10 +69,10 @@ namespace Datadog.Trace.TestHelpers
 
         public static string GetOS()
         {
-            return IsWindows() ? "win" :
+            return IsWindows()                                       ? "win" :
                    RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
-                   RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" :
-                                                                         string.Empty;
+                   RuntimeInformation.IsOSPlatform(OSPlatform.OSX)   ? "osx" :
+                                                                       string.Empty;
         }
 
         public static bool IsWindows()
@@ -101,7 +101,9 @@ namespace Datadog.Trace.TestHelpers
 
         public static string GetRuntimeIdentifier()
         {
-            return IsCoreClr() ? string.Empty : $"{EnvironmentHelper.GetOS()}-{GetPlatform()}";
+            return IsCoreClr()
+                       ? string.Empty
+                       : $"{EnvironmentHelper.GetOS()}-{GetPlatform()}";
         }
 
         public static string GetSolutionDirectory()
@@ -222,8 +224,8 @@ namespace Datadog.Trace.TestHelpers
             if (_profilerFileLocation == null)
             {
                 string extension = IsWindows()
-                                        ? "dll"
-                                        : "so";
+                                       ? "dll"
+                                       : "so";
 
                 string fileName = $"Datadog.Trace.ClrProfiler.Native.{extension}";
 
@@ -237,17 +239,29 @@ namespace Datadog.Trace.TestHelpers
                     directory,
                     profilerRelativePath);
 
+                // TODO: get rid of the fallback options when we have a consistent profiler location convention
+
                 if (!File.Exists(_profilerFileLocation))
                 {
+                    _output.WriteLine($"Unable to find profiler at {_profilerFileLocation}.");
                     // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
                     _profilerFileLocation = Path.Combine(
-                        ExecutingAssembly.Location,
+                        GetExecutingProjectBin(),
                         profilerRelativePath);
                 }
 
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    throw new Exception($"Unable to find profiler: {_profilerFileLocation}");
+                    _output.WriteLine($"Fallback 1: Unable to find profiler at {_profilerFileLocation}.");
+                    // One last attempt at the actual native project directory
+                    _profilerFileLocation = Path.Combine(
+                        GetProfilerProjectBin(),
+                        fileName);
+                }
+
+                if (!File.Exists(_profilerFileLocation))
+                {
+                    throw new Exception($"Fallback 2: Unable to find profiler at {_profilerFileLocation}");
                 }
             }
 
@@ -256,7 +270,9 @@ namespace Datadog.Trace.TestHelpers
 
         public string GetSampleApplicationPath()
         {
-            var appFileName = EnvironmentHelper.IsCoreClr() ? $"Samples.{SampleName}.dll" : $"Samples.{SampleName}.exe";
+            var appFileName = EnvironmentHelper.IsCoreClr()
+                                  ? $"Samples.{SampleName}.dll"
+                                  : $"Samples.{SampleName}.exe";
             var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(), appFileName);
             return sampleAppPath;
         }
@@ -304,6 +320,22 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
+        }
+
+        private string GetProfilerProjectBin()
+        {
+            return Path.Combine(
+                GetSolutionDirectory(),
+                "src",
+                "Datadog.Trace.ClrProfiler.Native",
+                "bin",
+                GetBuildConfiguration(),
+                GetPlatform());
+        }
+
+        private string GetExecutingProjectBin()
+        {
+            return Path.GetDirectoryName(ExecutingAssembly.Location);
         }
     }
 }
