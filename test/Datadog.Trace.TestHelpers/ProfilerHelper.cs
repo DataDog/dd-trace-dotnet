@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 
@@ -38,7 +37,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 // .NET Core
                 startInfo = new ProcessStartInfo(DotNetCoreExecutable, $"{applicationPath} {arguments ?? string.Empty}");
-                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, applicationPath, startInfo.EnvironmentVariables);
+                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, DotNetCoreExecutable, startInfo.EnvironmentVariables);
             }
             else
             {
