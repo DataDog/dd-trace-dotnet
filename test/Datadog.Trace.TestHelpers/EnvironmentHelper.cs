@@ -203,26 +203,28 @@ namespace Datadog.Trace.TestHelpers
 
                 if (!File.Exists(_integrationsFileLocation))
                 {
-                    _output.WriteLine($"Unable to find integrations at {_profilerFileLocation}.");
+                    _output.WriteLine($"Attempt 1: Unable to find integrations at {_integrationsFileLocation}.");
                     // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
-                    _profilerFileLocation = Path.Combine(
+                    _integrationsFileLocation = Path.Combine(
                         GetExecutingProjectBin(),
                         relativePath);
                 }
 
                 if (!File.Exists(_integrationsFileLocation))
                 {
-                    _output.WriteLine($"Fallback 1: Unable to find integrations at {_profilerFileLocation}.");
-                    // One last attempt at the actual native project directory
-                    _profilerFileLocation = Path.Combine(
-                        GetProfilerProjectBin(),
+                    _output.WriteLine($"Attempt 2: Unable to find integrations at {_integrationsFileLocation}.");
+                    // One last attempt at the solution root
+                    _integrationsFileLocation = Path.Combine(
+                        GetSolutionDirectory(),
                         fileName);
                 }
 
                 if (!File.Exists(_integrationsFileLocation))
                 {
-                    throw new Exception($"Fallback 2: Unable to find integrations at {_integrationsFileLocation}");
+                    throw new Exception($"Attempt 3: Unable to find integrations at {_integrationsFileLocation}");
                 }
+
+                _output.WriteLine($"Found integrations at {_integrationsFileLocation}.");
             }
 
             return new[]
@@ -243,38 +245,40 @@ namespace Datadog.Trace.TestHelpers
 
                 var directory = GetSampleApplicationOutputDirectory();
 
-                var profilerRelativePath = Path.Combine(
+                var relativePath = Path.Combine(
                     "profiler-lib",
                     fileName);
 
                 _profilerFileLocation = Path.Combine(
                     directory,
-                    profilerRelativePath);
+                    relativePath);
 
                 // TODO: get rid of the fallback options when we have a consistent convention
 
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    _output.WriteLine($"Unable to find profiler at {_profilerFileLocation}.");
+                    _output.WriteLine($"Attempt 1: Unable to find profiler at {_profilerFileLocation}.");
                     // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
-                    _profilerFileLocation = Path.Combine(
+                    _integrationsFileLocation = Path.Combine(
                         GetExecutingProjectBin(),
-                        profilerRelativePath);
+                        relativePath);
                 }
 
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    _output.WriteLine($"Fallback 1: Unable to find profiler at {_profilerFileLocation}.");
+                    _output.WriteLine($"Attempt 2: Unable to find profiler at {_profilerFileLocation}.");
                     // One last attempt at the actual native project directory
-                    _profilerFileLocation = Path.Combine(
+                    _integrationsFileLocation = Path.Combine(
                         GetProfilerProjectBin(),
                         fileName);
                 }
 
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    throw new Exception($"Fallback 2: Unable to find profiler at {_profilerFileLocation}");
+                    throw new Exception($"Attempt 3: Unable to find profiler at {_profilerFileLocation}");
                 }
+
+                _output.WriteLine($"Found profiler at {_profilerFileLocation}.");
             }
 
             return _profilerFileLocation;
