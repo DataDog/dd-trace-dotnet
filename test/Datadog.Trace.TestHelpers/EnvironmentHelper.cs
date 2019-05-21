@@ -199,17 +199,29 @@ namespace Datadog.Trace.TestHelpers
                     directory,
                     relativePath);
 
-                if (!File.Exists(_profilerFileLocation))
+                // TODO: get rid of the fallback options when we have a consistent convention
+
+                if (!File.Exists(_integrationsFileLocation))
                 {
-                    // Let's try the tests directory, as dotnet publish ignores the Copy attributes we currently use
+                    _output.WriteLine($"Unable to find integrations at {_profilerFileLocation}.");
+                    // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
                     _profilerFileLocation = Path.Combine(
-                        ExecutingAssembly.Location,
+                        GetExecutingProjectBin(),
                         relativePath);
                 }
 
                 if (!File.Exists(_integrationsFileLocation))
                 {
-                    throw new Exception($"Missing {fileName}");
+                    _output.WriteLine($"Fallback 1: Unable to find integrations at {_profilerFileLocation}.");
+                    // One last attempt at the actual native project directory
+                    _profilerFileLocation = Path.Combine(
+                        GetProfilerProjectBin(),
+                        fileName);
+                }
+
+                if (!File.Exists(_integrationsFileLocation))
+                {
+                    throw new Exception($"Fallback 2: Unable to find integrations at {_integrationsFileLocation}");
                 }
             }
 
@@ -239,7 +251,7 @@ namespace Datadog.Trace.TestHelpers
                     directory,
                     profilerRelativePath);
 
-                // TODO: get rid of the fallback options when we have a consistent profiler location convention
+                // TODO: get rid of the fallback options when we have a consistent convention
 
                 if (!File.Exists(_profilerFileLocation))
                 {
@@ -330,7 +342,7 @@ namespace Datadog.Trace.TestHelpers
                 "Datadog.Trace.ClrProfiler.Native",
                 "bin",
                 GetBuildConfiguration(),
-                GetPlatform());
+                GetPlatform().ToLower());
         }
 
         private string GetExecutingProjectBin()
