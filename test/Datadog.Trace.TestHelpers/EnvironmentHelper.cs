@@ -259,7 +259,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     _output.WriteLine($"Attempt 1: Unable to find profiler at {_profilerFileLocation}.");
                     // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
-                    _integrationsFileLocation = Path.Combine(
+                    _profilerFileLocation = Path.Combine(
                         GetExecutingProjectBin(),
                         relativePath);
                 }
@@ -268,7 +268,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     _output.WriteLine($"Attempt 2: Unable to find profiler at {_profilerFileLocation}.");
                     // One last attempt at the actual native project directory
-                    _integrationsFileLocation = Path.Combine(
+                    _profilerFileLocation = Path.Combine(
                         GetProfilerProjectBin(),
                         fileName);
                 }
