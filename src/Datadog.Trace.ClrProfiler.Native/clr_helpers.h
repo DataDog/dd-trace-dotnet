@@ -293,8 +293,8 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
                               const mdToken& token,
                               const MethodSignature& signature);
 
-WSTRING SignatureToWSTRING(const ComPtr<IMetaDataImport2>& metadata_import,
-                           PCCOR_SIGNATURE);
+bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
+                           MethodSignature signature);
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_CLR_HELPERS_H_

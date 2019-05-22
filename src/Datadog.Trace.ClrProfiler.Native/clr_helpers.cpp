@@ -348,8 +348,7 @@ WSTRING getTypeName(const ComPtr<IMetaDataImport2>& metadata_import,
   switch (TypeFromToken(token)) {
     case mdtTypeDef:
       hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize,
-                                            &type_name_len,
-                                            nullptr, nullptr);
+                                            &type_name_len, nullptr, nullptr);
       break;
 
     case mdtTypeRef:
@@ -428,141 +427,186 @@ PCCOR_SIGNATURE consumeType(PCCOR_SIGNATURE& signature) {
   }
 }
 
-void SignatureToWSTRING(const ComPtr<IMetaDataImport2>& metadata,
-                        PCCOR_SIGNATURE signature, WSTRING& result) {
-  const CorElementType elementType = CorSigUncompressElementType(signature);
-  switch (elementType) {
-    case ELEMENT_TYPE_VOID:
-      result += "Void"_W;
-      break;
+bool SignatureFuzzyMatch(
+    const ComPtr<IMetaDataImport2>& metadata_import,
+                           MethodSignature signature) {
+  auto signature_size = signature.data.size();
 
-    case ELEMENT_TYPE_BOOLEAN:
-      result += "Boolean"_W;
-      break;
+  // We skip signature size for the typical format because we've already
+  // evaluated to a vector
 
-    case ELEMENT_TYPE_CHAR:
-      result += "Char16"_W;
-      break;
+  const auto calling_convention = CorCallingConvention(signature.data[0]);
 
-    case ELEMENT_TYPE_I1:
-      result += "Int8"_W;
-      break;
+  const auto instance_convention = IMAGE_CEE_CS_CALLCONV_HASTHIS;
+  const auto generic_convention = IMAGE_CEE_CS_CALLCONV_GENERIC;
 
-    case ELEMENT_TYPE_U1:
-      result += "UInt8"_W;
-      break;
+  const auto is_instance = (calling_convention & instance_convention) != 0;
+  const auto is_generic = (calling_convention & generic_convention) != 0;
 
-    case ELEMENT_TYPE_I2:
-      result += "Int16"_W;
-      break;
+  auto generic_count = 0;
+  auto param_count = 0;
+  auto current_index = 2; // Where the parameters actually start
 
-    case ELEMENT_TYPE_U2:
-      result += "UInt16"_W;
-      break;
+  if (is_generic) {
+    generic_count = signature.data[1];
+    param_count = signature.data[2];
+    current_index = 3; // offset by one because the method is generic
+  } else {
+    param_count = signature.data[1];
+  }
 
-    case ELEMENT_TYPE_I4:
-      result += "Int32"_W;
-      break;
+  std::vector<WSTRING> type_names(param_count + 1); // plus one to account for the return type
 
-    case ELEMENT_TYPE_U4:
-      result += "UInt32"_W;
-      break;
+  WSTRING current_type_name;
 
-    case ELEMENT_TYPE_I8:
-      result += "Int64"_W;
-      break;
+  for (; current_index < signature_size; current_index++) {
 
-    case ELEMENT_TYPE_U8:
-      result += "UInt64"_W;
-      break;
+    auto param_piece = signature.data[current_index];
 
-    case ELEMENT_TYPE_R4:
-      result += "Single"_W;
-      break;
+    auto cor_element_type = CorElementType(param_piece);
 
-    case ELEMENT_TYPE_R8:
-      result += "Double"_W;
-      break;
+    switch (cor_element_type) {
+      case ELEMENT_TYPE_VOID:
+        current_type_name += "Void"_W;
+        break;
 
-    case ELEMENT_TYPE_STRING:
-      result += "String"_W;
-      break;
+      case ELEMENT_TYPE_BOOLEAN:
+        current_type_name += "Boolean"_W;
+        break;
 
-    case ELEMENT_TYPE_VALUETYPE: {
-      const mdToken token = CorSigUncompressToken(signature);
-      const WSTRING className = getTypeName(metadata, token);
-      if (className == "System.Guid"_W) {
-        result += "Guid"_W;
-      } else {
-        result += className;
-      }
-      break;
-    }
+      case ELEMENT_TYPE_CHAR:
+        current_type_name += "Char16"_W;
+        break;
 
-    case ELEMENT_TYPE_CLASS: {
-      const mdToken token = CorSigUncompressToken(signature);
-      result += getTypeName(metadata, token);
-      break;
-    }
+      case ELEMENT_TYPE_I1:
+        current_type_name += "Int8"_W;
+        break;
 
-    case ELEMENT_TYPE_OBJECT:
-      result += "Object"_W;
-      break;
+      case ELEMENT_TYPE_U1:
+        current_type_name += "UInt8"_W;
+        break;
 
-    case ELEMENT_TYPE_SZARRAY:
-      SignatureToWSTRING(metadata, signature, result);
-      result += "[]"_W;
-      break;
+      case ELEMENT_TYPE_I2:
+        current_type_name += "Int16"_W;
+        break;
 
-    case ELEMENT_TYPE_VAR: {
-      const ULONG index = CorSigUncompressData(signature);
-      result += "Var!"_W;
-      result += ToWSTRING(index);
-      break;
-    }
+      case ELEMENT_TYPE_U2:
+        current_type_name += "UInt16"_W;
+        break;
 
-    case ELEMENT_TYPE_GENERICINST: {
-      const CorElementType genericType = CorSigUncompressElementType(signature);
-      if (genericType != ELEMENT_TYPE_CLASS) {
-        // Unexpected, let's drop out
+      case ELEMENT_TYPE_I4:
+        current_type_name += "Int32"_W;
+        break;
+
+      case ELEMENT_TYPE_U4:
+        current_type_name += "UInt32"_W;
+        break;
+
+      case ELEMENT_TYPE_I8:
+        current_type_name += "Int64"_W;
+        break;
+
+      case ELEMENT_TYPE_U8:
+        current_type_name += "UInt64"_W;
+        break;
+
+      case ELEMENT_TYPE_R4:
+        current_type_name += "Single"_W;
+        break;
+
+      case ELEMENT_TYPE_R8:
+        current_type_name += "Double"_W;
+        break;
+
+      case ELEMENT_TYPE_STRING:
+        current_type_name += "String"_W;
+        break;
+
+      case ELEMENT_TYPE_VALUETYPE: {
+        /*const mdToken token = CorSigUncompressToken(param_piece);
+        const WSTRING className = getTypeName(metadata_import, token);
+        if (className == "System.Guid"_W) {
+          result += "Guid"_W;
+        } else {
+          result += className;
+        }*/
+        // TODO
+        current_type_name += "SomeValueType"_W;
         break;
       }
 
-      const mdToken token = CorSigUncompressToken(signature);
-      result += getTypeName(metadata, token);
-
-      result += "<"_W;
-
-      const ULONG genericArgumentsCount = CorSigUncompressData(signature);
-      for (size_t i = 0; i < genericArgumentsCount; ++i) {
-        PCCOR_SIGNATURE type = consumeType(signature);
-        SignatureToWSTRING(metadata, type, result);
-
-        if (i != genericArgumentsCount - 1) {
-          result += ", "_W;
-        }
+      case ELEMENT_TYPE_CLASS: {
+        /*const mdToken token = CorSigUncompressToken(signature);
+        result += getTypeName(metadata_import, token);*/
+        // TODO
+        current_type_name += "SomeClass"_W;
+        break;
       }
 
-      result += ">"_W;
-      break;
+      case ELEMENT_TYPE_OBJECT:
+        current_type_name += "Object"_W;
+        break;
+
+      case ELEMENT_TYPE_SZARRAY:
+        /*SignatureToWSTRING(metadata_import, signature, result);
+        result += "[]"_W;*/
+        // TODO
+        current_type_name += "SomeArray"_W;
+        break;
+
+      case ELEMENT_TYPE_VAR: {
+        /*const ULONG index = CorSigUncompressData(signature);
+        result += "Var!"_W;
+        result += ToWSTRING(index);*/
+        // TODO
+        current_type_name += "SomeVar!"_W;
+        break;
+      }
+
+      case ELEMENT_TYPE_GENERICINST: {
+        //const CorElementType genericType =
+        //    CorSigUncompressElementType(signature);
+        //if (genericType != ELEMENT_TYPE_CLASS) {
+        //  // TODO: Let's dive into a type lookup?
+        //  break;
+        //}
+
+        //const mdToken token = CorSigUncompressToken(signature);
+        //result += getTypeName(metadata_import, token);
+
+        //result += "<"_W;
+
+        //const ULONG genericArgumentsCount = CorSigUncompressData(signature);
+        //for (size_t i = 0; i < genericArgumentsCount; ++i) {
+        //  PCCOR_SIGNATURE type = consumeType(signature);
+        //  SignatureToWSTRING(metadata_import, type, result);
+
+        //  if (i != genericArgumentsCount - 1) {
+        //    result += ", "_W;
+        //  }
+        //}
+
+        //result += ">"_W;
+        // TODO
+        current_type_name += "<SomeGeneric>"_W;
+        break;
+      }
+
+      case ELEMENT_TYPE_BYREF:
+        /*result += "ByRef "_W;
+        SignatureToWSTRING(metadata_import, signature, result);*/
+        // TODO
+        current_type_name += "SomeByRef"_W;
+        break;
+
+      default:
+        // TODO: We couldn't figure out the type to inspect, so... add a thing?
+        // Should probably default to null and skip the check
+        break;
     }
-
-    case ELEMENT_TYPE_BYREF:
-      result += "ByRef "_W;
-      SignatureToWSTRING(metadata, signature, result);
-      break;
-
-    default:
-      // We couldn't figure out the type to inspect
-      break;
   }
-}
 
-WSTRING SignatureToWSTRING(const ComPtr<IMetaDataImport2>& metadata,
-                           PCCOR_SIGNATURE signature) {
-  WSTRING result;
-  SignatureToWSTRING(metadata, signature, result);
-  return result;
+  return true;
 }
 
 }  // namespace trace
