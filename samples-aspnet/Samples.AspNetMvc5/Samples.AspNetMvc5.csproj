@@ -112,6 +112,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**"
+          CopyToOutputDirectory="Always"
+          CopyToPublishDirectory="Always"
+          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <Content Include="..\..\integrations.json"
+             CopyToOutputDirectory="Always"
+             CopyToPublishDirectory="Always"
+             Link="profiler-lib\integrations.json" />
     <Content Include="Views\web.config" />
     <None Include="packages.config" />
     <Content Include="Views\_Layout.cshtml" />
@@ -123,6 +131,7 @@
     <Content Include="Views\Contacts\Details.cshtml" />
     <Content Include="Views\Contacts\Edit.cshtml" />
     <Content Include="Views\Contacts\Index.cshtml" />
+    <None Include="Properties\PublishProfiles\local-aspnet-mvc5-deploy.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
