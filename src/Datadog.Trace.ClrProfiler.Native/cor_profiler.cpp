@@ -350,6 +350,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
                              target.signature);
       }
 
+      auto itsAMatch = SignatureFuzzyMatch(module_metadata->metadata_import, target.signature);
       // replace with a call to the instrumentation wrapper
       const auto original_argument = pInstr->m_Arg32;
       pInstr->m_opcode = CEE_CALL;
