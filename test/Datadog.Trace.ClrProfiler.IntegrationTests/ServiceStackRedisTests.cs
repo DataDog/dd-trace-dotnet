@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -21,9 +20,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
-            var prefix = $"{BuildParameters.Configuration}.{BuildParameters.TargetFramework}.";
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"ServiceStack {prefix}"))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"ServiceStack {TestPrefix}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -47,13 +45,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var expected = new TupleList<string, string>
                 {
                     { "ROLE", "ROLE" },
-                    { "SET", $"SET {prefix}ServiceStack.Redis.INCR 0" },
+                    { "SET", $"SET {TestPrefix}ServiceStack.Redis.INCR 0" },
                     { "PING", "PING" },
                     { "DDCUSTOM", "DDCUSTOM COMMAND" },
                     { "ECHO", "ECHO Hello World" },
                     { "SLOWLOG", "SLOWLOG GET 5" },
-                    { "INCR", $"INCR {prefix}ServiceStack.Redis.INCR" },
-                    { "INCRBYFLOAT", $"INCRBYFLOAT {prefix}ServiceStack.Redis.INCR 1.25" },
+                    { "INCR", $"INCR {TestPrefix}ServiceStack.Redis.INCR" },
+                    { "INCRBYFLOAT", $"INCRBYFLOAT {TestPrefix}ServiceStack.Redis.INCR 1.25" },
                     { "TIME", "TIME" },
                     { "SELECT", "SELECT 0" },
                 };

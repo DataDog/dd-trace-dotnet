@@ -7,21 +7,18 @@ namespace Datadog.Trace.TestHelpers
 {
     public class ProfilerHelper
     {
-        private static string dotNetCoreExecutable = Environment.OSVersion.Platform == PlatformID.Win32NT ? "dotnet.exe" : "dotnet";
+        private static readonly string DotNetCoreExecutable = Environment.OSVersion.Platform == PlatformID.Win32NT ? "dotnet.exe" : "dotnet";
 
         public static Process StartProcessWithProfiler(
-            string appPath,
-            bool coreClr,
+            EnvironmentHelper environmentHelper,
             IEnumerable<string> integrationPaths,
-            string profilerClsid,
-            string profilerDllPath,
             string arguments = null,
             bool redirectStandardInput = false,
             int traceAgentPort = 9696)
         {
-            if (appPath == null)
+            if (environmentHelper == null)
             {
-                throw new ArgumentNullException(nameof(appPath));
+                throw new ArgumentNullException(nameof(environmentHelper));
             }
 
             if (integrationPaths == null)
@@ -29,55 +26,25 @@ namespace Datadog.Trace.TestHelpers
                 throw new ArgumentNullException(nameof(integrationPaths));
             }
 
-            if (profilerClsid == null)
-            {
-                throw new ArgumentNullException(nameof(profilerClsid));
-            }
+            var applicationPath = environmentHelper.GetSampleApplicationPath();
 
             // clear all relevant environment variables to start with a clean slate
-            ClearProfilerEnvironmentVariables();
+            EnvironmentHelper.ClearProfilerEnvironmentVariables();
 
             ProcessStartInfo startInfo;
 
-            if (coreClr)
+            if (EnvironmentHelper.IsCoreClr())
             {
                 // .NET Core
-                startInfo = new ProcessStartInfo(dotNetCoreExecutable, $"{appPath} {arguments ?? string.Empty}");
-
-                startInfo.EnvironmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
-                startInfo.EnvironmentVariables["CORECLR_PROFILER"] = profilerClsid;
-                startInfo.EnvironmentVariables["CORECLR_PROFILER_PATH"] = profilerDllPath;
-
-                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = dotNetCoreExecutable;
+                startInfo = new ProcessStartInfo(DotNetCoreExecutable, $"{applicationPath} {arguments ?? string.Empty}");
+                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, DotNetCoreExecutable, startInfo.EnvironmentVariables);
             }
             else
             {
                 // .NET Framework
-                startInfo = new ProcessStartInfo(appPath, $"{arguments ?? string.Empty}");
-
-                startInfo.EnvironmentVariables["COR_ENABLE_PROFILING"] = "1";
-                startInfo.EnvironmentVariables["COR_PROFILER"] = profilerClsid;
-                startInfo.EnvironmentVariables["COR_PROFILER_PATH"] = profilerDllPath;
-
-                string executableFileName = Path.GetFileName(appPath);
-                startInfo.EnvironmentVariables["DD_PROFILER_PROCESSES"] = executableFileName;
-            }
-
-            string integrations = string.Join(";", integrationPaths);
-            startInfo.EnvironmentVariables["DD_INTEGRATIONS"] = integrations;
-            startInfo.EnvironmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "localhost";
-            startInfo.EnvironmentVariables["DD_TRACE_AGENT_PORT"] = traceAgentPort.ToString();
-
-            // for ASP.NET Core sample apps, set the server's port
-            startInfo.EnvironmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{traceAgentPort}/";
-
-            foreach (var name in new string[] { "REDIS_HOST" })
-            {
-                var value = Environment.GetEnvironmentVariable(name);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    startInfo.EnvironmentVariables[name] = value;
-                }
+                startInfo = new ProcessStartInfo(applicationPath, $"{arguments ?? string.Empty}");
+                var executableFileName = Path.GetFileName(applicationPath);
+                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, executableFileName, startInfo.EnvironmentVariables);
             }
 
             startInfo.UseShellExecute = false;
@@ -87,35 +54,6 @@ namespace Datadog.Trace.TestHelpers
             startInfo.RedirectStandardInput = redirectStandardInput;
 
             return Process.Start(startInfo);
-        }
-
-        public static void ClearProfilerEnvironmentVariables()
-        {
-            var environmentVariables = new[]
-                                       {
-                                           // .NET Core
-                                           "CORECLR_ENABLE_PROFILING",
-                                           "CORECLR_PROFILER",
-                                           "CORECLR_PROFILER_PATH",
-                                           "CORECLR_PROFILER_PATH_32",
-                                           "CORECLR_PROFILER_PATH_64",
-
-                                           // .NET Framework
-                                           "COR_ENABLE_PROFILING",
-                                           "COR_PROFILER",
-                                           "COR_PROFILER_PATH",
-
-                                           // Datadog
-                                           "DD_PROFILER_PROCESSES",
-                                           "DD_INTEGRATIONS",
-                                           "DATADOG_PROFILER_PROCESSES",
-                                           "DATADOG_INTEGRATIONS",
-                                       };
-
-            foreach (string variable in environmentVariables)
-            {
-                Environment.SetEnvironmentVariable(variable, null);
-            }
         }
     }
 }
