@@ -59,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string host = httpContext.Request.Headers.Get("Host");
                 string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
                 string url = httpContext.Request.RawUrl.ToLowerInvariant();
+                string resourceName = null;
 
                 RouteData routeData = controllerContext.RouteData as RouteData;
                 Route route = routeData?.Route as Route;
@@ -74,12 +75,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         // get route and routeValues from the RouteData in routeMatches
                         route = routeMatches[0].Route as Route;
                         routeValues = routeMatches[0].Values;
+
+                        if (route != null)
+                        {
+                            resourceName = $"{httpMethod} {route.Url}";
+                        }
                     }
+                }
+
+                if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
+                {
+                    var cleanUri = UriHelpers.CleanUri(httpContext.Request.Url, removeScheme: true, tryRemoveIds: true);
+                    resourceName = $"{httpMethod} {cleanUri}";
                 }
 
                 string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                string resourceName = $"{httpMethod} {controllerName}.{actionName}";
+
+                if (string.IsNullOrEmpty(resourceName))
+                {
+                    // Keep the legacy resource name, just to have something
+                    resourceName = $"{httpMethod} {controllerName}.{actionName}";
+                }
 
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;

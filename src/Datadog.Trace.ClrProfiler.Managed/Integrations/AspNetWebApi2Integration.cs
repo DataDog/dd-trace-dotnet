@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -138,6 +139,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 string host = req?.Headers?.Host ?? string.Empty;
                 string rawUrl = req?.RequestUri?.ToString().ToLowerInvariant() ?? string.Empty;
+                string absoluteUri = req?.RequestUri?.AbsoluteUri?.ToLowerInvariant() ?? string.Empty;
                 string method = controllerContext?.Request?.Method?.Method?.ToUpperInvariant() ?? "GET";
                 string route = null;
                 try
@@ -148,10 +150,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
-                string resourceName = $"{method} {rawUrl}";
+                string resourceName = $"{method} {absoluteUri}";
+
                 if (route != null)
                 {
                     resourceName = $"{method} {route}";
+                }
+                else if (req?.RequestUri != null)
+                {
+                    var cleanUri = UriHelpers.CleanUri(req?.RequestUri, removeScheme: true, tryRemoveIds: true);
+                    resourceName = $"{method} {cleanUri}";
                 }
 
                 string controller = string.Empty;
