@@ -345,7 +345,8 @@ WSTRING getTypeName(const ComPtr<IMetaDataImport2>& metadata_import,
   WCHAR type_name[kNameMaxSize]{};
   DWORD type_name_len = 0;
   HRESULT hr = E_FAIL;
-  switch (TypeFromToken(token)) {
+  const auto type_from_token = TypeFromToken(token);
+  switch (type_from_token) {
     case mdtTypeDef:
       hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize,
                                             &type_name_len, nullptr, nullptr);
@@ -427,10 +428,76 @@ PCCOR_SIGNATURE consumeType(PCCOR_SIGNATURE& signature) {
   }
 }
 
+bool ParseNumber(ULONG& pOut, int& current_index, const int size,
+                 std::vector<BYTE> signature_bytes) {
+  // Four potential bytes
+  BYTE b1 = 0, b2 = 0, b3 = 0, b4 = 0;
+
+  // at least one byte in the encoding, read that
+  if (current_index >= size) {
+    return false;
+  }
+
+  b1 = signature_bytes[current_index];
+
+  if (b1 == 0xff) {
+    // special encoding of 'NULL'
+    // not sure what this means as a number, don't expect to see it except for
+    // string lengths which we don't encounter anyway so calling it an error
+    return false;
+  }
+
+  // early out on 1 byte encoding
+  if ((b1 & 0x80) == 0) {
+    pOut = b1;
+    return true;
+  }
+
+  current_index++;
+
+  if (current_index >= size) {
+    return false;
+  }
+
+  b2 = signature_bytes[current_index];
+
+  // early out on 2 byte encoding
+  if ((b1 & 0x40) == 0) {
+    pOut = (((b1 & 0x3f) << 8) | b2);
+    return true;
+  }
+
+  // must be a 4 byte encoding
+
+  if ((b1 & 0x20) != 0) {
+    // 4 byte encoding has this bit clear -- error if not
+    return false;
+  }
+
+  current_index++;
+
+  if (current_index >= size) {
+    return false;
+  }
+
+  b3 = signature_bytes[current_index];
+
+  current_index++;
+
+  if (current_index >= size) {
+    return false;
+  }
+
+  b4 = signature_bytes[current_index];
+
+  pOut = ((b1 & 0x1f) << 24) | (b2 << 16) | (b3 << 8) | b4;
+  return true;
+}
+
 bool SignatureFuzzyMatch(
     const ComPtr<IMetaDataImport2>& metadata_import,
                            MethodSignature signature) {
-  auto signature_size = signature.data.size();
+  int signature_size = signature.data.size();
 
   // We skip signature size for the typical format because we've already
   // evaluated to a vector
@@ -523,23 +590,35 @@ bool SignatureFuzzyMatch(
         break;
 
       case ELEMENT_TYPE_VALUETYPE: {
-        /*const mdToken token = CorSigUncompressToken(param_piece);
-        const WSTRING className = getTypeName(metadata_import, token);
+        current_index++;
+        //auto type_token_part = PCCOR_SIGNATURE(signature.data[current_index]);
+        ULONG parsed_number = 0;
+
+        auto success = ParseNumber(parsed_number, current_index, signature_size,
+                                   signature.data); 
+        auto type_token = mdToken(parsed_number);
+        auto className = getTypeName(metadata_import, type_token);
         if (className == "System.Guid"_W) {
-          result += "Guid"_W;
+          current_type_name += "Guid"_W;
         } else {
-          result += className;
-        }*/
-        // TODO
-        current_type_name += "SomeValueType"_W;
+          current_type_name += className;
+        }
         break;
       }
 
       case ELEMENT_TYPE_CLASS: {
-        /*const mdToken token = CorSigUncompressToken(signature);
-        result += getTypeName(metadata_import, token);*/
-        // TODO
-        current_type_name += "SomeClass"_W;
+        current_index++;
+        // auto type_token_part =
+        // PCCOR_SIGNATURE(signature.data[current_index]);
+        ULONG parsed_number = 0;
+
+        auto success = ParseNumber(parsed_number, current_index, signature_size,
+                                   signature.data);
+
+        auto index_type = (ULONG)(parsed_number & 0x3);
+        auto type_token = mdToken(parsed_number);
+        auto className = getTypeName(metadata_import, type_token);
+        current_type_name += className;
         break;
       }
 
@@ -551,7 +630,7 @@ bool SignatureFuzzyMatch(
         /*SignatureToWSTRING(metadata_import, signature, result);
         result += "[]"_W;*/
         // TODO
-        current_type_name += "SomeArray"_W;
+        current_type_name += "[]"_W;
         break;
 
       case ELEMENT_TYPE_VAR: {
@@ -559,7 +638,7 @@ bool SignatureFuzzyMatch(
         result += "Var!"_W;
         result += ToWSTRING(index);*/
         // TODO
-        current_type_name += "SomeVar!"_W;
+        current_type_name += "Var!"_W;
         break;
       }
 
