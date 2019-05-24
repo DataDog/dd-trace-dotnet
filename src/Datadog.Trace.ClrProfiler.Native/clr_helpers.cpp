@@ -517,12 +517,12 @@ bool SignatureFuzzyMatch(
   if (is_generic) {
     generic_count = signature.data[1];
     param_count = signature.data[2];
-    current_index = 3; // offset by one because the method is generic
+    current_index++; // offset by one because the method is generic
   } else {
     param_count = signature.data[1];
   }
 
-  std::vector<WSTRING> type_names(param_count + 1); // plus one to account for the return type
+  std::vector<WSTRING> type_names(1 + param_count); // plus one to account for the return type
 
   WSTRING current_type_name;
 
@@ -591,13 +591,16 @@ bool SignatureFuzzyMatch(
 
       case ELEMENT_TYPE_VALUETYPE: {
         current_index++;
-        //auto type_token_part = PCCOR_SIGNATURE(signature.data[current_index]);
+        //auto type_token_part = 
         ULONG parsed_number = 0;
 
         auto success = ParseNumber(parsed_number, current_index, signature_size,
-                                   signature.data); 
-        auto type_token = mdToken(parsed_number);
+                                   signature.data);
+        auto my_sig = PCCOR_SIGNATURE(parsed_number);
+        auto uncompressed = CorSigUncompressToken(my_sig);
+        auto type_token = mdToken(uncompressed);
         auto className = getTypeName(metadata_import, type_token);
+
         if (className == "System.Guid"_W) {
           current_type_name += "Guid"_W;
         } else {
@@ -608,17 +611,15 @@ bool SignatureFuzzyMatch(
 
       case ELEMENT_TYPE_CLASS: {
         current_index++;
-        // auto type_token_part =
-        // PCCOR_SIGNATURE(signature.data[current_index]);
-        ULONG parsed_number = 0;
+        mdToken magic_token;
+        auto magic_token_start =
+            PCCOR_SIGNATURE(&signature.data[current_index]);
+        auto token_length =
+            CorSigUncompressToken(magic_token_start, &magic_token);
+        auto magical_class_name = getTypeName(metadata_import, magic_token);
+        current_index += token_length;
 
-        auto success = ParseNumber(parsed_number, current_index, signature_size,
-                                   signature.data);
-
-        auto index_type = (ULONG)(parsed_number & 0x3);
-        auto type_token = mdToken(parsed_number);
-        auto className = getTypeName(metadata_import, type_token);
-        current_type_name += className;
+        current_type_name += magical_class_name;
         break;
       }
 

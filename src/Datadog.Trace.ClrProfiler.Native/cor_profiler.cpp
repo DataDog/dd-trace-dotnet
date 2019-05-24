@@ -333,14 +333,36 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
               target.signature.CallingConvention()) {
         continue;
       }
+      
+      auto target_arg_count = method_replacement.wrapper_method.method_signature
+                                  .NumberOfArguments();
 
       // make sure the number of arguments match
       if (method_replacement.target_method.method_signature.data.size() > 1 &&
           method_replacement.target_method.method_signature
-                  .NumberOfArguments() !=
-              target.signature.NumberOfArguments()) {
+                  .NumberOfArguments() != target_arg_count) {
         continue;
       }
+
+      //auto wrapper_arg_count = method_replacement.wrapper_method.method_signature
+      //                        .NumberOfArguments();
+
+      //// make sure the number of arguments match
+      //if (wrapper_arg_count != target_arg_count) {
+      //  continue;
+      //}
+      //
+      //auto wrapper_generic_count =
+      //    method_replacement.wrapper_method.method_signature
+      //        .NumberOfTypeArguments();
+      //auto target_generic_count =
+      //    method_replacement.wrapper_method.method_signature
+      //        .NumberOfTypeArguments();
+
+      //// make sure the number of generics match
+      //if (wrapper_generic_count != target_generic_count) {
+      //  continue;
+      //}
 
       // we need to emit a method spec to populate the generic arguments
       if (method_replacement.wrapper_method.method_signature
