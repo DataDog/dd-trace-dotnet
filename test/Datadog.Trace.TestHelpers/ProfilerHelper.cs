@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 
 namespace Datadog.Trace.TestHelpers
 {
     public class ProfilerHelper
     {
-        private static readonly string DotNetCoreExecutable = Environment.OSVersion.Platform == PlatformID.Win32NT ? "dotnet.exe" : "dotnet";
-
         public static Process StartProcessWithProfiler(
             EnvironmentHelper environmentHelper,
             IEnumerable<string> integrationPaths,
@@ -27,6 +24,7 @@ namespace Datadog.Trace.TestHelpers
             }
 
             var applicationPath = environmentHelper.GetSampleApplicationPath();
+            var executable = environmentHelper.GetSampleExecutionSource();
 
             // clear all relevant environment variables to start with a clean slate
             EnvironmentHelper.ClearProfilerEnvironmentVariables();
@@ -36,15 +34,14 @@ namespace Datadog.Trace.TestHelpers
             if (EnvironmentHelper.IsCoreClr())
             {
                 // .NET Core
-                startInfo = new ProcessStartInfo(DotNetCoreExecutable, $"{applicationPath} {arguments ?? string.Empty}");
-                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, DotNetCoreExecutable, startInfo.EnvironmentVariables);
+                startInfo = new ProcessStartInfo(executable, $"{applicationPath} {arguments ?? string.Empty}");
+                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, executable, startInfo.EnvironmentVariables);
             }
             else
             {
                 // .NET Framework
-                startInfo = new ProcessStartInfo(applicationPath, $"{arguments ?? string.Empty}");
-                var executableFileName = Path.GetFileName(applicationPath);
-                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, executableFileName, startInfo.EnvironmentVariables);
+                startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
+                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, executable, startInfo.EnvironmentVariables);
             }
 
             startInfo.UseShellExecute = false;
