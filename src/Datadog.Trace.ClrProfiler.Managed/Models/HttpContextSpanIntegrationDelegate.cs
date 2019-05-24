@@ -88,11 +88,11 @@ namespace Datadog.Trace.ClrProfiler.Models
         { // TODO: This will need to be moved out into a strategy to support extending to other integrations...
             var httpMethod = (GetHttpMethod() ?? Scope?.Span?.GetHttpMethod() ?? "GET").ToUpperInvariant();
 
-            var suffix = _httpContext.Request == null
-                             ? string.Empty
-                             : _httpContext.Request.Path ?? _httpContext.Request.RawUrl ?? string.Empty;
+            string suffix = _httpContext.Request?.Url == null
+                                ? string.Empty
+                                : UriHelpers.CleanUri(_httpContext.Request.Url, removeScheme: true, tryRemoveIds: true);
 
-            resourceName = string.Concat(httpMethod, " ", suffix.ToLowerInvariant()).Trim();
+            resourceName = $"{httpMethod} {suffix}";
 
             return true;
         }

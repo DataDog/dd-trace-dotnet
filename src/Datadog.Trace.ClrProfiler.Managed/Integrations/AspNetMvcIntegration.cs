@@ -78,7 +78,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                         if (route != null)
                         {
-                            resourceName = $"{httpMethod} {route.Url}";
+                            var topLevelHost = httpContext.Request.Url?.Authority;
+                            resourceName = $"{httpMethod} {topLevelHost}{route.Url}";
                         }
                     }
                 }
