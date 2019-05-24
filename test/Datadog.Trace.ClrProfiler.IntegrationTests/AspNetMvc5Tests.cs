@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 HttpStatusCode.OK,
                 "web",
                 "aspnet-mvc.request",
-                $"{expectedVerb} localhost:{_iisFixture.HttpPort}/{expectedResourceSuffix}");
+                $"{expectedVerb} {expectedResourceSuffix}");
         }
     }
 }
