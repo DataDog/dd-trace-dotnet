@@ -42,7 +42,7 @@ namespace Datadog.Trace.TestHelpers
             string disabledIntegrations = null)
         {
             SampleName = sampleName;
-            _samplesDirectory = samplesDirectory;
+            _samplesDirectory = samplesDirectory ?? "samples";
             _disabledIntegrations = disabledIntegrations;
             _anchorType = anchorType;
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
