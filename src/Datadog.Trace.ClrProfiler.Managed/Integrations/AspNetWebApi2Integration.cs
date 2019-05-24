@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -158,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
                 else if (req?.RequestUri != null)
                 {
-                    var cleanUri = UriHelpers.CleanUri(req?.RequestUri, removeScheme: true, tryRemoveIds: true);
+                    var cleanUri = UriHelpers.GetRelativeUrl(req?.RequestUri, tryRemoveIds: true);
                     resourceName = $"{method} {cleanUri}";
                 }
 
@@ -176,14 +175,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
-                span.ResourceName = resourceName;
-                span.Type = SpanTypes.Web;
+                span.DecorateWebSpan(
+                    resourceName: resourceName,
+                    method: method,
+                    host: host,
+                    httpUrl: rawUrl);
                 span.SetTag(Tags.AspNetAction, action);
                 span.SetTag(Tags.AspNetController, controller);
                 span.SetTag(Tags.AspNetRoute, route);
-                span.SetTag(Tags.HttpMethod, method);
-                span.SetTag(Tags.HttpRequestHeadersHost, host);
-                span.SetTag(Tags.HttpUrl, rawUrl);
             }
             catch (Exception ex)
             {

@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
                 {
-                    var cleanUri = UriHelpers.CleanUri(httpContext.Request.Url, removeScheme: true, tryRemoveIds: true);
+                    var cleanUri = UriHelpers.GetRelativeUrl(httpContext.Request.Url, tryRemoveIds: true);
                     resourceName = $"{httpMethod} {cleanUri}";
                 }
 
@@ -118,11 +118,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
                 Span span = scope.Span;
-                span.Type = SpanTypes.Web;
-                span.ResourceName = resourceName;
-                span.SetTag(Tags.HttpRequestHeadersHost, host);
-                span.SetTag(Tags.HttpMethod, httpMethod);
-                span.SetTag(Tags.HttpUrl, url);
+                span.DecorateWebSpan(
+                    resourceName: resourceName,
+                    method: httpMethod,
+                    host: host,
+                    httpUrl: url);
                 span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);

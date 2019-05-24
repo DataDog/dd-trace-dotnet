@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.Models
 
             string suffix = _httpContext.Request?.Url == null
                                 ? string.Empty
-                                : UriHelpers.CleanUri(_httpContext.Request.Url, removeScheme: true, tryRemoveIds: true);
+                                : UriHelpers.GetRelativeUrl(_httpContext.Request.Url, tryRemoveIds: true);
 
             resourceName = $"{httpMethod} {suffix}";
 

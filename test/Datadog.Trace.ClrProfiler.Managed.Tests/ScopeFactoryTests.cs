@@ -1,4 +1,5 @@
 using System;
+using Datadog.Trace.ClrProfiler.Integrations;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests

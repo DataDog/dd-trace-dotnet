@@ -9,10 +9,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public static string CleanUri(Uri uri, bool removeScheme, bool tryRemoveIds)
         {
-            // try to remove segments that look like ids
-            string path = tryRemoveIds
-                              ? string.Concat(uri.Segments.Select(CleanUriSegment))
-                              : uri.AbsolutePath;
+            var path = GetRelativeUrl(uri, tryRemoveIds);
 
             if (removeScheme)
             {
@@ -26,8 +23,22 @@ namespace Datadog.Trace.ClrProfiler
             return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
         }
 
+        public static string GetRelativeUrl(Uri uri, bool tryRemoveIds)
+        {
+            // try to remove segments that look like ids
+            string path = tryRemoveIds
+                              ? string.Concat(uri.Segments.Select(CleanUriSegment))
+                              : uri.AbsolutePath;
+            return path;
+        }
+
         public static string CleanUriSegment(string segment)
         {
+            if (string.IsNullOrWhiteSpace(segment))
+            {
+                return string.Empty;
+            }
+
             bool hasTrailingSlash = segment.EndsWith("/", StringComparison.Ordinal);
 
             // remove trailing slash
