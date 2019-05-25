@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.Models
                                 ? string.Empty
                                 : UriHelpers.GetRelativeUrl(_httpContext.Request.Url, tryRemoveIds: true);
 
-            resourceName = $"{httpMethod} {suffix}";
+            resourceName = $"{httpMethod} {suffix.ToLowerInvariant()}";
 
             return true;
         }

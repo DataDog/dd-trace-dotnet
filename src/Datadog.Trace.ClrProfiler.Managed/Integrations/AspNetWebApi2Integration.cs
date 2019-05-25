@@ -149,16 +149,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
-                string resourceName = $"{method} {absoluteUri}";
+                string resourceName = $"{method} {absoluteUri.ToLowerInvariant()}";
 
                 if (route != null)
                 {
-                    resourceName = $"{method} {route}";
+                    resourceName = $"{method} {route.ToLowerInvariant()}";
                 }
                 else if (req?.RequestUri != null)
                 {
                     var cleanUri = UriHelpers.GetRelativeUrl(req?.RequestUri, tryRemoveIds: true);
-                    resourceName = $"{method} {cleanUri}";
+                    resourceName = $"{method} {cleanUri.ToLowerInvariant()}";
                 }
 
                 string controller = string.Empty;

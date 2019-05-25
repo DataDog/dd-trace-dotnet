@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                         if (route != null)
                         {
-                            resourceName = $"{httpMethod} {route.Url}";
+                            resourceName = $"{httpMethod} {route.Url.ToLowerInvariant()}";
                         }
                     }
                 }
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
                 {
                     var cleanUri = UriHelpers.GetRelativeUrl(httpContext.Request.Url, tryRemoveIds: true);
-                    resourceName = $"{httpMethod} {cleanUri}";
+                    resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
                 }
 
                 string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
