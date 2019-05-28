@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.ExtensionMethods
             string httpUrl)
         {
             span.Type = SpanTypes.Web;
-            span.ResourceName = resourceName.Trim();
+            span.ResourceName = resourceName?.Trim();
             span.SetTag(Tags.HttpMethod, method);
             span.SetTag(Tags.HttpRequestHeadersHost, host);
             span.SetTag(Tags.HttpUrl, httpUrl);
