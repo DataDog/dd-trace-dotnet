@@ -99,6 +99,8 @@
   <ItemGroup>
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="Areas\Datadog\Controllers\DogHouseController.cs" />
+    <Compile Include="Areas\Datadog\DatadogAreaRegistration.cs" />
     <Compile Include="Controllers\ContactsController.cs" />
     <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Controllers\DistributedTracingApiController.cs" />
@@ -113,6 +115,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\web.config" />
+    <Content Include="Areas\Datadog\Views\web.config" />
+    <Content Include="Areas\Datadog\Views\_ViewStart.cshtml" />
+    <Content Include="Areas\Datadog\Views\Shared\_Layout.cshtml" />
+    <Content Include="Areas\Datadog\Views\DogHouse\Index.cshtml" />
     <None Include="packages.config" />
     <Content Include="Views\_Layout.cshtml" />
     <Content Include="Views\_ViewStart.cshtml" />
@@ -132,6 +138,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Areas\Datadog\Models\" />
     <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>

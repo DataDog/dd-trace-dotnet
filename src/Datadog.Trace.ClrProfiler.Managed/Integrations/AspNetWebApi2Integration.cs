@@ -176,6 +176,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
+                // Fail safe to catch templates in routing values
+                resourceName =
+                    resourceName
+                       .Replace("{controller}", controller)
+                       .Replace("{action}", action);
+
                 span.DecorateWebSpan(
                     resourceName: resourceName,
                     method: method,
