@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -138,6 +139,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 string host = req?.Headers?.Host ?? string.Empty;
                 string rawUrl = req?.RequestUri?.ToString().ToLowerInvariant() ?? string.Empty;
+                string absoluteUri = req?.RequestUri?.AbsoluteUri?.ToLowerInvariant() ?? string.Empty;
                 string method = controllerContext?.Request?.Method?.Method?.ToUpperInvariant() ?? "GET";
                 string route = null;
                 try
@@ -148,10 +150,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
-                string resourceName = $"{method} {rawUrl}";
+                string resourceName = $"{method} {absoluteUri.ToLowerInvariant()}";
+
                 if (route != null)
                 {
-                    resourceName = $"{method} {route}";
+                    resourceName = $"{method} {route.ToLowerInvariant()}";
+                }
+                else if (req?.RequestUri != null)
+                {
+                    var cleanUri = UriHelpers.GetRelativeUrl(req?.RequestUri, tryRemoveIds: true);
+                    resourceName = $"{method} {cleanUri.ToLowerInvariant()}";
                 }
 
                 string controller = string.Empty;
@@ -168,14 +176,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                 }
 
-                span.ResourceName = resourceName;
-                span.Type = SpanTypes.Web;
+                // Fail safe to catch templates in routing values
+                resourceName =
+                    resourceName
+                       .Replace("{controller}", controller)
+                       .Replace("{action}", action);
+
+                span.DecorateWebSpan(
+                    resourceName: resourceName,
+                    method: method,
+                    host: host,
+                    httpUrl: rawUrl);
                 span.SetTag(Tags.AspNetAction, action);
                 span.SetTag(Tags.AspNetController, controller);
                 span.SetTag(Tags.AspNetRoute, route);
-                span.SetTag(Tags.HttpMethod, method);
-                span.SetTag(Tags.HttpRequestHeadersHost, host);
-                span.SetTag(Tags.HttpUrl, rawUrl);
             }
             catch (Exception ex)
             {

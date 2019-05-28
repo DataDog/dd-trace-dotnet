@@ -67,20 +67,39 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         /// <param name="count">The expected number of spans.</param>
         /// <param name="timeoutInMilliseconds">The timeout</param>
+        /// <param name="operationName">The integration we're testing</param>
         /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <returns>The list of spans.</returns>
-        public IImmutableList<Span> WaitForSpans(int count, int timeoutInMilliseconds = 20000, DateTime? minDateTime = null)
+        public IImmutableList<Span> WaitForSpans(
+            int count,
+            int timeoutInMilliseconds = 20000,
+            string operationName = null,
+            DateTime? minDateTime = null)
         {
             var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
 
-            var minimumOffset = new DateTimeOffset(minDateTime ?? DateTime.MinValue).ToUnixTimeNanoseconds();
+            var minimumOffset =
+                new DateTimeOffset(minDateTime ?? DateTime.MinValue).ToUnixTimeNanoseconds();
 
-            while (DateTime.Now < deadline && Spans.Count(s => s.Start > minimumOffset) < count)
+            IImmutableList<Span> relevantSpans = null;
+
+            while (DateTime.Now < deadline)
             {
+                relevantSpans =
+                    Spans
+                       .Where(s => s.Start > minimumOffset)
+                       .Where(s => operationName == null || s.Name == operationName)
+                       .ToImmutableList();
+
+                if (relevantSpans.Count >= count)
+                {
+                    break;
+                }
+
                 Thread.Sleep(500);
             }
 
-            return Spans.Where(s => s.Start > minimumOffset).ToImmutableList();
+            return relevantSpans;
         }
 
         public void Dispose()

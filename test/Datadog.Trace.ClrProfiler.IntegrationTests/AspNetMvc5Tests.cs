@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly IisFixture _iisFixture;
 
         public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output)
-            : base("AspNetMvc5", output)
+            : base("AspNetMvc5", "samples-aspnet", output)
         {
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
@@ -22,12 +22,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [InlineData("/Home/Index", "GET home.index")]
-        [InlineData("/delay/0", "GET home.delay")]
-        [InlineData("/delay-async/0", "GET home.delayasync")]
+        [InlineData("/Home/Index", "GET", "home/index")]
+        [InlineData("/delay/0", "GET", "home/delay/{seconds}")]
+        [InlineData("/delay-async/0", "GET", "home/delayasync/{seconds}")]
         public async Task SubmitsTraces(
             string path,
-            string expectedResourceName)
+            string expectedVerb,
+            string expectedResourceSuffix)
         {
             await AssertHttpSpan(
                 path,
@@ -36,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 HttpStatusCode.OK,
                 "web",
                 "aspnet-mvc.request",
-                expectedResourceName);
+                $"{expectedVerb} {expectedResourceSuffix}");
         }
     }
 }

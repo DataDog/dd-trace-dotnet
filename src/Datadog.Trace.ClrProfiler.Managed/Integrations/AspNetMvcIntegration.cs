@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Web;
 using System.Web.Routing;
+using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -59,6 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string host = httpContext.Request.Headers.Get("Host");
                 string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
                 string url = httpContext.Request.RawUrl.ToLowerInvariant();
+                string resourceName = null;
 
                 RouteData routeData = controllerContext.RouteData as RouteData;
                 Route route = routeData?.Route as Route;
@@ -74,12 +76,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         // get route and routeValues from the RouteData in routeMatches
                         route = routeMatches[0].Route as Route;
                         routeValues = routeMatches[0].Values;
+
+                        if (route != null)
+                        {
+                            resourceName = $"{httpMethod} {route.Url.ToLowerInvariant()}";
+                        }
                     }
+                }
+
+                if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
+                {
+                    var cleanUri = UriHelpers.GetRelativeUrl(httpContext.Request.Url, tryRemoveIds: true);
+                    resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
                 }
 
                 string controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                 string actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                string resourceName = $"{httpMethod} {controllerName}.{actionName}";
+
+                if (string.IsNullOrEmpty(resourceName))
+                {
+                    // Keep the legacy resource name, just to have something
+                    resourceName = $"{httpMethod} {controllerName}.{actionName}";
+                }
 
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
@@ -100,11 +118,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
                 Span span = scope.Span;
-                span.Type = SpanTypes.Web;
-                span.ResourceName = resourceName;
-                span.SetTag(Tags.HttpRequestHeadersHost, host);
-                span.SetTag(Tags.HttpMethod, httpMethod);
-                span.SetTag(Tags.HttpUrl, url);
+
+                // Fail safe to catch templates in routing values
+                resourceName =
+                    resourceName
+                       .Replace("{controller}", controllerName)
+                       .Replace("{action}", actionName);
+
+                span.DecorateWebSpan(
+                    resourceName: resourceName,
+                    method: httpMethod,
+                    host: host,
+                    httpUrl: url);
                 span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);

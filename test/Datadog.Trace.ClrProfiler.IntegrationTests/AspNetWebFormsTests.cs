@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         // NOTE: Would pass this in addition to the name/output to the new constructor if we removed the Samples.WebForms copied project in favor of the demo repo source project...
         // $"../dd-trace-demo/dotnet-coffeehouse/Datadog.Coffeehouse.WebForms",
         public AspNetWebFormsTests(IisFixture iisFixture, ITestOutputHelper output)
-            : base("WebForms", "samples-aspnet/Samples.WebForms", output)
+            : base("WebForms", "samples-aspnet", output)
         {
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);

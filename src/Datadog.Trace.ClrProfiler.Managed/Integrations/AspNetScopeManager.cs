@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var current = Active;
 
-            if (current != scope && current == scope)
+            if (current != null && current == scope)
             {
                 // if the scope that was just closed was the active scope,
                 // set its parent as the new active scope

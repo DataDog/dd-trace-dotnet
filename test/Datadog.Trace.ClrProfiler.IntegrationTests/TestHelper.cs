@@ -19,13 +19,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private readonly EnvironmentHelper _environmentHelper;
 
-        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
+        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, string disabledIntegrations = null)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides, disabledIntegrations), output)
         {
         }
 
-        protected TestHelper(string sampleAppName, ITestOutputHelper output)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output), output)
+        protected TestHelper(string sampleAppName, ITestOutputHelper output, string disabledIntegrations = null)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, disabledIntegrations), output)
         {
         }
 
@@ -100,21 +100,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public Process StartIISExpress(int traceAgentPort, int iisPort)
         {
-            var sampleDir = string.IsNullOrEmpty(PathToSample)
-                                ? Path.Combine(
-                                    EnvironmentHelper.GetSolutionDirectory(),
-                                               "samples-aspnet",
-                                               $"Samples.{SampleAppName}")
-                                : PathToSample;
-
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
-            var exe = $"C:\\Program Files{(Environment.Is64BitProcess ? string.Empty : " (x86)")}\\IIS Express\\iisexpress.exe";
+            var exe = _environmentHelper.GetSampleExecutionSource();
             var args = new string[]
                 {
                     $"/clr:v4.0",
-                    $"/path:{sampleDir}",
+                    $"/path:{_environmentHelper.GetSampleProjectDirectory()}",
                     $"/systray:false",
                     $"/port:{iisPort}",
                     $"/trace:info",
@@ -242,7 +235,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Output.WriteLine($"[http] {response.StatusCode} {content}");
                 Assert.Equal(expectedHttpStatusCode, response.StatusCode);
 
-                spans = agent.WaitForSpans(1, minDateTime: testStart);
+                spans = agent.WaitForSpans(
+                    count: 1,
+                    minDateTime: testStart,
+                    operationName: expectedOperationName);
+
                 Assert.True(spans.Count == 1, "expected one span");
             }
 

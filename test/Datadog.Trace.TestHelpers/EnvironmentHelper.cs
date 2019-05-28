@@ -26,6 +26,7 @@ namespace Datadog.Trace.TestHelpers
         private readonly string _runtime;
         private readonly bool _isCoreClr;
         private readonly string _samplesDirectory;
+        private readonly string _disabledIntegrations;
         private readonly Type _anchorType;
         private readonly Assembly _anchorAssembly;
         private readonly TargetFrameworkAttribute _targetFramework;
@@ -37,10 +38,12 @@ namespace Datadog.Trace.TestHelpers
             string sampleName,
             Type anchorType,
             ITestOutputHelper output,
-            string samplesDirectory = "samples")
+            string samplesDirectory = "samples",
+            string disabledIntegrations = null)
         {
             SampleName = sampleName;
-            _samplesDirectory = samplesDirectory;
+            _samplesDirectory = samplesDirectory ?? "samples";
+            _disabledIntegrations = disabledIntegrations;
             _anchorType = anchorType;
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = _anchorAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
@@ -135,6 +138,7 @@ namespace Datadog.Trace.TestHelpers
                 // Datadog
                 "DD_PROFILER_PROCESSES",
                 "DD_INTEGRATIONS",
+                "DD_DISABLED_INTEGRATIONS",
                 "DATADOG_PROFILER_PROCESSES",
                 "DATADOG_INTEGRATIONS",
             };
@@ -180,6 +184,11 @@ namespace Datadog.Trace.TestHelpers
                 {
                     environmentVariables[name] = value;
                 }
+            }
+
+            if (_disabledIntegrations != null)
+            {
+                environmentVariables["DD_DISABLED_INTEGRATIONS"] = _disabledIntegrations;
             }
         }
 
@@ -286,27 +295,67 @@ namespace Datadog.Trace.TestHelpers
 
         public string GetSampleApplicationPath()
         {
-            var appFileName = EnvironmentHelper.IsCoreClr()
-                                  ? $"Samples.{SampleName}.dll"
-                                  : $"Samples.{SampleName}.exe";
+            string extension = "exe";
+
+            if (EnvironmentHelper.IsCoreClr() || _samplesDirectory.Contains("aspnet"))
+            {
+                extension = "dll";
+            }
+
+            var appFileName = $"Samples.{SampleName}.{extension}";
             var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(), appFileName);
             return sampleAppPath;
         }
 
-        public string GetSampleApplicationOutputDirectory()
+        public string GetSampleExecutionSource()
+        {
+            string executor;
+
+            if (_samplesDirectory.Contains("aspnet"))
+            {
+                executor = $"C:\\Program Files{(Environment.Is64BitProcess ? string.Empty : " (x86)")}\\IIS Express\\iisexpress.exe";
+            }
+            else if (EnvironmentHelper.IsCoreClr())
+            {
+                executor = IsWindows() ? "dotnet.exe" : "dotnet";
+            }
+            else
+            {
+                var appFileName = $"Samples.{SampleName}.exe";
+                executor = Path.Combine(GetSampleApplicationOutputDirectory(), appFileName);
+
+                if (!File.Exists(executor))
+                {
+                    throw new Exception($"Unable to find executing assembly at {executor}");
+                }
+            }
+
+            return executor;
+        }
+
+        public string GetSampleProjectDirectory()
         {
             var solutionDirectory = GetSolutionDirectory();
-            var sampleDirectory = $"Samples.{SampleName}";
-
-            var binDir = Path.Combine(
+            var projectDir = Path.Combine(
                 solutionDirectory,
                 _samplesDirectory,
-                sampleDirectory,
+                $"Samples.{SampleName}");
+            return projectDir;
+        }
+
+        public string GetSampleApplicationOutputDirectory()
+        {
+            var binDir = Path.Combine(
+                GetSampleProjectDirectory(),
                 "bin");
 
             string outputDir;
 
-            if (EnvironmentHelper.GetOS() == "win")
+            if (_samplesDirectory.Contains("aspnet"))
+            {
+                outputDir = binDir;
+            }
+            else if (EnvironmentHelper.GetOS() == "win")
             {
                 outputDir = Path.Combine(
                     binDir,

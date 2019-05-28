@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -43,6 +44,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 _httpContext = httpContext;
                 string httpMethod = null;
+                string resourceName = null;
+                string host = null;
+                string url = null;
 
                 if (actionDescriptor.TryGetPropertyValue("ControllerName", out string controllerName))
                 {
@@ -65,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     httpMethod = "UNKNOWN";
                 }
 
-                string url = GetDisplayUrl(request).ToLowerInvariant();
+                GetTagValuesFromRequest(request, out host, out resourceName, out url);
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
 
@@ -99,10 +103,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 _scope = tracer.StartActive(OperationName, propagatedContext);
                 var span = _scope.Span;
 
-                span.Type = SpanTypes.Web;
-                span.ResourceName = $"{httpMethod} {controllerName}.{actionName}";
-                span.SetTag(Tags.HttpMethod, httpMethod);
-                span.SetTag(Tags.HttpUrl, url);
+                if (string.IsNullOrEmpty(resourceName))
+                {
+                    // a legacy fail safe to be removed
+                    resourceName = $"{httpMethod} {controllerName}.{actionName}";
+                }
+
+                span.DecorateWebSpan(
+                    resourceName: resourceName,
+                    method: httpMethod,
+                    host: host,
+                    httpUrl: url);
+
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
 
@@ -353,10 +365,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static string GetDisplayUrl(object request)
+        private static void GetTagValuesFromRequest(
+            object request,
+            out string host,
+            out string resourceName,
+            out string fullUrl)
         {
             if (!request.TryGetPropertyValue("Host", out object hostObject) ||
-                !hostObject.TryGetPropertyValue("Value", out string host))
+                !hostObject.TryGetPropertyValue("Value", out host))
             {
                 host = string.Empty;
             }
@@ -384,7 +400,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scheme = string.Empty;
             }
 
-            return $"{scheme}://{host}{pathBase}{path}{queryString}";
+            resourceName = $"{UriHelpers.CleanUriSegment(pathBase)}{UriHelpers.CleanUriSegment(path)}".ToLowerInvariant();
+            fullUrl = $"{scheme}://{host}{pathBase}{path}{queryString}".ToLowerInvariant();
         }
 
         private bool DisposeObject(IDisposable disposable)

@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly IisFixture _iisFixture;
 
         public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output)
-            : base("AspNetMvc4", output)
+            : base("AspNetMvc4", "samples-aspnet", output)
         {
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
