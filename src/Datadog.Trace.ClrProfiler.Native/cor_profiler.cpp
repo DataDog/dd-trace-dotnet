@@ -352,11 +352,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
             method_replacement.wrapper_method.method_signature
                 .NumberOfTypeArguments()) {
 
-          // Number of generic arguments should always match
+          // Number of generic arguments does not match our wrapper method
           continue;
         }
 
-      // we need to emit a method spec to populate the generic arguments
+        // we need to emit a method spec to populate the generic arguments
         wrapper_method_ref =
             DefineMethodSpec(module_metadata->metadata_emit, wrapper_method_ref,
                              target.signature);
