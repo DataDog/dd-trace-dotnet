@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Web;
 using System.Web.Routing;
+using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
