@@ -248,8 +248,7 @@ struct FunctionInfo {
         name(name),
         type(type),
         is_generic(false),
-        signature(signature),
-        function_spec_signature(function_spec_signature) {}
+        signature(signature) {}
 
   bool IsValid() const { return id != 0; }
 };
