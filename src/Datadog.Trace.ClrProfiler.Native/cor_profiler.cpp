@@ -326,25 +326,37 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      // make sure the calling convention matches
-      if (!method_replacement.target_method.method_signature.data.empty() &&
-          method_replacement.target_method.method_signature
-                  .CallingConvention() !=
-              target.signature.CallingConvention()) {
+      if (method_replacement.wrapper_method.method_signature.data.size() < 3) {
+        // This is invalid, we should always have the wrapper fully defined 
+        // Minimum: 0:{CallingConvention}|1:{ParamCount}|2:{ReturnType}
+        // Drop out for safety
         continue;
       }
 
-      // make sure the number of arguments match
-      if (method_replacement.target_method.method_signature.data.size() > 1 &&
-          method_replacement.target_method.method_signature
-                  .NumberOfArguments() !=
-              target.signature.NumberOfArguments()) {
+      auto expected_number_args =
+          method_replacement.wrapper_method.method_signature.NumberOfArguments();
+
+      if (target.signature.IsInstanceMethod()) {
+        // We always pass the instance as the first argument
+        expected_number_args--;
+      }
+
+      if (expected_number_args != target.signature.NumberOfArguments()) {
+        // Number of arguments does not match our wrapper method
         continue;
       }
+
+      if (target.is_generic) {
+
+        if (target.signature.NumberOfTypeArguments() !=
+            method_replacement.wrapper_method.method_signature
+                .NumberOfTypeArguments()) {
+
+          // Number of generic arguments should always match
+          continue;
+        }
 
       // we need to emit a method spec to populate the generic arguments
-      if (method_replacement.wrapper_method.method_signature
-              .NumberOfTypeArguments() > 0) {
         wrapper_method_ref =
             DefineMethodSpec(module_metadata->metadata_emit, wrapper_method_ref,
                              target.signature);

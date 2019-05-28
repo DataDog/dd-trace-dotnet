@@ -92,6 +92,16 @@ AssemblyMetadata GetReferencedAssemblyMetadata(
       assembly_metadata.usBuildNumber, assembly_metadata.usRevisionNumber);
 }
 
+std::vector<BYTE> GetSignatureByteRepresentation(
+    ULONG signature_length, PCCOR_SIGNATURE raw_signature) {
+  std::vector<BYTE> signature_data(signature_length);
+  for (ULONG i = 0; i < signature_length; i++) {
+    signature_data[i] = raw_signature[i];
+  }
+
+  return signature_data;
+}
+
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                              const mdToken& token) {
   mdToken parent_token = mdTokenNil;
@@ -100,6 +110,8 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
 
   PCCOR_SIGNATURE raw_signature;
   ULONG raw_signature_len;
+  BOOL is_generic = false;
+  std::vector<BYTE> generic_signature_bytes;
 
   HRESULT hr = E_FAIL;
   const auto token_type = TypeFromToken(token);
@@ -118,10 +130,13 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
     case mdtMethodSpec: {
       hr = metadata_import->GetMethodSpecProps(
           token, &parent_token, &raw_signature, &raw_signature_len);
+      is_generic = true;
       if (FAILED(hr)) {
         return {};
       }
       auto generic_info = GetFunctionInfo(metadata_import, parent_token);
+      generic_signature_bytes =
+          GetSignatureByteRepresentation(raw_signature_len, raw_signature);
       std::memcpy(function_name, generic_info.name.c_str(),
                   sizeof(WCHAR) * (generic_info.name.length() + 1));
       function_name_len = (DWORD)(generic_info.name.length() + 1);
@@ -133,16 +148,21 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
     return {};
   }
 
-  std::vector<BYTE> signature_data(raw_signature_len);
-  for (ULONG i = 0; i < raw_signature_len; i++) {
-    signature_data[i] = raw_signature[i];
-  }
+  const auto signature_bytes =
+      GetSignatureByteRepresentation(raw_signature_len, raw_signature);
 
   // parent_token could be: TypeDef, TypeRef, TypeSpec, ModuleRef, MethodDef
   const auto type_info = GetTypeInfo(metadata_import, parent_token);
 
+  if (is_generic) {
+    // use the generic constructor and feed both method signatures
+    return {token, WSTRING(function_name), type_info,
+            MethodSignature(generic_signature_bytes),
+            MethodSignature(signature_bytes)};
+  }
+
   return {token, WSTRING(function_name), type_info,
-          MethodSignature(signature_data)};
+          MethodSignature(signature_bytes)};
 }
 
 ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {

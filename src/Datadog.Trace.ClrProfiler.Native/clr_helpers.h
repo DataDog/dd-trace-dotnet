@@ -226,12 +226,30 @@ struct FunctionInfo {
   const mdToken id;
   const WSTRING name;
   const TypeInfo type;
+  const BOOL is_generic;
   const MethodSignature signature;
+  const MethodSignature function_spec_signature;
 
-  FunctionInfo() : id(0), name(""_W), type({}), signature() {}
+  FunctionInfo() : id(0), name(""_W), type({}), is_generic(false) {}
+
+  FunctionInfo(mdToken id, WSTRING name, TypeInfo type,
+               MethodSignature signature,
+               MethodSignature function_spec_signature)
+      : id(id),
+        name(name),
+        type(type),
+        is_generic(true),
+        signature(signature),
+        function_spec_signature(function_spec_signature) {}
+
   FunctionInfo(mdToken id, WSTRING name, TypeInfo type,
                MethodSignature signature)
-      : id(id), name(name), type(type), signature(signature) {}
+      : id(id),
+        name(name),
+        type(type),
+        is_generic(false),
+        signature(signature),
+        function_spec_signature(function_spec_signature) {}
 
   bool IsValid() const { return id != 0; }
 };
