@@ -64,6 +64,14 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     }
   }
 
+  // get Profiler interface
+  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
+      &this->info_);
+  if (FAILED(hr)) {
+    Warn("Failed to attach profiler: interface ICorProfilerInfo3 not found.");
+    return E_FAIL;
+  }
+
   // get path to integration definition JSON files
   const WSTRING integrations_paths =
       GetEnvironmentValue(environment::integrations_path);
@@ -89,14 +97,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // check if there are any enabled integrations left
   if (integrations_.empty()) {
     Warn("Profiler disabled: no enabled integrations found.");
-    return E_FAIL;
-  }
-
-  // get Profiler interface
-  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
-      &this->info_);
-  if (FAILED(hr)) {
-    Warn("Failed to attach profiler: interface ICorProfilerInfo3 not found.");
     return E_FAIL;
   }
 
