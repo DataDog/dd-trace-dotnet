@@ -52,15 +52,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
-        public string GetSampleApplicationPath()
+        public string GetSampleApplicationPath(string packageVersion = "")
         {
-            return _environmentHelper.GetSampleApplicationPath();
+            return _environmentHelper.GetSampleApplicationPath(packageVersion);
         }
 
-        public Process StartSample(int traceAgentPort, string arguments = null)
+        public Process StartSample(int traceAgentPort, string arguments, string packageVersion)
         {
             // get path to sample app that the profiler will attach to
-            string sampleAppPath = GetSampleApplicationPath();
+            string sampleAppPath = GetSampleApplicationPath(packageVersion);
             if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
@@ -76,9 +76,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 traceAgentPort: traceAgentPort);
         }
 
-        public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, string arguments = null)
+        public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, string arguments = null, string packageVersion = "")
         {
-            Process process = StartSample(traceAgentPort, arguments);
+            Process process = StartSample(traceAgentPort, arguments, packageVersion);
 
             string standardOutput = process.StandardOutput.ReadToEnd();
             string standardError = process.StandardError.ReadToEnd();

@@ -1,0 +1,82 @@
+<Project>
+  <ItemGroup>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.8.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.8.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.7.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.7.3</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.7.2</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.7.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.6.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.6.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.5.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.5.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.4.4</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.4.3</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.4.2</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.4.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.4.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.3.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.2.4</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.2.3</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.2.2</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.2.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.2.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.1.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.1.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.0.2</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.0.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
+      <ApiVersion>2.0.0</ApiVersion>
+    </PackageVersionSample>
+  </ItemGroup>
+</Project>

@@ -8,6 +8,8 @@
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
   </ItemGroup>
 
+  <Import Project="PackageVersions.g.props" />
+
   <Target Name="Restore">
     <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject)"/>
   </Target>
@@ -47,7 +49,11 @@
     </MSBuild>
   </Target>
 
-  <Target Name="BuildSamples">
+  <Target Name="RestoreAndBuildSamplesForPackageVersions">
+    <Exec Command="dotnet publish -f netcoreapp2.1 -p:ApiVersion=%(PackageVersionSample.ApiVersion) %(PackageVersionSample.Identity)" />
+  </Target>
+
+  <Target Name="BuildSamples" DependsOnTargets="RestoreAndBuildSamplesForPackageVersions">
     <MSBuild Targets="Build" Projects="@(SampleProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>

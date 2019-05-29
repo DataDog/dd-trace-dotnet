@@ -3,6 +3,9 @@
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.8.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'>='2.7.0'">$(DefineConstants);MONGODB_2_7</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'>='2.2.0'">$(DefineConstants);MONGODB_2_2</DefineConstants>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
