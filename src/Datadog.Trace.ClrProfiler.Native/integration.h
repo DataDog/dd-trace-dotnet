@@ -128,7 +128,7 @@ struct MethodSignature {
   const std::vector<BYTE> data;
 
   MethodSignature() {}
-  MethodSignature(const std::vector<BYTE> data) : data(data) {}
+  MethodSignature(const std::vector<BYTE>& data) : data(data) {}
 
   inline bool operator==(const MethodSignature& other) const {
     return data == other.data;
