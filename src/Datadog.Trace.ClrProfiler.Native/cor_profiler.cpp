@@ -202,23 +202,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                    assembly_emit);
 
   for (const auto& integration : filtered_integrations) {
-      // for each wrapper assembly, emit an assembly reference
-      hr = metadata_builder.EmitAssemblyRef(
-          integration.replacement.wrapper_method.assembly);
-      if (FAILED(hr)) {
-        Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-             ". Failed to emit wrapper assembly ref.");
-        return S_OK;
-      }
+    // for each wrapper assembly, emit an assembly reference
+    hr = metadata_builder.EmitAssemblyRef(
+        integration.replacement.wrapper_method.assembly);
+    if (FAILED(hr)) {
+      Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+           ". Failed to emit wrapper assembly ref.");
+      return S_OK;
+    }
 
-      // for each method replacement in each enabled integration,
-      // emit a reference to the instrumentation wrapper methods
-      hr = metadata_builder.StoreWrapperMethodRef(integration.replacement);
-      if (FAILED(hr)) {
-        Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-             ". Failed to emit and store wrapper method ref.");
-        return S_OK;
-      }
+    // for each method replacement in each enabled integration,
+    // emit a reference to the instrumentation wrapper methods
+    hr = metadata_builder.StoreWrapperMethodRef(integration.replacement);
+    if (FAILED(hr)) {
+      Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+           ". Failed to emit and store wrapper method ref.");
+      return S_OK;
+    }
   }
 
   // store module info for later lookup
