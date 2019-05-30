@@ -288,6 +288,8 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
                               const mdToken& token,
                               const MethodSignature& signature);
 
+bool DisableOptimizations();
+
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_CLR_HELPERS_H_
