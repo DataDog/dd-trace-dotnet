@@ -38,9 +38,9 @@ const WSTRING env = "DD_ENV"_W;
 // from application name (e.g. entry assembly or IIS application name).
 const WSTRING service_name = "DD_SERVICE_NAME"_W;
 
-// Sets a list of integrations to disable. All other integrations will remain enabled.
-// If not set (default), all integrations are enabled.
-// Supports multiple values separated with semi-colons, for example:
+// Sets a list of integrations to disable. All other integrations will remain
+// enabled. If not set (default), all integrations are enabled. Supports
+// multiple values separated with semi-colons, for example:
 // "ElasticsearchNet;AspNetWebApi2"
 const WSTRING disabled_integrations = "DD_DISABLED_INTEGRATIONS"_W;
 
@@ -49,6 +49,13 @@ const WSTRING disabled_integrations = "DD_DISABLED_INTEGRATIONS"_W;
 // "%ProgramData%"\Datadog .NET Tracer\logs\dotnet-profiler.log" on Windows or
 // "/var/log/datadog/dotnet-profiler.log" on Linux.
 const WSTRING log_path = "DD_TRACE_LOG_PATH"_W;
+
+// Sets whether to disable all optimizations.
+// Default is false on Windows.
+// Default is true on Linux to work around a bug in the JIT compiler.
+// https://github.com/dotnet/coreclr/issues/24676
+// https://github.com/dotnet/coreclr/issues/12468
+const WSTRING clr_disable_optimizations = "DD_CLR_DISABLE_OPTIMIZATIONS"_W;
 
 }  // namespace environment
 }  // namespace trace

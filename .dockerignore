@@ -1,4 +1,11 @@
-.git/
 test/
-.vs/
 deploy/
+
+.circleci/
+.git/
+.github/
+.vs/
+.vscode/
+packages/
+**/bin/
+**/obj/

@@ -2,8 +2,10 @@
 
 #include <cstring>
 
+#include "environment_variables.h"
 #include "logging.h"
 #include "macros.h"
+#include "pal.h"
 
 namespace trace {
 
@@ -340,4 +342,26 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
   return spec;
 }
 
+bool DisableOptimizations() {
+  const auto clr_optimizations_enabled =
+      GetEnvironmentValue(environment::clr_disable_optimizations);
+
+  if (clr_optimizations_enabled == "1"_W ||
+      clr_optimizations_enabled == "true"_W) {
+    return true;
+  }
+
+  if (clr_optimizations_enabled == "0"_W ||
+      clr_optimizations_enabled == "false"_W) {
+    return false;
+  }
+
+#ifdef _WIN32
+  // default to false on Windows
+  return false;
+#else
+  // default to true on Linux
+  return true;
+#endif
+}
 }  // namespace trace

@@ -34,7 +34,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                         environment::agent_port,
                         environment::env,
                         environment::service_name,
-                        environment::disabled_integrations};
+                        environment::disabled_integrations,
+                        environment::clr_disable_optimizations};
 
   for (auto&& env_var : env_vars) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
@@ -62,6 +63,14 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
            environment::process_names, ".");
       return E_FAIL;
     }
+  }
+
+  // get Profiler interface
+  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
+      &this->info_);
+  if (FAILED(hr)) {
+    Warn("Failed to attach profiler: interface ICorProfilerInfo3 not found.");
+    return E_FAIL;
   }
 
   // get path to integration definition JSON files
@@ -92,16 +101,18 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  // get Profiler interface
-  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
-      &this->info_);
-  if (FAILED(hr)) {
-    Warn("Failed to attach profiler: interface ICorProfilerInfo3 not found.");
-    return E_FAIL;
+  DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
+                     COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
+                     COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
+                     COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+
+  if (DisableOptimizations()) {
+    Info("Disabling all code optimizations.");
+    event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
   }
 
   // set event mask to subscribe to events and disable NGEN images
-  hr = this->info_->SetEventMask(kEventMask);
+  hr = this->info_->SetEventMask(event_mask);
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
     return E_FAIL;
@@ -202,23 +213,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                    assembly_emit);
 
   for (const auto& integration : filtered_integrations) {
-      // for each wrapper assembly, emit an assembly reference
-      hr = metadata_builder.EmitAssemblyRef(
-          integration.replacement.wrapper_method.assembly);
-      if (FAILED(hr)) {
-        Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-             ". Failed to emit wrapper assembly ref.");
-        return S_OK;
-      }
+    // for each wrapper assembly, emit an assembly reference
+    hr = metadata_builder.EmitAssemblyRef(
+        integration.replacement.wrapper_method.assembly);
+    if (FAILED(hr)) {
+      Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+           ". Failed to emit wrapper assembly ref.");
+      return S_OK;
+    }
 
-      // for each method replacement in each enabled integration,
-      // emit a reference to the instrumentation wrapper methods
-      hr = metadata_builder.StoreWrapperMethodRef(integration.replacement);
-      if (FAILED(hr)) {
-        Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-             ". Failed to emit and store wrapper method ref.");
-        return S_OK;
-      }
+    // for each method replacement in each enabled integration,
+    // emit a reference to the instrumentation wrapper methods
+    hr = metadata_builder.StoreWrapperMethodRef(integration.replacement);
+    if (FAILED(hr)) {
+      Warn("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+           ". Failed to emit and store wrapper method ref.");
+      return S_OK;
+    }
   }
 
   // store module info for later lookup
