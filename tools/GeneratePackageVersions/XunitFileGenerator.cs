@@ -12,9 +12,11 @@ namespace GeneratePackageVersions
     {
         private const string HeaderConst =
 @"using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [SuppressMessage(""StyleCop.CSharp.LayoutRules"", ""SA1516:Elements must be separated by blank line"", Justification = ""This is an auto-generated file."")]
     public class PackageVersions
     {";
 

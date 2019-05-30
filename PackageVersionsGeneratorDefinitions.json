@@ -5,5 +5,12 @@
         "NugetPackageSearchName": "MongoDB.Driver",
         "MinVersion": "2.0.0",
         "MaxVersion": "3.0.0"
+    },
+    {
+        "IntegrationName": "ElasticSearch",
+        "SampleProjectName": "Samples.Elasticsearch",
+        "NugetPackageSearchName": "Elasticsearch.Net",
+        "MinVersion": "6.1.0",
+        "MaxVersion": "7.0.0"
     }
 ]

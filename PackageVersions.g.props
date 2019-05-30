@@ -78,5 +78,41 @@
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
       <ApiVersion>2.8.1</ApiVersion>
     </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.1.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.2.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.3.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.3.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.4.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.4.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.4.2</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.5.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.5.1</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.6.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.7.0</ApiVersion>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
+      <ApiVersion>6.8.0</ApiVersion>
+    </PackageVersionSample>
   </ItemGroup>
 </Project>
