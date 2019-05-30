@@ -9,8 +9,10 @@
 #include "corprof.h"
 
 #include "cor_profiler_base.h"
+#include "environment_variables.h"
 #include "integration.h"
 #include "module_metadata.h"
+#include "pal.h"
 
 namespace trace {
 
@@ -21,6 +23,29 @@ class CorProfiler : public CorProfilerBase {
 
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
+
+  static bool DisableOptimizations() {
+    const auto clr_optimizations_enabled =
+        GetEnvironmentValue(environment::clr_disable_optimizations);
+
+    if (clr_optimizations_enabled == "1"_W ||
+        clr_optimizations_enabled == "true"_W) {
+      return true;
+    }
+
+    if (clr_optimizations_enabled == "0"_W ||
+        clr_optimizations_enabled == "false"_W) {
+      return false;
+    }
+
+#ifdef _WIN32
+    // default to false on Windows
+    return false;
+#else
+    // default to true on Linux
+    return true;
+#endif
+  }
 
  public:
   CorProfiler();

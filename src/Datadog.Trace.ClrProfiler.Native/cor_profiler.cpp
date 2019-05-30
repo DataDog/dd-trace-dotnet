@@ -34,7 +34,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                         environment::agent_port,
                         environment::env,
                         environment::service_name,
-                        environment::disabled_integrations};
+                        environment::disabled_integrations,
+                        environment::clr_disable_optimizations};
 
   for (auto&& env_var : env_vars) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
@@ -104,6 +105,11 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+
+  if (DisableOptimizations()) {
+    Info("Disabling all code optimizations.");
+    event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
+  }
 
   // set event mask to subscribe to events and disable NGEN images
   hr = this->info_->SetEventMask(event_mask);
