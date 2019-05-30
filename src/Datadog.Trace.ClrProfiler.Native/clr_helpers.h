@@ -276,7 +276,7 @@ std::vector<IntegrationMethod> FlattenIntegrations(
 // its not set to the module
 std::vector<IntegrationMethod> FilterIntegrationsByCaller(
     const std::vector<IntegrationMethod>& integrations,
-    const AssemblyInfo module_metadata);
+    const AssemblyInfo assembly);
 
 // FilterIntegrationsByTarget removes any integrations which have a target not
 // referenced by the module's assembly import
