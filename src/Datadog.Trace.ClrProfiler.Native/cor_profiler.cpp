@@ -22,7 +22,15 @@ CorProfiler::CorProfiler() { Info("CorProfiler::CorProfiler"); }
 
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
-  is_attached_ = FALSE;
+  // check if debug mode is enabled
+  const auto debug_enabled_value =
+      GetEnvironmentValue(environment::debug_enabled);
+
+  if (debug_enabled_value == "1"_W || debug_enabled_value == "true"_W) {
+    debug_logging_enabled = true;
+    Debug("Debug mode enabled in ", environment::debug_enabled);
+  }
+
   Info("CorProfiler::Initialize");
   Info("Environment variables:");
 
