@@ -5,6 +5,8 @@
 
 namespace trace {
 
+inline bool debug_logging_enabled = false;
+
 void Log(const std::string &str);
 
 template <typename Arg>
@@ -17,6 +19,13 @@ inline std::string LogToString(Args const &... args) {
   std::ostringstream oss;
   int a[] = {0, ((void)(oss << LogToString(args)), 0)...};
   return oss.str();
+}
+
+template <typename... Args>
+inline void Debug(const Args... args) {
+  if (debug_logging_enabled) {
+    Log("[debug] " + LogToString(args...));
+  }
 }
 
 template <typename... Args>
