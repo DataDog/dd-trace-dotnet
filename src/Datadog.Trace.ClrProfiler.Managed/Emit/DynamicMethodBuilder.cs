@@ -9,7 +9,7 @@ using Sigil;
 namespace Datadog.Trace.ClrProfiler.Emit
 {
     /// <summary>
-    /// Helper class to instances of <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/>.
+    /// Helper class to create instances of <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/>.
     /// </summary>
     /// <typeparam name="TDelegate">The type of delegate</typeparam>
     internal static class DynamicMethodBuilder<TDelegate>
@@ -18,7 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static readonly ConcurrentDictionary<Key, TDelegate> _cached = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
 
         /// <summary>
-        /// Memoizes CreateMethodCallDelegate
+        /// Gets a previously cache delegate used to call the specified method,
+        /// or creates and caches a new delegate if not found.
         /// </summary>
         /// <param name="type">The <see cref="Type"/> that contains the method.</param>
         /// <param name="methodName">The name of the method.</param>

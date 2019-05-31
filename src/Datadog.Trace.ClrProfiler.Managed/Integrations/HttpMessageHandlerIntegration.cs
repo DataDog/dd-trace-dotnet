@@ -31,12 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "System.Net.Http",
             TargetType = "System.Net.Http.HttpClientHandler",
             TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)] // .NET Framework and .NET Core 2.0 and earlier
-            /*
-        [InterceptMethod(
-            TargetAssembly = "System.Net.Http",
-            TargetType = "System.Net.Http.SocketsHttpHandler")] // .NET Core 2.1 and later
-        */
+            TargetMaximumVersion = Major4)]
         public static object SendAsync(
             object handler,
             object request,
