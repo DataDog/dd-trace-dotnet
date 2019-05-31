@@ -41,17 +41,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             var callOpCode = (OpCodeValue)opCode;
-            var handlerType = typeof(HttpMessageHandler); // Note the HttpMessageHandler to match the method call we replaced
+            var httpMessageHandler = typeof(HttpMessageHandler); // Note the HttpMessageHandler to match the method call we replaced
 
             var sendAsync = Emit.DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
                                 .GetOrCreateMethodCallDelegate(
-                                     handlerType,
+                                     httpMessageHandler,
                                      "SendAsync",
                                      callOpCode);
 
             return SendAsyncInternal(
                 sendAsync,
-                callOpCode == OpCodeValue.Call ? handlerType : handler.GetType(),
+                reportedType: callOpCode == OpCodeValue.Call ? httpMessageHandler : handler.GetType(),
                 (HttpMessageHandler)handler,
                 (HttpRequestMessage)request,
                 cancellationToken);
@@ -82,17 +82,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             var callOpCode = (OpCodeValue)opCode;
-            var handlerType = typeof(HttpClientHandler); // Note the HttpClientHandler to match the method call we replaced
+            var httpClientHandler = typeof(HttpClientHandler); // Note the HttpClientHandler to match the method call we replaced
 
             var sendAsync = Emit.DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
                                 .GetOrCreateMethodCallDelegate(
-                                     handlerType,
+                                     httpClientHandler,
                                      "SendAsync",
                                      callOpCode);
 
             return SendAsyncInternal(
                 sendAsync,
-                callOpCode == OpCodeValue.Call ? handlerType : handler.GetType(),
+                reportedType: callOpCode == OpCodeValue.Call ? httpClientHandler : handler.GetType(),
                 (HttpMessageHandler)handler,
                 (HttpRequestMessage)request,
                 cancellationToken);
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static async Task<HttpResponseMessage> SendAsyncInternal(
             Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> sendAsync,
-            Type handlerType,
+            Type reportedType,
             HttpMessageHandler handler,
             HttpRequestMessage request,
             CancellationToken cancellationToken)
@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (scope != null)
                     {
-                        scope.Span.SetTag("http-client-handler-type", handlerType.FullName);
+                        scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
 
                         // add distributed tracing headers to the HTTP request
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
