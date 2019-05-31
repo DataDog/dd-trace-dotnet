@@ -18,7 +18,7 @@ namespace trace {
 
 CorProfiler* profiler = nullptr;
 
-CorProfiler::CorProfiler() { Info("CorProfiler::CorProfiler"); }
+CorProfiler::CorProfiler() { Debug("CorProfiler::CorProfiler"); }
 
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
@@ -31,22 +31,25 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     Debug("Debug mode enabled in ", environment::debug_enabled);
   }
 
-  Info("CorProfiler::Initialize");
-  Info("Environment variables:");
+  Debug("CorProfiler::Initialize");
 
-  WSTRING env_vars[] = {environment::tracing_enabled,
-                        environment::debug_enabled,
-                        environment::integrations_path,
-                        environment::process_names,
-                        environment::agent_host,
-                        environment::agent_port,
-                        environment::env,
-                        environment::service_name,
-                        environment::disabled_integrations,
-                        environment::clr_disable_optimizations};
+  if (debug_logging_enabled) {
+    Debug("Environment variables:");
 
-  for (auto&& env_var : env_vars) {
-    Info("  ", env_var, "=", GetEnvironmentValue(env_var));
+    WSTRING env_vars[] = {environment::tracing_enabled,
+                          environment::debug_enabled,
+                          environment::integrations_path,
+                          environment::process_names,
+                          environment::agent_host,
+                          environment::agent_port,
+                          environment::env,
+                          environment::service_name,
+                          environment::disabled_integrations,
+                          environment::clr_disable_optimizations};
+
+    for (auto&& env_var : env_vars) {
+      Debug("  ", env_var, "=", GetEnvironmentValue(env_var));
+    }
   }
 
   // check if tracing is completely disabled
@@ -158,7 +161,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     // We cannot obtain writable metadata interfaces on Windows Runtime modules
     // or instrument their IL. We must never try to add assembly references to
     // mscorlib or netstandard.
-    Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+    Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
          ". Skipping (known module).");
     return S_OK;
   }
@@ -170,7 +173,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByCaller(filtered_integrations, module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+    Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
          ". Skipping (filtered by caller).");
     return S_OK;
   }
@@ -199,7 +202,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByTarget(filtered_integrations, assembly_import);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+    Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
          ". Skipping (filtered by target).");
     return S_OK;
   }
@@ -246,14 +249,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     module_id_to_info_map_[module_id] = module_metadata;
   }
 
-  Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+  Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
        ". Emitted instrumentation metadata.");
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID module_id,
                                                             HRESULT hrStatus) {
-  Info("CorProfiler::ModuleUnloadFinished: ", uint64_t(module_id));
+  Debug("CorProfiler::ModuleUnloadFinished: ", uint64_t(module_id));
   {
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
     if (module_id_to_info_map_.count(module_id) > 0) {
