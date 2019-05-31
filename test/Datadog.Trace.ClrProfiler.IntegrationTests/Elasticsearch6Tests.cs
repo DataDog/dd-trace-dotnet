@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Theory]
-        [MemberData(nameof(PackageVersions.ElasticSearch), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(PackageVersions.ElasticSearch6), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {

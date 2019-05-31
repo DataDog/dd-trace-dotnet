@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             new List<object[]>
             {
-#if VS_COMPILE
+#if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
                 new object[] { "2.0.0" },
@@ -41,11 +41,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.8.1" },
 #endif
             };
-        public static IEnumerable<object[]> ElasticSearch =>
+        public static IEnumerable<object[]> ElasticSearch6 =>
 
             new List<object[]>
             {
-#if VS_COMPILE
+#if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
                 new object[] { "6.1.0" },
@@ -60,6 +60,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.6.0" },
                 new object[] { "6.7.0" },
                 new object[] { "6.8.0" },
+#endif
+            };
+        public static IEnumerable<object[]> ElasticSearch5 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+                new object[] { "5.3.0" },
+                new object[] { "5.3.1" },
+                new object[] { "5.4.0" },
+                new object[] { "5.5.0" },
+                new object[] { "5.6.0" },
+                new object[] { "5.6.1" },
+                new object[] { "5.6.2" },
+                new object[] { "5.6.3" },
+                new object[] { "5.6.4" },
+                new object[] { "5.6.5" },
+                new object[] { "5.6.6" },
 #endif
             };
     }

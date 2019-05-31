@@ -7,10 +7,17 @@
         "MaxVersion": "3.0.0"
     },
     {
-        "IntegrationName": "ElasticSearch",
+        "IntegrationName": "ElasticSearch6",
         "SampleProjectName": "Samples.Elasticsearch",
         "NugetPackageSearchName": "Elasticsearch.Net",
         "MinVersion": "6.1.0",
         "MaxVersion": "7.0.0"
+    },
+    {
+        "IntegrationName": "ElasticSearch5",
+        "SampleProjectName": "Samples.Elasticsearch.V5",
+        "NugetPackageSearchName": "Elasticsearch.Net",
+        "MinVersion": "5.3.0",
+        "MaxVersion": "6.0.0"
     }
 ]

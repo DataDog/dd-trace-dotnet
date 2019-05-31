@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             new List<object[]>
             {{
-#if VS_COMPILE
+#if DEFAULT_SAMPLES
                 new object[] {{ string.Empty }},
 #else{1}
 #endif
