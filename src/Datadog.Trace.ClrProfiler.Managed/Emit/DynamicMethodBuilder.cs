@@ -336,7 +336,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 }
             }
 
-            if (callOpCode == OpCodeValue.Call)
+            if (callOpCode == OpCodeValue.Call || methodInfo.IsStatic)
             {
                 // non-virtual call (e.g. static method, or method override calling overriden implementation)
                 dynamicMethod.Call(methodInfo);
