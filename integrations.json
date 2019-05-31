@@ -346,7 +346,7 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
-          "method": "SendAsync",
+          "method": "HttpMessageHandler_SendAsync",
           "signature": "00 04 1C 1C 1C 1C 08"
         }
       },
@@ -366,7 +366,7 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
-          "method": "SendAsync",
+          "method": "HttpClientHandler_SendAsync",
           "signature": "00 04 1C 1C 1C 1C 08"
         }
       }
