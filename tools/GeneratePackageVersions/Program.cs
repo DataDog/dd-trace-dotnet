@@ -44,27 +44,21 @@ namespace GeneratePackageVersions
             }
 
             PackageVersionEntry[] entries = JsonConvert.DeserializeObject<PackageVersionEntry[]>(File.ReadAllText(definitionsFilename));
-            Console.WriteLine(entries);
+            await RunFileGeneratorWithPackageEntries(new MSBuildPropsFileGenerator(outputPackageVersionsPropsFilename), entries);
+            await RunFileGeneratorWithPackageEntries(new XUnitFileGenerator(outputPackageVersionsXunitFilename), entries);
+        }
 
-            var msbuildPropsFileGenerator = new MSBuildPropsFileGenerator(outputPackageVersionsPropsFilename);
-            msbuildPropsFileGenerator.Start();
+        private static async Task RunFileGeneratorWithPackageEntries(FileGenerator fileGenerator, IEnumerable<PackageVersionEntry> entries)
+        {
+            fileGenerator.Start();
+
             foreach (PackageVersionEntry entry in entries)
             {
                 var packageVersions = await NuGetPackageHelper.GetNugetPackageVersions(entry);
-                msbuildPropsFileGenerator.Write(integrationName: entry.IntegrationName, sampleProjectName: entry.SampleProjectName, packageVersions: packageVersions);
+                fileGenerator.Write(integrationName: entry.IntegrationName, sampleProjectName: entry.SampleProjectName, packageVersions: packageVersions);
             }
 
-            msbuildPropsFileGenerator.Finish();
-
-            var xunitFileGenerator = new XUnitFileGenerator(outputPackageVersionsXunitFilename);
-            xunitFileGenerator.Start();
-            foreach (PackageVersionEntry entry in entries)
-            {
-                var packageVersions = await NuGetPackageHelper.GetNugetPackageVersions(entry);
-                xunitFileGenerator.Write(integrationName: entry.IntegrationName, sampleProjectName: entry.SampleProjectName, packageVersions: packageVersions);
-            }
-
-            xunitFileGenerator.Finish();
+            fileGenerator.Finish();
         }
     }
 }
