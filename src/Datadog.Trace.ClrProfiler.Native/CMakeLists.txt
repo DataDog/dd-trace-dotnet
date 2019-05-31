@@ -16,7 +16,6 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
     il_rewriter.cpp
     integration_loader.cpp
     integration.cpp
-    interop.cpp
     logging.cpp
     metadata_builder.cpp
     miniutf.cpp
@@ -40,6 +39,7 @@ target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
 
 add_library("Datadog.Trace.ClrProfiler.Native" SHARED
     dllmain.cpp
+    interop.cpp
 )
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static")
