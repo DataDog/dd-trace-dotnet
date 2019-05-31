@@ -61,9 +61,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, Task<T>>>
                .CreateMethodCallDelegate(
                     thisType,
-                    "ExecuteAsync",
-                    new[] { messageType, processorType, serverType },
-                    new[] { genericType });
+                    methodName: "ExecuteAsync",
+                    methodParameterTypes: new[] { messageType, processorType, serverType },
+                    methodGenericArguments: new[] { genericType });
 
             // we only trace RedisBatch methods here
             if (thisType == batchType)

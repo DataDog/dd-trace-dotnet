@@ -47,9 +47,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, T>>
                .CreateMethodCallDelegate(
                     multiplexerType,
-                    "ExecuteSyncImpl",
-                    new[] { messageType, processorType, serverType },
-                    new[] { resultType });
+                    methodName: "ExecuteSyncImpl",
+                    methodParameterTypes: new[] { messageType, processorType, serverType },
+                    methodGenericArguments: new[] { resultType });
 
             using (var scope = CreateScope(multiplexer, message))
             {
@@ -117,9 +117,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>
                .CreateMethodCallDelegate(
                     multiplexerType,
-                    "ExecuteAsyncImpl",
-                    new[] { messageType, processorType, stateType, serverType },
-                    new[] { genericType });
+                    methodName: "ExecuteAsyncImpl",
+                    methodParameterTypes: new[] { messageType, processorType, stateType, serverType },
+                    methodGenericArguments: new[] { genericType });
 
             using (var scope = CreateScope(multiplexer, message))
             {
