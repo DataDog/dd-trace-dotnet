@@ -87,7 +87,7 @@ std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src) {
   }
 
   // first get the name, which is required
-  auto name = ToWSTRING(src.value("name", ""));
+  const auto name = ToWSTRING(src.value("name", ""));
   if (name.empty()) {
     Warn("Integration name is missing for integration: ", src.dump());
     return std::make_pair<Integration, bool>({}, false);

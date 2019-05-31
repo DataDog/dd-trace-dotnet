@@ -145,7 +145,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  auto module_info = GetModuleInfo(this->info_, module_id);
+  const auto module_info = GetModuleInfo(this->info_, module_id);
   if (!module_info.IsValid()) {
     return S_OK;
   }
@@ -260,7 +260,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID module_id,
   {
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
     if (module_id_to_info_map_.count(module_id) > 0) {
-      auto metadata = module_id_to_info_map_[module_id];
+      const auto metadata = module_id_to_info_map_[module_id];
       delete metadata;
       module_id_to_info_map_.erase(module_id);
     }
