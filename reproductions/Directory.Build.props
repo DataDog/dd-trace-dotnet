@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**"
+    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\*.dll;..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\*.so"
           CopyToOutputDirectory="Always"
           CopyToPublishDirectory="Always"
           Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
