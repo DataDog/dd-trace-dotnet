@@ -46,7 +46,7 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter,
   }
 
   trace::Info("Datadog CLR Profiler ", PROFILER_VERSION);
-  trace::Info("ClassFactory::CreateInstance");
+  trace::Debug("ClassFactory::CreateInstance");
 
   auto profiler = new trace::CorProfiler();
   return profiler->QueryInterface(riid, ppvObject);

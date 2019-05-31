@@ -18,12 +18,21 @@ namespace trace {
 
 CorProfiler* profiler = nullptr;
 
-CorProfiler::CorProfiler() { Info("CorProfiler::CorProfiler"); }
+CorProfiler::CorProfiler() { Debug("CorProfiler::CorProfiler"); }
 
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
-  is_attached_ = FALSE;
-  Info("CorProfiler::Initialize");
+  // check if debug mode is enabled
+  const auto debug_enabled_value =
+      GetEnvironmentValue(environment::debug_enabled);
+
+  if (debug_enabled_value == "1"_W || debug_enabled_value == "true"_W) {
+    debug_logging_enabled = true;
+    Debug("Debug mode enabled in ", environment::debug_enabled);
+  }
+
+  Debug("CorProfiler::Initialize");
+
   Info("Environment variables:");
 
   WSTRING env_vars[] = {environment::tracing_enabled,
@@ -134,7 +143,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  auto module_info = GetModuleInfo(this->info_, module_id);
+  const auto module_info = GetModuleInfo(this->info_, module_id);
   if (!module_info.IsValid()) {
     return S_OK;
   }
@@ -150,8 +159,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     // We cannot obtain writable metadata interfaces on Windows Runtime modules
     // or instrument their IL. We must never try to add assembly references to
     // mscorlib or netstandard.
-    Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-         ". Skipping (known module).");
+    Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+          ". Skipping (known module).");
     return S_OK;
   }
 
@@ -162,8 +171,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByCaller(filtered_integrations, module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-         ". Skipping (filtered by caller).");
+    Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+          ". Skipping (filtered by caller).");
     return S_OK;
   }
 
@@ -191,8 +200,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByTarget(filtered_integrations, assembly_import);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-         ". Skipping (filtered by target).");
+    Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+          ". Skipping (filtered by target).");
     return S_OK;
   }
 
@@ -238,18 +247,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     module_id_to_info_map_[module_id] = module_metadata;
   }
 
-  Info("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-       ". Emitted instrumentation metadata.");
+  Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
+        ". Emitted instrumentation metadata.");
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID module_id,
                                                             HRESULT hrStatus) {
-  Info("CorProfiler::ModuleUnloadFinished: ", uint64_t(module_id));
+  Debug("CorProfiler::ModuleUnloadFinished: ", uint64_t(module_id));
   {
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
     if (module_id_to_info_map_.count(module_id) > 0) {
-      auto metadata = module_id_to_info_map_[module_id];
+      const auto metadata = module_id_to_info_map_[module_id];
       delete metadata;
       module_id_to_info_map_.erase(module_id);
     }
