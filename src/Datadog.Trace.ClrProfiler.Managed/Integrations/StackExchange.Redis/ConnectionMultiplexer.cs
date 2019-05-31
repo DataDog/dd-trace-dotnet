@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="message">The message to send to redis.</param>
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="server">The server to call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The result</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -35,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             TargetType = "StackExchange.Redis.ConnectionMultiplexer",
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
-        public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server)
+        public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server, int opCode)
         {
             var resultType = typeof(T);
             var multiplexerType = multiplexer.GetType();
@@ -74,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -89,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             TargetType = "StackExchange.Redis.ConnectionMultiplexer",
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
-        public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
+        public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server, int opCode)
         {
             return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server);
         }

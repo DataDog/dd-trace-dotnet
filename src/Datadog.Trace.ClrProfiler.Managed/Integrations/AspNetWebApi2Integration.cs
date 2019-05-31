@@ -29,13 +29,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="apiController">The Api Controller</param>
         /// <param name="controllerContext">The controller context for the call</param>
         /// <param name="cancellationTokenSource">The cancellation token source</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>A task with the result</returns>
         [InterceptMethod(
             TargetAssembly = "System.Web.Http",
             TargetType = "System.Web.Http.Controllers.IHttpController",
             TargetMinimumVersion = Major5Minor2,
             TargetMaximumVersion = Major5)]
-        public static object ExecuteAsync(object apiController, object controllerContext, object cancellationTokenSource)
+        public static object ExecuteAsync(object apiController, object controllerContext, object cancellationTokenSource, int opCode)
         {
             if (apiController == null) { throw new ArgumentNullException(nameof(apiController)); }
 

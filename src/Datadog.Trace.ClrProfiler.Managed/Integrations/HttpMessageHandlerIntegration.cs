@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="handler">The <see cref="HttpMessageHandler"/> instance to instrument.</param>
         /// <param name="request">The <see cref="HttpRequestMessage"/> that represents the current HTTP request.</param>
         /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Net.Http",
@@ -35,7 +36,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object SendAsync(
             object handler,
             object request,
-            object cancellationTokenSource)
+            object cancellationTokenSource,
+            int opCode)
         {
             // HttpMessageHandler
             // Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <typeparam name="TResponse">The type of the response</typeparam>
         /// <param name="pipeline">The pipeline for the original method</param>
         /// <param name="requestData">The request data</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
             CallerAssembly = "Elasticsearch.Net",
@@ -31,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "Elasticsearch.Net.IRequestPipeline",
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
-        public static object CallElasticsearch<TResponse>(object pipeline, object requestData)
+        public static object CallElasticsearch<TResponse>(object pipeline, object requestData, int opCode)
         {
             // TResponse CallElasticsearch<TResponse>(RequestData requestData) where TResponse : class, IElasticsearchResponse, new();
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object>>
@@ -61,6 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="pipeline">The pipeline for the original method</param>
         /// <param name="requestData">The request data</param>
         /// <param name="cancellationTokenSource">A cancellation token</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
             CallerAssembly = "Elasticsearch.Net",
@@ -68,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "Elasticsearch.Net.IRequestPipeline",
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
-        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource)
+        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource, int opCode)
         {
             // Task<ElasticsearchResponse<TReturn>> CallElasticsearchAsync<TReturn>(RequestData requestData, CancellationToken cancellationToken) where TReturn : class;
             var tokenSource = cancellationTokenSource as CancellationTokenSource;

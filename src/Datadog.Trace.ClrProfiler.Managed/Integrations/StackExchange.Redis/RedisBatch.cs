@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="message">The message</param>
         /// <param name="processor">The result processor</param>
         /// <param name="server">The server</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             TargetType = "StackExchange.Redis.RedisBase",
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major1)]
-        public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server)
+        public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server, int opCode)
         {
             return ExecuteAsyncInternal<T>(redisBase, message, processor, server);
         }
