@@ -33,23 +33,21 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   Debug("CorProfiler::Initialize");
 
-  if (debug_logging_enabled) {
-    Debug("Environment variables:");
+  Info("Environment variables:");
 
-    WSTRING env_vars[] = {environment::tracing_enabled,
-                          environment::debug_enabled,
-                          environment::integrations_path,
-                          environment::process_names,
-                          environment::agent_host,
-                          environment::agent_port,
-                          environment::env,
-                          environment::service_name,
-                          environment::disabled_integrations,
-                          environment::clr_disable_optimizations};
+  WSTRING env_vars[] = {environment::tracing_enabled,
+                        environment::debug_enabled,
+                        environment::integrations_path,
+                        environment::process_names,
+                        environment::agent_host,
+                        environment::agent_port,
+                        environment::env,
+                        environment::service_name,
+                        environment::disabled_integrations,
+                        environment::clr_disable_optimizations};
 
-    for (auto&& env_var : env_vars) {
-      Debug("  ", env_var, "=", GetEnvironmentValue(env_var));
-    }
+  for (auto&& env_var : env_vars) {
+    Info("  ", env_var, "=", GetEnvironmentValue(env_var));
   }
 
   // check if tracing is completely disabled
@@ -162,7 +160,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     // or instrument their IL. We must never try to add assembly references to
     // mscorlib or netstandard.
     Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-         ". Skipping (known module).");
+          ". Skipping (known module).");
     return S_OK;
   }
 
@@ -174,7 +172,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-         ". Skipping (filtered by caller).");
+          ". Skipping (filtered by caller).");
     return S_OK;
   }
 
@@ -203,7 +201,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-         ". Skipping (filtered by target).");
+          ". Skipping (filtered by target).");
     return S_OK;
   }
 
@@ -250,7 +248,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   Debug("CorProfiler::ModuleLoadFinished: ", module_info.assembly.name,
-       ". Emitted instrumentation metadata.");
+        ". Emitted instrumentation metadata.");
   return S_OK;
 }
 
