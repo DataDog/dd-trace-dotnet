@@ -5,6 +5,7 @@
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0</TargetFrameworks>
 
     <!-- NuGet -->
+    <Version>1.2.0</Version>
     <Title>Datadog APM - OpenTracing</Title>
     <Description>Provides OpenTracing support for Datadog APM</Description>
     <Authors>lucas.pimentel.datadog;bmermet</Authors>
