@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
@@ -37,7 +38,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             TargetMaximumVersion = Major1)]
         public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server, int opCode)
         {
-            return ExecuteAsyncInternal<T>(redisBase, message, processor, server);
+            var callOpCode = (OpCodeValue)opCode;
+            return ExecuteAsyncInternal<T>(redisBase, message, processor, server, callOpCode);
         }
 
         /// <summary>
@@ -48,8 +50,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="message">The message</param>
         /// <param name="processor">The result processor</param>
         /// <param name="server">The server</param>
+        /// <param name="callOpCode">The <see cref="OpCodeValue"/> used in the original method call.</param>
         /// <returns>An asynchronous task.</returns>
-        private static async Task<T> ExecuteAsyncInternal<T>(object redisBase, object message, object processor, object server)
+        private static async Task<T> ExecuteAsyncInternal<T>(object redisBase, object message, object processor, object server, OpCodeValue callOpCode)
         {
             var thisType = redisBase.GetType();
             var genericType = typeof(T);
@@ -63,6 +66,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                .CreateMethodCallDelegate(
                     thisType,
                     methodName: "ExecuteAsync",
+                    callOpCode,
                     methodParameterTypes: new[] { messageType, processorType, serverType },
                     methodGenericArguments: new[] { genericType });
 

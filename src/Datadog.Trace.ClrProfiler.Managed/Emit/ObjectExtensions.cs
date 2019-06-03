@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                        .CreateMethodCallDelegate(
                             type,
                             methodName,
+                            OpCodeValue.Callvirt,
                             methodParameterTypes: new[] { paramType1 }));
 
             if (cachedItem is Func<object, TArg1, TResult> func)

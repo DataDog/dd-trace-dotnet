@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -181,7 +182,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     _beforeAction = Emit.DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
                         type,
-                        "BeforeAction");
+                        "BeforeAction",
+                        (OpCodeValue)opCode);
                 }
             }
             catch (Exception ex)
@@ -251,7 +253,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     _afterAction = Emit.DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
                         type,
-                        "AfterAction");
+                        "AfterAction",
+                        (OpCodeValue)opCode);
                 }
             }
             catch

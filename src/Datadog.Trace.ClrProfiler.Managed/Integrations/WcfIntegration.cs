@@ -2,6 +2,7 @@
 
 using System;
 using System.ServiceModel.Channels;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ClrProfiler.Models;
 
@@ -29,7 +30,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Major4)]
         public static bool HandleRequest(object thisObj, object requestContext, object currentOperationContext, int opCode)
         {
-            var handleRequestDelegate = Emit.DynamicMethodBuilder<Func<object, object, object, bool>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "HandleRequest");
+            var handleRequestDelegate = Emit.DynamicMethodBuilder<Func<object, object, object, bool>>
+                                            .GetOrCreateMethodCallDelegate(
+                                                 thisObj.GetType(),
+                                                 "HandleRequest",
+                                                 (OpCodeValue)opCode);
 
             if (!(requestContext is RequestContext castRequestContext))
             {

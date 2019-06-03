@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -41,9 +42,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var commandBehavior = (CommandBehavior)behavior;
 
             var executeReader = Emit.DynamicMethodBuilder<Func<object, CommandBehavior, object>>
-               .GetOrCreateMethodCallDelegate(
-                    command.GetType(),
-                    "ExecuteDbDataReader");
+                                    .GetOrCreateMethodCallDelegate(
+                                         typeof(DbCommand),
+                                         "ExecuteDbDataReader",
+                                         (OpCodeValue)opCode);
 
             using (var scope = CreateScope(command))
             {
@@ -84,16 +86,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             var command = (DbCommand)@this;
             var commandBehavior = (CommandBehavior)behavior;
+            var callOpCode = (OpCodeValue)opCode;
 
-            return ExecuteDbDataReaderAsyncInternal(command, commandBehavior, cancellationToken);
+            return ExecuteDbDataReaderAsyncInternal(command, commandBehavior, cancellationToken, callOpCode);
         }
 
-        private static async Task<object> ExecuteDbDataReaderAsyncInternal(DbCommand command, CommandBehavior behavior, CancellationToken cancellationToken)
+        private static async Task<object> ExecuteDbDataReaderAsyncInternal(
+            DbCommand command,
+            CommandBehavior behavior,
+            CancellationToken cancellationToken,
+            OpCodeValue callOpCode)
         {
             var executeReader = Emit.DynamicMethodBuilder<Func<object, CommandBehavior, CancellationToken, Task<object>>>
-               .GetOrCreateMethodCallDelegate(
-                    command.GetType(),
-                    "ExecuteDbDataReaderAsync");
+                                    .GetOrCreateMethodCallDelegate(
+                                         typeof(DbCommand),
+                                         "ExecuteDbDataReaderAsync",
+                                         callOpCode);
 
             using (var scope = CreateScope(command))
             {

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -37,6 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                      .GetOrCreateMethodCallDelegate(
                                           ElasticsearchNetCommon.RequestPipelineType,
                                           "CallElasticsearch",
+                                          (OpCodeValue)opCode,
                                           methodGenericArguments: new[] { typeof(TResponse) });
 
             using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
@@ -73,7 +75,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // Task<TResponse> CallElasticsearchAsync<TResponse>(RequestData requestData, CancellationToken cancellationToken) where TResponse : class, IElasticsearchResponse, new();
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken);
+            var callOpCode = (OpCodeValue)opCode;
+            return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken, callOpCode);
         }
 
         /// <summary>
@@ -83,13 +86,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="pipeline">The pipeline for the original method</param>
         /// <param name="requestData">The request data</param>
         /// <param name="cancellationToken">A cancellation token</param>
+        /// <param name="callOpCode">The <see cref="OpCodeValue"/> used in the original method call.</param>
         /// <returns>The original result</returns>
-        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken)
+        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken, OpCodeValue callOpCode)
         {
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
                                      .GetOrCreateMethodCallDelegate(
                                           ElasticsearchNetCommon.RequestPipelineType,
                                           "CallElasticsearchAsync",
+                                          callOpCode,
                                           methodParameterTypes: new[] { ElasticsearchNetCommon.RequestDataType, ElasticsearchNetCommon.CancellationTokenType },
                                           methodGenericArguments: new[] { typeof(TResponse) });
 

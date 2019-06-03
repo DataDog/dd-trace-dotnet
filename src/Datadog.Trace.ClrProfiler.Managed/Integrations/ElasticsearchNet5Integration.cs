@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -39,6 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                      .GetOrCreateMethodCallDelegate(
                                           ElasticsearchNetCommon.RequestPipelineType,
                                           "CallElasticsearch",
+                                          (OpCodeValue)opCode,
                                           methodGenericArguments: new[] { typeof(TResponse) });
 
             using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
