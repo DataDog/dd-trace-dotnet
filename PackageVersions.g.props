@@ -1,151 +1,151 @@
 <Project>
   <ItemGroup>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.0.0</ApiVersion>
+      <Properties>ApiVersion=2.0.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.0.1</ApiVersion>
+      <Properties>ApiVersion=2.0.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.0.2</ApiVersion>
+      <Properties>ApiVersion=2.0.2;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.1.0</ApiVersion>
+      <Properties>ApiVersion=2.1.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.1.1</ApiVersion>
+      <Properties>ApiVersion=2.1.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.2.0</ApiVersion>
+      <Properties>ApiVersion=2.2.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.2.1</ApiVersion>
+      <Properties>ApiVersion=2.2.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.2.2</ApiVersion>
+      <Properties>ApiVersion=2.2.2;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.2.3</ApiVersion>
+      <Properties>ApiVersion=2.2.3;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.2.4</ApiVersion>
+      <Properties>ApiVersion=2.2.4;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.3.0</ApiVersion>
+      <Properties>ApiVersion=2.3.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.4.0</ApiVersion>
+      <Properties>ApiVersion=2.4.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.4.1</ApiVersion>
+      <Properties>ApiVersion=2.4.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.4.2</ApiVersion>
+      <Properties>ApiVersion=2.4.2;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.4.3</ApiVersion>
+      <Properties>ApiVersion=2.4.3;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.4.4</ApiVersion>
+      <Properties>ApiVersion=2.4.4;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.5.0</ApiVersion>
+      <Properties>ApiVersion=2.5.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.5.1</ApiVersion>
+      <Properties>ApiVersion=2.5.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.6.0</ApiVersion>
+      <Properties>ApiVersion=2.6.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.6.1</ApiVersion>
+      <Properties>ApiVersion=2.6.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.7.0</ApiVersion>
+      <Properties>ApiVersion=2.7.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.7.1</ApiVersion>
+      <Properties>ApiVersion=2.7.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.7.2</ApiVersion>
+      <Properties>ApiVersion=2.7.2;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.7.3</ApiVersion>
+      <Properties>ApiVersion=2.7.3;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.8.0</ApiVersion>
+      <Properties>ApiVersion=2.8.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.MongoDB.csproj">
-      <ApiVersion>2.8.1</ApiVersion>
+      <Properties>ApiVersion=2.8.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.1.0</ApiVersion>
+      <Properties>ApiVersion=6.1.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.2.0</ApiVersion>
+      <Properties>ApiVersion=6.2.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.3.0</ApiVersion>
+      <Properties>ApiVersion=6.3.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.3.1</ApiVersion>
+      <Properties>ApiVersion=6.3.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.4.0</ApiVersion>
+      <Properties>ApiVersion=6.4.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.4.1</ApiVersion>
+      <Properties>ApiVersion=6.4.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.4.2</ApiVersion>
+      <Properties>ApiVersion=6.4.2;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.5.0</ApiVersion>
+      <Properties>ApiVersion=6.5.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.5.1</ApiVersion>
+      <Properties>ApiVersion=6.5.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.6.0</ApiVersion>
+      <Properties>ApiVersion=6.6.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.7.0</ApiVersion>
+      <Properties>ApiVersion=6.7.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.csproj">
-      <ApiVersion>6.8.0</ApiVersion>
+      <Properties>ApiVersion=6.8.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.3.0</ApiVersion>
+      <Properties>ApiVersion=5.3.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.3.1</ApiVersion>
+      <Properties>ApiVersion=5.3.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.4.0</ApiVersion>
+      <Properties>ApiVersion=5.4.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.5.0</ApiVersion>
+      <Properties>ApiVersion=5.5.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.6.0</ApiVersion>
+      <Properties>ApiVersion=5.6.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.6.1</ApiVersion>
+      <Properties>ApiVersion=5.6.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.6.2</ApiVersion>
+      <Properties>ApiVersion=5.6.2;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.6.3</ApiVersion>
+      <Properties>ApiVersion=5.6.3;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.6.4</ApiVersion>
+      <Properties>ApiVersion=5.6.4;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.6.5</ApiVersion>
+      <Properties>ApiVersion=5.6.5;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
-      <ApiVersion>5.6.6</ApiVersion>
+      <Properties>ApiVersion=5.6.6;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
   </ItemGroup>
 </Project>

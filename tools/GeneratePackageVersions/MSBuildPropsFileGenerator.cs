@@ -20,7 +20,7 @@ namespace GeneratePackageVersions
 
         private const string EntryFormat =
 @"    <PackageVersionSample Include=""samples*\**\{0}.csproj"">
-      <ApiVersion>{1}</ApiVersion>
+      <Properties>ApiVersion={1};TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>";
 
         public MSBuildPropsFileGenerator(string filename)
