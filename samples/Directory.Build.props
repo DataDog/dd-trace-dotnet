@@ -10,6 +10,7 @@
 
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ProfilerOutputDirectory>..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,10 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\*.dll;..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\*.so"
-             CopyToOutputDirectory="Always"
-             CopyToPublishDirectory="Always"
-             Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <None Include="$(ProfilerOutputDirectory)\*.dll;$(ProfilerOutputDirectory)\*.so;$(ProfilerOutputDirectory)\*.pdb"
+          CopyToOutputDirectory="Always"
+          CopyToPublishDirectory="Always"
+          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
     <Content Include="..\..\integrations.json"
              CopyToOutputDirectory="Always"
              CopyToPublishDirectory="Always"
