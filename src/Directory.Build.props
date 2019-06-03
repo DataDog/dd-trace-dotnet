@@ -2,11 +2,12 @@
   <Import Project="..\Directory.Build.props" />
 
   <PropertyGroup>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <LangVersion>7.3</LangVersion>
 
     <!-- NuGet packages -->
-    <Version>1.2.0</Version>
     <IsPackable>true</IsPackable>
     <PackageIconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</PackageIconUrl>
     <PackageProjectUrl>https://docs.datadoghq.com/tracing/setup/dotnet/</PackageProjectUrl>
