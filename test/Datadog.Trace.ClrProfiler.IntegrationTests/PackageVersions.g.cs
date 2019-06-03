@@ -82,5 +82,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.6.6" },
 #endif
             };
+        public static IEnumerable<object[]> Npgsql =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+                new object[] { "4.0.0" },
+                new object[] { "4.0.1" },
+                new object[] { "4.0.2" },
+                new object[] { "4.0.3" },
+                new object[] { "4.0.4" },
+                new object[] { "4.0.5" },
+                new object[] { "4.0.6" },
+                new object[] { "4.0.7" },
+#endif
+            };
     }
 }

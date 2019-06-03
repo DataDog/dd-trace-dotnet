@@ -147,5 +147,29 @@
     <PackageVersionSample Include="samples*\**\Samples.Elasticsearch.V5.csproj">
       <Properties>ApiVersion=5.6.6;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Npgsql.csproj">
+      <Properties>ApiVersion=4.0.0;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Npgsql.csproj">
+      <Properties>ApiVersion=4.0.1;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Npgsql.csproj">
+      <Properties>ApiVersion=4.0.2;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Npgsql.csproj">
+      <Properties>ApiVersion=4.0.3;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Npgsql.csproj">
+      <Properties>ApiVersion=4.0.4;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Npgsql.csproj">
+      <Properties>ApiVersion=4.0.5;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Npgsql.csproj">
+      <Properties>ApiVersion=4.0.6;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.Npgsql.csproj">
+      <Properties>ApiVersion=4.0.7;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
   </ItemGroup>
 </Project>
