@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Web;
 using System.Web.Routing;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -20,9 +21,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
         private const string Major5Minor1 = "5.1";
         private const string Major5 = "5";
+        private const string AssemblyName = "System.Web.Mvc";
+        private const string AsyncActionInvokerTypeName = "System.Web.Mvc.Async.IAsyncActionInvoker";
 
-        private static readonly Type ControllerContextType = Type.GetType("System.Web.Mvc.ControllerContext, System.Web.Mvc", throwOnError: false);
-        private static readonly Type RouteCollectionRouteType = Type.GetType("System.Web.Mvc.Routing.RouteCollectionRoute, System.Web.Mvc", throwOnError: false);
+        private static readonly Type ControllerContextType = Type.GetType($"System.Web.Mvc.ControllerContext, {AssemblyName}", throwOnError: false);
+        private static readonly Type RouteCollectionRouteType = Type.GetType($"System.Web.Mvc.Routing.RouteCollectionRoute, {AssemblyName}", throwOnError: false);
+        private static readonly Type AsyncActionInvokerType = Type.GetType($"{AsyncActionInvokerTypeName}, {AssemblyName}", throwOnError: false);
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetMvcIntegration));
 
         /// <summary>
@@ -157,17 +161,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>Returns the <see cref="IAsyncResult "/> returned by the original BeginInvokeAction() that is later passed to <see cref="EndInvokeAction"/>.</returns>
         [InterceptMethod(
-            CallerAssembly = "System.Web.Mvc",
-            TargetAssembly = "System.Web.Mvc",
-            TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker",
+            CallerAssembly = AssemblyName,
+            TargetAssembly = AssemblyName,
+            TargetType = AsyncActionInvokerTypeName,
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
         public static object BeginInvokeAction(
-            dynamic asyncControllerActionInvoker,
-            dynamic controllerContext,
-            dynamic actionName,
-            dynamic callback,
-            dynamic state,
+            object asyncControllerActionInvoker,
+            object controllerContext,
+            object actionName,
+            object callback,
+            object state,
             int opCode)
         {
             Scope scope = null;
@@ -185,10 +189,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Log.ErrorException("Error instrumenting method {0}", ex, "System.Web.Mvc.Async.IAsyncActionInvoker.BeginInvokeAction()");
             }
 
+            var beginInvokeAction = Emit.DynamicMethodBuilder<Func<object, object, object, object, object, object>>
+                                        .GetOrCreateMethodCallDelegate(
+                                             AsyncActionInvokerType,
+                                             "BeginInvokeAction",
+                                             (OpCodeValue)opCode);
+
             try
             {
                 // call the original method, inspecting (but not catching) any unhandled exceptions
-                return asyncControllerActionInvoker.BeginInvokeAction(controllerContext, actionName, callback, state);
+                return beginInvokeAction(asyncControllerActionInvoker, controllerContext, actionName, callback, state);
             }
             catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
             {
@@ -205,12 +215,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
         [InterceptMethod(
-            CallerAssembly = "System.Web.Mvc",
-            TargetAssembly = "System.Web.Mvc",
-            TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker",
+            CallerAssembly = AssemblyName,
+            TargetAssembly = AssemblyName,
+            TargetType = AsyncActionInvokerTypeName,
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
-        public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult, int opCode)
+        public static bool EndInvokeAction(object asyncControllerActionInvoker, object asyncResult, int opCode)
         {
             Scope scope = null;
             var httpContext = HttpContext.Current;
@@ -221,13 +231,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error instrumenting method {0}", ex, "System.Web.Mvc.Async.IAsyncActionInvoker.EndInvokeAction()");
+                Log.ErrorException("Error instrumenting method {0}", ex, $"{AsyncActionInvokerTypeName}.EndInvokeAction()");
             }
+
+            var endInvokeAction = Emit.DynamicMethodBuilder<Func<object, object, bool>>
+                                      .GetOrCreateMethodCallDelegate(
+                                           AsyncActionInvokerType,
+                                           "EndInvokeAction",
+                                           (OpCodeValue)opCode);
 
             try
             {
                 // call the original method, inspecting (but not catching) any unhandled exceptions
-                return (bool)asyncControllerActionInvoker.EndInvokeAction(asyncResult);
+                return endInvokeAction(asyncControllerActionInvoker, asyncResult);
             }
             catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
             {
