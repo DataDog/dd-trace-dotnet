@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public static TDelegate GetOrCreateMethodCallDelegate(
             Type type,
             string methodName,
-            OpCodeValue callOpCode = OpCodeValue.Callvirt,
+            OpCodeValue callOpCode,
             Type returnType = null,
             Type[] methodParameterTypes = null,
             Type[] methodGenericArguments = null)
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public static TDelegate CreateMethodCallDelegate(
             Type type,
             string methodName,
-            OpCodeValue callOpCode = OpCodeValue.Callvirt,
+            OpCodeValue callOpCode,
             Type[] methodParameterTypes = null,
             Type[] methodGenericArguments = null)
         {
