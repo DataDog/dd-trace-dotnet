@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.Emit;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
@@ -9,10 +10,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// </summary>
     internal static class StackExchangeRedisHelper
     {
-        private static Func<object, string> _getCommandAndKeyMethod;
-
-        private static Func<object, string> _getConfigurationMethod;
-
         /// <summary>
         /// Get the configuration for the multiplexer.
         /// </summary>
@@ -20,19 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>The configuration</returns>
         public static string GetConfiguration(object multiplexer)
         {
-            try
-            {
-                if (_getConfigurationMethod == null)
-                {
-                    _getConfigurationMethod = Emit.DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(multiplexer.GetType(), "get_Configuration");
-                }
-
-                return _getConfigurationMethod(multiplexer);
-            }
-            catch
-            {
-                return null;
-            }
+            return multiplexer.GetProperty<string>("Configuration").GetValueOrDefault();
         }
 
         /// <summary>
@@ -77,23 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>The raw command</returns>
         public static string GetRawCommand(object multiplexer, object message)
         {
-            string cmdAndKey = null;
-            try
-            {
-                if (_getCommandAndKeyMethod == null)
-                {
-                    var asm = multiplexer.GetType().Assembly;
-                    var messageType = asm.GetType("StackExchange.Redis.Message");
-                    _getCommandAndKeyMethod = Emit.DynamicMethodBuilder<Func<object, string>>.CreateMethodCallDelegate(messageType, "get_CommandAndKey");
-                }
-
-                cmdAndKey = _getCommandAndKeyMethod(message);
-            }
-            catch
-            {
-            }
-
-            return cmdAndKey ?? "COMMAND";
+            return message.GetProperty<string>("CommandAndKey").GetValueOrDefault() ?? "COMMAND";
         }
 
         /// <summary>
