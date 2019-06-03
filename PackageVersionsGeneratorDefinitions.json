@@ -26,5 +26,12 @@
         "NugetPackageSearchName": "Npgsql",
         "MinVersion": "4.0.0",
         "MaxVersion": "5.0.0"
+    },
+    {
+        "IntegrationName": "SqlServer",
+        "SampleProjectName": "Samples.SqlServer",
+        "NugetPackageSearchName": "Microsoft.EntityFrameworkCore.SqlServer",
+        "MinVersion": "2.0.0",
+        "MaxVersion": "3.0.0"
     }
 ]
