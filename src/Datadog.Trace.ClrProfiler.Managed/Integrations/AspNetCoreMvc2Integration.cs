@@ -136,6 +136,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
         /// <param name="httpContext">The HttpContext for the current request.</param>
         /// <param name="routeData">A RouteData with information about the current route.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         [InterceptMethod(
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
@@ -146,7 +147,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object diagnosticSource,
             object actionDescriptor,
             object httpContext,
-            object routeData)
+            object routeData,
+            int opCode)
         {
             AspNetCoreMvc2Integration integration = null;
 
@@ -207,6 +209,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
         /// <param name="httpContext">The HttpContext for the current request.</param>
         /// <param name="routeData">A RouteData with information about the current route.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         [InterceptMethod(
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
@@ -217,7 +220,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object diagnosticSource,
             object actionDescriptor,
             object httpContext,
-            object routeData)
+            object routeData,
+            int opCode)
         {
             AspNetCoreMvc2Integration integration = null;
 
@@ -277,13 +281,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Wrapper method used to catch unhandled exceptions in the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
         /// </summary>
         /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         [InterceptMethod(
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = ResourceInvoker,
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
-        public static void Rethrow(object context)
+        public static void Rethrow(object context, int opCode)
         {
             AspNetCoreMvc2Integration integration = null;
             const string methodName = nameof(Rethrow);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,19 +10,21 @@ using Sigil;
 namespace Datadog.Trace.ClrProfiler.Emit
 {
     /// <summary>
-    /// Helper class to instances of <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/>.
+    /// Helper class to create instances of <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/>.
     /// </summary>
     /// <typeparam name="TDelegate">The type of delegate</typeparam>
     internal static class DynamicMethodBuilder<TDelegate>
         where TDelegate : Delegate
     {
-        private static readonly ConcurrentDictionary<Key, TDelegate> _cached = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
+        private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
 
         /// <summary>
-        /// Memoizes CreateMethodCallDelegate
+        /// Gets a previously cache delegate used to call the specified method,
+        /// or creates and caches a new delegate if not found.
         /// </summary>
         /// <param name="type">The <see cref="Type"/> that contains the method.</param>
         /// <param name="methodName">The name of the method.</param>
+        /// <param name="callOpCode">The OpCode to use in the method call.</param>
         /// <param name="returnType">The method's return type.</param>
         /// <param name="methodParameterTypes">optional types for the method parameters</param>
         /// <param name="methodGenericArguments">optional generic type arguments for a generic method</param>
@@ -29,15 +32,17 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public static TDelegate GetOrCreateMethodCallDelegate(
             Type type,
             string methodName,
+            OpCodeValue callOpCode = OpCodeValue.Callvirt,
             Type returnType = null,
             Type[] methodParameterTypes = null,
             Type[] methodGenericArguments = null)
         {
-            return _cached.GetOrAdd(
-                new Key(type, methodName, returnType, methodParameterTypes, methodGenericArguments),
+            return Cache.GetOrAdd(
+                new Key(type, methodName, callOpCode, returnType, methodParameterTypes, methodGenericArguments),
                 key => CreateMethodCallDelegate(
                     key.Type,
                     key.MethodName,
+                    key.CallOpCode,
                     key.MethodParameterTypes,
                     key.MethodGenericArguments));
         }
@@ -205,12 +210,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// </summary>
         /// <param name="type">The <see cref="Type"/> that contains the method to call when the returned delegate is executed..</param>
         /// <param name="methodName">The name of the method to call when the returned delegate is executed.</param>
+        /// <param name="callOpCode">The OpCode to use in the method call.</param>
         /// <param name="methodParameterTypes">If not null, use method overload that matches the specified parameters.</param>
         /// <param name="methodGenericArguments">If not null, use method overload that has the same number of generic arguments.</param>
         /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
         public static TDelegate CreateMethodCallDelegate(
             Type type,
             string methodName,
+            OpCodeValue callOpCode = OpCodeValue.Callvirt,
             Type[] methodParameterTypes = null,
             Type[] methodGenericArguments = null)
         {
@@ -329,18 +336,22 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 }
             }
 
-            if (methodInfo.IsStatic)
+            if (callOpCode == OpCodeValue.Call || methodInfo.IsStatic)
             {
+                // non-virtual call (e.g. static method, or method override calling overriden implementation)
                 dynamicMethod.Call(methodInfo);
+            }
+            else if (callOpCode == OpCodeValue.Callvirt)
+            {
+                // Note: C# compiler uses CALLVIRT for non-virtual
+                // instance methods to get the cheap null check
+                dynamicMethod.CallVirtual(methodInfo);
             }
             else
             {
-                // C# compiler always uses CALLVIRT for instance methods
-                // to get the cheap null check, even if they are not virtual
-                dynamicMethod.CallVirtual(methodInfo);
+                throw new NotSupportedException($"OpCode {callOpCode} not supported when calling a method.");
             }
 
-            // Non-void return type?
             if (methodInfo.ReturnType.IsValueType && returnType == typeof(object))
             {
                 dynamicMethod.Box(methodInfo.ReturnType);
@@ -358,14 +369,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             public readonly Type Type;
             public readonly string MethodName;
+            public readonly OpCodeValue CallOpCode;
             public readonly Type ReturnType;
             public readonly Type[] MethodParameterTypes;
             public readonly Type[] MethodGenericArguments;
 
-            public Key(Type type, string methodName, Type returnType, Type[] methodParameterTypes, Type[] methodGenericArguments)
+            public Key(Type type, string methodName, OpCodeValue callOpCode, Type returnType, Type[] methodParameterTypes, Type[] methodGenericArguments)
             {
                 Type = type;
                 MethodName = methodName;
+                CallOpCode = callOpCode;
                 ReturnType = returnType;
                 MethodParameterTypes = methodParameterTypes;
                 MethodGenericArguments = methodGenericArguments;
@@ -386,35 +399,24 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     return false;
                 }
 
+                if (!object.Equals(x.CallOpCode, y.CallOpCode))
+                {
+                    return false;
+                }
+
                 if (!object.Equals(x.ReturnType, y.ReturnType))
                 {
                     return false;
                 }
 
-                if (!(x.MethodParameterTypes == null && y.MethodParameterTypes == null))
+                if (!ArrayEquals(x.MethodParameterTypes, y.MethodParameterTypes))
                 {
-                    if (x.MethodParameterTypes == null || y.MethodParameterTypes == null)
-                    {
-                        return false;
-                    }
-
-                    if (x.MethodParameterTypes.Except(y.MethodParameterTypes).Any())
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
-                if (!(x.MethodGenericArguments == null && y.MethodGenericArguments == null))
+                if (!ArrayEquals(x.MethodGenericArguments, y.MethodGenericArguments))
                 {
-                    if (x.MethodGenericArguments == null || y.MethodGenericArguments == null)
-                    {
-                        return false;
-                    }
-
-                    if (x.MethodGenericArguments.Except(y.MethodGenericArguments).Any())
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
                 return true;
@@ -435,6 +437,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     {
                         hash = (hash * 23) + obj.MethodName.GetHashCode();
                     }
+
+                    hash = (hash * 23) + obj.CallOpCode.GetHashCode();
 
                     if (obj.MethodParameterTypes != null)
                     {
@@ -460,6 +464,21 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
                     return hash;
                 }
+            }
+
+            private static bool ArrayEquals<T>(T[] array1, T[] array2)
+            {
+                if (array1 == null && array2 == null)
+                {
+                    return true;
+                }
+
+                if (array1 == null || array2 == null)
+                {
+                    return false;
+                }
+
+                return ((IStructuralEquatable)array1).Equals(array2, EqualityComparer<T>.Default);
             }
         }
     }

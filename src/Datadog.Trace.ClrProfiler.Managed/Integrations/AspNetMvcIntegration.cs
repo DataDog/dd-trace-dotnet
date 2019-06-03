@@ -154,6 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="actionName">The name of the controller action.</param>
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate.</param>
         /// <param name="state">An object that holds the state of the async operation.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>Returns the <see cref="IAsyncResult "/> returned by the original BeginInvokeAction() that is later passed to <see cref="EndInvokeAction"/>.</returns>
         [InterceptMethod(
             CallerAssembly = "System.Web.Mvc",
@@ -166,7 +167,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             dynamic controllerContext,
             dynamic actionName,
             dynamic callback,
-            dynamic state)
+            dynamic state,
+            int opCode)
         {
             Scope scope = null;
 
@@ -200,6 +202,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="asyncControllerActionInvoker">The IAsyncActionInvoker instance.</param>
         /// <param name="asyncResult">The <see cref="IAsyncResult"/> returned by <see cref="BeginInvokeAction"/>.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
         [InterceptMethod(
             CallerAssembly = "System.Web.Mvc",
@@ -207,7 +210,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Web.Mvc.Async.IAsyncActionInvoker",
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
-        public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult)
+        public static bool EndInvokeAction(dynamic asyncControllerActionInvoker, dynamic asyncResult, int opCode)
         {
             Scope scope = null;
             var httpContext = HttpContext.Current;

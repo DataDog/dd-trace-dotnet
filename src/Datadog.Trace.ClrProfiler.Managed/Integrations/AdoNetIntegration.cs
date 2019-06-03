@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="this">The <see cref="DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
         /// <param name="behavior">A value from <see cref="CommandBehavior"/>.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Data.Common.DbCommand",
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object ExecuteDbDataReader(object @this, int behavior)
+        public static object ExecuteDbDataReader(object @this, int behavior, int opCode)
         {
             var command = (DbCommand)@this;
             var commandBehavior = (CommandBehavior)behavior;
@@ -64,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="this">The <see cref="DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
         /// <param name="behavior">A value from <see cref="CommandBehavior"/>.</param>
         /// <param name="cancellationTokenSource">A cancellation token source that can be used to cancel the async operation.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
@@ -75,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Data.Common.DbCommand",
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object ExecuteDbDataReaderAsync(object @this, int behavior, object cancellationTokenSource)
+        public static object ExecuteDbDataReaderAsync(object @this, int behavior, object cancellationTokenSource, int opCode)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;

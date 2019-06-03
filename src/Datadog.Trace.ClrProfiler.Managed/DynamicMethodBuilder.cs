@@ -1,7 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection.Emit;
+using Datadog.Trace.ClrProfiler.Emit;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -32,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler
             return Emit.DynamicMethodBuilder<TDelegate>.GetOrCreateMethodCallDelegate(
                 type,
                 methodName,
+                OpCodeValue.Callvirt,
                 returnType,
                 methodParameterTypes,
                 methodGenericArguments);
@@ -52,7 +52,12 @@ namespace Datadog.Trace.ClrProfiler
             Type[] methodParameterTypes = null,
             Type[] methodGenericArguments = null)
         {
-            return Emit.DynamicMethodBuilder<TDelegate>.CreateMethodCallDelegate(type, methodName, methodParameterTypes, methodGenericArguments);
+            return Emit.DynamicMethodBuilder<TDelegate>.CreateMethodCallDelegate(
+                type,
+                methodName,
+                OpCodeValue.Callvirt,
+                methodParameterTypes,
+                methodGenericArguments);
         }
     }
 }

@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.
         /// </summary>
         /// <param name="webRequest">The <see cref="WebRequest"/> instance to instrument.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System", // .NET Framework
@@ -28,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "System.Net.WebRequest",
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object GetResponse(object webRequest)
+        public static object GetResponse(object webRequest, int opCode)
         {
             var request = (WebRequest)webRequest;
 
@@ -68,13 +69,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponseAsync"/>.
         /// </summary>
         /// <param name="request">The <see cref="WebRequest"/> instance to instrument.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Net",
             TargetType = "System.Net.WebRequest",
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object GetResponseAsync(object request)
+        public static object GetResponseAsync(object request, int opCode)
         {
             return GetResponseAsyncInternal((WebRequest)request);
         }

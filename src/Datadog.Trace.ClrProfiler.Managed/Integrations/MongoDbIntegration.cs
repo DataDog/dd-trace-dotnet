@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="wireProtocol">The IWireProtocol`1 or IWireProtocol instance we are replacing.</param>
         /// <param name="connection">The connection.</param>
         /// <param name="cancellationTokenSource">A cancellation token source.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
@@ -45,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = IWireProtocolGeneric,
             TargetMinimumVersion = Major2Minor2,
             TargetMaximumVersion = Major2)]
-        public static object Execute(object wireProtocol, object connection, object cancellationTokenSource)
+        public static object Execute(object wireProtocol, object connection, object cancellationTokenSource, int opCode)
         {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 
@@ -91,6 +92,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="wireProtocol">The IWireProtocol instance we are replacing.</param>
         /// <param name="connection">The connection.</param>
         /// <param name="cancellationTokenSource">A cancellation token source.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetMethod = nameof(ExecuteAsync),
@@ -98,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = IWireProtocol,
             TargetMinimumVersion = Major2Minor1,
             TargetMaximumVersion = Major2)]
-        public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource)
+        public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource, int opCode)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
@@ -111,6 +113,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="wireProtocol">The IWireProtocol`1 instance we are replacing.</param>
         /// <param name="connection">The connection.</param>
         /// <param name="cancellationTokenSource">A cancellation token source.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetMethod = nameof(ExecuteAsync),
@@ -118,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = IWireProtocolGeneric,
             TargetMinimumVersion = Major2Minor1,
             TargetMaximumVersion = Major2)]
-        public static object ExecuteAsyncGeneric(object wireProtocol, object connection, object cancellationTokenSource)
+        public static object ExecuteAsyncGeneric(object wireProtocol, object connection, object cancellationTokenSource, int opCode)
         {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 

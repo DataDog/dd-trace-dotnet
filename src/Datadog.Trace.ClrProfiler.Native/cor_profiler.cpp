@@ -7,6 +7,7 @@
 #include "clr_helpers.h"
 #include "environment_variables.h"
 #include "il_rewriter.h"
+#include "il_rewriter_wrapper.h"
 #include "integration_loader.h"
 #include "logging.h"
 #include "metadata_builder.h"
@@ -370,9 +371,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
                              target.signature);
       }
 
-      // replace with a call to the instrumentation wrapper
       const auto original_argument = pInstr->m_Arg32;
+
+      // insert the opcode and signature token as
+      // additional arguments for the wrapper method
+      ILRewriterWrapper rewriter_wrapper(&rewriter);
+      rewriter_wrapper.SetILPosition(pInstr);
+      rewriter_wrapper.LoadInt32(pInstr->m_opcode);
+
+      // always use CALL because the wrappers methods are all static
       pInstr->m_opcode = CEE_CALL;
+      // replace with a call to the instrumentation wrapper
       pInstr->m_Arg32 = wrapper_method_ref;
 
       modified = true;

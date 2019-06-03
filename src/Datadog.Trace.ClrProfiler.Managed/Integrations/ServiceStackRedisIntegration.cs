@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="fn">The function</param>
         /// <param name="completePipelineFn">An optional function to call to complete a pipeline</param>
         /// <param name="sendWithoutRead">Whether or to send without waiting for the result</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
             CallerAssembly = "ServiceStack.Redis",
@@ -29,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetType = "ServiceStack.Redis.RedisNativeClient",
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major5)]
-        public static T SendReceive<T>(object redisNativeClient, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead)
+        public static T SendReceive<T>(object redisNativeClient, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead, int opCode)
         {
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>
                .GetOrCreateMethodCallDelegate(

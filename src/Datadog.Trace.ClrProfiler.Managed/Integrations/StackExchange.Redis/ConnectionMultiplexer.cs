@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="message">The message to send to redis.</param>
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="server">The server to call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>The result</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -35,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             TargetType = "StackExchange.Redis.ConnectionMultiplexer",
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
-        public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server)
+        public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server, int opCode)
         {
             var resultType = typeof(T);
             var multiplexerType = multiplexer.GetType();
@@ -47,9 +48,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, T>>
                .CreateMethodCallDelegate(
                     multiplexerType,
-                    "ExecuteSyncImpl",
-                    new[] { messageType, processorType, serverType },
-                    new[] { resultType });
+                    methodName: "ExecuteSyncImpl",
+                    methodParameterTypes: new[] { messageType, processorType, serverType },
+                    methodGenericArguments: new[] { resultType });
 
             using (var scope = CreateScope(multiplexer, message))
             {
@@ -74,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -89,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             TargetType = "StackExchange.Redis.ConnectionMultiplexer",
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
-        public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server)
+        public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server, int opCode)
         {
             return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server);
         }
@@ -117,9 +119,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>
                .CreateMethodCallDelegate(
                     multiplexerType,
-                    "ExecuteAsyncImpl",
-                    new[] { messageType, processorType, stateType, serverType },
-                    new[] { genericType });
+                    methodName: "ExecuteAsyncImpl",
+                    methodParameterTypes: new[] { messageType, processorType, stateType, serverType },
+                    methodGenericArguments: new[] { genericType });
 
             using (var scope = CreateScope(multiplexer, message))
             {
