@@ -177,7 +177,7 @@ namespace Datadog.Trace.TestHelpers
             // for ASP.NET Core sample apps, set the server's port
             environmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{agentPort}/";
 
-            foreach (var name in new string[] { "REDIS_HOST" })
+            foreach (var name in new string[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {
                 var value = Environment.GetEnvironmentVariable(name);
                 if (!string.IsNullOrEmpty(value))

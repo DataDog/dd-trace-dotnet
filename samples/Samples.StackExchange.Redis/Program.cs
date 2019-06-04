@@ -2,69 +2,26 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ServiceStack.Redis;
 using StackExchange.Redis;
 
-namespace Samples.RedisCore
+namespace Samples.StackExchangeRedis
 {
     class Program
     {
         static void Main(string[] args)
         {
             string prefix = "";
-            if (args.Length > 1)
+            if (args.Length > 0)
             {
-                prefix = args[1];
+                prefix = args[0];
             }
 
-            if (args.Length == 0 || args.Contains("ServiceStack"))
-            {
-                RunServiceStack(prefix);
-            }
-            if (args.Length == 0 || args.Contains("StackExchange"))
-            {
-                RunStackExchange(prefix);
-            }
+            RunStackExchange(prefix);
         }
 
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
-        }
-
-        private static void RunServiceStack(string prefix)
-        {
-            prefix += "ServiceStack.Redis.";
-
-            Console.WriteLine($"Testing ServiceStack.Redis: {prefix}");
-            using (var redisManager = new PooledRedisClientManager(Host()))
-            using (var redis = (RedisClient)redisManager.GetClient())
-            {
-                // clear
-                redis.Set($"{prefix}INCR", 0);
-
-                RunCommands(new TupleList<string, Func<object>>
-                {
-                    // test SendExpectCode
-                    { "PING", () => redis.Ping() },
-                    // test SendExpectComplexResponse
-                    { "DDCUSTOM", () => redis.Custom("DDCUSTOM", "COMMAND") },
-                    // test SendExpectData
-                    { "ECHO", () => redis.Echo("Hello World") },
-                    // test SendExpectDeeplyNestedMultiData
-                    { "SLOWLOG", () => redis.GetSlowlog(5) },
-                    // test SendExpectLong
-                    { "INCR", () => redis.Incr($"{prefix}INCR") },
-                    // test SendExpectDouble},
-                    { "INCR", () => redis.IncrByFloat($"{prefix}INCR", 1.25) },
-                    // test SendExpectMultiData
-                    { "TIME", () => redis.GetServerTime() },
-                    // test SendExpectSuccess
-                    { "DB", () => { redis.ChangeDb(0); return ""; } },
-                    // test SendWithoutRead
-                    // only Shutdown, so we will skip for now
-                });
-            }
+            return Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
         }
 
         private static void RunStackExchange(string prefix)
@@ -113,7 +70,7 @@ namespace Samples.RedisCore
 
                 try
                 {
-                    redis.GetServer("localhost:6379").FlushDatabase(1);
+                    redis.GetServer(Host()).FlushDatabase(1);
                 }
                 catch
                 {
