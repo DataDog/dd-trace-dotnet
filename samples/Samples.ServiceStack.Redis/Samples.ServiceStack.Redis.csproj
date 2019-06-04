@@ -1,7 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">5.2.0</ApiVersion>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="ServiceStack.Redis" Version="5.2.0" />
+    <PackageReference Include="ServiceStack.Redis" Version="$(ApiVersion)" />
   </ItemGroup>
 
 </Project>

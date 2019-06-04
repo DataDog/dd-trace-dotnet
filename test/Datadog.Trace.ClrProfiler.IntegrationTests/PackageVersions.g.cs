@@ -151,5 +151,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.2.6" },
 #endif
             };
+        public static IEnumerable<object[]> ServiceStackRedis =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+                new object[] { "4.0.48" },
+                new object[] { "4.0.50" },
+                new object[] { "4.0.52" },
+                new object[] { "4.0.54" },
+                new object[] { "4.0.56" },
+                new object[] { "4.0.58" },
+                new object[] { "4.0.60" },
+                new object[] { "4.0.62" },
+                new object[] { "4.5.0" },
+                new object[] { "4.5.2" },
+                new object[] { "4.5.4" },
+                new object[] { "4.5.6" },
+                new object[] { "4.5.8" },
+                new object[] { "4.5.10" },
+                new object[] { "4.5.12" },
+                new object[] { "4.5.14" },
+                new object[] { "5.0.0" },
+                new object[] { "5.0.2" },
+                new object[] { "5.1.0" },
+                new object[] { "5.2.0" },
+                new object[] { "5.4.0" },
+                new object[] { "5.5.0" },
+#endif
+            };
     }
 }

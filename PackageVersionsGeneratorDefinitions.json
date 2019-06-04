@@ -40,5 +40,12 @@
         "NugetPackageSearchName": "StackExchange.Redis",
         "MinVersion": "1.2.2",
         "MaxVersion": "2.0.0"
+    },
+    {
+        "IntegrationName": "ServiceStackRedis",
+        "SampleProjectName": "Samples.ServiceStack.Redis",
+        "NugetPackageSearchName": "ServiceStack.Redis",
+        "MinVersion": "4.0.48",
+        "MaxVersion": "6.0.0"
     }
 ]
