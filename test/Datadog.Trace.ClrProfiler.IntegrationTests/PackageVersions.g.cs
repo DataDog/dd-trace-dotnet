@@ -124,5 +124,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.2.4" },
 #endif
             };
+        public static IEnumerable<object[]> StackExchangeRedis =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+                new object[] { "1.2.2" },
+                new object[] { "1.2.3" },
+                new object[] { "1.2.4" },
+                new object[] { "1.2.5" },
+                new object[] { "1.2.6" },
+#endif
+            };
     }
 }

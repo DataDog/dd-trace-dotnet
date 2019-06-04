@@ -14,14 +14,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [Fact]
+        [Theory]
+        [MemberData(nameof(PackageVersions.StackExchangeRedis), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        public void SubmitsTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}"))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 

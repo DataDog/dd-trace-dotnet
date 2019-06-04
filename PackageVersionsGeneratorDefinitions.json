@@ -33,5 +33,12 @@
         "NugetPackageSearchName": "Microsoft.EntityFrameworkCore.SqlServer",
         "MinVersion": "2.0.0",
         "MaxVersion": "3.0.0"
+    },
+    {
+        "IntegrationName": "StackExchangeRedis",
+        "SampleProjectName": "Samples.StackExchange.Redis",
+        "NugetPackageSearchName": "StackExchange.Redis",
+        "MinVersion": "1.2.2",
+        "MaxVersion": "2.0.0"
     }
 ]

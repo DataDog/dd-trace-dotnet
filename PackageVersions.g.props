@@ -219,5 +219,20 @@
     <PackageVersionSample Include="samples*\**\Samples.SqlServer.csproj">
       <Properties>ApiVersion=2.2.4;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
     </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.StackExchange.Redis.csproj">
+      <Properties>ApiVersion=1.2.2;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.StackExchange.Redis.csproj">
+      <Properties>ApiVersion=1.2.3;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.StackExchange.Redis.csproj">
+      <Properties>ApiVersion=1.2.4;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.StackExchange.Redis.csproj">
+      <Properties>ApiVersion=1.2.5;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
+    <PackageVersionSample Include="samples*\**\Samples.StackExchange.Redis.csproj">
+      <Properties>ApiVersion=1.2.6;TargetFramework=netcoreapp2.1;RestoreRecursive=false;BuildProjectReferences=false</Properties>
+    </PackageVersionSample>
   </ItemGroup>
 </Project>
