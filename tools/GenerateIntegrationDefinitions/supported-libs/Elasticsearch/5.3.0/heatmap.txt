@@ -1,0 +1,6 @@
+[INSTRUMENTED TYPE] Elasticsearch.Net.IRequestPipeline
+[NAME] Elasticsearch.Net.ElasticsearchResponse`1[TReturn] CallElasticsearch[TReturn](Elasticsearch.Net.RequestData)
+[NAME] System.Threading.Tasks.Task`1[Elasticsearch.Net.ElasticsearchResponse`1[TReturn]] CallElasticsearchAsync[TReturn](Elasticsearch.Net.RequestData, System.Threading.CancellationToken)
+[NAME] Elasticsearch.Net.ElasticsearchResponse`1[TReturn] CallElasticsearch[TReturn](Elasticsearch.Net.RequestData)
+[NAME] System.Threading.Tasks.Task`1[Elasticsearch.Net.ElasticsearchResponse`1[TReturn]] CallElasticsearchAsync[TReturn](Elasticsearch.Net.RequestData, System.Threading.CancellationToken)
+

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -25,11 +26,11 @@ namespace GenerateIntegrationDefinitions
                                let integrationName = attribute.Integration ?? GetIntegrationName(wrapperType)
                                orderby integrationName
                                group new
-                                   {
-                                       wrapperType,
-                                       wrapperMethod,
-                                       attribute
-                                   }
+                               {
+                                   wrapperType,
+                                   wrapperMethod,
+                                   attribute
+                               }
                                    by integrationName into g
                                select new
                                {
@@ -84,6 +85,202 @@ namespace GenerateIntegrationDefinitions
 
             var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
             File.WriteAllText(filename, json, utf8NoBom);
+
+            try
+            {
+                string workingDirectory = Environment.CurrentDirectory;
+                string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
+                string libsDirectory = Path.Combine(projectDirectory, "supported-libs");
+
+                var integrationLibs = Directory.GetDirectories(libsDirectory);
+
+                var flatIntegrations = integrations.SelectMany(i => i.method_replacements).ToList();
+                var librariesWeInstrument = flatIntegrations.Select(i => i.target.assembly).Distinct().ToList();
+
+                var currentResolvingDirectory = string.Empty;
+
+                Func<object, ResolveEventArgs, Assembly> resolver = (obj, eventArgs) =>
+                {
+                    Assembly myAssembly;
+
+                    var objExecutingAssemblies = Assembly.GetExecutingAssembly();
+                    AssemblyName[] referencedNames = objExecutingAssemblies.GetReferencedAssemblies();
+
+                    var requestedAssembly = eventArgs.Name.Split(',').First();
+                    var path = Path.Combine(currentResolvingDirectory, requestedAssembly + ".dll");
+
+                    if (File.Exists(path))
+                    {
+                        myAssembly = Assembly.ReflectionOnlyLoadFrom(path);
+                        return myAssembly;
+                    }
+
+                    // Might be a GAC lib? Why isn't the GAC working? Probably because 461 vs 472
+                    path = Path.Combine(@"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1", requestedAssembly + ".dll");
+                    myAssembly = Assembly.ReflectionOnlyLoadFrom(path);
+                    return myAssembly;
+                };
+
+                AppDomain currentDomain = AppDomain.CurrentDomain;
+                currentDomain.ReflectionOnlyAssemblyResolve += new ResolveEventHandler(resolver);
+
+                foreach (var integrationDir in integrationLibs)
+                {
+                    var name = integrationDir.Split('\\').Last();
+                    var versions = Directory.GetDirectories(integrationDir);
+                    foreach (var versionDir in versions)
+                    {
+                        var versionText = versionDir.Split('\\').Last();
+                        var version = new Version(versionText);
+                        currentResolvingDirectory = versionDir;
+
+                        var potentialFiles =
+                            Directory.GetFiles(versionDir)
+                                     .Where(fn => librariesWeInstrument.Any(lib => fn.Split('\\').Last() == $"{lib}.dll"))
+                                     .Where(fn => fn.EndsWith("dll"));
+
+                        var heatmapName = $"heatmap-{name}-{version}.txt";
+                        var heatmapFile = Path.Combine(libsDirectory, heatmapName);
+
+                        if (File.Exists(heatmapFile))
+                        {
+                            File.Delete(heatmapFile); // start fresh
+                        }
+
+                        var heatmap = new List<string>();
+
+                        foreach (var libraryFile in potentialFiles)
+                        {
+                            var assembly = Assembly.ReflectionOnlyLoadFrom(libraryFile);
+
+                            var assemblyName = assembly.GetName().Name;
+
+                            heatmap.Add($"[ASSEMBLY START] {assemblyName}");
+                            heatmap.Add($""); // empty line
+
+                            var integrationsToScanFor = flatIntegrations.Where(mr => mr.target.assembly.Equals(assemblyName)).ToList();
+                            var typeNamesToScanFor = integrationsToScanFor.Select(i => i.target.type).Distinct();
+
+                            var typesWeExplicitlyInstrument =
+                                assembly.DefinedTypes
+                                        .Where(dt => typeNamesToScanFor.Any(tn => dt.FullName == tn))
+                                        .ToList();
+
+                            var explicitToImplicit = new Dictionary<Type, List<Type>>();
+                            typesWeExplicitlyInstrument.ForEach(t => explicitToImplicit.Add(t, new List<Type>()));
+                            foreach (var potentialType in assembly.DefinedTypes)
+                            {
+                                foreach (var explicitType in typesWeExplicitlyInstrument)
+                                {
+                                    if (explicitType.IsAssignableFrom(potentialType))
+                                    {
+                                        // Found a candidate!
+                                        explicitToImplicit[explicitType].Add(potentialType);
+                                    }
+                                }
+                            }
+
+                            foreach (var key in explicitToImplicit.Keys)
+                            {
+                                heatmap.Add($"[INSTRUMENTED TYPE] [{GetAccessModifierText(key)}] {key.FullName}");
+                                var relevantInstrumentations =
+                                    integrationsToScanFor
+                                       .Where(i => i.target.assembly == key.Assembly.GetName().Name)
+                                       .Where(i => i.target.type == key.FullName)
+                                       .ToList();
+
+                                var hits = explicitToImplicit[key];
+                                foreach (var type in hits.OrderBy(h => h == key))
+                                {
+                                    // Get all methods if it's the explicit type we instrument, otherwise, only get overrides
+                                    var methods =
+                                        type
+                                           .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                                           .Where(m => (type == key) || (m.GetBaseDefinition() != m));
+
+                                    var methodHits = new List<string>();
+
+                                    foreach (var instrumentation in relevantInstrumentations)
+                                    {
+                                        var target = instrumentation.target;
+                                        foreach (var methodInfo in methods)
+                                        {
+                                            if (methodInfo.Name != target.method)
+                                            {
+                                                continue;
+                                            }
+
+                                            bool overrides = ((type != key) || (methodInfo.GetBaseDefinition() != methodInfo));
+
+                                            methodHits.Add($"[{type.FullName}]{(overrides ? " [OVERRIDES]" : string.Empty)} {GetAccessModifierText(methodInfo)} {methodInfo}");
+                                        }
+                                    }
+
+                                    heatmap.AddRange(methodHits);
+                                }
+
+                                heatmap.Add($""); // empty line
+                            }
+
+                            heatmap.Add($"[ASSEMBLY END] {assemblyName}");
+
+                            heatmap.Add($""); // empty line
+                        }
+
+                        File.AppendAllLines(heatmapFile, heatmap);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex);
+            }
+        }
+
+        private static string GetAccessModifierText(this Type type)
+        {
+            if (type.IsPublic)
+            {
+                return "public";
+            }
+
+            if (type.IsNestedFamORAssem)
+            {
+                return "internal";
+            }
+
+            return "private";
+        }
+
+        private static string GetAccessModifierText(this MethodInfo methodInfo)
+        {
+            if (methodInfo.IsPrivate)
+            {
+                return "private";
+            }
+
+            if (methodInfo.IsFamily)
+            {
+                return "protected";
+            }
+
+            if (methodInfo.IsFamilyOrAssembly)
+            {
+                return "protected internal";
+            }
+
+            if (methodInfo.IsAssembly)
+            {
+                return "internal";
+            }
+
+            if (methodInfo.IsPublic)
+            {
+                return "public";
+            }
+
+            throw new ArgumentException("Did not find access modifier", nameof(methodInfo));
         }
 
         private static string GetIntegrationName(Type wrapperType)

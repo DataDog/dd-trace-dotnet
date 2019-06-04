@@ -58,7 +58,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 execute = ExecuteAccess.GetInterceptedMethod(
-                    wireProtocolType,
+                    owningType: wireProtocolType,
+                    intendedType: IWireProtocolGeneric,
                     returnType: null, // return type doesn't matter
                     methodName: methodName,
                     generics: Interception.NullTypeArray,
@@ -172,6 +173,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 executeAsync = ExecuteAsyncAccess.GetInterceptedMethod(
                     owningType: wireProtocolType,
+                    intendedType: IWireProtocolGeneric,
                     returnType: typeof(Task),
                     methodName: methodName,
                     generics: Interception.NullTypeArray,
@@ -217,6 +219,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 executeAsync = ExecuteAsyncAccess.GetInterceptedMethod(
                     owningType: wireProtocolType,
+                    intendedType: IWireProtocolGeneric,
                     returnType: typeof(Task<T>),
                     methodName: methodName,
                     generics: Interception.NullTypeArray,

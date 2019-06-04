@@ -298,6 +298,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 rethrow = RethrowAccess.GetInterceptedMethod(
                     assembly: Assembly.GetCallingAssembly(),
                     owningType: ResourceInvoker,
+                    intendedType: ResourceInvoker,
                     returnType: Interception.VoidType,
                     methodName: methodName,
                     generics: Interception.NullTypeArray,

@@ -46,7 +46,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// Creates a simple <see cref="DynamicMethod"/> using <see cref="System.Reflection.Emit"/> that
         /// calls a method with the specified name and parameter types.
         /// </summary>
-        /// <param name="owningType">The <see cref="Type"/> that contains the method to call when the returned delegate is executed..</param>
+        /// <param name="owningType">Runtime type which owns the method.</param>
+        /// <param name="intendedType">Type we are actually instrumenting.</param>
         /// <param name="methodName">The name of the method to call when the returned delegate is executed.</param>
         /// <param name="returnType">Use method overload that matches the specified return owningType.</param>
         /// <param name="parameterTypes">If not null, use method overload that matches the specified parameters.</param>
@@ -54,6 +55,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// <returns>A <see cref="Delegate"/> that can be used to execute the dynamic method.</returns>
         public static TDelegate CreateInstrumentedMethodDelegate(
             Type owningType,
+            string intendedType,
             string methodName,
             Type returnType,
             Type[] parameterTypes,
@@ -62,6 +64,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
             if (owningType == null)
             {
                 throw new ArgumentNullException($"Parameter may not be null: {nameof(owningType)}");
+            }
+
+            if (intendedType == null)
+            {
+                throw new ArgumentNullException($"Parameter may not be null: {nameof(intendedType)}");
             }
 
             MethodInfo[] methods =
@@ -123,6 +130,27 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 }
 
                 candidate = methods[i];
+
+                // // If we are instrumenting a base call within a child class to our instrumented type, ensure we get the right level
+                // var typeLevel = owningType;
+                // var interfacesImplemented = typeLevel.GetInterfaces();
+                // if (interfacesImplemented.Any(interfaceType => intendedType.Equals(interfaceType.FullName)))
+                // {
+                //     // We're instrumenting an interface call so wherever we are is okay
+                //     break;
+                // }
+                // while (typeLevel.FullName != intendedType && candidate.GetBaseDefinition() != candidate)
+                // {
+                //     if (typeLevel.BaseType == null)
+                //     {
+                //         // This is as good as we can do, but this should also never happen
+                //         break;
+                //     }
+                // // Crawl one level up
+                //     typeLevel = typeLevel.BaseType;
+                //     candidate = candidate.GetBaseDefinition();
+                // }
+
                 break;
             }
 

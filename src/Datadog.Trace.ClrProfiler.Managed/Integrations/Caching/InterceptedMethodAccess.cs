@@ -19,7 +19,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Attempts to retrieve a method from cache, otherwise creates the delegate reference, adds it to the cache, and then returns it.
         /// </summary>
         /// <param name="assembly">Assembly containing the method.</param>
-        /// <param name="owningType">Type which owns the method.</param>
+        /// <param name="owningType">Runtime type which owns the method.</param>
+        /// <param name="intendedType">Type we are actually instrumenting.</param>
         /// <param name="methodName">Name of the method being instrumented.</param>
         /// <param name="returnType">The return type of the instrumented method.</param>
         /// <param name="generics">The ordered types of the method's generics.</param>
@@ -28,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal TDelegate GetInterceptedMethod(
             Assembly assembly,
             string owningType,
+            string intendedType,
             string methodName,
             Type returnType,
             Type[] generics,
@@ -41,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     methodKey,
                     key => Emit.DynamicMethodBuilder<TDelegate>.CreateInstrumentedMethodDelegate(
                         owningType: type,
+                        intendedType: intendedType,
                         methodName: methodName,
                         returnType: returnType,
                         parameterTypes: parameters,
@@ -50,7 +53,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Attempts to retrieve a method from cache, otherwise creates the delegate reference, adds it to the cache, and then returns it.
         /// </summary>
-        /// <param name="owningType">Type which owns the method.</param>
+        /// <param name="owningType">Runtime type which owns the method.</param>
+        /// <param name="intendedType">Type we are actually instrumenting.</param>
         /// <param name="methodName">Name of the method being instrumented.</param>
         /// <param name="returnType">The return type of the instrumented method.</param>
         /// <param name="generics">The ordered types of the method's generics.</param>
@@ -58,6 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Delegate representing instrumented method.</returns>
         internal TDelegate GetInterceptedMethod(
             Type owningType,
+            string intendedType,
             string methodName,
             Type returnType,
             Type[] generics,
@@ -70,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     methodKey,
                     key => Emit.DynamicMethodBuilder<TDelegate>.CreateInstrumentedMethodDelegate(
                         owningType: owningType,
+                        intendedType: intendedType,
                         methodName: methodName,
                         returnType: returnType,
                         parameterTypes: parameters,

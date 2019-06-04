@@ -1,0 +1,7 @@
+[ASSEMBLY START] ServiceStack.Redis
+
+[INSTRUMENTED TYPE] [public] ServiceStack.Redis.RedisNativeClient
+[ServiceStack.Redis.RedisNativeClient] protected T SendReceive[T](Byte[][], System.Func`1[T], System.Action`1[System.Func`1[T]], Boolean)
+
+[ASSEMBLY END] ServiceStack.Redis
+

@@ -1,0 +1,9 @@
+[INSTRUMENTED TYPE] Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions
+[NAME] Void BeforeAction(System.Diagnostics.DiagnosticSource, Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor, Microsoft.AspNetCore.Http.HttpContext, Microsoft.AspNetCore.Routing.RouteData)
+[NAME] Void AfterAction(System.Diagnostics.DiagnosticSource, Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor, Microsoft.AspNetCore.Http.HttpContext, Microsoft.AspNetCore.Routing.RouteData)
+
+[INSTRUMENTED TYPE] Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker
+[NAME] Void Rethrow(Microsoft.AspNetCore.Mvc.Filters.ResourceExecutedContext)
+[NAME] Void Rethrow(Microsoft.AspNetCore.Mvc.Filters.ExceptionContext)
+[NAME] Void Rethrow(Microsoft.AspNetCore.Mvc.Filters.ResultExecutedContext)
+

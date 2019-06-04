@@ -1,0 +1,18 @@
+[ASSEMBLY START] System.Data.Common
+
+[ASSEMBLY END] System.Data.Common
+
+[ASSEMBLY START] System.Data
+
+[INSTRUMENTED TYPE] [public] System.Data.Common.DbCommand
+[System.Data.SqlClient.SqlCommand] [OVERRIDES] protected System.Data.Common.DbDataReader ExecuteDbDataReader(System.Data.CommandBehavior)
+[System.Data.SqlClient.SqlCommand] [OVERRIDES] protected System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader] ExecuteDbDataReaderAsync(System.Data.CommandBehavior, System.Threading.CancellationToken)
+[System.Data.OleDb.OleDbCommand] [OVERRIDES] protected System.Data.Common.DbDataReader ExecuteDbDataReader(System.Data.CommandBehavior)
+[System.Data.OleDb.OleDbCommand] [OVERRIDES] protected System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader] ExecuteDbDataReaderAsync(System.Data.CommandBehavior, System.Threading.CancellationToken)
+[System.Data.Odbc.OdbcCommand] [OVERRIDES] protected System.Data.Common.DbDataReader ExecuteDbDataReader(System.Data.CommandBehavior)
+[System.Data.Odbc.OdbcCommand] [OVERRIDES] protected System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader] ExecuteDbDataReaderAsync(System.Data.CommandBehavior, System.Threading.CancellationToken)
+[System.Data.Common.DbCommand] protected System.Data.Common.DbDataReader ExecuteDbDataReader(System.Data.CommandBehavior)
+[System.Data.Common.DbCommand] protected System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader] ExecuteDbDataReaderAsync(System.Data.CommandBehavior, System.Threading.CancellationToken)
+
+[ASSEMBLY END] System.Data
+

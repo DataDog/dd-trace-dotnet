@@ -1,0 +1,20 @@
+[ASSEMBLY START] StackExchange.Redis
+
+[INSTRUMENTED TYPE] [public] StackExchange.Redis.ConnectionMultiplexer
+[StackExchange.Redis.ConnectionMultiplexer] internal T ExecuteSyncImpl[T](StackExchange.Redis.Message, StackExchange.Redis.ResultProcessor`1[T], StackExchange.Redis.ServerEndPoint)
+[StackExchange.Redis.ConnectionMultiplexer] internal System.Threading.Tasks.Task`1[T] ExecuteAsyncImpl[T](StackExchange.Redis.Message, StackExchange.Redis.ResultProcessor`1[T], System.Object, StackExchange.Redis.ServerEndPoint)
+
+[INSTRUMENTED TYPE] [private] StackExchange.Redis.RedisBase
+[StackExchange.Redis.RedisBatch] [OVERRIDES] internal System.Threading.Tasks.Task`1[T] ExecuteAsync[T](StackExchange.Redis.Message, StackExchange.Redis.ResultProcessor`1[T], StackExchange.Redis.ServerEndPoint)
+[StackExchange.Redis.RedisBatch] [OVERRIDES] public System.Threading.Tasks.Task`1[StackExchange.Redis.RedisResult] ExecuteAsync(System.String, System.Object[])
+[StackExchange.Redis.RedisBatch] [OVERRIDES] public System.Threading.Tasks.Task`1[StackExchange.Redis.RedisResult] ExecuteAsync(System.String, System.Collections.Generic.ICollection`1[System.Object], StackExchange.Redis.CommandFlags)
+[StackExchange.Redis.RedisDatabase] [OVERRIDES] internal System.Threading.Tasks.Task`1[T] ExecuteAsync[T](StackExchange.Redis.Message, StackExchange.Redis.ResultProcessor`1[T], StackExchange.Redis.ServerEndPoint)
+[StackExchange.Redis.RedisServer] [OVERRIDES] internal System.Threading.Tasks.Task`1[T] ExecuteAsync[T](StackExchange.Redis.Message, StackExchange.Redis.ResultProcessor`1[T], StackExchange.Redis.ServerEndPoint)
+[StackExchange.Redis.RedisSubscriber] [OVERRIDES] internal System.Threading.Tasks.Task`1[T] ExecuteAsync[T](StackExchange.Redis.Message, StackExchange.Redis.ResultProcessor`1[T], StackExchange.Redis.ServerEndPoint)
+[StackExchange.Redis.RedisTransaction] [OVERRIDES] internal System.Threading.Tasks.Task`1[T] ExecuteAsync[T](StackExchange.Redis.Message, StackExchange.Redis.ResultProcessor`1[T], StackExchange.Redis.ServerEndPoint)
+[StackExchange.Redis.RedisTransaction] [OVERRIDES] public System.Threading.Tasks.Task`1[StackExchange.Redis.RedisResult] ExecuteAsync(System.String, System.Object[])
+[StackExchange.Redis.RedisTransaction] [OVERRIDES] public System.Threading.Tasks.Task`1[StackExchange.Redis.RedisResult] ExecuteAsync(System.String, System.Collections.Generic.ICollection`1[System.Object], StackExchange.Redis.CommandFlags)
+[StackExchange.Redis.RedisBase] internal System.Threading.Tasks.Task`1[T] ExecuteAsync[T](StackExchange.Redis.Message, StackExchange.Redis.ResultProcessor`1[T], StackExchange.Redis.ServerEndPoint)
+
+[ASSEMBLY END] StackExchange.Redis
+

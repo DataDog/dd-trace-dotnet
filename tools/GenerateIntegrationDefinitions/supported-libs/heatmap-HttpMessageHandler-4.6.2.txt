@@ -1,0 +1,13 @@
+[ASSEMBLY START] System.Net.Http
+
+[INSTRUMENTED TYPE] [public] System.Net.Http.HttpMessageHandler
+[System.Net.Http.DelegatingHandler] [OVERRIDES] protected internal System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage] SendAsync(System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken)
+[System.Net.Http.MessageProcessingHandler] [OVERRIDES] protected internal System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage] SendAsync(System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken)
+[System.Net.Http.HttpClientHandler] [OVERRIDES] protected internal System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage] SendAsync(System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken)
+[System.Net.Http.HttpMessageHandler] protected internal System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage] SendAsync(System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken)
+
+[INSTRUMENTED TYPE] [public] System.Net.Http.HttpClientHandler
+[System.Net.Http.HttpClientHandler] [OVERRIDES] protected internal System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage] SendAsync(System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken)
+
+[ASSEMBLY END] System.Net.Http
+

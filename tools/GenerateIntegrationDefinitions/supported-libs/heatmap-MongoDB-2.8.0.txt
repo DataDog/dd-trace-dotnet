@@ -1,0 +1,12 @@
+[ASSEMBLY START] MongoDB.Driver.Core
+
+[INSTRUMENTED TYPE] [private] MongoDB.Driver.Core.WireProtocol.IWireProtocol
+[MongoDB.Driver.Core.WireProtocol.IWireProtocol] public Void Execute(MongoDB.Driver.Core.Connections.IConnection, System.Threading.CancellationToken)
+[MongoDB.Driver.Core.WireProtocol.IWireProtocol] public System.Threading.Tasks.Task ExecuteAsync(MongoDB.Driver.Core.Connections.IConnection, System.Threading.CancellationToken)
+
+[INSTRUMENTED TYPE] [private] MongoDB.Driver.Core.WireProtocol.IWireProtocol`1
+[MongoDB.Driver.Core.WireProtocol.IWireProtocol`1] public TResult Execute(MongoDB.Driver.Core.Connections.IConnection, System.Threading.CancellationToken)
+[MongoDB.Driver.Core.WireProtocol.IWireProtocol`1] public System.Threading.Tasks.Task`1[TResult] ExecuteAsync(MongoDB.Driver.Core.Connections.IConnection, System.Threading.CancellationToken)
+
+[ASSEMBLY END] MongoDB.Driver.Core
+
