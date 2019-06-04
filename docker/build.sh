@@ -10,9 +10,11 @@ for config in Debug Release ; do
         dotnet publish -f netstandard2.0 -c $config src/$proj/$proj.csproj
     done
 
-    for sample in Samples.AspNetCoreMvc2 Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.RedisCore Samples.SqlServer Samples.MongoDB Samples.HttpMessageHandler Samples.Npgsql ; do
+    for sample in Samples.AspNetCoreMvc2 Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStack.Redis Samples.StackExchange.Redis Samples.SqlServer Samples.MongoDB Samples.HttpMessageHandler Samples.Npgsql ; do
         dotnet publish -f netcoreapp2.1 -c $config samples/$sample/$sample.csproj
     done
+
+    dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions
 
     for proj in Datadog.Trace.ClrProfiler.IntegrationTests ; do
         dotnet publish -f netcoreapp2.1 -c $config test/$proj/$proj.csproj

@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">4.0.4</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">5.2.0</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="$(ApiVersion)" />
+    <PackageReference Include="ServiceStack.Redis" Version="$(ApiVersion)" />
   </ItemGroup>
 
 </Project>

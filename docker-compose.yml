@@ -1,10 +1,16 @@
 version: '3'
 services:
-  redis:
+  servicestackredis:
     image: redis:4-alpine
     command: redis-server --bind 0.0.0.0
     ports:
     - "127.0.0.1:6379:6379"
+
+  stackexchangeredis:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "127.0.0.1:6389:6379"
 
   mongo:
     image: mongo:4.0.9
@@ -72,18 +78,31 @@ services:
     volumes:
     - ./:/project
 
-  Samples.RedisCore:
+  Samples.ServiceStack.Redis:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it redis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.RedisCore/bin/Release/netcoreapp2.1/publish/Samples.RedisCore.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it servicestackredis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.ServiceStack.Redis/bin/Release/netcoreapp2.1/publish/Samples.ServiceStack.Redis.dll"
     volumes:
     - ./:/project
     environment:
-    - REDIS_HOST=redis
+    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
     depends_on:
-    - redis
+    - servicestackredis
+
+  Samples.StackExchange.Redis:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it stackexchangeredis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.StackExchange.Redis/bin/Release/netcoreapp2.1/publish/Samples.StackExchange.Redis.dll"
+    volumes:
+    - ./:/project
+    environment:
+    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+    depends_on:
+    - stackexchangeredis
 
   Samples.Elasticsearch:
     build:
@@ -104,11 +123,11 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch5:9205 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch.V5/bin/Release/netcoreapp2.1/publish/Samples.Elasticsearch.V5.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch5:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch.V5/bin/Release/netcoreapp2.1/publish/Samples.Elasticsearch.V5.dll"
     volumes:
     - ./:/project
     environment:
-    - ELASTICSEARCH5_HOST=elasticsearch5:9205
+    - ELASTICSEARCH5_HOST=elasticsearch5:9200
     depends_on:
     - elasticsearch5
 
@@ -159,13 +178,15 @@ services:
     - ./:/project
     environment:
     - MONGO_HOST=mongo
-    - REDIS_HOST=redis
+    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
     - ELASTICSEARCH6_HOST=elasticsearch6:9200
-    - ELASTICSEARCH5_HOST=elasticsearch5:9205
+    - ELASTICSEARCH5_HOST=elasticsearch5:9200
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
     - POSTGRES_HOST=postgres
     depends_on:
-    - redis
+    - servicestackredis
+    - stackexchangeredis
     - elasticsearch6
     - elasticsearch5
     - sqlserver

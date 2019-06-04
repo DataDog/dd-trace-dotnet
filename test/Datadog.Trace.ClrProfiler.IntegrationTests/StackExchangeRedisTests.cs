@@ -10,18 +10,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class StackExchangeRedisTests : TestHelper
     {
         public StackExchangeRedisTests(ITestOutputHelper output)
-            : base("RedisCore", output)
+            : base("StackExchange.Redis", output)
         {
         }
 
-        [Fact]
+        [Theory]
+        [MemberData(nameof(PackageVersions.StackExchangeRedis), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        public void SubmitsTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"StackExchange {TestPrefix}"))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -236,15 +237,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 });
 
                 var spans = agent.WaitForSpans(expected.Count).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
-                var host = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
+                var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
+                var port = host.Substring(host.IndexOf(':') + 1);
+                host = host.Substring(0, host.IndexOf(':'));
 
                 foreach (var span in spans)
                 {
                     Assert.Equal("redis.command", span.Name);
-                    Assert.Equal("Samples.RedisCore-redis", span.Service);
+                    Assert.Equal("Samples.StackExchange.Redis-redis", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, span.Tags.Get<string>("out.host"));
-                    Assert.Equal("6379", span.Tags.Get<string>("out.port"));
+                    Assert.Equal(port, span.Tags.Get<string>("out.port"));
                 }
 
                 var spanLookup = new Dictionary<Tuple<string, string>, int>();

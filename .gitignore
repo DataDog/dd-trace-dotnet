@@ -264,4 +264,7 @@ __pycache__/
 # Benchmark results
 BenchmarkDotNet.Artifacts/
 
+# VSTest results
+*.trx
+
 deploy/linux/

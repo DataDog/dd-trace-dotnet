@@ -10,18 +10,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class ServiceStackRedisTests : TestHelper
     {
         public ServiceStackRedisTests(ITestOutputHelper output)
-            : base("RedisCore", output)
+            : base("ServiceStack.Redis", output)
         {
         }
 
-        [Fact]
+        [Theory]
+        [MemberData(nameof(PackageVersions.ServiceStackRedis), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        public void SubmitsTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"ServiceStack {TestPrefix}"))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -31,15 +32,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
-                var host = Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
+                var host = Environment.GetEnvironmentVariable("SERVICESTACK_REDIS_HOST") ?? "localhost:6379";
+                var port = host.Substring(host.IndexOf(':') + 1);
+                host = host.Substring(0, host.IndexOf(':'));
 
                 foreach (var span in spans)
                 {
                     Assert.Equal("redis.command", span.Name);
-                    Assert.Equal("Samples.RedisCore-redis", span.Service);
+                    Assert.Equal("Samples.ServiceStack.Redis-redis", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, span.Tags.GetValueOrDefault("out.host"));
-                    Assert.Equal("6379", span.Tags.GetValueOrDefault("out.port"));
+                    Assert.Equal(port, span.Tags.GetValueOrDefault("out.port"));
                 }
 
                 var expected = new TupleList<string, string>

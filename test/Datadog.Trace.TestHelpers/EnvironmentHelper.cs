@@ -177,7 +177,7 @@ namespace Datadog.Trace.TestHelpers
             // for ASP.NET Core sample apps, set the server's port
             environmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{agentPort}/";
 
-            foreach (var name in new string[] { "REDIS_HOST" })
+            foreach (var name in new string[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {
                 var value = Environment.GetEnvironmentVariable(name);
                 if (!string.IsNullOrEmpty(value))
@@ -293,7 +293,7 @@ namespace Datadog.Trace.TestHelpers
             return _profilerFileLocation;
         }
 
-        public string GetSampleApplicationPath()
+        public string GetSampleApplicationPath(string packageVersion = "")
         {
             string extension = "exe";
 
@@ -303,7 +303,7 @@ namespace Datadog.Trace.TestHelpers
             }
 
             var appFileName = $"Samples.{SampleName}.{extension}";
-            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(), appFileName);
+            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion), appFileName);
             return sampleAppPath;
         }
 
@@ -343,7 +343,7 @@ namespace Datadog.Trace.TestHelpers
             return projectDir;
         }
 
-        public string GetSampleApplicationOutputDirectory()
+        public string GetSampleApplicationOutputDirectory(string packageVersion = "")
         {
             var binDir = Path.Combine(
                 GetSampleProjectDirectory(),
@@ -359,6 +359,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 outputDir = Path.Combine(
                     binDir,
+                    packageVersion,
                     GetPlatform(),
                     GetBuildConfiguration(),
                     GetTargetFramework(),
@@ -368,6 +369,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 outputDir = Path.Combine(
                     binDir,
+                    packageVersion,
                     GetBuildConfiguration(),
                     GetTargetFramework(),
                     EnvironmentHelper.GetRuntimeIdentifier(),

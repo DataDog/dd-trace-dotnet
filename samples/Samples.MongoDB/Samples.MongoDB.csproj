@@ -1,12 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <MongoDBDriverVersion Condition="'$(MongoDBDriverVersion)' == ''">2.8.0</MongoDBDriverVersion>
-    <DefineConstants Condition="'$(MongoDBDriverVersion)'>='2.7.0'">$(DefineConstants);MONGODB_2_7</DefineConstants>
-    <DefineConstants Condition="'$(MongoDBDriverVersion)'>='2.2.0'">$(DefineConstants);MONGODB_2_2</DefineConstants>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.8.0</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'>='2.7.0'">$(DefineConstants);MONGODB_2_7</DefineConstants>
+    <DefineConstants Condition="'$(ApiVersion)'>='2.2.0'">$(DefineConstants);MONGODB_2_2</DefineConstants>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MongoDB.Driver" Version="$(MongoDBDriverVersion)" />
+    <PackageReference Include="MongoDB.Driver" Version="$(ApiVersion)" />
   </ItemGroup>
 
 </Project>

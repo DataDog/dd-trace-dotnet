@@ -11,13 +11,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [Fact]
+        [Theory]
+        [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces()
+        public void SubmitsTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 

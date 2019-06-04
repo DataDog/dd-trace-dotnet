@@ -1,4 +1,8 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <BuildInParallel Condition="'$(BuildInParallel)' == ''">true</BuildInParallel>
+  </PropertyGroup>
+
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj"/>
     <CsharpTestProject Include="test\**\*.csproj"/>
@@ -7,6 +11,8 @@
     <SampleProject Include="samples*\**\*.csproj"/>
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
   </ItemGroup>
+
+  <Import Project="PackageVersions.g.props" />
 
   <Target Name="Restore">
     <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject)"/>
@@ -47,7 +53,26 @@
     </MSBuild>
   </Target>
 
-  <Target Name="BuildSamples">
+  <Target Name="RestoreAndBuildSamplesForPackageVersions" Condition="'$(TestAllPackageVersions)'=='true'">
+    <!-- Build the core C# projects first, so that the sample project builds do not need to build them and can be run
+         concurrently -->
+    <MSBuild Targets="Restore" Projects="@(CsharpProject)" BuildInParallel="false">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+    <MSBuild Targets="Build" Projects="@(CsharpProject)" BuildInParallel="false">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
+    <!-- Build the sample projects concurrently -->
+    <MSBuild Targets="Restore" Projects="@(PackageVersionSample)" BuildInParallel="$(BuildInParallel)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+    <MSBuild Targets="Publish" Projects="@(PackageVersionSample)" BuildInParallel="$(BuildInParallel)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildSamples" DependsOnTargets="RestoreAndBuildSamplesForPackageVersions">
     <MSBuild Targets="Build" Projects="@(SampleProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
