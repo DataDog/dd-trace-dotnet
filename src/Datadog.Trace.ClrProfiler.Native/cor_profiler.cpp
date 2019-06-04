@@ -341,7 +341,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         expected_number_args--;
       }
 
-      if (expected_number_args != target.signature.NumberOfArguments()) {
+      auto target_arg_count = target.signature.NumberOfArguments();
+
+      if (expected_number_args != target_arg_count) {
         // Number of arguments does not match our wrapper method
         continue;
       }
@@ -359,7 +361,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         // we need to emit a method spec to populate the generic arguments
         wrapper_method_ref =
             DefineMethodSpec(module_metadata->metadata_emit, wrapper_method_ref,
-                             target.signature);
+                             target.function_spec_signature);
       }
 
       // replace with a call to the instrumentation wrapper

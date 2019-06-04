@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var expected = new TupleList<string, string>
                 {
-                    { "SET", $"SET {TestPrefix}StackExchange.Redis.INCR" },
+                     { "SET", $"SET {TestPrefix}StackExchange.Redis.INCR" },
                     { "PING", "PING" },
                     { "DDCUSTOM", "DDCUSTOM" },
                     { "ECHO", "ECHO" },

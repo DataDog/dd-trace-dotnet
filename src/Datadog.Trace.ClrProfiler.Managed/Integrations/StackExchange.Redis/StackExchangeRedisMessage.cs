@@ -89,50 +89,47 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// Finished redis operation.
         /// </summary>
         /// <param name="message">The message to send to redis.</param>
-        [InterceptMethod(
-            Integration = IntegrationName,
-            CallerAssembly = AssemblyName,
-            TargetAssembly = AssemblyName,
-            TargetType = InstrumentedType,
-            TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major2)]
-        [InterceptMethod(
-            Integration = IntegrationName,
-            CallerAssembly = AssemblyStrongName,
-            TargetAssembly = AssemblyStrongName,
-            TargetType = InstrumentedType,
-            TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major2)]
+        // [InterceptMethod(
+        //     Integration = IntegrationName,
+        //     CallerAssembly = AssemblyName,
+        //     TargetAssembly = AssemblyName,
+        //     TargetType = InstrumentedType,
+        //     TargetMinimumVersion = Major1,
+        //     TargetMaximumVersion = Major2)]
+        // [InterceptMethod(
+        //     Integration = IntegrationName,
+        //     CallerAssembly = AssemblyStrongName,
+        //     TargetAssembly = AssemblyStrongName,
+        //     TargetType = InstrumentedType,
+        //     TargetMinimumVersion = Major1,
+        //     TargetMaximumVersion = Major2)]
         public static void Complete(object message)
         {
-            var resultType = typeof(T);
-            var multiplexerType = multiplexer.GetType();
-            var asm = multiplexerType.Assembly;
-            var messageType = asm.GetType("StackExchange.Redis.Message");
-            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
-            var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
-
-            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, T>>
-               .CreateMethodCallDelegate(
-                    multiplexerType,
-                    "ExecuteSyncImpl",
-                    new[] { messageType, processorType, serverType },
-                    new[] { resultType });
-
-            using (var scope = CreateScope(multiplexer, message))
-            {
-                try
-                {
-                    return originalMethod(multiplexer, message, processor, server);
-                }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
-                {
-                    // unreachable code
-                    throw;
-                }
-            }
+            // var resultType = typeof(T);
+            // var multiplexerType = multiplexer.GetType();
+            // var asm = multiplexerType.Assembly;
+            // var messageType = asm.GetType("StackExchange.Redis.Message");
+            // var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
+            // var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
+            // var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, T>>
+            //    .CreateMethodCallDelegate(
+            //         multiplexerType,
+            //         "ExecuteSyncImpl",
+            //         new[] { messageType, processorType, serverType },
+            //         new[] { resultType });
+            // using (var scope = CreateScope(multiplexer, message))
+            // {
+            //     try
+            //     {
+            //         return originalMethod(multiplexer, message, processor, server);
+            //     }
+            //     catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+            //     {
+            //         // unreachable code
+            //         throw;
+            //     }
+            // }
         }
-
 
         private static Scope CreateScope(object multiplexer, object message)
         {

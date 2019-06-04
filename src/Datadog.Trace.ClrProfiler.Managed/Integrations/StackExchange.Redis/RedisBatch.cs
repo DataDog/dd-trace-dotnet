@@ -8,6 +8,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// </summary>
     public static class RedisBatch
     {
+        private const string RedisBaseTypeName = "StackExchange.Redis.RedisBase";
+        private const string RedisAssemblyName = "StackExchange.Redis";
+        private const string RedisStrongNameAssemblyName = "StackExchange.Redis.StrongName";
         private const string IntegrationName = "StackExchangeRedis";
         private const string Major1 = "1";
 
@@ -22,16 +25,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
             Integration = IntegrationName,
-            CallerAssembly = "StackExchange.Redis",
-            TargetAssembly = "StackExchange.Redis",
-            TargetType = "StackExchange.Redis.RedisBase",
+            CallerAssembly = RedisAssemblyName,
+            TargetAssembly = RedisAssemblyName,
+            TargetType = RedisBaseTypeName,
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major1)]
         [InterceptMethod(
             Integration = IntegrationName,
-            CallerAssembly = "StackExchange.Redis.StrongName",
-            TargetAssembly = "StackExchange.Redis.StrongName",
-            TargetType = "StackExchange.Redis.RedisBase",
+            CallerAssembly = RedisStrongNameAssemblyName,
+            TargetAssembly = RedisStrongNameAssemblyName,
+            TargetType = RedisBaseTypeName,
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major1)]
         public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server)

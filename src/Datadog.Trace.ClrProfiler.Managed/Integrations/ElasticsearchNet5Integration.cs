@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class ElasticsearchNet5Integration
     {
+        private const string IRequestPipelineType = "Elasticsearch.Net.IRequestPipeline";
         private const string IntegrationName = "ElasticsearchNet5";
         private const string Version5 = "5";
 
@@ -28,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            TargetType = IRequestPipelineType,
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData)
@@ -65,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            TargetType = IRequestPipelineType,
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource)
@@ -99,7 +100,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var genericArgument = typeof(T).GetGenericArguments()[0];
 
             var executeAsync = CallElasticsearchAsyncAccess.GetInterceptedMethod(
-                pipeline.GetType(),
+                owningType: pipeline.GetType(),
+                intendedType: IRequestPipelineType,
                 returnType: null,
                 methodName: nameof(CallElasticsearchAsync),
                 generics: new[] { genericArgument },
