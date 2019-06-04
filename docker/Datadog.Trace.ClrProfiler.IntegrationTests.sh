@@ -11,4 +11,4 @@ $DIR/with-profiler-logs.bash \
     wait-for-it sqlserver:1433 -- \
     wait-for-it mongo:27017 -- \
     wait-for-it postgres:5432 -- \
-    dotnet test --verbosity minimal $DIR/../test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+    dotnet test --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.ClrProfiler.IntegrationTests/results $DIR/../test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
