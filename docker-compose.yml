@@ -123,11 +123,11 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch5:9205 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch.V5/bin/Release/netcoreapp2.1/publish/Samples.Elasticsearch.V5.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch5:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch.V5/bin/Release/netcoreapp2.1/publish/Samples.Elasticsearch.V5.dll"
     volumes:
     - ./:/project
     environment:
-    - ELASTICSEARCH5_HOST=elasticsearch5:9205
+    - ELASTICSEARCH5_HOST=elasticsearch5:9200
     depends_on:
     - elasticsearch5
 
@@ -181,7 +181,7 @@ services:
     - SERVICESTACK_REDIS_HOST=servicestackredis:6379
     - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
     - ELASTICSEARCH6_HOST=elasticsearch6:9200
-    - ELASTICSEARCH5_HOST=elasticsearch5:9205
+    - ELASTICSEARCH5_HOST=elasticsearch5:9200
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
     - POSTGRES_HOST=postgres
     depends_on:
