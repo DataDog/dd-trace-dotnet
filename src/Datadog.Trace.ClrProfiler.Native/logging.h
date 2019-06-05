@@ -5,7 +5,7 @@
 
 namespace trace {
 
-inline bool debug_logging_enabled = false;
+extern bool debug_logging_enabled;
 
 void Log(const std::string &str);
 
