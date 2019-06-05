@@ -1,0 +1,47 @@
+trigger:
+- master
+- develop
+
+strategy:
+  matrix:
+    windows:
+      imageName: 'vs2017-win2016'
+    linux:
+      imageName: 'ubuntu-16.04'
+
+pool:
+  vmImage: $(imageName)
+
+variables:
+  buildConfiguration: debug
+
+steps:
+- task: DotNetCoreInstaller@0
+  inputs:
+    version: '2.1.700'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet restore'
+  inputs:
+    command: restore
+    projects: |
+     src/**/*.csproj
+     test/**/*.Tests.csproj
+    vstsFeed: '/ffc32c57-3e0e-4e8f-8633-a7ad01df2e45'
+    verbosityRestore: Normal
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet build'
+  inputs:
+    command: build
+    projects: |
+     src/**/*.csproj
+     test/**/*.Tests.csproj
+    arguments: '--configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet test'
+  inputs:
+    command: test
+    projects: 'test/**/*.Tests.csproj'
+    arguments: '--configuration $(buildConfiguration)'
