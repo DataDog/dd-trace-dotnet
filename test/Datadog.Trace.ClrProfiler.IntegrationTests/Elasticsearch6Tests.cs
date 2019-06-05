@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         "DeleteAlias",
                         "DeleteAlias",
                         "CreateIndex",
-                        "SplitIndex",
+                        "SplitIndex", // Only present on 6.1+
                         "DeleteIndex",
                         "CloseIndex",
                         "OpenIndex",
@@ -86,9 +86,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         "GetJobs",
                         "GetJobStats",
                         "GetModelSnapshots",
-                        "GetOverallBuckets",
                         "FlushJob",
-                        "ForecastJob",
+                        "GetOverallBuckets", // Only present on 6.1+
+                        "ForecastJob", // Only present on 6.1+
                         "GetAnomalyRecords",
                         "GetBuckets",
                         "GetCategories",
@@ -117,6 +117,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         "DisableUser",
                         "DeleteUser",
                     });
+
+                    if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("6.1.0") < 0)
+                    {
+                        expected.Remove("SplitIndex");
+                        expected.Remove("GetOverallBuckets");
+                        expected.Remove("ForecastJob");
+                    }
                 }
 
                 var spans = agent.WaitForSpans(expected.Count)

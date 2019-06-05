@@ -61,6 +61,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+                new object[] { "6.0.0" },
+                new object[] { "6.0.1" },
+                new object[] { "6.0.2" },
                 new object[] { "6.1.0" },
                 new object[] { "6.2.0" },
                 new object[] { "6.3.0" },

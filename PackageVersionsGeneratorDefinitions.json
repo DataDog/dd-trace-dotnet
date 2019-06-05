@@ -10,7 +10,7 @@
         "IntegrationName": "ElasticSearch6",
         "SampleProjectName": "Samples.Elasticsearch",
         "NugetPackageSearchName": "Elasticsearch.Net",
-        "MinVersion": "6.1.0",
+        "MinVersion": "6.0.0",
         "MaxVersion": "7.0.0"
     },
     {

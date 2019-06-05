@@ -14,6 +14,8 @@
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <ProfilerOutputDirectory>..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
+
+    <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
