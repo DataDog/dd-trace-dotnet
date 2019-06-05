@@ -10,31 +10,31 @@ extern bool debug_logging_enabled;
 void Log(const std::string &str);
 
 template <typename Arg>
-inline std::string LogToString(Arg const &arg) {
+std::string LogToString(Arg const &arg) {
   return ToString(arg);
 }
 
 template <typename... Args>
-inline std::string LogToString(Args const &... args) {
+std::string LogToString(Args const &... args) {
   std::ostringstream oss;
   int a[] = {0, ((void)(oss << LogToString(args)), 0)...};
   return oss.str();
 }
 
 template <typename... Args>
-inline void Debug(const Args... args) {
+void Debug(const Args... args) {
   if (debug_logging_enabled) {
     Log("[debug] " + LogToString(args...));
   }
 }
 
 template <typename... Args>
-inline void Info(const Args... args) {
+void Info(const Args... args) {
   Log("[info] " + LogToString(args...));
 }
 
 template <typename... Args>
-inline void Warn(const Args... args) {
+void Warn(const Args... args) {
   Log("[warn] " + LogToString(args...));
 }
 
