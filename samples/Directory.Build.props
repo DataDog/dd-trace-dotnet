@@ -18,6 +18,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj"
+                      ReferenceOutputAssembly="false"
+                      Condition="'$(BuildingInsideVisualStudio)'=='true'" />
   </ItemGroup>
 
   <ItemGroup>
