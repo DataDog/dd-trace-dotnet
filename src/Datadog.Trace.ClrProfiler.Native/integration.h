@@ -164,6 +164,10 @@ struct MethodSignature {
     }
     return ss.str();
   }
+
+  BOOL IsInstanceMethod() const {
+    return (CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS) != 0;
+  }
 };
 
 struct MethodReference {
