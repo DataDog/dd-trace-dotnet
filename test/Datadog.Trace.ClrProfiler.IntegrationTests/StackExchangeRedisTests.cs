@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "GEOHASH", $"GEOHASH {batchPrefix}GeoHashAsync" },
                     { "GEOPOS", $"GEOPOS {batchPrefix}GeoPositionAsync" },
                     { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {batchPrefix}GeoRadiusAsync" },
-                    { "GEOREM", $"GEOREM {batchPrefix}GeoRemoveAsync" },
+                    { "ZREM", $"ZREM {batchPrefix}GeoRemoveAsync" },
                     { "HINCRBYFLOAT", $"HINCRBYFLOAT {batchPrefix}HashDecrementAsync" },
                     { "HDEL", $"HDEL {batchPrefix}HashDeleteAsync" },
                     { "HEXISTS", $"HEXISTS {batchPrefix}HashExistsAsync" },
@@ -150,7 +150,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.0") < 0)
                 {
-                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO"));
+                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO") ||
+                        (tuple.Item1.ToUpper().Equals("ZREM") && tuple.Item2.ToUpper().Contains("GEO")));
                 }
 
                 var dbPrefix = $"{TestPrefix}StackExchange.Redis.Database.";
@@ -163,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "GEOHASH", $"GEOHASH {dbPrefix}Geo" },
                     { "GEOPOS", $"GEOPOS {dbPrefix}Geo" },
                     { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {dbPrefix}Geo" },
-                    { "GEOREM", $"GEOREM {dbPrefix}Geo" },
+                    { "ZREM", $"ZREM {dbPrefix}Geo" },
                     { "HINCRBYFLOAT", $"HINCRBYFLOAT {dbPrefix}Hash" },
                     { "HDEL", $"HDEL {dbPrefix}Hash" },
                     { "HEXISTS", $"HEXISTS {dbPrefix}Hash" },
@@ -261,7 +262,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.0") < 0)
                 {
-                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO"));
+                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO") ||
+                        (tuple.Item1.ToUpper().Equals("ZREM") && tuple.Item2.ToUpper().Contains("GEO")));
                 }
 
                 var spans = agent.WaitForSpans(expected.Count).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
