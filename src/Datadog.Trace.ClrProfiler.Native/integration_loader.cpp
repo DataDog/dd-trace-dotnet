@@ -60,7 +60,7 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
       }
     }
 
-    Debug("Loaded integrations: ", j.dump());
+    // Debug("Loaded integrations: ", j.dump());
   } catch (const json::parse_error& e) {
     Warn("Invalid integrations:", e.what());
   } catch (const json::type_error& e) {
