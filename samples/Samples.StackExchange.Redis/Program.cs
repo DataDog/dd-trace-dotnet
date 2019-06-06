@@ -151,7 +151,9 @@ namespace Samples.StackExchangeRedis
                 { "LockTake", () => db.LockTake($"{prefix}Lock", "value1", new TimeSpan(0, 0, 10)) },
 
                 { "Ping", () => db.Ping() },
+#if (STACKEXCHANGEREDIS_1_0_245 && !DEFAULT_SAMPLES)
                 { "Publish", () => db.Publish(ApiSafeCreateRedisChannel("value"), "message") },
+#endif
                 // { "ScriptEvaluate", () => db.ScriptEvaluate() }
 
                 { "SetAdd", () => db.SetAdd($"{prefix}Set", "value1") },
@@ -277,7 +279,9 @@ namespace Samples.StackExchangeRedis
                 { "LockReleaseAsync", () => db.LockReleaseAsync("listkey", "value7") },
                 { "LockTakeAsync", () => db.LockTakeAsync("listkey", "value8", new TimeSpan(0, 0, 10)) },
 
+#if (STACKEXCHANGEREDIS_1_0_245 && !DEFAULT_SAMPLES)
                 { "PublishAsync", () => db.PublishAsync(ApiSafeCreateRedisChannel("channel"), "somemessage") },
+#endif
                 // { "ScriptEvaluateAsync", () => db.ScriptEvaluateAsync(}
 
                 { "SetAddAsync", () => db.SetAddAsync("setkey", "value1") },

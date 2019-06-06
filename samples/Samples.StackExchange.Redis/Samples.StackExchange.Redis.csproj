@@ -7,6 +7,7 @@
     <DefineConstants Condition="'$(ApiVersion)'>='1.0.371'">$(DefineConstants);STACKEXCHANGEREDIS_1_0_371</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'>='1.0.297'">$(DefineConstants);STACKEXCHANGEREDIS_1_0_297</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'>='1.0.273'">$(DefineConstants);STACKEXCHANGEREDIS_1_0_273</DefineConstants>
+    <DefineConstants Condition="'$(ApiVersion)'>='1.0.245'">$(DefineConstants);STACKEXCHANGEREDIS_1_0_245</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
