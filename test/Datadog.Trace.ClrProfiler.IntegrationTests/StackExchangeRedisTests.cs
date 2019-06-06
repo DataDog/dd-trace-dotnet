@@ -51,13 +51,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 expected.AddRange(new TupleList<string, string>
                 {
                     { "DEBUG", $"DEBUG {batchPrefix}DebugObjectAsync" },
-                    { "DDCUSTOM", $"DDCUSTOM" },
-                    { "GEOADD", $"GEOADD {batchPrefix}GeoAddAsync" },
-                    { "GEODIST", $"GEODIST {batchPrefix}GeoDistanceAsync" },
-                    { "GEOHASH", $"GEOHASH {batchPrefix}GeoHashAsync" },
-                    { "GEOPOS", $"GEOPOS {batchPrefix}GeoPositionAsync" },
-                    { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {batchPrefix}GeoRadiusAsync" },
-                    { "ZREM", $"ZREM {batchPrefix}GeoRemoveAsync" },
+                    { "DDCUSTOM", $"DDCUSTOM" }, // Only present on 1.2.2+
+                    { "GEOADD", $"GEOADD {batchPrefix}GeoAddAsync" }, // Only present on 1.2.0+
+                    { "GEODIST", $"GEODIST {batchPrefix}GeoDistanceAsync" }, // Only present on 1.2.0+
+                    { "GEOHASH", $"GEOHASH {batchPrefix}GeoHashAsync" }, // Only present on 1.2.0+
+                    { "GEOPOS", $"GEOPOS {batchPrefix}GeoPositionAsync" }, // Only present on 1.2.0+
+                    { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {batchPrefix}GeoRadiusAsync" }, // Only present on 1.2.0+
+                    { "ZREM", $"ZREM {batchPrefix}GeoRemoveAsync" }, // Only present on 1.2.0+
                     { "HINCRBYFLOAT", $"HINCRBYFLOAT {batchPrefix}HashDecrementAsync" },
                     { "HDEL", $"HDEL {batchPrefix}HashDeleteAsync" },
                     { "HEXISTS", $"HEXISTS {batchPrefix}HashExistsAsync" },
@@ -143,33 +143,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETRANGE", "SETRANGE key" },
                 });
 
-                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.2") < 0)
-                {
-                    expected.Remove(new Tuple<string, string>("DDCUSTOM", "DDCUSTOM"));
-                }
-
-                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.0") < 0)
-                {
-                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO") ||
-                        (tuple.Item1.ToUpper().Equals("ZREM") && tuple.Item2.ToUpper().Contains("GEO")));
-                }
-
-                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.273") < 0)
-                {
-                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().Contains("LEX") && tuple.Item2.ToUpper().Contains("LEX"));
-                }
+                FilterExpectedResultsByApiVersion(expected);
 
                 var dbPrefix = $"{TestPrefix}StackExchange.Redis.Database.";
                 expected.AddRange(new TupleList<string, string>
                 {
                     { "DEBUG", $"DEBUG {dbPrefix}DebugObject" },
-                    { "DDCUSTOM", $"DDCUSTOM" },
-                    { "GEOADD", $"GEOADD {dbPrefix}Geo" },
-                    { "GEODIST", $"GEODIST {dbPrefix}Geo" },
-                    { "GEOHASH", $"GEOHASH {dbPrefix}Geo" },
-                    { "GEOPOS", $"GEOPOS {dbPrefix}Geo" },
-                    { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {dbPrefix}Geo" },
-                    { "ZREM", $"ZREM {dbPrefix}Geo" },
+                    { "DDCUSTOM", $"DDCUSTOM" }, // Only present on 1.2.2+
+                    { "GEOADD", $"GEOADD {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "GEODIST", $"GEODIST {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "GEOHASH", $"GEOHASH {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "GEOPOS", $"GEOPOS {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "ZREM", $"ZREM {dbPrefix}Geo" }, // Only present on 1.2.0+
                     { "HINCRBYFLOAT", $"HINCRBYFLOAT {dbPrefix}Hash" },
                     { "HDEL", $"HDEL {dbPrefix}Hash" },
                     { "HEXISTS", $"HEXISTS {dbPrefix}Hash" },
@@ -260,21 +246,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETRANGE", $"SETRANGE {dbPrefix}Key" },
                 });
 
-                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.2") < 0)
-                {
-                    expected.Remove(new Tuple<string, string>("DDCUSTOM", "DDCUSTOM"));
-                }
+                FilterExpectedResultsByApiVersion(expected);
 
-                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.0") < 0)
-                {
-                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO") ||
-                        (tuple.Item1.ToUpper().Equals("ZREM") && tuple.Item2.ToUpper().Contains("GEO")));
-                }
 
-                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.273") < 0)
-                {
-                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().Contains("LEX") && tuple.Item2.ToUpper().Contains("LEX"));
-                }
 
                 var spans = agent.WaitForSpans(expected.Count).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
                 var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
@@ -326,6 +300,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.True(false, $"no span found for `{e.Item1}`, `{e.Item2}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key.Item1}, {kvp.Key.Item2}").ToArray())}`");
                 }
+            }
+        }
+
+        private void FilterExpectedResultsByApiVersion(TupleList<string, string> expected)
+        {
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.2") < 0)
+            {
+                expected.Remove(new Tuple<string, string>("DDCUSTOM", "DDCUSTOM"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.0") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO") ||
+                    (tuple.Item1.ToUpper().Equals("ZREM") && tuple.Item2.ToUpper().Contains("GEO")));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.273") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().Contains("LEX") && tuple.Item2.ToUpper().Contains("LEX"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.245") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().Equals("PUBLISH"));
             }
         }
     }
