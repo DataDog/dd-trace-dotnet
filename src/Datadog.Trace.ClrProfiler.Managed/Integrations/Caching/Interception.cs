@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             for (var i = 0; i < objectsToCheck.Length; i++)
             {
-                types[i] = objectsToCheck[i].GetType();
+                types[i] = objectsToCheck[i]?.GetType();
             }
 
             return types;
