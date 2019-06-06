@@ -293,6 +293,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             AspNetCoreMvc2Integration integration = null;
             const string methodName = nameof(Rethrow);
 
+            if (context == null)
+            {
+                // Every rethrow method in every v2.x returns when the context is null
+                // We need the type of context to call the correct method as there are 3
+                // Remove this when we introduce the type arrays within the profiler
+                return;
+            }
+
             try
             {
                 if (context.TryGetPropertyValue("HttpContext", out object httpContext))
