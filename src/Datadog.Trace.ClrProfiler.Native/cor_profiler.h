@@ -19,6 +19,7 @@ namespace trace {
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
+  bool is_shutdown_ = false;
   std::vector<Integration> integrations_;
 
   std::mutex module_id_to_info_map_lock_;
@@ -31,12 +32,13 @@ class CorProfiler : public CorProfilerBase {
 
   HRESULT STDMETHODCALLTYPE
   Initialize(IUnknown* cor_profiler_info_unknown) override;
+  HRESULT STDMETHODCALLTYPE ModuleLoadStarted(ModuleID module_id) override;
   HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id,
                                                HRESULT hrStatus) override;
-  HRESULT STDMETHODCALLTYPE ModuleUnloadFinished(ModuleID module_id,
-                                                 HRESULT hrStatus) override;
+  HRESULT STDMETHODCALLTYPE ModuleUnloadStarted(ModuleID module_id) override;
   HRESULT STDMETHODCALLTYPE
   JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
+  HRESULT STDMETHODCALLTYPE Shutdown() override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,
