@@ -1,6 +1,12 @@
 trigger:
-- master
-- develop
+  branches:
+    include:
+      - master
+      - develop
+  paths:
+    exclude:
+      - docs/*
+      - .github/*
 
 strategy:
   matrix:
