@@ -34,23 +34,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   Debug("CorProfiler::Initialize");
 
-  Info("Environment variables:");
-
-  WSTRING env_vars[] = {environment::tracing_enabled,
-                        environment::debug_enabled,
-                        environment::integrations_path,
-                        environment::process_names,
-                        environment::agent_host,
-                        environment::agent_port,
-                        environment::env,
-                        environment::service_name,
-                        environment::disabled_integrations,
-                        environment::clr_disable_optimizations};
-
-  for (auto&& env_var : env_vars) {
-    Info("  ", env_var, "=", GetEnvironmentValue(env_var));
-  }
-
   // check if tracing is completely disabled
   const WSTRING tracing_enabled =
       GetEnvironmentValue(environment::tracing_enabled);
@@ -81,6 +64,23 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: interface ICorProfilerInfo3 not found.");
     return E_FAIL;
+  }
+
+  Info("Environment variables:");
+
+  WSTRING env_vars[]{environment::tracing_enabled,
+                     environment::debug_enabled,
+                     environment::integrations_path,
+                     environment::process_names,
+                     environment::agent_host,
+                     environment::agent_port,
+                     environment::env,
+                     environment::service_name,
+                     environment::disabled_integrations,
+                     environment::clr_disable_optimizations};
+
+  for (auto&& env_var : env_vars) {
+    Info("  ", env_var, "=", GetEnvironmentValue(env_var));
   }
 
   // get path to integration definition JSON files
