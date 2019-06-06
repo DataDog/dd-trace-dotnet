@@ -167,7 +167,9 @@ namespace Samples.Elasticsearch
                 () => elastic.DeleteAlias(new DeleteAliasRequest("test_index_1", "test_index_3")),
                 () => elastic.DeleteAlias(new DeleteAliasRequest("test_index_1", "test_index_2")),
                 () => elastic.CreateIndex("test_index_4"),
+#if (ELASTICSEARCH_6_1 && !DEFAULT_SAMPLES)
                 () => elastic.SplitIndex("test_index_1", "test_index_4"),
+#endif
                 () => elastic.DeleteIndex("test_index_4"),
                 () => elastic.CloseIndex("test_index_1"),
                 () => elastic.OpenIndex("test_index_1"),
@@ -217,7 +219,9 @@ namespace Samples.Elasticsearch
                 () => elastic.DeleteAliasAsync(new DeleteAliasRequest("test_index_1", "test_index_3")),
                 () => elastic.DeleteAliasAsync(new DeleteAliasRequest("test_index_1", "test_index_2")),
                 () => elastic.CreateIndexAsync("test_index_4"),
+#if (ELASTICSEARCH_6_1 && !DEFAULT_SAMPLES)
                 () => elastic.SplitIndexAsync("test_index_1", "test_index_4"),
+#endif
                 () => elastic.DeleteIndexAsync("test_index_4"),
                 () => elastic.CloseIndexAsync("test_index_1"),
                 () => elastic.OpenIndexAsync("test_index_1"),
@@ -301,9 +305,11 @@ namespace Samples.Elasticsearch
                 () => elastic.GetJobs(new GetJobsRequest("test_job")),
                 () => elastic.GetJobStats(new GetJobStatsRequest()),
                 () => elastic.GetModelSnapshots(new GetModelSnapshotsRequest("test_job")),
-                () => elastic.GetOverallBuckets(new GetOverallBucketsRequest("test_job")),
                 () => elastic.FlushJob(new FlushJobRequest("test_job")),
+#if (ELASTICSEARCH_6_1 && !DEFAULT_SAMPLES)
+                () => elastic.GetOverallBuckets(new GetOverallBucketsRequest("test_job")),
                 () => elastic.ForecastJob(new ForecastJobRequest("test_job")),
+#endif
                 () => elastic.GetAnomalyRecords(new GetAnomalyRecordsRequest("test_job")),
                 () => elastic.GetBuckets(new GetBucketsRequest("test_job")),
                 () => elastic.GetCategories(new GetCategoriesRequest("test_job")),
@@ -323,9 +329,11 @@ namespace Samples.Elasticsearch
                 () => elastic.GetJobsAsync(new GetJobsRequest("test_job")),
                 () => elastic.GetJobStatsAsync(new GetJobStatsRequest()),
                 () => elastic.GetModelSnapshotsAsync(new GetModelSnapshotsRequest("test_job")),
-                () => elastic.GetOverallBucketsAsync(new GetOverallBucketsRequest("test_job")),
                 () => elastic.FlushJobAsync(new FlushJobRequest("test_job")),
+#if (ELASTICSEARCH_6_1 && !DEFAULT_SAMPLES)
+                () => elastic.GetOverallBucketsAsync(new GetOverallBucketsRequest("test_job")),
                 () => elastic.ForecastJobAsync(new ForecastJobRequest("test_job")),
+#endif
                 () => elastic.GetAnomalyRecordsAsync(new GetAnomalyRecordsRequest("test_job")),
                 () => elastic.GetBucketsAsync(new GetBucketsRequest("test_job")),
                 () => elastic.GetCategoriesAsync(new GetCategoriesRequest("test_job")),

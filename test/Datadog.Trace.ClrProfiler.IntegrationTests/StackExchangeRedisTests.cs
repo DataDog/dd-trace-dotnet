@@ -30,26 +30,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     { "SET", $"SET {TestPrefix}StackExchange.Redis.INCR" },
                     { "PING", "PING" },
-                    { "DDCUSTOM", "DDCUSTOM" },
-                    { "ECHO", "ECHO" },
-                    { "SLOWLOG", "SLOWLOG" },
                     { "INCR", $"INCR {TestPrefix}StackExchange.Redis.INCR" },
                     { "INCRBYFLOAT", $"INCRBYFLOAT {TestPrefix}StackExchange.Redis.INCR" },
                     { "GET", $"GET {TestPrefix}StackExchange.Redis.INCR" },
+                    { "DDCUSTOM", "DDCUSTOM" },
+                    { "ECHO", "ECHO" },
+                    { "SLOWLOG", "SLOWLOG" },
                     { "TIME", "TIME" },
                 };
+
+                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.2") < 0)
+                {
+                    expected.Remove(new Tuple<string, string>("DDCUSTOM", "DDCUSTOM"));
+                    expected.Remove(new Tuple<string, string>("ECHO", "ECHO"));
+                    expected.Remove(new Tuple<string, string>("SLOWLOG", "SLOWLOG"));
+                    expected.Remove(new Tuple<string, string>("TIME", "TIME"));
+                }
 
                 var batchPrefix = $"{TestPrefix}StackExchange.Redis.Batch.";
                 expected.AddRange(new TupleList<string, string>
                 {
                     { "DEBUG", $"DEBUG {batchPrefix}DebugObjectAsync" },
-                    { "DDCUSTOM", $"DDCUSTOM" },
-                    { "GEOADD", $"GEOADD {batchPrefix}GeoAddAsync" },
-                    { "GEODIST", $"GEODIST {batchPrefix}GeoDistanceAsync" },
-                    { "GEOHASH", $"GEOHASH {batchPrefix}GeoHashAsync" },
-                    { "GEOPOS", $"GEOPOS {batchPrefix}GeoPositionAsync" },
-                    { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {batchPrefix}GeoRadiusAsync" },
-                    { "ZREM", $"ZREM {batchPrefix}GeoRemoveAsync" },
+                    { "DDCUSTOM", $"DDCUSTOM" }, // Only present on 1.2.2+
+                    { "GEOADD", $"GEOADD {batchPrefix}GeoAddAsync" }, // Only present on 1.2.0+
+                    { "GEODIST", $"GEODIST {batchPrefix}GeoDistanceAsync" }, // Only present on 1.2.0+
+                    { "GEOHASH", $"GEOHASH {batchPrefix}GeoHashAsync" }, // Only present on 1.2.0+
+                    { "GEOPOS", $"GEOPOS {batchPrefix}GeoPositionAsync" }, // Only present on 1.2.0+
+                    { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {batchPrefix}GeoRadiusAsync" }, // Only present on 1.2.0+
+                    { "ZREM", $"ZREM {batchPrefix}GeoRemoveAsync" }, // Only present on 1.2.0+
                     { "HINCRBYFLOAT", $"HINCRBYFLOAT {batchPrefix}HashDecrementAsync" },
                     { "HDEL", $"HDEL {batchPrefix}HashDeleteAsync" },
                     { "HEXISTS", $"HEXISTS {batchPrefix}HashExistsAsync" },
@@ -59,9 +67,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "HLEN", $"HLEN {batchPrefix}HashLengthAsync" },
                     { "HMSET", $"HMSET {batchPrefix}HashSetAsync" },
                     { "HVALS", $"HVALS {batchPrefix}HashValuesAsync" },
-                    { "PFADD", $"PFADD {batchPrefix}HyperLogLogAddAsync" },
-                    { "PFCOUNT", $"PFCOUNT {batchPrefix}HyperLogLogLengthAsync" },
-                    { "PFMERGE", $"PFMERGE {batchPrefix}HyperLogLogMergeAsync" },
+                    { "PFADD", $"PFADD {batchPrefix}HyperLogLogAddAsync" }, // Only present on 1.0.242+
+                    { "PFCOUNT", $"PFCOUNT {batchPrefix}HyperLogLogLengthAsync" }, // Only present on 1.0.242+
+                    { "PFMERGE", $"PFMERGE {batchPrefix}HyperLogLogMergeAsync" }, // Only present on 1.0.242+
                     { "PING", $"PING" },
                     // { "DEL", $"DEL key" },
                     { "DUMP", $"DUMP key" },
@@ -100,25 +108,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SRANDMEMBER", "SRANDMEMBER setkey" },
                     { "SRANDMEMBER", "SRANDMEMBER setkey" },
                     { "SREM", "SREM setkey" },
-                    { "SORT", "SORT setkey" },
-                    { "SORT", "SORT setkey" },
+                    { "SORT", "SORT setkey" }, // Only present on 1.0.206+
+                    { "SORT", "SORT setkey" }, // Only present on 1.0.206+
+                    { "ZUNIONSTORE", "ZUNIONSTORE ssetkey1" }, // Only present on 1.0.206+
                     { "ZADD", "ZADD ssetkey" },
-                    { "ZUNIONSTORE", "ZUNIONSTORE ssetkey1" },
                     { "ZINCRBY", "ZINCRBY ssetkey" },
                     { "ZINCRBY", "ZINCRBY ssetkey" },
                     { "ZCARD", "ZCARD ssetkey" },
-                    { "ZLEXCOUNT", "ZLEXCOUNT ssetkey" },
                     { "ZRANGE", "ZRANGE ssetkey" },
                     { "ZRANGE", "ZRANGE ssetkey" },
                     { "ZRANGEBYSCORE", "ZRANGEBYSCORE ssetkey" },
                     { "ZRANGEBYSCORE", "ZRANGEBYSCORE ssetkey" },
-                    { "ZRANGEBYLEX", "ZRANGEBYLEX ssetkey" },
                     { "ZRANK", "ZRANK ssetkey" },
                     { "ZREM", "ZREM ssetkey" },
                     { "ZREMRANGEBYRANK", "ZREMRANGEBYRANK ssetkey" },
                     { "ZREMRANGEBYSCORE", "ZREMRANGEBYSCORE ssetkey"  },
-                    { "ZREMRANGEBYLEX", "ZREMRANGEBYLEX ssetkey" },
                     { "ZSCORE", "ZSCORE ssestkey" },
+                    { "ZLEXCOUNT", "ZLEXCOUNT ssetkey" }, // Only present on 1.0.273+
+                    { "ZRANGEBYLEX", "ZRANGEBYLEX ssetkey" }, // Only present on 1.0.273+
+                    { "ZREMRANGEBYLEX", "ZREMRANGEBYLEX ssetkey" }, // Only present on 1.0.273+
                     { "APPEND", "APPEND ssetkey" },
                     { "BITCOUNT", "BITCOUNT ssetkey" },
                     { "BITOP", "BITOP" },
@@ -135,17 +143,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETRANGE", "SETRANGE key" },
                 });
 
+                FilterExpectedResultsByApiVersion(expected, packageVersion);
+
                 var dbPrefix = $"{TestPrefix}StackExchange.Redis.Database.";
                 expected.AddRange(new TupleList<string, string>
                 {
                     { "DEBUG", $"DEBUG {dbPrefix}DebugObject" },
-                    { "DDCUSTOM", $"DDCUSTOM" },
-                    { "GEOADD", $"GEOADD {dbPrefix}Geo" },
-                    { "GEODIST", $"GEODIST {dbPrefix}Geo" },
-                    { "GEOHASH", $"GEOHASH {dbPrefix}Geo" },
-                    { "GEOPOS", $"GEOPOS {dbPrefix}Geo" },
-                    { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {dbPrefix}Geo" },
-                    { "ZREM", $"ZREM {dbPrefix}Geo" },
+                    { "DDCUSTOM", $"DDCUSTOM" }, // Only present on 1.2.2+
+                    { "GEOADD", $"GEOADD {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "GEODIST", $"GEODIST {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "GEOHASH", $"GEOHASH {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "GEOPOS", $"GEOPOS {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {dbPrefix}Geo" }, // Only present on 1.2.0+
+                    { "ZREM", $"ZREM {dbPrefix}Geo" }, // Only present on 1.2.0+
                     { "HINCRBYFLOAT", $"HINCRBYFLOAT {dbPrefix}Hash" },
                     { "HDEL", $"HDEL {dbPrefix}Hash" },
                     { "HEXISTS", $"HEXISTS {dbPrefix}Hash" },
@@ -157,9 +167,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     // { "HSCAN", $"HSCAN {dbPrefix}Hash" },
                     { "HMSET", $"HMSET {dbPrefix}Hash" },
                     { "HVALS", $"HVALS {dbPrefix}Hash" },
-                    { "PFADD", $"PFADD {dbPrefix}HyperLogLog" },
-                    { "PFCOUNT", $"PFCOUNT {dbPrefix}HyperLogLog" },
-                    { "PFMERGE", $"PFMERGE {dbPrefix}HyperLogLog2" },
+                    { "PFADD", $"PFADD {dbPrefix}HyperLogLog" }, // Only present on 1.0.242+
+                    { "PFCOUNT", $"PFCOUNT {dbPrefix}HyperLogLog" }, // Only present on 1.0.242+
+                    { "PFMERGE", $"PFMERGE {dbPrefix}HyperLogLog2" }, // Only present on 1.0.242+
                     // { "DEL", $"DEL {dbPrefix}Key" },
                     { "DUMP", $"DUMP {dbPrefix}Key" },
                     { "EXISTS", $"EXISTS {dbPrefix}Key" },
@@ -201,25 +211,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SRANDMEMBER", $"SRANDMEMBER {dbPrefix}Set" },
                     { "SREM", $"SREM {dbPrefix}Set" },
                     { "EXEC", $"EXEC" },
-                    { "SORT", $"SORT {dbPrefix}Key" },
-                    { "SORT", $"SORT {dbPrefix}Key" },
+                    { "SORT", $"SORT {dbPrefix}Key" }, // Only present on 1.0.206+
+                    { "SORT", $"SORT {dbPrefix}Key" }, // Only present on 1.0.206+
+                    { "ZUNIONSTORE", $"ZUNIONSTORE {dbPrefix}SortedSet2" }, // Only present on 1.0.206+
                     { "ZADD", $"ZADD {dbPrefix}SortedSet" },
-                    { "ZUNIONSTORE", $"ZUNIONSTORE {dbPrefix}SortedSet2" },
                     { "ZINCRBY", $"ZINCRBY {dbPrefix}SortedSet" },
                     { "ZINCRBY", $"ZINCRBY {dbPrefix}SortedSet" },
                     { "ZCARD", $"ZCARD {dbPrefix}SortedSet" },
-                    { "ZLEXCOUNT", $"ZLEXCOUNT {dbPrefix}SortedSet" },
                     { "ZRANGE", $"ZRANGE {dbPrefix}SortedSet" },
                     { "ZRANGE", $"ZRANGE {dbPrefix}SortedSet" },
                     { "ZRANGEBYSCORE", $"ZRANGEBYSCORE {dbPrefix}SortedSet" },
                     { "ZRANGEBYSCORE", $"ZRANGEBYSCORE {dbPrefix}SortedSet" },
-                    { "ZRANGEBYLEX", $"ZRANGEBYLEX {dbPrefix}SortedSet" },
                     { "ZRANK", $"ZRANK {dbPrefix}SortedSet" },
                     { "ZREM", $"ZREM {dbPrefix}SortedSet" },
                     { "ZREMRANGEBYRANK", $"ZREMRANGEBYRANK {dbPrefix}SortedSet" },
                     { "ZREMRANGEBYSCORE", $"ZREMRANGEBYSCORE {dbPrefix}SortedSet"  },
-                    { "ZREMRANGEBYLEX", $"ZREMRANGEBYLEX {dbPrefix}SortedSet" },
                     { "ZSCORE", $"ZSCORE {dbPrefix}SortedSet" },
+                    { "ZLEXCOUNT", $"ZLEXCOUNT {dbPrefix}SortedSet" }, // Only present on 1.0.273+
+                    { "ZRANGEBYLEX", $"ZRANGEBYLEX {dbPrefix}SortedSet" }, // Only present on 1.0.273+
+                    { "ZREMRANGEBYLEX", $"ZREMRANGEBYLEX {dbPrefix}SortedSet" }, // Only present on 1.0.273+
                     { "APPEND", $"APPEND {dbPrefix}Key" },
                     { "BITCOUNT", $"BITCOUNT {dbPrefix}Key" },
                     { "BITOP", $"BITOP" },
@@ -235,6 +245,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETBIT", $"SETBIT {dbPrefix}Key" },
                     { "SETRANGE", $"SETRANGE {dbPrefix}Key" },
                 });
+
+                FilterExpectedResultsByApiVersion(expected, packageVersion);
 
                 var spans = agent.WaitForSpans(expected.Count).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
                 var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
@@ -286,6 +298,46 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.True(false, $"no span found for `{e.Item1}`, `{e.Item2}`, remaining spans: `{string.Join(", ", spanLookup.Select(kvp => $"{kvp.Key.Item1}, {kvp.Key.Item2}").ToArray())}`");
                 }
+            }
+        }
+
+        private void FilterExpectedResultsByApiVersion(TupleList<string, string> expected, string packageVersion)
+        {
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.2") < 0)
+            {
+                expected.Remove(new Tuple<string, string>("DDCUSTOM", "DDCUSTOM"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.0") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO") ||
+                    (tuple.Item1.ToUpper().Equals("ZREM") && tuple.Item2.ToUpper().Contains("GEO")));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.273") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().Contains("LEX") && tuple.Item2.ToUpper().Contains("LEX"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.245") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().Equals("PUBLISH"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.242") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("PF"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.219") < 0)
+            {
+                expected.Remove(new Tuple<string, string>("RANDOMKEY", "RANDOMKEY"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.206") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().Equals("SORT") ||
+                    (tuple.Item1.ToUpper().Equals("ZUNIONSTORE")));
             }
         }
     }

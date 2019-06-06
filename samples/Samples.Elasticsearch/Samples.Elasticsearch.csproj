@@ -3,7 +3,9 @@
   <PropertyGroup>
     <!-- override to remove net452 -->
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
+
     <ApiVersion Condition="'$(ApiVersion)' == ''">6.1.0</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'>='6.1.0'">$(DefineConstants);ELASTICSEARCH_6_1</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

@@ -10,7 +10,7 @@
         "IntegrationName": "ElasticSearch6",
         "SampleProjectName": "Samples.Elasticsearch",
         "NugetPackageSearchName": "Elasticsearch.Net",
-        "MinVersion": "6.1.0",
+        "MinVersion": "6.0.0",
         "MaxVersion": "7.0.0"
     },
     {
@@ -38,7 +38,7 @@
         "IntegrationName": "StackExchangeRedis",
         "SampleProjectName": "Samples.StackExchange.Redis",
         "NugetPackageSearchName": "StackExchange.Redis",
-        "MinVersion": "1.2.2",
+        "MinVersion": "1.0.187",
         "MaxVersion": "2.0.0"
     },
     {
