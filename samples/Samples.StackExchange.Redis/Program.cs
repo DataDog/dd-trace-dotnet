@@ -112,9 +112,11 @@ namespace Samples.StackExchangeRedis
                 { "HashSet", () => { db.HashSet($"{prefix}Hash", new HashEntry[] { new HashEntry("hashfield", "hashvalue") }); return null; } },
                 { "HashValues", () => db.HashValues($"{prefix}Hash") },
 
+#if (STACKEXCHANGEREDIS_1_0_242 && !DEFAULT_SAMPLES)
                 { "HyperLogLogAdd", () => db.HyperLogLogAdd($"{prefix}HyperLogLog", "value") },
                 { "HyperLogLogLength", () => db.HyperLogLogLength($"{prefix}HyperLogLog") },
                 { "HyperLogLogMerge", () => { db.HyperLogLogMerge($"{prefix}HyperLogLog2", new RedisKey[] { $"{prefix}HyperLogLog" }); return null; } },
+#endif
 
                 { "KeyDelete", () => db.KeyDelete($"{prefix}Key") },
                 { "KeyDump", () => db.KeyDump($"{prefix}Key") },
@@ -241,9 +243,11 @@ namespace Samples.StackExchangeRedis
                 { "HashSetAsync", () => db.HashSetAsync($"{prefix}HashSetAsync", new HashEntry[] { new HashEntry("x", "y") }) },
                 { "HashValuesAsync", () => db.HashValuesAsync($"{prefix}HashValuesAsync") },
 
+#if (STACKEXCHANGEREDIS_1_0_242 && !DEFAULT_SAMPLES)
                 { "HyperLogLogAddAsync", () => db.HyperLogLogAddAsync($"{prefix}HyperLogLogAddAsync", "value") },
                 { "HyperLogLogLengthAsync", () => db.HyperLogLogLengthAsync($"{prefix}HyperLogLogLengthAsync") },
                 { "HyperLogLogMergeAsync", () => db.HyperLogLogMergeAsync($"{prefix}HyperLogLogMergeAsync", new RedisKey[] { "key1", "key2" }) },
+#endif
 
                 { "IdentifyEndpointAsync", () => db.IdentifyEndpointAsync() },
 

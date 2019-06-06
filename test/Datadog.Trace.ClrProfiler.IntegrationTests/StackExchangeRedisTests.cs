@@ -67,9 +67,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "HLEN", $"HLEN {batchPrefix}HashLengthAsync" },
                     { "HMSET", $"HMSET {batchPrefix}HashSetAsync" },
                     { "HVALS", $"HVALS {batchPrefix}HashValuesAsync" },
-                    { "PFADD", $"PFADD {batchPrefix}HyperLogLogAddAsync" },
-                    { "PFCOUNT", $"PFCOUNT {batchPrefix}HyperLogLogLengthAsync" },
-                    { "PFMERGE", $"PFMERGE {batchPrefix}HyperLogLogMergeAsync" },
+                    { "PFADD", $"PFADD {batchPrefix}HyperLogLogAddAsync" }, // Only present on 1.0.242+
+                    { "PFCOUNT", $"PFCOUNT {batchPrefix}HyperLogLogLengthAsync" }, // Only present on 1.0.242+
+                    { "PFMERGE", $"PFMERGE {batchPrefix}HyperLogLogMergeAsync" }, // Only present on 1.0.242+
                     { "PING", $"PING" },
                     // { "DEL", $"DEL key" },
                     { "DUMP", $"DUMP key" },
@@ -167,9 +167,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     // { "HSCAN", $"HSCAN {dbPrefix}Hash" },
                     { "HMSET", $"HMSET {dbPrefix}Hash" },
                     { "HVALS", $"HVALS {dbPrefix}Hash" },
-                    { "PFADD", $"PFADD {dbPrefix}HyperLogLog" },
-                    { "PFCOUNT", $"PFCOUNT {dbPrefix}HyperLogLog" },
-                    { "PFMERGE", $"PFMERGE {dbPrefix}HyperLogLog2" },
+                    { "PFADD", $"PFADD {dbPrefix}HyperLogLog" }, // Only present on 1.0.242+
+                    { "PFCOUNT", $"PFCOUNT {dbPrefix}HyperLogLog" }, // Only present on 1.0.242+
+                    { "PFMERGE", $"PFMERGE {dbPrefix}HyperLogLog2" }, // Only present on 1.0.242+
                     // { "DEL", $"DEL {dbPrefix}Key" },
                     { "DUMP", $"DUMP {dbPrefix}Key" },
                     { "EXISTS", $"EXISTS {dbPrefix}Key" },
@@ -324,6 +324,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.245") < 0)
             {
                 expected.RemoveAll(tuple => tuple.Item1.ToUpper().Equals("PUBLISH"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.242") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("PF"));
             }
         }
     }
