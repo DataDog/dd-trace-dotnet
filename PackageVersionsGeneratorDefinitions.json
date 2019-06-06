@@ -38,7 +38,7 @@
         "IntegrationName": "StackExchangeRedis",
         "SampleProjectName": "Samples.StackExchange.Redis",
         "NugetPackageSearchName": "StackExchange.Redis",
-        "MinVersion": "1.0.371",
+        "MinVersion": "1.0.297",
         "MaxVersion": "2.0.0"
     },
     {
