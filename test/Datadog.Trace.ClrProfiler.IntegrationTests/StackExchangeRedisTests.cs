@@ -108,10 +108,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SRANDMEMBER", "SRANDMEMBER setkey" },
                     { "SRANDMEMBER", "SRANDMEMBER setkey" },
                     { "SREM", "SREM setkey" },
-                    { "SORT", "SORT setkey" },
-                    { "SORT", "SORT setkey" },
+                    { "SORT", "SORT setkey" }, // Only present on 1.0.206+
+                    { "SORT", "SORT setkey" }, // Only present on 1.0.206+
+                    { "ZUNIONSTORE", "ZUNIONSTORE ssetkey1" }, // Only present on 1.0.206+
                     { "ZADD", "ZADD ssetkey" },
-                    { "ZUNIONSTORE", "ZUNIONSTORE ssetkey1" },
                     { "ZINCRBY", "ZINCRBY ssetkey" },
                     { "ZINCRBY", "ZINCRBY ssetkey" },
                     { "ZCARD", "ZCARD ssetkey" },
@@ -211,10 +211,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SRANDMEMBER", $"SRANDMEMBER {dbPrefix}Set" },
                     { "SREM", $"SREM {dbPrefix}Set" },
                     { "EXEC", $"EXEC" },
-                    { "SORT", $"SORT {dbPrefix}Key" },
-                    { "SORT", $"SORT {dbPrefix}Key" },
+                    { "SORT", $"SORT {dbPrefix}Key" }, // Only present on 1.0.206+
+                    { "SORT", $"SORT {dbPrefix}Key" }, // Only present on 1.0.206+
+                    { "ZUNIONSTORE", $"ZUNIONSTORE {dbPrefix}SortedSet2" }, // Only present on 1.0.206+
                     { "ZADD", $"ZADD {dbPrefix}SortedSet" },
-                    { "ZUNIONSTORE", $"ZUNIONSTORE {dbPrefix}SortedSet2" },
                     { "ZINCRBY", $"ZINCRBY {dbPrefix}SortedSet" },
                     { "ZINCRBY", $"ZINCRBY {dbPrefix}SortedSet" },
                     { "ZCARD", $"ZCARD {dbPrefix}SortedSet" },
@@ -329,6 +329,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.242") < 0)
             {
                 expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("PF"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.219") < 0)
+            {
+                expected.Remove(new Tuple<string, string>("RANDOMKEY", "RANDOMKEY"));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.206") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().Equals("SORT") ||
+                    (tuple.Item1.ToUpper().Equals("ZUNIONSTORE")));
             }
         }
     }

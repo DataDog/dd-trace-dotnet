@@ -108,8 +108,10 @@ namespace Samples.StackExchangeRedis
                 { "HashIncrement", () => db.HashIncrement($"{prefix}Hash", "hashfield") },
                 { "HashKeys", () => db.HashKeys($"{prefix}Hash") },
                 { "HashLength", () => db.HashLength($"{prefix}Hash") },
+#if (STACKEXCHANGEREDIS_1_0_228 && !DEFAULT_SAMPLES)
                 { "HashScan", () => db.HashScan($"{prefix}Hash", "*", 5, CommandFlags.None) },
-                { "HashSet", () => { db.HashSet($"{prefix}Hash", new HashEntry[] { new HashEntry("hashfield", "hashvalue") }); return null; } },
+#endif
+                { "HashSet", () => { db.HashSet($"{prefix}Hash", ApiSafeCreateHashSetEntryList(new KeyValuePair<RedisValue, RedisValue>[] { new KeyValuePair<RedisValue, RedisValue>("hashfield", "hashvalue") })); return null; } },
                 { "HashValues", () => db.HashValues($"{prefix}Hash") },
 
 #if (STACKEXCHANGEREDIS_1_0_242 && !DEFAULT_SAMPLES)
@@ -127,7 +129,9 @@ namespace Samples.StackExchangeRedis
 #endif
                 { "KeyMove", () =>  db.KeyMove($"{prefix}Key", 1) },
                 { "KeyPersist", () => db.KeyPersist($"{prefix}Key") },
+#if (STACKEXCHANGEREDIS_1_0_219 && !DEFAULT_SAMPLES)
                 { "KeyRandom", () => db.KeyRandom() },
+#endif
                 { "KeyRename", () => db.KeyRename($"{prefix}Key", $"{prefix}Key2") },
                 { "KeyRestore", () => { db.KeyRestore($"{prefix}Key", new byte[] { 1,2,3,4 }); return null; } },
                 { "KeyTimeToLive", () => db.KeyTimeToLive($"{prefix}Key") },
@@ -171,11 +175,13 @@ namespace Samples.StackExchangeRedis
                 { "SetRemove", () => db.SetRemove($"{prefix}Set", "value1") },
                 { "SetScan", () => db.SetScan($"{prefix}Set", "*", 5) },
 
+#if (STACKEXCHANGEREDIS_1_0_206 && !DEFAULT_SAMPLES)
                 { "Sort", () => db.Sort($"{prefix}Key") },
                 { "SortAndStore", () => db.SortAndStore($"{prefix}Key2", $"{prefix}Key") },
-
-                { "SortedSetAdd", () => db.SortedSetAdd($"{prefix}SortedSet", new SortedSetEntry[] { new SortedSetEntry("element", 1) }) },
                 { "SortedSetCombineAndStore", () => db.SortedSetCombineAndStore(SetOperation.Union, $"{prefix}SortedSet2", $"{prefix}SortedSet", $"{prefix}SortedSet2") },
+#endif
+
+                { "SortedSetAdd", () => db.SortedSetAdd($"{prefix}SortedSet", ApiSafeCreateSortedSetEntryList(new KeyValuePair<RedisValue, double>[] { new KeyValuePair<RedisValue, double>("element", 1) })) },
                 { "SortedSetDecrement", () => db.SortedSetDecrement($"{prefix}SortedSet", "element", 0.5) },
                 { "SortedSetIncrement", () => db.SortedSetIncrement($"{prefix}SortedSet", "element", 0.5) },
                 { "SortedSetLength", () => db.SortedSetLength($"{prefix}SortedSet") },
@@ -187,7 +193,9 @@ namespace Samples.StackExchangeRedis
                 { "SortedSetRemove", () => db.SortedSetRemove($"{prefix}SortedSet", "element") },
                 { "SortedSetRemoveRangeByRank", () => db.SortedSetRemoveRangeByRank($"{prefix}SortedSet", 0, 1) },
                 { "SortedSetRemoveRangeByScore", () => db.SortedSetRemoveRangeByScore($"{prefix}SortedSet", 1, 2) },
+#if (STACKEXCHANGEREDIS_1_0_228 && !DEFAULT_SAMPLES)
                 { "SortedSetScan", () => db.SortedSetScan($"{prefix}SortedSet", "*", 5) },
+#endif
                 { "SortedSetScore", () => db.SortedSetScore($"{prefix}SortedSet", "element") },
 
 #if (STACKEXCHANGEREDIS_1_0_273 && !DEFAULT_SAMPLES)
@@ -240,7 +248,7 @@ namespace Samples.StackExchangeRedis
                 { "HashIncrementAsync", () => db.HashIncrementAsync($"{prefix}HashIncrementAsync", "hashfield", 1.5) },
                 { "HashKeysAsync", () => db.HashKeysAsync($"{prefix}HashKeysAsync") },
                 { "HashLengthAsync", () => db.HashLengthAsync($"{prefix}HashLengthAsync") },
-                { "HashSetAsync", () => db.HashSetAsync($"{prefix}HashSetAsync", new HashEntry[] { new HashEntry("x", "y") }) },
+                { "HashSetAsync", () => db.HashSetAsync($"{prefix}HashSetAsync", ApiSafeCreateHashSetEntryList(new KeyValuePair<RedisValue, RedisValue>[] { new KeyValuePair<RedisValue, RedisValue>("x", "y") })) },
                 { "HashValuesAsync", () => db.HashValuesAsync($"{prefix}HashValuesAsync") },
 
 #if (STACKEXCHANGEREDIS_1_0_242 && !DEFAULT_SAMPLES)
@@ -258,7 +266,9 @@ namespace Samples.StackExchangeRedis
                 // () => db.KeyMigrateAsync("key", ???)
                 { "KeyMoveAsync", () => db.KeyMoveAsync("key", 1) },
                 { "KeyPersistAsync", () => db.KeyPersistAsync("key") },
+#if (STACKEXCHANGEREDIS_1_0_219 && !DEFAULT_SAMPLES)
                 { "KeyRandomAsync", () => db.KeyRandomAsync() },
+#endif
                 { "KeyRenameAsync", () => db.KeyRenameAsync("key1", "key2") },
                 { "KeyRestoreAsync", () => db.KeyRestoreAsync("key", new byte[] { 0,1,2,3,4 }) },
                 { "KeyTimeToLiveAsync", () => db.KeyTimeToLiveAsync("key") },
@@ -300,11 +310,13 @@ namespace Samples.StackExchangeRedis
                 { "SetRandomMembersAsync", () => db.SetRandomMembersAsync("setkey", 2) },
                 { "SetRemoveAsync", () => db.SetRemoveAsync("setkey", "value2") },
 
+#if (STACKEXCHANGEREDIS_1_0_206 && !DEFAULT_SAMPLES)
                 { "SortAndStoreAsync", () => db.SortAndStoreAsync("setkey2", "setkey") },
                 { "SortAsync", () => db.SortAsync("setkey") },
-
-                { "SortedSetAddAsync", () => db.SortedSetAddAsync("ssetkey", new SortedSetEntry[] { new SortedSetEntry("value1", 1.5), new SortedSetEntry("value2", 2.5) }) },
                 { "SortedSetCombineAndStoreAsync", () => db.SortedSetCombineAndStoreAsync(SetOperation.Union, "ssetkey1", "ssetkey2", "ssetkey3") },
+#endif
+
+                { "SortedSetAddAsync", () => db.SortedSetAddAsync("ssetkey", ApiSafeCreateSortedSetEntryList(new KeyValuePair<RedisValue, double>[] { new KeyValuePair<RedisValue, double>("value1", 1.5), new KeyValuePair<RedisValue, double>("value2", 2.5) })) },
                 { "SortedSetDecrementAsync", () => db.SortedSetDecrementAsync("ssetkey", "value1", 1) },
                 { "SortedSetIncrementAsync", () => db.SortedSetIncrementAsync("ssetkey", "value2", 1) },
                 { "SortedSetLengthAsync", () => db.SortedSetLengthAsync("ssetkey") },
@@ -368,6 +380,24 @@ namespace Samples.StackExchangeRedis
             return new RedisChannel(value, RedisChannel.PatternMode.Auto);
 #else
             return value;
+#endif
+        }
+
+        private static dynamic ApiSafeCreateHashSetEntryList(KeyValuePair<RedisValue, RedisValue>[] entries) // KeyValuePair<RedisValue, RedisValue>[] hashFields
+        {
+#if STACKEXCHANGEREDIS_1_0_231
+            return entries.Select(tuple => new HashEntry(tuple.Key, tuple.Value)).ToArray();
+#else
+            return entries;
+#endif
+        }
+
+        private static dynamic ApiSafeCreateSortedSetEntryList(KeyValuePair<RedisValue, double>[] entries)
+        {
+#if STACKEXCHANGEREDIS_1_0_231
+            return entries.Select(tuple => new SortedSetEntry(tuple.Key, tuple.Value)).ToArray();
+#else
+            return entries;
 #endif
         }
 
