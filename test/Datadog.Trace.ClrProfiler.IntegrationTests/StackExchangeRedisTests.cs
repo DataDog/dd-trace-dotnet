@@ -143,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETRANGE", "SETRANGE key" },
                 });
 
-                FilterExpectedResultsByApiVersion(expected);
+                FilterExpectedResultsByApiVersion(expected, packageVersion);
 
                 var dbPrefix = $"{TestPrefix}StackExchange.Redis.Database.";
                 expected.AddRange(new TupleList<string, string>
@@ -246,9 +246,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETRANGE", $"SETRANGE {dbPrefix}Key" },
                 });
 
-                FilterExpectedResultsByApiVersion(expected);
-
-
+                FilterExpectedResultsByApiVersion(expected, packageVersion);
 
                 var spans = agent.WaitForSpans(expected.Count).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
                 var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
@@ -303,7 +301,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private void FilterExpectedResultsByApiVersion(TupleList<string, string> expected)
+        private void FilterExpectedResultsByApiVersion(TupleList<string, string> expected, string packageVersion)
         {
             if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.2") < 0)
             {
