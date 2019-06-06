@@ -120,7 +120,9 @@ namespace Samples.StackExchangeRedis
                 { "KeyDump", () => db.KeyDump($"{prefix}Key") },
                 { "KeyExists", () => db.KeyExists($"{prefix}Key") },
                 { "KeyExpire", () => db.KeyExpire($"{prefix}Key", DateTime.Now) },
+#if (STACKEXCHANGEREDIS_1_0_297 && !DEFAULT_SAMPLES)
                 { "KeyMigrate", () => { db.KeyMigrate($"{prefix}Key", db.IdentifyEndpoint());  return null; } },
+#endif
                 { "KeyMove", () =>  db.KeyMove($"{prefix}Key", 1) },
                 { "KeyPersist", () => db.KeyPersist($"{prefix}Key") },
                 { "KeyRandom", () => db.KeyRandom() },
