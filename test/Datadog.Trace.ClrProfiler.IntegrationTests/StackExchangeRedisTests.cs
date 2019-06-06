@@ -115,18 +115,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "ZINCRBY", "ZINCRBY ssetkey" },
                     { "ZINCRBY", "ZINCRBY ssetkey" },
                     { "ZCARD", "ZCARD ssetkey" },
-                    { "ZLEXCOUNT", "ZLEXCOUNT ssetkey" },
                     { "ZRANGE", "ZRANGE ssetkey" },
                     { "ZRANGE", "ZRANGE ssetkey" },
                     { "ZRANGEBYSCORE", "ZRANGEBYSCORE ssetkey" },
                     { "ZRANGEBYSCORE", "ZRANGEBYSCORE ssetkey" },
-                    { "ZRANGEBYLEX", "ZRANGEBYLEX ssetkey" },
                     { "ZRANK", "ZRANK ssetkey" },
                     { "ZREM", "ZREM ssetkey" },
                     { "ZREMRANGEBYRANK", "ZREMRANGEBYRANK ssetkey" },
                     { "ZREMRANGEBYSCORE", "ZREMRANGEBYSCORE ssetkey"  },
-                    { "ZREMRANGEBYLEX", "ZREMRANGEBYLEX ssetkey" },
                     { "ZSCORE", "ZSCORE ssestkey" },
+                    { "ZLEXCOUNT", "ZLEXCOUNT ssetkey" }, // Only present on 1.0.273+
+                    { "ZRANGEBYLEX", "ZRANGEBYLEX ssetkey" }, // Only present on 1.0.273+
+                    { "ZREMRANGEBYLEX", "ZREMRANGEBYLEX ssetkey" }, // Only present on 1.0.273+
                     { "APPEND", "APPEND ssetkey" },
                     { "BITCOUNT", "BITCOUNT ssetkey" },
                     { "BITOP", "BITOP" },
@@ -152,6 +152,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO") ||
                         (tuple.Item1.ToUpper().Equals("ZREM") && tuple.Item2.ToUpper().Contains("GEO")));
+                }
+
+                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.273") < 0)
+                {
+                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().Contains("LEX") && tuple.Item2.ToUpper().Contains("LEX"));
                 }
 
                 var dbPrefix = $"{TestPrefix}StackExchange.Redis.Database.";
@@ -227,18 +232,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "ZINCRBY", $"ZINCRBY {dbPrefix}SortedSet" },
                     { "ZINCRBY", $"ZINCRBY {dbPrefix}SortedSet" },
                     { "ZCARD", $"ZCARD {dbPrefix}SortedSet" },
-                    { "ZLEXCOUNT", $"ZLEXCOUNT {dbPrefix}SortedSet" },
                     { "ZRANGE", $"ZRANGE {dbPrefix}SortedSet" },
                     { "ZRANGE", $"ZRANGE {dbPrefix}SortedSet" },
                     { "ZRANGEBYSCORE", $"ZRANGEBYSCORE {dbPrefix}SortedSet" },
                     { "ZRANGEBYSCORE", $"ZRANGEBYSCORE {dbPrefix}SortedSet" },
-                    { "ZRANGEBYLEX", $"ZRANGEBYLEX {dbPrefix}SortedSet" },
                     { "ZRANK", $"ZRANK {dbPrefix}SortedSet" },
                     { "ZREM", $"ZREM {dbPrefix}SortedSet" },
                     { "ZREMRANGEBYRANK", $"ZREMRANGEBYRANK {dbPrefix}SortedSet" },
                     { "ZREMRANGEBYSCORE", $"ZREMRANGEBYSCORE {dbPrefix}SortedSet"  },
-                    { "ZREMRANGEBYLEX", $"ZREMRANGEBYLEX {dbPrefix}SortedSet" },
                     { "ZSCORE", $"ZSCORE {dbPrefix}SortedSet" },
+                    { "ZLEXCOUNT", $"ZLEXCOUNT {dbPrefix}SortedSet" }, // Only present on 1.0.273+
+                    { "ZRANGEBYLEX", $"ZRANGEBYLEX {dbPrefix}SortedSet" }, // Only present on 1.0.273+
+                    { "ZREMRANGEBYLEX", $"ZREMRANGEBYLEX {dbPrefix}SortedSet" }, // Only present on 1.0.273+
                     { "APPEND", $"APPEND {dbPrefix}Key" },
                     { "BITCOUNT", $"BITCOUNT {dbPrefix}Key" },
                     { "BITOP", $"BITOP" },
@@ -264,6 +269,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO") ||
                         (tuple.Item1.ToUpper().Equals("ZREM") && tuple.Item2.ToUpper().Contains("GEO")));
+                }
+
+                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.273") < 0)
+                {
+                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().Contains("LEX") && tuple.Item2.ToUpper().Contains("LEX"));
                 }
 
                 var spans = agent.WaitForSpans(expected.Count).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();

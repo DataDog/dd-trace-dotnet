@@ -147,6 +147,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+                new object[] { "1.0.245" },
+                new object[] { "1.0.247" },
+                new object[] { "1.0.266" },
+                new object[] { "1.0.270" },
                 new object[] { "1.0.273" },
                 new object[] { "1.0.278" },
                 new object[] { "1.0.281" },

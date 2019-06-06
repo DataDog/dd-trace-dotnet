@@ -175,19 +175,22 @@ namespace Samples.StackExchangeRedis
                 { "SortedSetDecrement", () => db.SortedSetDecrement($"{prefix}SortedSet", "element", 0.5) },
                 { "SortedSetIncrement", () => db.SortedSetIncrement($"{prefix}SortedSet", "element", 0.5) },
                 { "SortedSetLength", () => db.SortedSetLength($"{prefix}SortedSet") },
-                { "SortedSetLengthByValue", () => db.SortedSetLengthByValue($"{prefix}SortedSet", "value1", "value2") },
                 { "SortedSetRangeByRank", () => db.SortedSetRangeByRank($"{prefix}SortedSet") },
                 { "SortedSetRangeByRankWithScores", () => db.SortedSetRangeByRankWithScores($"{prefix}SortedSet") },
                 { "SortedSetRangeByScore", () => db.SortedSetRangeByScore($"{prefix}SortedSet") },
                 { "SortedSetRangeByScoreWithScores", () => db.SortedSetRangeByScoreWithScores($"{prefix}SortedSet") },
-                { "SortedSetRangeByValue", () => db.SortedSetRangeByValue($"{prefix}SortedSet") },
                 { "SortedSetRank", () => db.SortedSetRank($"{prefix}SortedSet", "element") },
                 { "SortedSetRemove", () => db.SortedSetRemove($"{prefix}SortedSet", "element") },
                 { "SortedSetRemoveRangeByRank", () => db.SortedSetRemoveRangeByRank($"{prefix}SortedSet", 0, 1) },
                 { "SortedSetRemoveRangeByScore", () => db.SortedSetRemoveRangeByScore($"{prefix}SortedSet", 1, 2) },
-                { "SortedSetRemoveRangeByValue", () => db.SortedSetRemoveRangeByValue($"{prefix}SortedSet", 1, 2) },
                 { "SortedSetScan", () => db.SortedSetScan($"{prefix}SortedSet", "*", 5) },
                 { "SortedSetScore", () => db.SortedSetScore($"{prefix}SortedSet", "element") },
+
+#if (STACKEXCHANGEREDIS_1_0_273 && !DEFAULT_SAMPLES)
+                { "SortedSetLengthByValue", () => db.SortedSetLengthByValue($"{prefix}SortedSet", "value1", "value2") },
+                { "SortedSetRangeByValue", () => db.SortedSetRangeByValue($"{prefix}SortedSet") },
+                { "SortedSetRemoveRangeByValue", () => db.SortedSetRemoveRangeByValue($"{prefix}SortedSet", 1, 2) },
+#endif
 
                 { "StringAppend", () => db.StringAppend($"{prefix}Key", "value") },
                 { "StringBitCount", () => db.StringBitCount($"{prefix}Key") },
@@ -297,18 +300,21 @@ namespace Samples.StackExchangeRedis
                 { "SortedSetDecrementAsync", () => db.SortedSetDecrementAsync("ssetkey", "value1", 1) },
                 { "SortedSetIncrementAsync", () => db.SortedSetIncrementAsync("ssetkey", "value2", 1) },
                 { "SortedSetLengthAsync", () => db.SortedSetLengthAsync("ssetkey") },
-                { "SortedSetLengthByValueAsync", () => db.SortedSetLengthByValueAsync("ssetkey", "value1", "value2") },
                 { "SortedSetRangeByRankAsync", () => db.SortedSetRangeByRankAsync("ssetkey") },
                 { "SortedSetRangeByRankWithScoresAsync", () => db.SortedSetRangeByRankWithScoresAsync("ssetkey") },
                 { "SortedSetRangeByScoreAsync", () => db.SortedSetRangeByScoreAsync("ssetkey") },
                 { "SortedSetRangeByScoreWithScoresAsync", () => db.SortedSetRangeByScoreWithScoresAsync("ssetkey") },
-                { "SortedSetRangeByValueAsync", () => db.SortedSetRangeByValueAsync("ssetkey") },
                 { "SortedSetRankAsync", () => db.SortedSetRankAsync("ssetkey", "value1") },
                 { "SortedSetRemoveAsync", () => db.SortedSetRemoveAsync("ssetkey", "value1") },
                 { "SortedSetRemoveRangeByRankAsync", () => db.SortedSetRemoveRangeByRankAsync("ssetkey", 0, 1) },
                 { "SortedSetRemoveRangeByScoreAsync", () => db.SortedSetRemoveRangeByScoreAsync("ssetkey", 0, 1) },
-                { "SortedSetRemoveRangeByValueAsync", () => db.SortedSetRemoveRangeByValueAsync("ssetkey", "value1", "value2") },
                 { "SortedSetScoreAsync", () => db.SortedSetScoreAsync("ssestkey", "value1") },
+
+#if (STACKEXCHANGEREDIS_1_0_273 && !DEFAULT_SAMPLES)
+                { "SortedSetLengthByValueAsync", () => db.SortedSetLengthByValueAsync("ssetkey", "value1", "value2") },
+                { "SortedSetRangeByValueAsync", () => db.SortedSetRangeByValueAsync("ssetkey") },
+                { "SortedSetRemoveRangeByValueAsync", () => db.SortedSetRemoveRangeByValueAsync("ssetkey", "value1", "value2") },
+#endif
 
                 { "StringAppendAsync", () => db.StringAppendAsync("ssetkey", "value1") },
                 { "StringBitCountAsync", () => db.StringBitCountAsync("ssetkey") },
