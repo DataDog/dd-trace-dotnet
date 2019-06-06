@@ -54,8 +54,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="test_helpers.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="clr_helper_type_check_test.cpp" />
     <ClCompile Include="integration_loader_test.cpp" />
     <ClCompile Include="integration_test.cpp" />
     <ClCompile Include="clr_helper_test.cpp" />
