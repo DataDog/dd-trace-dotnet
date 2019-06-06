@@ -13,14 +13,28 @@ namespace trace {
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id) {
-  WCHAR name[kNameMaxSize];
-  DWORD name_len = 0;
-  auto hr = info->GetAssemblyInfo(assembly_id, kNameMaxSize, &name_len, name,
-                                  nullptr, nullptr);
-  if (FAILED(hr) || name_len == 0) {
+  WCHAR assembly_name[kNameMaxSize];
+  DWORD assembly_name_len = 0;
+  AppDomainID app_domain_id;
+
+  auto hr = info->GetAssemblyInfo(assembly_id, kNameMaxSize, &assembly_name_len,
+                                  assembly_name, &app_domain_id, nullptr);
+
+  if (FAILED(hr) || assembly_name_len == 0) {
     return {};
   }
-  return {assembly_id, WSTRING(name)};
+
+  WCHAR app_domain_name[kNameMaxSize];
+  DWORD app_domain_name_len = 0;
+
+  hr = info->GetAppDomainInfo(app_domain_id, kNameMaxSize, &app_domain_name_len,
+                              app_domain_name, nullptr);
+
+  if (FAILED(hr) || app_domain_name_len == 0) {
+    return {};
+  }
+
+  return {assembly_id, WSTRING(assembly_name), app_domain_id, WSTRING(app_domain_name)};
 }
 
 AssemblyMetadata GetAssemblyMetadata(
