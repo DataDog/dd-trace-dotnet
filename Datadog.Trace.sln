@@ -138,6 +138,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Shared", "sample-libs\Samples.Shared\Samples.Shared.csproj", "{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WebForms", "samples-aspnet\Samples.WebForms\Samples.WebForms.csproj", "{99A62CCF-8E7F-4D57-8383-D38C371C8087}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reproductions", "reproductions", "{550AE553-2BBB-4021-B55A-137EF31A6B1F}"
 	ProjectSection(SolutionItems) = preProject
@@ -163,6 +166,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ServiceStack.Redis", "samples\Samples.ServiceStack.Redis\Samples.ServiceStack.Redis.csproj", "{8E1555D1-13D5-4DBF-9631-117D840C3158}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.StackExchange.Redis", "samples\Samples.StackExchange.Redis\Samples.StackExchange.Redis.csproj", "{DC7D131A-AF99-46AB-9AA6-463443E3B992}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WebForms.Empty", "samples-aspnet\Samples.WebForms.Empty\Samples.WebForms.Empty.csproj", "{673826CD-9219-4231-8FCF-4F9C8BE61F76}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -546,6 +554,18 @@ Global
 		{DC7D131A-AF99-46AB-9AA6-463443E3B992}.Release|x64.Build.0 = Release|x64
 		{DC7D131A-AF99-46AB-9AA6-463443E3B992}.Release|x86.ActiveCfg = Release|x86
 		{DC7D131A-AF99-46AB-9AA6-463443E3B992}.Release|x86.Build.0 = Release|x86
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Debug|x64.Build.0 = Debug|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Debug|x86.Build.0 = Debug|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Release|x64.ActiveCfg = Release|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Release|x64.Build.0 = Release|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Release|x86.ActiveCfg = Release|Any CPU
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -585,6 +605,7 @@ Global
 		{24B0357D-B0C8-46C7-96F6-006E3F66662A} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{8E1555D1-13D5-4DBF-9631-117D840C3158} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{DC7D131A-AF99-46AB-9AA6-463443E3B992} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{673826CD-9219-4231-8FCF-4F9C8BE61F76} = {65DF5743-B7B5-4BC8-8AB5-9DE596AF3FB8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
