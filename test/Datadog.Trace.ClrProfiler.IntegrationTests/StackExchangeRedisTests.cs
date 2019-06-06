@@ -30,14 +30,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     { "SET", $"SET {TestPrefix}StackExchange.Redis.INCR" },
                     { "PING", "PING" },
-                    { "DDCUSTOM", "DDCUSTOM" },
-                    { "ECHO", "ECHO" },
-                    { "SLOWLOG", "SLOWLOG" },
                     { "INCR", $"INCR {TestPrefix}StackExchange.Redis.INCR" },
                     { "INCRBYFLOAT", $"INCRBYFLOAT {TestPrefix}StackExchange.Redis.INCR" },
                     { "GET", $"GET {TestPrefix}StackExchange.Redis.INCR" },
+                    { "DDCUSTOM", "DDCUSTOM" },
+                    { "ECHO", "ECHO" },
+                    { "SLOWLOG", "SLOWLOG" },
                     { "TIME", "TIME" },
                 };
+
+                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.2") < 0)
+                {
+                    expected.Remove(new Tuple<string, string>("DDCUSTOM", "DDCUSTOM"));
+                    expected.Remove(new Tuple<string, string>("ECHO", "ECHO"));
+                    expected.Remove(new Tuple<string, string>("SLOWLOG", "SLOWLOG"));
+                    expected.Remove(new Tuple<string, string>("TIME", "TIME"));
+                }
 
                 var batchPrefix = $"{TestPrefix}StackExchange.Redis.Batch.";
                 expected.AddRange(new TupleList<string, string>
@@ -49,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "GEOHASH", $"GEOHASH {batchPrefix}GeoHashAsync" },
                     { "GEOPOS", $"GEOPOS {batchPrefix}GeoPositionAsync" },
                     { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {batchPrefix}GeoRadiusAsync" },
-                    { "ZREM", $"ZREM {batchPrefix}GeoRemoveAsync" },
+                    { "GEOREM", $"GEOREM {batchPrefix}GeoRemoveAsync" },
                     { "HINCRBYFLOAT", $"HINCRBYFLOAT {batchPrefix}HashDecrementAsync" },
                     { "HDEL", $"HDEL {batchPrefix}HashDeleteAsync" },
                     { "HEXISTS", $"HEXISTS {batchPrefix}HashExistsAsync" },
@@ -135,6 +143,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETRANGE", "SETRANGE key" },
                 });
 
+                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.2") < 0)
+                {
+                    expected.Remove(new Tuple<string, string>("DDCUSTOM", "DDCUSTOM"));
+                }
+
+                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.0") < 0)
+                {
+                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO"));
+                }
+
                 var dbPrefix = $"{TestPrefix}StackExchange.Redis.Database.";
                 expected.AddRange(new TupleList<string, string>
                 {
@@ -145,7 +163,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "GEOHASH", $"GEOHASH {dbPrefix}Geo" },
                     { "GEOPOS", $"GEOPOS {dbPrefix}Geo" },
                     { "GEORADIUSBYMEMBER", $"GEORADIUSBYMEMBER {dbPrefix}Geo" },
-                    { "ZREM", $"ZREM {dbPrefix}Geo" },
+                    { "GEOREM", $"GEOREM {dbPrefix}Geo" },
                     { "HINCRBYFLOAT", $"HINCRBYFLOAT {dbPrefix}Hash" },
                     { "HDEL", $"HDEL {dbPrefix}Hash" },
                     { "HEXISTS", $"HEXISTS {dbPrefix}Hash" },
@@ -235,6 +253,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "SETBIT", $"SETBIT {dbPrefix}Key" },
                     { "SETRANGE", $"SETRANGE {dbPrefix}Key" },
                 });
+
+                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.2") < 0)
+                {
+                    expected.Remove(new Tuple<string, string>("DDCUSTOM", "DDCUSTOM"));
+                }
+
+                if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.2.0") < 0)
+                {
+                    expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO"));
+                }
 
                 var spans = agent.WaitForSpans(expected.Count).Where(s => s.Type == "redis").OrderBy(s => s.Start).ToList();
                 var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";

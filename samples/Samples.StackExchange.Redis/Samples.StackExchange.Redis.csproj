@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">1.2.6</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'>='1.2.2'">$(DefineConstants);STACKEXCHANGEREDIS_1_2_2</DefineConstants>
+    <DefineConstants Condition="'$(ApiVersion)'>='1.2.0'">$(DefineConstants);STACKEXCHANGEREDIS_1_2_0</DefineConstants>
+    <DefineConstants Condition="'$(ApiVersion)'>='1.0.371'">$(DefineConstants);STACKEXCHANGEREDIS_1_0_371</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

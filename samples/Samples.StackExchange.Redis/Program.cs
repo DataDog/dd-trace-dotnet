@@ -38,13 +38,16 @@ namespace Samples.StackExchangeRedis
                 RunCommands(new TupleList<string, Func<object>>
                 {
                     { "PING", () => db.PingAsync().Result },
-                    { "DDCUSTOM", () => db.Execute("DDCUSTOM", "COMMAND") },
-                    { "ECHO", () => db.Execute("ECHO", "Hello World") },
-                    { "SLOWLOG", () => db.Execute("SLOWLOG", "GET") },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR") },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR", 1.25) },
                     { "GET", () => db.StringGet($"{prefix}INCR") },
+
+#if (STACKEXCHANGEREDIS_1_2_2 && !DEFAULT_SAMPLES)
+                    { "DDCUSTOM", () => db.Execute("DDCUSTOM", "COMMAND") },
+                    { "ECHO", () => db.Execute("ECHO", "Hello World") },
+                    { "SLOWLOG", () => db.Execute("SLOWLOG", "GET") },
                     { "TIME", () => db.Execute("TIME") },
+#endif
                 });
 
                 RunCommands(StackExchangeSyncCommands(prefix + "Database.", db));
@@ -83,14 +86,19 @@ namespace Samples.StackExchangeRedis
             return new TupleList<string, Func<object>>()
             {
                 { "DebugObject", () => db.DebugObject($"{prefix}DebugObject") },
-                { "Execute", () => db.Execute("DDCUSTOM", "COMMAND") },
 
+#if (STACKEXCHANGEREDIS_1_2_2 && !DEFAULT_SAMPLES)
+                { "Execute", () => db.Execute("DDCUSTOM", "COMMAND") },
+#endif
+
+#if (STACKEXCHANGEREDIS_1_2_0 && !DEFAULT_SAMPLES)
                 { "GeoAdd", () => db.GeoAdd($"{prefix}Geo", new GeoEntry(1.5, 2.5, "member")) },
                 { "GeoDistance", () => db.GeoDistance($"{prefix}Geo", "member1", "member2") },
                 { "GeoHash", () => db.GeoHash($"{prefix}Geo", "member") },
                 { "GeoPosition", () => db.GeoPosition($"{prefix}Geo", "member") },
                 { "GeoRadius", () => db.GeoRadius($"{prefix}Geo", "member", 2.3) },
                 { "GeoRemove", () => db.GeoRemove($"{prefix}Geo", "member") },
+#endif
 
                 { "HashDecrement", () => db.HashDecrement($"{prefix}Hash", "hashfield", 4.5) },
                 { "HashDelete", () => db.HashDelete($"{prefix}Hash", "hashfield") },
@@ -141,7 +149,7 @@ namespace Samples.StackExchangeRedis
                 { "LockTake", () => db.LockTake($"{prefix}Lock", "value1", new TimeSpan(0, 0, 10)) },
 
                 { "Ping", () => db.Ping() },
-                { "Publish", () => db.Publish(new RedisChannel("value", RedisChannel.PatternMode.Auto), "message") },
+                { "Publish", () => db.Publish(ApiSafeCreateRedisChannel("value"), "message") },
                 // { "ScriptEvaluate", () => db.ScriptEvaluate() }
 
                 { "SetAdd", () => db.SetAdd($"{prefix}Set", "value1") },
@@ -202,13 +210,20 @@ namespace Samples.StackExchangeRedis
             var tasks = new TupleList<string, Func<Task>>()
             {
                 { "DebugObjectAsync", () => db.DebugObjectAsync($"{prefix}DebugObjectAsync") },
+
+#if (STACKEXCHANGEREDIS_1_2_2 && !DEFAULT_SAMPLES)
                 { "ExecuteAsync", () => db.ExecuteAsync("DDCUSTOM", "COMMAND") },
+#endif
+
+#if (STACKEXCHANGEREDIS_1_2_0 && !DEFAULT_SAMPLES)
                 { "GeoAddAsync", () => db.GeoAddAsync($"{prefix}GeoAddAsync", new GeoEntry(1.5, 2.5, "member")) },
                 { "GeoDistanceAsync",  () => db.GeoDistanceAsync($"{prefix}GeoDistanceAsync", "member1", "member2") },
                 { "GeoHashAsync", () => db.GeoHashAsync($"{prefix}GeoHashAsync", "member") },
                 { "GeoPositionAsync", () => db.GeoPositionAsync($"{prefix}GeoPositionAsync", "member") },
                 { "GeoRadiusAsync", () => db.GeoRadiusAsync($"{prefix}GeoRadiusAsync", "member", 2.3) },
                 { "GeoRemoveAsync", () => db.GeoRemoveAsync($"{prefix}GeoRemoveAsync", "member") },
+#endif
+
                 { "HashDecrementAsync", () => db.HashDecrementAsync($"{prefix}HashDecrementAsync", "hashfield", 4.5) },
                 { "HashDeleteAsync", () => db.HashDeleteAsync($"{prefix}HashDeleteAsync", "hashfield") },
                 { "HashExistsAsync", () => db.HashExistsAsync($"{prefix}HashExistsAsync", "hashfield") },
@@ -218,10 +233,13 @@ namespace Samples.StackExchangeRedis
                 { "HashLengthAsync", () => db.HashLengthAsync($"{prefix}HashLengthAsync") },
                 { "HashSetAsync", () => db.HashSetAsync($"{prefix}HashSetAsync", new HashEntry[] { new HashEntry("x", "y") }) },
                 { "HashValuesAsync", () => db.HashValuesAsync($"{prefix}HashValuesAsync") },
+
                 { "HyperLogLogAddAsync", () => db.HyperLogLogAddAsync($"{prefix}HyperLogLogAddAsync", "value") },
                 { "HyperLogLogLengthAsync", () => db.HyperLogLogLengthAsync($"{prefix}HyperLogLogLengthAsync") },
                 { "HyperLogLogMergeAsync", () => db.HyperLogLogMergeAsync($"{prefix}HyperLogLogMergeAsync", new RedisKey[] { "key1", "key2" }) },
+
                 { "IdentifyEndpointAsync", () => db.IdentifyEndpointAsync() },
+
                 { "KeyDeleteAsync", () => db.KeyDeleteAsync("key") },
                 { "KeyDumpAsync", () => db.KeyDumpAsync("key") },
                 { "KeyExistsAsync", () => db.KeyExistsAsync("key") },
@@ -234,6 +252,7 @@ namespace Samples.StackExchangeRedis
                 { "KeyRestoreAsync", () => db.KeyRestoreAsync("key", new byte[] { 0,1,2,3,4 }) },
                 { "KeyTimeToLiveAsync", () => db.KeyTimeToLiveAsync("key") },
                 { "KeyTypeAsync", () => db.KeyTypeAsync("key") },
+
                 { "ListGetByIndexAsync", () => db.ListGetByIndexAsync("listkey", 0) },
                 { "ListInsertAfterAsync", () => db.ListInsertAfterAsync("listkey", "value1", "value2") },
                 { "ListInsertBeforeAsync", () => db.ListInsertBeforeAsync("listkey", "value1", "value2") },
@@ -247,12 +266,15 @@ namespace Samples.StackExchangeRedis
                 { "ListRightPushAsync", () => db.ListRightPushAsync("listkey", new RedisValue[] { "value5", "value6" }) },
                 { "ListSetByIndexAsync", () => db.ListSetByIndexAsync("listkey", 0, "value7") },
                 { "ListTrimAsync", () => db.ListTrimAsync("listkey", 0, 1) },
+
                 { "LockExtendAsync", () => db.LockExtendAsync("listkey", "value7", new TimeSpan(0, 0, 10)) },
                 { "LockQueryAsync", () => db.LockQueryAsync("listkey") },
                 { "LockReleaseAsync", () => db.LockReleaseAsync("listkey", "value7") },
                 { "LockTakeAsync", () => db.LockTakeAsync("listkey", "value8", new TimeSpan(0, 0, 10)) },
-                { "PublishAsync", () => db.PublishAsync(new RedisChannel("channel", RedisChannel.PatternMode.Auto), "somemessage") },
+
+                { "PublishAsync", () => db.PublishAsync(ApiSafeCreateRedisChannel("channel"), "somemessage") },
                 // { "ScriptEvaluateAsync", () => db.ScriptEvaluateAsync(}
+
                 { "SetAddAsync", () => db.SetAddAsync("setkey", "value1") },
                 { "SetCombineAndStoreAsync", () => db.SetCombineAndStoreAsync(SetOperation.Union, "setkey", new RedisKey[] { "value2" }) },
                 { "SetCombineAsync", () => db.SetCombineAsync(SetOperation.Union, new RedisKey[] { "setkey1", "setkey2"}) },
@@ -264,8 +286,10 @@ namespace Samples.StackExchangeRedis
                 { "SetRandomMemberAsync", () => db.SetRandomMemberAsync("setkey") },
                 { "SetRandomMembersAsync", () => db.SetRandomMembersAsync("setkey", 2) },
                 { "SetRemoveAsync", () => db.SetRemoveAsync("setkey", "value2") },
+
                 { "SortAndStoreAsync", () => db.SortAndStoreAsync("setkey2", "setkey") },
                 { "SortAsync", () => db.SortAsync("setkey") },
+
                 { "SortedSetAddAsync", () => db.SortedSetAddAsync("ssetkey", new SortedSetEntry[] { new SortedSetEntry("value1", 1.5), new SortedSetEntry("value2", 2.5) }) },
                 { "SortedSetCombineAndStoreAsync", () => db.SortedSetCombineAndStoreAsync(SetOperation.Union, "ssetkey1", "ssetkey2", "ssetkey3") },
                 { "SortedSetDecrementAsync", () => db.SortedSetDecrementAsync("ssetkey", "value1", 1) },
@@ -283,6 +307,7 @@ namespace Samples.StackExchangeRedis
                 { "SortedSetRemoveRangeByScoreAsync", () => db.SortedSetRemoveRangeByScoreAsync("ssetkey", 0, 1) },
                 { "SortedSetRemoveRangeByValueAsync", () => db.SortedSetRemoveRangeByValueAsync("ssetkey", "value1", "value2") },
                 { "SortedSetScoreAsync", () => db.SortedSetScoreAsync("ssestkey", "value1") },
+
                 { "StringAppendAsync", () => db.StringAppendAsync("ssetkey", "value1") },
                 { "StringBitCountAsync", () => db.StringBitCountAsync("ssetkey") },
                 { "StringBitOperationAsync", () => db.StringBitOperationAsync(Bitwise.And, "ssetkey1", new RedisKey[] { "ssetkey2", "ssetkey3" }) },
@@ -318,6 +343,16 @@ namespace Samples.StackExchangeRedis
             }
 
             return pending;
+        }
+
+
+        private static RedisChannel ApiSafeCreateRedisChannel(string value)
+        {
+#if STACKEXCHANGEREDIS_1_0_371
+            return new RedisChannel(value, RedisChannel.PatternMode.Auto);
+#else
+            return value;
+#endif
         }
 
         private static object TaskResult(Task task)
