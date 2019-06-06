@@ -14,68 +14,89 @@ CorProfilerBase::~CorProfilerBase() {
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::Initialize(IUnknown *pICorProfilerInfoUnk) {
+  Debug("CorProfiler::Initialize");
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfilerBase::Shutdown() { return S_OK; }
+HRESULT STDMETHODCALLTYPE CorProfilerBase::Shutdown() {
+  Debug("CorProfiler::Shutdown");
+  return S_OK;
+}
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AppDomainCreationStarted(AppDomainID appDomainId) {
+  Debug("CorProfiler::AppDomainCreationStarted: ", appDomainId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AppDomainCreationFinished(
     AppDomainID appDomainId, HRESULT hrStatus) {
+  Debug("CorProfiler::AppDomainCreationFinished: ", appDomainId,
+        ", HRESULT: ", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AppDomainShutdownStarted(AppDomainID appDomainId) {
+  Debug("CorProfiler::AppDomainShutdownStarted: ", appDomainId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AppDomainShutdownFinished(
     AppDomainID appDomainId, HRESULT hrStatus) {
+  Debug("CorProfiler::AppDomainShutdownFinished: ", appDomainId,
+        ", HRESULT: ", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AssemblyLoadStarted(AssemblyID assemblyId) {
+  Debug("CorProfiler::AssemblyLoadStarted: ", assemblyId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AssemblyLoadFinished(AssemblyID assemblyId, HRESULT hrStatus) {
+  Debug("CorProfiler::AssemblyLoadFinished: ", assemblyId,
+        ", HRESULT: ", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AssemblyUnloadStarted(AssemblyID assemblyId) {
+  Debug("CorProfiler::AssemblyUnloadStarted: ", assemblyId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AssemblyUnloadFinished(
     AssemblyID assemblyId, HRESULT hrStatus) {
+  Debug("CorProfiler::AssemblyUnloadFinished: ", assemblyId,
+        ", HRESULT: ", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::ModuleLoadStarted(ModuleID moduleId) {
+  Debug("CorProfiler::ModuleLoadStarted: ", moduleId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus) {
+  Debug("CorProfiler::ModuleLoadFinished: ", moduleId, ", HRESULT: ", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::ModuleUnloadStarted(ModuleID moduleId) {
+  Debug("CorProfiler::ModuleUnloadStarted: ", moduleId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus) {
+  Debug("CorProfiler::ModuleUnloadFinished: ", moduleId,
+        ", HRESULT: ", hrStatus);
   return S_OK;
 }
 
@@ -109,11 +130,15 @@ CorProfilerBase::FunctionUnloadStarted(FunctionID functionId) {
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCompilationStarted(
     FunctionID functionId, BOOL fIsSafeToBlock) {
+  Debug("CorProfiler::JITCompilationStarted: ", functionId,
+        ", fIsSafeToBlock: ", fIsSafeToBlock);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCompilationFinished(
     FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock) {
+  Debug("CorProfiler::JITCompilationFinished: ", functionId,
+        ", HRESULT: ", hrStatus);
   return S_OK;
 }
 
