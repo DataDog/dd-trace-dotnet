@@ -142,7 +142,8 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
   Integration i3 = {L"integration-3", {{{}, {}, {}}}};
   auto all = FlattenIntegrations({i1, i2, i3});
   auto expected = FlattenIntegrations({i1, i3});
-  trace::AssemblyInfo assembly_info = {1, L"Assembly.One"};
+  AppDomainID app_domain_id{};
+  trace::AssemblyInfo assembly_info = {1, L"Assembly.One", app_domain_id, L"AppDomain1"};
   auto actual =
       FilterIntegrationsByCaller(all, assembly_info);
   EXPECT_EQ(expected, actual);
