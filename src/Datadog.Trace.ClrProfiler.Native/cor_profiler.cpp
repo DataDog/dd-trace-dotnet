@@ -139,6 +139,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
+  // keep this lock until we are done using the module,
+  // to prevent it from unloading while in use
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
   const auto module_info = GetModuleInfo(this->info_, module_id);
   if (!module_info.IsValid()) {
     return S_OK;
@@ -258,10 +262,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   // store module info for later lookup
-  {
-    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-    module_id_to_info_map_[module_id] = module_metadata;
-  }
+  module_id_to_info_map_[module_id] = module_metadata;
 
   Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
         ", AppDomain: ", module_info.assembly.app_domain_id, " ",
@@ -274,14 +275,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
   CorProfilerBase::ModuleUnloadStarted(module_id);
   ModuleMetadata* metadata = nullptr;
 
-  {
-    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+  // take this lock so we block until the
+  // module metadata is not longer being used
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
-    // remove module metadata from map
-    if (module_id_to_info_map_.count(module_id) > 0) {
-      metadata = module_id_to_info_map_[module_id];
-      module_id_to_info_map_.erase(module_id);
-    }
+  // remove module metadata from map
+  if (module_id_to_info_map_.count(module_id) > 0) {
+    metadata = module_id_to_info_map_[module_id];
+    module_id_to_info_map_.erase(module_id);
   }
 
   // if pointer is not null
@@ -315,24 +316,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     FunctionID function_id, BOOL is_safe_to_block) {
   CorProfilerBase::JITCompilationStarted(function_id, is_safe_to_block);
 
-  if (is_shutdown_) {
+  if (is_shutdown_ || !is_safe_to_block) {
     return S_OK;
   }
 
-  ClassID class_id;
+  // keep this lock until we are done using the module,
+  // to prevent it from unloading while in use
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
   ModuleID module_id;
   mdToken function_token = mdTokenNil;
 
-  HRESULT hr = this->info_->GetFunctionInfo(function_id, &class_id, &module_id,
+  HRESULT hr = this->info_->GetFunctionInfo(function_id, nullptr, &module_id,
                                             &function_token);
   RETURN_OK_IF_FAILED(hr);
 
   ModuleMetadata* module_metadata = nullptr;
-  {
-    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-    if (module_id_to_info_map_.count(module_id) > 0) {
-      module_metadata = module_id_to_info_map_[module_id];
-    }
+
+  if (module_id_to_info_map_.count(module_id) > 0) {
+    module_metadata = module_id_to_info_map_[module_id];
   }
 
   if (module_metadata == nullptr) {
@@ -450,8 +452,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       modified = true;
 
-      Info("*** JITCompilationStarted() replaced calls from ",
-           caller.type.name, ".", caller.name, "() to ",
+      Info("*** JITCompilationStarted() replaced calls from ", caller.type.name,
+           ".", caller.name, "() to ",
            method_replacement.target_method.type_name, ".",
            method_replacement.target_method.method_name, "() ",
            int32_t(original_argument), " with calls to ",
