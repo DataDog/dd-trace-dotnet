@@ -61,25 +61,25 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <OutDir>bin\$(Configuration)\$(Platform)\static\</OutDir>
     <IntDir>obj\$(Configuration)\$(Platform)\static\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <OutDir>bin\$(Configuration)\x86\static\</OutDir>
     <IntDir>obj\$(Configuration)\x86\static\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <OutDir>bin\$(Configuration)\$(Platform)\static\</OutDir>
     <IntDir>obj\$(Configuration)\$(Platform)\static\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <OutDir>bin\$(Configuration)\x86\static\</OutDir>
     <IntDir>obj\$(Configuration)\x86\static\</IntDir>
   </PropertyGroup>
@@ -87,58 +87,63 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <WholeProgramOptimization />
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <WholeProgramOptimization />
+      <OmitFramePointers />
     </ClCompile>
+    <Lib>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <WholeProgramOptimization />
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
       <ConformanceMode>true</ConformanceMode>
+      <WholeProgramOptimization />
+      <OmitFramePointers />
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -172,7 +177,6 @@
     <ClCompile Include="il_rewriter_wrapper.cpp" />
     <ClCompile Include="integration.cpp" />
     <ClCompile Include="integration_loader.cpp" />
-    <ClCompile Include="interop.cpp" />
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="miniutf.cpp" />
