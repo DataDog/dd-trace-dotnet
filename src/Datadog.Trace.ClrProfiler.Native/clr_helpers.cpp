@@ -37,34 +37,6 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
   return {assembly_id, WSTRING(assembly_name), app_domain_id, WSTRING(app_domain_name)};
 }
 
-AssemblyMetadata GetAssemblyMetadata(
-    const ModuleID& module_id,
-    const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
-  mdAssembly current = mdAssemblyNil;
-  auto hr = assembly_import->GetAssemblyFromScope(&current);
-
-  if (FAILED(hr)) {
-    return {};
-  }
-
-  WCHAR name[kNameMaxSize];
-  WSTRING assembly_name = ""_W;
-  DWORD name_len = 0;
-  ASSEMBLYMETADATA assembly_m{};
-  DWORD assembly_flags = 0;
-  hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr,
-                                         name, kNameMaxSize, &name_len,
-                                         &assembly_m, &assembly_flags);
-  if (!FAILED(hr) && name_len > 0) {
-    assembly_name = WSTRING(name);
-  }
-
-  return AssemblyMetadata(module_id, assembly_name, current,
-                          assembly_m.usMajorVersion, assembly_m.usMinorVersion,
-                          assembly_m.usBuildNumber,
-                          assembly_m.usRevisionNumber);
-}
-
 AssemblyMetadata GetAssemblyImportMetadata(
     const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
   mdAssembly current = mdAssemblyNil;
