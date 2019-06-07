@@ -14,89 +14,83 @@ CorProfilerBase::~CorProfilerBase() {
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::Initialize(IUnknown *pICorProfilerInfoUnk) {
-  Debug("CorProfiler::Initialize");
+  Debug("Initialize");
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::Shutdown() {
-  Debug("CorProfiler::Shutdown");
+  Debug("Shutdown");
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AppDomainCreationStarted(AppDomainID appDomainId) {
-  Debug("CorProfiler::AppDomainCreationStarted: ", appDomainId);
+  Debug("AppDomainCreationStarted: ", appDomainId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AppDomainCreationFinished(
     AppDomainID appDomainId, HRESULT hrStatus) {
-  Debug("CorProfiler::AppDomainCreationFinished: ", appDomainId,
-        ", HRESULT: ", hrStatus);
+  Debug("AppDomainCreationFinished: ", appDomainId, " hrStatus=", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AppDomainShutdownStarted(AppDomainID appDomainId) {
-  Debug("CorProfiler::AppDomainShutdownStarted: ", appDomainId);
+  Debug("AppDomainShutdownStarted: ", appDomainId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AppDomainShutdownFinished(
     AppDomainID appDomainId, HRESULT hrStatus) {
-  Debug("CorProfiler::AppDomainShutdownFinished: ", appDomainId,
-        ", HRESULT: ", hrStatus);
+  Debug("AppDomainShutdownFinished: ", appDomainId, " ", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AssemblyLoadStarted(AssemblyID assemblyId) {
-  Debug("CorProfiler::AssemblyLoadStarted: ", assemblyId);
+  Debug("AssemblyLoadStarted: ", assemblyId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AssemblyLoadFinished(AssemblyID assemblyId, HRESULT hrStatus) {
-  Debug("CorProfiler::AssemblyLoadFinished: ", assemblyId,
-        ", HRESULT: ", hrStatus);
+  Debug("AssemblyLoadFinished: ", assemblyId, " ", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::AssemblyUnloadStarted(AssemblyID assemblyId) {
-  Debug("CorProfiler::AssemblyUnloadStarted: ", assemblyId);
+  Debug("AssemblyUnloadStarted: ", assemblyId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::AssemblyUnloadFinished(
     AssemblyID assemblyId, HRESULT hrStatus) {
-  Debug("CorProfiler::AssemblyUnloadFinished: ", assemblyId,
-        ", HRESULT: ", hrStatus);
+  Debug("AssemblyUnloadFinished: ", assemblyId, " ", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::ModuleLoadStarted(ModuleID moduleId) {
-  Debug("CorProfiler::ModuleLoadStarted: ", moduleId);
+  Debug("ModuleLoadStarted: ", moduleId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus) {
-  Debug("CorProfiler::ModuleLoadFinished: ", moduleId, ", HRESULT: ", hrStatus);
+  Debug("ModuleLoadFinished: ", moduleId, " ", hrStatus);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::ModuleUnloadStarted(ModuleID moduleId) {
-  Debug("CorProfiler::ModuleUnloadStarted: ", moduleId);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE
 CorProfilerBase::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus) {
-  Debug("CorProfiler::ModuleUnloadFinished: ", moduleId,
-        ", HRESULT: ", hrStatus);
+  Debug("ModuleUnloadFinished: ", moduleId, " ", hrStatus);
   return S_OK;
 }
 
@@ -130,15 +124,13 @@ CorProfilerBase::FunctionUnloadStarted(FunctionID functionId) {
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCompilationStarted(
     FunctionID functionId, BOOL fIsSafeToBlock) {
-  Debug("CorProfiler::JITCompilationStarted: ", functionId,
-        ", fIsSafeToBlock: ", fIsSafeToBlock);
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCompilationFinished(
     FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock) {
-  Debug("CorProfiler::JITCompilationFinished: ", functionId,
-        ", HRESULT: ", hrStatus);
+  Debug("JITCompilationFinished ", functionId, " ", hrStatus, " ",
+        fIsSafeToBlock);
   return S_OK;
 }
 

@@ -135,9 +135,14 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hr_status) {
-  CorProfilerBase::ModuleLoadFinished(module_id, hr_status);
+  if (FAILED(hr_status)) {
+    // if module failed to load, skip it entirely,
+    // otherwise we can crash the process if module is not valid
+    CorProfilerBase::ModuleLoadFinished(module_id, hr_status);
+    return S_OK;
+  }
 
-  if (is_shutdown_ || FAILED(hr_status)) {
+  if (!is_attached_) {
     // if module failed to load, skip it entirely,
     // otherwise we can crash the process if module is not valid
     return S_OK;
@@ -155,8 +160,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (module_info.IsWindowsRuntime()) {
     // We cannot obtain writable metadata interfaces on Windows Runtime modules
     // or instrument their IL.
-    Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
-          ". Skipping (known module).");
+    Debug("ModuleLoadFinished skipping Windows Metadata module: ", module_id,
+          " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -178,8 +183,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   for (auto&& skip_assembly : skip_assemblies) {
     if (module_info.assembly.name == skip_assembly) {
-      Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
-            ". Skipping (known module).");
+      Debug("ModuleLoadFinished skipping known module: ", module_id, " ",
+            module_info.assembly.name);
       return S_OK;
     }
   }
@@ -191,8 +196,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByCaller(filtered_integrations, module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
-          ". Skipping (filtered by caller).");
+    Debug("ModuleLoadFinished skipping module (filtered by caller): ",
+          module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -203,10 +208,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                            metadata_interfaces.GetAddressOf());
 
   if (FAILED(hr)) {
-    Warn(
-        "CorProfiler::ModuleLoadFinished: Failed to get metadata interface "
-        "for ",
-        module_id, " ", module_info.assembly.name);
+    Warn("ModuleLoadFinished failed to get metadata interface for ", module_id,
+         " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -223,16 +226,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByTarget(filtered_integrations, assembly_import);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
-          ". Skipping (filtered by target).");
+    Debug("ModuleLoadFinished skipping module ((filtered by target)): ",
+          module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
   mdModule module;
   hr = metadata_import->GetModuleFromScope(&module);
   if (FAILED(hr)) {
-    Warn("CorProfiler::ModuleLoadFinished: ", module_id, " ",
-         module_info.assembly.name, ". Failed to get module metadata token.");
+    Warn("ModuleLoadFinished failed to get module metadata token for ",
+         module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -249,8 +252,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     hr = metadata_builder.EmitAssemblyRef(
         integration.replacement.wrapper_method.assembly);
     if (FAILED(hr)) {
-      Warn("CorProfiler::ModuleLoadFinished: ", module_id, " ",
-           module_info.assembly.name, ". Failed to emit wrapper assembly ref.");
+      Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
+           module_id, " ", module_info.assembly.name);
       return S_OK;
     }
 
@@ -258,9 +261,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     // emit a reference to the instrumentation wrapper methods
     hr = metadata_builder.StoreWrapperMethodRef(integration.replacement);
     if (FAILED(hr)) {
-      Warn("CorProfiler::ModuleLoadFinished: ", module_id, " ",
-           module_info.assembly.name,
-           ". Failed to emit and store wrapper method ref.");
+      Warn("ModuleLoadFinished failed to emit or store wrapper method ref for ",
+           module_id, " ", module_info.assembly.name);
       return S_OK;
     }
   }
@@ -268,16 +270,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
 
-  Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
-        ", AppDomain: ", module_info.assembly.app_domain_id, " ",
-        module_info.assembly.app_domain_name,
-        ". Emitted instrumentation metadata.");
+  Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
+        module_info.assembly.name,
+        " AppDomain ", module_info.assembly.app_domain_id, " ",
+        module_info.assembly.app_domain_name, ". .");
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
-  CorProfilerBase::ModuleUnloadStarted(module_id);
-  ModuleMetadata* metadata = nullptr;
+  if (debug_logging_enabled) {
+    const auto module_info = GetModuleInfo(this->info_, module_id);
+
+    if (module_info.IsValid()) {
+      Debug("ModuleUnloadStarted: ", module_id, " ", module_info.assembly.name,
+            " AppDomain ", module_info.assembly.app_domain_id, " ",
+            module_info.assembly.app_domain_name);
+    } else {
+      Debug("ModuleUnloadStarted: ", module_id);
+    }
+  }
 
   // take this lock so we block until the
   // module metadata is not longer being used
@@ -285,26 +296,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
 
   // remove module metadata from map
   if (module_id_to_info_map_.count(module_id) > 0) {
-    metadata = module_id_to_info_map_[module_id];
+    ModuleMetadata* metadata = module_id_to_info_map_[module_id];
     module_id_to_info_map_.erase(module_id);
-  }
-
-  // if pointer is not null
-  if (metadata != nullptr) {
     delete metadata;
-
-    if (debug_logging_enabled) {
-      const auto module_info = GetModuleInfo(this->info_, module_id);
-
-      if (module_info.IsValid()) {
-        Debug("ModuleUnloadStarted: ", module_id, " ",
-              module_info.assembly.name,
-              ", AppDomain: ", module_info.assembly.app_domain_id, " ",
-              module_info.assembly.app_domain_name);
-      } else {
-        Debug("ModuleUnloadStarted: ", module_id);
-      }
-    }
   }
 
   return S_OK;
@@ -317,15 +311,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
-  is_shutdown_ = true;
+  is_attached_ = false;
   return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     FunctionID function_id, BOOL is_safe_to_block) {
-  CorProfilerBase::JITCompilationStarted(function_id, is_safe_to_block);
-
-  if (is_shutdown_ || !is_safe_to_block) {
+  if (!is_attached_ || !is_safe_to_block) {
     return S_OK;
   }
 
@@ -357,6 +349,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       GetFunctionInfo(module_metadata->metadata_import, function_token);
   if (!caller.IsValid()) {
     return S_OK;
+  }
+
+  if (debug_logging_enabled) {
+    Debug("JITCompilationStarted: function_id=", function_id,
+          " token=", function_token, " name=", caller.type.name, ".",
+          caller.name, "()");
   }
 
   auto method_replacements =
@@ -465,10 +463,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
            ".", caller.name, "() to ",
            method_replacement.target_method.type_name, ".",
            method_replacement.target_method.method_name, "() ",
-           int32_t(original_argument), " with calls to ",
+           original_argument, " with calls to ",
            method_replacement.wrapper_method.type_name, ".",
            method_replacement.wrapper_method.method_name, "() ",
-           uint32_t(wrapper_method_ref));
+           wrapper_method_ref);
     }
   }
 
