@@ -30,13 +30,13 @@ HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID riid,
       0x4b07,
       {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}};
 
-  if (ppv == NULL || rclsid != CLSID_CorProfiler) {
+  if (ppv == nullptr || rclsid != CLSID_CorProfiler) {
     return E_FAIL;
   }
 
   auto factory = new ClassFactory;
 
-  if (factory == NULL) {
+  if (factory == nullptr) {
     return E_FAIL;
   }
 
