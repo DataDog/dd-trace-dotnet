@@ -21,11 +21,15 @@ CorProfiler* profiler = nullptr;
 
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
-  CorProfilerBase::Initialize(cor_profiler_info_unknown);
-
   // check if debug mode is enabled
   const auto debug_enabled_value =
       GetEnvironmentValue(environment::debug_enabled);
+
+  if (debug_enabled_value == "1"_W || debug_enabled_value == "true"_W) {
+    debug_logging_enabled = true;
+  }
+
+  CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
   // check if tracing is completely disabled
   const WSTRING tracing_enabled =
