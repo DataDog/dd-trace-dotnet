@@ -43,5 +43,5 @@ HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID riid,
   return factory->QueryInterface(riid, ppv);
 }
 
-HRESULT STDMETHODCALLTYPE DllCanUnloadNow() { return S_OK; }
+HRESULT STDMETHODCALLTYPE DllCanUnloadNow() { return S_FALSE ; }
 }
