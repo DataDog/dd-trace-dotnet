@@ -312,6 +312,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
 
 HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   CorProfilerBase::Shutdown();
+
+  // keep this lock until we are done using the module,
+  // to prevent it from unloading while in use
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
   is_shutdown_ = true;
   return S_OK;
 }
