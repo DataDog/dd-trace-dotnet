@@ -569,7 +569,7 @@ bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
 
         // figure out how many generic args this type has
         const auto index_of_tick = type_name.find_last_of('`');
-        auto num_args_text = type_name.substr(index_of_tick + 1);
+        auto num_args_text = ToString(type_name.substr(index_of_tick + 1));
         auto actual_arg_count = std::stoi(num_args_text, nullptr);
         generic_arg_stack.push(actual_arg_count);
         current_index += token_length;
