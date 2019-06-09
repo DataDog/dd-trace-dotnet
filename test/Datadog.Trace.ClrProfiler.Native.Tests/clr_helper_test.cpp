@@ -10,18 +10,13 @@ class CLRHelperTest : public ::CLRHelperTestBase {};
 TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
   std::vector<std::wstring> expected_types = {
       L"Samples.ExampleLibrary.Class1",
-      L"Samples.ExampleLibrary.FakeClient.DogBiscuit`1",
-      L"Samples.ExampleLibrary.FakeClient.DogBiscuit",
-      L"Samples.ExampleLibrary.FakeClient.DogClient`1",
-      L"Samples.ExampleLibrary.FakeClient.DogClient",
+      L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
+      L"Samples.ExampleLibrary.FakeClient.Biscuit",
+      L"Samples.ExampleLibrary.FakeClient.DogClient`2",
       L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
       L"Samples.ExampleLibrary.FakeClient.DogTrick",
-      L"Samples.ExampleLibrary.FakeClient.IDogClient",
-      L"Samples.ExampleLibrary.FakeClient.IDogClient`1",
       L"<>c",
-      L"<ExecuteAsync>d__2",
-      L"<ExecuteAsync>d__4`2",
-      L"<ExecuteAsync>d__2"};
+      L"<StayAndLayDown>d__3`2"};
 
   std::vector<std::wstring> actual_types;
 
@@ -153,17 +148,13 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
 TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
   std::set<std::wstring> expected = {
       L"<>c",
-      L"<ExecuteAsync>d__2",
-      L"<ExecuteAsync>d__4`2",
+      L"<StayAndLayDown>d__3`2",
       L"Samples.ExampleLibrary.Class1",
-      L"Samples.ExampleLibrary.FakeClient.DogBiscuit",
-      L"Samples.ExampleLibrary.FakeClient.DogBiscuit`1",
-      L"Samples.ExampleLibrary.FakeClient.DogClient",
-      L"Samples.ExampleLibrary.FakeClient.DogClient`1",
+      L"Samples.ExampleLibrary.FakeClient.Biscuit",
+      L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
+      L"Samples.ExampleLibrary.FakeClient.DogClient`2",
       L"Samples.ExampleLibrary.FakeClient.DogTrick",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
-      L"Samples.ExampleLibrary.FakeClient.IDogClient",
-      L"Samples.ExampleLibrary.FakeClient.IDogClient`1"};
+      L"Samples.ExampleLibrary.FakeClient.DogTrick`1"};
   std::set<std::wstring> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
     auto type_info = GetTypeInfo(metadata_import_, type_def);
@@ -177,6 +168,8 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
 TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
   std::set<std::wstring> expected = {
       L"DebuggingModes",
+      L"System.Collections.Generic.Dictionary`2",
+      L"System.Collections.Generic.IList`1",
       L"System.Collections.Generic.List`1",
       L"System.Diagnostics.DebuggableAttribute",
       L"System.Diagnostics.DebuggerBrowsableAttribute",
@@ -205,6 +198,8 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
       L"System.String",
       L"System.Threading.Tasks.Task",
       L"System.Threading.Tasks.Task`1",
+      L"System.Tuple`2",
+      L"System.Tuple`7",
       L"System.Type"};
   std::set<std::wstring> actual;
   for (auto& type_ref : EnumTypeRefs(metadata_import_)) {
@@ -230,17 +225,13 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromModuleRefs) {
 TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
   std::set<std::wstring> expected = {
       L"<>c",
-      L"<ExecuteAsync>d__2",
-      L"<ExecuteAsync>d__4`2",
+      L"<StayAndLayDown>d__3`2",
       L"Samples.ExampleLibrary.Class1",
-      L"Samples.ExampleLibrary.FakeClient.DogBiscuit",
-      L"Samples.ExampleLibrary.FakeClient.DogBiscuit`1",
-      L"Samples.ExampleLibrary.FakeClient.DogClient",
-      L"Samples.ExampleLibrary.FakeClient.DogClient`1",
+      L"Samples.ExampleLibrary.FakeClient.Biscuit",
+      L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
+      L"Samples.ExampleLibrary.FakeClient.DogClient`2",
       L"Samples.ExampleLibrary.FakeClient.DogTrick",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
-      L"Samples.ExampleLibrary.FakeClient.IDogClient",
-      L"Samples.ExampleLibrary.FakeClient.IDogClient`1"};
+      L"Samples.ExampleLibrary.FakeClient.DogTrick`1"};
   std::set<std::wstring> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
     for (auto& method_def : EnumMethods(metadata_import_, type_def)) {
