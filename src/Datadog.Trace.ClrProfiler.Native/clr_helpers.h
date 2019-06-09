@@ -310,7 +310,7 @@ bool DisableOptimizations();
 
 bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
-                         std::list<WSTRING>& signature_result);
+                         std::vector<WSTRING>& signature_result);
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_CLR_HELPERS_H_

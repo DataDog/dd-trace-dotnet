@@ -403,7 +403,7 @@ TypeInfo RetrieveTypeForSignature(
 
 bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
-                         std::list<WSTRING>& signature_result) {
+                         std::vector<WSTRING>& signature_result) {
   const int signature_size = function_info.signature.data.size();
   auto generic_count = function_info.signature.NumberOfTypeArguments();
   auto param_count = function_info.signature.NumberOfArguments();
@@ -413,12 +413,14 @@ bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
     current_index++;  // offset by one because the method is generic
   }
 
-  std::list<WSTRING> type_names;
+  const UINT expected_number_of_types = param_count + 1;
+  UINT current_type_index = 0;
+  std::vector<WSTRING> type_names(expected_number_of_types);
 
   std::stack<int> generic_arg_stack;
   WSTRING append_to_type = ""_W;
   WSTRING current_type_name = ""_W;
-
+  
   for (; current_index < signature_size; current_index++) {
     mdToken type_token;
     ULONG token_length;
@@ -623,8 +625,14 @@ bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
       continue;
     }
 
-    type_names.push_back(current_type_name);
+    if (current_type_index >= expected_number_of_types) {
+      // We missed something, drop out for safety
+      return false;
+    }
+
+    type_names[current_type_index] = current_type_name;
     current_type_name = ""_W;
+    current_type_index++;
   }
 
   signature_result = type_names;
