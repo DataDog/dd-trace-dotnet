@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             typeof(AspNetCoreMvc2Integration).GetMethod(nameof(AspNetCoreMvc2Integration.BeforeAction)),
             typeof(AspNetCoreMvc2Integration).GetMethod(nameof(AspNetCoreMvc2Integration.AfterAction)),
+            typeof(AspNetCoreMvc2Integration).GetMethod(nameof(AspNetCoreMvc2Integration.Rethrow)),
         };
 
         public static IEnumerable<object[]> GetWrapperMethodWithInterceptionAttributes()
