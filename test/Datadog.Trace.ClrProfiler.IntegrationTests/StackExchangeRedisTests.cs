@@ -174,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     { "DUMP", $"DUMP {dbPrefix}Key" },
                     { "EXISTS", $"EXISTS {dbPrefix}Key" },
                     { "PEXPIREAT", $"PEXPIREAT {dbPrefix}Key" },
-                    { "MIGRATE", $"MIGRATE {dbPrefix}Key" },
+                    { "MIGRATE", $"MIGRATE {dbPrefix}Key" }, // Only present on 1.0.297+
                     { "MOVE", $"MOVE {dbPrefix}Key" },
                     { "PERSIST", $"PERSIST {dbPrefix}Key" },
                     { "RANDOMKEY", $"RANDOMKEY" },
@@ -312,6 +312,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("GEO") ||
                     (tuple.Item1.ToUpper().Equals("ZREM") && tuple.Item2.ToUpper().Contains("GEO")));
+            }
+
+            if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.297") < 0)
+            {
+                expected.RemoveAll(tuple => tuple.Item1.ToUpper().StartsWith("MIGRATE"));
             }
 
             if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("1.0.273") < 0)
