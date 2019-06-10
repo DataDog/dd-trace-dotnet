@@ -139,13 +139,13 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       if (FAILED(hr)) {
         return {};
       }
-      auto generic_info = GetFunctionInfo(metadata_import, parent_token);
+      const auto generic_info = GetFunctionInfo(metadata_import, parent_token);
       final_signature_bytes = generic_info.signature.data;
       method_spec_signature =
           GetSignatureByteRepresentation(raw_signature_len, raw_signature);
       std::memcpy(function_name, generic_info.name.c_str(),
                   sizeof(WCHAR) * (generic_info.name.length() + 1));
-      function_name_len = (DWORD)(generic_info.name.length() + 1);
+      function_name_len = DWORD(generic_info.name.length() + 1);
     } break;
     default:
       Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
@@ -255,7 +255,7 @@ mdAssemblyRef FindAssemblyRef(
 
 std::vector<Integration> FilterIntegrationsByName(
     const std::vector<Integration>& integrations,
-    const std::vector<WSTRING> integration_names) {
+    const std::vector<WSTRING>& integration_names) {
   std::vector<Integration> enabled;
 
   for (auto& i : integrations) {
@@ -391,7 +391,7 @@ bool DisableOptimizations() {
 
 TypeInfo RetrieveTypeForSignature(
     const ComPtr<IMetaDataImport2>& metadata_import,
-    const FunctionInfo& function_info, const int& current_index,
+    const FunctionInfo& function_info, const size_t current_index,
     ULONG& token_length) {
   mdToken type_token;
   const auto type_token_start =
@@ -404,23 +404,23 @@ TypeInfo RetrieveTypeForSignature(
 bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
                          std::vector<WSTRING>& signature_result) {
-  const int signature_size = function_info.signature.data.size();
-  auto generic_count = function_info.signature.NumberOfTypeArguments();
-  auto param_count = function_info.signature.NumberOfArguments();
-  auto current_index = 2;  // Where the parameters actually start
+  const auto signature_size = function_info.signature.data.size();
+  const auto generic_count = function_info.signature.NumberOfTypeArguments();
+  const auto param_count = function_info.signature.NumberOfArguments();
+  size_t current_index = 2;  // Where the parameters actually start
 
   if (generic_count > 0) {
     current_index++;  // offset by one because the method is generic
   }
 
-  const UINT expected_number_of_types = param_count + 1;
-  UINT current_type_index = 0;
+  const auto expected_number_of_types = param_count + 1;
+  size_t current_type_index = 0;
   std::vector<WSTRING> type_names(expected_number_of_types);
 
   std::stack<int> generic_arg_stack;
   WSTRING append_to_type = ""_W;
   WSTRING current_type_name = ""_W;
-  
+
   for (; current_index < signature_size; current_index++) {
     mdToken type_token;
     ULONG token_length;
@@ -517,9 +517,8 @@ bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
 
       case ELEMENT_TYPE_SZARRAY: {
         append_to_type.append("[]"_W);
-        while (
-            CorElementType(function_info.signature.data[current_index + 1]) ==
-            ELEMENT_TYPE_SZARRAY) {
+        while (function_info.signature.data[(current_index + 1)] ==
+               ELEMENT_TYPE_SZARRAY) {
           append_to_type.append("[]"_W);
           current_index++;
         }
