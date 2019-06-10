@@ -84,7 +84,7 @@
     <Compile Include="SqlServer.aspx.designer.cs">
       <DependentUpon>SqlServer.aspx</DependentUpon>
     </Compile>
-    <Content Include="App_Code\NativeMethods.cs" />
+    <Content Include="App_Code\Profiler.cs" />
     <Compile Include="Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>

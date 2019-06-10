@@ -10,7 +10,7 @@
 <form id="form1" runat="server">
     <h2>SqlServer</h2>
     <div><%: DateTime.Now %></div>
-    <div>Profiler attached: <%: Samples.WebForms.Empty.NativeMethods.IsProfilerAttached() %></div>
+    <div>Profiler attached: <%: Samples.WebForms.Empty.Profiler.IsAttached %></div>
 </form>
 </body>
 </html>
