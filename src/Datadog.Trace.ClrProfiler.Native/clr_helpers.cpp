@@ -414,7 +414,7 @@ bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
   }
 
   const auto expected_number_of_types = param_count + 1;
-  auto current_type_index = 0;
+  size_t current_type_index = 0;
   std::vector<WSTRING> type_names(expected_number_of_types);
 
   std::stack<int> generic_arg_stack;
