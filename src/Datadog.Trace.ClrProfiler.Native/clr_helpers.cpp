@@ -145,7 +145,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
           GetSignatureByteRepresentation(raw_signature_len, raw_signature);
       std::memcpy(function_name, generic_info.name.c_str(),
                   sizeof(WCHAR) * (generic_info.name.length() + 1));
-      function_name_len = (DWORD)(generic_info.name.length() + 1);
+      function_name_len = DWORD(generic_info.name.length() + 1);
     } break;
     default:
       Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
@@ -517,8 +517,7 @@ bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
 
       case ELEMENT_TYPE_SZARRAY: {
         append_to_type.append("[]"_W);
-        while (
-            CorElementType(function_info.signature.data[current_index + 1]) ==
+        while (function_info.signature.data[(current_index + 1)] ==
             ELEMENT_TYPE_SZARRAY) {
           append_to_type.append("[]"_W);
           current_index++;
