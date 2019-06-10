@@ -1,4 +1,4 @@
-/*
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -11,9 +11,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class AspNetCoreMvc2Tests : TestHelper
     {
-        private const int AgentPort = 9008;
-        private const int Port = 9009;
-
         public AspNetCoreMvc2Tests(ITestOutputHelper output)
             : base("AspNetCoreMvc2", output)
         {
@@ -25,8 +22,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [InlineData("/api/delay/0")]
         public void SubmitsTracesSelfHosted(string path)
         {
-            using (var agent = new MockTracerAgent(AgentPort))
-            using (Process process = StartSample(AgentPort))
+            int agentPort = TcpPortProvider.GetOpenPort();
+            int aspNetCorePort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: aspNetCorePort))
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 try
                 {
-                    var request = WebRequest.Create($"http://localhost:{Port}{path}");
+                    var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{path}");
                     using (var response = (HttpWebResponse)request.GetResponse())
                     using (var stream = response.GetResponseStream())
                     using (var reader = new StreamReader(stream))
@@ -80,21 +80,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 var spans = agent.WaitForSpans(1);
-                Assert.True(spans.Count > 0, "expected at least one span");
-
-                foreach (var span in spans)
-                {
-                    Assert.Equal(Integrations.AspNetWebApi2Integration.OperationName, span.Name);
-                    Assert.Equal(SpanTypes.Web, span.Type);
-                    Assert.Equal($"GET {path}", span.Resource);
-                }
-
                 if (!process.HasExited)
                 {
                     process.Kill();
+                }
+
+                Assert.True(spans.Count > 0, "expected at least one span");
+                foreach (var span in spans)
+                {
+                    Assert.Equal("aspnet-coremvc.request", span.Name);
+                    Assert.Equal(SpanTypes.Web, span.Type);
+                    Assert.Equal($"{path}", span.Resource);
                 }
             }
         }
     }
 }
-*/

@@ -47,5 +47,12 @@
         "NugetPackageSearchName": "ServiceStack.Redis",
         "MinVersion": "4.0.48",
         "MaxVersion": "6.0.0"
+    },
+    {
+        "IntegrationName": "AspNetCoreMvc2",
+        "SampleProjectName": "Samples.AspNetCoreMvc2",
+        "NugetPackageSearchName": "Microsoft.AspNetCore.Mvc",
+        "MinVersion": "2.0.0",
+        "MaxVersion": "3.0.0"
     }
 ]

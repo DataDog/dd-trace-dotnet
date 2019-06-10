@@ -240,5 +240,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.0" },
 #endif
             };
+        public static IEnumerable<object[]> AspNetCoreMvc2 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+                new object[] { "2.0.0" },
+                new object[] { "2.0.1" },
+                new object[] { "2.0.2" },
+                new object[] { "2.0.3" },
+                new object[] { "2.0.4" },
+                new object[] { "2.1.0" },
+                new object[] { "2.1.1" },
+                new object[] { "2.1.2" },
+                new object[] { "2.1.3" },
+                new object[] { "2.2.0" },
+#endif
+            };
     }
 }
