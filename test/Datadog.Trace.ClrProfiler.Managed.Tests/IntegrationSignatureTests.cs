@@ -10,20 +10,26 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     {
         private static readonly List<MethodInfo> StaticInstrumentations = new List<MethodInfo>()
         {
-            typeof(AspNetCoreMvc2Integration).GetMethod(nameof(AspNetCoreMvc2Integration.Rethrow)),
+            typeof(AspNetCoreMvc2Integration).GetMethod(nameof(AspNetCoreMvc2Integration.BeforeAction)),
+            typeof(AspNetCoreMvc2Integration).GetMethod(nameof(AspNetCoreMvc2Integration.AfterAction)),
         };
 
-        public static IEnumerable<object[]> GetWrapperMethods()
+        public static IEnumerable<object[]> GetWrapperMethodWithInterceptionAttributes()
         {
             var integrationsAssembly = typeof(Instrumentation).Assembly;
 
-            var integrations = from wrapperType in integrationsAssembly.GetTypes()
-                               from wrapperMethod in wrapperType.GetRuntimeMethods()
-                               let attributes = wrapperMethod.GetCustomAttributes<InterceptMethodAttribute>(inherit: false)
-                               where attributes.Any()
-                               select new object[] { wrapperMethod };
+            foreach (var wrapperMethod in integrationsAssembly.GetTypes().SelectMany(t => t.GetRuntimeMethods()))
+            {
+                foreach (var interceptionAttribute in wrapperMethod.GetCustomAttributes<InterceptMethodAttribute>(inherit: false))
+                {
+                    yield return new object[] { wrapperMethod, interceptionAttribute };
+                }
+            }
+        }
 
-            return integrations;
+        public static IEnumerable<object[]> GetWrapperMethods()
+        {
+            return GetWrapperMethodWithInterceptionAttributes().Select(i => new[] { i[0] }).Distinct();
         }
 
         [Theory]
@@ -38,23 +44,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetWrapperMethods))]
-        public void AllMethodsHaveProperlyFormedTargetSignatureTypes(MethodInfo wrapperMethod)
+        [MemberData(nameof(GetWrapperMethodWithInterceptionAttributes))]
+        public void AllMethodsHaveProperlyFormedTargetSignatureTypes(MethodInfo wrapperMethod, InterceptMethodAttribute attribute)
         {
-            var attribute = wrapperMethod.GetCustomAttributes<InterceptMethodAttribute>(inherit: false).Single();
-
             Assert.True(
                 attribute.TargetSignatureTypes != null,
                 $"{wrapperMethod.DeclaringType.Name}.{wrapperMethod.Name}: {nameof(attribute.TargetSignatureTypes)} definition missing.");
 
+            // Return type and op-code cancel out for count
             var expectedParameterCount = wrapperMethod.GetParameters().Length;
 
-            // Return type
-            expectedParameterCount++;
-
-            if (StaticInstrumentations.Contains(wrapperMethod))
+            if (!StaticInstrumentations.Contains(wrapperMethod))
             {
-                // no instance parameter
+                // Subtract for the instance (this) parameter
                 expectedParameterCount--;
             }
 

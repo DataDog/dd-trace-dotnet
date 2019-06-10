@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.Web.Http",
             TargetType = "System.Web.Http.Controllers.IHttpController",
+            TargetSignatureTypes = new string[] { null, null, null },
             TargetMinimumVersion = Major5Minor2,
             TargetMaximumVersion = Major5)]
         public static object ExecuteAsync(object apiController, object controllerContext, object cancellationTokenSource, int opCode)

@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "System.Net.Http",
             TargetType = "System.Net.Http.HttpMessageHandler",
             TargetMethod = "SendAsync",
+            TargetSignatureTypes = new string[] { null, null, null },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object HttpMessageHandler_SendAsync(
@@ -69,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "System.Net.Http",
             TargetType = "System.Net.Http.HttpClientHandler",
             TargetMethod = "SendAsync",
+            TargetSignatureTypes = new string[] { null, null, null },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object HttpClientHandler_SendAsync(
