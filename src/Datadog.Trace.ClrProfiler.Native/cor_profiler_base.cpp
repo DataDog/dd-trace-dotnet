@@ -129,8 +129,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCompilationStarted(
 
 HRESULT STDMETHODCALLTYPE CorProfilerBase::JITCompilationFinished(
     FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock) {
-  Debug("JITCompilationFinished ", functionId, " ", hrStatus, " ",
-        fIsSafeToBlock);
   return S_OK;
 }
 
