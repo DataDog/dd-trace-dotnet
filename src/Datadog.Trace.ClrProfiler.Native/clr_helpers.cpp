@@ -404,17 +404,17 @@ TypeInfo RetrieveTypeForSignature(
 bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
                          std::vector<WSTRING>& signature_result) {
-  const int signature_size = function_info.signature.data.size();
-  auto generic_count = function_info.signature.NumberOfTypeArguments();
-  auto param_count = function_info.signature.NumberOfArguments();
-  auto current_index = 2;  // Where the parameters actually start
+  const auto signature_size = function_info.signature.data.size();
+  size_t generic_count = function_info.signature.NumberOfTypeArguments();
+  size_t param_count = function_info.signature.NumberOfArguments();
+  size_t current_index = 2;  // Where the parameters actually start
 
   if (generic_count > 0) {
     current_index++;  // offset by one because the method is generic
   }
 
-  const UINT expected_number_of_types = param_count + 1;
-  UINT current_type_index = 0;
+  const size_t expected_number_of_types = param_count + 1;
+  size_t current_type_index = 0;
   std::vector<WSTRING> type_names(expected_number_of_types);
 
   std::stack<int> generic_arg_stack;
