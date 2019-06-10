@@ -143,8 +143,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   if (!is_attached_) {
-    // if module failed to load, skip it entirely,
-    // otherwise we can crash the process if module is not valid
     return S_OK;
   }
 
