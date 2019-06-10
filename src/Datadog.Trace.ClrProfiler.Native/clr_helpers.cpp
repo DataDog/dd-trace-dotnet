@@ -139,7 +139,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       if (FAILED(hr)) {
         return {};
       }
-      auto generic_info = GetFunctionInfo(metadata_import, parent_token);
+      const auto generic_info = GetFunctionInfo(metadata_import, parent_token);
       final_signature_bytes = generic_info.signature.data;
       method_spec_signature =
           GetSignatureByteRepresentation(raw_signature_len, raw_signature);
@@ -255,7 +255,7 @@ mdAssemblyRef FindAssemblyRef(
 
 std::vector<Integration> FilterIntegrationsByName(
     const std::vector<Integration>& integrations,
-    const std::vector<WSTRING> integration_names) {
+    const std::vector<WSTRING>& integration_names) {
   std::vector<Integration> enabled;
 
   for (auto& i : integrations) {
@@ -518,7 +518,7 @@ bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
       case ELEMENT_TYPE_SZARRAY: {
         append_to_type.append("[]"_W);
         while (function_info.signature.data[(current_index + 1)] ==
-            ELEMENT_TYPE_SZARRAY) {
+               ELEMENT_TYPE_SZARRAY) {
           append_to_type.append("[]"_W);
           current_index++;
         }
