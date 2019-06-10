@@ -11,7 +11,7 @@ trigger:
 strategy:
   matrix:
     windows:
-      imageName: 'vs2019-win2019'
+      imageName: 'windows-2019'
     linux:
       imageName: 'ubuntu-16.04'
 
