@@ -404,23 +404,23 @@ TypeInfo RetrieveTypeForSignature(
 bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
                          std::vector<WSTRING>& signature_result) {
-  const int signature_size = function_info.signature.data.size();
-  auto generic_count = function_info.signature.NumberOfTypeArguments();
-  auto param_count = function_info.signature.NumberOfArguments();
+  const auto signature_size = function_info.signature.data.size();
+  const auto generic_count = function_info.signature.NumberOfTypeArguments();
+  const auto param_count = function_info.signature.NumberOfArguments();
   auto current_index = 2;  // Where the parameters actually start
 
   if (generic_count > 0) {
     current_index++;  // offset by one because the method is generic
   }
 
-  const UINT expected_number_of_types = param_count + 1;
-  UINT current_type_index = 0;
+  const auto expected_number_of_types = param_count + 1;
+  auto current_type_index = 0;
   std::vector<WSTRING> type_names(expected_number_of_types);
 
   std::stack<int> generic_arg_stack;
   WSTRING append_to_type = ""_W;
   WSTRING current_type_name = ""_W;
-  
+
   for (; current_index < signature_size; current_index++) {
     mdToken type_token;
     ULONG token_length;
