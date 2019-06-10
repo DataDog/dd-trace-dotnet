@@ -60,6 +60,15 @@ namespace Datadog.Trace.ClrProfiler
         public string TargetSignature { get; set; }
 
         /// <summary>
+        /// Gets or sets the explicit type array for the target method to be intercepted.
+        /// This is a required field.
+        /// Must match the wrapper method in count:
+        ///     n (parameters) + 1 (return type) - (is_instance_method : 1 : 0) - 1 (op-code)
+        /// NULL indexes are ignored in comparison.
+        /// </summary>
+        public string[] TargetSignatureTypes { get; set; }
+
+        /// <summary>
         /// Gets the target version range for <see cref="TargetAssembly"/>.
         /// </summary>
         public IntegrationVersionRange TargetVersionRange { get; } = new IntegrationVersionRange();

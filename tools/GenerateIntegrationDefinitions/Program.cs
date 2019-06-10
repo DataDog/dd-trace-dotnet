@@ -49,6 +49,7 @@ namespace GenerateIntegrationDefinitions
                                                                  type = item.attribute.TargetType,
                                                                  method = item.attribute.TargetMethod ?? item.wrapperMethod.Name,
                                                                  signature = item.attribute.TargetSignature,
+                                                                 signature_types = item.attribute.TargetSignatureTypes,
                                                                  minimum_major = item.attribute.TargetVersionRange.MinimumMajor,
                                                                  minimum_minor = item.attribute.TargetVersionRange.MinimumMinor,
                                                                  minimum_patch = item.attribute.TargetVersionRange.MinimumPatch,
