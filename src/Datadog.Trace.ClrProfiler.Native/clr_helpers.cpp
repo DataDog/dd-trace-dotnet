@@ -391,7 +391,7 @@ bool DisableOptimizations() {
 
 TypeInfo RetrieveTypeForSignature(
     const ComPtr<IMetaDataImport2>& metadata_import,
-    const FunctionInfo& function_info, const int& current_index,
+    const FunctionInfo& function_info, const size_t current_index,
     ULONG& token_length) {
   mdToken type_token;
   const auto type_token_start =
@@ -407,7 +407,7 @@ bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
   const auto signature_size = function_info.signature.data.size();
   const auto generic_count = function_info.signature.NumberOfTypeArguments();
   const auto param_count = function_info.signature.NumberOfArguments();
-  auto current_index = 2;  // Where the parameters actually start
+  size_t current_index = 2;  // Where the parameters actually start
 
   if (generic_count > 0) {
     current_index++;  // offset by one because the method is generic
