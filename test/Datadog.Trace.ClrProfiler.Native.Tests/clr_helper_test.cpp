@@ -60,16 +60,17 @@ TEST_F(CLRHelperTest, FiltersEnabledIntegrations) {
                        L"SomeMethod",
                        min_ver_,
                        max_ver_,
-                       {}},
+                       {},
+                       empty_sig_type_},
                       {}}}};
   Integration i2 = {
       L"integration-2",
       {{{},
-        {L"Assembly.Two", L"SomeType", L"SomeMethod", min_ver_, max_ver_, {}},
+        {L"Assembly.Two", L"SomeType", L"SomeMethod", min_ver_, max_ver_, {}, empty_sig_type_},
         {}}}};
   Integration i3 = {
       L"integration-3",
-      {{{}, {L"System.Runtime", L"", L"", min_ver_, max_ver_, {}}, {}}}};
+      {{{}, {L"System.Runtime", L"", L"", min_ver_, max_ver_, {}, empty_sig_type_}, {}}}};
   std::vector<Integration> all = {i1, i2, i3};
   std::vector<Integration> expected = {i1, i3};
   std::vector<WSTRING> disabled_integrations = {"integration-2"_W};
@@ -80,12 +81,12 @@ TEST_F(CLRHelperTest, FiltersEnabledIntegrations) {
 TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
   Integration i1 = {
       L"integration-1",
-      {{{L"Assembly.One", L"SomeType", L"SomeMethod", min_ver_, max_ver_, {}},
+      {{{L"Assembly.One", L"SomeType", L"SomeMethod", min_ver_, max_ver_, {}, empty_sig_type_},
         {},
         {}}}};
   Integration i2 = {
       L"integration-2",
-      {{{L"Assembly.Two", L"SomeType", L"SomeMethod", min_ver_, max_ver_, {}},
+      {{{L"Assembly.Two", L"SomeType", L"SomeMethod", min_ver_, max_ver_, {}, empty_sig_type_},
         {},
         {}}}};
   Integration i3 = {L"integration-3", {{{}, {}, {}}}};
@@ -105,16 +106,17 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
                        L"SomeMethod",
                        min_ver_,
                        max_ver_,
-                       {}},
+                       {},
+                       empty_sig_type_},
                       {}}}};
   Integration i2 = {
       L"integration-2",
       {{{},
-        {L"Assembly.Two", L"SomeType", L"SomeMethod", min_ver_, max_ver_, {}},
+        {L"Assembly.Two", L"SomeType", L"SomeMethod", min_ver_, max_ver_, {}, empty_sig_type_},
         {}}}};
   Integration i3 = {
       L"integration-3",
-      {{{}, {L"System.Runtime", L"", L"", min_ver_, max_ver_, {}}, {}}}};
+      {{{}, {L"System.Runtime", L"", L"", min_ver_, max_ver_, {}, empty_sig_type_}, {}}}};
   auto all = FlattenIntegrations({i1, i2, i3});
   auto expected = FlattenIntegrations({i1, i3});
   auto actual = FilterIntegrationsByTarget(all, assembly_import_);
@@ -127,11 +129,14 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
                               L"SomeMethod",
                               min_ver_,
                               max_ver_,
-                              {}};
+                              {},
+                              empty_sig_type_};
 
   MethodReference excluded = {L"Samples.ExampleLibrary", L"SomeType",
                               L"SomeOtherMethod",        Version(0, 0, 0, 0),
-                              Version(0, 1, 0, 0),       {}};
+                              Version(0, 1, 0, 0),
+                              {},
+                              empty_sig_type_};
 
   Integration i1 = {L"integration-1", {{{}, included, {}}, {{}, excluded, {}}}};
   auto all = FlattenIntegrations({i1});

@@ -11,6 +11,7 @@ class MetadataBuilderTest : public ::testing::Test {
   MetadataBuilder* metadata_builder_ = nullptr;
   ICLRStrongName* strong_name_ = nullptr;
   IMetaDataDispenser* metadata_dispenser_ = nullptr;
+  std::vector<WSTRING> empty_sig_type_;
 
   void SetUp() override {
     ICLRMetaHost* metahost = nullptr;
@@ -82,11 +83,9 @@ TEST_F(MetadataBuilderTest, StoresWrapperMemberRef) {
 
   const auto min_ver = Version(0, 0, 0, 0);
   const auto max_ver = Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX);
-  const MethodReference ref1(L"", L"", L"", min_ver, max_ver, {});
-  const MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", min_ver,
-                       max_ver, {});
-  const MethodReference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", min_ver,
-                       max_ver, {});
+  const MethodReference ref1(L"", L"", L"", min_ver, max_ver, {}, empty_sig_type_);
+  const MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", min_ver, max_ver, {}, empty_sig_type_);
+  const MethodReference ref3(L"Samples.ExampleLibrary", L"Class1", L"Add", min_ver, max_ver, {}, empty_sig_type_);
   const MethodReplacement mr1(ref1, ref2, ref3);
   auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);
@@ -107,11 +106,11 @@ TEST_F(MetadataBuilderTest, StoresWrapperMemberRef) {
 TEST_F(MetadataBuilderTest, StoresWrapperMemberRefForSeparateAssembly) {
   const auto min_ver = Version(0, 0, 0, 0);
   const auto max_ver = Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX);
-  const MethodReference ref1(L"", L"", L"", min_ver, max_ver, {});
-  const MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", min_ver,
-                       max_ver, {});
+  const MethodReference ref1(L"", L"", L"", min_ver, max_ver, {},
+                             empty_sig_type_);
+  const MethodReference ref2(L"Samples.ExampleLibrary", L"Class1", L"Add", min_ver, max_ver, {}, empty_sig_type_);
   const MethodReference ref3(L"Samples.ExampleLibraryTracer", L"Class1", L"Add",
-                       min_ver, max_ver, {});
+                             min_ver, max_ver, {}, empty_sig_type_);
   const MethodReplacement mr1(ref1, ref2, ref3);
   auto hr = metadata_builder_->StoreWrapperMethodRef(mr1);
   ASSERT_EQ(S_OK, hr);

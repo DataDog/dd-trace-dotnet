@@ -12,6 +12,7 @@ class CLRHelperTestBase : public ::testing::Test {
   ComPtr<IMetaDataAssemblyImport> assembly_import_;
   Version min_ver_ = Version(0, 0, 0, 0);
   Version max_ver_ = Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX);
+  std::vector<WSTRING> empty_sig_type_;
 
   void LoadMetadataDependencies() {
     ICLRMetaHost* metahost = nullptr;
