@@ -204,3 +204,22 @@ TEST(IntegrationLoaderTest, LoadsFromEnvironment) {
   std::filesystem::remove(tmpname1);
   std::filesystem::remove(tmpname2);
 }
+
+TEST(IntegrationLoaderTest, DeserializesSignatureTypeArray) {
+  std::stringstream str(R"TEXT(
+        [{
+            "name": "test-integration",
+            "method_replacements": [{
+                "caller": { },
+                "target": { "assembly": "Assembly.One", "type": "Type.One", "method": "Method.One", "signature_types": ["System.Void", "System.Object", "FakeClient.Pipeline'1<T>"] },
+                "wrapper": { "assembly": "Assembly.Two", "type": "Type.Two", "method": "Method.One", "signature": [0, 1, 1, 28] }
+            }]
+        }]
+    )TEXT");
+
+  auto integrations = LoadIntegrationsFromStream(str);
+  const auto target = integrations[0].method_replacements[0].target_method;
+  EXPECT_STREQ(L"System.Void", target.signature_types[0].c_str());
+  EXPECT_STREQ(L"System.Object", target.signature_types[1].c_str());
+  EXPECT_STREQ(L"FakeClient.Pipeline'1<T>", target.signature_types[2].c_str());
+}
