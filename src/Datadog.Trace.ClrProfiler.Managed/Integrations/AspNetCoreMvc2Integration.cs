@@ -288,7 +288,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = ResourceInvoker,
-            TargetSignatureTypes = new[] { "System.Void", TypeNames.Ignore },
+            TargetSignatureTypes = new[] { TypeNames.Void, TypeNames.Ignore },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static void Rethrow(object context, int opCode)
