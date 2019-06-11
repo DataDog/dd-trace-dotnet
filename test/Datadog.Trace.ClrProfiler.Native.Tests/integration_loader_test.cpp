@@ -220,6 +220,6 @@ TEST(IntegrationLoaderTest, DeserializesSignatureTypeArray) {
   auto integrations = LoadIntegrationsFromStream(str);
   const auto target = integrations[0].method_replacements[0].target_method;
   EXPECT_STREQ(L"System.Void", target.signature_types[0].c_str());
-  EXPECT_STREQ(L"System.Object", target.signature_types[1].c_str());
+  EXPECT_STREQ(L"_", target.signature_types[1].c_str());
   EXPECT_STREQ(L"FakeClient.Pipeline'1<T>", target.signature_types[2].c_str());
 }
