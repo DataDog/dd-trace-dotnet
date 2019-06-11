@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void WrapperMethodHasOpCodeArgument(MethodInfo wrapperMethod)
         {
             // all wrapper methods should have an additional Int32
-            // parameter for the original method call's op-code
+            // parameter for the original method call's opcode
             ParameterInfo lastParameter = wrapperMethod.GetParameters().Last();
             Assert.Equal(typeof(int), lastParameter.ParameterType);
             Assert.Equal("opCode", lastParameter.Name);
