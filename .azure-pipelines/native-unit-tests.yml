@@ -13,43 +13,43 @@ variables:
 
 jobs:
 
-- job: 'windows'
+- job: windows
   strategy:
     matrix:
-      'x64':
-        buildPlatform: 'x64'
-      'x86':
-        buildPlatform: 'x86'
+      x64:
+        buildPlatform: x64
+      x86:
+        buildPlatform: x86
 
   pool:
-    vmImage: 'windows-2019'
+    vmImage: windows-2019
 
   steps:
 
   - task: NuGetCommand@2
-    displayName: 'nuget restore'
+    displayName: nuget restore
     inputs:
-      restoreSolution: 'Datadog.Trace.Native.sln'
-      vstsFeed: '/ffc32c57-3e0e-4e8f-8633-a7ad01df2e45'
+      restoreSolution: Datadog.Trace.Native.sln
+      vstsFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
       verbosityRestore: Normal
 
   - task: MSBuild@1
-    displayName: 'msbuild'
+    displayName: msbuild
     inputs:
       solution: Datadog.Trace.proj
-      platform: '$(buildPlatform)'
-      configuration: '$(buildConfiguration)'
-      msbuildArguments: '/t:BuildCpp;BuildCppTests'
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:BuildCpp;BuildCppTests
       maximumCpuCount: true
 
-  - script: 'Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml'
-    workingDirectory: '$(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/$(buildPlatform)'
-    displayName: 'Run C++ unit tests'
+  - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
+    workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/$(buildPlatform)
+    displayName: Run C++ unit tests
 
   - task: PublishTestResults@2
-    displayName: 'publish test results'
+    displayName: publish test results
     inputs:
-      testResultsFiles: 'test/**/test*.xml'
-      buildPlatform: '$(buildPlatform)'
-      buildConfiguration: '$(buildConfiguration)'
+      testResultsFiles: test/**/test*.xml
+      buildPlatform: $(buildPlatform)
+      buildConfiguration: $(buildConfiguration)
     condition: succeededOrFailed()
