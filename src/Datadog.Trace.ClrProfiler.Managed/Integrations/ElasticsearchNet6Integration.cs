@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
             TargetType = "Elasticsearch.Net.IRequestPipeline",
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData, int opCode)
@@ -66,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Elasticsearch.Net",
             TargetAssembly = "Elasticsearch.Net",
             TargetType = "Elasticsearch.Net.IRequestPipeline",
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource, int opCode)

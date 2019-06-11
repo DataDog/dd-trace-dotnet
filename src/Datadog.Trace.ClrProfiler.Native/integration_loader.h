@@ -27,7 +27,8 @@ namespace {
 std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src);
 std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     const json::value_type& src);
-MethodReference MethodReferenceFromJson(const json::value_type& src);
+MethodReference MethodReferenceFromJson(const json::value_type& src,
+                                        const bool is_target_method);
 
 }  // namespace
 

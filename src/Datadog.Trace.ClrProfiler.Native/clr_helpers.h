@@ -316,7 +316,7 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
 
 bool DisableOptimizations();
 
-bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
+bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
                          std::vector<WSTRING>& signature_result);
 }  // namespace trace

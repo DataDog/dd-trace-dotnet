@@ -389,240 +389,248 @@ TypeInfo RetrieveTypeForSignature(
   return type_data;
 }
 
-bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
-                         const FunctionInfo& function_info,
-                         std::vector<WSTRING>& signature_result) {
-  const auto signature_size = function_info.signature.data.size();
-  const auto generic_count = function_info.signature.NumberOfTypeArguments();
-  const auto param_count = function_info.signature.NumberOfArguments();
-  size_t current_index = 2;  // Where the parameters actually start
+bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
+                            const FunctionInfo& function_info,
+                            std::vector<WSTRING>& signature_result) {
+  try {
+    const auto signature_size = function_info.signature.data.size();
+    const auto generic_count = function_info.signature.NumberOfTypeArguments();
+    const auto param_count = function_info.signature.NumberOfArguments();
+    size_t current_index = 2;  // Where the parameters actually start
 
-  if (generic_count > 0) {
-    current_index++;  // offset by one because the method is generic
-  }
+    if (generic_count > 0) {
+      current_index++;  // offset by one because the method is generic
+    }
 
-  const auto expected_number_of_types = param_count + 1;
-  size_t current_type_index = 0;
-  std::vector<WSTRING> type_names(expected_number_of_types);
+    const auto expected_number_of_types = param_count + 1;
+    size_t current_type_index = 0;
+    std::vector<WSTRING> type_names(expected_number_of_types);
 
-  std::stack<int> generic_arg_stack;
-  WSTRING append_to_type = ""_W;
-  WSTRING current_type_name = ""_W;
+    std::stack<int> generic_arg_stack;
+    WSTRING append_to_type = ""_W;
+    WSTRING current_type_name = ""_W;
 
-  for (; current_index < signature_size; current_index++) {
-    mdToken type_token;
-    ULONG token_length;
-    auto param_piece = function_info.signature.data[current_index];
-    const auto cor_element_type = CorElementType(param_piece);
+    for (; current_index < signature_size; current_index++) {
+      mdToken type_token;
+      ULONG token_length;
+      auto param_piece = function_info.signature.data[current_index];
+      const auto cor_element_type = CorElementType(param_piece);
 
-    switch (cor_element_type) {
-      case ELEMENT_TYPE_VOID: {
-        current_type_name.append("System.Void"_W);
-        break;
-      }
+      switch (cor_element_type) {
+        case ELEMENT_TYPE_VOID: {
+          current_type_name.append("System.Void"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_BOOLEAN: {
-        current_type_name.append("System.Boolean"_W);
-        break;
-      }
+        case ELEMENT_TYPE_BOOLEAN: {
+          current_type_name.append("System.Boolean"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_CHAR: {
-        current_type_name.append("System.Char16"_W);
-        break;
-      }
+        case ELEMENT_TYPE_CHAR: {
+          current_type_name.append("System.Char16"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_I1: {
-        current_type_name.append("System.Int8"_W);
-        break;
-      }
+        case ELEMENT_TYPE_I1: {
+          current_type_name.append("System.SByte"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_U1: {
-        current_type_name.append("System.UInt8"_W);
-        break;
-      }
+        case ELEMENT_TYPE_U1: {
+          current_type_name.append("System.Byte"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_I2: {
-        current_type_name.append("System.Int16"_W);
-        break;
-      }
+        case ELEMENT_TYPE_I2: {
+          current_type_name.append("System.Int16"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_U2: {
-        current_type_name.append("System.UInt16"_W);
-        break;
-      }
+        case ELEMENT_TYPE_U2: {
+          current_type_name.append("System.UInt16"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_I4: {
-        current_type_name.append("System.Int32"_W);
-        break;
-      }
+        case ELEMENT_TYPE_I4: {
+          current_type_name.append("System.Int32"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_U4: {
-        current_type_name.append("System.UInt32"_W);
-        break;
-      }
+        case ELEMENT_TYPE_U4: {
+          current_type_name.append("System.UInt32"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_I8: {
-        current_type_name.append("System.Int64"_W);
-        break;
-      }
+        case ELEMENT_TYPE_I8: {
+          current_type_name.append("System.Int64"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_U8: {
-        current_type_name.append("System.UInt64"_W);
-        break;
-      }
+        case ELEMENT_TYPE_U8: {
+          current_type_name.append("System.UInt64"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_R4: {
-        current_type_name.append("System.Single"_W);
-        break;
-      }
+        case ELEMENT_TYPE_R4: {
+          current_type_name.append("System.Single"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_R8: {
-        current_type_name.append("System.Double"_W);
-        break;
-      }
+        case ELEMENT_TYPE_R8: {
+          current_type_name.append("System.Double"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_STRING: {
-        current_type_name.append("System.String"_W);
-        break;
-      }
+        case ELEMENT_TYPE_STRING: {
+          current_type_name.append("System.String"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_OBJECT: {
-        current_type_name.append("System.Object"_W);
-        break;
-      }
+        case ELEMENT_TYPE_OBJECT: {
+          current_type_name.append("System.Object"_W);
+          break;
+        }
 
-      case ELEMENT_TYPE_VALUETYPE:
-      case ELEMENT_TYPE_CLASS: {
-        current_index++;
-        auto type_data = RetrieveTypeForSignature(
-            metadata_import, function_info, current_index, token_length);
-        // index will be moved up one on every loop
-        // handle tokens which have more than one byte
-        current_index += token_length - 1;
-        current_type_name.append(type_data.name);
-        break;
-      }
-
-      case ELEMENT_TYPE_SZARRAY: {
-        append_to_type.append("[]"_W);
-        while (function_info.signature.data[(current_index + 1)] ==
-               ELEMENT_TYPE_SZARRAY) {
-          append_to_type.append("[]"_W);
+        case ELEMENT_TYPE_VALUETYPE:
+        case ELEMENT_TYPE_CLASS: {
           current_index++;
-        }
-        // Next will be the type of the array(s)
-        continue;
-      }
-
-      case ELEMENT_TYPE_MVAR: {
-        // We are likely parsing a standalone generic param
-        token_length = CorSigUncompressToken(
-            PCCOR_SIGNATURE(&function_info.signature.data[current_index]),
-            &type_token);
-        current_type_name.append("T"_W);
-        current_index += token_length;
-        // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
-        // current_type_name.append(std::to_wstring(type_token));
-        break;
-      }
-
-      case ELEMENT_TYPE_VAR: {
-        // We are likely within a generic variant
-        token_length = CorSigUncompressToken(
-            PCCOR_SIGNATURE(&function_info.signature.data[current_index]),
-            &type_token);
-        current_type_name.append("T"_W);
-        current_index += token_length;
-        // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
-        // current_type_name.append(std::to_wstring(type_token));
-        break;
-      }
-
-      case ELEMENT_TYPE_GENERICINST: {
-        // skip past generic type indicator token
-        current_index++;
-        // skip past actual generic type token (probably a class)
-        current_index++;
-        const auto generic_type_data = RetrieveTypeForSignature(
-            metadata_import, function_info, current_index, token_length);
-        auto type_name = generic_type_data.name;
-        current_type_name.append(type_name);
-        current_type_name.append("<"_W);  // Begin generic args
-
-        // Because we are starting a new generic, decrement any existing level
-        if (!generic_arg_stack.empty()) {
-          generic_arg_stack.top()--;
+          auto type_data = RetrieveTypeForSignature(
+              metadata_import, function_info, current_index, token_length);
+          // index will be moved up one on every loop
+          // handle tokens which have more than one byte
+          current_index += token_length - 1;
+          current_type_name.append(type_data.name);
+          break;
         }
 
-        // figure out how many generic args this type has
-        const auto index_of_tick = type_name.find_last_of('`');
-        auto num_args_text = ToString(type_name.substr(index_of_tick + 1));
-        auto actual_arg_count = std::stoi(num_args_text, nullptr);
-        generic_arg_stack.push(actual_arg_count);
-        current_index += token_length;
-        // Next will be the variants
+        case ELEMENT_TYPE_SZARRAY: {
+          append_to_type.append("[]"_W);
+          while (function_info.signature.data[(current_index + 1)] ==
+                 ELEMENT_TYPE_SZARRAY) {
+            append_to_type.append("[]"_W);
+            current_index++;
+          }
+          // Next will be the type of the array(s)
+          continue;
+        }
+
+        case ELEMENT_TYPE_MVAR: {
+          // We are likely parsing a standalone generic param
+          token_length = CorSigUncompressToken(
+              PCCOR_SIGNATURE(&function_info.signature.data[current_index]),
+              &type_token);
+          current_type_name.append("T"_W);
+          current_index += token_length;
+          // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
+          // current_type_name.append(std::to_wstring(type_token));
+          break;
+        }
+
+        case ELEMENT_TYPE_VAR: {
+          // We are likely within a generic variant
+          token_length = CorSigUncompressToken(
+              PCCOR_SIGNATURE(&function_info.signature.data[current_index]),
+              &type_token);
+          current_type_name.append("T"_W);
+          current_index += token_length;
+          // TODO: implement conventions for generics (eg., TC1, TC2, TM1, TM2)
+          // current_type_name.append(std::to_wstring(type_token));
+          break;
+        }
+
+        case ELEMENT_TYPE_GENERICINST: {
+          // skip past generic type indicator token
+          current_index++;
+          // skip past actual generic type token (probably a class)
+          current_index++;
+          const auto generic_type_data = RetrieveTypeForSignature(
+              metadata_import, function_info, current_index, token_length);
+          auto type_name = generic_type_data.name;
+          current_type_name.append(type_name);
+          current_type_name.append("<"_W);  // Begin generic args
+
+          // Because we are starting a new generic, decrement any existing level
+          if (!generic_arg_stack.empty()) {
+            generic_arg_stack.top()--;
+          }
+
+          // figure out how many generic args this type has
+          const auto index_of_tick = type_name.find_last_of('`');
+          auto num_args_text = ToString(type_name.substr(index_of_tick + 1));
+          auto actual_arg_count = std::stoi(num_args_text, nullptr);
+          generic_arg_stack.push(actual_arg_count);
+          current_index += token_length;
+          // Next will be the variants
+          continue;
+        }
+
+        case ELEMENT_TYPE_BYREF: {
+          // TODO: This hasn't been encountered yet
+          current_type_name.append("ref"_W);
+          break;
+        }
+
+        case ELEMENT_TYPE_END: {
+          // we already handle the generic by counting args
+          continue;
+        }
+
+        default: {
+          // This is unexpected and we should report that, and not instrument
+          current_type_name.append(ToWSTRING(ToString(cor_element_type)));
+          break;
+        }
+      }
+
+      if (!append_to_type.empty()) {
+        current_type_name.append(append_to_type);
+        append_to_type = ""_W;
+      }
+
+      if (!generic_arg_stack.empty()) {
+        // decrement this level's args
+        generic_arg_stack.top()--;
+
+        if (generic_arg_stack.top() > 0) {
+          // we're in the middle of generic type args
+          current_type_name.append(", "_W);
+        }
+      }
+
+      while (!generic_arg_stack.empty() && generic_arg_stack.top() == 0) {
+        // unwind the generics with no args left
+        generic_arg_stack.pop();
+        current_type_name.append(">"_W);
+
+        if (!generic_arg_stack.empty() && generic_arg_stack.top() > 0) {
+          // We are in a nested generic and we need a comma to separate args
+          current_type_name.append(", "_W);
+        }
+      }
+
+      if (!generic_arg_stack.empty()) {
         continue;
       }
 
-      case ELEMENT_TYPE_BYREF: {
-        // TODO: This hasn't been encountered yet
-        current_type_name.append("ref"_W);
-        break;
+      if (current_type_index >= expected_number_of_types) {
+        // We missed something, drop out for safety
+        return false;
       }
 
-      case ELEMENT_TYPE_END: {
-        // we already handle the generic by counting args
-        continue;
-      }
-
-      default: {
-        // This is unexpected and we should report that, and not instrument
-        current_type_name.append(ToWSTRING(ToString(cor_element_type)));
-        break;
-      }
+      type_names[current_type_index] = current_type_name;
+      current_type_name = ""_W;
+      current_type_index++;
     }
 
-    if (!append_to_type.empty()) {
-      current_type_name.append(append_to_type);
-      append_to_type = ""_W;
-    }
+    signature_result = type_names;
 
-    if (!generic_arg_stack.empty()) {
-      // decrement this level's args
-      generic_arg_stack.top()--;
-
-      if (generic_arg_stack.top() > 0) {
-        // we're in the middle of generic type args
-        current_type_name.append(", "_W);
-      }
-    }
-
-    while (!generic_arg_stack.empty() && generic_arg_stack.top() == 0) {
-      // unwind the generics with no args left
-      generic_arg_stack.pop();
-      current_type_name.append(">"_W);
-
-      if (!generic_arg_stack.empty() && generic_arg_stack.top() > 0) {
-        // We are in a nested generic and we need a comma to separate args
-        current_type_name.append(", "_W);
-      }
-    }
-
-    if (!generic_arg_stack.empty()) {
-      continue;
-    }
-
-    if (current_type_index >= expected_number_of_types) {
-      // We missed something, drop out for safety
-      return false;
-    }
-
-    type_names[current_type_index] = current_type_name;
-    current_type_name = ""_W;
-    current_type_index++;
+  } catch (...) {
+    // TODO: Add precise exceptions and log
+    // We were unable to parse for some reason
+    // Return that we've failed
+    return false;
   }
-
-  signature_result = type_names;
 
   return true;
 }

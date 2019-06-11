@@ -164,6 +164,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = AssemblyName,
             TargetAssembly = AssemblyName,
             TargetType = AsyncActionInvokerTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
         public static object BeginInvokeAction(
@@ -218,6 +219,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = AssemblyName,
             TargetAssembly = AssemblyName,
             TargetType = AsyncActionInvokerTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Bool, ClrNames.Ignore },
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
         public static bool EndInvokeAction(object asyncControllerActionInvoker, object asyncResult, int opCode)

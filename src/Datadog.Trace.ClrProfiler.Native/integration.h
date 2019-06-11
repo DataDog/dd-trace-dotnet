@@ -177,6 +177,7 @@ struct MethodReference {
   const MethodSignature method_signature;
   const Version min_version;
   const Version max_version;
+  const std::vector<WSTRING> signature_types;
 
   MethodReference()
       : min_version(Version(0, 0, 0, 0)),
@@ -184,13 +185,15 @@ struct MethodReference {
 
   MethodReference(const WSTRING& assembly_name, WSTRING type_name,
                   WSTRING method_name, Version min_version, Version max_version,
-                  const std::vector<BYTE>& method_signature)
+                  const std::vector<BYTE>& method_signature,
+                  const std::vector<WSTRING>& signature_types)
       : assembly(assembly_name),
         type_name(type_name),
         method_name(method_name),
         method_signature(method_signature),
         min_version(min_version),
-        max_version(max_version) {}
+        max_version(max_version),
+        signature_types(signature_types) {}
 
   inline WSTRING get_type_cache_key() const {
     return "["_W + assembly.name + "]"_W + type_name + "_vMin_"_W +

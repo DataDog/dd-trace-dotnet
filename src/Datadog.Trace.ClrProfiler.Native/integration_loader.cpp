@@ -112,14 +112,14 @@ std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     return std::make_pair<MethodReplacement, bool>({}, false);
   }
 
-  const auto caller = MethodReferenceFromJson(src.value("caller", json::object()));
-  const auto target = MethodReferenceFromJson(src.value("target", json::object()));
-  const auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()));
+  const auto caller = MethodReferenceFromJson(src.value("caller", json::object()), false);
+  const auto target = MethodReferenceFromJson(src.value("target", json::object()), true);
+  const auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()), false);
   return std::make_pair<MethodReplacement, bool>({caller, target, wrapper},
                                                  true);
 }
 
-MethodReference MethodReferenceFromJson(const json::value_type& src) {
+MethodReference MethodReferenceFromJson(const json::value_type& src, const bool is_target_method) {
   if (!src.is_object()) {
     return {};
   }
@@ -136,24 +136,39 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
   USHORT max_major = USHRT_MAX;
   USHORT max_minor = USHRT_MAX;
   USHORT max_patch = USHRT_MAX;
+  std::vector<WSTRING> signature_type_array;
 
-  if (src.find("minimum_major") != eoj) {
-    min_major = src["minimum_major"].get<USHORT>();
-  }
-  if (src.find("minimum_minor") != eoj) {
-    min_minor = src["minimum_minor"].get<USHORT>();
-  }
-  if (src.find("minimum_patch") != eoj) {
-    min_patch = src["minimum_patch"].get<USHORT>();
-  }
-  if (src.find("maximum_major") != eoj) {
-    max_major = src["maximum_major"].get<USHORT>();
-  }
-  if (src.find("maximum_minor") != eoj) {
-    max_minor = src["maximum_minor"].get<USHORT>();
-  }
-  if (src.find("maximum_patch") != eoj) {
-    max_patch = src["maximum_patch"].get<USHORT>();
+  if (is_target_method) {
+    // these fields only exist in the target definition
+
+    if (src.find("minimum_major") != eoj) {
+      min_major = src["minimum_major"].get<USHORT>();
+    }
+    if (src.find("minimum_minor") != eoj) {
+      min_minor = src["minimum_minor"].get<USHORT>();
+    }
+    if (src.find("minimum_patch") != eoj) {
+      min_patch = src["minimum_patch"].get<USHORT>();
+    }
+    if (src.find("maximum_major") != eoj) {
+      max_major = src["maximum_major"].get<USHORT>();
+    }
+    if (src.find("maximum_minor") != eoj) {
+      max_minor = src["maximum_minor"].get<USHORT>();
+    }
+    if (src.find("maximum_patch") != eoj) {
+      max_patch = src["maximum_patch"].get<USHORT>();
+    }
+
+    if (src.find("signature_types") != eoj) {
+      // c++ is unable to handle null values in this array
+      // we would need to write out own parsing here for null values
+      auto sig_types = src["signature_types"].get<std::vector<std::string>>();
+      signature_type_array = std::vector<WSTRING>(sig_types.size());
+      for (auto i = sig_types.size() - 1; i < sig_types.size(); i--) {
+        signature_type_array[i] = ToWSTRING(sig_types[i]);
+      }
+    }
   }
 
   std::vector<BYTE> signature;
@@ -189,7 +204,8 @@ MethodReference MethodReferenceFromJson(const json::value_type& src) {
   }
   return MethodReference(
       assembly, type, method, Version(min_major, min_minor, min_patch, 0),
-      Version(max_major, max_minor, max_patch, USHRT_MAX), signature);
+                         Version(max_major, max_minor, max_patch, USHRT_MAX),
+                         signature, signature_type_array);
 }
 
 }  // namespace
