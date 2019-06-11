@@ -62,9 +62,11 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the explicit type array for the target method to be intercepted.
         /// This is a required field.
+        /// Follows format:
+        ///     new[] { return_type, param_1_type, param_2_type, ..., param_n_type }
         /// Must match the wrapper method in count:
         ///     n (parameters) + 1 (return type) - (is_instance_method : 1 : 0) - 1 (opcode)
-        /// NULL indexes are ignored in comparison.
+        /// Indexes with "_" are ignored for comparison purposes.
         /// </summary>
         public string[] TargetSignatureTypes { get; set; }
 
