@@ -28,13 +28,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
             TargetType = "System.Data.Common.DbCommand",
-            TargetSignatureTypes = new string[] { null, null },
+            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Data.Common", // .NET Core
             TargetType = "System.Data.Common.DbCommand",
-            TargetSignatureTypes = new string[] { null, null },
+            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReader(object @this, int behavior, int opCode)
@@ -72,13 +72,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
             TargetType = "System.Data.Common.DbCommand",
-            TargetSignatureTypes = new string[] { null, null, null },
+            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Data.Common", // .NET Core
             TargetType = "System.Data.Common.DbCommand",
-            TargetSignatureTypes = new string[] { null, null, null },
+            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReaderAsync(object @this, int behavior, object cancellationTokenSource, int opCode)
@@ -166,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 case "InterceptableDbCommand":
                 case "ProfiledDbCommand":
                     // don't create spans for these
-                    return null;
+                    return TypeNames.Ignore;
                 default:
                     const string commandSuffix = "Command";
 

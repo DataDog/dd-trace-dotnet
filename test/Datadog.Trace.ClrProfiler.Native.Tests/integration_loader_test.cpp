@@ -211,7 +211,7 @@ TEST(IntegrationLoaderTest, DeserializesSignatureTypeArray) {
             "name": "test-integration",
             "method_replacements": [{
                 "caller": { },
-                "target": { "assembly": "Assembly.One", "type": "Type.One", "method": "Method.One", "signature_types": ["System.Void", "System.Object", "FakeClient.Pipeline'1<T>"] },
+                "target": { "assembly": "Assembly.One", "type": "Type.One", "method": "Method.One", "signature_types": ["System.Void", null, "FakeClient.Pipeline'1<T>"] },
                 "wrapper": { "assembly": "Assembly.Two", "type": "Type.Two", "method": "Method.One", "signature": [0, 1, 1, 28] }
             }]
         }]

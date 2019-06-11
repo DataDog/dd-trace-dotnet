@@ -162,7 +162,7 @@ MethodReference MethodReferenceFromJson(const json::value_type& src, const bool 
 
     if (src.find("signature_types") != eoj) {
       // nlohmann is unable to handle null values in this array
-      // we would need to write out own parser here for null values
+      // we would need to write out own parsing here for null values
       auto sig_types = src["signature_types"].get<std::vector<std::string>>();
       signature_type_array = std::vector<WSTRING>(sig_types.size());
       for (auto i = sig_types.size() - 1; i < sig_types.size(); i--) {

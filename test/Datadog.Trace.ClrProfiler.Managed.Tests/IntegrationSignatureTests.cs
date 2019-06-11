@@ -65,6 +65,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.True(
                 expectedParameterCount == typeSigLength,
                 $"{wrapperMethod.DeclaringType.Name}.{wrapperMethod.Name}: {nameof(attribute.TargetSignatureTypes)} has {typeSigLength} items, expected {expectedParameterCount}.");
+
+            Assert.False(
+                attribute.TargetSignatureTypes.Any(string.IsNullOrWhiteSpace),
+                $"{wrapperMethod.DeclaringType.Name}.{wrapperMethod.Name}: {nameof(attribute.TargetSignatureTypes)} has null or empty arguments.");
         }
     }
 }

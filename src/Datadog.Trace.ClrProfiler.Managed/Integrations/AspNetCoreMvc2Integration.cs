@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-            TargetSignatureTypes = new string[] { null, null, null, null, null },
+            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static void BeforeAction(
@@ -215,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-            TargetSignatureTypes = new string[] { null, null, null, null, null },
+            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static void AfterAction(
@@ -288,7 +288,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = ResourceInvoker,
-            TargetSignatureTypes = new string[] { "System.Void", null },
+            TargetSignatureTypes = new[] { "System.Void", TypeNames.Ignore },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static void Rethrow(object context, int opCode)

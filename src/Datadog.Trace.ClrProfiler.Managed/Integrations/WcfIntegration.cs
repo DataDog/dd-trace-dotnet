@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.ServiceModel",
             TargetType = "System.ServiceModel.Dispatcher.ChannelHandler",
-            TargetSignatureTypes = new string[] { null, null, null },
+            TargetSignatureTypes = new[] { TypeNames.Bool, TypeNames.Ignore, TypeNames.Ignore },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static bool HandleRequest(object thisObj, object requestContext, object currentOperationContext, int opCode)
