@@ -97,10 +97,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <OmitFramePointers>false</OmitFramePointers>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -113,37 +115,40 @@
     <PreBuildEvent>
       <Message>Remove potentially locked outputs (dll/pdb/xml)</Message>
     </PreBuildEvent>
-    <PostBuildEvent>
-      <Command>IF EXIST $(ProjectDir)\post-build-events-cpp.bat CALL $(ProjectDir)\post-build-events-cpp.bat "$(SolutionDir)"</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>Copy profiler for other projects</Message>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
     </Link>
+    <PreBuildEvent>
+      <Command>IF EXIST $(SolutionDir)\pre-build-events-cpp.bat CALL $(SolutionDir)\pre-build-events-cpp.bat  "$(TargetPath)"  "$(TargetFileName)"  "$(TargetDir)"  "$(TargetName)"</Command>
+      <Message>Remove potentially locked outputs (dll/pdb/xml)</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <SDLCheck>true</SDLCheck>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -152,16 +157,24 @@
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
     </Link>
+    <PreBuildEvent>
+      <Command>IF EXIST $(SolutionDir)\pre-build-events-cpp.bat CALL $(SolutionDir)\pre-build-events-cpp.bat  "$(TargetPath)"  "$(TargetFileName)"  "$(TargetDir)"  "$(TargetName)"</Command>
+      <Message>Remove potentially locked outputs (dll/pdb/xml)</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <SDLCheck>true</SDLCheck>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -170,6 +183,10 @@
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
     </Link>
+    <PreBuildEvent>
+      <Command>IF EXIST $(SolutionDir)\pre-build-events-cpp.bat CALL $(SolutionDir)\pre-build-events-cpp.bat  "$(TargetPath)"  "$(TargetFileName)"  "$(TargetDir)"  "$(TargetName)"</Command>
+      <Message>Remove potentially locked outputs (dll/pdb/xml)</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="Datadog.Trace.ClrProfiler.Native.vcxproj">
@@ -181,6 +198,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="interop.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
