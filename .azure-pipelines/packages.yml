@@ -96,7 +96,7 @@ jobs:
   - task: PublishBuildArtifacts@1
     displayName: publish msi artifact
     inputs:
-      PathtoPublish: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/es-us
+      PathtoPublish: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/en-us
       ArtifactName: windows-msi
 
 #### Linux
