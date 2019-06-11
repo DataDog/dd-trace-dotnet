@@ -34,7 +34,8 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
     return {};
   }
 
-  return {assembly_id, WSTRING(assembly_name), app_domain_id, WSTRING(app_domain_name)};
+  return {assembly_id, WSTRING(assembly_name), app_domain_id,
+          WSTRING(app_domain_name)};
 }
 
 AssemblyMetadata GetAssemblyImportMetadata(
@@ -135,6 +136,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
     } break;
     default:
       Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
+      return {};
   }
   if (FAILED(hr) || function_name_len == 0) {
     return {};
