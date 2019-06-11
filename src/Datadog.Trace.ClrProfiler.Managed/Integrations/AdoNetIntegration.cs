@@ -166,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 case "InterceptableDbCommand":
                 case "ProfiledDbCommand":
                     // don't create spans for these
-                    return TypeNames.Ignore;
+                    return null;
                 default:
                     const string commandSuffix = "Command";
 
