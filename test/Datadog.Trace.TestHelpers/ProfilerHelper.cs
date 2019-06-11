@@ -11,7 +11,8 @@ namespace Datadog.Trace.TestHelpers
             IEnumerable<string> integrationPaths,
             string arguments = null,
             bool redirectStandardInput = false,
-            int traceAgentPort = 9696)
+            int traceAgentPort = 9696,
+            int aspNetCorePort = 5000)
         {
             if (environmentHelper == null)
             {
@@ -35,13 +36,13 @@ namespace Datadog.Trace.TestHelpers
             {
                 // .NET Core
                 startInfo = new ProcessStartInfo(executable, $"{applicationPath} {arguments ?? string.Empty}");
-                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, executable, startInfo.EnvironmentVariables);
+                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
             }
             else
             {
                 // .NET Framework
                 startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
-                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, executable, startInfo.EnvironmentVariables);
+                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
             }
 
             startInfo.UseShellExecute = false;

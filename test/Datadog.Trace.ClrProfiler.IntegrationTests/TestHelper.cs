@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return _environmentHelper.GetSampleApplicationPath(packageVersion);
         }
 
-        public Process StartSample(int traceAgentPort, string arguments, string packageVersion)
+        public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = GetSampleApplicationPath(packageVersion);
@@ -73,12 +73,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _environmentHelper,
                 integrationPaths,
                 arguments,
-                traceAgentPort: traceAgentPort);
+                traceAgentPort: traceAgentPort,
+                aspNetCorePort: aspNetCorePort);
         }
 
         public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, string arguments = null, string packageVersion = "")
         {
-            Process process = StartSample(traceAgentPort, arguments, packageVersion);
+            Process process = StartSample(traceAgentPort, arguments, packageVersion, aspNetCorePort: 5000);
 
             string standardOutput = process.StandardOutput.ReadToEnd();
             string standardError = process.StandardError.ReadToEnd();

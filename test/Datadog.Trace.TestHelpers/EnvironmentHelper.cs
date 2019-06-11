@@ -151,6 +151,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void SetEnvironmentVariableDefaults(
             int agentPort,
+            int aspNetCorePort,
             string processPath,
             StringDictionary environmentVariables)
         {
@@ -175,7 +176,7 @@ namespace Datadog.Trace.TestHelpers
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 
             // for ASP.NET Core sample apps, set the server's port
-            environmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{agentPort}/";
+            environmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{aspNetCorePort}/";
 
             foreach (var name in new string[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {
