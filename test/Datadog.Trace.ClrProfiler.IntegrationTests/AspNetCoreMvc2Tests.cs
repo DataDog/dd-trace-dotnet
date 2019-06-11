@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using Datadog.Trace.TestHelpers;
@@ -11,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class AspNetCoreMvc2Tests : TestHelper
     {
+        private static readonly string[] Paths = { "/", "/api/delay/0" };
+
         public AspNetCoreMvc2Tests(ITestOutputHelper output)
             : base("AspNetCoreMvc2", output)
         {
@@ -18,15 +22,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Theory]
         [Trait("Category", "EndToEnd")]
-        [InlineData("/")]
-        [InlineData("/api/delay/0")]
-        public void SubmitsTracesSelfHosted(string path)
+        [MemberData(nameof(PackageVersions.AspNetCoreMvc2), MemberType = typeof(PackageVersions))]
+        public void SubmitsTracesSelfHosted(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();
             int aspNetCorePort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: aspNetCorePort))
+            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -56,6 +59,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // wait for server to start
                 wh.WaitOne(5000);
 
+                SubmitRequests(aspNetCorePort, Paths);
+                var expected = new List<string>(Paths);
+                var spans = agent.WaitForSpans(expected.Count)
+                                 .Where(s => s.Type == SpanTypes.Web)
+                                 .OrderBy(s => s.Start)
+                                 .ToList();
+
+                if (!process.HasExited)
+                {
+                    process.Kill();
+                }
+
+                Assert.True(spans.Count >= expected.Count, $"expected at least {expected.Count} spans");
+                foreach (var span in spans)
+                {
+                    Assert.Equal("aspnet-coremvc.request", span.Name);
+                    Assert.Equal("Samples.AspNetCoreMvc2", span.Service);
+                    Assert.Equal(SpanTypes.Web, span.Type);
+                }
+
+                ValidateSpans(spans, (span) => span.Resource, expected);
+            }
+        }
+
+        private void SubmitRequests(int aspNetCorePort, string[] paths)
+        {
+            foreach (string path in paths)
+            {
                 try
                 {
                     var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{path}");
@@ -77,20 +108,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
                         }
                     }
-                }
-
-                var spans = agent.WaitForSpans(1);
-                if (!process.HasExited)
-                {
-                    process.Kill();
-                }
-
-                Assert.True(spans.Count > 0, "expected at least one span");
-                foreach (var span in spans)
-                {
-                    Assert.Equal("aspnet-coremvc.request", span.Name);
-                    Assert.Equal(SpanTypes.Web, span.Type);
-                    Assert.Equal($"{path}", span.Resource);
                 }
             }
         }
