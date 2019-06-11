@@ -37,17 +37,16 @@ jobs:
       verbosityRestore: Normal
 
   - task: MSBuild@1
-    displayName: Build C++ DLL (x64 or x86)
+    displayName: msbuild native
     inputs:
       solution: Datadog.Trace.proj
-      msbuildVersion: 'latest'
-      msbuildArchitecture: x64
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
       msbuildArguments: /t:BuildCpp
       maximumCpuCount: true
 
   - task: DotNetCoreInstaller@0
+    displayName: install dotnet core sdk
     inputs:
       version: 2.1.700
 
@@ -80,11 +79,9 @@ jobs:
       ArtifactName: nuget
 
   - task: MSBuild@1
-    displayName: build msi
+    displayName: msbuild msi
     inputs:
       solution: Datadog.Trace.proj
-      msbuildVersion: 'latest'
-      msbuildArchitecture: x64
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
       msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%
