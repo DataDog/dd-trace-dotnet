@@ -44,6 +44,8 @@ jobs:
     displayName: Build C++ DLL (x64 or x86)
     inputs:
       solution: Datadog.Trace.proj
+      msbuildVersion: 'latest'
+      msbuildArchitecture: x64
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
       msbuildArguments: /t:BuildCpp
@@ -85,6 +87,8 @@ jobs:
     displayName: build msi
     inputs:
       solution: Datadog.Trace.proj
+      msbuildVersion: 'latest'
+      msbuildArchitecture: x64
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
       msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%
@@ -92,7 +96,7 @@ jobs:
   - task: PublishBuildArtifacts@1
     displayName: publish msi artifact
     inputs:
-      PathtoPublish: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/**/*.msi
+      PathtoPublish: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/es-us
       ArtifactName: windows-msi
 
 #### Linux
