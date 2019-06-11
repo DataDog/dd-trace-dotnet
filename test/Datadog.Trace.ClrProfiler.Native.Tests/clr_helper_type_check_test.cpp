@@ -18,7 +18,7 @@ TEST_F(CLRHelperTypeCheckTest, SimpleNoSignatureMethodHasOnlyVoid) {
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
-  SignatureFuzzyMatch(metadata_import_, target, actual);
+  TryParseSignatureTypes(metadata_import_, target, actual);
 
   EXPECT_EQ(expected, actual);
 }
@@ -42,7 +42,7 @@ TEST_F(CLRHelperTypeCheckTest, GetsVeryComplexNestedGenericTypeStrings) {
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
-  SignatureFuzzyMatch(metadata_import_, target, actual);
+  TryParseSignatureTypes(metadata_import_, target, actual);
 
   EXPECT_EQ(expected, actual);
 }
@@ -58,7 +58,7 @@ TEST_F(CLRHelperTypeCheckTest, SimpleClassReturnWithSimpleParamsNoGenerics) {
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
-  SignatureFuzzyMatch(metadata_import_, target, actual);
+  TryParseSignatureTypes(metadata_import_, target, actual);
 
   EXPECT_EQ(expected, actual);
 }
@@ -79,7 +79,7 @@ TEST_F(CLRHelperTypeCheckTest, GenericAsyncMethodWithNestedGenericTask) {
 
   EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
 
-  SignatureFuzzyMatch(metadata_import_, target, actual);
+  TryParseSignatureTypes(metadata_import_, target, actual);
 
   EXPECT_EQ(expected, actual);
 }
@@ -89,7 +89,7 @@ TEST_F(CLRHelperTypeCheckTest, SuccessfullyParsesEverySignature) {
     for (auto& method_def : EnumMethods(metadata_import_, type_def)) {
       auto target = GetFunctionInfo(metadata_import_, method_def);
       std::vector<std::wstring> actual;
-      auto success = SignatureFuzzyMatch(metadata_import_, target, actual);
+      auto success = TryParseSignatureTypes(metadata_import_, target, actual);
       EXPECT_TRUE(success == true) << "Could not parse: "_W + target.type.name + "."_W + target.name;
     }
   }

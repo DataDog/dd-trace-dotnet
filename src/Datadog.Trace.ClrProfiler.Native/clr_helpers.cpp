@@ -387,7 +387,7 @@ TypeInfo RetrieveTypeForSignature(
   return type_data;
 }
 
-bool SignatureFuzzyMatch(const ComPtr<IMetaDataImport2>& metadata_import,
+bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
                          std::vector<WSTRING>& signature_result) {
   const auto signature_size = function_info.signature.data.size();

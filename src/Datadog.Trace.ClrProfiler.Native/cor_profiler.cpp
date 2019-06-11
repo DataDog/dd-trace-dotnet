@@ -442,9 +442,37 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
                              target.function_spec_signature);
       }
 
+      std::vector<WSTRING> sig_types;
+      const auto successfully_parsed_signature = TryParseSignatureTypes(
+          module_metadata->metadata_import, target, sig_types);
+      auto expected_sig_types =
+          method_replacement.target_method.signature_types;
+      if (!successfully_parsed_signature ||
+          sig_types.size() != expected_sig_types.size()) {
+        // we can't safely assume our wrapper methods handle the types
+        continue;
+      }
+
+      auto is_match = true;
+      for (auto i = 0; i < expected_sig_types.size(); i++) {
+        if (expected_sig_types[i] == "_"_W) {
+          // We are supposed to ignore this index
+          continue;
+        }
+        if (expected_sig_types[i] != sig_types[i]) {
+          // we have a type mismatch, drop out
+          is_match = false;
+          break;
+        }
+      }
+
+      if (!is_match) {
+        continue;
+      }
+
       const auto original_argument = pInstr->m_Arg32;
 
-      // insert the opcode and signature token as
+      // insert the op-code and signature token as
       // additional arguments for the wrapper method
       ILRewriterWrapper rewriter_wrapper(&rewriter);
       rewriter_wrapper.SetILPosition(pInstr);
