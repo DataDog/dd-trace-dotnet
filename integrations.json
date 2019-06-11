@@ -9,8 +9,8 @@
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReader",
           "signature_types": [
-            null,
-            null
+            "_",
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -33,8 +33,8 @@
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReader",
           "signature_types": [
-            null,
-            null
+            "_",
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -57,9 +57,9 @@
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReaderAsync",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -82,9 +82,9 @@
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReaderAsync",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -114,11 +114,11 @@
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
           "method": "BeforeAction",
           "signature_types": [
-            null,
-            null,
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 2,
           "minimum_minor": 0,
@@ -143,11 +143,11 @@
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
           "method": "AfterAction",
           "signature_types": [
-            null,
-            null,
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 2,
           "minimum_minor": 0,
@@ -173,7 +173,7 @@
           "method": "Rethrow",
           "signature_types": [
             "System.Void",
-            null
+            "_"
           ],
           "minimum_major": 2,
           "minimum_minor": 0,
@@ -203,11 +203,11 @@
           "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
           "method": "BeginInvokeAction",
           "signature_types": [
-            null,
-            null,
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 5,
           "minimum_minor": 1,
@@ -232,8 +232,8 @@
           "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
           "method": "EndInvokeAction",
           "signature_types": [
-            null,
-            null
+            "System.Boolean",
+            "_"
           ],
           "minimum_major": 5,
           "minimum_minor": 1,
@@ -261,9 +261,9 @@
           "type": "System.Web.Http.Controllers.IHttpController",
           "method": "ExecuteAsync",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 5,
           "minimum_minor": 2,
@@ -293,8 +293,8 @@
           "type": "Elasticsearch.Net.IRequestPipeline",
           "method": "CallElasticsearch",
           "signature_types": [
-            null,
-            null
+            "_",
+            "_"
           ],
           "minimum_major": 5,
           "minimum_minor": 0,
@@ -319,9 +319,9 @@
           "type": "Elasticsearch.Net.IRequestPipeline",
           "method": "CallElasticsearchAsync",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 5,
           "minimum_minor": 0,
@@ -351,8 +351,8 @@
           "type": "Elasticsearch.Net.IRequestPipeline",
           "method": "CallElasticsearch",
           "signature_types": [
-            null,
-            null
+            "_",
+            "_"
           ],
           "minimum_major": 6,
           "minimum_minor": 0,
@@ -377,9 +377,9 @@
           "type": "Elasticsearch.Net.IRequestPipeline",
           "method": "CallElasticsearchAsync",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 6,
           "minimum_minor": 0,
@@ -407,9 +407,9 @@
           "type": "System.Net.Http.HttpMessageHandler",
           "method": "SendAsync",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -432,9 +432,9 @@
           "type": "System.Net.Http.HttpClientHandler",
           "method": "SendAsync",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -462,9 +462,9 @@
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol",
           "method": "Execute",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 2,
           "minimum_minor": 2,
@@ -487,9 +487,9 @@
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
           "method": "Execute",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 2,
           "minimum_minor": 2,
@@ -512,9 +512,9 @@
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol",
           "method": "ExecuteAsync",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 2,
           "minimum_minor": 1,
@@ -537,9 +537,9 @@
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
           "method": "ExecuteAsync",
           "signature_types": [
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 2,
           "minimum_minor": 1,
@@ -569,11 +569,11 @@
           "type": "ServiceStack.Redis.RedisNativeClient",
           "method": "SendReceive",
           "signature_types": [
-            null,
-            null,
-            null,
-            null,
-            null
+            "T",
+            "_",
+            "System.Int8[][]",
+            "_",
+            "System.Boolean"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -603,10 +603,10 @@
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteSyncImpl",
           "signature_types": [
-            null,
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -631,10 +631,10 @@
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteSyncImpl",
           "signature_types": [
-            null,
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -659,11 +659,11 @@
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteAsyncImpl",
           "signature_types": [
-            null,
-            null,
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -688,11 +688,11 @@
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteAsyncImpl",
           "signature_types": [
-            null,
-            null,
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -717,10 +717,10 @@
           "type": "StackExchange.Redis.RedisBase",
           "method": "ExecuteAsync",
           "signature_types": [
-            null,
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -745,10 +745,10 @@
           "type": "StackExchange.Redis.RedisBase",
           "method": "ExecuteAsync",
           "signature_types": [
-            null,
-            null,
-            null,
-            null
+            "_",
+            "_",
+            "_",
+            "_"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -776,9 +776,9 @@
           "type": "System.ServiceModel.Dispatcher.ChannelHandler",
           "method": "HandleRequest",
           "signature_types": [
-            null,
-            null,
-            null
+            "System.Boolean",
+            "_",
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -806,7 +806,7 @@
           "type": "System.Net.WebRequest",
           "method": "GetResponse",
           "signature_types": [
-            null
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -829,7 +829,7 @@
           "type": "System.Net.WebRequest",
           "method": "GetResponse",
           "signature_types": [
-            null
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -852,7 +852,7 @@
           "type": "System.Net.WebRequest",
           "method": "GetResponseAsync",
           "signature_types": [
-            null
+            "_"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
