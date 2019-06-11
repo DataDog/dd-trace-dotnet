@@ -6,6 +6,7 @@ pr: none
 
 variables:
   buildConfiguration: debug
+  packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
 
 jobs:
 
@@ -33,7 +34,7 @@ jobs:
     displayName: nuget restore native
     inputs:
       restoreSolution: Datadog.Trace.Native.sln
-      vstsFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+      vstsFeed: $(packageFeed)
       verbosityRestore: Normal
 
   - task: MSBuild@1
@@ -55,7 +56,7 @@ jobs:
     inputs:
       command: restore
       projects: src/**/*.csproj
-      vstsFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+      vstsFeed: $(packageFeed)
       verbosityRestore: Normal
 
   - task: DotNetCoreCLI@2
