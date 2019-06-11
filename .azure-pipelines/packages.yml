@@ -1,12 +1,7 @@
 trigger:
-  branches:
+  tags:
     include:
-      - master
-      - develop
-  paths:
-    exclude:
-      - docs/*
-      - .github/*
+      - refs/tags/*
 
 variables:
   buildConfiguration: debug
