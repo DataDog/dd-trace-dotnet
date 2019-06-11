@@ -28,23 +28,29 @@ inline WSTRING DatadogLogFilePath() {
   }
 
 #ifdef _WIN32
-  std::string programdata(getenv("PROGRAMDATA"));
-  if (programdata.empty()) {
-    programdata = "C:\\ProgramData";
+  char* p_program_data;
+  size_t length;
+  const errno_t result = _dupenv_s(&p_program_data, &length, "PROGRAMDATA");
+  std::string program_data;
+
+  if (FAILED(result) || length == 0) {
+    program_data = R"(C:\ProgramData)";
   }
-  return ToWSTRING(programdata +
-                   "\\Datadog .NET Tracer\\logs\\dotnet-profiler.log");
+
+  return ToWSTRING(program_data +
+                   R"(\Datadog .NET Tracer\logs\dotnet-profiler.log)");
 #else
-  return ToWSTRING("/var/log/datadog/dotnet-profiler.log");
+  return "/var/log/datadog/dotnet-profiler.log"_W;
 #endif
 }
 
 inline WSTRING GetCurrentProcessName() {
 #ifdef _WIN32
-  WSTRING current_process_path(260, 0);
-  const DWORD len = GetModuleFileName(nullptr, current_process_path.data(),
-                                      (DWORD)(current_process_path.size()));
-  current_process_path = current_process_path.substr(0, len);
+  const DWORD length = 260;
+  WCHAR buffer[length]{};
+
+  const DWORD len = GetModuleFileName(nullptr, buffer, length);
+  const WSTRING current_process_path(buffer);
   return std::filesystem::path(current_process_path).filename();
 #else
   std::fstream comm("/proc/self/comm");
