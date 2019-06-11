@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     {
         public static IEnumerable<object[]> GetConstTypeAssociations()
         {
+            yield return new object[] { ClrNames.Ignore, "_" };
             yield return new object[] { ClrNames.Void, typeof(void) };
             yield return new object[] { ClrNames.Object, typeof(object) };
             yield return new object[] { ClrNames.Bool, typeof(bool) };
@@ -32,7 +33,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 typeof(ClrNames)
                    .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
                    .Where(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(string))
-                   .Where(fi => fi.Name != nameof(ClrNames.Ignore))
                    .ToList();
 
             Assert.Equal(actual: associations.Count, expected: expectedItems.Count);
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetConstTypeAssociations))]
-        public void StringMatches(string constant, object type)
+        public void MatchesExpectedTypeName(string constant, object type)
         {
             if (type is Type)
             {
