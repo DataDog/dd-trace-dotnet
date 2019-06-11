@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
             TargetType = "StackExchange.Redis.RedisBase",
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major1)]
         [InterceptMethod(
@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = "StackExchange.Redis.StrongName",
             TargetAssembly = "StackExchange.Redis.StrongName",
             TargetType = "StackExchange.Redis.RedisBase",
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major1)]
         public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server, int opCode)

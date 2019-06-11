@@ -571,7 +571,7 @@
           "signature_types": [
             "T",
             "_",
-            "System.Int8[][]",
+            "System.UInt8[][]",
             "_",
             "System.Boolean"
           ],

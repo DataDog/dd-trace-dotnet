@@ -39,13 +39,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major2Minor2,
             TargetMaximumVersion = Major2)]
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocolGeneric,
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major2Minor2,
             TargetMaximumVersion = Major2)]
         public static object Execute(object wireProtocol, object connection, object cancellationTokenSource, int opCode)
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMethod = nameof(ExecuteAsync),
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major2Minor1,
             TargetMaximumVersion = Major2)]
         public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource, int opCode)
@@ -122,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMethod = nameof(ExecuteAsync),
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocolGeneric,
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major2Minor1,
             TargetMaximumVersion = Major2)]
         public static object ExecuteAsyncGeneric(object wireProtocol, object connection, object cancellationTokenSource, int opCode)

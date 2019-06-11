@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer",
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         [InterceptMethod(
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = "StackExchange.Redis.StrongName",
             TargetAssembly = "StackExchange.Redis.StrongName",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer",
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server, int opCode)
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = "StackExchange.Redis",
             TargetAssembly = "StackExchange.Redis",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer",
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         [InterceptMethod(
@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = "StackExchange.Redis.StrongName",
             TargetAssembly = "StackExchange.Redis.StrongName",
             TargetType = "StackExchange.Redis.ConnectionMultiplexer",
-            TargetSignatureTypes = new[] { TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore, TypeNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server, int opCode)
