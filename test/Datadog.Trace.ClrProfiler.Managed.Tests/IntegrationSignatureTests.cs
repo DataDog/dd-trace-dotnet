@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 attribute.TargetSignatureTypes != null,
                 $"{wrapperMethod.DeclaringType.Name}.{wrapperMethod.Name}: {nameof(attribute.TargetSignatureTypes)} definition missing.");
 
-            // Return type and op-code cancel out for count
+            // Return type and opcode cancel out for count
             var expectedParameterCount = wrapperMethod.GetParameters().Length;
 
             if (!StaticInstrumentations.Contains(wrapperMethod))

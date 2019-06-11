@@ -413,7 +413,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       auto expected_number_args = method_replacement.wrapper_method
                                       .method_signature.NumberOfArguments();
 
-      // We pass the op-code as the last argument to every wrapper method
+      // We pass the opcode as the last argument to every wrapper method
       expected_number_args--;
 
       if (target.signature.IsInstanceMethod()) {
@@ -472,7 +472,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       const auto original_argument = pInstr->m_Arg32;
 
-      // insert the op-code and signature token as
+      // insert the opcode and signature token as
       // additional arguments for the wrapper method
       ILRewriterWrapper rewriter_wrapper(&rewriter);
       rewriter_wrapper.SetILPosition(pInstr);
