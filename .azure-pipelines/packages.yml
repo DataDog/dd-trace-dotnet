@@ -2,6 +2,7 @@ trigger:
   tags:
     include:
       - refs/tags/*
+pr: none
 
 variables:
   buildConfiguration: debug
