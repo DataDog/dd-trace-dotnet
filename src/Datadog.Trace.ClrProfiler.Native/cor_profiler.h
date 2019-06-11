@@ -25,18 +25,22 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
 
  public:
-  CorProfiler();
+  CorProfiler() = default;
 
   bool IsAttached() const;
 
   HRESULT STDMETHODCALLTYPE
   Initialize(IUnknown* cor_profiler_info_unknown) override;
+
   HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id,
-                                               HRESULT hrStatus) override;
-  HRESULT STDMETHODCALLTYPE ModuleUnloadFinished(ModuleID module_id,
-                                                 HRESULT hrStatus) override;
+                                               HRESULT hr_status) override;
+
+  HRESULT STDMETHODCALLTYPE ModuleUnloadStarted(ModuleID module_id) override;
+
   HRESULT STDMETHODCALLTYPE
   JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
+
+  HRESULT STDMETHODCALLTYPE Shutdown() override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,

@@ -171,9 +171,17 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(
 struct AssemblyInfo {
   const AssemblyID id;
   const WSTRING name;
+  const AppDomainID app_domain_id;
+  const WSTRING app_domain_name;
 
-  AssemblyInfo() : id(0), name(""_W) {}
-  AssemblyInfo(AssemblyID id, WSTRING name) : id(id), name(name) {}
+  AssemblyInfo() : id(0), name(""_W), app_domain_id(0), app_domain_name(""_W) {}
+
+  AssemblyInfo(AssemblyID id, WSTRING name, AppDomainID app_domain_id,
+               WSTRING app_domain_name)
+      : id(id),
+        name(name),
+        app_domain_id(app_domain_id),
+        app_domain_name(app_domain_name) {}
 
   bool is_valid() const { return id != 0; }
 };

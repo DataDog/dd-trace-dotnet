@@ -13,42 +13,28 @@ namespace trace {
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id) {
-  WCHAR name[kNameMaxSize];
-  DWORD name_len = 0;
-  auto hr = info->GetAssemblyInfo(assembly_id, kNameMaxSize, &name_len, name,
-                                  nullptr, nullptr);
-  if (FAILED(hr) || name_len == 0) {
-    return {};
-  }
-  return {assembly_id, WSTRING(name)};
-}
+  WCHAR assembly_name[kNameMaxSize];
+  DWORD assembly_name_len = 0;
+  AppDomainID app_domain_id;
 
-AssemblyMetadata GetAssemblyMetadata(
-    const ModuleID& module_id,
-    const ComPtr<IMetaDataAssemblyImport>& assembly_import) {
-  mdAssembly current = mdAssemblyNil;
-  auto hr = assembly_import->GetAssemblyFromScope(&current);
+  auto hr = info->GetAssemblyInfo(assembly_id, kNameMaxSize, &assembly_name_len,
+                                  assembly_name, &app_domain_id, nullptr);
 
-  if (FAILED(hr)) {
+  if (FAILED(hr) || assembly_name_len == 0) {
     return {};
   }
 
-  WCHAR name[kNameMaxSize];
-  WSTRING assembly_name = ""_W;
-  DWORD name_len = 0;
-  ASSEMBLYMETADATA assembly_m{};
-  DWORD assembly_flags = 0;
-  hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr,
-                                         name, kNameMaxSize, &name_len,
-                                         &assembly_m, &assembly_flags);
-  if (!FAILED(hr) && name_len > 0) {
-    assembly_name = WSTRING(name);
+  WCHAR app_domain_name[kNameMaxSize];
+  DWORD app_domain_name_len = 0;
+
+  hr = info->GetAppDomainInfo(app_domain_id, kNameMaxSize, &app_domain_name_len,
+                              app_domain_name, nullptr);
+
+  if (FAILED(hr) || app_domain_name_len == 0) {
+    return {};
   }
 
-  return AssemblyMetadata(module_id, assembly_name, current,
-                          assembly_m.usMajorVersion, assembly_m.usMinorVersion,
-                          assembly_m.usBuildNumber,
-                          assembly_m.usRevisionNumber);
+  return {assembly_id, WSTRING(assembly_name), app_domain_id, WSTRING(app_domain_name)};
 }
 
 AssemblyMetadata GetAssemblyImportMetadata(
