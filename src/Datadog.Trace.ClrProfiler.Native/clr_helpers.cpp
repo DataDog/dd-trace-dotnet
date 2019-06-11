@@ -430,12 +430,12 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
       }
 
       case ELEMENT_TYPE_I1: {
-        current_type_name.append("System.Int8"_W);
+        current_type_name.append("System.SByte"_W);
         break;
       }
 
       case ELEMENT_TYPE_U1: {
-        current_type_name.append("System.UInt8"_W);
+        current_type_name.append("System.Byte"_W);
         break;
       }
 

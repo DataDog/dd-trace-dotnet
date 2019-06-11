@@ -28,10 +28,10 @@ TEST_F(CLRHelperTypeCheckTest, GetsVeryComplexNestedGenericTypeStrings) {
       L"System.Void",
       L"System.String",
       L"System.Int32",
-      L"System.UInt8[]",
+      L"System.Byte[]",
       L"System.Guid[][]",
       L"T[][][]",
-      L"System.Collections.Generic.List`1<System.UInt8[][]>",
+      L"System.Collections.Generic.List`1<System.Byte[][]>",
       L"System.Collections.Generic.List`1<Samples.ExampleLibrary.FakeClient.DogTrick`1<T>>",
       L"System.Tuple`7<System.Int32, T, System.String, System.Object, System.Tuple`2<System.Tuple`2<T, System.Int64>, System.Int64>, System.Threading.Tasks.Task, System.Guid>",
       L"System.Collections.Generic.Dictionary`2<System.Int32, System.Collections.Generic.IList`1<System.Threading.Tasks.Task`1<Samples.ExampleLibrary.FakeClient.DogTrick`1<T>>>>"};

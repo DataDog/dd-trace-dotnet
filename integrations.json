@@ -570,8 +570,8 @@
           "method": "SendReceive",
           "signature_types": [
             "T",
+            "System.Byte[][]",
             "_",
-            "System.UInt8[][]",
             "_",
             "System.Boolean"
           ],
@@ -603,7 +603,7 @@
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteSyncImpl",
           "signature_types": [
-            "_",
+            "T",
             "_",
             "_",
             "_"
@@ -631,7 +631,7 @@
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteSyncImpl",
           "signature_types": [
-            "_",
+            "T",
             "_",
             "_",
             "_"
