@@ -1,0 +1,128 @@
+trigger:
+  tags:
+    include:
+      - refs/tags/*
+pr: none
+
+variables:
+  buildConfiguration: debug
+
+jobs:
+
+#### Windows
+
+- job: windows
+  strategy:
+    matrix:
+      x64:
+        buildPlatform: x64
+      x86:
+        buildPlatform: x86
+
+  pool:
+    vmImage: windows-2019
+
+  steps:
+    
+  - task: gittools.gitversion.gitversion-task.GitVersion@4
+    displayName: GitVersion
+    inputs:
+      preferBundledVersion: false
+
+  - task: NuGetCommand@2
+    displayName: nuget restore native
+    inputs:
+      restoreSolution: Datadog.Trace.Native.sln
+      vstsFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: msbuild native
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:BuildCpp
+      maximumCpuCount: true
+
+  - task: DotNetCoreInstaller@0
+    displayName: install dotnet core sdk
+    inputs:
+      version: 2.1.700
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore
+    inputs:
+      command: restore
+      projects: src/**/*.csproj
+      vstsFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+      verbosityRestore: Normal
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      projects: src/**/*.csproj
+      arguments: --configuration $(buildConfiguration)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet pack
+    inputs:
+      command: pack
+      packagesToPack: src/**/*.csproj
+      packDirectory: $(Build.ArtifactStagingDirectory)/nuget
+
+  - task: PublishBuildArtifacts@1
+    displayName: publish nuget artifacts
+    inputs:
+      PathtoPublish: $(Build.ArtifactStagingDirectory)/nuget
+      ArtifactName: nuget
+
+  - task: MSBuild@1
+    displayName: msbuild msi
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%
+
+  - task: PublishBuildArtifacts@1
+    displayName: publish msi artifact
+    inputs:
+      PathtoPublish: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/en-us
+      ArtifactName: windows-msi
+
+#### Linux
+
+- job: linux
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  variables:
+    buildPlatform: x64
+
+  steps:
+  - task: DockerCompose@0
+    displayName: docker-compose run build
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run build
+
+  - task: DockerCompose@0
+    displayName: docker-compose run Datadog.Trace.ClrProfiler.Native
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run Datadog.Trace.ClrProfiler.Native
+
+  - task: DockerCompose@0
+    displayName: docker-compose run package
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run package
+
+  - task: PublishBuildArtifacts@1
+    displayName: publish artifacts
+    inputs:
+      PathtoPublish: deploy/linux
+      ArtifactName: linux
