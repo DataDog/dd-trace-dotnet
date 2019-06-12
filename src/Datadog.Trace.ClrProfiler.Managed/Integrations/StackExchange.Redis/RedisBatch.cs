@@ -9,7 +9,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     public static class RedisBatch
     {
         private const string IntegrationName = "StackExchangeRedis";
+        private const string RedisAssembly = "StackExchange.Redis";
+        private const string StrongNameRedisAssembly = "StackExchange.Redis.StrongName";
+        private const string RedisBaseTypeName = "StackExchange.Redis.RedisBase";
         private const string Major1 = "1";
+        private const string Major2 = "2";
 
         /// <summary>
         /// Execute an asynchronous redis operation.
@@ -23,20 +27,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
             Integration = IntegrationName,
-            CallerAssembly = "StackExchange.Redis",
-            TargetAssembly = "StackExchange.Redis",
-            TargetType = "StackExchange.Redis.RedisBase",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            CallerAssembly = RedisAssembly,
+            TargetAssembly = RedisAssembly,
+            TargetType = RedisBaseTypeName,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major1)]
+            TargetMaximumVersion = Major2)]
         [InterceptMethod(
             Integration = IntegrationName,
-            CallerAssembly = "StackExchange.Redis.StrongName",
-            TargetAssembly = "StackExchange.Redis.StrongName",
-            TargetType = "StackExchange.Redis.RedisBase",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            CallerAssembly = StrongNameRedisAssembly,
+            TargetAssembly = StrongNameRedisAssembly,
+            TargetType = RedisBaseTypeName,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major1)]
+            TargetMaximumVersion = Major2)]
         public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server, int opCode)
         {
             return ExecuteAsyncInternal<T>(redisBase, message, processor, server);

@@ -9,6 +9,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     public static class ConnectionMultiplexer
     {
         private const string IntegrationName = "StackExchangeRedis";
+        private const string RedisAssembly = "StackExchange.Redis";
+        private const string StrongNameRedisAssembly = "StackExchange.Redis.StrongName";
+        private const string ConnectionMultiplexerTypeName = "StackExchange.Redis.ConnectionMultiplexer";
         private const string Major1 = "1";
         private const string Major2 = "2";
 
@@ -24,18 +27,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>The result</returns>
         [InterceptMethod(
             Integration = IntegrationName,
-            CallerAssembly = "StackExchange.Redis",
-            TargetAssembly = "StackExchange.Redis",
-            TargetType = "StackExchange.Redis.ConnectionMultiplexer",
-            TargetSignatureTypes = new[] { "T", ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            CallerAssembly = RedisAssembly,
+            TargetAssembly = RedisAssembly,
+            TargetType = ConnectionMultiplexerTypeName,
+            TargetSignatureTypes = new[] { "T", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         [InterceptMethod(
             Integration = IntegrationName,
-            CallerAssembly = "StackExchange.Redis.StrongName",
-            TargetAssembly = "StackExchange.Redis.StrongName",
-            TargetType = "StackExchange.Redis.ConnectionMultiplexer",
-            TargetSignatureTypes = new[] { "T", ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            CallerAssembly = StrongNameRedisAssembly,
+            TargetAssembly = StrongNameRedisAssembly,
+            TargetType = ConnectionMultiplexerTypeName,
+            TargetSignatureTypes = new[] { "T", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server, int opCode)
@@ -81,18 +84,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
             Integration = IntegrationName,
-            CallerAssembly = "StackExchange.Redis",
-            TargetAssembly = "StackExchange.Redis",
-            TargetType = "StackExchange.Redis.ConnectionMultiplexer",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            CallerAssembly = RedisAssembly,
+            TargetAssembly = RedisAssembly,
+            TargetType = ConnectionMultiplexerTypeName,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "System.Object", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         [InterceptMethod(
             Integration = IntegrationName,
-            CallerAssembly = "StackExchange.Redis.StrongName",
-            TargetAssembly = "StackExchange.Redis.StrongName",
-            TargetType = "StackExchange.Redis.ConnectionMultiplexer",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            CallerAssembly = StrongNameRedisAssembly,
+            TargetAssembly = StrongNameRedisAssembly,
+            TargetType = ConnectionMultiplexerTypeName,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "System.Object", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server, int opCode)
