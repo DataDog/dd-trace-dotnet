@@ -571,8 +571,8 @@
           "signature_types": [
             "T",
             "System.Byte[][]",
-            "_",
-            "_",
+            "System.Func`1<T>",
+            "System.Action`1<System.Func`1<T>>",
             "System.Boolean"
           ],
           "minimum_major": 4,
@@ -604,9 +604,9 @@
           "method": "ExecuteSyncImpl",
           "signature_types": [
             "T",
-            "_",
-            "_",
-            "_"
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1<T>",
+            "StackExchange.Redis.ServerEndPoint"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -632,9 +632,9 @@
           "method": "ExecuteSyncImpl",
           "signature_types": [
             "T",
-            "_",
-            "_",
-            "_"
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1<T>",
+            "StackExchange.Redis.ServerEndPoint"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -659,11 +659,11 @@
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteAsyncImpl",
           "signature_types": [
-            "_",
-            "_",
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1<T>",
+            "System.Object",
+            "StackExchange.Redis.ServerEndPoint"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -688,11 +688,11 @@
           "type": "StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteAsyncImpl",
           "signature_types": [
-            "_",
-            "_",
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1<T>",
+            "System.Object",
+            "StackExchange.Redis.ServerEndPoint"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -717,15 +717,15 @@
           "type": "StackExchange.Redis.RedisBase",
           "method": "ExecuteAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1<T>",
+            "StackExchange.Redis.ServerEndPoint"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 1,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -745,15 +745,15 @@
           "type": "StackExchange.Redis.RedisBase",
           "method": "ExecuteAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<T>",
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1<T>",
+            "StackExchange.Redis.ServerEndPoint"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 1,
+          "maximum_major": 2,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
