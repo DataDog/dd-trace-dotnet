@@ -18,7 +18,7 @@
         "SampleProjectName": "Samples.Elasticsearch.V5",
         "NugetPackageSearchName": "Elasticsearch.Net",
         "MinVersion": "5.3.0",
-        "MaxVersionExclusive": "6.0.0",
+        "MaxVersionExclusive": "6.0.0"
     },
     {
         "IntegrationName": "Npgsql",
