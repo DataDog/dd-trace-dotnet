@@ -4,55 +4,55 @@
         "SampleProjectName": "Samples.MongoDB",
         "NugetPackageSearchName": "MongoDB.Driver",
         "MinVersion": "2.0.0",
-        "MaxVersion": "3.0.0"
+        "MaxVersionExclusive": "3.0.0"
     },
     {
         "IntegrationName": "ElasticSearch6",
         "SampleProjectName": "Samples.Elasticsearch",
         "NugetPackageSearchName": "Elasticsearch.Net",
         "MinVersion": "6.0.0",
-        "MaxVersion": "7.0.0"
+        "MaxVersionExclusive": "7.0.0"
     },
     {
         "IntegrationName": "ElasticSearch5",
         "SampleProjectName": "Samples.Elasticsearch.V5",
         "NugetPackageSearchName": "Elasticsearch.Net",
         "MinVersion": "5.3.0",
-        "MaxVersion": "6.0.0"
+        "MaxVersionExclusive": "6.0.0"
     },
     {
         "IntegrationName": "Npgsql",
         "SampleProjectName": "Samples.Npgsql",
         "NugetPackageSearchName": "Npgsql",
         "MinVersion": "4.0.0",
-        "MaxVersion": "5.0.0"
+        "MaxVersionExclusive": "5.0.0"
     },
     {
         "IntegrationName": "SqlServer",
         "SampleProjectName": "Samples.SqlServer",
         "NugetPackageSearchName": "Microsoft.EntityFrameworkCore.SqlServer",
         "MinVersion": "2.0.0",
-        "MaxVersion": "3.0.0"
+        "MaxVersionExclusive": "3.0.0"
     },
     {
         "IntegrationName": "StackExchangeRedis",
         "SampleProjectName": "Samples.StackExchange.Redis",
         "NugetPackageSearchName": "StackExchange.Redis",
         "MinVersion": "1.0.187",
-        "MaxVersion": "2.0.0"
+        "MaxVersionExclusive": "2.0.0"
     },
     {
         "IntegrationName": "ServiceStackRedis",
         "SampleProjectName": "Samples.ServiceStack.Redis",
         "NugetPackageSearchName": "ServiceStack.Redis",
         "MinVersion": "4.0.48",
-        "MaxVersion": "6.0.0"
+        "MaxVersionExclusive": "6.0.0"
     },
     {
         "IntegrationName": "AspNetCoreMvc2",
         "SampleProjectName": "Samples.AspNetCoreMvc2",
         "NugetPackageSearchName": "Microsoft.AspNetCore.Mvc",
         "MinVersion": "2.0.0",
-        "MaxVersion": "3.0.0"
+        "MaxVersionExclusive": "3.0.0"
     }
 ]
