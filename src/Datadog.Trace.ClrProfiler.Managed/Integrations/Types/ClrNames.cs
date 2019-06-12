@@ -19,5 +19,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string UInt16 = "System.UInt16";
         public const string UInt32 = "System.UInt32";
         public const string UInt64 = "System.UInt64";
+
+        public const string CancellationToken = "System.Threading.CancellationToken";
     }
 }
