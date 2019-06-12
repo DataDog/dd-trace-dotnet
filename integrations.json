@@ -293,8 +293,8 @@
           "type": "Elasticsearch.Net.IRequestPipeline",
           "method": "CallElasticsearch",
           "signature_types": [
-            "_",
-            "_"
+            "Elasticsearch.Net.ElasticsearchResponse`1<T>",
+            "Elasticsearch.Net.RequestData"
           ],
           "minimum_major": 5,
           "minimum_minor": 0,
@@ -319,9 +319,9 @@
           "type": "Elasticsearch.Net.IRequestPipeline",
           "method": "CallElasticsearchAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>",
+            "Elasticsearch.Net.RequestData",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 5,
           "minimum_minor": 0,
@@ -351,8 +351,8 @@
           "type": "Elasticsearch.Net.IRequestPipeline",
           "method": "CallElasticsearch",
           "signature_types": [
-            "_",
-            "_"
+            "T",
+            "Elasticsearch.Net.RequestData"
           ],
           "minimum_major": 6,
           "minimum_minor": 0,
@@ -377,9 +377,9 @@
           "type": "Elasticsearch.Net.IRequestPipeline",
           "method": "CallElasticsearchAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<T>",
+            "Elasticsearch.Net.RequestData",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 6,
           "minimum_minor": 0,

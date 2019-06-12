@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.UInt16, typeof(ushort) };
             yield return new object[] { ClrNames.UInt32, typeof(uint) };
             yield return new object[] { ClrNames.UInt64, typeof(ulong) };
+            yield return new object[] { ClrNames.CancellationToken, typeof(System.Threading.CancellationToken) };
         }
 
         [Fact]
