@@ -1,5 +1,5 @@
 trigger:
-  tags:
+  branches:
     include:
       - refs/tags/*
 pr: none
