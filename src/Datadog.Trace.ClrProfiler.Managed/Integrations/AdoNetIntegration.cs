@@ -28,13 +28,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
             TargetType = "System.Data.Common.DbCommand",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Data.Common", // .NET Core
             TargetType = "System.Data.Common.DbCommand",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReader(object @this, int behavior, int opCode)
@@ -72,13 +72,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
             TargetType = "System.Data.Common.DbCommand",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Data.Common", // .NET Core
             TargetType = "System.Data.Common.DbCommand",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReaderAsync(object @this, int behavior, object cancellationTokenSource, int opCode)
