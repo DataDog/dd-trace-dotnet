@@ -407,9 +407,9 @@
           "type": "System.Net.Http.HttpMessageHandler",
           "method": "SendAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -432,9 +432,9 @@
           "type": "System.Net.Http.HttpClientHandler",
           "method": "SendAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -806,7 +806,7 @@
           "type": "System.Net.WebRequest",
           "method": "GetResponse",
           "signature_types": [
-            "_"
+            "System.Net.WebResponse"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -829,7 +829,7 @@
           "type": "System.Net.WebRequest",
           "method": "GetResponse",
           "signature_types": [
-            "_"
+            "System.Net.WebResponse"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
