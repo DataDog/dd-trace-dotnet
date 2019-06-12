@@ -462,9 +462,9 @@
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol",
           "method": "Execute",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Void",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 2,
           "minimum_minor": 2,
@@ -487,9 +487,9 @@
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
           "method": "Execute",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "T",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 2,
           "minimum_minor": 2,
@@ -512,9 +512,9 @@
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol",
           "method": "ExecuteAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 2,
           "minimum_minor": 1,
@@ -537,9 +537,9 @@
           "type": "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1",
           "method": "ExecuteAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<T>",
+            "MongoDB.Driver.Core.Connections.IConnection",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 2,
           "minimum_minor": 1,
