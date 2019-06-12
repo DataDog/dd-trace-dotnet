@@ -454,7 +454,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       }
 
       auto is_match = true;
-      for (auto i = 0; i < expected_sig_types.size(); i++) {
+      for (size_t i = 0; i < expected_sig_types.size(); i++) {
         if (expected_sig_types[i] == "_"_W) {
           // We are supposed to ignore this index
           continue;

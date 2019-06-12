@@ -9,8 +9,8 @@
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReader",
           "signature_types": [
-            "_",
-            "_"
+            "System.Data.Common.DbDataReader",
+            "System.Data.CommandBehavior"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -33,8 +33,8 @@
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReader",
           "signature_types": [
-            "_",
-            "_"
+            "System.Data.Common.DbDataReader",
+            "System.Data.CommandBehavior"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -57,9 +57,9 @@
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReaderAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
+            "System.Data.CommandBehavior",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -82,9 +82,9 @@
           "type": "System.Data.Common.DbCommand",
           "method": "ExecuteDbDataReaderAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
+            "System.Data.CommandBehavior",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -114,7 +114,7 @@
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
           "method": "BeforeAction",
           "signature_types": [
-            "_",
+            "System.Void",
             "_",
             "_",
             "_",
@@ -143,7 +143,7 @@
           "type": "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
           "method": "AfterAction",
           "signature_types": [
-            "_",
+            "System.Void",
             "_",
             "_",
             "_",
