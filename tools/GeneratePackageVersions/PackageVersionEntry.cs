@@ -10,6 +10,6 @@ namespace GeneratePackageVersions
 
         public string MinVersion { get; set; }
 
-        public string MaxVersion { get; set; }
+        public string MaxVersionExclusive { get; set; }
     }
 }

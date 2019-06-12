@@ -38,22 +38,22 @@ namespace GeneratePackageVersions
                                                                      logger,
                                                                      CancellationToken.None);
 
-            SemanticVersion minSemanticVersion, maxSemanticVersion;
+            SemanticVersion minSemanticVersion, maxSemanticVersionExclusive;
 
             if (!SemanticVersion.TryParse(entry.MinVersion, out minSemanticVersion))
             {
                 throw new ArgumentException($"MinVersion {entry.MinVersion} in integration {entry.IntegrationName} could not be parsed into a NuGet Semantic Version");
             }
 
-            if (!SemanticVersion.TryParse(entry.MaxVersion, out maxSemanticVersion))
+            if (!SemanticVersion.TryParse(entry.MaxVersionExclusive, out maxSemanticVersionExclusive))
             {
-                throw new ArgumentException($"MaxVersion {entry.MaxVersion} in integration {entry.IntegrationName} could not be parsed into a NuGet Semantic Version");
+                throw new ArgumentException($"MaxVersion {entry.MaxVersionExclusive} in integration {entry.IntegrationName} could not be parsed into a NuGet Semantic Version");
             }
 
             List<string> packageVersions = new List<string>();
             foreach (var md in searchMetadata)
             {
-                if (md.Identity.HasVersion && md.Identity.Version.CompareTo(minSemanticVersion) >= 0 && md.Identity.Version.CompareTo(maxSemanticVersion) < 0)
+                if (md.Identity.HasVersion && md.Identity.Version.CompareTo(minSemanticVersion) >= 0 && md.Identity.Version.CompareTo(maxSemanticVersionExclusive) < 0)
                 {
                     packageVersions.Add(md.Identity.Version.ToNormalizedString());
                 }
