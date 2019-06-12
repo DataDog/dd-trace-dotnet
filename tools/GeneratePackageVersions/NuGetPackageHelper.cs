@@ -53,7 +53,7 @@ namespace GeneratePackageVersions
             List<string> packageVersions = new List<string>();
             foreach (var md in searchMetadata)
             {
-                if (md.Identity.HasVersion && md.Identity.Version.CompareTo(minSemanticVersion) >= 0 && md.Identity.Version.CompareTo(maxSemanticVersion) <= 0)
+                if (md.Identity.HasVersion && md.Identity.Version.CompareTo(minSemanticVersion) >= 0 && md.Identity.Version.CompareTo(maxSemanticVersion) < 0)
                 {
                     packageVersions.Add(md.Identity.Version.ToNormalizedString());
                 }
