@@ -18,7 +18,7 @@ Pipeline                        | Build Status
 --------------------------------|-------------
 C# unit tests (Windows & Linux) | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/managed-unit-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=24&branchName=develop)
 C++ unit tests (Windows)        | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/native-unit-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=25&branchName=develop)
-Integration tests (Linux)       | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/Linux/linux-integration-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=13&branchName=develop)
+Integration tests (Linux)       | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/integration-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=27&branchName=develop)
 
 # Development
 
