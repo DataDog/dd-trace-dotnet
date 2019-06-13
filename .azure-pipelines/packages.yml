@@ -71,13 +71,13 @@ jobs:
     inputs:
       command: pack
       packagesToPack: src/**/*.csproj
-      packDirectory: $(Build.ArtifactStagingDirectory)/nuget
+      packDirectory: nuget-output
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: publish nuget artifacts
     inputs:
-      PathtoPublish: $(Build.ArtifactStagingDirectory)/nuget
-      ArtifactName: nuget
+      artifactName: nuget
+      targetPath: nuget-output
 
   - task: MSBuild@1
     displayName: msbuild msi
@@ -87,11 +87,11 @@ jobs:
       configuration: $(buildConfiguration)
       msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: publish msi artifact
     inputs:
-      PathtoPublish: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/en-us
-      ArtifactName: windows-msi
+      artifactName: windows-msi
+      targetPath: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/en-us
 
 #### Linux
 
