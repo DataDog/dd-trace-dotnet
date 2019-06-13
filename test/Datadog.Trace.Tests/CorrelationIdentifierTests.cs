@@ -9,15 +9,21 @@ namespace Datadog.Trace.Tests
     public class CorrelationIdentifierTests
     {
         [Fact]
-        public void Ids_NonzeroWithActiveSpan_ZeroWithNoActiveSpan()
+        public void Ids_MatchWithActiveSpan_ZeroWithoutActiveSpan()
         {
-            var scope = Tracer.Instance.StartActive("ActiveSpan");
-            var span = scope.Span;
+            var parentScope = Tracer.Instance.StartActive("parent");
+            var parentSpan = parentScope.Span;
 
-            Assert.Equal<ulong>(span.SpanId, CorrelationIdentifier.SpanId);
-            Assert.Equal<ulong>(span.TraceId, CorrelationIdentifier.TraceId);
+            var childScope = Tracer.Instance.StartActive("child");
+            var childSpan = childScope.Span;
 
-            scope.Close();
+            Assert.Equal<ulong>(childSpan.SpanId, CorrelationIdentifier.SpanId);
+            Assert.Equal<ulong>(childSpan.TraceId, CorrelationIdentifier.TraceId);
+            childScope.Close();
+
+            Assert.Equal<ulong>(parentSpan.SpanId, CorrelationIdentifier.SpanId);
+            Assert.Equal<ulong>(parentSpan.TraceId, CorrelationIdentifier.TraceId);
+            parentScope.Close();
 
             Assert.Equal<ulong>(0, CorrelationIdentifier.SpanId);
             Assert.Equal<ulong>(0, CorrelationIdentifier.TraceId);
