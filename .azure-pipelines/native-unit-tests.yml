@@ -44,8 +44,8 @@ jobs:
       maximumCpuCount: true
 
   - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
+    displayName: run tests
     workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/$(buildPlatform)
-    displayName: Run C++ unit tests
 
   - task: PublishTestResults@2
     displayName: publish test results
