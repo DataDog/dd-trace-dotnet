@@ -49,7 +49,7 @@ jobs:
   - task: DotNetCoreInstaller@0
     displayName: install dotnet core sdk
     inputs:
-      version: 2.1.700
+      version: 2.2.300
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
