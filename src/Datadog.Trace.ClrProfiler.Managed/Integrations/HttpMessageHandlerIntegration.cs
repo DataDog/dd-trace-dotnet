@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class HttpMessageHandlerIntegration
     {
         private const string IntegrationName = "HttpMessageHandler";
+        private const string SystemNetHttp = "System.Net.Http";
         private const string Major4 = "4";
 
         /// <summary>
@@ -25,10 +26,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-            TargetAssembly = "System.Net.Http",
+            TargetAssembly = SystemNetHttp,
             TargetType = "System.Net.Http.HttpMessageHandler",
             TargetMethod = "SendAsync",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object HttpMessageHandler_SendAsync(
@@ -67,10 +68,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-            TargetAssembly = "System.Net.Http",
+            TargetAssembly = SystemNetHttp,
             TargetType = "System.Net.Http.HttpClientHandler",
             TargetMethod = "SendAsync",
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object HttpClientHandler_SendAsync(
