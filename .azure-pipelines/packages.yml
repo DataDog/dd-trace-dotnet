@@ -153,8 +153,8 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run package
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: publish artifacts
     inputs:
-      PathtoPublish: deploy/linux
-      ArtifactName: linux-packages
+      artifactName: linux-packages
+      targetPath: deploy/linux
