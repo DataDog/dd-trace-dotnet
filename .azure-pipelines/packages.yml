@@ -7,18 +7,21 @@ pr: none
 variables:
   buildConfiguration: debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+  dotnetCoreSdkVersion: 2.2.300
 
 jobs:
 
-#### Windows
+#### NuGet packages and Windows msi installer
 
-- job: windows
+- job: nuget_and_windows_msi
   strategy:
     matrix:
       x64:
         buildPlatform: x64
+        nugetPack: true
       x86:
         buildPlatform: x86
+        nugetPack: false
 
   pool:
     vmImage: windows-2019
@@ -49,7 +52,7 @@ jobs:
   - task: DotNetCoreInstaller@0
     displayName: install dotnet core sdk
     inputs:
-      version: 2.2.300
+      version: $(dotnetCoreSdkVersion)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
@@ -57,7 +60,6 @@ jobs:
       command: restore
       projects: src/**/*.csproj
       vstsFeed: $(packageFeed)
-      verbosityRestore: Normal
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
@@ -68,16 +70,19 @@ jobs:
 
   - task: DotNetCoreCLI@2
     displayName: dotnet pack
+    condition: eq(variables['nugetPack'], 'true')
     inputs:
       command: pack
+      configuration: $(buildConfiguration)
       packagesToPack: src/**/*.csproj
-      packDirectory: $(Build.ArtifactStagingDirectory)/nuget
+      packDirectory: nuget-output
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: publish nuget artifacts
+    condition: eq(variables['nugetPack'], 'true')
     inputs:
-      PathtoPublish: $(Build.ArtifactStagingDirectory)/nuget
-      ArtifactName: nuget
+      artifactName: nuget-packages
+      targetPath: nuget-output
 
   - task: MSBuild@1
     displayName: msbuild msi
@@ -87,26 +92,20 @@ jobs:
       configuration: $(buildConfiguration)
       msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: publish msi artifact
     inputs:
-      PathtoPublish: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/en-us
-      ArtifactName: windows-msi
+      artifactName: windows-msi-$(buildPlatform)
+      targetPath: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/en-us
 
-#### Linux
+#### Linux packages
 
-- job: linux
+- job: linux_packages
 
   pool:
     vmImage: ubuntu-16.04
 
   steps:
-  - task: DockerCompose@0
-    displayName: docker-compose run build
-    inputs:
-      containerregistrytype: Container Registry
-      dockerComposeCommand: run build
-
   - task: DockerCompose@0
     displayName: docker-compose run Datadog.Trace.ClrProfiler.Native
     inputs:
@@ -119,8 +118,8 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run package
 
-  - task: PublishBuildArtifacts@1
+  - task: PublishPipelineArtifact@0
     displayName: publish artifacts
     inputs:
-      PathtoPublish: deploy/linux
-      ArtifactName: linux
+      artifactName: linux-packages
+      targetPath: deploy/linux

@@ -21,12 +21,13 @@ pool:
 variables:
   buildConfiguration: debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+  dotnetCoreSdkVersion: 2.2.300
 
 steps:
 - task: DotNetCoreInstaller@0
   displayName: install dotnet core sdk
   inputs:
-    version: 2.2.300
+    version: $(dotnetCoreSdkVersion)
 
 - task: DotNetCoreCLI@2
   displayName: dotnet restore
@@ -36,7 +37,6 @@ steps:
      src/**/*.csproj
      test/**/*.Tests.csproj
     vstsFeed: $(packageFeed)
-    verbosityRestore: Normal
 
 - task: DotNetCoreCLI@2
   displayName: dotnet build
