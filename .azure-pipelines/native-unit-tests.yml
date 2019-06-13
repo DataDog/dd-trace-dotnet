@@ -1,8 +1,8 @@
 trigger:
+  batch: 'true'
   branches:
     include:
-      - master
-      - develop
+      - refs/heads/*
   paths:
     exclude:
       - docs/*
@@ -10,6 +10,7 @@ trigger:
 
 variables:
   buildConfiguration: debug
+  packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
 
 jobs:
 
@@ -30,7 +31,7 @@ jobs:
     displayName: nuget restore
     inputs:
       restoreSolution: Datadog.Trace.Native.sln
-      vstsFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+      vstsFeed: $(packageFeed)
       verbosityRestore: Normal
 
   - task: MSBuild@1
@@ -43,8 +44,8 @@ jobs:
       maximumCpuCount: true
 
   - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
+    displayName: run tests
     workingDirectory: $(System.DefaultWorkingDirectory)/test/Datadog.Trace.ClrProfiler.Native.Tests/bin/$(buildConfiguration)/$(buildPlatform)
-    displayName: Run C++ unit tests
 
   - task: PublishTestResults@2
     displayName: publish test results

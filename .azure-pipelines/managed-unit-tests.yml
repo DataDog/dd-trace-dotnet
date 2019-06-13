@@ -1,8 +1,8 @@
 trigger:
+  batch: 'true'
   branches:
     include:
-      - master
-      - develop
+      - refs/heads/*
   paths:
     exclude:
       - docs/*
@@ -20,12 +20,13 @@ pool:
 
 variables:
   buildConfiguration: debug
+  packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
 
 steps:
 - task: DotNetCoreInstaller@0
   displayName: install dotnet core sdk
   inputs:
-    version: 2.1.700
+    version: 2.2.300
 
 - task: DotNetCoreCLI@2
   displayName: dotnet restore
@@ -34,21 +35,21 @@ steps:
     projects: |
      src/**/*.csproj
      test/**/*.Tests.csproj
-    vstsFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+    vstsFeed: $(packageFeed)
     verbosityRestore: Normal
 
 - task: DotNetCoreCLI@2
   displayName: dotnet build
   inputs:
     command: build
+    configuration: $(buildConfiguration)
     projects: |
      src/**/*.csproj
      test/**/*.Tests.csproj
-    arguments: --configuration $(buildConfiguration)
 
 - task: DotNetCoreCLI@2
   displayName: dotnet test
   inputs:
     command: test
+    configuration: $(buildConfiguration)
     projects: test/**/*.Tests.csproj
-    arguments: --configuration $(buildConfiguration)
