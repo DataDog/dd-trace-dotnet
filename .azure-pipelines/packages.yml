@@ -11,9 +11,56 @@ variables:
 
 jobs:
 
-#### Windows
+#### Nuget packages
 
-- job: windows
+- job: nuget
+
+  pool:
+    vmImage: windows-2019
+
+  steps:
+    
+  - task: gittools.gitversion.gitversion-task.GitVersion@4
+    displayName: GitVersion
+    inputs:
+      preferBundledVersion: false
+
+  - task: DotNetCoreInstaller@0
+    displayName: install dotnet core sdk
+    inputs:
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore
+    inputs:
+      command: restore
+      projects: src/**/*.csproj
+      vstsFeed: $(packageFeed)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      projects: src/**/*.csproj
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet pack
+    inputs:
+      command: pack
+      configuration: $(buildConfiguration)
+      packagesToPack: src/**/*.csproj
+      packDirectory: nuget-output
+
+  - task: PublishPipelineArtifact@0
+    displayName: publish nuget artifacts
+    inputs:
+      artifactName: nuget-packages
+      targetPath: nuget-output
+
+#### Windows installer
+
+- job: msi
   strategy:
     matrix:
       x64:
@@ -58,7 +105,6 @@ jobs:
       command: restore
       projects: src/**/*.csproj
       vstsFeed: $(packageFeed)
-      verbosityRestore: Normal
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
@@ -66,19 +112,6 @@ jobs:
       command: build
       configuration: $(buildConfiguration)
       projects: src/**/*.csproj
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet pack
-    inputs:
-      command: pack
-      packagesToPack: src/**/*.csproj
-      packDirectory: nuget-output
-
-  - task: PublishPipelineArtifact@0
-    displayName: publish nuget artifacts
-    inputs:
-      artifactName: nuget
-      targetPath: nuget-output
 
   - task: MSBuild@1
     displayName: msbuild msi
@@ -91,10 +124,10 @@ jobs:
   - task: PublishPipelineArtifact@0
     displayName: publish msi artifact
     inputs:
-      artifactName: windows-msi
+      artifactName: windows-msi-$(buildPlatform)
       targetPath: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/en-us
 
-#### Linux
+#### Linux packages
 
 - job: linux
 
@@ -124,4 +157,4 @@ jobs:
     displayName: publish artifacts
     inputs:
       PathtoPublish: deploy/linux
-      ArtifactName: linux
+      ArtifactName: linux-packages
