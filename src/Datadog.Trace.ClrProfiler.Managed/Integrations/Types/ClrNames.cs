@@ -22,5 +22,8 @@ namespace Datadog.Trace.ClrProfiler
 
         public const string Task = "System.Threading.Tasks.Task";
         public const string CancellationToken = "System.Threading.CancellationToken";
+        // ReSharper disable once InconsistentNaming
+        public const string IAsyncResult = "System.IAsyncResult";
+        public const string AsyncCallback = "System.AsyncCallback";
     }
 }

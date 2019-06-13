@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly IisFixture _iisFixture;
 
         public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output)
-            : base("AspNetMvc5", output)
+            : base("AspNetMvc5", "samples-aspnet", output)
         {
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);

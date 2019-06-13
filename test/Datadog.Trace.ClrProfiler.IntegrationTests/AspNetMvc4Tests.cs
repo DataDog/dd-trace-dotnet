@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [InlineData("/Home/Index", "GET home.index")]
+        [InlineData("/Home/Index", "GET /home/index")]
         public async Task SubmitsTraces(
             string path,
             string expectedResourceName)
