@@ -136,12 +136,6 @@ jobs:
 
   steps:
   - task: DockerCompose@0
-    displayName: docker-compose run build
-    inputs:
-      containerregistrytype: Container Registry
-      dockerComposeCommand: run build
-
-  - task: DockerCompose@0
     displayName: docker-compose run Datadog.Trace.ClrProfiler.Native
     inputs:
       containerregistrytype: Container Registry
