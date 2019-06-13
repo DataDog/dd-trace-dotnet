@@ -63,8 +63,8 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
+      configuration: $(buildConfiguration)
       projects: src/**/*.csproj
-      arguments: --configuration $(buildConfiguration)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet pack
