@@ -100,9 +100,6 @@ jobs:
   pool:
     vmImage: ubuntu-16.04
 
-  variables:
-    buildPlatform: x64
-
   steps:
   - task: DockerCompose@0
     displayName: docker-compose run build
