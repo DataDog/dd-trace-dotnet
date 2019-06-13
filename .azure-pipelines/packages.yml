@@ -11,62 +11,17 @@ variables:
 
 jobs:
 
-#### Nuget packages
+#### NuGet packages and Windows msi installer
 
-- job: nuget
-
-  pool:
-    vmImage: windows-2019
-
-  steps:
-    
-  - task: gittools.gitversion.gitversion-task.GitVersion@4
-    displayName: GitVersion
-    inputs:
-      preferBundledVersion: false
-
-  - task: DotNetCoreInstaller@0
-    displayName: install dotnet core sdk
-    inputs:
-      version: $(dotnetCoreSdkVersion)
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet restore
-    inputs:
-      command: restore
-      projects: src/**/*.csproj
-      vstsFeed: $(packageFeed)
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build
-    inputs:
-      command: build
-      configuration: $(buildConfiguration)
-      projects: src/**/*.csproj
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet pack
-    inputs:
-      command: pack
-      configuration: $(buildConfiguration)
-      packagesToPack: src/**/*.csproj
-      packDirectory: nuget-output
-
-  - task: PublishPipelineArtifact@0
-    displayName: publish nuget artifacts
-    inputs:
-      artifactName: nuget-packages
-      targetPath: nuget-output
-
-#### Windows installer
-
-- job: msi
+- job: nuget_and_windows_msi
   strategy:
     matrix:
       x64:
         buildPlatform: x64
+        nugetPack: true
       x86:
         buildPlatform: x86
+        nugetPack: false
 
   pool:
     vmImage: windows-2019
@@ -113,6 +68,22 @@ jobs:
       configuration: $(buildConfiguration)
       projects: src/**/*.csproj
 
+  - task: DotNetCoreCLI@2
+    displayName: dotnet pack
+    condition: $(nugetPack)
+    inputs:
+      command: pack
+      configuration: $(buildConfiguration)
+      packagesToPack: src/**/*.csproj
+      packDirectory: nuget-output
+
+  - task: PublishPipelineArtifact@0
+    displayName: publish nuget artifacts
+    condition: $(nugetPack)
+    inputs:
+      artifactName: nuget-packages
+      targetPath: nuget-output
+
   - task: MSBuild@1
     displayName: msbuild msi
     inputs:
@@ -129,7 +100,7 @@ jobs:
 
 #### Linux packages
 
-- job: linux
+- job: linux_packages
 
   pool:
     vmImage: ubuntu-16.04
