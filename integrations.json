@@ -203,11 +203,11 @@
           "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
           "method": "BeginInvokeAction",
           "signature_types": [
-            "_",
-            "_",
-            "_",
-            "_",
-            "_"
+            "System.IAsyncResult",
+            "System.Web.Mvc.ControllerContext",
+            "System.String",
+            "System.AsyncCallback",
+            "System.Object"
           ],
           "minimum_major": 5,
           "minimum_minor": 1,
@@ -233,7 +233,7 @@
           "method": "EndInvokeAction",
           "signature_types": [
             "System.Boolean",
-            "_"
+            "System.IAsyncResult"
           ],
           "minimum_major": 5,
           "minimum_minor": 1,

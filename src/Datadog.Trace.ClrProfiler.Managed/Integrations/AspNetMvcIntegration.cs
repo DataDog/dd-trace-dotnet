@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -83,7 +84,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                         if (route != null)
                         {
-                            resourceName = $"{httpMethod} {route.Url.ToLowerInvariant()}";
+                            var resourceUrl = route.Url.ToLowerInvariant();
+                            if (resourceUrl.First() != '/')
+                            {
+                                resourceUrl = string.Concat("/", resourceUrl);
+                            }
+
+                            resourceName = $"{httpMethod} {resourceUrl}";
                         }
                     }
                 }
@@ -164,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = AssemblyName,
             TargetAssembly = AssemblyName,
             TargetType = AsyncActionInvokerTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.IAsyncResult, "System.Web.Mvc.ControllerContext", ClrNames.String, ClrNames.AsyncCallback, ClrNames.Object },
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
         public static object BeginInvokeAction(
@@ -219,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = AssemblyName,
             TargetAssembly = AssemblyName,
             TargetType = AsyncActionInvokerTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Bool, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Bool, ClrNames.IAsyncResult },
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
         public static bool EndInvokeAction(object asyncControllerActionInvoker, object asyncResult, int opCode)

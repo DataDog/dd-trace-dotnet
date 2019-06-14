@@ -22,9 +22,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("Integration", nameof(Integrations.AspNetMvcIntegration))]
-        [InlineData("/Home/Index", "GET", "home/index")]
-        [InlineData("/delay/0", "GET", "home/delay/{seconds}")]
-        [InlineData("/delay-async/0", "GET", "home/delayasync/{seconds}")]
+        [InlineData("/Home/Index", "GET", "/home/index")]
+        [InlineData("/delay/0", "GET", "/delay/{seconds}")]
+        [InlineData("/delay-async/0", "GET", "/delay-async/{seconds}")]
         public async Task SubmitsTraces(
             string path,
             string expectedVerb,

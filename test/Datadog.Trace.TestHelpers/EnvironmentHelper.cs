@@ -155,6 +155,8 @@ namespace Datadog.Trace.TestHelpers
             string processPath,
             StringDictionary environmentVariables)
         {
+            var processName = processPath;
+
             if (IsCoreClr())
             {
                 environmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
@@ -166,9 +168,11 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["COR_ENABLE_PROFILING"] = "1";
                 environmentVariables["COR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
                 environmentVariables["COR_PROFILER_PATH"] = GetProfilerPath();
+
+                processName = Path.GetFileName(processPath);
             }
 
-            environmentVariables["DD_PROFILER_PROCESSES"] = processPath;
+            environmentVariables["DD_PROFILER_PROCESSES"] = processName;
 
             string integrations = string.Join(";", GetIntegrationsFilePaths());
             environmentVariables["DD_INTEGRATIONS"] = integrations;
@@ -178,7 +182,7 @@ namespace Datadog.Trace.TestHelpers
             // for ASP.NET Core sample apps, set the server's port
             environmentVariables["ASPNETCORE_URLS"] = $"http://localhost:{aspNetCorePort}/";
 
-            foreach (var name in new string[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
+            foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {
                 var value = Environment.GetEnvironmentVariable(name);
                 if (!string.IsNullOrEmpty(value))
