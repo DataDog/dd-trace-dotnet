@@ -229,6 +229,10 @@ namespace Datadog.Trace
             _agentWriter.WriteTrace(trace);
         }
 
+        /// <summary>
+        /// Adds the specified ScopeListener to the ScopeManager
+        /// </summary>
+        /// <param name="listener">ScopeListener that responds to scope activation and closing.</param>
         void IDatadogTracer.AddScopeListener(IScopeListener listener)
         {
             _scopeManager.AddScopeListener(listener);
