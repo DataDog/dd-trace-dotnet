@@ -2,8 +2,8 @@ namespace Datadog.Trace
 {
     internal interface IScopeListener
     {
-        void AfterScopeActivated();
+        void AfterScopeActivated(Scope scope);
 
-        void AfterScopeClosed();
+        void AfterScopeClosed(Scope scope);
     }
 }
