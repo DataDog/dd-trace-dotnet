@@ -11,10 +11,53 @@ trigger:
 variables:
   buildConfiguration: debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+  dotnetCoreSdkVersion: 2.2.300
 
 jobs:
 
-- job: windows
+- job: managed
+  strategy:
+    matrix:
+      windows:
+        imageName: windows-2019
+      linux:
+        imageName: ubuntu-16.04
+
+  pool:
+    vmImage: $(imageName)
+
+  steps:
+  - task: DotNetCoreInstaller@0
+    displayName: install dotnet core sdk
+    inputs:
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore
+    inputs:
+      command: restore
+      projects: |
+        src/**/*.csproj
+        test/**/*.Tests.csproj
+      vstsFeed: $(packageFeed)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      projects: |
+        src/**/*.csproj
+        test/**/*.Tests.csproj
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/**/*.Tests.csproj
+
+- job: native_windows
   strategy:
     matrix:
       x64:
@@ -26,7 +69,6 @@ jobs:
     vmImage: windows-2019
 
   steps:
-
   - task: NuGetCommand@2
     displayName: nuget restore
     inputs:
