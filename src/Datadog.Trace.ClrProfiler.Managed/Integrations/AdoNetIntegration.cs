@@ -49,14 +49,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             using (var scope = CreateScope(command))
             {
-                try
+                using (LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, CorrelationIdentifier.TraceId, destructure: false))
                 {
-                    return executeReader(command, commandBehavior);
-                }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
-                {
-                    // unreachable code
-                    throw;
+                    using (LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, CorrelationIdentifier.SpanId, destructure: false))
+                    {
+                        try
+                        {
+                            return executeReader(command, commandBehavior);
+                        }
+                        catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                        {
+                            // unreachable code
+                            throw;
+                        }
+                    }
                 }
             }
         }
@@ -101,14 +107,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             using (var scope = CreateScope(command))
             {
-                try
+                using (LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, CorrelationIdentifier.TraceId, destructure: false))
                 {
-                    return await executeReader(command, behavior, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
-                {
-                    // unreachable code
-                    throw;
+                    using (LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, CorrelationIdentifier.SpanId, destructure: false))
+                    {
+                        try
+                        {
+                            return await executeReader(command, behavior, cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                        {
+                            // unreachable code
+                            throw;
+                        }
+                    }
                 }
             }
         }
