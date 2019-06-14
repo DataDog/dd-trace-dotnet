@@ -25,7 +25,7 @@ namespace Datadog.Trace
         {
             foreach (IScopeListener listener in _scopeListeners)
             {
-                listener.AfterScopeClosed(scope);
+                listener.OnScopeClosed(scope);
             }
 
             var current = _activeScope.Get();
@@ -48,7 +48,7 @@ namespace Datadog.Trace
 
             foreach (IScopeListener listener in _scopeListeners)
             {
-                listener.AfterScopeActivated(scope);
+                listener.OnScopeActivated(scope);
             }
         }
     }

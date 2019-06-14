@@ -10,7 +10,7 @@ namespace Datadog.Trace.Logging
         private IDisposable _activeTraceContext;
         private IDisposable _activeSpanContext;
 
-        public void AfterScopeActivated(Scope scope)
+        public void OnScopeActivated(Scope scope)
         {
             // Dispose of the previous contents since that scope is no longer active
             _activeTraceContext?.Dispose();
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Logging
             _activeSpanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, CorrelationIdentifier.SpanId, destructure: false);
         }
 
-        public void AfterScopeClosed(Scope scope)
+        public void OnScopeClosed(Scope scope)
         {
             if (_activeScope.Equals(scope))
             {

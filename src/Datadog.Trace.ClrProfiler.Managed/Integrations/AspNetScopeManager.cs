@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             foreach (IScopeListener listener in _scopeListeners)
             {
-                listener.AfterScopeClosed(scope);
+                listener.OnScopeClosed(scope);
             }
 
             var current = Active;
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             foreach (IScopeListener listener in _scopeListeners)
             {
-                listener.AfterScopeActivated(scope);
+                listener.OnScopeActivated(scope);
             }
         }
     }
