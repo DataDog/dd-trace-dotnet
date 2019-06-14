@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Void, "System.Diagnostics.DiagnosticListener", "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static void BeforeAction(
@@ -215,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Void, "System.Diagnostics.DiagnosticListener", "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static void AfterAction(
