@@ -17,7 +17,7 @@ namespace Datadog.Trace
         {
             var activeScope = _activeScope.Get();
             var scope = new Scope(activeScope, span, this, finishOnClose);
-
+            SetScope(scope);
             return scope;
         }
 

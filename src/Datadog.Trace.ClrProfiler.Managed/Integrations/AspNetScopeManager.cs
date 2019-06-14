@@ -58,7 +58,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             _scopeListeners.Add(listener);
         }
 
-
         private void SetScope(Scope scope)
         {
             var httpContext = HttpContext.Current;
