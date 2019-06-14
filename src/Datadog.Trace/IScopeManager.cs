@@ -6,6 +6,8 @@ namespace Datadog.Trace
 
         Scope Activate(Span span, bool finishOnClose);
 
+        void AddScopeListener(IScopeListener listener);
+
         void Close(Scope scope);
     }
 }

@@ -65,6 +65,13 @@ namespace Datadog.Trace
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
+
+            // If configured, add/remove the correlation identifiers into the
+            // LibLog logging context when a scope is activated/closed
+            if (Settings.LogsInjectionEnabled)
+            {
+                _scopeManager.AddScopeListener(new LibLogCorrelationIdentifierScopeListener());
+            }
         }
 
         /// <summary>
@@ -220,6 +227,11 @@ namespace Datadog.Trace
         void IDatadogTracer.Write(List<Span> trace)
         {
             _agentWriter.WriteTrace(trace);
+        }
+
+        void IDatadogTracer.AddScopeListener(IScopeListener listener)
+        {
+            _scopeManager.AddScopeListener(listener);
         }
 
         /// <summary>

@@ -17,5 +17,7 @@ namespace Datadog.Trace
         Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
 
         void Write(List<Span> span);
+
+        void AddScopeListener(IScopeListener listener);
     }
 }

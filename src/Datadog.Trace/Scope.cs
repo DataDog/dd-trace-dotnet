@@ -39,12 +39,12 @@ namespace Datadog.Trace
         /// </summary>
         public void Close()
         {
-            _scopeManager.Close(this);
-
             if (_finishOnClose)
             {
                 Span.Finish();
             }
+
+            _scopeManager.Close(this);
         }
 
         /// <summary>
