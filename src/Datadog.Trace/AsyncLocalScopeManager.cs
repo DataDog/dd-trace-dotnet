@@ -37,7 +37,7 @@ namespace Datadog.Trace
             }
         }
 
-        public void AddScopeListener(IScopeListener listener)
+        public void RegisterScopeListener(IScopeListener listener)
         {
             _scopeListeners.Add(listener);
         }

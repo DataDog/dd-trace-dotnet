@@ -18,6 +18,6 @@ namespace Datadog.Trace
 
         void Write(List<Span> span);
 
-        void AddScopeListener(IScopeListener listener);
+        void RegisterScopeListener(IScopeListener listener);
     }
 }
