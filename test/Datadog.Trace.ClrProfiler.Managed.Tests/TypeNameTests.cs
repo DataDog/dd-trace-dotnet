@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.Task, typeof(Task) };
             yield return new object[] { ClrNames.IAsyncResult, typeof(IAsyncResult) };
             yield return new object[] { ClrNames.AsyncCallback, typeof(AsyncCallback) };
-            yield return new object[] { ClrNames.HttpResponseMessageTask, typeof(Task<HttpResponseMessage>) };
+            yield return new object[] { ClrNames.HttpResponseMessageTask, "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>" }; // Generic full names have square brackets
         }
 
         [Fact]
