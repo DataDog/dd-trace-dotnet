@@ -4,25 +4,36 @@ namespace Datadog.Trace.Logging
 {
     internal class LibLogCorrelationIdentifierScopeListener : IScopeListener, IDisposable
     {
-        private IDisposable _traceContext;
-        private IDisposable _spanContext;
+        // Keep track of the active Scope (and its corresponding logging contexts)
+        // so if another Scope is closed, no changes are made
+        private Scope _activeScope;
+        private IDisposable _activeTraceContext;
+        private IDisposable _activeSpanContext;
 
         public void AfterScopeActivated(Scope scope)
         {
-            _traceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, CorrelationIdentifier.TraceId, destructure: false);
-            _spanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, CorrelationIdentifier.SpanId, destructure: false);
+            // Dispose of the previous contents since that scope is no longer active
+            _activeTraceContext?.Dispose();
+            _activeSpanContext?.Dispose();
+
+            _activeScope = scope;
+            _activeTraceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, CorrelationIdentifier.TraceId, destructure: false);
+            _activeSpanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, CorrelationIdentifier.SpanId, destructure: false);
         }
 
         public void AfterScopeClosed(Scope scope)
         {
-            _traceContext?.Dispose();
-            _spanContext?.Dispose();
+            if (_activeScope.Equals(scope))
+            {
+                _activeTraceContext?.Dispose();
+                _activeSpanContext?.Dispose();
+            }
         }
 
         public void Dispose()
         {
-            _traceContext?.Dispose();
-            _spanContext?.Dispose();
+            _activeTraceContext?.Dispose();
+            _activeSpanContext?.Dispose();
         }
     }
 }
