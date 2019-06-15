@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 
@@ -23,17 +24,24 @@ namespace Datadog.Trace
 
         public void Close(Scope scope)
         {
-            foreach (IScopeListener listener in _scopeListeners)
-            {
-                listener.OnScopeClosed(scope);
-            }
-
             var current = _activeScope.Get();
             if (current != null && current == scope)
             {
                 // if the scope that was just closed was the active scope,
                 // set its parent as the new active scope
                 _activeScope.Set(current.Parent);
+            }
+
+            foreach (IScopeListener listener in _scopeListeners)
+            {
+                try
+                {
+                    listener.OnScopeClosed(scope);
+                }
+                catch (Exception ex)
+                {
+                    Log.ErrorException("Error calling OnScopeClosed callback.", ex);
+                }
             }
         }
 
@@ -48,7 +56,14 @@ namespace Datadog.Trace
 
             foreach (IScopeListener listener in _scopeListeners)
             {
-                listener.OnScopeActivated(scope);
+                try
+                {
+                    listener.OnScopeActivated(scope);
+                }
+                catch (Exception ex)
+                {
+                    Log.ErrorException("Error calling OnScopeActivated callback.", ex);
+                }
             }
         }
     }
