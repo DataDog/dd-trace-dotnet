@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "AspNetCoreMvc2";
         private const string OperationName = "aspnet-coremvc.request";
         private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
+        private const string AspnetMvcCore = "Microsoft.AspNetCore.Mvc.Core";
         private const string Major2 = "2";
 
         /// <summary>
@@ -138,10 +139,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="routeData">A RouteData with information about the current route.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         [InterceptMethod(
-            CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            CallerAssembly = AspnetMvcCore,
+            TargetAssembly = AspnetMvcCore,
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-            TargetSignatureTypes = new[] { ClrNames.Void, "System.Diagnostics.DiagnosticListener", "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static void BeforeAction(
@@ -212,10 +213,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="routeData">A RouteData with information about the current route.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         [InterceptMethod(
-            CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            CallerAssembly = AspnetMvcCore,
+            TargetAssembly = AspnetMvcCore,
             TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
-            TargetSignatureTypes = new[] { ClrNames.Void, "System.Diagnostics.DiagnosticListener", "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
         public static void AfterAction(
@@ -285,8 +286,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         [InterceptMethod(
-            CallerAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            CallerAssembly = AspnetMvcCore,
+            TargetAssembly = AspnetMvcCore,
             TargetType = ResourceInvoker,
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore },
             TargetMinimumVersion = Major2,

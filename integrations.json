@@ -115,7 +115,7 @@
           "method": "BeforeAction",
           "signature_types": [
             "System.Void",
-            "System.Diagnostics.DiagnosticListener",
+            "_",
             "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
             "Microsoft.AspNetCore.Http.HttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"
@@ -144,7 +144,7 @@
           "method": "AfterAction",
           "signature_types": [
             "System.Void",
-            "System.Diagnostics.DiagnosticListener",
+            "_",
             "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
             "Microsoft.AspNetCore.Http.HttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"
