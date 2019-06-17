@@ -24,8 +24,8 @@ namespace Datadog.Trace.Logging
             _activeSpanContext?.Dispose();
 
             _activeScope = scopeEventArgs.Scope;
-            _activeTraceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, CorrelationIdentifier.TraceId, destructure: false);
-            _activeSpanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, CorrelationIdentifier.SpanId, destructure: false);
+            _activeTraceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, _activeScope.Span.TraceId, destructure: false);
+            _activeSpanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, _activeScope.Span.SpanId, destructure: false);
         }
 
         public void OnScopeDeactivated(object sender, ScopeEventArgs scopeEventArgs)
