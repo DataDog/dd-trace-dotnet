@@ -70,7 +70,7 @@ namespace Datadog.Trace
             // LibLog logging context when a scope is activated/closed
             if (Settings.LogsInjectionEnabled)
             {
-                new LibLogCorrelationIdentifierScopeSubscriber(_scopeManager);
+                InjectLibLogScopeEventSubscriber(_scopeManager);
             }
         }
 
@@ -267,6 +267,11 @@ namespace Datadog.Trace
                 Log.ErrorException("Error creating default service name.", ex);
                 return null;
             }
+        }
+
+        private void InjectLibLogScopeEventSubscriber(IScopeManager scopeManager)
+        {
+            new LibLogScopeEventSubscriber(scopeManager);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)

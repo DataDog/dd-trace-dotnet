@@ -2,7 +2,7 @@ using System;
 
 namespace Datadog.Trace.Logging
 {
-    internal class LibLogCorrelationIdentifierScopeSubscriber : IDisposable
+    internal class LibLogScopeEventSubscriber : IDisposable
     {
         // Keep track of the active Scope (and its corresponding logging contexts)
         // so if another Scope is deactivated (not the active Scope), no
@@ -12,7 +12,7 @@ namespace Datadog.Trace.Logging
         private IDisposable _activeTraceContext;
         private IDisposable _activeSpanContext;
 
-        public LibLogCorrelationIdentifierScopeSubscriber(IScopeManager scopeManager)
+        public LibLogScopeEventSubscriber(IScopeManager scopeManager)
         {
             _scopeManager = scopeManager;
             _scopeManager.ScopeActivated += OnScopeActivated;
