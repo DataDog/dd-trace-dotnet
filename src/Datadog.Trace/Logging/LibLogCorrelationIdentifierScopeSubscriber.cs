@@ -7,14 +7,16 @@ namespace Datadog.Trace.Logging
         // Keep track of the active Scope (and its corresponding logging contexts)
         // so if another Scope is deactivated (not the active Scope), no
         // changes are made
+        private IScopeManager _scopeManager;
         private Scope _activeScope;
         private IDisposable _activeTraceContext;
         private IDisposable _activeSpanContext;
 
         public LibLogCorrelationIdentifierScopeSubscriber(IScopeManager scopeManager)
         {
-            scopeManager.ScopeActivated += OnScopeActivated;
-            scopeManager.ScopeDeactivated += OnScopeDeactivated;
+            _scopeManager = scopeManager;
+            _scopeManager.ScopeActivated += OnScopeActivated;
+            _scopeManager.ScopeDeactivated += OnScopeDeactivated;
         }
 
         public void OnScopeActivated(object sender, ScopeEventArgs scopeEventArgs)
@@ -39,6 +41,9 @@ namespace Datadog.Trace.Logging
 
         public void Dispose()
         {
+            _scopeManager.ScopeActivated -= OnScopeActivated;
+            _scopeManager.ScopeDeactivated -= OnScopeDeactivated;
+
             _activeTraceContext?.Dispose();
             _activeSpanContext?.Dispose();
         }
