@@ -50,6 +50,11 @@ services:
     environment:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
+    
+  wcfservice:
+    image: mcr.microsoft.com/dotnet/framework/wcf:4.8
+    ports:
+    - "127.0.0.1:8585:8585"
 
   build:
     build:
