@@ -5,7 +5,8 @@ namespace Datadog.Trace.Logging
     internal class LibLogCorrelationIdentifierScopeSubscriber : IDisposable
     {
         // Keep track of the active Scope (and its corresponding logging contexts)
-        // so if another Scope is closed, no changes are made
+        // so if another Scope is deactivated (not the active Scope), no
+        // changes are made
         private Scope _activeScope;
         private IDisposable _activeTraceContext;
         private IDisposable _activeSpanContext;
@@ -18,7 +19,6 @@ namespace Datadog.Trace.Logging
 
         public void OnScopeActivated(object sender, ScopeEventArgs scopeEventArgs)
         {
-            // Scope scope
             // Dispose of the previous contents since that scope is no longer active
             _activeTraceContext?.Dispose();
             _activeSpanContext?.Dispose();
