@@ -116,9 +116,9 @@
           "signature_types": [
             "System.Void",
             "_",
-            "_",
-            "_",
-            "_"
+            "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
+            "Microsoft.AspNetCore.Http.HttpContext",
+            "Microsoft.AspNetCore.Routing.RouteData"
           ],
           "minimum_major": 2,
           "minimum_minor": 0,
@@ -145,9 +145,9 @@
           "signature_types": [
             "System.Void",
             "_",
-            "_",
-            "_",
-            "_"
+            "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
+            "Microsoft.AspNetCore.Http.HttpContext",
+            "Microsoft.AspNetCore.Routing.RouteData"
           ],
           "minimum_major": 2,
           "minimum_minor": 0,
@@ -261,9 +261,9 @@
           "type": "System.Web.Http.Controllers.IHttpController",
           "method": "ExecuteAsync",
           "signature_types": [
-            "_",
-            "_",
-            "_"
+            "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
+            "System.Web.Http.Controllers.HttpControllerContext",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 5,
           "minimum_minor": 2,
@@ -852,7 +852,7 @@
           "type": "System.Net.WebRequest",
           "method": "GetResponseAsync",
           "signature_types": [
-            "_"
+            "System.Threading.Tasks.Task`1<System.Net.WebResponse>"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
