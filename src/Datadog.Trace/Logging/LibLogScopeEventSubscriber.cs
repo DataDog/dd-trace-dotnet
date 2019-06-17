@@ -21,9 +21,9 @@ namespace Datadog.Trace.Logging
 
         public void OnScopeActivated(object sender, ScopeEventArgs scopeEventArgs)
         {
-            // Dispose of the previous contents since that scope is no longer active
-            _activeTraceContext?.Dispose();
+            // Contexts MUST be closed in reverse order of opening
             _activeSpanContext?.Dispose();
+            _activeTraceContext?.Dispose();
 
             _activeScope = scopeEventArgs.Scope;
             _activeTraceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, _activeScope.Span.TraceId, destructure: false);
@@ -32,10 +32,11 @@ namespace Datadog.Trace.Logging
 
         public void OnScopeDeactivated(object sender, ScopeEventArgs scopeEventArgs)
         {
-            if (_activeScope.Equals(scopeEventArgs.Scope))
+            if (_activeScope != null && _activeScope.Equals(scopeEventArgs.Scope))
             {
-                _activeTraceContext?.Dispose();
+                // Contexts MUST be closed in reverse order of opening
                 _activeSpanContext?.Dispose();
+                _activeTraceContext?.Dispose();
             }
         }
 
@@ -44,8 +45,9 @@ namespace Datadog.Trace.Logging
             _scopeManager.ScopeActivated -= OnScopeActivated;
             _scopeManager.ScopeDeactivated -= OnScopeDeactivated;
 
-            _activeTraceContext?.Dispose();
+            // Contexts MUST be closed in reverse order of opening
             _activeSpanContext?.Dispose();
+            _activeTraceContext?.Dispose();
         }
     }
 }
