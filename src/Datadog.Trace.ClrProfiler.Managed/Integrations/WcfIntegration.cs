@@ -8,7 +8,7 @@ using Datadog.Trace.ClrProfiler.Models;
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    ///     WcfIntegration
+    /// WcfIntegration
     /// </summary>
     public static class WcfIntegration
     {
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.ServiceModel",
             TargetType = "System.ServiceModel.Dispatcher.ChannelHandler",
-            TargetSignatureTypes = new[] { ClrNames.Bool, ClrNames.Ignore, ClrNames.Ignore },
+            TargetSignatureTypes = new[] { ClrNames.Bool, "System.ServiceModel.Channels.RequestContext", "System.ServiceModel.OperationContext" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static bool HandleRequest(object thisObj, object requestContext, object currentOperationContext, int opCode)

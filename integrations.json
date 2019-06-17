@@ -777,8 +777,8 @@
           "method": "HandleRequest",
           "signature_types": [
             "System.Boolean",
-            "_",
-            "_"
+            "System.ServiceModel.Channels.RequestContext",
+            "System.ServiceModel.OperationContext"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
