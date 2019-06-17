@@ -62,7 +62,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // set its parent as the new active scope
                 SetScope(current.Parent);
                 ScopeDeactivated?.Invoke(this, new ScopeEventArgs(current));
-                ScopeActivated?.Invoke(this, new ScopeEventArgs(current.Parent));
+
+                if (current.Parent != null)
+                {
+                    ScopeActivated?.Invoke(this, new ScopeEventArgs(current.Parent));
+                }
             }
 
             ScopeClosed?.Invoke(this, new ScopeEventArgs(scope));
