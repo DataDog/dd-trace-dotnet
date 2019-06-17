@@ -70,7 +70,7 @@ namespace Datadog.Trace
             // LibLog logging context when a scope is activated/closed
             if (Settings.LogsInjectionEnabled)
             {
-                _scopeManager.RegisterScopeListener(new LibLogCorrelationIdentifierScopeListener());
+                new LibLogCorrelationIdentifierScopeSubscriber(_scopeManager);
             }
         }
 
@@ -227,15 +227,6 @@ namespace Datadog.Trace
         void IDatadogTracer.Write(List<Span> trace)
         {
             _agentWriter.WriteTrace(trace);
-        }
-
-        /// <summary>
-        /// Adds the specified ScopeListener to the ScopeManager
-        /// </summary>
-        /// <param name="listener">ScopeListener that responds to scope activation and closing.</param>
-        void IDatadogTracer.RegisterScopeListener(IScopeListener listener)
-        {
-            _scopeManager.RegisterScopeListener(listener);
         }
 
         /// <summary>

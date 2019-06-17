@@ -13,7 +13,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private readonly string _name = "__Datadog_Scope_Current__" + Guid.NewGuid();
         private readonly AsyncLocalCompat<Scope> _activeScopeFallback = new AsyncLocalCompat<Scope>();
-        private readonly List<IScopeListener> _scopeListeners = new List<IScopeListener>(); // TODO: This needs to be thread safe...
+
+        public event EventHandler<ScopeEventArgs> ScopeOpened;
+
+        public event EventHandler<ScopeEventArgs> ScopeActivated;
+
+        public event EventHandler<ScopeEventArgs> ScopeDeactivated;
+
+        public event EventHandler<ScopeEventArgs> ScopeClosed;
 
         public Scope Active
         {
@@ -33,7 +40,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var activeScope = Active;
             var scope = new Scope(activeScope, span, this, finishOnClose);
+
+            var scopeDeactivatedArgs = new ScopeEventArgs(activeScope);
+            var scopeOpenedArgs = new ScopeEventArgs(scope);
+
+            ScopeOpened?.Invoke(this, scopeOpenedArgs);
+
             SetScope(scope);
+            ScopeDeactivated?.Invoke(this, scopeDeactivatedArgs);
+            ScopeActivated?.Invoke(this, scopeOpenedArgs);
+
             return scope;
         }
 
@@ -45,24 +61,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // if the scope that was just closed was the active scope,
                 // set its parent as the new active scope
                 SetScope(current.Parent);
+                ScopeDeactivated?.Invoke(this, new ScopeEventArgs(current));
+                ScopeActivated?.Invoke(this, new ScopeEventArgs(current.Parent));
             }
 
-            foreach (IScopeListener listener in _scopeListeners)
-            {
-                try
-                {
-                    listener.OnScopeClosed(scope);
-                }
-                catch (Exception ex)
-                {
-                    Log.ErrorException("Error calling OnScopeClosed callback.", ex);
-                }
-            }
-        }
-
-        public void RegisterScopeListener(IScopeListener listener)
-        {
-            _scopeListeners.Add(listener);
+            ScopeClosed?.Invoke(this, new ScopeEventArgs(scope));
         }
 
         private void SetScope(Scope scope)
@@ -74,18 +77,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             _activeScopeFallback.Set(scope);
-
-            foreach (IScopeListener listener in _scopeListeners)
-            {
-                try
-                {
-                    listener.OnScopeActivated(scope);
-                }
-                catch (Exception ex)
-                {
-                    Log.ErrorException("Error calling OnScopeActivated callback.", ex);
-                }
-            }
         }
     }
 }

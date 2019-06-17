@@ -10,7 +10,13 @@ namespace Datadog.Trace
 
         private readonly AsyncLocalCompat<Scope> _activeScope = new AsyncLocalCompat<Scope>();
 
-        private readonly List<IScopeListener> _scopeListeners = new List<IScopeListener>(); // TODO: This needs to be thread safe...
+        public event EventHandler<ScopeEventArgs> ScopeOpened;
+
+        public event EventHandler<ScopeEventArgs> ScopeActivated;
+
+        public event EventHandler<ScopeEventArgs> ScopeDeactivated;
+
+        public event EventHandler<ScopeEventArgs> ScopeClosed;
 
         public Scope Active => _activeScope.Get();
 
@@ -18,7 +24,16 @@ namespace Datadog.Trace
         {
             var activeScope = _activeScope.Get();
             var scope = new Scope(activeScope, span, this, finishOnClose);
-            SetScope(scope);
+
+            var scopeDeactivatedArgs = new ScopeEventArgs(activeScope);
+            var scopeOpenedArgs = new ScopeEventArgs(scope);
+
+            ScopeOpened?.Invoke(this, scopeOpenedArgs);
+
+            _activeScope.Set(scope);
+            ScopeDeactivated?.Invoke(this, scopeDeactivatedArgs);
+            ScopeActivated?.Invoke(this, scopeOpenedArgs);
+
             return scope;
         }
 
@@ -30,41 +45,11 @@ namespace Datadog.Trace
                 // if the scope that was just closed was the active scope,
                 // set its parent as the new active scope
                 _activeScope.Set(current.Parent);
+                ScopeActivated?.Invoke(this, new ScopeEventArgs(current));
+                ScopeActivated?.Invoke(this, new ScopeEventArgs(current.Parent));
             }
 
-            foreach (IScopeListener listener in _scopeListeners)
-            {
-                try
-                {
-                    listener.OnScopeClosed(scope);
-                }
-                catch (Exception ex)
-                {
-                    Log.ErrorException("Error calling OnScopeClosed callback.", ex);
-                }
-            }
-        }
-
-        public void RegisterScopeListener(IScopeListener listener)
-        {
-            _scopeListeners.Add(listener);
-        }
-
-        private void SetScope(Scope scope)
-        {
-            _activeScope.Set(scope);
-
-            foreach (IScopeListener listener in _scopeListeners)
-            {
-                try
-                {
-                    listener.OnScopeActivated(scope);
-                }
-                catch (Exception ex)
-                {
-                    Log.ErrorException("Error calling OnScopeActivated callback.", ex);
-                }
-            }
+            ScopeClosed?.Invoke(this, new ScopeEventArgs(scope));
         }
     }
 }
