@@ -45,7 +45,7 @@ namespace Datadog.Trace
                 // if the scope that was just closed was the active scope,
                 // set its parent as the new active scope
                 _activeScope.Set(current.Parent);
-                ScopeActivated?.Invoke(this, new ScopeEventArgs(current));
+                ScopeDeactivated?.Invoke(this, new ScopeEventArgs(current));
                 ScopeActivated?.Invoke(this, new ScopeEventArgs(current.Parent));
             }
 
