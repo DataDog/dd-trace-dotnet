@@ -40,16 +40,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var activeScope = Active;
             var scope = new Scope(activeScope, span, this, finishOnClose);
-
-            var scopeDeactivatedArgs = new ScopeEventArgs(activeScope);
             var scopeOpenedArgs = new ScopeEventArgs(scope);
 
             ScopeOpened?.Invoke(this, scopeOpenedArgs);
-
             SetScope(scope);
-            ScopeDeactivated?.Invoke(this, scopeDeactivatedArgs);
-            ScopeActivated?.Invoke(this, scopeOpenedArgs);
 
+            if (activeScope != null)
+            {
+                ScopeDeactivated?.Invoke(this, new ScopeEventArgs(activeScope));
+            }
+
+            ScopeActivated?.Invoke(this, scopeOpenedArgs);
             return scope;
         }
 

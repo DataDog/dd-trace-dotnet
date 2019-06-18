@@ -24,16 +24,17 @@ namespace Datadog.Trace
         {
             var activeScope = _activeScope.Get();
             var scope = new Scope(activeScope, span, this, finishOnClose);
-
-            var scopeDeactivatedArgs = new ScopeEventArgs(activeScope);
             var scopeOpenedArgs = new ScopeEventArgs(scope);
 
             ScopeOpened?.Invoke(this, scopeOpenedArgs);
-
             _activeScope.Set(scope);
-            ScopeDeactivated?.Invoke(this, scopeDeactivatedArgs);
-            ScopeActivated?.Invoke(this, scopeOpenedArgs);
 
+            if (activeScope != null)
+            {
+                ScopeDeactivated?.Invoke(this, new ScopeEventArgs(activeScope));
+            }
+
+            ScopeActivated?.Invoke(this, scopeOpenedArgs);
             return scope;
         }
 
