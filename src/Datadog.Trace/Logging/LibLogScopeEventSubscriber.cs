@@ -17,6 +17,9 @@ namespace Datadog.Trace.Logging
             _scopeManager = scopeManager;
             _scopeManager.ScopeActivated += OnScopeActivated;
             _scopeManager.ScopeDeactivated += OnScopeDeactivated;
+
+            _activeTraceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, 0, destructure: false);
+            _activeSpanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, 0, destructure: false);
         }
 
         public void OnScopeActivated(object sender, ScopeEventArgs scopeEventArgs)
@@ -37,6 +40,11 @@ namespace Datadog.Trace.Logging
                 // Contexts MUST be closed in reverse order of opening
                 _activeSpanContext?.Dispose();
                 _activeTraceContext?.Dispose();
+
+                // Now we no longer have an active scope, so reset to zero values
+                _activeScope = null;
+                _activeTraceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, 0, destructure: false);
+                _activeSpanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, 0, destructure: false);
             }
         }
 

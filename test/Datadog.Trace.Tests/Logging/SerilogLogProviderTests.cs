@@ -84,8 +84,10 @@ namespace Datadog.Trace.Tests.Logging
 
             // Emit a log event and verify the event is not decorated with the properties
             _logger.Log(LogLevel.Info, () => "No active scope.");
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.Equal<ulong>(0, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.Equal<ulong>(0, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
         }
 
         [Fact]
