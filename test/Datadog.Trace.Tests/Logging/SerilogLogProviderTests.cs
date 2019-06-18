@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -14,18 +15,19 @@ namespace Datadog.Trace.Tests.Logging
     [Collection("Logging Test Collection")]
     public class SerilogLogProviderTests
     {
-        private ILog _logger;
-        private LogEvent _logEvent;
+        private readonly ILog _logger;
+        private readonly List<LogEvent> _logEvents;
 
         public SerilogLogProviderTests()
         {
             Serilog.Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
-                .WriteTo.Observers(obs => obs.Subscribe(logEvent => _logEvent = logEvent))
+                .WriteTo.Observers(obs => obs.Subscribe(logEvent => _logEvents.Add(logEvent)))
                 .CreateLogger();
 
             LogProvider.SetCurrentLogProvider(new SerilogLogProvider());
             _logger = LogProvider.GetLogger(typeof(SerilogLogProviderTests));
+            _logEvents = new List<LogEvent>();
         }
 
         [Fact]
@@ -35,49 +37,39 @@ namespace Datadog.Trace.Tests.Logging
             Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
-            var tracer = InitializeTracer(enableLogsInjection: true);
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
 
-            // Start and make the parent scope active
-            var parentScope = tracer.StartActive("parent");
-            var parentSpan = parentScope.Span;
+            var logIndex = 0;
+            LogEvent logEvent;
 
-            // Emit a log event and verify the event is decorated with the parent scope properties
-            _logger.Log(LogLevel.Info, () => "Started parent scope.");
-            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal<ulong>(parentSpan.SpanId, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
-            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal<ulong>(parentSpan.TraceId, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            // Verify the log event is decorated with the parent scope properties
+            logEvent = _logEvents[logIndex++];
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.Equal<ulong>(parentScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.Equal<ulong>(parentScope.Span.TraceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
 
-            // Start and make the child scope active
-            var childScope = tracer.StartActive("child");
-            var childSpan = childScope.Span;
+            // Verify the log event is decorated with the child scope properties
+            logEvent = _logEvents[logIndex++];
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.Equal<ulong>(childScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.Equal<ulong>(childScope.Span.TraceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
 
-            // Emit a log event and verify the event is decorated with the child scope properties
-            _logger.Log(LogLevel.Info, () => "Activated child scope.");
-            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal<ulong>(childSpan.SpanId, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
-            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal<ulong>(childSpan.TraceId, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            // Verify the log event is decorated with the parent scope properties
+            logEvent = _logEvents[logIndex++];
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.Equal<ulong>(parentScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.Equal<ulong>(parentScope.Span.TraceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
 
-            // Close the child scope, making the parent scope active
-            childScope.Close();
-
-            // Emit a log event and verify the event is decorated with the parent span properties
-            _logger.Log(LogLevel.Info, () => "Reactivated parent scope.");
-            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal<ulong>(parentSpan.SpanId, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
-            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal<ulong>(parentSpan.TraceId, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
-
-            // Close the parent scope, so there is no active scope
-            parentScope.Close();
-
-            // Emit a log event and verify the event is not decorated with the properties
-            _logger.Log(LogLevel.Info, () => "No active scope.");
-            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal<ulong>(0, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
-            Assert.True(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal<ulong>(0, ulong.Parse(_logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            // Verify the log event is decorated with zero values
+            logEvent = _logEvents[logIndex++];
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.Equal<ulong>(0, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.Equal<ulong>(0, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
         }
 
         [Fact]
@@ -87,52 +79,31 @@ namespace Datadog.Trace.Tests.Logging
             Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
-            var tracer = InitializeTracer(enableLogsInjection: false);
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
 
-            // Start and make the parent scope active
-            var parentScope = tracer.StartActive("parent");
-            var parentSpan = parentScope.Span;
+            int logIndex = 0;
+            LogEvent logEvent;
 
-            // Emit a log event and verify the event does not carry trace properties
-            _logger.Log(LogLevel.Info, () => "Started parent scope.");
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            // Verify the log event is not decorated with the properties
+            logEvent = _logEvents[logIndex++];
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
 
-            // Start and make the child scope active
-            var childScope = tracer.StartActive("child");
-            var childSpan = childScope.Span;
+            // Verify the log event is not decorated with the properties
+            logEvent = _logEvents[logIndex++];
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
 
-            // Emit a log event and verify the event does not carry trace properties
-            _logger.Log(LogLevel.Info, () => "Activated child scope.");
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            // Verify the log event is not decorated with the properties
+            logEvent = _logEvents[logIndex++];
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
 
-            // Close the child scope, making the parent scope active
-            childScope.Close();
-
-            // Emit a log event and verify the event does not carry trace properties
-            _logger.Log(LogLevel.Info, () => "Reactivated parent scope.");
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-
-            // Close the parent scope, so there is no active scope
-            parentScope.Close();
-
-            // Emit a log event and verify the event does not carry trace properties
-            _logger.Log(LogLevel.Info, () => "No active scope.");
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(_logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-        }
-
-        private Tracer InitializeTracer(bool enableLogsInjection)
-        {
-            var settings = new TracerSettings();
-            var writerMock = new Mock<IAgentWriter>();
-            var samplerMock = new Mock<ISampler>();
-
-            settings.LogsInjectionEnabled = enableLogsInjection;
-
-            return new Tracer(settings, writerMock.Object, samplerMock.Object, null);
+            // Verify the log event is not decorated with the properties
+            logEvent = _logEvents[logIndex++];
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
         }
     }
 }
