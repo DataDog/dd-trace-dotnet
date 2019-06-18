@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
 {
+    [Collection("Logging Test Collection")]
     public class SerilogLogProviderTests
     {
         private ILog _logger;
@@ -27,22 +28,15 @@ namespace Datadog.Trace.Tests.Logging
                 .WriteTo.Observers(obs => obs.Subscribe(logEvent => _logEvent = logEvent))
                 .CreateLogger();
 
-            // Disable other loggers to allow Serilog to be obtained
-            Trace.Logging.LogProvider.SetCurrentLogProvider(null);
-            NLogLogProvider.ProviderIsAvailableOverride = false;
-            Log4NetLogProvider.ProviderIsAvailableOverride = false;
-            SerilogLogProvider.ProviderIsAvailableOverride = true;
-            LoupeLogProvider.ProviderIsAvailableOverride = false;
-
+            LogProvider.SetCurrentLogProvider(new SerilogLogProvider());
             _logger = LogProvider.GetLogger(typeof(SerilogLogProviderTests));
         }
 
         [Fact]
         public void EnabledLibLogSubscriberAddsTraceData()
         {
-            // Assert that the Serilog provider is correctly being used
-            var logProvider = LogProvider.ForceResolveLogProvider();
-            Assert.IsType<SerilogLogProvider>(logProvider);
+            // Assert that the Serilog log provider is correctly being used
+            Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = InitializeTracer(enableLogsInjection: true);
@@ -93,9 +87,8 @@ namespace Datadog.Trace.Tests.Logging
         [Fact]
         public void DisabledLibLogSubscriberDoesNotAddTraceData()
         {
-            // Assert that the Serilog provider is correctly being used
-            var logProvider = LogProvider.ForceResolveLogProvider();
-            Assert.IsType<SerilogLogProvider>(logProvider);
+            // Assert that the Serilog log provider is correctly being used
+            Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = InitializeTracer(enableLogsInjection: false);
