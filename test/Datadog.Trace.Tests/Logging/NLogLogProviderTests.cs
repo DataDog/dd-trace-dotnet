@@ -1,18 +1,13 @@
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.LogProviders;
-using Datadog.Trace.Sampling;
-using Moq;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
 using Xunit;
-using LogLevel = Datadog.Trace.Logging.LogLevel;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection("Logging Test Collection")]
+    [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class NLogLogProviderTests
     {
         private readonly ILog _logger;

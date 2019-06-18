@@ -1,18 +1,14 @@
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.LogProviders;
-using Datadog.Trace.Sampling;
-using Moq;
 using Serilog;
 using Serilog.Events;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection("Logging Test Collection")]
+    [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class SerilogLogProviderTests
     {
         private readonly ILog _logger;

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection("Logging Test Collection")]
+    [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class Log4NetLogProviderTests
     {
         private readonly MemoryAppender _memoryAppender;
