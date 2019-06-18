@@ -13,7 +13,6 @@ namespace Datadog.Trace.Tests.Logging
     {
         private readonly MemoryAppender _memoryAppender;
         private ILog _logger;
-        // private LogEvent _logEvent;
 
         public Log4NetLogProviderTests()
         {
