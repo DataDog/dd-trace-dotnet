@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -24,12 +25,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         private const string ResourceInvoker = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
 
+        /// <summary>
+        /// Diagnostics static class for Microsoft.AspNetCore.Mvc.Core
+        /// </summary>
+        private const string DiagnosticsSource = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions";
+
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
         private static readonly InterceptedMethodAccess<Action<object>> RethrowAccess = new InterceptedMethodAccess<Action<object>>();
-
-        private static Action<object, object, object, object> _beforeAction;
-        private static Action<object, object, object, object> _afterAction;
 
         private readonly object _httpContext;
         private readonly Scope _scope;
@@ -45,9 +48,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 _httpContext = httpContext;
                 string httpMethod = null;
-                string resourceName = null;
-                string host = null;
-                string url = null;
 
                 if (actionDescriptor.TryGetPropertyValue("ControllerName", out string controllerName))
                 {
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     httpMethod = "UNKNOWN";
                 }
 
-                GetTagValuesFromRequest(request, out host, out resourceName, out url);
+                GetTagValuesFromRequest(request, out var host, out var resourceName, out var url);
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
 
@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
-            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
+            TargetType = DiagnosticsSource,
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
@@ -174,17 +174,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Log.ErrorExceptionForFilter($"Error creating {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
+            Action<object, object, object, object> beforeAction;
+
             try
             {
-                if (_beforeAction == null)
-                {
-                    var assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
-                    var type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
+                var assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
+                var type = assembly.GetType(DiagnosticsSource);
 
-                    _beforeAction = Emit.DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                        type,
-                        "BeforeAction");
-                }
+                beforeAction = Emit.DynamicMethodBuilder<Action<object, object, object, object>>.GetOrCreateMethodCallDelegate(
+                    type: type,
+                    methodName: nameof(BeforeAction),
+                    callOpCode: opCode,
+                    returnType: Interception.VoidType,
+                    methodParameterTypes: Interception.ParamsToTypes(actionDescriptor, httpContext, routeData),
+                    methodGenericArguments: Interception.NoArgs);
             }
             catch (Exception ex)
             {
@@ -195,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                _beforeAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
+                beforeAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
             catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
@@ -215,7 +218,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
-            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
+            TargetType = DiagnosticsSource,
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
@@ -246,27 +249,31 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
+            Action<object, object, object, object> afterAction;
+
             try
             {
-                if (_afterAction == null)
-                {
-                    var type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
+                    var type = actionDescriptor.GetType().Assembly.GetType(DiagnosticsSource);
 
-                    _afterAction = Emit.DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                        type,
-                        "AfterAction");
-                }
+                    afterAction = Emit.DynamicMethodBuilder<Action<object, object, object, object>>.GetOrCreateMethodCallDelegate(
+                        type: type,
+                        methodName: nameof(AfterAction),
+                        callOpCode: opCode,
+                        returnType: Interception.VoidType,
+                        methodParameterTypes: Interception.ParamsToTypes(actionDescriptor, httpContext, routeData),
+                        methodGenericArguments: Interception.NoArgs);
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, we cannot call instrumented method,
                 // profiled app will continue working without DiagnosticSource
+                Log.ErrorException("Error calling Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.AfterAction()", ex);
+                return;
             }
 
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                _afterAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
+                afterAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
             catch (Exception ex)
             {
@@ -324,13 +331,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                rethrow = RethrowAccess.GetInterceptedMethod(
-                    assembly: Assembly.GetCallingAssembly(),
-                    owningType: ResourceInvoker,
-                    returnType: Interception.VoidType,
+                rethrow = Emit.DynamicMethodBuilder<Action<object>>.GetOrCreateMethodCallDelegate(
+                    type: Assembly.GetCallingAssembly().GetType(ResourceInvoker),
                     methodName: methodName,
-                    generics: Interception.NullTypeArray,
-                    parameters: Interception.ParamsToTypes(context));
+                    callOpCode: opCode,
+                    returnType: Interception.VoidType,
+                    methodParameterTypes: Interception.ParamsToTypes(context),
+                    methodGenericArguments: Interception.NoArgs);
             }
             catch (Exception ex)
             {

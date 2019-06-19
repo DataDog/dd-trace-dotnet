@@ -1,6 +1,6 @@
 namespace Datadog.Trace.ClrProfiler.Emit
 {
-    internal enum OpCodeValue : short
+    internal enum OpCodeValue
     {
         /// <seealso cref="System.Reflection.Emit.OpCodes.Call"/>
         Call = 40,

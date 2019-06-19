@@ -8,9 +8,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     internal static class Interception
     {
-        internal const Type[] NullTypeArray = null;
-        internal static readonly Type[] EmptyTypes = Type.EmptyTypes;
+        internal static readonly Type[] NoArgs = Type.EmptyTypes;
         internal static readonly Type VoidType = typeof(void);
+
+        internal static Type FindType(string assemblyName, string typeName)
+        {
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (var i = 0; i < assemblies.Length; i++)
+            {
+                if (assemblyName == assemblies[i].GetName().Name)
+                {
+                    return assemblies[i].GetType(typeName);
+                }
+            }
+
+            return null;
+        }
 
         internal static Type[] ParamsToTypes(params object[] objectsToCheck)
         {
