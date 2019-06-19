@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.Models
 
         public void OnError()
         {
-            // Currently only used in extension for excpetion filtering, where we set the actual excpetion
+            // Currently only used in extension for exception filtering, where we set the actual exception
         }
 
         public void Dispose()
