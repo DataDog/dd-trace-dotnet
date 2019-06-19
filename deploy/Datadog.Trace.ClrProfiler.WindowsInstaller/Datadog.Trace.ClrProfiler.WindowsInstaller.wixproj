@@ -19,7 +19,7 @@
          accessed as $(var.InstallerVersion) from WiX files.
          This is the default value if one is not specified when building. -->
     <InstallerVersion Condition="'$(InstallerVersion)'==''">0.1</InstallerVersion>
-    <OutputName>DatadogDotNetTracing-$(InstallerVersion)-$(Platform)-$(Configuration)</OutputName>
+    <OutputName Condition="'$(OutputName)'==''">DatadogDotNetTracing-$(InstallerVersion)-$(Platform)-$(Configuration)</OutputName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>Debug;InstallerVersion=$(InstallerVersion)</DefineConstants>
