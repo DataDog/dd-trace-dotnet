@@ -31,7 +31,7 @@ Integration tests | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-
 
 ### Minimum requirements
 
-- [Visual Studio 2017](https://visualstudio.microsoft.com/downloads/) v15.7 or newer
+- [Visual Studio 2019](https://visualstudio.microsoft.com/downloads/) or newer
   - Workloads
     - Desktop development with C++
     - .NET desktop development
@@ -43,11 +43,11 @@ Integration tests | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-
 - Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v3.4.4 or newer
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
-  - [WiX Toolset VS2017 Extension](https://marketplace.visualstudio.com/items?itemName=RobMensching.WixToolsetVisualStudio2017Extension) to build installer from VS2017
+  - [WiX Toolset Visual Studio Extension](https://wixtoolset.org/releases/) to build installer from Visual Studio
 - Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to build Linux binaries and run integration tests on Linux containers. See [section on Docker Compose](#building-and-running-tests-with-docker-compose).
   - Requires Windows 10 (1607 Anniversary Update, Build 14393 or newer)
 
-Microsoft provides [evaluation developer VMs]((https://developer.microsoft.com/en-us/windows/downloads/virtual-machines)) with Windows 10 and Visual Studio 2017 pre-installed.
+Microsoft provides [evaluation developer VMs](https://developer.microsoft.com/en-us/windows/downloads/virtual-machines) with Windows 10 and Visual Studio pre-installed.
 
 ### Building from a command line
 
