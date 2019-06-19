@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class WcfIntegration
     {
+        private const string IntegrationName = "Wcf";
         private const string Major4 = "4";
 
         /// <summary>
@@ -32,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var handleRequestDelegate = Emit.DynamicMethodBuilder<Func<object, object, object, bool>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "HandleRequest");
 
-            if (!(requestContext is RequestContext castRequestContext))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName) ||
+                !(requestContext is RequestContext castRequestContext))
             {
                 return handleRequestDelegate(thisObj, requestContext, currentOperationContext);
             }
