@@ -9,8 +9,8 @@ namespace Datadog.Trace.Logging
         // changes are made
         private IScopeManager _scopeManager;
         private Scope _activeScope;
-        private IDisposable _activeTraceContext;
-        private IDisposable _activeSpanContext;
+        private IDisposable _traceIdMappedContext;
+        private IDisposable _spanIdMappedContext;
 
         public LibLogScopeEventSubscriber(IScopeManager scopeManager)
         {
@@ -18,19 +18,18 @@ namespace Datadog.Trace.Logging
             _scopeManager.ScopeActivated += OnScopeActivated;
             _scopeManager.ScopeDeactivated += OnScopeDeactivated;
 
-            _activeTraceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, 0, destructure: false);
-            _activeSpanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, 0, destructure: false);
+            SetDefaultValues();
         }
 
         public void OnScopeActivated(object sender, ScopeEventArgs scopeEventArgs)
         {
             // Contexts MUST be closed in reverse order of opening
-            _activeSpanContext?.Dispose();
-            _activeTraceContext?.Dispose();
+            _spanIdMappedContext?.Dispose();
+            _traceIdMappedContext?.Dispose();
 
             _activeScope = scopeEventArgs.Scope;
-            _activeTraceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, _activeScope.Span.TraceId, destructure: false);
-            _activeSpanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, _activeScope.Span.SpanId, destructure: false);
+            _traceIdMappedContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, _activeScope.Span.TraceId, destructure: false);
+            _spanIdMappedContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, _activeScope.Span.SpanId, destructure: false);
         }
 
         public void OnScopeDeactivated(object sender, ScopeEventArgs scopeEventArgs)
@@ -38,13 +37,11 @@ namespace Datadog.Trace.Logging
             if (_activeScope != null && _activeScope.Equals(scopeEventArgs.Scope))
             {
                 // Contexts MUST be closed in reverse order of opening
-                _activeSpanContext?.Dispose();
-                _activeTraceContext?.Dispose();
+                _spanIdMappedContext?.Dispose();
+                _traceIdMappedContext?.Dispose();
 
-                // Now we no longer have an active scope, so reset to zero values
-                _activeScope = null;
-                _activeTraceContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, 0, destructure: false);
-                _activeSpanContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, 0, destructure: false);
+                // Now we no longer have an active scope, reset the state to the default
+                SetDefaultValues();
             }
         }
 
@@ -54,8 +51,15 @@ namespace Datadog.Trace.Logging
             _scopeManager.ScopeDeactivated -= OnScopeDeactivated;
 
             // Contexts MUST be closed in reverse order of opening
-            _activeSpanContext?.Dispose();
-            _activeTraceContext?.Dispose();
+            _spanIdMappedContext?.Dispose();
+            _traceIdMappedContext?.Dispose();
+        }
+
+        private void SetDefaultValues()
+        {
+            _activeScope = null;
+            _traceIdMappedContext = LogProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, 0, destructure: false);
+            _spanIdMappedContext = LogProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, 0, destructure: false);
         }
     }
 }
