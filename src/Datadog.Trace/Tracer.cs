@@ -65,6 +65,13 @@ namespace Datadog.Trace
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
+
+            // If configured, add/remove the correlation identifiers into the
+            // LibLog logging context when a scope is activated/closed
+            if (Settings.LogsInjectionEnabled)
+            {
+                InitializeLibLogScopeEventSubscriber(_scopeManager);
+            }
         }
 
         /// <summary>
@@ -260,6 +267,11 @@ namespace Datadog.Trace
                 Log.ErrorException("Error creating default service name.", ex);
                 return null;
             }
+        }
+
+        private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager)
+        {
+            new LibLogScopeEventSubscriber(scopeManager);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)

@@ -17,6 +17,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.Environment), null };
             yield return new object[] { CreateFunc(s => s.ServiceName), null };
             yield return new object[] { CreateFunc(s => s.DisabledIntegrationNames.Count), 0 };
+            yield return new object[] { CreateFunc(s => s.LogsInjectionEnabled), false };
         }
 
         public static IEnumerable<object[]> GetTestData()

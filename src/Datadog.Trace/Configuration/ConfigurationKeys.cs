@@ -78,6 +78,13 @@ namespace Datadog.Trace.Configuration
         public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling or disabling the automatic injection
+        /// of correlation identifiers into the logging context.
+        /// </summary>
+        /// <seealso cref="TracerSettings.LogsInjectionEnabled"/>
+        public const string LogsInjectionEnabled = "DD_LOGS_INJECTION";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations

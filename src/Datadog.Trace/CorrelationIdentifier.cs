@@ -7,8 +7,8 @@ namespace Datadog.Trace
     /// </summary>
     public static class CorrelationIdentifier
     {
-        // private static readonly string TraceIdKey = "dd.trace_id";
-        // private static readonly string SpanIdKey = "dd.span_id";
+        internal static readonly string TraceIdKey = "dd.trace_id";
+        internal static readonly string SpanIdKey = "dd.span_id";
 
         /// <summary>
         /// Gets the trace id

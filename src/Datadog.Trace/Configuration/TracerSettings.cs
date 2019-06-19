@@ -72,6 +72,9 @@ namespace Datadog.Trace.Configuration
             AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
                                false;
 
+            LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled) ??
+                               false;
+
             Integrations = new IntegrationSettingsCollection(source);
         }
 
@@ -124,6 +127,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
         public bool AnalyticsEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether correlation identifiers are
+        /// automatically injected into the logging context.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
+        public bool LogsInjectionEnabled { get; set; }
 
         /// <summary>
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
