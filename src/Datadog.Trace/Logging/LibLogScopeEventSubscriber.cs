@@ -9,6 +9,14 @@ namespace Datadog.Trace.Logging
         // changes are made
         private IScopeManager _scopeManager;
         private Scope _activeScope;
+
+        // Each mapped context sets a key-value pair into the logging context
+        // Disposing the context unsets the key-value pair
+        //
+        // IMPORTANT: The contexts must be closed in reverse-order of opening,
+        //            so by convention always open the TraceId context before
+        //            opening the SpanId context, and close the contexts in
+        //            the opposite order
         private IDisposable _traceIdMappedContext;
         private IDisposable _spanIdMappedContext;
 
@@ -23,7 +31,6 @@ namespace Datadog.Trace.Logging
 
         public void OnScopeActivated(object sender, ScopeEventArgs scopeEventArgs)
         {
-            // Contexts MUST be closed in reverse order of opening
             _spanIdMappedContext?.Dispose();
             _traceIdMappedContext?.Dispose();
 
@@ -36,7 +43,6 @@ namespace Datadog.Trace.Logging
         {
             if (_activeScope != null && _activeScope.Equals(scopeEventArgs.Scope))
             {
-                // Contexts MUST be closed in reverse order of opening
                 _spanIdMappedContext?.Dispose();
                 _traceIdMappedContext?.Dispose();
 
@@ -50,7 +56,6 @@ namespace Datadog.Trace.Logging
             _scopeManager.ScopeActivated -= OnScopeActivated;
             _scopeManager.ScopeDeactivated -= OnScopeDeactivated;
 
-            // Contexts MUST be closed in reverse order of opening
             _spanIdMappedContext?.Dispose();
             _traceIdMappedContext?.Dispose();
         }
