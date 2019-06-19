@@ -1,8 +1,5 @@
 using System;
-using System.Threading;
 
-// [assembly: System.Security.SecurityCritical]
-// [assembly: System.Security.AllowPartiallyTrustedCallers]
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
@@ -15,8 +12,15 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public static readonly string ProfilerClsid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
-        private static readonly Lazy<bool> _profilerAttached = new Lazy<bool>(
-            () =>
+        /// <summary>
+        /// Gets a value indicating whether Datadog's profiler is attached to the current process.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.
+        /// </value>
+        public static bool ProfilerAttached
+        {
+            get
             {
                 try
                 {
@@ -26,15 +30,7 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     return false;
                 }
-            },
-            LazyThreadSafetyMode.PublicationOnly);
-
-        /// <summary>
-        /// Gets a value indicating whether Datadog's profiler is currently attached.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.
-        /// </value>
-        public static bool ProfilerAttached => _profilerAttached.Value;
+            }
+        }
     }
 }
