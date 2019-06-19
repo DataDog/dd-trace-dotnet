@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.InteropServices;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
@@ -13,23 +12,21 @@ namespace Datadog.Trace.ClrProfiler
                 return Windows.IsProfilerAttached();
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                return Linux.IsProfilerAttached();
-            }
-
-            throw new PlatformNotSupportedException();
+            return NonWindows.IsProfilerAttached();
         }
 
+        // the "dll" extension is required on .NET Framework
+        // and optional on .NET Core
         private static class Windows
         {
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
             public static extern bool IsProfilerAttached();
         }
 
-        private static class Linux
+        // assume .NET Core if not running on Windows
+        private static class NonWindows
         {
-            [DllImport("Datadog.Trace.ClrProfiler.Native.so")]
+            [DllImport("Datadog.Trace.ClrProfiler.Native")]
             public static extern bool IsProfilerAttached();
         }
     }
