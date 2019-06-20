@@ -14,11 +14,10 @@ Windows and Linux Installers|[See releases](https://github.com/DataDog/dd-trace-
 
 ## Build Status
 
-Pipeline                        | Build Status
---------------------------------|-------------
-C# unit tests (Windows & Linux) | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/managed-unit-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=24&branchName=develop)
-C++ unit tests (Windows)        | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/native-unit-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=25&branchName=develop)
-Integration tests (Linux)       | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/integration-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=27&branchName=develop)
+Pipeline          | Build Status
+------------------|-------------
+Unit tests        | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/unit-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=28&branchName=develop)
+Integration tests | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/integration-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=27&branchName=develop)
 
 # Development
 
@@ -32,7 +31,7 @@ Integration tests (Linux)       | [![Build Status](https://dev.azure.com/datadog
 
 ### Minimum requirements
 
-- [Visual Studio 2017](https://visualstudio.microsoft.com/downloads/) v15.7 or newer
+- [Visual Studio 2019](https://visualstudio.microsoft.com/downloads/) or newer
   - Workloads
     - Desktop development with C++
     - .NET desktop development
@@ -44,11 +43,11 @@ Integration tests (Linux)       | [![Build Status](https://dev.azure.com/datadog
 - Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v3.4.4 or newer
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
-  - [WiX Toolset VS2017 Extension](https://marketplace.visualstudio.com/items?itemName=RobMensching.WixToolsetVisualStudio2017Extension) to build installer from VS2017
+  - [WiX Toolset Visual Studio Extension](https://wixtoolset.org/releases/) to build installer from Visual Studio
 - Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to build Linux binaries and run integration tests on Linux containers. See [section on Docker Compose](#building-and-running-tests-with-docker-compose).
   - Requires Windows 10 (1607 Anniversary Update, Build 14393 or newer)
 
-Microsoft provides [evaluation developer VMs]((https://developer.microsoft.com/en-us/windows/downloads/virtual-machines)) with Windows 10 and Visual Studio 2017 pre-installed.
+Microsoft provides [evaluation developer VMs](https://developer.microsoft.com/en-us/windows/downloads/virtual-machines) with Windows 10 and Visual Studio pre-installed.
 
 ### Building from a command line
 
