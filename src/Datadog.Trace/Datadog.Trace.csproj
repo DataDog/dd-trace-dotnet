@@ -8,10 +8,6 @@
     <Authors>lucas.pimentel.datadog;bmermet</Authors>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <DefineConstants>LIBLOG_PORTABLE</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
