@@ -90,7 +90,7 @@ jobs:
       solution: Datadog.Trace.proj
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
-      msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%;OutputName=datadog-dotnet-apm-%GitVersion_MajorMinorPatch%-$(buildPlatform)
+      msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%;OutputName=datadog-dotnet-apm-%GitVersion_MajorMinorPatch%-$(buildPlatform);RunWixToolsOutOfProc=true
 
   - task: PublishPipelineArtifact@0
     displayName: publish msi artifact
