@@ -70,7 +70,7 @@ jobs:
 
   - task: DotNetCoreCLI@2
     displayName: dotnet pack
-    condition: eq(variables['nugetPack'], 'true')
+    condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
       command: pack
       configuration: $(buildConfiguration)
@@ -79,7 +79,7 @@ jobs:
 
   - task: PublishPipelineArtifact@0
     displayName: publish nuget artifacts
-    condition: eq(variables['nugetPack'], 'true')
+    condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
       artifactName: nuget-packages
       targetPath: nuget-output
