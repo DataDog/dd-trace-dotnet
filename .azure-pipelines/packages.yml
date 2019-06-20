@@ -65,17 +65,17 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
       projects: src/**/*.csproj
+      arguments: --configuration $(buildConfiguration)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet pack
     condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
       command: pack
-      configuration: $(buildConfiguration)
       packagesToPack: src/**/*.csproj
       packDirectory: nuget-output
+      configuration: $(buildConfiguration)
 
   - task: PublishPipelineArtifact@0
     displayName: publish nuget artifacts
