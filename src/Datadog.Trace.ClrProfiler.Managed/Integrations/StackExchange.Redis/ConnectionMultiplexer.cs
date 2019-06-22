@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="server">The server to call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The result</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -41,7 +42,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             TargetSignatureTypes = new[] { "T", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
-        public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server, int opCode)
+        public static T ExecuteSyncImpl<T>(
+            object multiplexer,
+            object message,
+            object processor,
+            object server,
+            int opCode,
+            int mdToken)
         {
             var resultType = typeof(T);
             var multiplexerType = multiplexer.GetType();
@@ -81,6 +88,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -98,7 +106,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "System.Object", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
-        public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server, int opCode)
+        public static object ExecuteAsyncImpl<T>(
+            object multiplexer,
+            object message,
+            object processor,
+            object state,
+            object server,
+            int opCode,
+            int mdToken)
         {
             return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server);
         }

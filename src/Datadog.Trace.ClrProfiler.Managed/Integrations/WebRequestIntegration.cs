@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="webRequest">The <see cref="WebRequest"/> instance to instrument.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System", // .NET Framework
@@ -31,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Net.WebResponse" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object GetResponse(object webRequest, int opCode)
+        public static object GetResponse(object webRequest, int opCode, int mdToken)
         {
             var request = (WebRequest)webRequest;
 
@@ -72,6 +73,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="request">The <see cref="WebRequest"/> instance to instrument.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Net",
@@ -79,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.WebResponse>" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object GetResponseAsync(object request, int opCode)
+        public static object GetResponseAsync(object request, int opCode, int mdToken)
         {
             return GetResponseAsyncInternal((WebRequest)request);
         }

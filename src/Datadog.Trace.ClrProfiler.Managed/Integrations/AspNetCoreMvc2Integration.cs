@@ -138,6 +138,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="httpContext">The HttpContext for the current request.</param>
         /// <param name="routeData">A RouteData with information about the current route.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
@@ -150,7 +151,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object actionDescriptor,
             object httpContext,
             object routeData,
-            int opCode)
+            int opCode,
+            int mdToken)
         {
             AspNetCoreMvc2Integration integration = null;
 
@@ -212,6 +214,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="httpContext">The HttpContext for the current request.</param>
         /// <param name="routeData">A RouteData with information about the current route.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
@@ -224,7 +227,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object actionDescriptor,
             object httpContext,
             object routeData,
-            int opCode)
+            int opCode,
+            int mdToken)
         {
             AspNetCoreMvc2Integration integration = null;
 
@@ -285,6 +289,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
@@ -292,7 +297,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
-        public static void Rethrow(object context, int opCode)
+        public static void Rethrow(object context, int opCode, int mdToken)
         {
             AspNetCoreMvc2Integration integration = null;
             const string methodName = nameof(Rethrow);
