@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     httpMethod = "UNKNOWN";
                 }
 
-                GetTagValuesFromRequest(request, out host, out resourceName, out url);
+                GetTagValuesFromRequest(request, httpMethod, out host, out resourceName, out url);
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
 
@@ -384,6 +384,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void GetTagValuesFromRequest(
             object request,
+            string httpMethod,
             out string host,
             out string resourceName,
             out string fullUrl)
@@ -417,7 +418,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scheme = string.Empty;
             }
 
-            resourceName = $"{UriHelpers.CleanUriSegment(pathBase)}{UriHelpers.CleanUriSegment(path)}".ToLowerInvariant();
+            resourceName = $"{httpMethod} {UriHelpers.CleanUriSegment(pathBase)}{UriHelpers.CleanUriSegment(path)}".ToLowerInvariant();
             fullUrl = $"{scheme}://{host}{pathBase}{path}{queryString}".ToLowerInvariant();
         }
 
