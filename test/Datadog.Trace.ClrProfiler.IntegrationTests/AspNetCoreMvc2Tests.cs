@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 wh.WaitOne(5000);
 
                 SubmitRequests(aspNetCorePort, Paths);
-                var expected = new List<string>(Paths);
+                var expected = Paths.Select(p => $"GET {p}").ToList();
                 var spans = agent.WaitForSpans(expected.Count)
                                  .Where(s => s.Type == SpanTypes.Web)
                                  .OrderBy(s => s.Start)
