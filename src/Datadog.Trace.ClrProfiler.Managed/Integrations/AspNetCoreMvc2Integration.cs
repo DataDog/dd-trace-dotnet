@@ -418,7 +418,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scheme = string.Empty;
             }
 
-            resourceName = $"{httpMethod} {UriHelpers.CleanUriSegment(pathBase)}{UriHelpers.CleanUriSegment(path)}".ToLowerInvariant();
+            var relativePath = $"{UriHelpers.CleanUriSegment(pathBase)}{UriHelpers.CleanUriSegment(path)}".ToLowerInvariant();
+            resourceName = $"{httpMethod.ToUpperInvariant()} {relativePath}";
             fullUrl = $"{scheme}://{host}{pathBase}{path}{queryString}".ToLowerInvariant();
         }
 
