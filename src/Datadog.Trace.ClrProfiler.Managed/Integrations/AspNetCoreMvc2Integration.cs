@@ -45,22 +45,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 _httpContext = httpContext;
-                string httpMethod = null;
-
-                if (_httpContext.TryGetPropertyValue("Request", out object request) &&
-                    request.TryGetPropertyValue("Method", out httpMethod))
-                {
-                    httpMethod = httpMethod?.ToUpperInvariant();
-                }
-
-                if (httpMethod == null)
-                {
-                    httpMethod = "UNKNOWN";
-                }
+                var request = _httpContext.GetProperty("Request").GetValueOrDefault();
 
                 GetTagValues(
                     actionDescriptor,
                     request,
+                    out string httpMethod,
                     out string host,
                     out string resourceName,
                     out string url,
@@ -375,6 +365,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static void GetTagValues(
             object actionDescriptor,
             object request,
+            out string httpMethod,
             out string host,
             out string resourceName,
             out string url,
@@ -386,6 +377,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             actionName = actionDescriptor.GetProperty<string>("ActionName").GetValueOrDefault()?.ToLowerInvariant();
 
             host = request.GetProperty("Host").GetProperty<string>("Value").GetValueOrDefault();
+
+            httpMethod = request.GetProperty<string>("Method").GetValueOrDefault()?.ToUpperInvariant() ?? "UNKNOWN";
 
             string pathBase = request.GetProperty("PathBase").GetProperty<string>("Value").GetValueOrDefault();
 
