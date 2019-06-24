@@ -417,8 +417,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scheme = string.Empty;
             }
 
-            resourceName = $"{UriHelpers.CleanUriSegment(pathBase)}{UriHelpers.CleanUriSegment(path)}".ToLowerInvariant();
             fullUrl = $"{scheme}://{host}{pathBase}{path}{queryString}".ToLowerInvariant();
+
+            resourceName = UriHelpers.GetRelativeUrl(new Uri(fullUrl), tryRemoveIds: true)
+                                     .ToLowerInvariant();
         }
 
         private bool DisposeObject(IDisposable disposable)
