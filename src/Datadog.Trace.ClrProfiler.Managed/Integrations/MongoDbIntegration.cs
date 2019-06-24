@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="connection">The connection.</param>
         /// <param name="cancellationTokenSource">A cancellation token source.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
@@ -48,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "T", "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
             TargetMinimumVersion = Major2Minor2,
             TargetMaximumVersion = Major2)]
-        public static object Execute(object wireProtocol, object connection, object cancellationTokenSource, int opCode)
+        public static object Execute(object wireProtocol, object connection, object cancellationTokenSource, int opCode, int mdToken)
         {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 
@@ -95,6 +96,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="connection">The connection.</param>
         /// <param name="cancellationTokenSource">A cancellation token source.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetMethod = nameof(ExecuteAsync),
@@ -103,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { ClrNames.Task, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
             TargetMinimumVersion = Major2Minor1,
             TargetMaximumVersion = Major2)]
-        public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource, int opCode)
+        public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource, int opCode, int mdToken)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
@@ -117,6 +119,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="connection">The connection.</param>
         /// <param name="cancellationTokenSource">A cancellation token source.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetMethod = nameof(ExecuteAsync),
@@ -125,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
             TargetMinimumVersion = Major2Minor1,
             TargetMaximumVersion = Major2)]
-        public static object ExecuteAsyncGeneric(object wireProtocol, object connection, object cancellationTokenSource, int opCode)
+        public static object ExecuteAsyncGeneric(object wireProtocol, object connection, object cancellationTokenSource, int opCode, int mdToken)
         {
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 

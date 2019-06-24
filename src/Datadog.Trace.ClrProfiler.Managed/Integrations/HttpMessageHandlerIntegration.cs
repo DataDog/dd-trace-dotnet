@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="request">The <see cref="HttpRequestMessage"/> that represents the current HTTP request.</param>
         /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = SystemNetHttp,
@@ -36,7 +37,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object handler,
             object request,
             object cancellationTokenSource,
-            int opCode)
+            int opCode,
+            int mdToken)
         {
             // original signature:
             // Task<HttpResponseMessage> HttpMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -66,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="request">The <see cref="HttpRequestMessage"/> that represents the current HTTP request.</param>
         /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = SystemNetHttp,
@@ -78,7 +81,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object handler,
             object request,
             object cancellationTokenSource,
-            int opCode)
+            int opCode,
+            int mdToken)
         {
             // original signature:
             // Task<HttpResponseMessage> HttpClientHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

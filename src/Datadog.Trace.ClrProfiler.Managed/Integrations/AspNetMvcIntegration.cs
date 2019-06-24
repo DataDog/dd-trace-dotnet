@@ -166,6 +166,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="callback">An <see cref="AsyncCallback"/> delegate.</param>
         /// <param name="state">An object that holds the state of the async operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>Returns the <see cref="IAsyncResult "/> returned by the original BeginInvokeAction() that is later passed to <see cref="EndInvokeAction"/>.</returns>
         [InterceptMethod(
             CallerAssembly = AssemblyName,
@@ -180,7 +181,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object actionName,
             object callback,
             object state,
-            int opCode)
+            int opCode,
+            int mdToken)
         {
             Scope scope = null;
 
@@ -221,6 +223,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="asyncControllerActionInvoker">The IAsyncActionInvoker instance.</param>
         /// <param name="asyncResult">The <see cref="IAsyncResult"/> returned by <see cref="BeginInvokeAction"/>.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
         [InterceptMethod(
             CallerAssembly = AssemblyName,
@@ -229,7 +232,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { ClrNames.Bool, ClrNames.IAsyncResult },
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
-        public static bool EndInvokeAction(object asyncControllerActionInvoker, object asyncResult, int opCode)
+        public static bool EndInvokeAction(object asyncControllerActionInvoker, object asyncResult, int opCode, int mdToken)
         {
             Scope scope = null;
             var httpContext = HttpContext.Current;

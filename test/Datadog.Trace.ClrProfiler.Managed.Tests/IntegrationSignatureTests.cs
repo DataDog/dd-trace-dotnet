@@ -39,9 +39,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             // all wrapper methods should have an additional Int32
             // parameter for the original method call's opcode
-            ParameterInfo lastParameter = wrapperMethod.GetParameters().Last();
-            Assert.Equal(typeof(int), lastParameter.ParameterType);
-            Assert.Equal("opCode", lastParameter.Name);
+            var parameters = wrapperMethod.GetParameters();
+            ParameterInfo expectedOpCodeParam = parameters[parameters.Length - 2];
+            Assert.Equal(typeof(int), expectedOpCodeParam.ParameterType);
+            Assert.Equal("opCode", expectedOpCodeParam.Name);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetWrapperMethods))]
+        public void WrapperMethodHasMdTokenArgument(MethodInfo wrapperMethod)
+        {
+            // all wrapper methods should have an additional Int32
+            // parameter for the original method call's opcode
+            var parameters = wrapperMethod.GetParameters();
+            ParameterInfo expectedOpCodeParam = parameters.Last();
+            Assert.Equal(typeof(int), expectedOpCodeParam.ParameterType);
+            Assert.Equal("mdToken", expectedOpCodeParam.Name);
         }
 
         [Theory]
@@ -52,8 +65,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 attribute.TargetSignatureTypes != null,
                 $"{wrapperMethod.DeclaringType.Name}.{wrapperMethod.Name}: {nameof(attribute.TargetSignatureTypes)} definition missing.");
 
-            // Return type and opcode cancel out for count
-            var expectedParameterCount = wrapperMethod.GetParameters().Length;
+            // Return type and opcode and cancel out for count
+            // mdToken means minus 1
+            var expectedParameterCount = wrapperMethod.GetParameters().Length - 1;
 
             if (!StaticInstrumentations.Contains(wrapperMethod))
             {

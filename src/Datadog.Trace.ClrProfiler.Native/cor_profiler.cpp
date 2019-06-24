@@ -413,8 +413,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       auto expected_number_args = method_replacement.wrapper_method
                                       .method_signature.NumberOfArguments();
 
-      // We pass the opcode as the last argument to every wrapper method
-      expected_number_args--;
+      // We pass the opcode and mdToken as the last arguments to every wrapper method
+      expected_number_args = expected_number_args - 2;
 
       if (target.signature.IsInstanceMethod()) {
         // We always pass the instance as the first argument
@@ -477,6 +477,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       ILRewriterWrapper rewriter_wrapper(&rewriter);
       rewriter_wrapper.SetILPosition(pInstr);
       rewriter_wrapper.LoadInt32(pInstr->m_opcode);
+      rewriter_wrapper.LoadInt32(pInstr->m_Arg32);
 
       // always use CALL because the wrappers methods are all static
       pInstr->m_opcode = CEE_CALL;

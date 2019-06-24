@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="requestContext">A System.ServiceModel.Channels.RequestContext implementation instance.</param>
         /// <param name="currentOperationContext">A System.ServiceModel.OperationContext instance.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = "System.ServiceModel",
@@ -29,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { ClrNames.Bool, "System.ServiceModel.Channels.RequestContext", "System.ServiceModel.OperationContext" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static bool HandleRequest(object thisObj, object requestContext, object currentOperationContext, int opCode)
+        public static bool HandleRequest(object thisObj, object requestContext, object currentOperationContext, int opCode, int mdToken)
         {
             var handleRequestDelegate = Emit.DynamicMethodBuilder<Func<object, object, object, bool>>.GetOrCreateMethodCallDelegate(thisObj.GetType(), "HandleRequest");
 
