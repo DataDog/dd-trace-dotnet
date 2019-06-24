@@ -65,14 +65,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     try
                     {
                         // extract propagated http headers
-                        if (request.TryGetPropertyValue("Headers", out IEnumerable requestHeaders))
+                        var requestHeaders = request.GetProperty<IEnumerable>("Headers").GetValueOrDefault();
+
+                        if (requestHeaders != null)
                         {
                             var headersCollection = new DictionaryHeadersCollection();
 
                             foreach (object header in requestHeaders)
                             {
-                                if (header.TryGetPropertyValue("Key", out string key) &&
-                                    header.TryGetPropertyValue("Value", out IList<string> values))
+                                var key = header.GetProperty<string>("Key").GetValueOrDefault();
+                                var values = header.GetProperty<IList<string>>("Value").GetValueOrDefault();
+
+                                if (key != null && values != null)
                                 {
                                     headersCollection.Add(key, values);
                                 }
