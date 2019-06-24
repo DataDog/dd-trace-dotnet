@@ -395,7 +395,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             url = $"{pathBase}{path}{queryString}";
 
-            resourceName = UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true).ToLowerInvariant();
+            resourceName = actionDescriptor.GetProperty("AttributeRouteInfo").GetProperty<string>("Template").GetValueOrDefault() ??
+                           UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true).ToLowerInvariant();
         }
 
         private bool DisposeObject(IDisposable disposable)
