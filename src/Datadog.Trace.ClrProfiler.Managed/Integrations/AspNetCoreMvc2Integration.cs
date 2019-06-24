@@ -393,7 +393,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             url = $"{pathBase}{path}{queryString}";
 
             string resourceUrl = actionDescriptor.GetProperty("AttributeRouteInfo").GetProperty<string>("Template").GetValueOrDefault() ??
-                                 UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true).ToLowerInvariant();
+                                 UriHelpers.GetRelativeUrl(new Uri($"https://{host}{url}"), tryRemoveIds: true).ToLowerInvariant();
 
             resourceName = $"{httpMethod} {resourceUrl}";
         }
