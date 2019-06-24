@@ -13,7 +13,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class AspNetCoreMvc2Tests : TestHelper
     {
-        private static readonly string[] Paths = { "/", "/api/delay/0" };
+        private static readonly Dictionary<string, string> Paths = new Dictionary<string, string>
+        {
+            { "/", "GET /" },
+            { "/delay/0", "GET delay/{seconds}" },
+            { "/api/delay/0", "GET api/delay/{seconds}" }
+        };
 
         public AspNetCoreMvc2Tests(ITestOutputHelper output)
             : base("AspNetCoreMvc2", output)
@@ -34,33 +39,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
                 process.OutputDataReceived += (sender, args) =>
-                                              {
-                                                  if (args.Data != null)
-                                                  {
-                                                      if (args.Data.Contains("Now listening on:") || args.Data.Contains("Unable to start Kestrel"))
-                                                      {
-                                                          wh.Set();
-                                                      }
+                {
+                    if (args.Data != null)
+                    {
+                        if (args.Data.Contains("Now listening on:") || args.Data.Contains("Unable to start Kestrel"))
+                        {
+                            wh.Set();
+                        }
 
-                                                      Output.WriteLine($"[webserver][stdout] {args.Data}");
-                                                  }
-                                              };
+                        Output.WriteLine($"[webserver][stdout] {args.Data}");
+                    }
+                };
                 process.BeginOutputReadLine();
 
                 process.ErrorDataReceived += (sender, args) =>
-                                             {
-                                                 if (args.Data != null)
-                                                 {
-                                                     Output.WriteLine($"[webserver][stderr] {args.Data}");
-                                                 }
-                                             };
+                {
+                    if (args.Data != null)
+                    {
+                        Output.WriteLine($"[webserver][stderr] {args.Data}");
+                    }
+                };
                 process.BeginErrorReadLine();
 
                 // wait for server to start
                 wh.WaitOne(5000);
 
-                SubmitRequests(aspNetCorePort, Paths);
-                var expected = new List<string>(Paths);
+                SubmitRequests(aspNetCorePort, Paths.Keys.ToArray());
+                var expected = new List<string>(Paths.Values);
                 var spans = agent.WaitForSpans(expected.Count)
                                  .Where(s => s.Type == SpanTypes.Web)
                                  .OrderBy(s => s.Start)
