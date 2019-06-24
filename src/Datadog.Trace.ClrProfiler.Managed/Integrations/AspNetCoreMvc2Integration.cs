@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -45,19 +46,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 _httpContext = httpContext;
                 string httpMethod = null;
-                string resourceName = null;
-                string host = null;
-                string url = null;
-
-                if (actionDescriptor.TryGetPropertyValue("ControllerName", out string controllerName))
-                {
-                    controllerName = controllerName?.ToLowerInvariant();
-                }
-
-                if (actionDescriptor.TryGetPropertyValue("ActionName", out string actionName))
-                {
-                    actionName = actionName?.ToLowerInvariant();
-                }
 
                 if (_httpContext.TryGetPropertyValue("Request", out object request) &&
                     request.TryGetPropertyValue("Method", out httpMethod))
@@ -70,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     httpMethod = "UNKNOWN";
                 }
 
-                GetTagValuesFromRequest(request, out host, out resourceName, out url);
+                GetTagValues(actionDescriptor, request, out var host, out var resourceName, out var url);
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
 
@@ -376,12 +364,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static void GetTagValuesFromRequest(
+        private static void GetTagValues(
+            object actionDescriptor,
             object request,
             out string host,
             out string resourceName,
-            out string fullUrl)
+            out string fullUrl,
+            out string controllerName,
+            out string actionName)
         {
+            controllerName = actionDescriptor.GetProperty<string>("ControllerName")
+                                             .GetValueOrDefault()
+                                            ?.ToLowerInvariant();
+
+            actionName = actionDescriptor.GetProperty<string>("ActionName")
+                                         .GetValueOrDefault()
+                                        ?.ToLowerInvariant();
+
             if (!request.TryGetPropertyValue("Host", out object hostObject) ||
                 !hostObject.TryGetPropertyValue("Value", out host))
             {
