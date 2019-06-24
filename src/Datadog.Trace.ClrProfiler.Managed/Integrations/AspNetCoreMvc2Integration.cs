@@ -377,7 +377,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object request,
             out string host,
             out string resourceName,
-            out string fullUrl,
+            out string url,
             out string controllerName,
             out string actionName)
         {
@@ -393,11 +393,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             string queryString = request.GetProperty("QueryString").GetProperty<string>("Value").GetValueOrDefault();
 
-            string scheme = request.GetProperty<string>("Scheme").GetValueOrDefault();
+            url = $"{pathBase}{path}{queryString}";
 
-            fullUrl = $"{scheme}://{host}{pathBase}{path}{queryString}".ToLowerInvariant();
-
-            resourceName = UriHelpers.GetRelativeUrl(new Uri(fullUrl), tryRemoveIds: true).ToLowerInvariant();
+            resourceName = UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true).ToLowerInvariant();
         }
 
         private bool DisposeObject(IDisposable disposable)
