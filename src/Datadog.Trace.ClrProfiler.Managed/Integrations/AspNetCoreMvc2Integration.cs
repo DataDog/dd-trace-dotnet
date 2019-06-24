@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 _scope = tracer.StartActive(OperationName, propagatedContext);
                 var span = _scope.Span;
 
-                span.DecorateWebSpan(
+                span.DecorateWebServerSpan(
                     resourceName: resourceName,
                     method: httpMethod,
                     host: host,
