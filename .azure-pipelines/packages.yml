@@ -65,21 +65,21 @@ jobs:
     displayName: dotnet build
     inputs:
       command: build
-      configuration: $(buildConfiguration)
       projects: src/**/*.csproj
+      arguments: --configuration $(buildConfiguration)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet pack
-    condition: eq(variables['nugetPack'], 'true')
+    condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
       command: pack
-      configuration: $(buildConfiguration)
       packagesToPack: src/**/*.csproj
       packDirectory: nuget-output
+      configuration: $(buildConfiguration)
 
   - task: PublishPipelineArtifact@0
     displayName: publish nuget artifacts
-    condition: eq(variables['nugetPack'], 'true')
+    condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
       artifactName: nuget-packages
       targetPath: nuget-output
@@ -90,7 +90,7 @@ jobs:
       solution: Datadog.Trace.proj
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
-      msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%
+      msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%;OutputName=datadog-dotnet-apm-%GitVersion_MajorMinorPatch%-$(buildPlatform);RunWixToolsOutOfProc=true
 
   - task: PublishPipelineArtifact@0
     displayName: publish msi artifact
