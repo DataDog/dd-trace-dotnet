@@ -104,12 +104,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 _scope = tracer.StartActive(OperationName, propagatedContext);
                 var span = _scope.Span;
 
-                if (string.IsNullOrEmpty(resourceName))
-                {
-                    // a legacy fail safe to be removed
-                    resourceName = $"{httpMethod} {controllerName}.{actionName}";
-                }
-
                 span.DecorateWebSpan(
                     resourceName: resourceName,
                     method: httpMethod,
