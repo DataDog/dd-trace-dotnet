@@ -4,6 +4,7 @@
 #include <string>
 #include "corhlpr.h"
 
+#include <iostream>
 #include "clr_helpers.h"
 #include "environment_variables.h"
 #include "il_rewriter.h"
@@ -176,6 +177,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers2"_W,
       "Sigil"_W,
       "Sigil.Emit.DynamicAssembly"_W,
+      "System.Core"_W,
+      "System.Runtime"_W,
+      "System.IO.FileSystem"_W,
+      "System.Collections"_W,
+      "System.Runtime.Extensions"_W,
+      "System.Threading.Tasks"_W,
+      "System.Runtime.InteropServices"_W,
+      "System.Runtime.InteropServices.RuntimeInformation"_W,
+      "System.ComponentModel"_W,
+      "System.Console"_W,
+      "System.Diagnostics.DiagnosticSource"_W,
+      "Microsoft.Extensions.Options"_W,
+      "Microsoft.Extensions.ObjectPool"_W,
+      "System.Configuration"_W,
+      "System.Xml.Linq"_W,
+      "Microsoft.AspNetCore.Razor.Language"_W,
+      "Microsoft.AspNetCore.Mvc.RazorPages"_W,
+      "Microsoft.CSharp"_W,
+      "Newtonsoft.Json"_W, 
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
 
@@ -395,6 +415,32 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
       if (!target.IsValid()) {
         continue;
+      }
+
+      bool is_func =
+          target.type.name.find("System.Func"_W) != std::string::npos;
+      bool is_action =
+          target.type.name.find("System.Action"_W) != std::string::npos;
+
+      if (!is_func && !is_action) {
+
+        size_t find_result = target.type.name.find("ContainerMiddleware"_W);
+
+        if (find_result != std::string::npos) {
+          std::cout << "found a thing";
+        }
+
+        find_result = target.name.find("OnAction"_W);
+
+        if (find_result != std::string::npos) {
+          std::cout << "found a thing";
+        }
+
+        find_result = target.name.find("Invoke"_W);
+
+        if (find_result != std::string::npos) {
+           std::cout << "found a thing";
+        }
       }
 
       // make sure the type and method names match

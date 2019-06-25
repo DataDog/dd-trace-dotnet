@@ -2,7 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+<<<<<<< HEAD:src/Datadog.Trace.ClrProfiler.Managed/Integrations/AspNetCoreMvc2Integration.cs
 using Datadog.Trace.ClrProfiler.Emit;
+=======
+using System.Reflection.Emit;
+using System.Threading.Tasks;
+>>>>>>> 87ab627... Aspnet core rework:src/Datadog.Trace.ClrProfiler.Managed/Integrations/AspNet/AspNetCoreMvc2Integration.cs
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -25,12 +30,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         private const string ResourceInvoker = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
 
+        /// <summary>
+        /// Type for unobtrusive hooking into Microsoft.AspNetCore.Mvc.Core pipeline.
+        /// </summary>
+        private const string DiagnosticSource = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions";
+
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
         private static readonly InterceptedMethodAccess<Action<object>> RethrowAccess = new InterceptedMethodAccess<Action<object>>();
-
-        private static Action<object, object, object, object> _beforeAction;
-        private static Action<object, object, object, object> _afterAction;
 
         private readonly object _httpContext;
         private readonly Scope _scope;
@@ -126,7 +133,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
-            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
+            TargetType = DiagnosticSource,
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
@@ -160,28 +167,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Log.ErrorExceptionForFilter($"Error creating {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
+            MethodBase instrumentedMethod = null;
+
             try
             {
-                if (_beforeAction == null)
-                {
-                    var assembly = actionDescriptor.GetType().GetTypeInfo().Assembly;
-                    var type = assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
-
-                    _beforeAction = Emit.DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                        type,
-                        "BeforeAction");
-                }
+                instrumentedMethod = Assembly.GetCallingAssembly().ManifestModule.ResolveMethod(mdToken);
             }
             catch (Exception ex)
             {
-                // profiled app will continue working without DiagnosticSource
-                Log.ErrorException("Error calling Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.BeforeAction()", ex);
+                // profiled app will continue working as expected without this method
+                Log.ErrorException($"Error calling {"TODO"}.{"TODO"}(object context)", ex);
             }
 
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                _beforeAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
+                instrumentedMethod?.Invoke(null, new[] { diagnosticSource, actionDescriptor, httpContext, routeData });
             }
             catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
@@ -202,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
-            TargetType = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions",
+            TargetType = DiagnosticSource,
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
@@ -234,27 +235,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
+            MethodBase instrumentedMethod = null;
+
             try
             {
-                if (_afterAction == null)
-                {
-                    var type = actionDescriptor.GetType().Assembly.GetType("Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions");
-
-                    _afterAction = Emit.DynamicMethodBuilder<Action<object, object, object, object>>.CreateMethodCallDelegate(
-                        type,
-                        "AfterAction");
-                }
+                instrumentedMethod = Assembly.GetCallingAssembly().ManifestModule.ResolveMethod(mdToken);
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: log this as an instrumentation error, we cannot call instrumented method,
-                // profiled app will continue working without DiagnosticSource
+                // profiled app will continue working as expected without this method
+                Log.ErrorException($"Error calling {"TODO"}.{"TODO"}(object context)", ex);
             }
 
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                _afterAction?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
+                instrumentedMethod?.Invoke(null, new[] { diagnosticSource, actionDescriptor, httpContext, routeData });
             }
             catch (Exception ex)
             {
@@ -269,75 +265,75 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Wrapper method used to catch unhandled exceptions in the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
+        /// Entry method for invoking the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
         /// </summary>
-        /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
+        /// <param name="instance">The instance (this).</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <returns>Task</returns>
         [InterceptMethod(
-            CallerAssembly = AspnetMvcCore,
-            TargetAssembly = AspnetMvcCore,
-            TargetType = ResourceInvoker,
-            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore },
+            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
+            TargetType = "Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker",
+            TargetSignatureTypes = new[] { ClrNames.Ignore },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
-        public static void Rethrow(object context, int opCode, int mdToken)
+        public static object InvokeActionMethodAsync(object instance, int opCode, int mdToken)
         {
-            AspNetCoreMvc2Integration integration = null;
-            const string methodName = nameof(Rethrow);
-
-            if (context == null)
-            {
-                // Every rethrow method in every v2.x returns when the context is null
-                // We need the type of context to call the correct method as there are 3
-                // Remove this when we introduce the type arrays within the profiler
-                return;
-            }
+            // Microsoft.AspNetCore.Mvc.Internal.ControllerActionFilter.OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+            var shouldTrace = Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName);
+            MethodBase instrumentedMethod;
 
             try
             {
-                if (context.TryGetPropertyValue("HttpContext", out object httpContext))
+                instrumentedMethod = Assembly.GetCallingAssembly().ManifestModule.ResolveMethod(mdToken);
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error calling ControllerActionInvoker.{nameof(InvokeActionMethodAsync)}()", ex);
+                throw;
+            }
+
+            if (shouldTrace)
+            {
+                using (var scope = Tracer.Instance.StartActive(OperationName))
                 {
-                    if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                    try
                     {
-                        integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                        var result = instrumentedMethod.Invoke(instance, Interception.NoArgObjects);
+                        return result;
+                    }
+                    catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                    {
+                        // unreachable code
+                        throw;
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
-            }
 
-            Action<object> rethrow;
+            return instrumentedMethod.Invoke(instance, Interception.NoArgObjects);
+        }
 
-            try
-            {
-                rethrow = RethrowAccess.GetInterceptedMethod(
-                    assembly: Assembly.GetCallingAssembly(),
-                    owningType: ResourceInvoker,
-                    returnType: Interception.VoidType,
-                    methodName: methodName,
-                    generics: Interception.NullTypeArray,
-                    parameters: Interception.ParamsToTypes(context));
-            }
-            catch (Exception ex)
-            {
-                // profiled app will not continue working as expected without this rethrow method
-                Log.ErrorException($"Error calling {ResourceInvoker}.{methodName}(object context)", ex);
-                throw;
-            }
-
-            try
-            {
-                // call the original method, catching and rethrowing any unhandled exceptions
-                rethrow.Invoke(context);
-            }
-            catch (Exception ex) when (integration?.SetException(ex) ?? false)
-            {
-                // unreachable code
-                throw;
-            }
+        /// <summary>
+        /// Entry method for invoking the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
+        /// </summary>
+        /// <param name="instance">Instance being instrumented.</param>
+        /// <param name="value">HttpContext.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        [InterceptMethod(
+            TargetAssembly = "Microsoft.AspNetCore.Http.Abstractions",
+            TargetType = "Microsoft.AspNetCore.Http.HttpResponse",
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Int32 },
+            TargetMethod = "set_StatusCode",
+            TargetMinimumVersion = "0",
+            TargetMaximumVersion = "15")]
+        // ReSharper disable once UnusedMember.Global
+        public static void SetStatusCode(object instance, int value, int opCode, int mdToken)
+        {
+            // Microsoft.AspNetCore.Hosting.Internal.RequestServicesContainerMiddleware.Invoke(HttpContext httpContext)
+            MethodBase instrumentedMethod = Assembly.GetCallingAssembly().ManifestModule.ResolveMethod(mdToken);
+            instrumentedMethod.Invoke(instance, new[] { (object)value });
         }
 
         /// <summary>
