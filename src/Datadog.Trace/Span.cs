@@ -295,7 +295,7 @@ namespace Datadog.Trace
                 }
 
                 SetTag(Trace.Tags.ErrorMsg, exception.Message);
-                SetTag(Trace.Tags.ErrorStack, exception.StackTrace);
+                SetTag(Trace.Tags.ErrorStack, exception.ToString());
                 SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
             }
         }
