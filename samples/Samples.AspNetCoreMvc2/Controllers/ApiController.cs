@@ -4,10 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Samples.AspNetCoreMvc2.Controllers
 {
+    [Route("api")]
     public class ApiController : ControllerBase
     {
         [HttpGet]
-        [Route("api/delay/{seconds}")]
+        [Route("delay/{seconds}")]
         public ActionResult Delay(int seconds)
         {
             Thread.Sleep(TimeSpan.FromSeconds(seconds));

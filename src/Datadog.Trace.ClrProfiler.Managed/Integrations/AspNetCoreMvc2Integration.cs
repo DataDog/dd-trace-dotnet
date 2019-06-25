@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -44,33 +45,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 _httpContext = httpContext;
-                string httpMethod = null;
-                string resourceName = null;
-                string host = null;
-                string url = null;
+                var request = _httpContext.GetProperty("Request").GetValueOrDefault();
 
-                if (actionDescriptor.TryGetPropertyValue("ControllerName", out string controllerName))
-                {
-                    controllerName = controllerName?.ToLowerInvariant();
-                }
+                GetTagValues(
+                    actionDescriptor,
+                    request,
+                    out string httpMethod,
+                    out string host,
+                    out string resourceName,
+                    out string url,
+                    out string controllerName,
+                    out string actionName);
 
-                if (actionDescriptor.TryGetPropertyValue("ActionName", out string actionName))
-                {
-                    actionName = actionName?.ToLowerInvariant();
-                }
-
-                if (_httpContext.TryGetPropertyValue("Request", out object request) &&
-                    request.TryGetPropertyValue("Method", out httpMethod))
-                {
-                    httpMethod = httpMethod?.ToUpperInvariant();
-                }
-
-                if (httpMethod == null)
-                {
-                    httpMethod = "UNKNOWN";
-                }
-
-                GetTagValuesFromRequest(request, out host, out resourceName, out url);
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
 
@@ -79,14 +65,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     try
                     {
                         // extract propagated http headers
-                        if (request.TryGetPropertyValue("Headers", out IEnumerable requestHeaders))
+                        var requestHeaders = request.GetProperty<IEnumerable>("Headers").GetValueOrDefault();
+
+                        if (requestHeaders != null)
                         {
                             var headersCollection = new DictionaryHeadersCollection();
 
                             foreach (object header in requestHeaders)
                             {
-                                if (header.TryGetPropertyValue("Key", out string key) &&
-                                    header.TryGetPropertyValue("Value", out IList<string> values))
+                                var key = header.GetProperty<string>("Key").GetValueOrDefault();
+                                var values = header.GetProperty<IList<string>>("Value").GetValueOrDefault();
+
+                                if (key != null && values != null)
                                 {
                                     headersCollection.Add(key, values);
                                 }
@@ -104,13 +94,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 _scope = tracer.StartActive(OperationName, propagatedContext);
                 var span = _scope.Span;
 
-                if (string.IsNullOrEmpty(resourceName))
-                {
-                    // a legacy fail safe to be removed
-                    resourceName = $"{httpMethod} {controllerName}.{actionName}";
-                }
-
-                span.DecorateWebSpan(
+                span.DecorateWebServerSpan(
                     resourceName: resourceName,
                     method: httpMethod,
                     host: host,
@@ -387,43 +371,36 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static void GetTagValuesFromRequest(
+        private static void GetTagValues(
+            object actionDescriptor,
             object request,
+            out string httpMethod,
             out string host,
             out string resourceName,
-            out string fullUrl)
+            out string url,
+            out string controllerName,
+            out string actionName)
         {
-            if (!request.TryGetPropertyValue("Host", out object hostObject) ||
-                !hostObject.TryGetPropertyValue("Value", out host))
-            {
-                host = string.Empty;
-            }
+            controllerName = actionDescriptor.GetProperty<string>("ControllerName").GetValueOrDefault()?.ToLowerInvariant();
 
-            if (!request.TryGetPropertyValue("PathBase", out object pathBaseObject) ||
-                !pathBaseObject.TryGetPropertyValue("Value", out string pathBase))
-            {
-                pathBase = string.Empty;
-            }
+            actionName = actionDescriptor.GetProperty<string>("ActionName").GetValueOrDefault()?.ToLowerInvariant();
 
-            if (!request.TryGetPropertyValue("Path", out object pathObject) ||
-                !pathObject.TryGetPropertyValue("Value", out string path))
-            {
-                path = string.Empty;
-            }
+            host = request.GetProperty("Host").GetProperty<string>("Value").GetValueOrDefault();
 
-            if (!request.TryGetPropertyValue("QueryString", out object queryStringObject) ||
-                !queryStringObject.TryGetPropertyValue("Value", out string queryString))
-            {
-                queryString = string.Empty;
-            }
+            httpMethod = request.GetProperty<string>("Method").GetValueOrDefault()?.ToUpperInvariant() ?? "UNKNOWN";
 
-            if (!request.TryGetPropertyValue("Scheme", out string scheme))
-            {
-                scheme = string.Empty;
-            }
+            string pathBase = request.GetProperty("PathBase").GetProperty<string>("Value").GetValueOrDefault();
 
-            resourceName = $"{UriHelpers.CleanUriSegment(pathBase)}{UriHelpers.CleanUriSegment(path)}".ToLowerInvariant();
-            fullUrl = $"{scheme}://{host}{pathBase}{path}{queryString}".ToLowerInvariant();
+            string path = request.GetProperty("Path").GetProperty<string>("Value").GetValueOrDefault();
+
+            string queryString = request.GetProperty("QueryString").GetProperty<string>("Value").GetValueOrDefault();
+
+            url = $"{pathBase}{path}{queryString}";
+
+            string resourceUrl = actionDescriptor.GetProperty("AttributeRouteInfo").GetProperty<string>("Template").GetValueOrDefault() ??
+                                 UriHelpers.GetRelativeUrl(new Uri($"https://{host}{url}"), tryRemoveIds: true).ToLowerInvariant();
+
+            resourceName = $"{httpMethod} {resourceUrl}";
         }
 
         private bool DisposeObject(IDisposable disposable)

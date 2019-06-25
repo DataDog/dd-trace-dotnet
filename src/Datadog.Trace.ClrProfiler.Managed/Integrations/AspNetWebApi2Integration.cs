@@ -185,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Replace("{controller}", controller)
                        .Replace("{action}", action);
 
-                span.DecorateWebSpan(
+                span.DecorateWebServerSpan(
                     resourceName: resourceName,
                     method: method,
                     host: host,

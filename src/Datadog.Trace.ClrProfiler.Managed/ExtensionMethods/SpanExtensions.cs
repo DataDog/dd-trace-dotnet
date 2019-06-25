@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.ExtensionMethods
         internal static string GetHttpMethod(this ISpan span)
             => span.GetTag(Tags.HttpMethod);
 
-        internal static void DecorateWebSpan(
+        internal static void DecorateWebServerSpan(
             this Span span,
             string resourceName,
             string method,
@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.ExtensionMethods
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
+            span.SetTag(Tags.SpanKind, SpanKinds.Server);
             span.SetTag(Tags.HttpMethod, method);
             span.SetTag(Tags.HttpRequestHeadersHost, host);
             span.SetTag(Tags.HttpUrl, httpUrl);
