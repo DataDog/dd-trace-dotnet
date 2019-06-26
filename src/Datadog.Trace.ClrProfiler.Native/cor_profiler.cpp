@@ -269,8 +269,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   module_id_to_info_map_[module_id] = module_metadata;
 
   Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
-        module_info.assembly.name,
-        " AppDomain ", module_info.assembly.app_domain_id, " ",
+        module_info.assembly.name, " AppDomain ",
+        module_info.assembly.app_domain_id, " ",
         module_info.assembly.app_domain_name, ". .");
   return S_OK;
 }
@@ -403,17 +403,31 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      if (method_replacement.wrapper_method.method_signature.data.size() < 3) {
+      auto wrapper_method_signature_size =
+          method_replacement.wrapper_method.method_signature.data.size();
+
+      if (wrapper_method_signature_size < 5) {
         // This is invalid, we should always have the wrapper fully defined
-        // Minimum: 0:{CallingConvention}|1:{ParamCount}|2:{ReturnType}
+        // Minimum:
+        // 0:{CallingConvention}|1:{ParamCount}|2:{ReturnType}|3:{OpCode}|4:{mdToken}
         // Drop out for safety
+        if (debug_logging_enabled) {
+          Debug(
+              "JITCompilationStarted skipping method: signature too short. "
+              "function_id=",
+              function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()",
+              " wrapper_method_signature_size=", wrapper_method_signature_size);
+        }
+
         continue;
       }
 
       auto expected_number_args = method_replacement.wrapper_method
                                       .method_signature.NumberOfArguments();
 
-      // We pass the opcode and mdToken as the last arguments to every wrapper method
+      // We pass the opcode and mdToken as the last arguments to every wrapper
+      // method
       expected_number_args = expected_number_args - 2;
 
       if (target.signature.IsInstanceMethod()) {
@@ -425,6 +439,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       if (expected_number_args != target_arg_count) {
         // Number of arguments does not match our wrapper method
+        if (debug_logging_enabled) {
+          Debug(
+              "JITCompilationStarted skipping method: argument counts don't "
+              "match. function_id=",
+              function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()",
+              " expected_number_args=", expected_number_args,
+              " target_arg_count=", target_arg_count);
+        }
+
         continue;
       }
 
@@ -447,9 +471,35 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           module_metadata->metadata_import, target, sig_types);
       auto expected_sig_types =
           method_replacement.target_method.signature_types;
-      if (!successfully_parsed_signature ||
-          sig_types.size() != expected_sig_types.size()) {
+
+      if (!successfully_parsed_signature) {
+        if (debug_logging_enabled) {
+          Debug(
+              "JITCompilationStarted skipping method: failed to parse "
+              "signature. function_id=",
+              function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()",
+              " successfully_parsed_signature=", successfully_parsed_signature,
+              " sig_types.size()=", sig_types.size(),
+              " expected_sig_types.size()=", expected_sig_types.size());
+        }
+
+        continue;
+      }
+
+      if (sig_types.size() != expected_sig_types.size()) {
         // we can't safely assume our wrapper methods handle the types
+        if (debug_logging_enabled) {
+          Debug(
+              "JITCompilationStarted skipping method: unexpected type count. "
+              "function_id=",
+              function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()",
+              " successfully_parsed_signature=", successfully_parsed_signature,
+              " sig_types.size()=", sig_types.size(),
+              " expected_sig_types.size()=", expected_sig_types.size());
+        }
+
         continue;
       }
 
@@ -461,12 +511,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         }
         if (expected_sig_types[i] != sig_types[i]) {
           // we have a type mismatch, drop out
+          if (debug_logging_enabled) {
+            Debug(
+                "JITCompilationStarted skipping method: types don't match. "
+                "function_id=",
+                function_id, " token=", function_token,
+                " name=", caller.type.name, ".", caller.name, "()",
+                " expected_sig_types[", i, "]=", expected_sig_types[i],
+                " sig_types[", i, "]=", sig_types[i]);
+          }
+
           is_match = false;
           break;
         }
       }
 
       if (!is_match) {
+        // signatures don't match
         continue;
       }
 
