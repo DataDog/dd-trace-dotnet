@@ -12,10 +12,9 @@ namespace DataDogThreadTest
 
         public static void Setup()
         {
-            Hierarchy hierarchy = (Hierarchy)LogManager.GetRepository(typeof(Logger).Assembly);
+            var hierarchy = (Hierarchy)LogManager.GetRepository(typeof(Logger).Assembly);
 
-            PatternLayout patternLayout = new PatternLayout();
-            //patternLayout.ConversionPattern = "%date [%thread] %-5level %logger - %message%newline";
+            var patternLayout = new PatternLayout();
             patternLayout.ConversionPattern = "%message";
             patternLayout.ActivateOptions();
 

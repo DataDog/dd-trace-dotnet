@@ -55,7 +55,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             }
 
             var reasonableWaitTime = 30_000;
-
             var ranToCompletion = result.WaitForExit(reasonableWaitTime);
 
             if (!ranToCompletion)
@@ -64,7 +63,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             }
 
             var successCode = 0;
-
             Assert.True(successCode == result.ExitCode, "Non-success exit code: where there is smoke, there is fire.");
         }
     }

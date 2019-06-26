@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (current == null || current != scope)
             {
-                // This is not the current scope, bail out
+                // This is not the current scope for this context, bail out
                 return;
             }
 
@@ -98,5 +98,4 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
     }
 }
-
 #endif

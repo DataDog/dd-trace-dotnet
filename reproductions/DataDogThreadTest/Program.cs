@@ -1,16 +1,13 @@
+using Datadog.Trace.Configuration;
+using log4net;
 using System;
 using System.Collections.Concurrent;
-using log4net;
+using System.Linq;
+using System.Threading;
+using Tracer = Datadog.Trace.Tracer;
 
 namespace DataDogThreadTest
 {
-    using System.Linq;
-    using System.Threading;
-
-    using Datadog.Trace.Configuration;
-
-    using Tracer = Datadog.Trace.Tracer;
-
     class Program
     {
         internal static readonly string TraceIdKey = "dd.trace_id";
@@ -34,7 +31,6 @@ namespace DataDogThreadTest
 
                 // Two logs per thread iteration
                 var expectedLogCount = totalIterations * threadRepresentation.Length * 2;
-
                 var exceptionBag = new ConcurrentBag<Exception>();
 
                 Console.WriteLine($"Running {threadRepresentation.Length} threads with {totalIterations} iterations.");
@@ -132,9 +128,7 @@ namespace DataDogThreadTest
                 logger.Info("TraceId: 0, SpanId: 0");
 
                 var lastLog = InMemoryLog4NetLogger.InMemoryAppender.GetEvents().Last();
-
                 var expectedOutOfTraceLog = "TraceId: 0, SpanId: 0";
-
                 var lastLogTraceId = lastLog.Properties[TraceIdKey];
                 var lastLogSpanIdId = lastLog.Properties[SpanIdKey];
                 var actual = $"TraceId: {lastLogTraceId}, SpanId: {lastLogSpanIdId}";
@@ -145,7 +139,6 @@ namespace DataDogThreadTest
                 }
 
                 Console.WriteLine("Non-trace wrapped logging event has 0 for TraceId and SpanId.");
-
                 Console.WriteLine("All is well!");
             }
             catch (Exception ex)
