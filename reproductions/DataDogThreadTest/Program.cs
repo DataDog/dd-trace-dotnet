@@ -28,9 +28,10 @@ namespace DataDogThreadTest
 
                 var totalIterations = 10_000;
                 var threadRepresentation = Enumerable.Range(0, 10).ToArray();
+                var threadCount = threadRepresentation.Length;
 
-                // Two logs per thread iteration
-                var expectedLogCount = totalIterations * threadRepresentation.Length * 2;
+                // Two logs per thread iteration + 1 extra log at the end of each thread
+                var expectedLogCount = (totalIterations * threadCount * 2) + threadCount;
                 var exceptionBag = new ConcurrentBag<Exception>();
 
                 Console.WriteLine($"Running {threadRepresentation.Length} threads with {totalIterations} iterations.");
@@ -73,6 +74,9 @@ namespace DataDogThreadTest
                                                 }
                                             }
                                         }
+
+                                        // Verify everything is cleaned up on this thread
+                                        logger.Info("TraceId: 0, SpanId: 0");
                                     }
                                     catch (Exception ex)
                                     {
