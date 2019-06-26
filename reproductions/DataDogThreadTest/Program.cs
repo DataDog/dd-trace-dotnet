@@ -1,5 +1,4 @@
 using System;
-using Datadog.Trace;
 using log4net;
 
 namespace DataDogThreadTest
@@ -28,10 +27,12 @@ namespace DataDogThreadTest
             var tracer = new Tracer(ddTraceSettings);
 
             var totalIterations = 10_000;
-            var threadRepresentation = Enumerable.Range(0, 2).ToArray();
+            var threadRepresentation = Enumerable.Range(0, 10).ToArray();
 
             // Two logs per thread iteration
             var expectedLogCount = totalIterations * threadRepresentation.Length * 2;
+
+            Console.WriteLine($"Running {threadRepresentation.Length} threads with {totalIterations} iterations.");
 
             var threads = threadRepresentation.Select(idx =>
             {
@@ -41,37 +42,30 @@ namespace DataDogThreadTest
                     var i = 0;
                     while (i++ < totalIterations)
                     {
-                        try
+                        using (var outerScope = tracer.StartActive("thread-test"))
                         {
-                            using (var outerScope = tracer.StartActive("thread-test"))
+                            var outerTraceId = outerScope.Span.TraceId;
+                            var outerSpanId = outerScope.Span.SpanId;
+
+                            logger.Info($"TraceId: {outerTraceId}, SpanId: {outerSpanId}");
+
+                            using (var innerScope = tracer.StartActive("nest-thread-test"))
                             {
-                                var outerTraceId = outerScope.Span.TraceId;
-                                var outerSpanId = outerScope.Span.SpanId;
+                                var innerTraceId = innerScope.Span.TraceId;
+                                var innerSpanId = innerScope.Span.SpanId;
 
-                                logger.Info($"TraceId: {outerTraceId}, SpanId: {outerSpanId}");
-
-                                using (var innerScope = tracer.StartActive("nest-thread-test"))
+                                if (outerTraceId != innerTraceId)
                                 {
-                                    var innerTraceId = innerScope.Span.TraceId;
-                                    var innerSpanId = innerScope.Span.SpanId;
-
-                                    if (outerTraceId != innerTraceId)
-                                    {
-                                        throw new Exception($"TraceId mismatch - outer: {outerTraceId}, inner: {innerTraceId}");
-                                    }
-
-                                    if (outerSpanId == innerSpanId)
-                                    {
-                                        throw new Exception($"Unexpected SpanId match - outer: {outerSpanId}, inner: {innerSpanId}");
-                                    }
-
-                                    logger.Info($"TraceId: {innerTraceId}, SpanId: {innerSpanId}");
+                                    throw new Exception($"TraceId mismatch - outer: {outerTraceId}, inner: {innerTraceId}");
                                 }
+
+                                if (outerSpanId == innerSpanId)
+                                {
+                                    throw new Exception($"Unexpected SpanId match - outer: {outerSpanId}, inner: {innerSpanId}");
+                                }
+
+                                logger.Info($"TraceId: {innerTraceId}, SpanId: {innerSpanId}");
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                           Console.WriteLine($"Error making span. {ex}");
                         }
                     }
                 });
@@ -89,10 +83,14 @@ namespace DataDogThreadTest
 
             var loggingEvents = InMemoryLog4NetLogger.InMemoryAppender.GetEvents();
 
+            Console.WriteLine($"Expecting {expectedLogCount} total log events.");
+
             if (loggingEvents.Length != expectedLogCount)
             {
                 throw new Exception($"Expected {expectedLogCount}, actual log count {loggingEvents.Length}");
             }
+
+            Console.WriteLine($"Received {loggingEvents.Length} total log events.");
 
             foreach (var loggingEvent in loggingEvents)
             {
@@ -107,6 +105,8 @@ namespace DataDogThreadTest
 
                 throw new Exception($"LOGGING EVENT DOES NOT MATCH ({attachedTraceId}, {attachedSpanIdId}): {loggingEvent.RenderedMessage}");
             }
+
+            Console.WriteLine("Every trace wrapped logging event has the expected TraceId and SpanId.");
 
             // Test non-traced logging event
             logger.Info("TraceId: 0, SpanId: 0");
@@ -124,7 +124,9 @@ namespace DataDogThreadTest
                 throw new Exception($"Unexpected TraceId or SpanId: {actual}");
             }
 
-            Console.WriteLine("Done");
+            Console.WriteLine("Non-trace wrapped logging event has 0 for TraceId and SpanId.");
+
+            Console.WriteLine("All is well!");
         }
     }
 }
