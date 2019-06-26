@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using log4net;
 
 namespace DataDogThreadTest
@@ -15,118 +16,151 @@ namespace DataDogThreadTest
         internal static readonly string TraceIdKey = "dd.trace_id";
         internal static readonly string SpanIdKey = "dd.span_id";
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            InMemoryLog4NetLogger.Setup();
-            var logger = LogManager.GetLogger(typeof(Program));
-
-            var ddTraceSettings = TracerSettings.FromDefaultSources();
-            ddTraceSettings.AnalyticsEnabled = true;
-            ddTraceSettings.LogsInjectionEnabled = true;
-            ddTraceSettings.TraceEnabled = true;
-            var tracer = new Tracer(ddTraceSettings);
-
-            var totalIterations = 10_000;
-            var threadRepresentation = Enumerable.Range(0, 10).ToArray();
-
-            // Two logs per thread iteration
-            var expectedLogCount = totalIterations * threadRepresentation.Length * 2;
-
-            Console.WriteLine($"Running {threadRepresentation.Length} threads with {totalIterations} iterations.");
-
-            var threads = threadRepresentation.Select(idx =>
+            try
             {
-                return new Thread(o =>
-                {
-                    Thread.Sleep(2000);
-                    var i = 0;
-                    while (i++ < totalIterations)
-                    {
-                        using (var outerScope = tracer.StartActive("thread-test"))
-                        {
-                            var outerTraceId = outerScope.Span.TraceId;
-                            var outerSpanId = outerScope.Span.SpanId;
+                InMemoryLog4NetLogger.Setup();
+                var logger = LogManager.GetLogger(typeof(Program));
 
-                            logger.Info($"TraceId: {outerTraceId}, SpanId: {outerSpanId}");
+                var ddTraceSettings = TracerSettings.FromDefaultSources();
+                ddTraceSettings.AnalyticsEnabled = true;
+                ddTraceSettings.LogsInjectionEnabled = true;
+                ddTraceSettings.TraceEnabled = true;
+                var tracer = new Tracer(ddTraceSettings);
 
-                            using (var innerScope = tracer.StartActive("nest-thread-test"))
-                            {
-                                var innerTraceId = innerScope.Span.TraceId;
-                                var innerSpanId = innerScope.Span.SpanId;
+                var totalIterations = 10_000;
+                var threadRepresentation = Enumerable.Range(0, 10).ToArray();
 
-                                if (outerTraceId != innerTraceId)
+                // Two logs per thread iteration
+                var expectedLogCount = totalIterations * threadRepresentation.Length * 2;
+
+                var exceptionBag = new ConcurrentBag<Exception>();
+
+                Console.WriteLine($"Running {threadRepresentation.Length} threads with {totalIterations} iterations.");
+
+                var threads =
+                    threadRepresentation
+                       .Select(
+                            idx => new Thread(
+                                thread =>
                                 {
-                                    throw new Exception($"TraceId mismatch - outer: {outerTraceId}, inner: {innerTraceId}");
-                                }
+                                    try
+                                    {
+                                        Thread.Sleep(2000);
+                                        var i = 0;
+                                        while (i++ < totalIterations)
+                                        {
+                                            using (var outerScope = tracer.StartActive("thread-test"))
+                                            {
+                                                var outerTraceId = outerScope.Span.TraceId;
+                                                var outerSpanId = outerScope.Span.SpanId;
 
-                                if (outerSpanId == innerSpanId)
-                                {
-                                    throw new Exception($"Unexpected SpanId match - outer: {outerSpanId}, inner: {innerSpanId}");
-                                }
+                                                logger.Info($"TraceId: {outerTraceId}, SpanId: {outerSpanId}");
 
-                                logger.Info($"TraceId: {innerTraceId}, SpanId: {innerSpanId}");
-                            }
-                        }
-                    }
-                });
-            }).ToList();
+                                                using (var innerScope = tracer.StartActive("nest-thread-test"))
+                                                {
+                                                    var innerTraceId = innerScope.Span.TraceId;
+                                                    var innerSpanId = innerScope.Span.SpanId;
 
-            foreach (var thread in threads)
-            {
-                thread.Start();
-            }
+                                                    if (outerTraceId != innerTraceId)
+                                                    {
+                                                        throw new Exception($"TraceId mismatch - outer: {outerTraceId}, inner: {innerTraceId}");
+                                                    }
 
-            while (threads.Any(x => x.IsAlive))
-            {
-                Thread.Sleep(1000);
-            }
+                                                    if (outerSpanId == innerSpanId)
+                                                    {
+                                                        throw new Exception($"Unexpected SpanId match - outer: {outerSpanId}, inner: {innerSpanId}");
+                                                    }
 
-            var loggingEvents = InMemoryLog4NetLogger.InMemoryAppender.GetEvents();
+                                                    logger.Info($"TraceId: {innerTraceId}, SpanId: {innerSpanId}");
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        exceptionBag.Add(ex);
+                                    }
+                                }))
+                       .ToList();
 
-            Console.WriteLine($"Expecting {expectedLogCount} total log events.");
-
-            if (loggingEvents.Length != expectedLogCount)
-            {
-                throw new Exception($"Expected {expectedLogCount}, actual log count {loggingEvents.Length}");
-            }
-
-            Console.WriteLine($"Received {loggingEvents.Length} total log events.");
-
-            foreach (var loggingEvent in loggingEvents)
-            {
-                var attachedTraceId = loggingEvent.Properties[TraceIdKey];
-                var attachedSpanIdId = loggingEvent.Properties[SpanIdKey];
-                var expectedMessage = $"TraceId: {attachedTraceId}, SpanId: {attachedSpanIdId}";
-                if (expectedMessage.Equals(loggingEvent.RenderedMessage))
+                foreach (var thread in threads)
                 {
-                    // all is well
-                    continue;
+                    thread.Start();
                 }
 
-                throw new Exception($"LOGGING EVENT DOES NOT MATCH ({attachedTraceId}, {attachedSpanIdId}): {loggingEvent.RenderedMessage}");
+                while (threads.Any(x => x.IsAlive))
+                {
+                    Thread.Sleep(1000);
+                }
+
+                if (exceptionBag.Any())
+                {
+                    // No exceptions are acceptable
+                    throw new AggregateException(exceptionBag.ToArray());
+                }
+
+                var loggingEvents = InMemoryLog4NetLogger.InMemoryAppender.GetEvents();
+
+                Console.WriteLine($"Expecting {expectedLogCount} total log events.");
+
+                if (loggingEvents.Length != expectedLogCount)
+                {
+                    throw new Exception($"Expected {expectedLogCount}, actual log count {loggingEvents.Length}");
+                }
+
+                Console.WriteLine($"Received {loggingEvents.Length} total log events.");
+
+                foreach (var loggingEvent in loggingEvents)
+                {
+                    var attachedTraceId = loggingEvent.Properties[TraceIdKey];
+                    var attachedSpanIdId = loggingEvent.Properties[SpanIdKey];
+                    var expectedMessage = $"TraceId: {attachedTraceId}, SpanId: {attachedSpanIdId}";
+                    if (expectedMessage.Equals(loggingEvent.RenderedMessage))
+                    {
+                        // all is well
+                        continue;
+                    }
+
+                    throw new Exception($"LOGGING EVENT DOES NOT MATCH ({attachedTraceId}, {attachedSpanIdId}): {loggingEvent.RenderedMessage}");
+                }
+
+                Console.WriteLine("Every trace wrapped logging event has the expected TraceId and SpanId.");
+
+                // Test non-traced logging event
+                logger.Info("TraceId: 0, SpanId: 0");
+
+                var lastLog = InMemoryLog4NetLogger.InMemoryAppender.GetEvents().Last();
+
+                var expectedOutOfTraceLog = "TraceId: 0, SpanId: 0";
+
+                var lastLogTraceId = lastLog.Properties[TraceIdKey];
+                var lastLogSpanIdId = lastLog.Properties[SpanIdKey];
+                var actual = $"TraceId: {lastLogTraceId}, SpanId: {lastLogSpanIdId}";
+
+                if (!actual.Equals(expectedOutOfTraceLog))
+                {
+                    throw new Exception($"Unexpected TraceId or SpanId: {actual}");
+                }
+
+                Console.WriteLine("Non-trace wrapped logging event has 0 for TraceId and SpanId.");
+
+                Console.WriteLine("All is well!");
             }
-
-            Console.WriteLine("Every trace wrapped logging event has the expected TraceId and SpanId.");
-
-            // Test non-traced logging event
-            logger.Info("TraceId: 0, SpanId: 0");
-
-            var lastLog = InMemoryLog4NetLogger.InMemoryAppender.GetEvents().Last();
-
-            var expectedOutOfTraceLog = "TraceId: 0, SpanId: 0";
-
-            var lastLogTraceId = lastLog.Properties[TraceIdKey];
-            var lastLogSpanIdId = lastLog.Properties[SpanIdKey];
-            var actual = $"TraceId: {lastLogTraceId}, SpanId: {lastLogSpanIdId}";
-
-            if (!actual.Equals(expectedOutOfTraceLog))
+            catch (Exception ex)
             {
-                throw new Exception($"Unexpected TraceId or SpanId: {actual}");
+                Console.Error.WriteLine(ex);
+                return (int)ExitCode.UnknownError;
             }
 
-            Console.WriteLine("Non-trace wrapped logging event has 0 for TraceId and SpanId.");
+            return (int)ExitCode.Success;
+        }
 
-            Console.WriteLine("All is well!");
+        enum ExitCode : int
+        {
+            Success = 0,
+            UnknownError = 10
         }
     }
 }

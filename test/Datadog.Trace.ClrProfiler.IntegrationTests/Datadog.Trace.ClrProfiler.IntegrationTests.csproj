@@ -1,21 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
     <Platforms>x64;x86</Platforms>
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**"
-             CopyToOutputDirectory="Always"
-             CopyToPublishDirectory="Always"
-             Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
-    <Content Include="..\..\integrations.json"
-             CopyToOutputDirectory="Always"
-             CopyToPublishDirectory="Always"
-             Link="profiler-lib\integrations.json" />
+    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <Content Include="..\..\integrations.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\integrations.json" />
   </ItemGroup>
   
   <ItemGroup>
