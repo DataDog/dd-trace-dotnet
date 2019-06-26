@@ -31,7 +31,7 @@ namespace Datadog.Trace
 
             _activeScope.Set(scope);
 
-            if (scope.Parent != null)
+            if (newParent != null)
             {
                 SpanDeactivated?.Invoke(this, new SpanEventArgs(newParent.Span));
             }
@@ -46,28 +46,30 @@ namespace Datadog.Trace
             var current = Active;
             var isRootSpan = scope.Parent == null;
 
-            if (current != null && current == scope)
+            if (current == null || current != scope)
             {
-                // if the scope that was just closed was the active scope,
-                // set its parent as the new active scope
-                _activeScope.Set(current.Parent);
-                SpanDeactivated?.Invoke(this, new SpanEventArgs(current.Span));
-
-                if (!isRootSpan)
-                {
-                    SpanActivated?.Invoke(this, new SpanEventArgs(current.Parent.Span));
-                }
+                Log.Error($"Tried to close a non-current scope. TraceId: {scope?.Span?.TraceId}, SpanId: {scope?.Span?.SpanId}");
+                // This is not the current scope, bail out
+                return;
             }
 
-            if (current != null)
-            {
-                SpanClosed?.Invoke(this, new SpanEventArgs(scope.Span));
+            // if the scope that was just closed was the active scope,
+            // set its parent as the new active scope
+            _activeScope.Set(current.Parent);
+            SpanDeactivated?.Invoke(this, new SpanEventArgs(current.Span));
 
-                if (isRootSpan)
-                {
-                    TraceEnded?.Invoke(this, new SpanEventArgs(scope.Span));
-                }
+            if (!isRootSpan)
+            {
+                SpanActivated?.Invoke(this, new SpanEventArgs(current.Parent.Span));
+            }
+
+            SpanClosed?.Invoke(this, new SpanEventArgs(scope.Span));
+
+            if (isRootSpan)
+            {
+                TraceEnded?.Invoke(this, new SpanEventArgs(scope.Span));
             }
         }
     }
+}
 }
