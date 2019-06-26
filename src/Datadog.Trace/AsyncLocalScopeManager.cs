@@ -48,8 +48,7 @@ namespace Datadog.Trace
 
             if (current == null || current != scope)
             {
-                Log.Error($"Tried to close a non-current scope. TraceId: {scope?.Span?.TraceId}, SpanId: {scope?.Span?.SpanId}");
-                // This is not the current scope, bail out
+                // This is not the current scope for this context, bail out
                 return;
             }
 

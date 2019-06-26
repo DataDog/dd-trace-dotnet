@@ -64,7 +64,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (current == null || current != scope)
             {
-                Log.Error($"Tried to close a non-current scope. TraceId: {scope?.Span?.TraceId}, SpanId: {scope?.Span?.SpanId}");
                 // This is not the current scope, bail out
                 return;
             }
