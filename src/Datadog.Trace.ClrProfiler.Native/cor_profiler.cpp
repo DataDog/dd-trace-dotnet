@@ -406,12 +406,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       auto wrapper_method_signature_size =
           method_replacement.wrapper_method.method_signature.data.size();
 
-      if (wrapper_method_signature_size < 3) {
+      if (wrapper_method_signature_size < 5) {
         // This is invalid, we should always have the wrapper fully defined
-        // Minimum: 0:{CallingConvention}|1:{ParamCount}|2:{ReturnType}
+        // Minimum:
+        // 0:{CallingConvention}|1:{ParamCount}|2:{ReturnType}|3:{OpCode}|4:{mdToken}
         // Drop out for safety
         if (debug_logging_enabled) {
-          Debug("JITCompilationStarted skipping method: function_id=",
+          Debug("JITCompilationStarted skipping method: signature too short. function_id=",
                 function_id, " wrapper_method_signature_size=",
                 wrapper_method_signature_size);
         }
