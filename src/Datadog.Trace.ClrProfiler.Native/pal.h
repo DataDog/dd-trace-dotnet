@@ -33,7 +33,9 @@ inline WSTRING DatadogLogFilePath() {
   const errno_t result = _dupenv_s(&p_program_data, &length, "PROGRAMDATA");
   std::string program_data;
 
-  if (FAILED(result) || length == 0) {
+  if (SUCCEEDED(result) && p_program_data != nullptr && length > 0) {
+    program_data = std::string(p_program_data);
+  } else {
     program_data = R"(C:\ProgramData)";
   }
 
@@ -68,6 +70,6 @@ inline int GetPID() {
 #endif
 }
 
-}  // namespace trace
+} // namespace trace
 
 #endif  // DD_CLR_PROFILER_PAL_H_

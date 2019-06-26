@@ -224,7 +224,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByTarget(filtered_integrations, assembly_import);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Debug("ModuleLoadFinished skipping module ((filtered by target)): ",
+    Debug("ModuleLoadFinished skipping module (filtered by target): ",
           module_id, " ", module_info.assembly.name);
     return S_OK;
   }
