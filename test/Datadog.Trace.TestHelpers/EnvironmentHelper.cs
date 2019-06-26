@@ -23,6 +23,7 @@ namespace Datadog.Trace.TestHelpers
         private readonly int _minor;
         private readonly string _patch = null;
 
+        private readonly string _appNamePrepend;
         private readonly string _runtime;
         private readonly bool _isCoreClr;
         private readonly string _samplesDirectory;
@@ -39,7 +40,8 @@ namespace Datadog.Trace.TestHelpers
             Type anchorType,
             ITestOutputHelper output,
             string samplesDirectory = "samples",
-            string disabledIntegrations = null)
+            string disabledIntegrations = null,
+            bool prependSamplesToAppName = true)
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? "samples";
@@ -61,6 +63,10 @@ namespace Datadog.Trace.TestHelpers
             {
                 _patch = versionParts[2];
             }
+
+            _appNamePrepend = prependSamplesToAppName
+                          ? "Samples."
+                          : string.Empty;
         }
 
         public string SampleName { get; }
@@ -307,7 +313,7 @@ namespace Datadog.Trace.TestHelpers
                 extension = "dll";
             }
 
-            var appFileName = $"Samples.{SampleName}.{extension}";
+            var appFileName = $"{_appNamePrepend}{SampleName}.{extension}";
             var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion), appFileName);
             return sampleAppPath;
         }
@@ -326,7 +332,7 @@ namespace Datadog.Trace.TestHelpers
             }
             else
             {
-                var appFileName = $"Samples.{SampleName}.exe";
+                var appFileName = $"{_appNamePrepend}{SampleName}.exe";
                 executor = Path.Combine(GetSampleApplicationOutputDirectory(), appFileName);
 
                 if (!File.Exists(executor))
@@ -344,7 +350,7 @@ namespace Datadog.Trace.TestHelpers
             var projectDir = Path.Combine(
                 solutionDirectory,
                 _samplesDirectory,
-                $"Samples.{SampleName}");
+                $"{_appNamePrepend}{SampleName}");
             return projectDir;
         }
 

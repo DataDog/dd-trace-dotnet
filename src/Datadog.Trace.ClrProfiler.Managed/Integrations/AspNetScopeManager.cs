@@ -1,7 +1,6 @@
 #if !NETSTANDARD2_0
 
 using System;
-using System.Collections.Generic;
 using System.Web;
 using Datadog.Trace.Logging;
 
@@ -14,13 +13,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private readonly string _name = "__Datadog_Scope_Current__" + Guid.NewGuid();
         private readonly AsyncLocalCompat<Scope> _activeScopeFallback = new AsyncLocalCompat<Scope>();
 
-        public event EventHandler<ScopeEventArgs> ScopeOpened;
+        public event EventHandler<SpanEventArgs> SpanOpened;
 
-        public event EventHandler<ScopeEventArgs> ScopeActivated;
+        public event EventHandler<SpanEventArgs> SpanActivated;
 
-        public event EventHandler<ScopeEventArgs> ScopeDeactivated;
+        public event EventHandler<SpanEventArgs> SpanDeactivated;
 
-        public event EventHandler<ScopeEventArgs> ScopeClosed;
+        public event EventHandler<SpanEventArgs> SpanClosed;
+
+        public event EventHandler<SpanEventArgs> TraceEnded;
 
         public Scope Active
         {
@@ -38,39 +39,51 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public Scope Activate(Span span, bool finishOnClose)
         {
-            var activeScope = Active;
-            var scope = new Scope(activeScope, span, this, finishOnClose);
-            var scopeOpenedArgs = new ScopeEventArgs(scope);
+            var newParent = Active;
+            var scope = new Scope(newParent, span, this, finishOnClose);
+            var scopeOpenedArgs = new SpanEventArgs(span);
 
-            ScopeOpened?.Invoke(this, scopeOpenedArgs);
+            SpanOpened?.Invoke(this, scopeOpenedArgs);
+
             SetScope(scope);
 
-            if (activeScope != null)
+            if (newParent != null)
             {
-                ScopeDeactivated?.Invoke(this, new ScopeEventArgs(activeScope));
+                SpanDeactivated?.Invoke(this, new SpanEventArgs(newParent.Span));
             }
 
-            ScopeActivated?.Invoke(this, scopeOpenedArgs);
+            SpanActivated?.Invoke(this, scopeOpenedArgs);
+
             return scope;
         }
 
         public void Close(Scope scope)
         {
             var current = Active;
-            if (current != null && current == scope)
-            {
-                // if the scope that was just closed was the active scope,
-                // set its parent as the new active scope
-                SetScope(current.Parent);
-                ScopeDeactivated?.Invoke(this, new ScopeEventArgs(current));
+            var isRootSpan = scope.Parent == null;
 
-                if (current.Parent != null)
-                {
-                    ScopeActivated?.Invoke(this, new ScopeEventArgs(current.Parent));
-                }
+            if (current == null || current != scope)
+            {
+                // This is not the current scope for this context, bail out
+                return;
             }
 
-            ScopeClosed?.Invoke(this, new ScopeEventArgs(scope));
+            // if the scope that was just closed was the active scope,
+            // set its parent as the new active scope
+            SetScope(current.Parent);
+            SpanDeactivated?.Invoke(this, new SpanEventArgs(current.Span));
+
+            if (!isRootSpan)
+            {
+                SpanActivated?.Invoke(this, new SpanEventArgs(current.Parent.Span));
+            }
+
+            SpanClosed?.Invoke(this, new SpanEventArgs(scope.Span));
+
+            if (isRootSpan)
+            {
+                TraceEnded?.Invoke(this, new SpanEventArgs(scope.Span));
+            }
         }
 
         private void SetScope(Scope scope)
