@@ -32,6 +32,7 @@ namespace Datadog.Trace.Logging
 
         public void OnTraceEnded(object sender, SpanEventArgs spanEventArgs)
         {
+            DisposeAll();
             SetDefaultValues();
         }
 
