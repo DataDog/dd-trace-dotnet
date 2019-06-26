@@ -20,7 +20,6 @@ namespace Datadog.Trace.Logging
         {
             _scopeManager = scopeManager;
             _scopeManager.SpanActivated += OnSpanActivated;
-            _scopeManager.SpanDeactivated += OnSpanDeactivated;
             _scopeManager.TraceEnded += OnTraceEnded;
             SetDefaultValues();
         }
@@ -31,11 +30,6 @@ namespace Datadog.Trace.Logging
             SetLoggingValues(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
         }
 
-        public void OnSpanDeactivated(object sender, SpanEventArgs spanEventArgs)
-        {
-            // DisposeAll();
-        }
-
         public void OnTraceEnded(object sender, SpanEventArgs spanEventArgs)
         {
             SetDefaultValues();
@@ -44,7 +38,7 @@ namespace Datadog.Trace.Logging
         public void Dispose()
         {
             _scopeManager.SpanActivated -= OnSpanActivated;
-            _scopeManager.SpanDeactivated -= OnSpanDeactivated;
+            _scopeManager.TraceEnded -= OnTraceEnded;
             DisposeAll();
         }
 
