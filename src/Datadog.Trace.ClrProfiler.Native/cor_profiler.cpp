@@ -412,9 +412,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         // 0:{CallingConvention}|1:{ParamCount}|2:{ReturnType}|3:{OpCode}|4:{mdToken}
         // Drop out for safety
         if (debug_logging_enabled) {
-          Debug("JITCompilationStarted skipping method: signature too short. function_id=",
-                function_id, " wrapper_method_signature_size=",
-                wrapper_method_signature_size);
+          Debug(
+              "JITCompilationStarted skipping method: signature too short. "
+              "function_id=",
+              function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()",
+              " wrapper_method_signature_size=", wrapper_method_signature_size);
         }
 
         continue;
@@ -437,9 +440,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       if (expected_number_args != target_arg_count) {
         // Number of arguments does not match our wrapper method
         if (debug_logging_enabled) {
-          Debug("JITCompilationStarted skipping method: function_id=",
-                function_id, " expected_number_args=", expected_number_args,
-                " target_arg_count=", target_arg_count);
+          Debug(
+              "JITCompilationStarted skipping method: argument counts don't "
+              "match. function_id=",
+              function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()",
+              " expected_number_args=", expected_number_args,
+              " target_arg_count=", target_arg_count);
         }
 
         continue;
@@ -464,15 +471,33 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           module_metadata->metadata_import, target, sig_types);
       auto expected_sig_types =
           method_replacement.target_method.signature_types;
-      if (!successfully_parsed_signature ||
-          sig_types.size() != expected_sig_types.size()) {
+
+      if (!successfully_parsed_signature) {
+        if (debug_logging_enabled) {
+          Debug(
+              "JITCompilationStarted skipping method: failed to parse "
+              "signature. function_id=",
+              function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()",
+              " successfully_parsed_signature=", successfully_parsed_signature,
+              " sig_types.size()=", sig_types.size(),
+              " expected_sig_types.size()=", expected_sig_types.size());
+        }
+
+        continue;
+      }
+
+      if (sig_types.size() != expected_sig_types.size()) {
         // we can't safely assume our wrapper methods handle the types
         if (debug_logging_enabled) {
-          Debug("JITCompilationStarted skipping method: function_id=",
-                function_id, " successfully_parsed_signature=",
-                successfully_parsed_signature,
-                " sig_types.size()=", sig_types.size(),
-                " expected_sig_types.size()=", expected_sig_types.size());
+          Debug(
+              "JITCompilationStarted skipping method: unexpected type count. "
+              "function_id=",
+              function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()",
+              " successfully_parsed_signature=", successfully_parsed_signature,
+              " sig_types.size()=", sig_types.size(),
+              " expected_sig_types.size()=", expected_sig_types.size());
         }
 
         continue;
@@ -487,10 +512,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         if (expected_sig_types[i] != sig_types[i]) {
           // we have a type mismatch, drop out
           if (debug_logging_enabled) {
-            Debug("JITCompilationStarted skipping method: function_id=",
-                  function_id, " expected_sig_types[", i,
-                  "]=", expected_sig_types[i], " sig_types[", i,
-                  "]=", sig_types[i]);
+            Debug(
+                "JITCompilationStarted skipping method: types don't match. "
+                "function_id=",
+                function_id, " token=", function_token,
+                " name=", caller.type.name, ".", caller.name, "()",
+                " expected_sig_types[", i, "]=", expected_sig_types[i],
+                " sig_types[", i, "]=", sig_types[i]);
           }
 
           is_match = false;
