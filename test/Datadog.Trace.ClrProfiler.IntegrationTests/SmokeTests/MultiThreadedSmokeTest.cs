@@ -34,7 +34,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             }
 
             var applicationPath = _environmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
+            _output.WriteLine($"Application path: {applicationPath}");
             var executable = _environmentHelper.GetSampleExecutionSource();
+            _output.WriteLine($"Executable path: {executable}");
+
+            if (!System.IO.File.Exists(applicationPath))
+            {
+                throw new Exception("Smoke test file does not exist.");
+            }
 
             var startInfo =
                 EnvironmentHelper.IsCoreClr()
@@ -54,6 +61,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 throw new NullException("We need a reference to the process for this test.");
             }
 
+            _output.WriteLine(result.StandardOutput.ReadToEnd());
+
             var reasonableWaitTime = 30_000;
             var ranToCompletion = result.WaitForExit(reasonableWaitTime);
 
@@ -63,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             }
 
             var successCode = 0;
-            Assert.True(successCode == result.ExitCode, "Non-success exit code: where there is smoke, there is fire.");
+            Assert.True(successCode == result.ExitCode, $"Non-success exit code {result.ExitCode}: where there is smoke, there is fire.");
         }
     }
 }

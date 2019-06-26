@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using log4net.Core;
 using Tracer = Datadog.Trace.Tracer;
 
 namespace DataDogThreadTest
@@ -12,6 +13,7 @@ namespace DataDogThreadTest
     {
         internal static readonly string TraceIdKey = "dd.trace_id";
         internal static readonly string SpanIdKey = "dd.span_id";
+        internal static readonly string NonTraceMessage = "TraceId: 0, SpanId: 0";
 
         static int Main(string[] args)
         {
@@ -76,7 +78,7 @@ namespace DataDogThreadTest
                                         }
 
                                         // Verify everything is cleaned up on this thread
-                                        logger.Info("TraceId: 0, SpanId: 0");
+                                        logger.Info(NonTraceMessage);
                                     }
                                     catch (Exception ex)
                                     {
@@ -101,16 +103,24 @@ namespace DataDogThreadTest
                     throw new AggregateException(exceptionBag.ToArray());
                 }
 
-                var loggingEvents = InMemoryLog4NetLogger.InMemoryAppender.GetEvents();
+                var loggingEvents = RelevantLogs();
+
+                foreach (var group in loggingEvents.Where(e => e.RenderedMessage != NonTraceMessage).GroupBy(e => e.RenderedMessage))
+                {
+                    var message = group.First().RenderedMessage;
+                    if (group.Count() > 1)
+                    {
+                        Console.WriteLine($"Has duplicate log entries ({group.Count()}): {message}");
+                    }
+                }
 
                 Console.WriteLine($"Expecting {expectedLogCount} total log events.");
+                Console.WriteLine($"Received {loggingEvents.Length} total log events.");
 
                 if (loggingEvents.Length != expectedLogCount)
                 {
                     throw new Exception($"Expected {expectedLogCount}, actual log count {loggingEvents.Length}");
                 }
-
-                Console.WriteLine($"Received {loggingEvents.Length} total log events.");
 
                 foreach (var loggingEvent in loggingEvents)
                 {
@@ -129,9 +139,9 @@ namespace DataDogThreadTest
                 Console.WriteLine("Every trace wrapped logging event has the expected TraceId and SpanId.");
 
                 // Test non-traced logging event
-                logger.Info("TraceId: 0, SpanId: 0");
+                logger.Info(NonTraceMessage);
 
-                var lastLog = InMemoryLog4NetLogger.InMemoryAppender.GetEvents().Last();
+                var lastLog = RelevantLogs().Last();
                 var expectedOutOfTraceLog = "TraceId: 0, SpanId: 0";
                 var lastLogTraceId = lastLog.Properties[TraceIdKey];
                 var lastLogSpanIdId = lastLog.Properties[SpanIdKey];
@@ -147,11 +157,18 @@ namespace DataDogThreadTest
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex);
+                Console.WriteLine(ex);
                 return (int)ExitCode.UnknownError;
             }
 
             return (int)ExitCode.Success;
+        }
+
+        private static LoggingEvent[] RelevantLogs()
+        {
+            var loggingEvents = InMemoryLog4NetLogger.InMemoryAppender.GetEvents();
+            var relevantLogEvents = loggingEvents.Where(e => e.RenderedMessage.Contains("TraceId: ")).ToArray();
+            return relevantLogEvents;
         }
 
         enum ExitCode : int
