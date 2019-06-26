@@ -27,13 +27,19 @@ namespace DataDogThreadTest
             ddTraceSettings.TraceEnabled = true;
             var tracer = new Tracer(ddTraceSettings);
 
-            var threads = Enumerable.Range(0, 2).Select(idx =>
+            var totalIterations = 10_000;
+            var threadRepresentation = Enumerable.Range(0, 2).ToArray();
+
+            // Two logs per thread iteration
+            var expectedLogCount = totalIterations * threadRepresentation.Length * 2;
+
+            var threads = threadRepresentation.Select(idx =>
             {
                 return new Thread(o =>
                 {
                     Thread.Sleep(2000);
                     var i = 0;
-                    while (i++ < 10_000)
+                    while (i++ < totalIterations)
                     {
                         try
                         {
@@ -81,7 +87,14 @@ namespace DataDogThreadTest
                 Thread.Sleep(1000);
             }
 
-            foreach (var loggingEvent in InMemoryLog4NetLogger.InMemoryAppender.GetEvents())
+            var loggingEvents = InMemoryLog4NetLogger.InMemoryAppender.GetEvents();
+
+            if (loggingEvents.Length != expectedLogCount)
+            {
+                throw new Exception($"Expected {expectedLogCount}, actual log count {loggingEvents.Length}");
+            }
+
+            foreach (var loggingEvent in loggingEvents)
             {
                 var attachedTraceId = loggingEvent.Properties[TraceIdKey];
                 var attachedSpanIdId = loggingEvent.Properties[SpanIdKey];
@@ -91,7 +104,24 @@ namespace DataDogThreadTest
                     // all is well
                     continue;
                 }
-                Console.WriteLine($"LOGGING EVENT DOES NOT MATCH ({attachedTraceId}, {attachedSpanIdId}): {loggingEvent.RenderedMessage}");
+
+                throw new Exception($"LOGGING EVENT DOES NOT MATCH ({attachedTraceId}, {attachedSpanIdId}): {loggingEvent.RenderedMessage}");
+            }
+
+            // Test non-traced logging event
+            logger.Info("TraceId: 0, SpanId: 0");
+
+            var lastLog = InMemoryLog4NetLogger.InMemoryAppender.GetEvents().Last();
+
+            var expectedOutOfTraceLog = "TraceId: 0, SpanId: 0";
+
+            var lastLogTraceId = lastLog.Properties[TraceIdKey];
+            var lastLogSpanIdId = lastLog.Properties[SpanIdKey];
+            var actual = $"TraceId: {lastLogTraceId}, SpanId: {lastLogSpanIdId}";
+
+            if (!actual.Equals(expectedOutOfTraceLog))
+            {
+                throw new Exception($"Unexpected TraceId or SpanId: {actual}");
             }
 
             Console.WriteLine("Done");
