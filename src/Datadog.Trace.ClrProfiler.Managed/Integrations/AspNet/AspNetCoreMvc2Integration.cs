@@ -216,10 +216,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return;
             }
 
+            string methodDef = $"{DiagnosticSource}.{nameof(AfterAction)}(...)";
             var integration = RetrieveFromHttpContext(httpContext);
 
             if (integration == null)
             {
+                    Log.Error($"Could not access {nameof(AspNetCoreMvc2Integration)} for {methodDef}.");
                 Log.Error($"Could not access {nameof(AspNetCoreMvc2Integration)}.");
             }
 
@@ -232,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will continue working as expected without this method
-                Log.ErrorException($"Error calling {DiagnosticSource}.{nameof(AfterAction)}(...)", ex);
+                Log.ErrorException($"Error retrieving {methodDef}", ex);
             }
 
             try
@@ -267,7 +269,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Major2)]
         public static object InvokeActionMethodAsync(object instance, int opCode, int mdToken)
         {
-            // Microsoft.AspNetCore.Mvc.Internal.ControllerActionFilter.OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+            const string methodDef = "Microsoft.AspNetCore.Mvc.Internal.ControllerActionFilter.OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)";
             var shouldTrace = Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName);
             MethodBase instrumentedMethod;
 
@@ -278,20 +280,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error calling ControllerActionInvoker.{nameof(InvokeActionMethodAsync)}()", ex);
+                Log.ErrorException($"Error retrieving {methodDef}", ex);
                 throw;
             }
 
             if (shouldTrace)
             {
                 AspNetCoreMvc2Integration integration = null;
-                if (instance.TryGetPropertyValue("HttpContext", out object httpContext))
+                if (instance.TryGetFieldValue("_instance", out object controller)
+                    && controller.TryGetPropertyValue("HttpContext", out object httpContext))
                 {
                     integration = RetrieveFromHttpContext(httpContext);
-                    if (integration == null)
-                    {
-                        Log.Error($"Could not access {nameof(AspNetCoreMvc2Integration)}.");
-                    }
+                }
+
+                if (integration == null)
+                {
+                    Log.Error($"Could not access {nameof(AspNetCoreMvc2Integration)} for {methodDef}.");
                 }
 
                 try
@@ -355,7 +359,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var currentLevel = _scope;
             while (currentLevel != null)
             {
-                if (currentLevel.Span?.Tags.ContainsKey(Tags.HttpStatusCode) ?? false)
+                if (currentLevel.Span != null
+                    && !currentLevel.Span.IsFinished
+                    && currentLevel.Span.Tags.ContainsKey(Tags.HttpStatusCode))
                 {
                     currentLevel.Span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
                 }

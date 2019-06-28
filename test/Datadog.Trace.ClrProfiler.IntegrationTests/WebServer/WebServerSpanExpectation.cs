@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.TestHelpers;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
@@ -21,39 +22,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public bool IsMatch(MockTracerAgent.Span span, out string message)
         {
-            var match = true;
-            var messages = new List<string>();
+            var mismatches = new List<string>();
 
             if (span.Name != OperationName)
             {
-                match = false;
-                messages.Add($"({nameof(OperationName)} mismatch: actual: {span.Name ?? "NULL"}, expected: {OperationName})");
+                mismatches.Add(FailureMessage(nameof(OperationName), actual: span.Name, expected: OperationName));
             }
 
             if (span.Service != ServiceName)
             {
-                match = false;
-                messages.Add($"({nameof(ServiceName)} mismatch: actual: {span.Service ?? "NULL"}, expected: {ServiceName})");
+                mismatches.Add(FailureMessage(nameof(ServiceName), actual: span.Service, expected: ServiceName));
             }
 
             if (span.Type != Type)
             {
-                match = false;
-                messages.Add($"({nameof(Type)} mismatch: actual: {span.Type ?? "NULL"}, expected: {Type})");
-            }
-
-            if (span.Service != ServiceName)
-            {
-                match = false;
-                messages.Add($"({nameof(ServiceName)} mismatch: actual: {span.Service ?? "NULL"}, expected: {OperationName})");
+                mismatches.Add(FailureMessage(nameof(Type), actual: span.Type, expected: Type));
             }
 
             var expectedResourceName = ResourceName.TrimEnd();
 
             if (span.Resource != expectedResourceName)
             {
-                match = false;
-                messages.Add($"({nameof(ResourceName)} mismatch: actual: {span.Resource ?? "NULL"}, expected: {expectedResourceName})");
+                mismatches.Add(FailureMessage(nameof(ResourceName), actual: span.Resource, expected: expectedResourceName));
             }
 
             var actualStatusCode = GetTag(span, Tags.HttpStatusCode);
@@ -61,19 +51,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             if (actualStatusCode != StatusCode)
             {
-                match = false;
-                messages.Add($"{nameof(StatusCode)} mismatch: actual: {actualStatusCode ?? "NULL"}, expected: {StatusCode}");
+                mismatches.Add(FailureMessage(nameof(StatusCode), actual: actualStatusCode, expected: StatusCode));
             }
 
             if (actualHttpMethod != HttpMethod)
             {
-                match = false;
-                messages.Add($"{nameof(HttpMethod)} mismatch: actual: {actualHttpMethod ?? "NULL"}, expected: {HttpMethod}");
+                mismatches.Add(FailureMessage(nameof(HttpMethod), actual: actualHttpMethod, expected: HttpMethod));
             }
 
-            message = string.Join(", ", messages);
+            message = string.Join(", ", mismatches);
 
-            return match;
+            return !mismatches.Any();
+        }
+
+        private string FailureMessage(string name, string actual, string expected)
+        {
+            return $"({name} mismatch: actual: {actual ?? "NULL"}, expected: {expected ?? "NULL"})";
         }
 
         private string GetTag(MockTracerAgent.Span span, string tag)
