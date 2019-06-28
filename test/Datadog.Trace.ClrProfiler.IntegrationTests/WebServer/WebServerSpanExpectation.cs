@@ -48,10 +48,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 messages.Add($"({nameof(ServiceName)} mismatch: actual: {span.Service ?? "NULL"}, expected: {OperationName})");
             }
 
-            if (span.Resource != ResourceName)
+            var expectedResourceName = ResourceName.TrimEnd();
+
+            if (span.Resource != expectedResourceName)
             {
                 match = false;
-                messages.Add($"({nameof(ResourceName)} mismatch: actual: {span.Resource ?? "NULL"}, expected: {ResourceName})");
+                messages.Add($"({nameof(ResourceName)} mismatch: actual: {span.Resource ?? "NULL"}, expected: {expectedResourceName})");
             }
 
             var actualStatusCode = GetTag(span, Tags.HttpStatusCode);

@@ -12,7 +12,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             List<WebServerSpanExpectation> expectations,
             List<MockTracerAgent.Span> spans)
         {
-
             Assert.True(spans.Count >= expectations.Count, $"Expected at least {expectations.Count} spans, received {spans.Count}");
 
             var failures = new List<string>();

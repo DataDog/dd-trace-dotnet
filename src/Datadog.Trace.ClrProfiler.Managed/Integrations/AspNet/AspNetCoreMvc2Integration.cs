@@ -284,18 +284,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (shouldTrace)
             {
-                using (var scope = Tracer.Instance.StartActive(OperationName))
+                AspNetCoreMvc2Integration integration = null;
+                if (instance.TryGetPropertyValue("HttpContext", out object httpContext))
                 {
-                    try
+                    integration = RetrieveFromHttpContext(httpContext);
+                    if (integration == null)
                     {
-                        var result = instrumentedMethod.Invoke(instance, Interception.NoArgObjects);
-                        return result;
+                        Log.Error($"Could not access {nameof(AspNetCoreMvc2Integration)}.");
                     }
-                    catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
-                    {
-                        // unreachable code
-                        throw;
-                    }
+                }
+
+                try
+                {
+                    // call the original method, catching and rethrowing any unhandled exceptions
+                    instrumentedMethod.Invoke(instance, Interception.NoArgObjects);
+                }
+                catch (Exception ex) when (integration?.SetException(ex) ?? false)
+                {
+                    // unreachable code
+                    throw;
                 }
             }
 
