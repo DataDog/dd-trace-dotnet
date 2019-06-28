@@ -185,30 +185,6 @@
           "method": "InvokeActionMethodAsync",
           "signature": "00 03 1C 1C 08 08"
         }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "Microsoft.AspNetCore.Http.Abstractions",
-          "type": "Microsoft.AspNetCore.Http.HttpResponse",
-          "method": "set_StatusCode",
-          "signature_types": [
-            "System.Void",
-            "System.Int32"
-          ],
-          "minimum_major": 0,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 15,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
-          "method": "SetStatusCode",
-          "signature": "00 04 01 1C 08 08 08"
-        }
       }
     ]
   },
@@ -469,6 +445,35 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
           "method": "HttpClientHandler_SendAsync",
           "signature": "00 05 1C 1C 1C 1C 08 08"
+        }
+      }
+    ]
+  },
+  {
+    "name": "HttpResponse",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.AspNetCore.Http.Abstractions",
+          "type": "Microsoft.AspNetCore.Http.HttpResponse",
+          "method": "set_StatusCode",
+          "signature_types": [
+            "System.Void",
+            "System.Int32"
+          ],
+          "minimum_major": 0,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 65535,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.HttpResponseIntegration",
+          "method": "SetStatusCode",
+          "signature": "00 04 01 1C 08 08 08"
         }
       }
     ]

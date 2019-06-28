@@ -2,12 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-<<<<<<< HEAD:src/Datadog.Trace.ClrProfiler.Managed/Integrations/AspNetCoreMvc2Integration.cs
 using Datadog.Trace.ClrProfiler.Emit;
-=======
-using System.Reflection.Emit;
-using System.Threading.Tasks;
->>>>>>> 87ab627... Aspnet core rework:src/Datadog.Trace.ClrProfiler.Managed/Integrations/AspNet/AspNetCoreMvc2Integration.cs
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -19,16 +14,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public sealed class AspNetCoreMvc2Integration : IDisposable
     {
+        internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
         private const string IntegrationName = "AspNetCoreMvc2";
         private const string OperationName = "aspnet-coremvc.request";
-        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
         private const string AspnetMvcCore = "Microsoft.AspNetCore.Mvc.Core";
         private const string Major2 = "2";
-
-        /// <summary>
-        /// Base type used for traversing the pipeline in Microsoft.AspNetCore.Mvc.Core.
-        /// </summary>
-        private const string ResourceInvoker = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
 
         /// <summary>
         /// Type for unobtrusive hooking into Microsoft.AspNetCore.Mvc.Core pipeline.
@@ -36,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string DiagnosticSource = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
-
-        private static readonly InterceptedMethodAccess<Action<object>> RethrowAccess = new InterceptedMethodAccess<Action<object>>();
 
         private readonly object _httpContext;
         private readonly Scope _scope;
@@ -109,6 +97,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
+
+                if (_httpContext != null &&
+                    _httpContext.TryGetPropertyValue("Response", out object response) &&
+                    response.TryGetPropertyValue("StatusCode", out object statusCode))
+                {
+                    span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
+                }
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
@@ -215,24 +210,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int opCode,
             int mdToken)
         {
-            AspNetCoreMvc2Integration integration = null;
-
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
                 // integration disabled
                 return;
             }
 
-            try
+            var integration = RetrieveFromHttpContext(httpContext);
+
+            if (integration == null)
             {
-                if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
-                {
-                    integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
+                Log.Error($"Could not access {nameof(AspNetCoreMvc2Integration)}.");
             }
 
             MethodBase instrumentedMethod = null;
@@ -244,7 +232,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will continue working as expected without this method
-                Log.ErrorException($"Error calling {"TODO"}.{"TODO"}(object context)", ex);
+                Log.ErrorException($"Error calling {DiagnosticSource}.{nameof(AfterAction)}(...)", ex);
             }
 
             try
@@ -315,28 +303,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Entry method for invoking the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
-        /// </summary>
-        /// <param name="instance">Instance being instrumented.</param>
-        /// <param name="value">HttpContext.</param>
-        /// <param name="opCode">The OpCode used in the original method call.</param>
-        /// <param name="mdToken">The mdToken of the original method call.</param>
-        [InterceptMethod(
-            TargetAssembly = "Microsoft.AspNetCore.Http.Abstractions",
-            TargetType = "Microsoft.AspNetCore.Http.HttpResponse",
-            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Int32 },
-            TargetMethod = "set_StatusCode",
-            TargetMinimumVersion = "0",
-            TargetMaximumVersion = "15")]
-        // ReSharper disable once UnusedMember.Global
-        public static void SetStatusCode(object instance, int value, int opCode, int mdToken)
-        {
-            // Microsoft.AspNetCore.Hosting.Internal.RequestServicesContainerMiddleware.Invoke(HttpContext httpContext)
-            MethodBase instrumentedMethod = Assembly.GetCallingAssembly().ManifestModule.ResolveMethod(mdToken);
-            instrumentedMethod.Invoke(instance, new[] { (object)value });
-        }
-
-        /// <summary>
         /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
         /// </summary>
         /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
@@ -352,18 +318,42 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         public void Dispose()
         {
+            _scope?.Dispose();
+        }
+
+        internal static AspNetCoreMvc2Integration RetrieveFromHttpContext(object httpContext)
+        {
+            AspNetCoreMvc2Integration integration = null;
+
             try
             {
-                if (_httpContext != null &&
-                    _httpContext.TryGetPropertyValue("Response", out object response) &&
-                    response.TryGetPropertyValue("StatusCode", out object statusCode))
+                if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
                 {
-                    _scope?.Span?.SetTag("http.status_code", statusCode.ToString());
+                    if (contextItems?.ContainsKey(HttpContextKey) ?? false)
+                    {
+                        integration = contextItems[HttpContextKey] as AspNetCoreMvc2Integration;
+                    }
                 }
             }
-            finally
+            catch (Exception ex)
             {
-                _scope?.Dispose();
+                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
+            }
+
+            return integration;
+        }
+
+        internal void SetStatusCode(int statusCode)
+        {
+            var currentLevel = _scope;
+            while (currentLevel != null)
+            {
+                if (currentLevel.Span?.Tags.ContainsKey(Tags.HttpStatusCode) ?? false)
+                {
+                    currentLevel.Span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
+                }
+
+                currentLevel = currentLevel.Parent;
             }
         }
 

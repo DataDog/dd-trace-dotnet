@@ -13,11 +13,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class AspNetCoreMvc2Tests : TestHelper
     {
-        private static readonly Dictionary<string, string> Paths = new Dictionary<string, string>
+        private static readonly string _operationName = "aspnet-coremvc.request";
+
+        private static readonly List<WebServerSpanExpectation> _expectations = new List<WebServerSpanExpectation>()
         {
-            { "/", "GET /" },
-            { "/delay/0", "GET delay/{seconds}" },
-            { "/api/delay/0", "GET api/delay/{seconds}" }
+            CreateExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "/"),
+            CreateExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}"),
+            CreateExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}"),
+            CreateExpectation(url: "/bad-request", httpMethod: "GET", httpStatus: "500", resourceUrl: "bad-request"),
         };
 
         public AspNetCoreMvc2Tests(ITestOutputHelper output)
@@ -64,10 +67,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // wait for server to start
                 wh.WaitOne(5000);
 
-                SubmitRequests(aspNetCorePort, Paths.Keys.ToArray());
-                var expected = new List<string>(Paths.Values);
-                var spans = agent.WaitForSpans(expected.Count)
-                                 .Where(s => s.Type == SpanTypes.Web)
+                var paths = _expectations.Select(e => e.OriginalUri).ToArray();
+                SubmitRequests(aspNetCorePort, paths);
+                var spans = agent.WaitForSpans(_expectations.Count, operationName: _operationName)
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
@@ -76,16 +78,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     process.Kill();
                 }
 
-                Assert.True(spans.Count >= expected.Count, $"expected at least {expected.Count} spans");
-                foreach (var span in spans)
-                {
-                    Assert.Equal("aspnet-coremvc.request", span.Name);
-                    Assert.Equal("Samples.AspNetCoreMvc2", span.Service);
-                    Assert.Equal(SpanTypes.Web, span.Type);
-                }
-
-                ValidateSpans(spans, (span) => span.Resource, expected);
+                WebServerTestHelpers.AssertExpectationsMet(_expectations, spans);
             }
+        }
+
+        private static WebServerSpanExpectation CreateExpectation(string url, string httpMethod, string httpStatus, string resourceUrl)
+        {
+            return new WebServerSpanExpectation
+            {
+                OriginalUri = url,
+                HttpMethod = httpMethod,
+                OperationName = _operationName,
+                ServiceName = "Samples.AspNetCoreMvc2",
+                ResourceName = $"{httpMethod.ToUpper()} {resourceUrl}",
+                StatusCode = httpStatus,
+                Type = SpanTypes.Web
+            };
         }
 
         private void SubmitRequests(int aspNetCorePort, string[] paths)
