@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will continue working as expected without this method
-                Log.ErrorException($"Error calling {"TODO"}.{"TODO"}(object context)", ex);
+                Log.ErrorException($"Error calling {DiagnosticSource}.{nameof(BeforeAction)}(...)", ex);
             }
 
             try
