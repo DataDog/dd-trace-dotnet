@@ -212,7 +212,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                instrumentedMethod.Invoke(context, Interception.NoArgObjects);
+                instrumentedMethod.Invoke(null, new[] { context });
             }
             catch (Exception ex) when (integration?.SetExceptionOnRootSpan(ex) ?? false)
             {
