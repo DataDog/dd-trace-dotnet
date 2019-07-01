@@ -270,6 +270,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 integrationContext.ResetWebServerRootTags(
+                    operationName: OperationName,
                     resourceName: resourceName,
                     method: httpMethod,
                     host: host,

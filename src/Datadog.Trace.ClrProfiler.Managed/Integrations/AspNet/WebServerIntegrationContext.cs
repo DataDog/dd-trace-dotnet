@@ -180,6 +180,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         internal void ResetWebServerRootTags(
+            string operationName,
             string resourceName,
             string method,
             string host,
@@ -187,6 +188,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             if (_rootScope?.Span != null)
             {
+                _rootScope.Span.OperationName = operationName;
                 _rootScope.Span.ResourceName = resourceName?.Trim();
                 SetTagOnRootSpan(Tags.SpanKind, SpanKinds.Server);
                 SetTagOnRootSpan(Tags.HttpMethod, method);

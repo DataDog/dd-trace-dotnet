@@ -25,8 +25,4 @@
     <Reference Include="System.ServiceModel" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="HttpResponse\" />
-  </ItemGroup>
-
 </Project>
