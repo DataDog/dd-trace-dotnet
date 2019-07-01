@@ -100,6 +100,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public void Dispose()
         {
+            try
+            {
+                var request = _httpContext.GetProperty("Response");
+                var statusCodeResult = request.GetProperty<int>("StatusCode");
+
+                if (statusCodeResult.HasValue)
+                {
+                    SetStatusCode(statusCodeResult.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                // no exceptions in dispose
+                Log.Error("Exception when trying to sniff data at the end of the pipeline.", ex);
+            }
+
             while (_disposables.TryPop(out IDisposable nextDisposable))
             {
                 nextDisposable?.Dispose();
