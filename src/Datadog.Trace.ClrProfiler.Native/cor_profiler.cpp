@@ -417,32 +417,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      bool is_func =
-          target.type.name.find("System.Func"_W) != std::string::npos;
-      bool is_action =
-          target.type.name.find("System.Action"_W) != std::string::npos;
-
-      if (!is_func && !is_action) {
-
-        size_t find_result = target.type.name.find("ContainerMiddleware"_W);
-
-        if (find_result != std::string::npos) {
-          std::cout << "found a thing";
-        }
-
-        find_result = target.name.find("OnAction"_W);
-
-        if (find_result != std::string::npos) {
-          std::cout << "found a thing";
-        }
-
-        find_result = target.name.find("Invoke"_W);
-
-        if (find_result != std::string::npos) {
-           std::cout << "found a thing";
-        }
-      }
-
       // make sure the type and method names match
       if (method_replacement.target_method.type_name != target.type.name ||
           method_replacement.target_method.method_name != target.name) {
