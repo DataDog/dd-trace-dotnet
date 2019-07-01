@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -110,7 +111,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     var integration =
                         WebServerIntegrationContext.RetrieveFromHttpContext(httpContext);
 
-                    integration?.SetStatusCode(value);
+                    var actualStatusCode = responseInstance.GetProperty<int>("StatusCode");
+
+                    if (actualStatusCode.HasValue)
+                    {
+                        integration?.SetStatusCode(actualStatusCode.Value);
+                    }
+                    else
+                    {
+                        integration?.SetStatusCode(value);
+                    }
                 }
             }
             catch (Exception ex)

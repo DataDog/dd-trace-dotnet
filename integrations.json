@@ -164,12 +164,15 @@
         }
       },
       {
-        "caller": {},
+        "caller": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core"
+        },
         "target": {
           "assembly": "Microsoft.AspNetCore.Mvc.Core",
-          "type": "Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker",
-          "method": "InvokeActionMethodAsync",
+          "type": "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker",
+          "method": "Rethrow",
           "signature_types": [
+            "System.Void",
             "_"
           ],
           "minimum_major": 2,
@@ -182,8 +185,8 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration",
-          "method": "InvokeActionMethodAsync",
-          "signature": "00 03 1C 1C 08 08"
+          "method": "Rethrow",
+          "signature": "00 03 01 1C 08 08"
         }
       }
     ]

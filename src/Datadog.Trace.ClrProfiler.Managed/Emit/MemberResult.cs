@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public MemberResult(T value)
         {
             _value = value;
+            HasValue = true;
         }
 
         private MemberResult()
@@ -21,9 +22,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
         }
 
         public T Value =>
-            ReferenceEquals(this, NotFound)
-                ? throw new InvalidOperationException("Reflected member not found.")
-                : _value;
+            HasValue
+                ? _value
+                : throw new InvalidOperationException("Reflected member not found.");
+
+        public bool HasValue { get; }
 
         public T GetValueOrDefault()
         {

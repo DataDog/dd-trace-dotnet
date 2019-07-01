@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -13,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public sealed class AspNetCoreMvc2Integration
     {
-        internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
         private const string IntegrationName = "AspNetCoreMvc2";
         private const string OperationName = "aspnet-coremvc.request";
         private const string AspnetMvcCore = "Microsoft.AspNetCore.Mvc.Core";
@@ -23,6 +23,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Type for unobtrusive hooking into Microsoft.AspNetCore.Mvc.Core pipeline.
         /// </summary>
         private const string DiagnosticSource = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions";
+
+        /// <summary>
+        /// Base type used for traversing the pipeline in Microsoft.AspNetCore.Mvc.Core.
+        /// </summary>
+        private const string ResourceInvoker = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
@@ -158,21 +163,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Entry method for invoking the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
+        /// Wrapper method used to catch unhandled exceptions in the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
         /// </summary>
-        /// <param name="instance">The instance (this).</param>
+        /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <returns>Task</returns>
         [InterceptMethod(
-            TargetAssembly = "Microsoft.AspNetCore.Mvc.Core",
-            TargetType = "Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker",
-            TargetSignatureTypes = new[] { ClrNames.Ignore },
+            CallerAssembly = AspnetMvcCore,
+            TargetAssembly = AspnetMvcCore,
+            TargetType = ResourceInvoker,
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
-        public static object InvokeActionMethodAsync(object instance, int opCode, int mdToken)
+        public static void Rethrow(object context, int opCode, int mdToken)
         {
-            const string methodDef = "Microsoft.AspNetCore.Mvc.Internal.ControllerActionFilter.OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)";
+            string methodDef = $"{ResourceInvoker}.{nameof(Rethrow)}({context?.GetType().FullName} context)";
             var shouldTrace = Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName);
             MethodBase instrumentedMethod;
 
@@ -187,33 +192,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
+            WebServerIntegrationContext integration = null;
+
             if (shouldTrace)
             {
-                WebServerIntegrationContext integration = null;
-                if (instance.TryGetFieldValue("_instance", out object controller)
-                    && controller.TryGetPropertyValue("HttpContext", out object httpContext))
+                var httpContextResult = context.GetProperty("HttpContext");
+
+                if (httpContextResult.HasValue)
                 {
-                    integration = WebServerIntegrationContext.RetrieveFromHttpContext(httpContext);
+                    integration = WebServerIntegrationContext.RetrieveFromHttpContext(httpContextResult.Value);
                 }
 
                 if (integration == null)
                 {
                     Log.Error($"Could not access {nameof(WebServerIntegrationContext)} for {methodDef}.");
                 }
-
-                try
-                {
-                    // call the original method, catching and rethrowing any unhandled exceptions
-                    instrumentedMethod.Invoke(instance, Interception.NoArgObjects);
-                }
-                catch (Exception ex) when (integration?.SetExceptionOnRootSpan(ex) ?? false)
-                {
-                    // unreachable code
-                    throw;
-                }
             }
 
-            return instrumentedMethod.Invoke(instance, Interception.NoArgObjects);
+            try
+            {
+                // call the original method, catching and rethrowing any unhandled exceptions
+                instrumentedMethod.Invoke(context, Interception.NoArgObjects);
+            }
+            catch (Exception ex) when (integration?.SetExceptionOnRootSpan(ex) ?? false)
+            {
+                // unreachable code
+                throw;
+            }
         }
 
         private static void SetAspNetCoreMvcSpecificData(

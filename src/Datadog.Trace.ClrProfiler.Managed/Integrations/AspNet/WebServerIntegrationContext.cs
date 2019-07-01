@@ -80,11 +80,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     host: host,
                     httpUrl: absoluteUri);
 
-                if (_httpContext != null &&
-                    _httpContext.TryGetPropertyValue("Response", out object response) &&
-                    response.TryGetPropertyValue("StatusCode", out object statusCode))
+                var statusCode = _httpContext.GetProperty("Response").GetProperty<int>("StatusCode");
+
+                if (statusCode.HasValue)
                 {
-                    span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
+                    span.SetTag(Tags.HttpStatusCode, statusCode.Value.ToString());
                 }
 
                 var analyticSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: true);
