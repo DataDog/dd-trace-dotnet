@@ -13,14 +13,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public class AspNetCoreMvc2Tests : TestHelper
     {
-        private static readonly string _operationName = "aspnet-coremvc.request";
+        private static readonly string _topLevelOperationName = "web.request";
+        // TODO: Test me
+        // private static readonly string _nestedOperationName = "aspnet-coremvc.request";
 
         private static readonly List<WebServerSpanExpectation> _expectations = new List<WebServerSpanExpectation>()
         {
-            CreateExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "/"),
-            CreateExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}"),
-            CreateExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}"),
-            CreateExpectation(url: "/bad-request", httpMethod: "GET", httpStatus: "500", resourceUrl: "bad-request"),
+            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "/"),
+            CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}"),
+            CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}"),
+            CreateTopLevelExpectation(url: "/bad-request", httpMethod: "GET", httpStatus: "500", resourceUrl: "bad-request"),
         };
 
         public AspNetCoreMvc2Tests(ITestOutputHelper output)
@@ -69,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                 var paths = _expectations.Select(e => e.OriginalUri).ToArray();
                 SubmitRequests(aspNetCorePort, paths);
-                var spans = agent.WaitForSpans(_expectations.Count, operationName: _operationName)
+                var spans = agent.WaitForSpans(_expectations.Count, operationName: _topLevelOperationName)
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
@@ -82,13 +84,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             }
         }
 
-        private static WebServerSpanExpectation CreateExpectation(string url, string httpMethod, string httpStatus, string resourceUrl)
+        private static WebServerSpanExpectation CreateTopLevelExpectation(string url, string httpMethod, string httpStatus, string resourceUrl)
         {
             return new WebServerSpanExpectation
             {
                 OriginalUri = url,
                 HttpMethod = httpMethod,
-                OperationName = _operationName,
+                OperationName = _topLevelOperationName,
                 ServiceName = "Samples.AspNetCoreMvc2",
                 ResourceName = $"{httpMethod.ToUpper()} {resourceUrl}",
                 StatusCode = httpStatus,
