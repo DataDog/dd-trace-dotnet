@@ -116,9 +116,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal Tracer Tracer { get; }
 
         /// <summary>
-        /// Gets the root span for this AspNetCore web request.
+        /// Gets the root span for this web request.
         /// </summary>
-        internal Span RootAspNetCoreSpan => _rootScope?.Span;
+        internal Span RootSpan => _rootScope?.Span;
 
         /// <summary>
         /// Gets a value indicating whether this context should be registered.

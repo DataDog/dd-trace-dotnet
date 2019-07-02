@@ -259,8 +259,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 aspNetCoreMvcActionScope.Span?.DecorateWebServerSpan(
                     resourceName: resourceName,
                     method: httpMethod,
-                    host: ambientContext.RootAspNetCoreSpan?.GetHost(),
-                    httpUrl: ambientContext.RootAspNetCoreSpan?.GetAbsoluteUrl());
+                    host: ambientContext.RootSpan?.GetHost(),
+                    httpUrl: ambientContext.RootSpan?.GetAbsoluteUrl());
 
                 aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetController, controllerName);
                 aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetAction, actionName);
