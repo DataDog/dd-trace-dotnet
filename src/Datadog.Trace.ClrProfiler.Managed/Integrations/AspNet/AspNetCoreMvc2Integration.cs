@@ -1,11 +1,8 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Threading.Tasks;
+using System.Reflection.Emit;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -77,22 +74,27 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     httpContext: httpContext);
             }
 
-            MethodBase instrumentedMethod = null;
+            Action<object, object, object, object> instrumentedMethod = null;
 
             try
             {
-                instrumentedMethod = Assembly.GetCallingAssembly().ManifestModule.ResolveMethod(mdToken);
+                instrumentedMethod =
+                    MethodBuilder<Action<object, object, object, object>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .WithConcreteTypeName(DiagnosticSource)
+                       .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
+                       .Build();
             }
             catch (Exception ex)
             {
                 // profiled app will continue working as expected without this method
-                Log.ErrorException($"Error calling {DiagnosticSource}.{nameof(BeforeAction)}(...)", ex);
+                Log.ErrorException($"Error resolving {DiagnosticSource}.{nameof(BeforeAction)}(...)", ex);
             }
 
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                instrumentedMethod?.Invoke(null, new[] { diagnosticSource, actionDescriptor, httpContext, routeData });
+                instrumentedMethod?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
             catch (Exception ex)
             {
@@ -145,22 +147,27 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 integrationContext.TryRetrieveScope(IntegrationName, out aspNetCoreMvcActionScope);
             }
 
-            MethodBase instrumentedMethod = null;
+            Action<object, object, object, object> instrumentedMethod = null;
 
             try
             {
-                instrumentedMethod = Assembly.GetCallingAssembly().ManifestModule.ResolveMethod(mdToken);
+                instrumentedMethod =
+                    MethodBuilder<Action<object, object, object, object>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .WithConcreteTypeName(DiagnosticSource)
+                       .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
+                       .Build();
             }
             catch (Exception ex)
             {
                 // profiled app will continue working as expected without this method
-                Log.ErrorException($"Error retrieving {methodDef}", ex);
+                Log.ErrorException($"Error resolving {methodDef}", ex);
             }
 
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                instrumentedMethod?.Invoke(null, new[] { diagnosticSource, actionDescriptor, httpContext, routeData });
+                instrumentedMethod?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
             catch (Exception ex)
             {
@@ -190,11 +197,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             string methodDef = $"{ResourceInvoker}.{nameof(Rethrow)}({context?.GetType().FullName} context)";
             var shouldTrace = Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName);
-            MethodBase instrumentedMethod;
+
+            Action<object> instrumentedMethod = null;
 
             try
             {
-                instrumentedMethod = Assembly.GetCallingAssembly().ManifestModule.ResolveMethod(mdToken);
+                instrumentedMethod =
+                    MethodBuilder<Action<object>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .WithConcreteTypeName(DiagnosticSource)
+                       .WithParameters(context)
+                       .Build();
             }
             catch (Exception ex)
             {
@@ -203,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            AspNetAmbientContext ambient = null;
+            AspNetAmbientContext ambientContext = null;
             var exceptionToGrab = context.GetProperty<Exception>("Exception");
 
             if (shouldTrace)
@@ -212,10 +225,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (httpContextResult.HasValue)
                 {
-                    ambient = AspNetAmbientContext.RetrieveFromHttpContext(httpContextResult.Value);
+                    ambientContext = AspNetAmbientContext.RetrieveFromHttpContext(httpContextResult.Value);
                 }
 
-                if (ambient == null)
+                if (ambientContext == null)
                 {
                     Log.Error($"Could not access {nameof(AspNetAmbientContext)} for {methodDef}.");
                 }
@@ -224,9 +237,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                instrumentedMethod.Invoke(null, new[] { context });
+                instrumentedMethod.Invoke(context);
             }
-            catch (Exception ex) when (ambient?.SetExceptionOnRootSpan(exceptionToGrab.HasValue ? exceptionToGrab.Value : ex) ?? false)
+            catch (Exception ex) when (ambientContext?.SetExceptionOnRootSpan(exceptionToGrab.HasValue ? exceptionToGrab.Value : ex) ?? false)
             {
                 // unreachable code
                 throw;

@@ -25,12 +25,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore })]
         public static void Initialize(object httpContext, object features, int opCode, int mdToken)
         {
-            string methodDef = $"{httpContext?.GetType().FullName}.Initialize(IFeatureCollection features)";
-            MethodBase instrumentedMethod = null;
+            var httpContextType = httpContext.GetType();
+            string methodDef = $"{httpContextType.FullName}.Initialize(IFeatureCollection features)";
+
+            Action<object, object> instrumentedMethod = null;
 
             try
             {
-                instrumentedMethod = Assembly.GetCallingAssembly().ManifestModule.ResolveMethod(mdToken);
+                instrumentedMethod =
+                    MethodBuilder<Action<object, object>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .WithConcreteType(httpContextType)
+                       .WithInstance(httpContext)
+                       .WithParameters(features)
+                       .Build();
             }
             catch (Exception ex)
             {
@@ -40,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                instrumentedMethod.Invoke(httpContext, new[] { features });
+                instrumentedMethod.Invoke(httpContext, features);
             }
             catch (Exception ex)
             {
