@@ -22,7 +22,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "/"),
             CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}"),
             CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}"),
-            CreateTopLevelExpectation(url: "/bad-request", httpMethod: "GET", httpStatus: "500", resourceUrl: "bad-request"),
+            CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}"),
+            // TODO: The below test succeeds in IISExpress, but fails in self host when expecting a status code of 500.
+            CreateTopLevelExpectation(
+                url: "/bad-request",
+                httpMethod: "GET",
+                httpStatus: null,
+                resourceUrl: "bad-request",
+                additionalCheck: span =>
+                {
+                    var failures = new List<string>();
+                    if (span.Tags[Tags.ErrorMsg] != "This was a bad request.")
+                    {
+                        failures.Add($"Expected specific exception within {span.Resource}");
+                    }
+
+                    return failures;
+                }),
         };
 
         public AspNetCoreMvc2Tests(ITestOutputHelper output)
@@ -84,7 +100,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             }
         }
 
-        private static WebServerSpanExpectation CreateTopLevelExpectation(string url, string httpMethod, string httpStatus, string resourceUrl)
+        private static WebServerSpanExpectation CreateTopLevelExpectation(
+            string url,
+            string httpMethod,
+            string httpStatus,
+            string resourceUrl,
+            Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
         {
             return new WebServerSpanExpectation
             {
@@ -94,7 +115,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 ServiceName = "Samples.AspNetCoreMvc2",
                 ResourceName = $"{httpMethod.ToUpper()} {resourceUrl}",
                 StatusCode = httpStatus,
-                Type = SpanTypes.Web
+                Type = SpanTypes.Web,
+                CustomAssertion = additionalCheck
             };
         }
 

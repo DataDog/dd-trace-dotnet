@@ -49,10 +49,11 @@ namespace Samples.AspNetCoreMvc2.Controllers
             throw new Exception("This was a bad request.");
         }
 
-        [Route("forbidden-test")]
-        public IActionResult ForbiddenResource()
+        [Route("status-code/{statusCode}")]
+        public string StatusCodeTest(int statusCode)
         {
-            return Forbid();
+            HttpContext.Response.StatusCode = statusCode;
+            return $"Status code has been set to {statusCode}";
         }
     }
 }

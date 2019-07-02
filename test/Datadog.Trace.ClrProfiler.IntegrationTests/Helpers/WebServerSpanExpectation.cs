@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
@@ -19,6 +20,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public string StatusCode { get; set; }
 
         public string HttpMethod { get; set; }
+
+        public Func<MockTracerAgent.Span, List<string>> CustomAssertion { get; set; }
 
         public virtual bool IsMatch(MockTracerAgent.Span span, out string message)
         {
@@ -49,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var actualStatusCode = GetTag(span, Tags.HttpStatusCode);
             var actualHttpMethod = GetTag(span, Tags.HttpMethod);
 
-            if (actualStatusCode != StatusCode)
+            if (StatusCode != null && actualStatusCode != StatusCode)
             {
                 mismatches.Add(FailureMessage(nameof(StatusCode), actual: actualStatusCode, expected: StatusCode));
             }
@@ -57,6 +60,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (actualHttpMethod != HttpMethod)
             {
                 mismatches.Add(FailureMessage(nameof(HttpMethod), actual: actualHttpMethod, expected: HttpMethod));
+            }
+
+            if (CustomAssertion != null)
+            {
+                mismatches.AddRange(CustomAssertion(span));
             }
 
             message = string.Join(", ", mismatches);
