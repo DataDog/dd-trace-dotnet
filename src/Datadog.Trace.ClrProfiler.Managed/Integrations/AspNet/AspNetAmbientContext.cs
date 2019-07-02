@@ -9,18 +9,19 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
-    internal class AspNetCoreIntegrationContext : IDisposable
+    internal class AspNetAmbientContext : IDisposable
     {
-        private static readonly string HttpContextKey = "__Datadog_web_request_http_context__";
+        private static readonly string HttpContextKey = "__Datadog_web_request_ambient_context__";
         private static readonly string TopLevelOperationName = "web.request";
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreIntegrationContext));
+        private static readonly string StartupDiagnosticMethod = "DEBUG";
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetAmbientContext));
 
         private readonly ConcurrentStack<IDisposable> _disposables = new ConcurrentStack<IDisposable>();
         private readonly ConcurrentDictionary<string, Scope> _scopeStorage = new ConcurrentDictionary<string, Scope>();
         private readonly object _httpContext;
-        private readonly Scope _rootAspNetCoreScope;
+        private readonly Scope _rootScope;
 
-        private AspNetCoreIntegrationContext(string integrationName, object httpContext)
+        private AspNetAmbientContext(string integrationName, object httpContext)
         {
             try
             {
@@ -30,14 +31,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var request = _httpContext.GetProperty("Request").GetValueOrDefault();
                 var response = _httpContext.GetProperty("Response").GetValueOrDefault();
 
-                RegisterForDisposalWithPipeline(response, this);
-
                 GetTagValues(
                     request,
                     out string absoluteUri,
                     out string httpMethod,
                     out string host,
                     out string resourceName);
+
+                if (httpMethod == StartupDiagnosticMethod)
+                {
+                    // An initial diagnostic HttpContext is created on the start of many web applications
+                    AbortRegistration = true;
+                    return;
+                }
+
+                RegisterForDisposalWithPipeline(response, this);
 
                 SpanContext propagatedContext = null;
 
@@ -72,11 +80,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                _rootAspNetCoreScope = Tracer.StartActive(TopLevelOperationName, propagatedContext);
+                _rootScope = Tracer.StartActive(TopLevelOperationName, propagatedContext);
 
-                RegisterForDisposal(_rootAspNetCoreScope);
+                RegisterForDisposal(_rootScope);
 
-                var span = _rootAspNetCoreScope.Span;
+                var span = _rootScope.Span;
 
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
@@ -97,12 +105,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // Don't crash client apps
-                Log.Error($"Exception when initializing {nameof(AspNetCoreIntegrationContext)}.", ex);
+                Log.Error($"Exception when initializing {nameof(AspNetAmbientContext)}.", ex);
             }
         }
 
         /// <summary>
-        /// Gets the instance of the Tracer for this AspNetCore web request.
+        /// Gets the instance of the Tracer for this web request.
         /// Ensure that the same Tracer instance is used throughout an entire request.
         /// </summary>
         internal Tracer Tracer { get; }
@@ -110,7 +118,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Gets the root span for this AspNetCore web request.
         /// </summary>
-        internal Span RootAspNetCoreSpan => _rootAspNetCoreScope?.Span;
+        internal Span RootAspNetCoreSpan => _rootScope?.Span;
+
+        /// <summary>
+        /// Gets a value indicating whether this context should be registered.
+        /// </summary>
+        internal bool AbortRegistration { get; }
 
         public void Dispose()
         {
@@ -148,22 +161,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Responsible for setting up an overarching Scope and then registering with the end of pipeline disposal.
         /// </summary>
         /// <param name="httpContext">Instance of Microsoft.AspNetCore.Http.DefaultHttpContext</param>
-        /// <returns>The Datadog context for AspNetCore http pipelines.</returns>
-        internal static AspNetCoreIntegrationContext Initialize(object httpContext)
+        internal static void Initialize(object httpContext)
         {
-            var context = new AspNetCoreIntegrationContext(TopLevelOperationName, httpContext);
+            var context = new AspNetAmbientContext(TopLevelOperationName, httpContext);
+
+            if (context.AbortRegistration)
+            {
+                return;
+            }
 
             if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
             {
                 contextItems[HttpContextKey] = context;
             }
-
-            return context;
         }
 
-        internal static AspNetCoreIntegrationContext RetrieveFromHttpContext(object httpContext)
+        internal static AspNetAmbientContext RetrieveFromHttpContext(object httpContext)
         {
-            AspNetCoreIntegrationContext context = null;
+            AspNetAmbientContext context = null;
 
             try
             {
@@ -171,13 +186,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (contextItems?.ContainsKey(HttpContextKey) ?? false)
                     {
-                        context = contextItems[HttpContextKey] as AspNetCoreIntegrationContext;
+                        context = contextItems[HttpContextKey] as AspNetAmbientContext;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreIntegrationContext)}.", ex);
+                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetAmbientContext)}.", ex);
             }
 
             return context;
@@ -205,28 +220,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         internal void SetTagOnRootSpan(string tag, string value)
         {
-            _rootAspNetCoreScope?.Span?.SetTag(tag, value);
+            _rootScope?.Span?.SetTag(tag, value);
         }
 
         internal void SetMetricOnRootSpan(string tag, double? value)
         {
-            _rootAspNetCoreScope?.Span?.SetMetric(tag, value);
+            _rootScope?.Span?.SetMetric(tag, value);
         }
 
         internal bool SetExceptionOnRootSpan(Exception ex)
         {
-            _rootAspNetCoreScope?.Span?.SetException(ex);
+            _rootScope?.Span?.SetException(ex);
             // Return false for use in exception filters
             return false;
         }
 
         internal void ResetWebServerRootTags(string resourceName, string method)
         {
-            if (_rootAspNetCoreScope?.Span != null)
+            if (_rootScope?.Span != null)
             {
                 if (!string.IsNullOrWhiteSpace(resourceName))
                 {
-                    _rootAspNetCoreScope.Span.ResourceName = resourceName?.Trim();
+                    _rootScope.Span.ResourceName = resourceName?.Trim();
                 }
 
                 if (!string.IsNullOrWhiteSpace(method))

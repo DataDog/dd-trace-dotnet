@@ -63,16 +63,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             string methodDef = $"{DiagnosticSource}.{nameof(BeforeAction)}(...)";
-            var integrationContext = AspNetCoreIntegrationContext.RetrieveFromHttpContext(httpContext);
+            var integrationContext = AspNetAmbientContext.RetrieveFromHttpContext(httpContext);
 
             if (integrationContext == null)
             {
-                Log.Error($"Could not access {nameof(AspNetCoreIntegrationContext)} for {methodDef}.");
+                Log.Error($"Could not access {nameof(AspNetAmbientContext)} for {methodDef}.");
             }
             else
             {
                 SetAspNetCoreMvcSpecificData(
-                    integrationContext: integrationContext,
+                    ambientContext: integrationContext,
                     actionDescriptor: actionDescriptor,
                     httpContext: httpContext);
             }
@@ -132,13 +132,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             string methodDef = $"{DiagnosticSource}.{nameof(AfterAction)}(...)";
-            var integrationContext = AspNetCoreIntegrationContext.RetrieveFromHttpContext(httpContext);
+            var integrationContext = AspNetAmbientContext.RetrieveFromHttpContext(httpContext);
 
             Scope aspNetCoreMvcActionScope = null;
 
             if (integrationContext == null)
             {
-                Log.Error($"Could not access {nameof(AspNetCoreIntegrationContext)} for {methodDef}.");
+                Log.Error($"Could not access {nameof(AspNetAmbientContext)} for {methodDef}.");
             }
             else
             {
@@ -203,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            AspNetCoreIntegrationContext integration = null;
+            AspNetAmbientContext ambient = null;
             var exceptionToGrab = context.GetProperty<Exception>("Exception");
 
             if (shouldTrace)
@@ -212,12 +212,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (httpContextResult.HasValue)
                 {
-                    integration = AspNetCoreIntegrationContext.RetrieveFromHttpContext(httpContextResult.Value);
+                    ambient = AspNetAmbientContext.RetrieveFromHttpContext(httpContextResult.Value);
                 }
 
-                if (integration == null)
+                if (ambient == null)
                 {
-                    Log.Error($"Could not access {nameof(AspNetCoreIntegrationContext)} for {methodDef}.");
+                    Log.Error($"Could not access {nameof(AspNetAmbientContext)} for {methodDef}.");
                 }
             }
 
@@ -226,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 instrumentedMethod.Invoke(null, new[] { context });
             }
-            catch (Exception ex) when (integration?.SetExceptionOnRootSpan(exceptionToGrab.HasValue ? exceptionToGrab.Value : ex) ?? false)
+            catch (Exception ex) when (ambient?.SetExceptionOnRootSpan(exceptionToGrab.HasValue ? exceptionToGrab.Value : ex) ?? false)
             {
                 // unreachable code
                 throw;
@@ -234,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         private static void SetAspNetCoreMvcSpecificData(
-            AspNetCoreIntegrationContext integrationContext,
+            AspNetAmbientContext ambientContext,
             object actionDescriptor,
             object httpContext)
         {
@@ -250,26 +250,26 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     controllerName: out string controllerName,
                     actionName: out string actionName);
 
-                integrationContext.ResetWebServerRootTags(
+                ambientContext.ResetWebServerRootTags(
                     resourceName: resourceName,
                     method: httpMethod);
 
-                var aspNetCoreMvcActionScope = integrationContext.Tracer.StartActive(OperationName);
+                var aspNetCoreMvcActionScope = ambientContext.Tracer.StartActive(OperationName);
 
                 aspNetCoreMvcActionScope.Span?.DecorateWebServerSpan(
                     resourceName: resourceName,
                     method: httpMethod,
-                    host: integrationContext.RootAspNetCoreSpan?.GetHost(),
-                    httpUrl: integrationContext.RootAspNetCoreSpan?.GetAbsoluteUrl());
+                    host: ambientContext.RootAspNetCoreSpan?.GetHost(),
+                    httpUrl: ambientContext.RootAspNetCoreSpan?.GetAbsoluteUrl());
 
                 aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetController, controllerName);
                 aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetAction, actionName);
 
-                integrationContext.TryPersistScope(IntegrationName, aspNetCoreMvcActionScope);
+                ambientContext.TryPersistScope(IntegrationName, aspNetCoreMvcActionScope);
 
                 // set analytic sample rate if enabled
-                var analyticSampleRate = integrationContext.Tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                integrationContext.SetMetricOnRootSpan(Tags.Analytics, analyticSampleRate);
+                var analyticSampleRate = ambientContext.Tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+                ambientContext.SetMetricOnRootSpan(Tags.Analytics, analyticSampleRate);
             }
             catch (Exception ex)
             {

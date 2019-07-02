@@ -5,12 +5,12 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    /// Tracer integration base for core web server integrations.
+    /// Tracer integration ambient base for web server integrations.
     /// </summary>
-    public static class AspNetCoreIntegration
+    public static class HttpContextIntegration
     {
-        private const string IntegrationName = "AspNetCore";
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreIntegration));
+        private const string IntegrationName = "HttpContext";
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(HttpContextIntegration));
 
         /// <summary>
         /// Entry method for invoking the beginning of every web server request pipeline
@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
-                AspNetCoreIntegrationContext.Initialize(httpContext);
+                AspNetAmbientContext.Initialize(httpContext);
             }
         }
     }

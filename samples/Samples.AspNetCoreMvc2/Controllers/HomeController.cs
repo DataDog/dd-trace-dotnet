@@ -48,5 +48,11 @@ namespace Samples.AspNetCoreMvc2.Controllers
         {
             throw new Exception("This was a bad request.");
         }
+
+        [Route("forbidden-test")]
+        public IActionResult ForbiddenResource()
+        {
+            return Forbid();
+        }
     }
 }
