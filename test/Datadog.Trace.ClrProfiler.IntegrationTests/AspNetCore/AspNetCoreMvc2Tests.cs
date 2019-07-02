@@ -9,7 +9,7 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public class AspNetCoreMvc2Tests : TestHelper
     {
@@ -107,7 +107,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     using (var stream = response.GetResponseStream())
                     using (var reader = new StreamReader(stream))
                     {
-                        Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
+                        string responseText;
+                        try
+                        {
+                            responseText = reader.ReadToEnd();
+                        }
+                        catch (Exception ex)
+                        {
+                            responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
+                            Output.WriteLine(ex.ToString());
+                        }
+
+                        Output.WriteLine($"[http] {response.StatusCode} {responseText}");
                     }
                 }
                 catch (WebException wex)

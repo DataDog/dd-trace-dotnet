@@ -249,11 +249,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     actionName: out string actionName);
 
                 integrationContext.ResetWebServerRootTags(
-                    operationName: OperationName,
                     resourceName: resourceName,
                     method: httpMethod);
 
-                var aspNetCoreMvcActionScope = integrationContext.Tracer.StartActive("aspnet-coremvc.action");
+                var aspNetCoreMvcActionScope = integrationContext.Tracer.StartActive(OperationName);
 
                 aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetController, controllerName);
                 aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetAction, actionName);

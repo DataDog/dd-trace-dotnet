@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     internal class AspNetCoreIntegrationContext : IDisposable
     {
         private static readonly string HttpContextKey = "__Datadog_web_request_http_context__";
-        private static readonly string DefaultOperationName = "web.request";
+        private static readonly string TopLevelOperationName = "web.request";
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreIntegrationContext));
 
         private readonly ConcurrentStack<IDisposable> _disposables = new ConcurrentStack<IDisposable>();
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                _rootAspNetCoreScope = Tracer.StartActive(DefaultOperationName, propagatedContext);
+                _rootAspNetCoreScope = Tracer.StartActive(TopLevelOperationName, propagatedContext);
 
                 RegisterForDisposal(_rootAspNetCoreScope);
 
@@ -146,7 +146,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The Datadog context for AspNetCore http pipelines.</returns>
         internal static AspNetCoreIntegrationContext Initialize(object httpContext)
         {
-            var context = new AspNetCoreIntegrationContext(DefaultOperationName, httpContext);
+            var context = new AspNetCoreIntegrationContext(TopLevelOperationName, httpContext);
 
             if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
             {
@@ -215,19 +215,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return false;
         }
 
-        internal void ResetWebServerRootTags(
-            string operationName,
-            string resourceName,
-            string method)
+        internal void ResetWebServerRootTags(string resourceName, string method)
         {
             if (_rootAspNetCoreScope?.Span != null)
             {
-                // Only override the originals if they are specified
-                if (!string.IsNullOrWhiteSpace(operationName))
-                {
-                    _rootAspNetCoreScope.Span.OperationName = operationName;
-                }
-
                 if (!string.IsNullOrWhiteSpace(resourceName))
                 {
                     _rootAspNetCoreScope.Span.ResourceName = resourceName?.Trim();
