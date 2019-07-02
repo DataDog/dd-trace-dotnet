@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public string HttpMethod { get; set; }
 
-        public bool IsMatch(MockTracerAgent.Span span, out string message)
+        public virtual bool IsMatch(MockTracerAgent.Span span, out string message)
         {
             var mismatches = new List<string>();
 

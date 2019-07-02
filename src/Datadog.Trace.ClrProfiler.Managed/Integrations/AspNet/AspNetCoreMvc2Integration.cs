@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -203,6 +204,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             AspNetCoreIntegrationContext integration = null;
+            var exceptionToGrab = context.GetProperty<Exception>("Exception");
 
             if (shouldTrace)
             {
@@ -224,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 instrumentedMethod.Invoke(null, new[] { context });
             }
-            catch (Exception ex) when (integration?.SetExceptionOnRootSpan(ex) ?? false)
+            catch (Exception ex) when (integration?.SetExceptionOnRootSpan(exceptionToGrab.HasValue ? exceptionToGrab.Value : ex) ?? false)
             {
                 // unreachable code
                 throw;
@@ -253,6 +255,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     method: httpMethod);
 
                 var aspNetCoreMvcActionScope = integrationContext.Tracer.StartActive(OperationName);
+
+                aspNetCoreMvcActionScope.Span?.DecorateWebServerSpan(
+                    resourceName: resourceName,
+                    method: httpMethod,
+                    host: integrationContext.RootAspNetCoreSpan?.GetHost(),
+                    httpUrl: integrationContext.RootAspNetCoreSpan?.GetAbsoluteUrl());
 
                 aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetController, controllerName);
                 aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetAction, actionName);

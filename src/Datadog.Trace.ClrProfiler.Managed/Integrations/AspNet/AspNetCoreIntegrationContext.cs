@@ -107,6 +107,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         internal Tracer Tracer { get; }
 
+        /// <summary>
+        /// Gets the root span for this AspNetCore web request.
+        /// </summary>
+        internal Span RootAspNetCoreSpan => _rootAspNetCoreScope?.Span;
+
         public void Dispose()
         {
             try

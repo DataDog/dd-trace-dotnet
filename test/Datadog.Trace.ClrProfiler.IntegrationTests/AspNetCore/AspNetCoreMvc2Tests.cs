@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                 var paths = _expectations.Select(e => e.OriginalUri).ToArray();
                 SubmitRequests(aspNetCorePort, paths);
-                var spans = agent.WaitForSpans(_expectations.Count, operationName: _topLevelOperationName)
+                var spans = agent.WaitForSpans(_expectations.Count, operationName: _topLevelOperationName, returnAllOperations: true)
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
