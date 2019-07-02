@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -8,11 +7,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Tracer integration base for core web server integrations.
     /// </summary>
-    public static class WebServerRootIntegration
+    public static class AspNetCoreIntegration
     {
-        internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(WebServerRootIntegration);
-        private const string IntegrationName = "WebServerRoot";
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(WebServerRootIntegration));
+        private const string IntegrationName = "AspNetCore";
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreIntegration));
 
         /// <summary>
         /// Entry method for invoking the beginning of every web server request pipeline
@@ -25,14 +23,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = "Microsoft.AspNetCore.Http.Abstractions",
             TargetType = "Microsoft.AspNetCore.Http.DefaultHttpContext",
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore })]
-        // [InterceptMethod(
-        //    TargetAssembly = "Microsoft.AspNetCore.Http.Abstractions",
-        //    TargetType = "Microsoft.AspNetCore.Http.HttpContext",
-        //    TargetSignatureTypes = new[] { ClrNames.Ignore })]
         public static void Initialize(object httpContext, object features, int opCode, int mdToken)
         {
-            // void Initialize(IFeatureCollection features)
-            string methodDef = $"{httpContext?.GetType().FullName}.{nameof(Initialize)}()";
+            string methodDef = $"{httpContext?.GetType().FullName}.Initialize(IFeatureCollection features)";
             MethodBase instrumentedMethod = null;
 
             try
@@ -57,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
-                WebServerIntegrationContext.Initialize(httpContext);
+                AspNetCoreIntegrationContext.Initialize(httpContext);
             }
         }
     }

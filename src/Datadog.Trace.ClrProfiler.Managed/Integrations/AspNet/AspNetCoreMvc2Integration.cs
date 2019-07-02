@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// The ASP.NET Core MVC 2 integration.
     /// </summary>
-    public sealed class AspNetCoreMvc2Integration
+    public static class AspNetCoreMvc2Integration
     {
         private const string IntegrationName = "AspNetCoreMvc2";
         private const string OperationName = "aspnet-coremvc.request";
@@ -62,16 +62,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             string methodDef = $"{DiagnosticSource}.{nameof(BeforeAction)}(...)";
-            var integration = WebServerIntegrationContext.RetrieveFromHttpContext(httpContext);
+            var integrationContext = AspNetCoreIntegrationContext.RetrieveFromHttpContext(httpContext);
 
-            if (integration == null)
+            if (integrationContext == null)
             {
-                Log.Error($"Could not access {nameof(WebServerIntegrationContext)} for {methodDef}.");
+                Log.Error($"Could not access {nameof(AspNetCoreIntegrationContext)} for {methodDef}.");
             }
             else
             {
                 SetAspNetCoreMvcSpecificData(
-                    integrationContext: integration,
+                    integrationContext: integrationContext,
                     actionDescriptor: actionDescriptor,
                     httpContext: httpContext);
             }
@@ -131,11 +131,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             string methodDef = $"{DiagnosticSource}.{nameof(AfterAction)}(...)";
-            var integration = WebServerIntegrationContext.RetrieveFromHttpContext(httpContext);
+            var integrationContext = AspNetCoreIntegrationContext.RetrieveFromHttpContext(httpContext);
 
-            if (integration == null)
+            Scope aspNetCoreMvcActionScope = null;
+
+            if (integrationContext == null)
             {
-                Log.Error($"Could not access {nameof(WebServerIntegrationContext)} for {methodDef}.");
+                Log.Error($"Could not access {nameof(AspNetCoreIntegrationContext)} for {methodDef}.");
+            }
+            else
+            {
+                integrationContext.TryRetrieveScope(IntegrationName, out aspNetCoreMvcActionScope);
             }
 
             MethodBase instrumentedMethod = null;
@@ -159,6 +165,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // profiled app will continue working as expected without this method
                 Log.Error($"Exception when calling {methodDef}.", ex);
+            }
+            finally
+            {
+                aspNetCoreMvcActionScope?.Dispose();
             }
         }
 
@@ -192,7 +202,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            WebServerIntegrationContext integration = null;
+            AspNetCoreIntegrationContext integration = null;
 
             if (shouldTrace)
             {
@@ -200,12 +210,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (httpContextResult.HasValue)
                 {
-                    integration = WebServerIntegrationContext.RetrieveFromHttpContext(httpContextResult.Value);
+                    integration = AspNetCoreIntegrationContext.RetrieveFromHttpContext(httpContextResult.Value);
                 }
 
                 if (integration == null)
                 {
-                    Log.Error($"Could not access {nameof(WebServerIntegrationContext)} for {methodDef}.");
+                    Log.Error($"Could not access {nameof(AspNetCoreIntegrationContext)} for {methodDef}.");
                 }
             }
 
@@ -222,7 +232,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         private static void SetAspNetCoreMvcSpecificData(
-            WebServerIntegrationContext integrationContext,
+            AspNetCoreIntegrationContext integrationContext,
             object actionDescriptor,
             object httpContext)
         {
@@ -231,62 +241,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var request = httpContext.GetProperty("Request").GetValueOrDefault();
 
                 GetTagValues(
-                    actionDescriptor,
-                    request,
-                    out string httpMethod,
-                    out string host,
-                    out string resourceName,
-                    out string url,
-                    out string controllerName,
-                    out string actionName);
-
-                SpanContext propagatedContext = null;
-                var tracer = Tracer.Instance;
-
-                if (tracer.ActiveScope == null)
-                {
-                    try
-                    {
-                        // extract propagated http headers
-                        var requestHeaders = request.GetProperty<IEnumerable>("Headers").GetValueOrDefault();
-
-                        if (requestHeaders != null)
-                        {
-                            var headersCollection = new DictionaryHeadersCollection();
-
-                            foreach (object header in requestHeaders)
-                            {
-                                var key = header.GetProperty<string>("Key").GetValueOrDefault();
-                                var values = header.GetProperty<IList<string>>("Value").GetValueOrDefault();
-
-                                if (key != null && values != null)
-                                {
-                                    headersCollection.Add(key, values);
-                                }
-                            }
-
-                            propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
-                    }
-                }
+                    actionDescriptor: actionDescriptor,
+                    request: request,
+                    httpMethod: out string httpMethod,
+                    resourceName: out string resourceName,
+                    controllerName: out string controllerName,
+                    actionName: out string actionName);
 
                 integrationContext.ResetWebServerRootTags(
                     operationName: OperationName,
                     resourceName: resourceName,
-                    method: httpMethod,
-                    host: host,
-                    httpUrl: url);
+                    method: httpMethod);
 
-                integrationContext.SetTagOnRootSpan(Tags.AspNetController, controllerName);
-                integrationContext.SetTagOnRootSpan(Tags.AspNetAction, actionName);
+                var aspNetCoreMvcActionScope = integrationContext.Tracer.StartActive("aspnet-coremvc.action");
 
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                integrationContext.SetMetricOnRootSpan(Tags.Analytics, analyticsSampleRate);
+                aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetController, controllerName);
+                aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetAction, actionName);
+
+                integrationContext.TryPersistScope(IntegrationName, aspNetCoreMvcActionScope);
+
+                // set analytic sample rate if enabled
+                var analyticSampleRate = integrationContext.Tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+                integrationContext.SetMetricOnRootSpan(Tags.Analytics, analyticSampleRate);
             }
             catch (Exception ex)
             {
@@ -299,9 +275,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object actionDescriptor,
             object request,
             out string httpMethod,
-            out string host,
             out string resourceName,
-            out string url,
             out string controllerName,
             out string actionName)
         {
@@ -309,7 +283,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             actionName = actionDescriptor.GetProperty<string>("ActionName").GetValueOrDefault()?.ToLowerInvariant();
 
-            host = request.GetProperty("Host").GetProperty<string>("Value").GetValueOrDefault();
+            string host = request.GetProperty("Host").GetProperty<string>("Value").GetValueOrDefault();
 
             httpMethod = request.GetProperty<string>("Method").GetValueOrDefault()?.ToUpperInvariant() ?? "UNKNOWN";
 
@@ -319,7 +293,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             string queryString = request.GetProperty("QueryString").GetProperty<string>("Value").GetValueOrDefault();
 
-            url = $"{pathBase}{path}{queryString}";
+            string url = $"{pathBase}{path}{queryString}";
 
             string resourceUrl = actionDescriptor.GetProperty("AttributeRouteInfo").GetProperty<string>("Template").GetValueOrDefault() ??
                                  UriHelpers.GetRelativeUrl(new Uri($"https://{host}{url}"), tryRemoveIds: true).ToLowerInvariant();

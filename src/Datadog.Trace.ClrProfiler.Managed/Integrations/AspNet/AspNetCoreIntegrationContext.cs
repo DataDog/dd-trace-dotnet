@@ -9,23 +9,28 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
-    internal class WebServerIntegrationContext : IDisposable
+    internal class AspNetCoreIntegrationContext : IDisposable
     {
-        internal static readonly string HttpContextKey = "__Datadog_http_integration_context__";
-        internal static readonly string DefaultOperationName = "http-request";
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(WebServerIntegrationContext));
-        private readonly ConcurrentStack<IDisposable> _disposables = new ConcurrentStack<IDisposable>();
-        private readonly object _httpContext;
-        private readonly Scope _rootScope;
-        private readonly Scope _scope;
+        private static readonly string HttpContextKey = "__Datadog_web_request_http_context__";
+        private static readonly string DefaultOperationName = "web.request";
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreIntegrationContext));
 
-        private WebServerIntegrationContext(string integrationName, object httpContext)
+        private readonly ConcurrentStack<IDisposable> _disposables = new ConcurrentStack<IDisposable>();
+        private readonly ConcurrentDictionary<string, Scope> _scopeStorage = new ConcurrentDictionary<string, Scope>();
+        private readonly object _httpContext;
+        private readonly Scope _rootAspNetCoreScope;
+
+        private AspNetCoreIntegrationContext(string integrationName, object httpContext)
         {
             try
             {
+                Tracer = Tracer.Instance;
                 _httpContext = httpContext;
+
                 var request = _httpContext.GetProperty("Request").GetValueOrDefault();
-                RegisterForDisposalWithPipeline(httpContext, this);
+                var response = _httpContext.GetProperty("Response").GetValueOrDefault();
+
+                RegisterForDisposalWithPipeline(response, this);
 
                 GetTagValues(
                     request,
@@ -35,9 +40,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     out string resourceName);
 
                 SpanContext propagatedContext = null;
-                var tracer = Tracer.Instance;
 
-                if (tracer.ActiveScope == null)
+                if (Tracer.ActiveScope == null)
                 {
                     try
                     {
@@ -68,11 +72,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                _rootScope = _scope = tracer.StartActive(DefaultOperationName, propagatedContext);
+                _rootAspNetCoreScope = Tracer.StartActive(DefaultOperationName, propagatedContext);
 
-                RegisterForDisposal(_rootScope);
+                RegisterForDisposal(_rootAspNetCoreScope);
 
-                var span = _rootScope.Span;
+                var span = _rootAspNetCoreScope.Span;
 
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
@@ -80,23 +84,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     host: host,
                     httpUrl: absoluteUri);
 
-                var statusCode = _httpContext.GetProperty("Response").GetProperty<int>("StatusCode");
+                var statusCode = response.GetProperty<int>("StatusCode");
 
                 if (statusCode.HasValue)
                 {
                     span.SetTag(Tags.HttpStatusCode, statusCode.Value.ToString());
                 }
 
-                var analyticSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: true);
+                var analyticSampleRate = Tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: true);
                 span.SetMetric(Tags.Analytics, analyticSampleRate);
             }
             catch (Exception ex)
             {
-                // unreachable code
-                Log.Error($"Exception when initializing {nameof(WebServerIntegrationContext)}.", ex);
-                throw;
+                // Don't crash client apps
+                Log.Error($"Exception when initializing {nameof(AspNetCoreIntegrationContext)}.", ex);
             }
         }
+
+        /// <summary>
+        /// Gets the instance of the Tracer for this AspNetCore web request.
+        /// Ensure that the same Tracer instance is used throughout an entire request.
+        /// </summary>
+        internal Tracer Tracer { get; }
 
         public void Dispose()
         {
@@ -112,19 +121,32 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // no exceptions in dispose
-                Log.Error("Exception when trying to sniff data at the end of the pipeline.", ex);
+                // No exceptions in dispose
+                Log.Error("Exception when trying to populate data at the end of the request pipeline.", ex);
             }
 
-            while (_disposables.TryPop(out IDisposable nextDisposable))
+            while (_disposables.TryPop(out IDisposable registeredDisposable))
             {
-                nextDisposable?.Dispose();
+                try
+                {
+                    registeredDisposable?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    // No exceptions in dispose
+                    Log.Error($"Exception when disposing {registeredDisposable?.GetType().FullName ?? "NULL"}.", ex);
+                }
             }
         }
 
-        internal static WebServerIntegrationContext Initialize(object httpContext)
+        /// <summary>
+        /// Responsible for setting up an overarching Scope and then registering with the end of pipeline disposal.
+        /// </summary>
+        /// <param name="httpContext">Instance of Microsoft.AspNetCore.Http.DefaultHttpContext</param>
+        /// <returns>The Datadog context for AspNetCore http pipelines.</returns>
+        internal static AspNetCoreIntegrationContext Initialize(object httpContext)
         {
-            WebServerIntegrationContext context = new WebServerIntegrationContext(DefaultOperationName, httpContext);
+            var context = new AspNetCoreIntegrationContext(DefaultOperationName, httpContext);
 
             if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
             {
@@ -134,9 +156,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return context;
         }
 
-        internal static WebServerIntegrationContext RetrieveFromHttpContext(object httpContext)
+        internal static AspNetCoreIntegrationContext RetrieveFromHttpContext(object httpContext)
         {
-            WebServerIntegrationContext context = null;
+            AspNetCoreIntegrationContext context = null;
 
             try
             {
@@ -144,33 +166,31 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (contextItems?.ContainsKey(HttpContextKey) ?? false)
                     {
-                        context = contextItems[HttpContextKey] as WebServerIntegrationContext;
+                        context = contextItems[HttpContextKey] as AspNetCoreIntegrationContext;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.ErrorExceptionForFilter($"Error accessing {nameof(WebServerIntegrationContext)}.", ex);
+                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreIntegrationContext)}.", ex);
             }
 
             return context;
         }
 
+        internal bool TryPersistScope(string key, Scope scope)
+        {
+            return _scopeStorage.TryAdd(key, scope);
+        }
+
+        internal bool TryRetrieveScope(string key, out Scope scope)
+        {
+            return _scopeStorage.TryGetValue(key, out scope);
+        }
+
         internal void RegisterForDisposal(IDisposable disposable)
         {
             _disposables.Push(disposable);
-        }
-
-        internal Scope GetRootScope()
-        {
-            var currentLevel = _scope;
-
-            while (currentLevel.Parent != null)
-            {
-                currentLevel = currentLevel.Parent;
-            }
-
-            return currentLevel;
         }
 
         internal void SetStatusCode(int statusCode)
@@ -180,17 +200,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         internal void SetTagOnRootSpan(string tag, string value)
         {
-            _rootScope?.Span?.SetTag(tag, value);
+            _rootAspNetCoreScope?.Span?.SetTag(tag, value);
         }
 
         internal void SetMetricOnRootSpan(string tag, double? value)
         {
-            _rootScope?.Span?.SetMetric(tag, value);
+            _rootAspNetCoreScope?.Span?.SetMetric(tag, value);
         }
 
         internal bool SetExceptionOnRootSpan(Exception ex)
         {
-            _rootScope?.Span?.SetException(ex);
+            _rootAspNetCoreScope?.Span?.SetException(ex);
             // Return false for use in exception filters
             return false;
         }
@@ -198,25 +218,26 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal void ResetWebServerRootTags(
             string operationName,
             string resourceName,
-            string method,
-            string host,
-            string httpUrl)
+            string method)
         {
-            if (_rootScope?.Span != null)
+            if (_rootAspNetCoreScope?.Span != null)
             {
-                _rootScope.Span.OperationName = operationName;
-                _rootScope.Span.ResourceName = resourceName?.Trim();
-                SetTagOnRootSpan(Tags.SpanKind, SpanKinds.Server);
-                SetTagOnRootSpan(Tags.HttpMethod, method);
-                SetTagOnRootSpan(Tags.HttpRequestHeadersHost, host);
-                SetTagOnRootSpan(Tags.HttpUrl, httpUrl);
-            }
-        }
+                // Only override the originals if they are specified
+                if (!string.IsNullOrWhiteSpace(operationName))
+                {
+                    _rootAspNetCoreScope.Span.OperationName = operationName;
+                }
 
-        private static bool ExceptionFilterDispose(IDisposable disposable)
-        {
-            disposable?.Dispose();
-            return false;
+                if (!string.IsNullOrWhiteSpace(resourceName))
+                {
+                    _rootAspNetCoreScope.Span.ResourceName = resourceName?.Trim();
+                }
+
+                if (!string.IsNullOrWhiteSpace(method))
+                {
+                    SetTagOnRootSpan(Tags.HttpMethod, method);
+                }
+            }
         }
 
         private static void GetTagValues(
@@ -245,12 +266,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             resourceName = $"{httpMethod} {resourceUrl}";
         }
 
-        private static void RegisterForDisposalWithPipeline(object httpContext, IDisposable disposable)
+        private static void RegisterForDisposalWithPipeline(object response, IDisposable disposable)
         {
             try
             {
-                var response = httpContext.GetProperty("Response").GetValueOrDefault();
-
                 if (response == null)
                 {
                     Log.Error($"HttpContext.Response is null, unable to register {disposable.GetType().FullName}");
