@@ -239,6 +239,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod(context);
             }
             catch (Exception ex) when (ambientContext?.SetExceptionOnRootSpan(exceptionToGrab.HasValue ? exceptionToGrab.Value : ex) ?? false)
+            catch (Exception ex) when (ambientContext?.SetExceptionOnRootSpan(exceptionToGrab.GetValueOrDefault() ?? ex) ?? false)
             {
                 // unreachable code
                 throw;
