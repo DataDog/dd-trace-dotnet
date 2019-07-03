@@ -99,6 +99,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // profiled app will continue working as expected without this method
                 Log.Error($"Exception when calling {methodDef}.", ex);
+                throw;
             }
         }
 
@@ -172,6 +173,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // profiled app will continue working as expected without this method
                 Log.Error($"Exception when calling {methodDef}.", ex);
+                throw;
             }
             finally
             {
