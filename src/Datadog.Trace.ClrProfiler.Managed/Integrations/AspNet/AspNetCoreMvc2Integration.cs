@@ -205,7 +205,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Action<object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
-                       .WithConcreteTypeName(DiagnosticSource)
+                       .WithConcreteTypeName(ResourceInvoker)
                        .WithParameters(context)
                        .Build();
             }
@@ -237,7 +237,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                instrumentedMethod.Invoke(context);
+                instrumentedMethod(context);
             }
             catch (Exception ex) when (ambientContext?.SetExceptionOnRootSpan(exceptionToGrab.HasValue ? exceptionToGrab.Value : ex) ?? false)
             {
