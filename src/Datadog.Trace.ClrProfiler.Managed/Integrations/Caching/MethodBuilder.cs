@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -9,20 +11,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 {
     internal class MethodBuilder<TDelegate>
     {
+        /// <summary>
+        /// Global dictionary for caching reflected delegates
+        /// </summary>
+        private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
+
         private readonly Assembly _callingAssembly;
         private readonly int _mdToken;
         private readonly int _originalOpCodeValue;
         private readonly OpCodeValue _opCode;
-        private readonly MethodBase _methodBase;
+
+        private MethodBase _methodBase;
         private Type _concreteType;
         private string _concreteTypeName;
-        private object _instance = null;
-        private object[] _parameters = new object[0];
+        private object[] _argumentObjects = new object[0];
 
-        private Type[] _genericTypeArguments = Type.EmptyTypes;
-
-        private bool _requiresBestEffortMatching = false;
-        private bool _instanceWasSpecified = false;
+        private Type[] _declaringTypeGenericArguments = null;
+        private Type[] _methodGenericArguments = null;
 
         private MethodBuilder(Assembly callingAssembly, int mdToken, int opCode)
         {
@@ -30,15 +35,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             _mdToken = mdToken;
             _opCode = (OpCodeValue)opCode;
             _originalOpCodeValue = opCode;
-
-            try
-            {
-                _methodBase = callingAssembly.ManifestModule.ResolveMethod(mdToken);
-            }
-            catch
-            {
-                _requiresBestEffortMatching = true;
-            }
         }
 
         public static MethodBuilder<TDelegate> Start(Assembly callingAssembly, int mdToken, int opCode)
@@ -61,30 +57,59 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public MethodBuilder<TDelegate> WithParameters(params object[] parameters)
         {
-            _parameters = parameters;
+            _argumentObjects = parameters;
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithGenericTypeArguments(params Type[] genericTypeArguments)
+        public MethodBuilder<TDelegate> WithDeclaringTypeGenericTypeArguments(params Type[] declaringTypeGenericTypeArguments)
         {
-            _genericTypeArguments = genericTypeArguments;
-            return this;
+            throw new NotImplementedException("Requires in depth testing.");
+            // _declaringTypeGenericArguments = declaringTypeGenericTypeArguments;
+            // return this;
         }
 
-        public MethodBuilder<TDelegate> WithInstance(object instance)
+        public MethodBuilder<TDelegate> WithGenericParameterTypes(params Type[] methodGenericArguments)
         {
-            _instance = instance;
-            _instanceWasSpecified = true;
-            return this;
+            throw new NotImplementedException("Requires in depth testing.");
+            // _methodGenericArguments = methodGenericArguments;
+            // return this;
         }
 
         public TDelegate Build()
         {
             ValidateRequirements();
 
+            var cacheKey = new Key(
+                callingModule: _callingAssembly.ManifestModule,
+                mdToken: _mdToken,
+                callOpCode: _opCode,
+                methodGenericArguments: _declaringTypeGenericArguments,
+                genericParameterTypes: _methodGenericArguments);
+
+            return Cache.GetOrAdd(cacheKey, key => EmitDelegate());
+        }
+
+        private TDelegate EmitDelegate()
+        {
+            var requiresBestEffortMatching = false;
+
+            try
+            {
+                // Don't resolve until we build, because we need to wait for generics to be specified
+                _methodBase =
+                    _callingAssembly.ManifestModule.ResolveMethod(
+                        metadataToken: _mdToken,
+                        genericTypeArguments: _declaringTypeGenericArguments,
+                        genericMethodArguments: _methodGenericArguments);
+            }
+            catch
+            {
+                requiresBestEffortMatching = true;
+            }
+
             MethodInfo methodInfo = null;
 
-            if (!_requiresBestEffortMatching && _methodBase is MethodInfo info)
+            if (!requiresBestEffortMatching && _methodBase is MethodInfo info)
             {
                 methodInfo = info;
             }
@@ -122,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (methodInfo.IsGenericMethodDefinition || methodInfo.IsGenericMethod)
             {
-                methodInfo = methodInfo.MakeGenericMethod(_genericTypeArguments);
+                methodInfo = methodInfo.MakeGenericMethod(_declaringTypeGenericArguments);
             }
 
             Type[] effectiveParameterTypes;
@@ -195,57 +220,203 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 throw new ArgumentException("There must be a concrete type specified.");
             }
-
-            if (_methodBase == null)
-            {
-                return;
-            }
-
-            if (_methodBase.IsStatic)
-            {
-                if (_instanceWasSpecified)
-                {
-                    throw new ArgumentException("There should be no instance specified for static methods.");
-                }
-            }
-            else
-            {
-                if (!_instanceWasSpecified)
-                {
-                    throw new ArgumentException("Instance must be specified for instance methods.");
-                }
-            }
         }
 
         private MethodInfo TryFindMethod()
         {
             var methods =
-                _concreteType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-                             .Where(
-                                  mi => mi.MetadataToken == _methodBase.MetadataToken
-                                     && mi.IsGenericMethodDefinition == _methodBase.IsGenericMethodDefinition
-                                     && mi.IsGenericMethod == _methodBase.IsGenericMethod
-                                     && mi.IsAbstract == _methodBase.IsAbstract
-                                     && mi.ContainsGenericParameters == _methodBase.ContainsGenericParameters
-                                     && mi.IsPrivate == _methodBase.IsPrivate
-                                     && mi.IsPublic == _methodBase.IsPublic
-                                     && mi.IsVirtual == _methodBase.IsVirtual
-                                     && mi.Name == _methodBase.Name)
-                             .ToArray();
+                _concreteType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+            if (_methodBase != null)
+            {
+                // For the case I haven't encountered, where MethodBase is not MethodInfo
+                methods =
+                    methods.Where(
+                           mi => mi.MetadataToken == _methodBase.MetadataToken
+                              && mi.IsGenericMethodDefinition == _methodBase.IsGenericMethodDefinition
+                              && mi.IsGenericMethod == _methodBase.IsGenericMethod
+                              && mi.IsAbstract == _methodBase.IsAbstract
+                              && mi.ContainsGenericParameters == _methodBase.ContainsGenericParameters
+                              && mi.IsPrivate == _methodBase.IsPrivate
+                              && mi.IsPublic == _methodBase.IsPublic
+                              && mi.IsVirtual == _methodBase.IsVirtual
+                              && mi.Name == _methodBase.Name)
+                      .ToArray();
+            }
+            else
+            {
+                // An attempt to match on the metadata token for the concrete type
+
+                // Non-Generic Method - { IsGenericMethod: false, ContainsGenericParameters: false, IsGenericMethodDefinition: false }
+                // Generic Method Definition - { IsGenericMethod: true, ContainsGenericParameters: true, IsGenericMethodDefinition: true }
+                // Open Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: true, IsGenericMethodDefinition: false }
+                // Closed Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: false, IsGenericMethodDefinition: false }
+
+                var isGenericMethod = _methodGenericArguments?.Length > 0;
+
+                // We don't officially instrument any Closed Constructed Methods
+                // This would need updating if we did
+                var relevantMethods =
+                    methods
+                       .Where(
+                            mi => mi.MetadataToken == _mdToken
+                               && mi.ContainsGenericParameters == isGenericMethod
+                               && mi.IsGenericMethod == isGenericMethod)
+                       .Where(
+                            mi =>
+                            {
+                                if (isGenericMethod)
+                                {
+                                    var genericArgs = mi.GetGenericArguments();
+
+                                    if (genericArgs.Length != _methodGenericArguments.Length)
+                                    {
+                                        return false;
+                                    }
+                                }
+
+                                var parameters = mi.GetParameters();
+
+                                if (parameters.Length != _argumentObjects.Length)
+                                {
+                                    return false;
+                                }
+
+                                for (var i = 0; i < parameters.Length; i++)
+                                {
+                                    var candidateParameter = parameters[i];
+
+                                    var parameterType = candidateParameter.ParameterType;
+
+                                    if (parameterType.IsGenericParameter)
+                                    {
+                                        if (!isGenericMethod)
+                                        {
+                                            // We're expecting no generic parameters
+                                            return false;
+                                        }
+
+                                        // TODO: more generic parameter evaluation
+                                    }
+
+                                    var actualArgument = _argumentObjects[i];
+
+                                    if (actualArgument == null)
+                                    {
+                                        // Skip the rest of this check
+                                        continue;
+                                    }
+
+                                    var actualArgumentType = actualArgument.GetType();
+
+                                    if (!parameterType.IsAssignableFrom(actualArgumentType))
+                                    {
+                                        return false;
+                                    }
+                                }
+
+                                return true;
+                            });
+
+                methods = relevantMethods.ToArray();
+            }
+
+            var methodText = _methodBase?.Name ?? $"mdToken: {_mdToken}";
 
             if (methods.Length > 1)
             {
-                throw new ArgumentException($"Unable to safely resolve method {_methodBase.Name} for {_concreteTypeName}");
+                throw new ArgumentException($"Unable to safely resolve method {methodText} for {_concreteTypeName}");
             }
 
-            MethodInfo methodInfo = methods.SingleOrDefault();
+            var methodInfo = methods.SingleOrDefault();
 
             if (methodInfo == null)
             {
-                throw new ArgumentException($"Unable to resolve method {_methodBase.Name} for {_concreteTypeName}");
+                throw new ArgumentException($"Unable to resolve method {methodText} for {_concreteTypeName}");
             }
 
             return methodInfo;
+        }
+
+        private struct Key
+        {
+            public readonly int CallingModuleMetadataToken;
+            public readonly int MethodMetadataToken;
+            public readonly OpCodeValue CallOpCode;
+            public readonly string GenericSpec;
+
+            public Key(
+                Module callingModule,
+                int mdToken,
+                OpCodeValue callOpCode,
+                Type[] methodGenericArguments,
+                Type[] genericParameterTypes)
+            {
+                CallingModuleMetadataToken = callingModule.MetadataToken;
+                MethodMetadataToken = mdToken;
+                CallOpCode = callOpCode;
+
+                GenericSpec = "_gArgs_";
+
+                if (methodGenericArguments != null)
+                {
+                    for (var i = 0; i < methodGenericArguments.Length; i++)
+                    {
+                        GenericSpec = string.Concat(GenericSpec, $"_{methodGenericArguments[i].FullName}_");
+                    }
+                }
+
+                GenericSpec = string.Concat(GenericSpec, "_gParams_");
+
+                if (genericParameterTypes != null)
+                {
+                    for (var i = 0; i < genericParameterTypes.Length; i++)
+                    {
+                        GenericSpec = string.Concat(GenericSpec, $"_{genericParameterTypes[i].FullName}_");
+                    }
+                }
+            }
+        }
+
+        private class KeyComparer : IEqualityComparer<Key>
+        {
+            public bool Equals(Key x, Key y)
+            {
+                if (!int.Equals(x.CallingModuleMetadataToken, y.CallingModuleMetadataToken))
+                {
+                    return false;
+                }
+
+                if (!int.Equals(x.MethodMetadataToken, y.MethodMetadataToken))
+                {
+                    return false;
+                }
+
+                if (!short.Equals(x.CallOpCode, y.CallOpCode))
+                {
+                    return false;
+                }
+
+                if (!string.Equals(x.GenericSpec, y.GenericSpec))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            public int GetHashCode(Key obj)
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = (hash * 23) + obj.CallingModuleMetadataToken.GetHashCode();
+                    hash = (hash * 23) + obj.MethodMetadataToken.GetHashCode();
+                    hash = (hash * 23) + obj.CallOpCode.GetHashCode();
+                    hash = (hash * 23) + obj.GenericSpec.GetHashCode();
+                    return hash;
+                }
+            }
         }
     }
 }

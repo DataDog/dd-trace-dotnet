@@ -36,7 +36,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Action<object, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
                        .WithConcreteType(httpContextType)
-                       .WithInstance(httpContext)
                        .WithParameters(features)
                        .Build();
             }
