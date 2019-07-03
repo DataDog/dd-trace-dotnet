@@ -68,16 +68,19 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// <returns><c>true</c> if the property exists, otherwise <c>false</c>.</returns>
         public static bool TryGetPropertyValue<TResult>(this object source, string propertyName, out TResult value)
         {
-            var type = source.GetType();
-
-            object cachedItem = Cache.GetOrAdd(
-                $"{type.AssemblyQualifiedName}.{propertyName}",
-                key => CreatePropertyDelegate<TResult>(type, propertyName));
-
-            if (cachedItem is Func<object, TResult> func)
+            if (source != null)
             {
-                value = func(source);
-                return true;
+                var type = source.GetType();
+
+                object cachedItem = Cache.GetOrAdd(
+                    $"{type.AssemblyQualifiedName}.{propertyName}",
+                    key => CreatePropertyDelegate<TResult>(type, propertyName));
+
+                if (cachedItem is Func<object, TResult> func)
+                {
+                    value = func(source);
+                    return true;
+                }
             }
 
             value = default;
@@ -86,6 +89,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public static MemberResult<TResult> GetProperty<TResult>(this object source, string propertyName)
         {
+            if (source == null)
+            {
+                return MemberResult<TResult>.NotFound;
+            }
+
             return source.TryGetPropertyValue(propertyName, out TResult result)
                        ? new MemberResult<TResult>(result)
                        : MemberResult<TResult>.NotFound;
