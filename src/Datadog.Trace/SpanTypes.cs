@@ -31,5 +31,10 @@ namespace Datadog.Trace
         /// The span type for an outgoing HTTP integration.
         /// </summary>
         public const string Http = "http";
+
+        /// <summary>
+        /// The span type for a GraphQL integration.
+        /// </summary>
+        public const string GraphQL = "graphql";
     }
 }

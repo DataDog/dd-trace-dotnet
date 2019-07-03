@@ -398,6 +398,39 @@
     ]
   },
   {
+    "name": "GraphQL",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "GraphQL.Server.Core",
+          "type": "GraphQL.Server.Internal.IGraphQLExecuter",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
+            "System.String",
+            "System.String",
+            "_",
+            "_",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 0,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 65535,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.GraphQLIntegration",
+          "method": "ExecuteAsync",
+          "signature": "00 08 1C 1C 1C 1C 1C 1C 1C 08 08"
+        }
+      }
+    ]
+  },
+  {
     "name": "HttpContext",
     "method_replacements": [
       {
