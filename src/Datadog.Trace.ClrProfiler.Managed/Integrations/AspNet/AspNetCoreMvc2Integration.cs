@@ -278,10 +278,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetAction, actionName);
 
                 ambientContext.TryPersistScope(IntegrationName, aspNetCoreMvcActionScope);
-
-                // set analytic sample rate if enabled
-                var analyticSampleRate = ambientContext.Tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                aspNetCoreMvcActionScope.Span?.SetMetric(Tags.Analytics, analyticSampleRate);
             }
             catch (Exception ex)
             {
