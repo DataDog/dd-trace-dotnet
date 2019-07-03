@@ -4,7 +4,6 @@
 #include <string>
 #include "corhlpr.h"
 
-#include <iostream>
 #include "clr_helpers.h"
 #include "environment_variables.h"
 #include "il_rewriter.h"

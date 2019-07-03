@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using System.Reflection.Emit;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -282,7 +281,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 // set analytic sample rate if enabled
                 var analyticSampleRate = ambientContext.Tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
-                ambientContext.SetMetricOnRootSpan(Tags.Analytics, analyticSampleRate);
+                aspNetCoreMvcActionScope.Span?.SetMetric(Tags.Analytics, analyticSampleRate);
             }
             catch (Exception ex)
             {
