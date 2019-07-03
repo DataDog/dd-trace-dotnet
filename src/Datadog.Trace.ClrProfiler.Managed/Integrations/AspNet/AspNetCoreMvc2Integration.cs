@@ -238,7 +238,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 instrumentedMethod(context);
             }
-            catch (Exception ex) when (ambientContext?.SetExceptionOnRootSpan(exceptionToGrab.HasValue ? exceptionToGrab.Value : ex) ?? false)
             catch (Exception ex) when (ambientContext?.SetExceptionOnRootSpan(exceptionToGrab.GetValueOrDefault() ?? ex) ?? false)
             {
                 // unreachable code
