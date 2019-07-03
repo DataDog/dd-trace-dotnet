@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations

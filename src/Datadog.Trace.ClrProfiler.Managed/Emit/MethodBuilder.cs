@@ -4,10 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using Datadog.Trace.ClrProfiler.Emit;
 using Sigil;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.Emit
 {
     internal class MethodBuilder<TDelegate>
     {
@@ -57,6 +56,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public MethodBuilder<TDelegate> WithParameters(params object[] parameters)
         {
+            if (parameters == null)
+            {
+                throw new ArgumentNullException(nameof(parameters));
+            }
+
             _argumentObjects = parameters;
             return this;
         }
