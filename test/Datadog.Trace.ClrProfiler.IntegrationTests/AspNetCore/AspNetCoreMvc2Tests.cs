@@ -9,15 +9,36 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public class AspNetCoreMvc2Tests : TestHelper
     {
-        private static readonly Dictionary<string, string> Paths = new Dictionary<string, string>
+        private static readonly string _topLevelOperationName = "web.request";
+        // TODO: Test me
+        // private static readonly string _nestedOperationName = "aspnet-coremvc.request";
+
+        private static readonly List<WebServerSpanExpectation> _expectations = new List<WebServerSpanExpectation>()
         {
-            { "/", "GET /" },
-            { "/delay/0", "GET delay/{seconds}" },
-            { "/api/delay/0", "GET api/delay/{seconds}" }
+            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "/"),
+            CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}"),
+            CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}"),
+            CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}"),
+            // TODO: The below test succeeds in IISExpress, but fails in self host when expecting a status code of 500.
+            CreateTopLevelExpectation(
+                url: "/bad-request",
+                httpMethod: "GET",
+                httpStatus: null,
+                resourceUrl: "bad-request",
+                additionalCheck: span =>
+                {
+                    var failures = new List<string>();
+                    if (span.Tags[Tags.ErrorMsg] != "This was a bad request.")
+                    {
+                        failures.Add($"Expected specific exception within {span.Resource}");
+                    }
+
+                    return failures;
+                }),
         };
 
         public AspNetCoreMvc2Tests(ITestOutputHelper output)
@@ -64,10 +85,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // wait for server to start
                 wh.WaitOne(5000);
 
-                SubmitRequests(aspNetCorePort, Paths.Keys.ToArray());
-                var expected = new List<string>(Paths.Values);
-                var spans = agent.WaitForSpans(expected.Count)
-                                 .Where(s => s.Type == SpanTypes.Web)
+                var paths = _expectations.Select(e => e.OriginalUri).ToArray();
+                SubmitRequests(aspNetCorePort, paths);
+                var spans = agent.WaitForSpans(_expectations.Count, operationName: _topLevelOperationName, returnAllOperations: true)
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
@@ -76,16 +96,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     process.Kill();
                 }
 
-                Assert.True(spans.Count >= expected.Count, $"expected at least {expected.Count} spans");
-                foreach (var span in spans)
-                {
-                    Assert.Equal("aspnet-coremvc.request", span.Name);
-                    Assert.Equal("Samples.AspNetCoreMvc2", span.Service);
-                    Assert.Equal(SpanTypes.Web, span.Type);
-                }
-
-                ValidateSpans(spans, (span) => span.Resource, expected);
+                WebServerTestHelpers.AssertExpectationsMet(_expectations, spans);
             }
+        }
+
+        private static WebServerSpanExpectation CreateTopLevelExpectation(
+            string url,
+            string httpMethod,
+            string httpStatus,
+            string resourceUrl,
+            Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
+        {
+            return new WebServerSpanExpectation
+            {
+                OriginalUri = url,
+                HttpMethod = httpMethod,
+                OperationName = _topLevelOperationName,
+                ServiceName = "Samples.AspNetCoreMvc2",
+                ResourceName = $"{httpMethod.ToUpper()} {resourceUrl}",
+                StatusCode = httpStatus,
+                Type = SpanTypes.Web,
+                CustomAssertion = additionalCheck
+            };
         }
 
         private void SubmitRequests(int aspNetCorePort, string[] paths)
@@ -99,7 +131,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     using (var stream = response.GetResponseStream())
                     using (var reader = new StreamReader(stream))
                     {
-                        Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
+                        string responseText;
+                        try
+                        {
+                            responseText = reader.ReadToEnd();
+                        }
+                        catch (Exception ex)
+                        {
+                            responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
+                            Output.WriteLine(ex.ToString());
+                        }
+
+                        Output.WriteLine($"[http] {response.StatusCode} {responseText}");
                     }
                 }
                 catch (WebException wex)

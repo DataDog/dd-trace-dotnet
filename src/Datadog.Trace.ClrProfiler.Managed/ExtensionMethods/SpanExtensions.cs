@@ -7,6 +7,12 @@ namespace Datadog.Trace.ClrProfiler.ExtensionMethods
         internal static string GetHttpMethod(this ISpan span)
             => span.GetTag(Tags.HttpMethod);
 
+        internal static string GetHost(this ISpan span)
+            => span.GetTag(Tags.HttpRequestHeadersHost);
+
+        internal static string GetAbsoluteUrl(this ISpan span)
+            => span.GetTag(Tags.HttpUrl);
+
         internal static void DecorateWebServerSpan(
             this Span span,
             string resourceName,

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Samples.AspNetCoreMvc2.Attributes;
 
 namespace Samples.AspNetCoreMvc2.Controllers
 {
@@ -12,6 +13,7 @@ namespace Samples.AspNetCoreMvc2.Controllers
     {
         public IActionResult Index()
         {
+            ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
 
             var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
@@ -28,6 +30,7 @@ namespace Samples.AspNetCoreMvc2.Controllers
         [Route("delay/{seconds}")]
         public IActionResult Delay(int seconds)
         {
+            ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
             Thread.Sleep(TimeSpan.FromSeconds(seconds));
             return View(seconds);
         }
@@ -35,6 +38,7 @@ namespace Samples.AspNetCoreMvc2.Controllers
         [Route("delay-async/{seconds}")]
         public async Task<IActionResult> DelayAsync(int seconds)
         {
+            ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
             await Task.Delay(TimeSpan.FromSeconds(seconds));
             return View("Delay", seconds);
         }
@@ -43,6 +47,13 @@ namespace Samples.AspNetCoreMvc2.Controllers
         public IActionResult ThrowException()
         {
             throw new Exception("This was a bad request.");
+        }
+
+        [Route("status-code/{statusCode}")]
+        public string StatusCodeTest(int statusCode)
+        {
+            HttpContext.Response.StatusCode = statusCode;
+            return $"Status code has been set to {statusCode}";
         }
     }
 }
