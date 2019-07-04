@@ -191,7 +191,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
                        .WithConcreteType(wireProtocolType)
-                       .WithMethodGenericArguments(genericArgs[0])
+                       .WithDeclaringTypeGenericTypeArguments(genericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }

@@ -65,11 +65,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithDeclaringTypeGenericTypeArguments(params Type[] declaringTypeGenericTypeArguments)
+        public MethodBuilder<TDelegate> WithDeclaringTypeGenericTypeArguments(Type[] declaringTypeGenericTypeArguments)
         {
-            throw new NotImplementedException("Requires in depth testing.");
-            // _declaringTypeGenericArguments = declaringTypeGenericTypeArguments;
-            // return this;
+            _declaringTypeGenericArguments = declaringTypeGenericTypeArguments;
+            return this;
         }
 
         public MethodBuilder<TDelegate> WithMethodGenericArguments(params Type[] methodGenericArguments)
@@ -255,27 +254,19 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 // Open Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: true, IsGenericMethodDefinition: false }
                 // Closed Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: false, IsGenericMethodDefinition: false }
 
-                var isGenericMethod = _methodGenericArguments?.Length > 0;
-
                 // We don't officially instrument any Closed Constructed Methods
                 // This would need updating if we did
                 var relevantMethods =
                     methods
-                       .Where(
-                            mi => mi.MetadataToken == _mdToken
-                               && mi.ContainsGenericParameters == isGenericMethod
-                               && mi.IsGenericMethod == isGenericMethod)
+                       .Where(mi => mi.MetadataToken == _mdToken) // This doesn't work at all with the method spec, maybe if it was the method def
                        .Where(
                             mi =>
                             {
-                                if (isGenericMethod)
-                                {
-                                    var genericArgs = mi.GetGenericArguments();
+                                var genericArgs = mi.GetGenericArguments();
 
-                                    if (genericArgs.Length != _methodGenericArguments.Length)
-                                    {
-                                        return false;
-                                    }
+                                if (genericArgs.Length != (_methodGenericArguments?.Length ?? 0))
+                                {
+                                    return false;
                                 }
 
                                 var parameters = mi.GetParameters();
@@ -290,17 +281,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                                     var candidateParameter = parameters[i];
 
                                     var parameterType = candidateParameter.ParameterType;
-
-                                    if (parameterType.IsGenericParameter)
-                                    {
-                                        if (!isGenericMethod)
-                                        {
-                                            // We're expecting no generic parameters
-                                            return false;
-                                        }
-
-                                        // TODO: more generic parameter evaluation
-                                    }
 
                                     var actualArgument = _argumentObjects[i];
 
