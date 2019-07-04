@@ -72,11 +72,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
             // return this;
         }
 
-        public MethodBuilder<TDelegate> WithGenericParameterTypes(params Type[] methodGenericArguments)
+        public MethodBuilder<TDelegate> WithMethodGenericArguments(params Type[] methodGenericArguments)
         {
-            throw new NotImplementedException("Requires in depth testing.");
-            // _methodGenericArguments = methodGenericArguments;
-            // return this;
+            _methodGenericArguments = methodGenericArguments;
+            return this;
         }
 
         public TDelegate Build()

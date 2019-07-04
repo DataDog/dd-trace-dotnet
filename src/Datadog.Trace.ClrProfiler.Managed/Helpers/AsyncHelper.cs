@@ -5,11 +5,11 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
-    internal class GenericAsyncTargetAccess
+    internal static class AsyncHelper
     {
-        private readonly ConcurrentDictionary<string, MethodInfo> _methodCache = new ConcurrentDictionary<string, MethodInfo>();
+        private static readonly ConcurrentDictionary<string, MethodInfo> MethodCache = new ConcurrentDictionary<string, MethodInfo>();
 
-        internal object InvokeGenericTaskDelegate(
+        internal static object InvokeGenericTaskDelegate(
             Type owningType,
             Type taskResultType,
             string nameOfIntegrationMethod,
@@ -17,10 +17,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             params object[] parametersToPass)
         {
             var methodKey =
-                Interception.MethodKey(owningType: owningType, returnType: taskResultType, genericTypes: Interception.NullTypeArray, parameterTypes: Interception.ParamsToTypes(parametersToPass));
+                Interception.MethodKey(
+                    owningType: owningType,
+                    returnType: taskResultType,
+                    genericTypes: Interception.NullTypeArray,
+                    parameterTypes: Interception.ParamsToTypes(parametersToPass));
 
             var asyncDelegate =
-                _methodCache.GetOrAdd(methodKey, _ => GetGenericAsyncMethodInfo(taskResultType, nameOfIntegrationMethod, integrationType));
+                MethodCache.GetOrAdd(methodKey, _ => GetGenericAsyncMethodInfo(taskResultType, nameOfIntegrationMethod, integrationType));
 
             return asyncDelegate.Invoke(null, parametersToPass);
         }

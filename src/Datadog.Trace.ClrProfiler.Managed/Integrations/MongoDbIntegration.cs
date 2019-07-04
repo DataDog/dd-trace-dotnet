@@ -1,7 +1,9 @@
 using System;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -23,10 +25,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IWireProtocolGeneric = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(MongoDbIntegration));
-
-        private static readonly InterceptedMethodAccess<Func<object, object, CancellationToken, object>> ExecuteAccess = new InterceptedMethodAccess<Func<object, object, CancellationToken, object>>();
-        private static readonly InterceptedMethodAccess<Func<object, object, CancellationToken, object>> ExecuteAsyncAccess = new InterceptedMethodAccess<Func<object, object, CancellationToken, object>>();
-        private static readonly GenericAsyncTargetAccess AsyncTargetAccess = new GenericAsyncTargetAccess();
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.
@@ -61,17 +59,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             try
             {
-                execute = ExecuteAccess.GetInterceptedMethod(
-                    wireProtocolType,
-                    returnType: null, // return type doesn't matter
-                    methodName: methodName,
-                    generics: Interception.NullTypeArray,
-                    parameters: Interception.ParamsToTypes(connection, cancellationToken));
+                execute =
+                    MethodBuilder<Func<object, object, CancellationToken, object>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .WithConcreteType(wireProtocolType)
+                       .WithParameters(connection, cancellationToken)
+                       .Build();
             }
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error calling {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.ErrorException($"Error retrieving {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
                 throw;
             }
 
@@ -107,9 +105,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Major2)]
         public static object ExecuteAsync(object wireProtocol, object connection, object cancellationTokenSource, int opCode, int mdToken)
         {
+            if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
+
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            return ExecuteAsyncInternalNonGeneric(wireProtocol, connection, cancellationToken);
+
+            const string methodName = nameof(ExecuteAsync);
+            var wireProtocolType = wireProtocol.GetType();
+
+            Func<object, object, CancellationToken, object> executeAsync;
+
+            try
+            {
+                executeAsync =
+                    MethodBuilder<Func<object, object, CancellationToken, object>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .WithConcreteType(wireProtocolType)
+                       .WithParameters(connection, cancellationToken)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error calling {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                throw;
+            }
+
+            return ExecuteAsyncInternalNonGeneric(wireProtocol, connection, cancellationToken, executeAsync);
         }
 
         /// <summary>
@@ -160,49 +182,53 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentException($"Expected generics to determine TaskResult from {wireProtocolType.AssemblyQualifiedName}");
             }
 
-            return AsyncTargetAccess.InvokeGenericTaskDelegate(
+            const string methodName = nameof(ExecuteAsync);
+            Func<object, object, CancellationToken, object> executeAsync;
+
+            try
+            {
+                executeAsync =
+                    MethodBuilder<Func<object, object, CancellationToken, object>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .WithConcreteType(wireProtocolType)
+                       .WithMethodGenericArguments(genericArgs[0])
+                       .WithParameters(connection, cancellationToken)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error calling {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                throw;
+            }
+
+            return AsyncHelper.InvokeGenericTaskDelegate(
                 wireProtocolType,
                 genericArgs[0],
                 nameof(ExecuteAsyncInternalGeneric),
                 typeof(MongoDbIntegration),
                 wireProtocol,
                 connection,
-                cancellationToken);
+                cancellationToken,
+                executeAsync);
         }
 
-        private static async Task ExecuteAsyncInternalNonGeneric(object wireProtocol, object connection, CancellationToken cancellationToken)
+        private static async Task ExecuteAsyncInternalNonGeneric(
+            object wireProtocol,
+            object connection,
+            CancellationToken cancellationToken,
+            Func<object, object, CancellationToken, object> originalMethod)
         {
-            if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
-
-            const string methodName = nameof(ExecuteAsync);
-            Func<object, object, CancellationToken, object> executeAsync = null;
-            var wireProtocolType = wireProtocol.GetType();
-
-            try
-            {
-                executeAsync = ExecuteAsyncAccess.GetInterceptedMethod(
-                    owningType: wireProtocolType,
-                    returnType: typeof(Task),
-                    methodName: methodName,
-                    generics: Interception.NullTypeArray,
-                    parameters: Interception.ParamsToTypes(connection, cancellationToken));
-            }
-            catch (Exception ex)
-            {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error calling {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
-            }
-
             using (var scope = CreateScope(wireProtocol, connection))
             {
                 try
                 {
-                    if (executeAsync == null)
+                    if (originalMethod == null)
                     {
-                        throw new Exception();
+                        throw new ArgumentNullException(nameof(originalMethod));
                     }
 
-                    var taskObject = executeAsync(wireProtocol, connection, cancellationToken);
+                    var taskObject = originalMethod(wireProtocol, connection, cancellationToken);
                     var task = (Task)taskObject;
                     await task.ConfigureAwait(false);
                 }
@@ -217,33 +243,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static async Task<T> ExecuteAsyncInternalGeneric<T>(
             object wireProtocol,
             object connection,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            Func<object, object, CancellationToken, object> originalMethod)
         {
-            const string methodName = nameof(ExecuteAsync);
-            Func<object, object, CancellationToken, object> executeAsync;
-            var wireProtocolType = wireProtocol.GetType();
-
-            try
-            {
-                executeAsync = ExecuteAsyncAccess.GetInterceptedMethod(
-                    owningType: wireProtocolType,
-                    returnType: typeof(Task<T>),
-                    methodName: methodName,
-                    generics: Interception.NullTypeArray,
-                    parameters: Interception.ParamsToTypes(connection, cancellationToken));
-            }
-            catch (Exception ex)
-            {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error calling {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
-                throw;
-            }
-
             using (var scope = CreateScope(wireProtocol, connection))
             {
                 try
                 {
-                    var taskObject = executeAsync(wireProtocol, connection, cancellationToken);
+                    var taskObject = originalMethod(wireProtocol, connection, cancellationToken);
                     var typedTask = (Task<T>)taskObject;
                     return await typedTask.ConfigureAwait(false);
                 }
