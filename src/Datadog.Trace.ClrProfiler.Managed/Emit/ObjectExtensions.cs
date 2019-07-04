@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 var type = source.GetType();
 
                 object cachedItem = Cache.GetOrAdd(
-                    $"{type.AssemblyQualifiedName}.{propertyName}",
+                    GetKey<TResult>(propertyName, type),
                     key => CreatePropertyDelegate<TResult>(type, propertyName));
 
                 if (cachedItem is Func<object, TResult> func)
@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var type = source.GetType();
 
             object cachedItem = Cache.GetOrAdd(
-                $"{type.AssemblyQualifiedName}.{fieldName}",
+                GetKey<TResult>(fieldName, type),
                 key => CreateFieldDelegate<TResult>(type, fieldName));
 
             if (cachedItem is Func<object, TResult> func)
@@ -140,6 +140,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public static MemberResult<object> GetField(this object source, string fieldName)
         {
             return GetField<object>(source, fieldName);
+        }
+
+        private static string GetKey<TResult>(string name, Type type)
+        {
+            return $"{typeof(TResult).FullName}.{type.FullName}.{name}";
         }
 
         private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
