@@ -18,11 +18,17 @@ const WSTRING debug_enabled = "DD_TRACE_DEBUG"_W;
 // "C:\Program Files\Datadog .NET Tracer\integrations.json;D:\temp\test_integrations.json"
 const WSTRING integrations_path = "DD_INTEGRATIONS"_W;
 
-// Sets the filename of executables the profiler will attach to.
+// Sets the filename of executables the profiler can attach to.
 // If not defined (default), the profiler will attach to any process.
 // Supports multiple values separated with semi-colons, for example:
 // "MyApp.exe;dotnet.exe"
-const WSTRING process_names = "DD_PROFILER_PROCESSES"_W;
+const WSTRING include_process_names = "DD_PROFILER_PROCESSES"_W;
+
+// Sets the filename of executables the profiler cannot attach to.
+// If not defined (default), the profiler will attach to any process.
+// Supports multiple values separated with semi-colons, for example:
+// "MyApp.exe;dotnet.exe"
+const WSTRING exclude_process_names = "DD_PROFILER_EXCLUDE_PROCESSES"_W;
 
 // Sets the Agent's host. Default is localhost.
 const WSTRING agent_host = "DD_AGENT_HOST"_W;

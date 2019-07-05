@@ -40,17 +40,30 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  // check if there is a whitelist of process names
-  const auto allowed_process_names =
-      GetEnvironmentValues(environment::process_names);
+  const auto process_name = GetCurrentProcessName();
+  const auto include_process_names =
+      GetEnvironmentValues(environment::include_process_names);
+  const auto exclude_process_names =
+      GetEnvironmentValues(environment::exclude_process_names);
 
-  if (!allowed_process_names.empty()) {
-    const auto process_name = GetCurrentProcessName();
-
-    if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
-                  process_name) == allowed_process_names.end()) {
+  // if there is a process inclusion list, attach profiler only if this
+  // process's name is on the list
+  if (!include_process_names.empty()) {
+    if (std::find(include_process_names.begin(), include_process_names.end(),
+                  process_name) == include_process_names.end()) {
       Info("Profiler disabled: ", process_name, " not found in ",
-           environment::process_names, ".");
+           environment::include_process_names, ".");
+      return E_FAIL;
+    }
+  }
+
+  // if there is a process exclusion list, attach profiler only if this
+  // process's name is NOT on the list
+  if (!exclude_process_names.empty()) {
+    if (std::find(exclude_process_names.begin(), exclude_process_names.end(),
+                  process_name) != exclude_process_names.end()) {
+      Info("Profiler disabled: ", process_name, " found in ",
+           environment::exclude_process_names, ".");
       return E_FAIL;
     }
   }
@@ -68,7 +81,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   WSTRING env_vars[]{environment::tracing_enabled,
                      environment::debug_enabled,
                      environment::integrations_path,
-                     environment::process_names,
+                     environment::include_process_names,
+                     environment::exclude_process_names,
                      environment::agent_host,
                      environment::agent_port,
                      environment::env,
