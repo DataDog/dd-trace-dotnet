@@ -43,29 +43,24 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const auto process_name = GetCurrentProcessName();
   const auto include_process_names =
       GetEnvironmentValues(environment::include_process_names);
-  const auto exclude_process_names =
-      GetEnvironmentValues(environment::exclude_process_names);
 
   // if there is a process inclusion list, attach profiler only if this
   // process's name is on the list
-  if (!include_process_names.empty()) {
-    if (std::find(include_process_names.begin(), include_process_names.end(),
-                  process_name) == include_process_names.end()) {
-      Info("Profiler disabled: ", process_name, " not found in ",
-           environment::include_process_names, ".");
-      return E_FAIL;
-    }
+  if (!include_process_names.empty() &&
+      !Contains(include_process_names, process_name)) {
+    Info("Profiler disabled: ", process_name, " not found in ",
+         environment::include_process_names, ".");
+    return E_FAIL;
   }
 
-  // if there is a process exclusion list, attach profiler only if this
-  // process's name is NOT on the list
-  if (!exclude_process_names.empty()) {
-    if (std::find(exclude_process_names.begin(), exclude_process_names.end(),
-                  process_name) != exclude_process_names.end()) {
-      Info("Profiler disabled: ", process_name, " found in ",
-           environment::exclude_process_names, ".");
-      return E_FAIL;
-    }
+  const auto exclude_process_names =
+      GetEnvironmentValues(environment::exclude_process_names);
+
+  // attach profiler only if this process's name is NOT on the list
+  if (Contains(exclude_process_names, process_name)) {
+    Info("Profiler disabled: ", process_name, " found in ",
+         environment::exclude_process_names, ".");
+    return E_FAIL;
   }
 
   // get Profiler interface

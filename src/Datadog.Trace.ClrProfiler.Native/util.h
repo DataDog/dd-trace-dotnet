@@ -30,6 +30,8 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name,
 // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
 std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name);
 
+bool Contains(const std::vector<WSTRING> &items, const WSTRING &value);
+
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_UTIL_H_

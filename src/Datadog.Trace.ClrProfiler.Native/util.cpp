@@ -82,4 +82,9 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name) {
   return GetEnvironmentValues(name, L';');
 }
 
-}  // namespace trace
+bool Contains(const std::vector<WSTRING>& items, const WSTRING& value) {
+  return !items.empty() &&
+         std::find(items.begin(), items.end(), value) != items.end();
+}
+
+} // namespace trace
