@@ -25,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private string _concreteTypeName;
         private object[] _argumentObjects = new object[0];
 
-        private Type[] _declaringTypeGenericArguments = null;
         private Type[] _methodGenericArguments = null;
 
         private MethodBuilder(Assembly callingAssembly, int mdToken, int opCode)
@@ -65,12 +64,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithDeclaringTypeGenericTypeArguments(Type[] declaringTypeGenericTypeArguments)
-        {
-            _declaringTypeGenericArguments = declaringTypeGenericTypeArguments;
-            return this;
-        }
-
         public MethodBuilder<TDelegate> WithMethodGenericArguments(params Type[] methodGenericArguments)
         {
             _methodGenericArguments = methodGenericArguments;
@@ -85,8 +78,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 callingModule: _callingAssembly.ManifestModule,
                 mdToken: _mdToken,
                 callOpCode: _opCode,
-                methodGenericArguments: _declaringTypeGenericArguments,
-                genericParameterTypes: _methodGenericArguments);
+                methodGenericArguments: _methodGenericArguments);
 
             return Cache.GetOrAdd(cacheKey, key => EmitDelegate());
         }
@@ -97,12 +89,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             try
             {
-                // Don't resolve until we build, because we need to wait for generics to be specified
+                // Don't resolve until we build, as it may be an unnecessary lookup because of the cache
+                // Instead of trying to resolve a generic method spec, we override and always pass a MethodDef mdToken
                 _methodBase =
-                    _callingAssembly.ManifestModule.ResolveMethod(
-                        metadataToken: _mdToken,
-                        genericTypeArguments: _declaringTypeGenericArguments,
-                        genericMethodArguments: _methodGenericArguments);
+                    _callingAssembly.ManifestModule.ResolveMethod(metadataToken: _mdToken);
             }
             catch
             {
@@ -149,7 +139,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (methodInfo.IsGenericMethodDefinition || methodInfo.IsGenericMethod)
             {
-                methodInfo = methodInfo.MakeGenericMethod(_declaringTypeGenericArguments);
+                if (_methodGenericArguments == null || _methodGenericArguments.Length == 0)
+                {
+                    throw new ArgumentException($"Must specify {nameof(_methodGenericArguments)} for a generic method.");
+                }
+
+                methodInfo = methodInfo.MakeGenericMethod(_methodGenericArguments);
             }
 
             Type[] effectiveParameterTypes;
@@ -332,8 +327,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 Module callingModule,
                 int mdToken,
                 OpCodeValue callOpCode,
-                Type[] methodGenericArguments,
-                Type[] genericParameterTypes)
+                Type[] methodGenericArguments)
             {
                 CallingModuleMetadataToken = callingModule.MetadataToken;
                 MethodMetadataToken = mdToken;
@@ -346,16 +340,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     for (var i = 0; i < methodGenericArguments.Length; i++)
                     {
                         GenericSpec = string.Concat(GenericSpec, $"_{methodGenericArguments[i].FullName}_");
-                    }
-                }
-
-                GenericSpec = string.Concat(GenericSpec, "_gParams_");
-
-                if (genericParameterTypes != null)
-                {
-                    for (var i = 0; i < genericParameterTypes.Length; i++)
-                    {
-                        GenericSpec = string.Concat(GenericSpec, $"_{genericParameterTypes[i].FullName}_");
                     }
                 }
             }

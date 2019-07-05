@@ -471,6 +471,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
+      auto method_def_md_token = target.id;
+
       if (target.is_generic) {
         if (target.signature.NumberOfTypeArguments() !=
             method_replacement.wrapper_method.method_signature
@@ -483,6 +485,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         wrapper_method_ref =
             DefineMethodSpec(module_metadata->metadata_emit, wrapper_method_ref,
                              target.function_spec_signature);
+        method_def_md_token = target.method_def_id;
       }
 
       std::vector<WSTRING> sig_types;
@@ -557,7 +560,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       ILRewriterWrapper rewriter_wrapper(&rewriter);
       rewriter_wrapper.SetILPosition(pInstr);
       rewriter_wrapper.LoadInt32(pInstr->m_opcode);
-      rewriter_wrapper.LoadInt32(pInstr->m_Arg32);
+      rewriter_wrapper.LoadInt32(method_def_md_token);
 
       // always use CALL because the wrappers methods are all static
       pInstr->m_opcode = CEE_CALL;

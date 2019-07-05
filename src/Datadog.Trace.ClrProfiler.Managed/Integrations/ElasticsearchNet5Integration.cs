@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string IntegrationName = "ElasticsearchNet5";
         private const string Version5 = "5";
+        private const string ElasticsearchAssembly = "Elasticsearch.Net";
+        private const string RequestPipelineInterface = "Elasticsearch.Net.IRequestPipeline";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNet5Integration));
         private static readonly Type ElasticsearchResponseType = Type.GetType("Elasticsearch.Net.ElasticsearchResponse`1, Elasticsearch.Net", throwOnError: false);
@@ -28,9 +30,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
-            CallerAssembly = "Elasticsearch.Net",
-            TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            CallerAssembly = ElasticsearchAssembly,
+            TargetAssembly = ElasticsearchAssembly,
+            TargetType = RequestPipelineInterface,
             TargetSignatureTypes = new[] { "Elasticsearch.Net.ElasticsearchResponse`1<T>", "Elasticsearch.Net.RequestData" },
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
@@ -68,9 +70,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
-            CallerAssembly = "Elasticsearch.Net",
-            TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            CallerAssembly = ElasticsearchAssembly,
+            TargetAssembly = ElasticsearchAssembly,
+            TargetType = RequestPipelineInterface,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
