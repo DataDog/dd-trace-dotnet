@@ -29,7 +29,13 @@ std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path) {
   try {
     std::ifstream stream;
     stream.open(ToString(file_path));
-    integrations = LoadIntegrationsFromStream(stream);
+
+    if (static_cast<bool>(stream)) {
+      integrations = LoadIntegrationsFromStream(stream);
+    } else {
+      Warn("Failed to load integrations from file ", file_path);
+    }
+
     stream.close();
   } catch (...) {
     auto ex = std::current_exception();
@@ -112,14 +118,18 @@ std::pair<MethodReplacement, bool> MethodReplacementFromJson(
     return std::make_pair<MethodReplacement, bool>({}, false);
   }
 
-  const auto caller = MethodReferenceFromJson(src.value("caller", json::object()), false);
-  const auto target = MethodReferenceFromJson(src.value("target", json::object()), true);
-  const auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()), false);
+  const auto caller =
+      MethodReferenceFromJson(src.value("caller", json::object()), false);
+  const auto target =
+      MethodReferenceFromJson(src.value("target", json::object()), true);
+  const auto wrapper =
+      MethodReferenceFromJson(src.value("wrapper", json::object()), false);
   return std::make_pair<MethodReplacement, bool>({caller, target, wrapper},
                                                  true);
 }
 
-MethodReference MethodReferenceFromJson(const json::value_type& src, const bool is_target_method) {
+MethodReference MethodReferenceFromJson(const json::value_type& src,
+                                        const bool is_target_method) {
   if (!src.is_object()) {
     return {};
   }
@@ -202,8 +212,8 @@ MethodReference MethodReferenceFromJson(const json::value_type& src, const bool 
       prev = b;
     }
   }
-  return MethodReference(
-      assembly, type, method, Version(min_major, min_minor, min_patch, 0),
+  return MethodReference(assembly, type, method,
+                         Version(min_major, min_minor, min_patch, 0),
                          Version(max_major, max_minor, max_patch, USHRT_MAX),
                          signature, signature_type_array);
 }
