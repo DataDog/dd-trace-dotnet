@@ -94,7 +94,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(CallElasticsearchAsync))
                        .WithConcreteType(pipeline.GetType())
+                       .WithMethodGenerics(genericArgument)
                        .WithParameters(requestData, cancellationToken)
+                       .ForceMethodDefinitionResolution()
                        .Build();
             }
             catch (Exception ex)

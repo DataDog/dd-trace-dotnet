@@ -31,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         private Type[] _declaringTypeGenerics;
         private Type[] _methodGenerics;
+        private bool _forceMethodDefResolve;
 
         private MethodBuilder(Assembly callingAssembly, int mdToken, int opCode, string methodName)
         {
@@ -39,6 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             _opCode = (OpCodeValue)opCode;
             _originalOpCodeValue = opCode;
             _methodName = methodName;
+            _forceMethodDefResolve = false;
         }
 
         public static MethodBuilder<TDelegate> Start(Assembly callingAssembly, int mdToken, int opCode, string methodName)
@@ -82,6 +84,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return this;
         }
 
+        public MethodBuilder<TDelegate> ForceMethodDefinitionResolution()
+        {
+            _forceMethodDefResolve = true;
+            return this;
+        }
+
         public MethodBuilder<TDelegate> WithReturnType(Type returnType)
         {
             _returnType = returnType;
@@ -110,12 +118,19 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 // Don't resolve until we build, as it may be an unnecessary lookup because of the cache
                 // We also may need the generics which were specified
-                // Instead of trying to resolve a generic method spec, we override and always pass a MethodDef mdToken
-                _methodBase =
-                    _callingAssembly.ManifestModule.ResolveMethod(
-                        metadataToken: _mdToken,
-                        genericTypeArguments: _declaringTypeGenerics,
-                        genericMethodArguments: _methodGenerics);
+                if (_forceMethodDefResolve || (_declaringTypeGenerics == null && _methodGenerics == null))
+                {
+                    _methodBase =
+                        _callingAssembly.ManifestModule.ResolveMethod(metadataToken: _mdToken);
+                }
+                else
+                {
+                    _methodBase =
+                        _callingAssembly.ManifestModule.ResolveMethod(
+                            metadataToken: _mdToken,
+                            genericTypeArguments: _declaringTypeGenerics,
+                            genericMethodArguments: _methodGenerics);
+                }
             }
             catch
             {
