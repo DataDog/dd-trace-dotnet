@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -82,9 +83,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
-            var genericResponseType = ElasticsearchResponseType.MakeGenericType(typeof(TResponse));
-
             var genericArgument = typeof(TResponse);
+            var genericResponseType = ElasticsearchResponseType.MakeGenericType(genericArgument);
 
             Func<object, object, CancellationToken, object> instrumentedMethod;
 
@@ -92,9 +92,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(CallElasticsearchAsync))
                        .WithConcreteType(pipeline.GetType())
-                       .WithMethodGenericArguments(genericArgument)
                        .WithParameters(requestData, cancellationToken)
                        .Build();
             }

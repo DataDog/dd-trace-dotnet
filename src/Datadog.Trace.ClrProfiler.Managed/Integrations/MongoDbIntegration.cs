@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -61,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(Execute))
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
                        .Build();
@@ -119,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 executeAsync =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(ExecuteAsync))
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
                        .Build();
@@ -152,6 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Major2)]
         public static object ExecuteAsyncGeneric(object wireProtocol, object connection, object cancellationTokenSource, int opCode, int mdToken)
         {
+            // The generic type for this method comes from the declaring type of wireProtocol
             if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
 
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
@@ -189,9 +191,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 executeAsync =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
-                       .WithMethodGenericArguments(genericArgs)
+                       .WithDeclaringTypeGenerics(genericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }
