@@ -297,7 +297,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                    .Where(ParametersAreViable)
                    .ToArray();
 
-            var methodText = _methodBase?.Name ?? $"mdToken: {_mdToken}";
+            var methodText = _methodBase?.Name ?? _methodName ?? $"mdToken: {_mdToken}";
 
             if (methods.Length > 1)
             {
@@ -382,7 +382,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
                 var constraints = actualGenericArg.GetGenericParameterConstraints();
 
-                if (!constraints.Any(constraint => constraint.IsAssignableFrom(expectedGenericArg)))
+                if (constraints.Any(constraint => !constraint.IsAssignableFrom(expectedGenericArg)))
                 {
                     // We have failed to meet a constraint
                     return false;
