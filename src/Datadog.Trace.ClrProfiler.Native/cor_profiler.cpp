@@ -40,17 +40,17 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  // check if there is a whitelist of process names
-  const auto allowed_process_names =
-      GetEnvironmentValues(environment::process_names);
+  // check if there is a process name inclusion list
+  const auto include_process_names =
+      GetEnvironmentValues(environment::include_process_names);
 
-  if (!allowed_process_names.empty()) {
+  if (!include_process_names.empty()) {
     const auto process_name = GetCurrentProcessName();
 
-    if (std::find(allowed_process_names.begin(), allowed_process_names.end(),
-                  process_name) == allowed_process_names.end()) {
+    if (std::find(include_process_names.begin(), include_process_names.end(),
+                  process_name) == include_process_names.end()) {
       Info("Profiler disabled: ", process_name, " not found in ",
-           environment::process_names, ".");
+           environment::include_process_names, ".");
       return E_FAIL;
     }
   }
@@ -68,7 +68,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   WSTRING env_vars[]{environment::tracing_enabled,
                      environment::debug_enabled,
                      environment::integrations_path,
-                     environment::process_names,
+                     environment::include_process_names,
                      environment::agent_host,
                      environment::agent_port,
                      environment::env,
