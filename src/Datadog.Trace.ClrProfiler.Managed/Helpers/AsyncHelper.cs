@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Helpers;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {

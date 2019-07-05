@@ -191,13 +191,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode)
                        .WithConcreteType(wireProtocolType)
+                       .WithMethodGenericArguments(genericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error calling {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.ErrorException($"Error resolving {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
                 throw;
             }
 
