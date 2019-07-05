@@ -55,6 +55,21 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     }
   }
 
+  // check if there is a process name exclusion list
+  const auto exclude_process_names =
+      GetEnvironmentValues(environment::exclude_process_names);
+
+  if (!exclude_process_names.empty()) {
+    const auto process_name = GetCurrentProcessName();
+
+    if (std::find(exclude_process_names.begin(), exclude_process_names.end(),
+                  process_name) != exclude_process_names.end()) {
+      Info("Profiler disabled: ", process_name, " found in ",
+           environment::exclude_process_names, ".");
+      return E_FAIL;
+    }
+  }
+
   // get Profiler interface
   HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
       &this->info_);
