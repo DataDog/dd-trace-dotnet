@@ -84,6 +84,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      environment::debug_enabled,
                      environment::integrations_path,
                      environment::include_process_names,
+                     environment::exclude_process_names,
                      environment::agent_host,
                      environment::agent_port,
                      environment::env,
