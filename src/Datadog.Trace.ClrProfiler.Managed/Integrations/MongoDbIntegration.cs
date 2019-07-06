@@ -113,6 +113,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             const string methodName = nameof(ExecuteAsync);
             var wireProtocolType = wireProtocol.GetType();
+            var genericArgs = GetGenericsFromWireProtocol(wireProtocolType);
 
             Func<object, object, CancellationToken, object> executeAsync;
 
@@ -122,6 +123,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(ExecuteAsync))
                        .WithConcreteType(wireProtocolType)
+                       .WithDeclaringTypeGenerics(genericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }
@@ -160,29 +162,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
             var wireProtocolType = wireProtocol.GetType();
-            var interfaces = wireProtocolType.GetInterfaces();
-            Type typeWeInstrument = null;
-
-            for (var i = 0; i < interfaces.Length; i++)
-            {
-                if ($"{interfaces[i].Namespace}.{interfaces[i].Name}" == IWireProtocolGeneric)
-                {
-                    typeWeInstrument = interfaces[i];
-                    break;
-                }
-            }
-
-            if (typeWeInstrument == null)
-            {
-                throw new ArgumentException($"Unable to find the instrumented interface: {IWireProtocolGeneric}");
-            }
-
-            var genericArgs = typeWeInstrument.GetGenericArguments();
-
-            if (genericArgs.Length == 0)
-            {
-                throw new ArgumentException($"Expected generics to determine TaskResult from {wireProtocolType.AssemblyQualifiedName}");
-            }
+            var genericArgs = GetGenericsFromWireProtocol(wireProtocolType);
 
             const string methodName = nameof(ExecuteAsync);
             Func<object, object, CancellationToken, object> executeAsync;
@@ -213,6 +193,35 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 connection,
                 cancellationToken,
                 executeAsync);
+        }
+
+        private static Type[] GetGenericsFromWireProtocol(Type wireProtocolType)
+        {
+            var interfaces = wireProtocolType.GetInterfaces();
+            Type typeWeInstrument = null;
+
+            for (var i = 0; i < interfaces.Length; i++)
+            {
+                if ($"{interfaces[i].Namespace}.{interfaces[i].Name}" == IWireProtocolGeneric)
+                {
+                    typeWeInstrument = interfaces[i];
+                    break;
+                }
+            }
+
+            if (typeWeInstrument == null)
+            {
+                throw new ArgumentException($"Unable to find the instrumented interface: {IWireProtocolGeneric}");
+            }
+
+            var genericArgs = typeWeInstrument.GetGenericArguments();
+
+            if (genericArgs.Length == 0)
+            {
+                throw new ArgumentException($"Expected generics to determine TaskResult from {wireProtocolType.AssemblyQualifiedName}");
+            }
+
+            return genericArgs;
         }
 
         private static async Task ExecuteAsyncInternalNonGeneric(
