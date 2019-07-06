@@ -104,6 +104,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 callingModule: _callingAssembly.ManifestModule,
                 mdToken: _mdToken,
                 callOpCode: _opCode,
+                concreteType: _concreteType, // Needed for Generic DeclaringType MethodSpec scenarios
                 methodGenerics: _methodGenerics,
                 declaringTypeGenerics: _declaringTypeGenerics);
 
@@ -397,18 +398,21 @@ namespace Datadog.Trace.ClrProfiler.Emit
             public readonly int CallingModuleMetadataToken;
             public readonly int MethodMetadataToken;
             public readonly OpCodeValue CallOpCode;
+            public readonly string ConcreteTypeName;
             public readonly string GenericSpec;
 
             public Key(
                 Module callingModule,
                 int mdToken,
                 OpCodeValue callOpCode,
+                Type concreteType,
                 Type[] methodGenerics,
                 Type[] declaringTypeGenerics)
             {
                 CallingModuleMetadataToken = callingModule.MetadataToken;
                 MethodMetadataToken = mdToken;
                 CallOpCode = callOpCode;
+                ConcreteTypeName = concreteType.AssemblyQualifiedName;
 
                 GenericSpec = "_gArgs_";
 
@@ -451,6 +455,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     return false;
                 }
 
+                if (!string.Equals(x.ConcreteTypeName, y.ConcreteTypeName))
+                {
+                    return false;
+                }
+
                 if (!string.Equals(x.GenericSpec, y.GenericSpec))
                 {
                     return false;
@@ -467,6 +476,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     hash = (hash * 23) + obj.CallingModuleMetadataToken.GetHashCode();
                     hash = (hash * 23) + obj.MethodMetadataToken.GetHashCode();
                     hash = (hash * 23) + obj.CallOpCode.GetHashCode();
+                    hash = (hash * 23) + obj.ConcreteTypeName.GetHashCode();
                     hash = (hash * 23) + obj.GenericSpec.GetHashCode();
                     return hash;
                 }
