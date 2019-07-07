@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.
         /// </summary>
-        /// <param name="wireProtocol">The IWireProtocol`1 or IWireProtocol instance we are replacing.</param>
+        /// <param name="wireProtocol">The IWireProtocol instance we are replacing.</param>
         /// <param name="connection">The connection.</param>
         /// <param name="cancellationTokenSource">A cancellation token source.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -40,12 +40,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
             TargetSignatureTypes = new[] { ClrNames.Void, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
-            TargetMinimumVersion = Major2Minor2,
-            TargetMaximumVersion = Major2)]
-        [InterceptMethod(
-            TargetAssembly = MongoDbClientAssembly,
-            TargetType = IWireProtocolGeneric,
-            TargetSignatureTypes = new[] { "T", "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
             TargetMinimumVersion = Major2Minor2,
             TargetMaximumVersion = Major2)]
         public static object Execute(object wireProtocol, object connection, object cancellationTokenSource, int opCode, int mdToken)
@@ -58,12 +52,72 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+
             try
             {
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(Execute))
                        .WithConcreteType(wireProtocolType)
+                       .WithParameters(connection, cancellationToken)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error retrieving {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                throw;
+            }
+
+            using (var scope = CreateScope(wireProtocol, connection))
+            {
+                try
+                {
+                    return execute(wireProtocol, connection, cancellationToken);
+                }
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                {
+                    // unreachable code
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Wrap the original method by adding instrumentation code around it.
+        /// </summary>
+        /// <param name="wireProtocol">The IWireProtocol`1 instance we are replacing.</param>
+        /// <param name="connection">The connection.</param>
+        /// <param name="cancellationTokenSource">A cancellation token source.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <returns>The original method's return value.</returns>
+        [InterceptMethod(
+            TargetAssembly = MongoDbClientAssembly,
+            TargetType = IWireProtocolGeneric,
+            TargetSignatureTypes = new[] { "T", "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
+            TargetMethod = nameof(Execute),
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2)]
+        public static object ExecuteGeneric(object wireProtocol, object connection, object cancellationTokenSource, int opCode, int mdToken)
+        {
+            if (wireProtocol == null) { throw new ArgumentNullException(nameof(wireProtocol)); }
+
+            const string methodName = nameof(Execute);
+            Func<object, object, CancellationToken, object> execute;
+            var wireProtocolType = wireProtocol.GetType();
+
+            var tokenSource = cancellationTokenSource as CancellationTokenSource;
+            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            var genericArgs = GetGenericsFromWireProtocol(wireProtocolType);
+
+            try
+            {
+                execute =
+                    MethodBuilder<Func<object, object, CancellationToken, object>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(Execute))
+                       .WithConcreteType(wireProtocolType)
+                       .WithDeclaringTypeGenerics(genericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }
@@ -113,7 +167,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             const string methodName = nameof(ExecuteAsync);
             var wireProtocolType = wireProtocol.GetType();
-            var genericArgs = GetGenericsFromWireProtocol(wireProtocolType);
 
             Func<object, object, CancellationToken, object> executeAsync;
 
@@ -123,7 +176,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(ExecuteAsync))
                        .WithConcreteType(wireProtocolType)
-                       .WithDeclaringTypeGenerics(genericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }
@@ -211,7 +263,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (typeWeInstrument == null)
             {
-                throw new ArgumentException($"Unable to find the instrumented interface: {IWireProtocolGeneric}");
+                // We're likely in a non-generic context
+                return null;
             }
 
             var genericArgs = typeWeInstrument.GetGenericArguments();

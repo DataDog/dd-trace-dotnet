@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.Logging;
 using Sigil;
 
 namespace Datadog.Trace.ClrProfiler.Emit
@@ -14,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// Global dictionary for caching reflected delegates
         /// </summary>
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(MethodBuilder<TDelegate>));
 
         private readonly Assembly _callingAssembly;
         private readonly int _mdToken;
@@ -133,9 +135,17 @@ namespace Datadog.Trace.ClrProfiler.Emit
                             genericMethodArguments: _methodGenerics);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
+                Log.Error(message, ex);
                 requiresBestEffortMatching = true;
+
+#if DEBUG
+                // We should always develop to resolve by method token
+                // Throw an exception so it's apparent that we are not
+                throw new Exception(message);
+#endif
             }
 
             MethodInfo methodInfo = null;
