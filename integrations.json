@@ -831,6 +831,52 @@
       {
         "caller": {},
         "target": {
+          "assembly": "System",
+          "type": "System.Net.WebRequest",
+          "method": "GetResponse",
+          "signature_types": [
+            "System.Net.WebResponse"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
+          "method": "GetResponse",
+          "signature": "00 03 1C 1C 08 08"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Requests",
+          "type": "System.Net.WebRequest",
+          "method": "GetResponse",
+          "signature_types": [
+            "System.Net.WebResponse"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
+          "method": "GetResponse",
+          "signature": "00 03 1C 1C 08 08"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
           "assembly": "System.Net",
           "type": "System.Net.WebRequest",
           "method": "GetResponseAsync",

@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(Execute))
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
                        .Build();
@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(Execute))
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithDeclaringTypeGenerics(genericArgs)
                        .WithParameters(connection, cancellationToken)
@@ -174,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 executeAsync =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(ExecuteAsync))
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
                        .Build();
@@ -254,7 +254,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             for (var i = 0; i < interfaces.Length; i++)
             {
-                if ($"{interfaces[i].Namespace}.{interfaces[i].Name}" == IWireProtocolGeneric)
+                if (string.Equals($"{interfaces[i].Namespace}.{interfaces[i].Name}", IWireProtocolGeneric))
                 {
                     typeWeInstrument = interfaces[i];
                     break;
