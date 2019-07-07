@@ -140,12 +140,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
                 Log.Error(message, ex);
                 requiresBestEffortMatching = true;
-
-#if DEBUG
-                // We should always develop to resolve by method token
-                // Throw an exception so it's apparent that we are not
-                throw new Exception(message);
-#endif
             }
 
             MethodInfo methodInfo = null;
