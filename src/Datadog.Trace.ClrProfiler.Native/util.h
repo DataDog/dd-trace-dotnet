@@ -34,8 +34,7 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name);
 template <class Container>
 bool Contains(const Container &items,
               const typename Container::value_type &value) {
-  return !items.empty() &&
-         std::find(items.begin(), items.end(), value) != items.end();
+  return std::find(items.begin(), items.end(), value) != items.end();
 }
 }  // namespace trace
 
