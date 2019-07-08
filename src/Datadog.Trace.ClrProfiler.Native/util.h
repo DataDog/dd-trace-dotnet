@@ -1,6 +1,7 @@
 #ifndef DD_CLR_PROFILER_UTIL_H_
 #define DD_CLR_PROFILER_UTIL_H_
 
+#include <algorithm>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -30,6 +31,11 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name,
 // GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
 std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name);
 
+template <class Container>
+bool Contains(const Container &items,
+              const typename Container::value_type &value) {
+  return std::find(items.begin(), items.end(), value) != items.end();
+}
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_UTIL_H_
