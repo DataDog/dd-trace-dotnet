@@ -157,7 +157,7 @@ namespace DataDogThreadTest
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Console.Error.WriteLine(ex);
                 return (int)ExitCode.UnknownError;
             }
 
@@ -174,7 +174,7 @@ namespace DataDogThreadTest
         enum ExitCode : int
         {
             Success = 0,
-            UnknownError = 10
+            UnknownError = -10
         }
     }
 }

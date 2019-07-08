@@ -1,10 +1,12 @@
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -17,6 +19,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string SystemNetHttp = "System.Net.Http";
         private const string Major4 = "4";
 
+        private const string HttpMessageHandler = "System.Net.Http.HttpMessageHandler";
+        private const string HttpClientHandler = "System.Net.Http.HttpClientHandler";
+        private const string SendAsync = "SendAsync";
+
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(HttpMessageHandlerIntegration));
+
         /// <summary>
         /// Instrumentation wrapper for <see cref="HttpMessageHandler.SendAsync"/>.
         /// </summary>
@@ -28,9 +36,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = SystemNetHttp,
-            TargetType = "System.Net.Http.HttpMessageHandler",
-            TargetMethod = "SendAsync",
-            TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, "System.Net.Http.HttpRequestMessage", ClrNames.CancellationToken },
+            TargetType = HttpMessageHandler,
+            TargetMethod = SendAsync,
+            TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object HttpMessageHandler_SendAsync(
@@ -47,14 +55,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var callOpCode = (OpCodeValue)opCode;
             var httpMessageHandler = typeof(HttpMessageHandler); // Note the HttpMessageHandler to match the method call we replaced
 
-            var sendAsync = Emit.DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
-                                .GetOrCreateMethodCallDelegate(
-                                     httpMessageHandler,
-                                     "SendAsync",
-                                     callOpCode);
+            Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> instrumentedMethod = null;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, SendAsync)
+                       .WithConcreteType(httpMessageHandler)
+                       .WithParameters(request, cancellationToken)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException($"Error resolving {HttpMessageHandler}.{SendAsync}(...)", ex);
+                throw;
+            }
 
             return SendAsyncInternal(
-                sendAsync,
+                instrumentedMethod,
                 reportedType: callOpCode == OpCodeValue.Call ? httpMessageHandler : handler.GetType(),
                 (HttpMessageHandler)handler,
                 (HttpRequestMessage)request,
@@ -62,9 +81,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Instrumentation wrapper for <see cref="HttpMessageHandler.SendAsync"/>.
+        /// Instrumentation wrapper for <see cref="HttpClientHandler.SendAsync"/>.
         /// </summary>
-        /// <param name="handler">The <see cref="HttpMessageHandler"/> instance to instrument.</param>
+        /// <param name="handler">The <see cref="HttpClientHandler"/> instance to instrument.</param>
         /// <param name="request">The <see cref="HttpRequestMessage"/> that represents the current HTTP request.</param>
         /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -72,9 +91,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = SystemNetHttp,
-            TargetType = "System.Net.Http.HttpClientHandler",
-            TargetMethod = "SendAsync",
-            TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, "System.Net.Http.HttpRequestMessage", ClrNames.CancellationToken },
+            TargetType = HttpClientHandler,
+            TargetMethod = SendAsync,
+            TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object HttpClientHandler_SendAsync(
@@ -91,14 +110,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var callOpCode = (OpCodeValue)opCode;
             var httpClientHandler = typeof(HttpClientHandler); // Note the HttpClientHandler to match the method call we replaced
 
-            var sendAsync = Emit.DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
-                                .GetOrCreateMethodCallDelegate(
-                                     httpClientHandler,
-                                     "SendAsync",
-                                     callOpCode);
+            Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> instrumentedMethod = null;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, SendAsync)
+                       .WithConcreteType(httpClientHandler)
+                       .WithParameters(request, cancellationToken)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException($"Error resolving {HttpClientHandler}.{SendAsync}(...)", ex);
+                throw;
+            }
 
             return SendAsyncInternal(
-                sendAsync,
+                instrumentedMethod,
                 reportedType: callOpCode == OpCodeValue.Call ? httpClientHandler : handler.GetType(),
                 (HttpMessageHandler)handler,
                 (HttpRequestMessage)request,

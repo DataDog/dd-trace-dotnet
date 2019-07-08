@@ -27,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string IAsyncResult = "System.IAsyncResult";
         public const string AsyncCallback = "System.AsyncCallback";
 
+        public const string HttpRequestMessage = "System.Net.Http.HttpRequestMessage";
         public const string HttpResponseMessageTask = "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>";
     }
 }
