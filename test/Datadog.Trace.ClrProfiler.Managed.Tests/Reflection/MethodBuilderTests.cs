@@ -79,11 +79,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Fact]
-        public void StringParameterAsObject_ProperlyCalls_StringMethod()
+        public void StringParameterAsObject_ProperlyCalls_ObjectMethod()
         {
             var instance = new ObscenelyAnnoyingClass();
             object parameter = string.Empty;
-            var expected = MethodReference.Get(() => instance.Method(string.Empty));
+            var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, object>>(expected.Name).WithParameters(parameter).Build();
             methodResult.Invoke(instance, parameter);
             Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);

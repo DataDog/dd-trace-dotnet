@@ -345,7 +345,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
                 var actualArgumentType = actualArgument.GetType();
 
-                if (!parameterType.IsAssignableFrom(actualArgumentType))
+                if (parameterType != actualArgumentType)
                 {
                     return false;
                 }
