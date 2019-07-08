@@ -50,8 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var sendAsync = Emit.DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
                                 .GetOrCreateMethodCallDelegate(
                                      httpMessageHandler,
-                                     "SendAsync",
-                                     callOpCode);
+                                     "SendAsync");
 
             return SendAsyncInternal(
                 sendAsync,
@@ -94,8 +93,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var sendAsync = Emit.DynamicMethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
                                 .GetOrCreateMethodCallDelegate(
                                      httpClientHandler,
-                                     "SendAsync",
-                                     callOpCode);
+                                     "SendAsync");
 
             return SendAsyncInternal(
                 sendAsync,
