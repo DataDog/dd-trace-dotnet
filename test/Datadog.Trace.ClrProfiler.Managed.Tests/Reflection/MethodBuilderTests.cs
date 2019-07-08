@@ -10,7 +10,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     /// </summary>
     public class MethodBuilderTests
     {
-        private const string DeclaringTypeGenericsField = "_declaringTypeGenerics";
         private readonly Assembly _thisAssembly = Assembly.GetExecutingAssembly();
         private readonly Type _testType = typeof(ObscenelyAnnoyingClass);
 
@@ -91,13 +90,44 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Fact]
-        public void GenericParameter_ProperlyCalls_GenericMethod()
+        public void DeclaringTypeGenericParameter_ProperlyCalls_ClosedGenericMethod()
         {
             var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
             var parameter = new ClassA();
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, object>>(expected.Name, overrideType: instance.GetType()).WithParameters(parameter).Build();
             methodResult.Invoke(instance, parameter);
+            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+        }
+
+        [Fact]
+        public void DeclaringTypeGenericParameter_WithOpenGenericMethod_ProperlyCalls_OpenGenericMethod()
+        {
+            var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
+            var parameter = new ClassA();
+            var expected = MethodReference.Get(() => instance.Method<int>(parameter));
+            var methodResult =
+                Build<Action<object, object>>(expected.Name, overrideType: instance.GetType())
+                   .WithParameters(parameter)
+                   .WithMethodGenerics(typeof(int))
+                   .Build();
+            methodResult.Invoke(instance, parameter);
+            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+        }
+
+        [Fact]
+        public void DeclaringTypeGenericTypeParam_ThenMethodGenericParam_ProperlyCalls_Method()
+        {
+            var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
+            var parameter1 = new ClassA();
+            int parameter2 = 1;
+            var expected = MethodReference.Get(() => instance.Method<int>(parameter1, parameter2));
+            var methodResult =
+                Build<Action<object, object, int>>(expected.Name, overrideType: instance.GetType())
+                   .WithParameters(parameter1, parameter2)
+                   .WithMethodGenerics(typeof(int))
+                   .Build();
+            methodResult.Invoke(instance, parameter1, parameter2);
             Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 

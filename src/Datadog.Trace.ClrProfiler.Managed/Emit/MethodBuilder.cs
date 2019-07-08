@@ -377,15 +377,28 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
                 var parameterType = candidateParameter.ParameterType;
 
-                var actualArgumentType = GetExpectedParameterTypeByIndex(i);
+                var expectedParameterType = GetExpectedParameterTypeByIndex(i);
 
-                if (actualArgumentType == null)
+                if (expectedParameterType == null)
                 {
                     // Skip the rest of this check, as we can't know the type
                     continue;
                 }
 
-                if (!parameterType.IsAssignableFrom(actualArgumentType))
+                if (parameterType.IsGenericParameter)
+                {
+                    // This requires different evaluation
+                    if (MeetsGenericArgumentRequirements(parameterType, expectedParameterType))
+                    {
+                        // Good to go
+                        continue;
+                    }
+
+                    // We didn't meet this generic argument's requirements
+                    return false;
+                }
+
+                if (!parameterType.IsAssignableFrom(expectedParameterType))
                 {
                     return false;
                 }
@@ -461,13 +474,23 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 var expectedGenericArg = _methodGenerics[actualGenericArg.GenericParameterPosition];
 
-                var constraints = actualGenericArg.GetGenericParameterConstraints();
-
-                if (constraints.Any(constraint => !constraint.IsAssignableFrom(expectedGenericArg)))
+                if (!MeetsGenericArgumentRequirements(actualGenericArg, expectedGenericArg))
                 {
-                    // We have failed to meet a constraint
                     return false;
                 }
+            }
+
+            return true;
+        }
+
+        private bool MeetsGenericArgumentRequirements(Type actualGenericArg, Type expectedArg)
+        {
+            var constraints = actualGenericArg.GetGenericParameterConstraints();
+
+            if (constraints.Any(constraint => !constraint.IsAssignableFrom(expectedArg)))
+            {
+                // We have failed to meet a constraint
+                return false;
             }
 
             return true;
