@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             SetLastCall(MethodBase.GetCurrentMethod(), i);
         }
 
-        private void SetLastCall(MethodBase currentMethod, params object[] wholeBunchOfGarbage)
+        protected void SetLastCall(MethodBase currentMethod, params object[] wholeBunchOfGarbage)
         {
             if (CallCountsPerMetadataToken.ContainsKey(currentMethod.MetadataToken) == false)
             {

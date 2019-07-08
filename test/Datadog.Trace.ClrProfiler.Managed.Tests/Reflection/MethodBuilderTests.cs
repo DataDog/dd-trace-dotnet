@@ -89,11 +89,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 
-        private MethodBuilder<T> Build<T>(string methodName)
+        [Fact]
+        public void GenericParameter_ProperlyCalls_GenericMethod()
+        {
+            var instance = new ObscenelyAnnoyingGenericClass<ClassB>();
+            var parameter = new ClassB();
+            var expected = MethodReference.Get(() => instance.Method(parameter));
+            var methodResult = Build<Action<object, object>>(expected.Name, overrideType: instance.GetType()).WithParameters(parameter).Build();
+            methodResult.Invoke(instance, parameter);
+            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+        }
+
+        private MethodBuilder<T> Build<T>(string methodName, Type overrideType = null)
         {
             return MethodBuilder<T>
                   .Start(_thisAssembly, 0, (int)OpCodeValue.Callvirt, methodName)
-                  .WithConcreteType(_testType);
+                  .WithConcreteType(overrideType ?? _testType);
         }
     }
 }

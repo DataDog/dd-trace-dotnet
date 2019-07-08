@@ -109,7 +109,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            var genericArgs = GetGenericsFromWireProtocol(wireProtocolType);
 
             try
             {
@@ -117,7 +116,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
-                       .WithDeclaringTypeGenerics(genericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }
@@ -225,7 +223,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
-                       .WithDeclaringTypeGenerics(genericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }

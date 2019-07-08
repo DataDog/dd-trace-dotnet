@@ -30,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private Type _concreteType;
         private string _concreteTypeName;
         private object[] _parameters = new object[0];
+        private Type[] _explicitParameterTypes = null;
 
         private Type[] _declaringTypeGenerics;
         private Type[] _methodGenerics;
@@ -54,6 +55,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             _concreteType = type;
             _concreteTypeName = type.FullName;
+
+            if (type.ContainsGenericParameters)
+            {
+                return this.WithDeclaringTypeGenerics(type.GenericTypeArguments);
+            }
+
             return this;
         }
 
@@ -74,9 +81,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithDeclaringTypeGenerics(params Type[] generics)
+        public MethodBuilder<TDelegate> WithExplicitParameterTypes(params Type[] types)
         {
-            _declaringTypeGenerics = generics;
+            _explicitParameterTypes = types;
             return this;
         }
 
@@ -100,8 +107,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public TDelegate Build()
         {
-            ValidateRequirements();
-
             var cacheKey = new Key(
                 callingModule: _callingAssembly.ManifestModule,
                 mdToken: _mdToken,
@@ -110,7 +115,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 methodGenerics: _methodGenerics,
                 declaringTypeGenerics: _declaringTypeGenerics);
 
-            return Cache.GetOrAdd(cacheKey, key => EmitDelegate());
+            return Cache.GetOrAdd(cacheKey, key =>
+            {
+                // Validate requirements at the last possible moment
+                // Don't do more than needed before checking the cache
+                ValidateRequirements();
+                return EmitDelegate();
+            });
         }
 
         private TDelegate EmitDelegate()
@@ -265,6 +276,37 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 throw new ArgumentException($"There must be a {nameof(_methodName)} specified to ensure fallback {nameof(TryFindMethod)} is viable.");
             }
+
+            if (_explicitParameterTypes != null)
+            {
+                if (_explicitParameterTypes.Length != _parameters.Length)
+                {
+                    throw new ArgumentException($"The {nameof(_explicitParameterTypes)} must match the {_parameters} count.");
+                }
+
+                for (var i = 0; i < _explicitParameterTypes.Length; i++)
+                {
+                    var explicitType = _explicitParameterTypes[i];
+                    var parameterType = _parameters[i]?.GetType();
+
+                    if (parameterType == null)
+                    {
+                        // Nothing to check
+                        continue;
+                    }
+
+                    if (!explicitType.IsAssignableFrom(parameterType))
+                    {
+                        throw new ArgumentException($"Parameter Index {i}: Explicit type {explicitType.FullName} is not assignable from {parameterType}");
+                    }
+                }
+            }
+        }
+
+        private MethodBuilder<TDelegate> WithDeclaringTypeGenerics(params Type[] generics)
+        {
+            _declaringTypeGenerics = generics;
+            return this;
         }
 
         private MethodInfo TryFindMethod()
@@ -298,9 +340,15 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             methods =
                 methodEnumerable
-                   .Where(GenericsAreViable)
                    .Where(ParametersAreViable)
+                   .Where(GenericsAreViable)
                    .ToArray();
+
+            if (methods.Length > 1)
+            {
+                // Attempt to trim down further
+                methods = methods.Where(ParametersAreExact).ToArray();
+            }
 
             var methodText = _methodBase?.Name ?? _methodName ?? $"mdToken: {_mdToken}";
 
@@ -335,15 +383,41 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
                 var parameterType = candidateParameter.ParameterType;
 
-                var actualArgument = _parameters[i];
+                var actualArgumentType = GetExpectedParameterTypeByIndex(i);
 
-                if (actualArgument == null)
+                if (actualArgumentType == null)
                 {
-                    // Skip the rest of this check
+                    // Skip the rest of this check, as we can't know the type
                     continue;
                 }
 
-                var actualArgumentType = actualArgument.GetType();
+                if (!parameterType.IsAssignableFrom(actualArgumentType))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool ParametersAreExact(MethodInfo mi)
+        {
+            // We can already assume that the counts match by this point
+            var parameters = mi.GetParameters();
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                var candidateParameter = parameters[i];
+
+                var parameterType = candidateParameter.ParameterType;
+
+                var actualArgumentType = GetExpectedParameterTypeByIndex(i);
+
+                if (actualArgumentType == null)
+                {
+                    // Skip the rest of this check, as we can't know the type
+                    continue;
+                }
 
                 if (parameterType != actualArgumentType)
                 {
@@ -354,6 +428,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return true;
         }
 
+        private Type GetExpectedParameterTypeByIndex(int i)
+        {
+            return _explicitParameterTypes != null
+                       ? _explicitParameterTypes[i]
+                       : _parameters[i]?.GetType();
+        }
+
         private bool GenericsAreViable(MethodInfo mi)
         {
             // Non-Generic Method - { IsGenericMethod: false, ContainsGenericParameters: false, IsGenericMethodDefinition: false }
@@ -361,16 +442,17 @@ namespace Datadog.Trace.ClrProfiler.Emit
             // Open Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: true, IsGenericMethodDefinition: false }
             // Closed Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: false, IsGenericMethodDefinition: false }
 
-            if (!mi.IsGenericMethod)
-            {
-                // No need to evaluate
-                return true;
-            }
-
             if (_methodGenerics == null)
             {
-                // We decided this wasn't necessary to look at
-                return true;
+                // We expect no generic arguments for this method
+                return mi.ContainsGenericParameters == false;
+            }
+
+            if (!mi.IsGenericMethod)
+            {
+                // There is really nothing to compare here
+                // Make sure we aren't looking for generics where there aren't
+                return _methodGenerics?.Length == 0;
             }
 
             var genericArgs = mi.GetGenericArguments();
