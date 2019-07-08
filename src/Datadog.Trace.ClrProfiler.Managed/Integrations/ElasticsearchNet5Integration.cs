@@ -1,6 +1,9 @@
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -12,10 +15,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string IntegrationName = "ElasticsearchNet5";
         private const string Version5 = "5";
+        private const string ElasticsearchAssembly = "Elasticsearch.Net";
+        private const string RequestPipelineInterface = "Elasticsearch.Net.IRequestPipeline";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNet5Integration));
-        private static readonly InterceptedMethodAccess<Func<object, object, CancellationToken, object>> CallElasticsearchAsyncAccess = new InterceptedMethodAccess<Func<object, object, CancellationToken, object>>();
-        private static readonly GenericAsyncTargetAccess AsyncTargetAccess = new GenericAsyncTargetAccess();
         private static readonly Type ElasticsearchResponseType = Type.GetType("Elasticsearch.Net.ElasticsearchResponse`1, Elasticsearch.Net", throwOnError: false);
 
         /// <summary>
@@ -28,9 +31,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
-            CallerAssembly = "Elasticsearch.Net",
-            TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            CallerAssembly = ElasticsearchAssembly,
+            TargetAssembly = ElasticsearchAssembly,
+            TargetType = RequestPipelineInterface,
             TargetSignatureTypes = new[] { "Elasticsearch.Net.ElasticsearchResponse`1<T>", "Elasticsearch.Net.RequestData" },
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
@@ -68,9 +71,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
-            CallerAssembly = "Elasticsearch.Net",
-            TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            CallerAssembly = ElasticsearchAssembly,
+            TargetAssembly = ElasticsearchAssembly,
+            TargetType = RequestPipelineInterface,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
@@ -80,16 +83,37 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
-            var genericResponseType = ElasticsearchResponseType.MakeGenericType(typeof(TResponse));
+            var genericArgument = typeof(TResponse);
+            var genericResponseType = ElasticsearchResponseType.MakeGenericType(genericArgument);
 
-            return AsyncTargetAccess.InvokeGenericTaskDelegate(
+            Func<object, object, CancellationToken, object> instrumentedMethod;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<object, object, CancellationToken, object>>
+                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(CallElasticsearchAsync))
+                       .WithConcreteType(pipeline.GetType())
+                       .WithMethodGenerics(genericArgument)
+                       .WithParameters(requestData, cancellationToken)
+                       .ForceMethodDefinitionResolution()
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException($"Error resolving Elasticsearch.Net.IRequestPipeline.{nameof(CallElasticsearchAsync)}<T>(...)", ex);
+                throw;
+            }
+
+            return AsyncHelper.InvokeGenericTaskDelegate(
                 owningType: ElasticsearchNetCommon.RequestPipelineType,
                 taskResultType: genericResponseType,
                 nameOfIntegrationMethod: nameof(CallElasticsearchAsyncInternal),
                 integrationType: typeof(ElasticsearchNet5Integration),
                 pipeline,
                 requestData,
-                cancellationToken);
+                cancellationToken,
+                instrumentedMethod);
         }
 
         /// <summary>
@@ -99,23 +123,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="pipeline">The pipeline for the original method</param>
         /// <param name="requestData">The request data</param>
         /// <param name="cancellationToken">A cancellation token</param>
+        /// <param name="originalMethod">A delegate for the method we are instrumenting</param>
         /// <returns>The original result</returns>
-        private static async Task<T> CallElasticsearchAsyncInternal<T>(object pipeline, object requestData, CancellationToken cancellationToken)
+        private static async Task<T> CallElasticsearchAsyncInternal<T>(
+            object pipeline,
+            object requestData,
+            CancellationToken cancellationToken,
+            Func<object, object, CancellationToken, object> originalMethod)
         {
-            var genericArgument = typeof(T).GetGenericArguments()[0];
-
-            var executeAsync = CallElasticsearchAsyncAccess.GetInterceptedMethod(
-                pipeline.GetType(),
-                returnType: null,
-                methodName: nameof(CallElasticsearchAsync),
-                generics: new[] { genericArgument },
-                parameters: new[] { ElasticsearchNetCommon.RequestDataType, ElasticsearchNetCommon.CancellationTokenType });
-
             using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
             {
                 try
                 {
-                    var task = (Task<T>)executeAsync(pipeline, requestData, cancellationToken);
+                    var task = (Task<T>)originalMethod(pipeline, requestData, cancellationToken);
                     return await task.ConfigureAwait(false);
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)

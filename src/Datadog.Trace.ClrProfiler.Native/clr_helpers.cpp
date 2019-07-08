@@ -96,6 +96,8 @@ std::vector<BYTE> GetSignatureByteRepresentation(
 FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
                              const mdToken& token) {
   mdToken parent_token = mdTokenNil;
+  mdToken method_spec_token = mdTokenNil;
+  mdToken method_def_token = mdTokenNil;
   WCHAR function_name[kNameMaxSize]{};
   DWORD function_name_len = 0;
 
@@ -133,6 +135,8 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
       std::memcpy(function_name, generic_info.name.c_str(),
                   sizeof(WCHAR) * (generic_info.name.length() + 1));
       function_name_len = DWORD(generic_info.name.length() + 1);
+      method_spec_token = token;
+      method_def_token = generic_info.id;
     } break;
     default:
       Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
@@ -147,9 +151,12 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import,
 
   if (is_generic) {
     // use the generic constructor and feed both method signatures
-    return {token, WSTRING(function_name), type_info,
+    return {method_spec_token,
+            WSTRING(function_name),
+            type_info,
             MethodSignature(final_signature_bytes),
-            MethodSignature(method_spec_signature)};
+            MethodSignature(method_spec_signature),
+            method_def_token};
   }
 
   final_signature_bytes =

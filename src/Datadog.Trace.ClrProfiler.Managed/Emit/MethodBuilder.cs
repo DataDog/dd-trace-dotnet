@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.Logging;
 using Sigil;
 
 namespace Datadog.Trace.ClrProfiler.Emit
@@ -14,31 +15,39 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// Global dictionary for caching reflected delegates
         /// </summary>
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(MethodBuilder<TDelegate>));
 
         private readonly Assembly _callingAssembly;
         private readonly int _mdToken;
         private readonly int _originalOpCodeValue;
         private readonly OpCodeValue _opCode;
 
+        // Legacy fallback mechanisms
+        private readonly string _methodName;
+        private Type _returnType;
+
         private MethodBase _methodBase;
         private Type _concreteType;
         private string _concreteTypeName;
-        private object[] _argumentObjects = new object[0];
+        private object[] _parameters = new object[0];
 
-        private Type[] _declaringTypeGenericArguments = null;
-        private Type[] _methodGenericArguments = null;
+        private Type[] _declaringTypeGenerics;
+        private Type[] _methodGenerics;
+        private bool _forceMethodDefResolve;
 
-        private MethodBuilder(Assembly callingAssembly, int mdToken, int opCode)
+        private MethodBuilder(Assembly callingAssembly, int mdToken, int opCode, string methodName)
         {
             _callingAssembly = callingAssembly;
             _mdToken = mdToken;
             _opCode = (OpCodeValue)opCode;
             _originalOpCodeValue = opCode;
+            _methodName = methodName;
+            _forceMethodDefResolve = false;
         }
 
-        public static MethodBuilder<TDelegate> Start(Assembly callingAssembly, int mdToken, int opCode)
+        public static MethodBuilder<TDelegate> Start(Assembly callingAssembly, int mdToken, int opCode, string methodName)
         {
-            return new MethodBuilder<TDelegate>(callingAssembly, mdToken, opCode);
+            return new MethodBuilder<TDelegate>(callingAssembly, mdToken, opCode, methodName);
         }
 
         public MethodBuilder<TDelegate> WithConcreteType(Type type)
@@ -61,22 +70,32 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 throw new ArgumentNullException(nameof(parameters));
             }
 
-            _argumentObjects = parameters;
+            _parameters = parameters;
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithDeclaringTypeGenericTypeArguments(params Type[] declaringTypeGenericTypeArguments)
+        public MethodBuilder<TDelegate> WithDeclaringTypeGenerics(params Type[] generics)
         {
-            throw new NotImplementedException("Requires in depth testing.");
-            // _declaringTypeGenericArguments = declaringTypeGenericTypeArguments;
-            // return this;
+            _declaringTypeGenerics = generics;
+            return this;
         }
 
-        public MethodBuilder<TDelegate> WithGenericParameterTypes(params Type[] methodGenericArguments)
+        public MethodBuilder<TDelegate> WithMethodGenerics(params Type[] generics)
         {
-            throw new NotImplementedException("Requires in depth testing.");
-            // _methodGenericArguments = methodGenericArguments;
-            // return this;
+            _methodGenerics = generics;
+            return this;
+        }
+
+        public MethodBuilder<TDelegate> ForceMethodDefinitionResolution()
+        {
+            _forceMethodDefResolve = true;
+            return this;
+        }
+
+        public MethodBuilder<TDelegate> WithReturnType(Type returnType)
+        {
+            _returnType = returnType;
+            return this;
         }
 
         public TDelegate Build()
@@ -87,8 +106,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 callingModule: _callingAssembly.ManifestModule,
                 mdToken: _mdToken,
                 callOpCode: _opCode,
-                methodGenericArguments: _declaringTypeGenericArguments,
-                genericParameterTypes: _methodGenericArguments);
+                concreteType: _concreteType, // Needed for Generic DeclaringType MethodSpec scenarios
+                methodGenerics: _methodGenerics,
+                declaringTypeGenerics: _declaringTypeGenerics);
 
             return Cache.GetOrAdd(cacheKey, key => EmitDelegate());
         }
@@ -99,15 +119,26 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             try
             {
-                // Don't resolve until we build, because we need to wait for generics to be specified
-                _methodBase =
-                    _callingAssembly.ManifestModule.ResolveMethod(
-                        metadataToken: _mdToken,
-                        genericTypeArguments: _declaringTypeGenericArguments,
-                        genericMethodArguments: _methodGenericArguments);
+                // Don't resolve until we build, as it may be an unnecessary lookup because of the cache
+                // We also may need the generics which were specified
+                if (_forceMethodDefResolve || (_declaringTypeGenerics == null && _methodGenerics == null))
+                {
+                    _methodBase =
+                        _callingAssembly.ManifestModule.ResolveMethod(metadataToken: _mdToken);
+                }
+                else
+                {
+                    _methodBase =
+                        _callingAssembly.ManifestModule.ResolveMethod(
+                            metadataToken: _mdToken,
+                            genericTypeArguments: _declaringTypeGenerics,
+                            genericMethodArguments: _methodGenerics);
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
+                Log.Error(message, ex);
                 requiresBestEffortMatching = true;
             }
 
@@ -151,7 +182,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (methodInfo.IsGenericMethodDefinition || methodInfo.IsGenericMethod)
             {
-                methodInfo = methodInfo.MakeGenericMethod(_declaringTypeGenericArguments);
+                if (_methodGenerics == null || _methodGenerics.Length == 0)
+                {
+                    throw new ArgumentException($"Must specify {nameof(_methodGenerics)} for a generic method.");
+                }
+
+                methodInfo = methodInfo.MakeGenericMethod(_methodGenerics);
             }
 
             Type[] effectiveParameterTypes;
@@ -222,7 +258,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             if (_concreteType == null)
             {
-                throw new ArgumentException("There must be a concrete type specified.");
+                throw new ArgumentException($"{nameof(_concreteType)} must be specified.");
+            }
+
+            if (string.IsNullOrWhiteSpace(_methodName))
+            {
+                throw new ArgumentException($"There must be a {nameof(_methodName)} specified to ensure fallback {nameof(TryFindMethod)} is viable.");
             }
         }
 
@@ -231,101 +272,37 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var methods =
                 _concreteType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
 
+            // prevent multiple enumerations
+            var methodEnumerable = methods.AsEnumerable();
+
             if (_methodBase != null)
             {
                 // For the case I haven't encountered, where MethodBase is not MethodInfo
-                methods =
-                    methods.Where(
-                           mi => mi.MetadataToken == _methodBase.MetadataToken
-                              && mi.IsGenericMethodDefinition == _methodBase.IsGenericMethodDefinition
-                              && mi.IsGenericMethod == _methodBase.IsGenericMethod
-                              && mi.IsAbstract == _methodBase.IsAbstract
-                              && mi.ContainsGenericParameters == _methodBase.ContainsGenericParameters
-                              && mi.IsPrivate == _methodBase.IsPrivate
-                              && mi.IsPublic == _methodBase.IsPublic
-                              && mi.IsVirtual == _methodBase.IsVirtual
-                              && mi.Name == _methodBase.Name)
-                      .ToArray();
+                methodEnumerable =
+                    methodEnumerable.Where(
+                        mi => mi.IsGenericMethod == _methodBase.IsGenericMethod
+                           && mi.IsAbstract == _methodBase.IsAbstract
+                           && mi.IsPrivate == _methodBase.IsPrivate
+                           && mi.IsPublic == _methodBase.IsPublic
+                           && mi.IsVirtual == _methodBase.IsVirtual
+                           && mi.Name == _methodBase.Name);
             }
             else
             {
-                // An attempt to match on the metadata token for the concrete type
-
-                // Non-Generic Method - { IsGenericMethod: false, ContainsGenericParameters: false, IsGenericMethodDefinition: false }
-                // Generic Method Definition - { IsGenericMethod: true, ContainsGenericParameters: true, IsGenericMethodDefinition: true }
-                // Open Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: true, IsGenericMethodDefinition: false }
-                // Closed Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: false, IsGenericMethodDefinition: false }
-
-                var isGenericMethod = _methodGenericArguments?.Length > 0;
-
-                // We don't officially instrument any Closed Constructed Methods
-                // This would need updating if we did
-                var relevantMethods =
-                    methods
-                       .Where(
-                            mi => mi.MetadataToken == _mdToken
-                               && mi.ContainsGenericParameters == isGenericMethod
-                               && mi.IsGenericMethod == isGenericMethod)
-                       .Where(
-                            mi =>
-                            {
-                                if (isGenericMethod)
-                                {
-                                    var genericArgs = mi.GetGenericArguments();
-
-                                    if (genericArgs.Length != _methodGenericArguments.Length)
-                                    {
-                                        return false;
-                                    }
-                                }
-
-                                var parameters = mi.GetParameters();
-
-                                if (parameters.Length != _argumentObjects.Length)
-                                {
-                                    return false;
-                                }
-
-                                for (var i = 0; i < parameters.Length; i++)
-                                {
-                                    var candidateParameter = parameters[i];
-
-                                    var parameterType = candidateParameter.ParameterType;
-
-                                    if (parameterType.IsGenericParameter)
-                                    {
-                                        if (!isGenericMethod)
-                                        {
-                                            // We're expecting no generic parameters
-                                            return false;
-                                        }
-
-                                        // TODO: more generic parameter evaluation
-                                    }
-
-                                    var actualArgument = _argumentObjects[i];
-
-                                    if (actualArgument == null)
-                                    {
-                                        // Skip the rest of this check
-                                        continue;
-                                    }
-
-                                    var actualArgumentType = actualArgument.GetType();
-
-                                    if (!parameterType.IsAssignableFrom(actualArgumentType))
-                                    {
-                                        return false;
-                                    }
-                                }
-
-                                return true;
-                            });
-
-                methods = relevantMethods.ToArray();
+                // A legacy fallback attempt to match on the concrete type
+                methodEnumerable =
+                    methodEnumerable
+                       .Where(mi => mi.Name == _methodName)
+                       .Where(mi => _returnType == null || mi.ReturnType == _returnType);
             }
 
-            var methodText = _methodBase?.Name ?? $"mdToken: {_mdToken}";
+            methods =
+                methodEnumerable
+                   .Where(GenericsAreViable)
+                   .Where(ParametersAreViable)
+                   .ToArray();
+
+            var methodText = _methodBase?.Name ?? _methodName ?? $"mdToken: {_mdToken}";
 
             if (methods.Length > 1)
             {
@@ -342,41 +319,122 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return methodInfo;
         }
 
+        private bool ParametersAreViable(MethodInfo mi)
+        {
+            var parameters = mi.GetParameters();
+
+            if (parameters.Length != _parameters.Length)
+            {
+                // expected parameters don't match actual count
+                return false;
+            }
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                var candidateParameter = parameters[i];
+
+                var parameterType = candidateParameter.ParameterType;
+
+                var actualArgument = _parameters[i];
+
+                if (actualArgument == null)
+                {
+                    // Skip the rest of this check
+                    continue;
+                }
+
+                var actualArgumentType = actualArgument.GetType();
+
+                if (!parameterType.IsAssignableFrom(actualArgumentType))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool GenericsAreViable(MethodInfo mi)
+        {
+            // Non-Generic Method - { IsGenericMethod: false, ContainsGenericParameters: false, IsGenericMethodDefinition: false }
+            // Generic Method Definition - { IsGenericMethod: true, ContainsGenericParameters: true, IsGenericMethodDefinition: true }
+            // Open Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: true, IsGenericMethodDefinition: false }
+            // Closed Constructed Method - { IsGenericMethod: true, ContainsGenericParameters: false, IsGenericMethodDefinition: false }
+
+            if (!mi.IsGenericMethod)
+            {
+                // No need to evaluate
+                return true;
+            }
+
+            if (_methodGenerics == null)
+            {
+                // We decided this wasn't necessary to look at
+                return true;
+            }
+
+            var genericArgs = mi.GetGenericArguments();
+
+            if (genericArgs.Length != _methodGenerics.Length)
+            {
+                // Count of arguments mismatch
+                return false;
+            }
+
+            foreach (var actualGenericArg in genericArgs)
+            {
+                var expectedGenericArg = _methodGenerics[actualGenericArg.GenericParameterPosition];
+
+                var constraints = actualGenericArg.GetGenericParameterConstraints();
+
+                if (constraints.Any(constraint => !constraint.IsAssignableFrom(expectedGenericArg)))
+                {
+                    // We have failed to meet a constraint
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private struct Key
         {
             public readonly int CallingModuleMetadataToken;
             public readonly int MethodMetadataToken;
             public readonly OpCodeValue CallOpCode;
+            public readonly string ConcreteTypeName;
             public readonly string GenericSpec;
 
             public Key(
                 Module callingModule,
                 int mdToken,
                 OpCodeValue callOpCode,
-                Type[] methodGenericArguments,
-                Type[] genericParameterTypes)
+                Type concreteType,
+                Type[] methodGenerics,
+                Type[] declaringTypeGenerics)
             {
                 CallingModuleMetadataToken = callingModule.MetadataToken;
                 MethodMetadataToken = mdToken;
                 CallOpCode = callOpCode;
+                ConcreteTypeName = concreteType.AssemblyQualifiedName;
 
                 GenericSpec = "_gArgs_";
 
-                if (methodGenericArguments != null)
+                if (methodGenerics != null)
                 {
-                    for (var i = 0; i < methodGenericArguments.Length; i++)
+                    for (var i = 0; i < methodGenerics.Length; i++)
                     {
-                        GenericSpec = string.Concat(GenericSpec, $"_{methodGenericArguments[i].FullName}_");
+                        GenericSpec = string.Concat(GenericSpec, $"_{methodGenerics[i].FullName}_");
                     }
                 }
 
                 GenericSpec = string.Concat(GenericSpec, "_gParams_");
 
-                if (genericParameterTypes != null)
+                if (declaringTypeGenerics != null)
                 {
-                    for (var i = 0; i < genericParameterTypes.Length; i++)
+                    for (var i = 0; i < declaringTypeGenerics.Length; i++)
                     {
-                        GenericSpec = string.Concat(GenericSpec, $"_{genericParameterTypes[i].FullName}_");
+                        GenericSpec = string.Concat(GenericSpec, $"_{declaringTypeGenerics[i].FullName}_");
                     }
                 }
             }
@@ -401,6 +459,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     return false;
                 }
 
+                if (!string.Equals(x.ConcreteTypeName, y.ConcreteTypeName))
+                {
+                    return false;
+                }
+
                 if (!string.Equals(x.GenericSpec, y.GenericSpec))
                 {
                     return false;
@@ -417,6 +480,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     hash = (hash * 23) + obj.CallingModuleMetadataToken.GetHashCode();
                     hash = (hash * 23) + obj.MethodMetadataToken.GetHashCode();
                     hash = (hash * 23) + obj.CallOpCode.GetHashCode();
+                    hash = (hash * 23) + obj.ConcreteTypeName.GetHashCode();
                     hash = (hash * 23) + obj.GenericSpec.GetHashCode();
                     return hash;
                 }
