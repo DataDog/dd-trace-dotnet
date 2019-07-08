@@ -55,12 +55,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             _concreteType = type;
             _concreteTypeName = type.FullName;
-
-            if (type.ContainsGenericParameters)
-            {
-                return this.WithDeclaringTypeGenerics(type.GenericTypeArguments);
-            }
-
             return this;
         }
 
@@ -90,6 +84,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public MethodBuilder<TDelegate> WithMethodGenerics(params Type[] generics)
         {
             _methodGenerics = generics;
+            return this;
+        }
+
+        public MethodBuilder<TDelegate> WithDeclaringTypeGenerics(params Type[] generics)
+        {
+            _declaringTypeGenerics = generics;
             return this;
         }
 
@@ -301,12 +301,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     }
                 }
             }
-        }
-
-        private MethodBuilder<TDelegate> WithDeclaringTypeGenerics(params Type[] generics)
-        {
-            _declaringTypeGenerics = generics;
-            return this;
         }
 
         private MethodInfo TryFindMethod()

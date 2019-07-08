@@ -165,6 +165,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             const string methodName = nameof(ExecuteAsync);
             var wireProtocolType = wireProtocol.GetType();
+            var wireProtocolGenericArgs = GetGenericsFromWireProtocol(wireProtocolType);
 
             Func<object, object, CancellationToken, object> executeAsync;
 
@@ -174,6 +175,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
+                       .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }
@@ -212,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
             var wireProtocolType = wireProtocol.GetType();
-            var genericArgs = GetGenericsFromWireProtocol(wireProtocolType);
+            var wireProtocolGenericArgs = GetGenericsFromWireProtocol(wireProtocolType);
 
             const string methodName = nameof(ExecuteAsync);
             Func<object, object, CancellationToken, object> executeAsync;
@@ -223,6 +225,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
+                       .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }
@@ -235,7 +238,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             return AsyncHelper.InvokeGenericTaskDelegate(
                 wireProtocolType,
-                genericArgs[0],
+                wireProtocolGenericArgs[0],
                 nameof(ExecuteAsyncInternalGeneric),
                 typeof(MongoDbIntegration),
                 wireProtocol,

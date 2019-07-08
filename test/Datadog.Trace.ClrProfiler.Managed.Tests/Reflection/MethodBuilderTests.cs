@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     /// </summary>
     public class MethodBuilderTests
     {
+        private const string DeclaringTypeGenericsField = "_declaringTypeGenerics";
         private readonly Assembly _thisAssembly = Assembly.GetExecutingAssembly();
         private readonly Type _testType = typeof(ObscenelyAnnoyingClass);
 
@@ -92,8 +93,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Fact]
         public void GenericParameter_ProperlyCalls_GenericMethod()
         {
-            var instance = new ObscenelyAnnoyingGenericClass<ClassB>();
-            var parameter = new ClassB();
+            var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
+            var parameter = new ClassA();
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, object>>(expected.Name, overrideType: instance.GetType()).WithParameters(parameter).Build();
             methodResult.Invoke(instance, parameter);
