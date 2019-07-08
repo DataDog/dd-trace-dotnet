@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -7,16 +8,20 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
     public class SpanTests
     {
+        private readonly ITestOutputHelper _output;
         private readonly Mock<IAgentWriter> _writerMock;
         private readonly Tracer _tracer;
 
-        public SpanTests()
+        public SpanTests(ITestOutputHelper output)
         {
+            _output = output;
+
             var settings = new TracerSettings();
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ISampler>();
@@ -86,22 +91,26 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData(0)]
+        [InlineData(1)]
         [InlineData(10)]
         [InlineData(100)]
-        public void Accurate_Duration(int expectedDurationMilliseconds)
+        public void Accurate_Duration(int minimumDurationMilliseconds)
         {
             // TODO: refactor how we measure time so we can lower this threshold
             const int iterations = 10;
             const int threshold = 15;
-            double totalElapsedTime = 0;
+            TimeSpan totalElapsedTime = TimeSpan.Zero;
+            TimeSpan totalSpanTime = TimeSpan.Zero;
             Span span;
+            var stopwatch = new Stopwatch();
 
             // execute once to ensure JIT compilation
             using (span = _tracer.StartSpan("Operation"))
             {
-                Thread.Sleep(0);
-                var elapsedTime = span.Duration.TotalMilliseconds;
+                stopwatch.Restart();
+                Thread.Sleep(1);
+                var spanMilliseconds = span.Duration.TotalMilliseconds;
+                var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
             }
 
             // execute multiple times and average the results
@@ -109,15 +118,21 @@ namespace Datadog.Trace.Tests
             {
                 using (span = _tracer.StartSpan("Operation"))
                 {
-                    Thread.Sleep(expectedDurationMilliseconds);
+                    stopwatch.Restart();
+                    Thread.Sleep(minimumDurationMilliseconds);
+                    totalElapsedTime += stopwatch.Elapsed;
                 }
 
-                totalElapsedTime += span.Duration.TotalMilliseconds;
+                totalSpanTime += span.Duration;
             }
 
-            var averageElapsedTime = totalElapsedTime / iterations;
-            var diff = Math.Abs(averageElapsedTime - expectedDurationMilliseconds);
-            Assert.True(diff < threshold, $"Span duration outside of allowed threshold. Expected: {expectedDurationMilliseconds}ms, actual average: {averageElapsedTime}ms");
+            var averageElapsedTime = totalElapsedTime.TotalMilliseconds / iterations;
+            var averageSpanTime = totalSpanTime.TotalMilliseconds / iterations;
+            var diff = Math.Abs(averageElapsedTime - minimumDurationMilliseconds);
+
+            _output.WriteLine($"Average elapsed time: {averageElapsedTime:0.0} ms");
+            _output.WriteLine($"Average span time: {averageSpanTime:0.0} ms");
+            Assert.True(diff < threshold, $"Span duration outside of allowed threshold. Expected: {minimumDurationMilliseconds}ms, actual average: {averageElapsedTime}ms");
         }
     }
 }
