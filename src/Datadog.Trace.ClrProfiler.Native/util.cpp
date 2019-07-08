@@ -1,5 +1,6 @@
 #include "util.h"
 
+#include <algorithm>
 #include <cwctype>
 #include <iterator>
 #include <sstream>
