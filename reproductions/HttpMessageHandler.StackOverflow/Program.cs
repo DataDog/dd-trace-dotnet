@@ -9,24 +9,37 @@ namespace HttpMessageHandler.StackOverflow
 {
     internal class Program
     {
-        private static async Task Main()
+        private static async Task<int> Main()
         {
-            Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
-
-            var baseAddress = new Uri("https://www.example.com/");
-            var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
-            var customHandlerHttpClient = new HttpClient(new DerivedHandler()) { BaseAddress = baseAddress };
-
-            using (var scope = Tracer.Instance.StartActive("main"))
+            try
             {
-                Console.WriteLine("Calling regularHttpClient.GetAsync");
-                await regularHttpClient.GetAsync("default-handler");
-                Console.WriteLine("Called regularHttpClient.GetAsync");
+                Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
 
-                Console.WriteLine("Calling customHandlerHttpClient.GetAsync");
-                await customHandlerHttpClient.GetAsync("derived-handler");
-                Console.WriteLine("Called customHandlerHttpClient.GetAsync");
+                var baseAddress = new Uri("https://www.example.com/");
+                var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
+                var customHandlerHttpClient = new HttpClient(new DerivedHandler()) { BaseAddress = baseAddress };
+
+                using (var scope = Tracer.Instance.StartActive("main"))
+                {
+                    Console.WriteLine("Calling regularHttpClient.GetAsync");
+                    await regularHttpClient.GetAsync("default-handler");
+                    Console.WriteLine("Called regularHttpClient.GetAsync");
+
+                    Console.WriteLine("Calling customHandlerHttpClient.GetAsync");
+                    await customHandlerHttpClient.GetAsync("derived-handler");
+                    Console.WriteLine("Called customHandlerHttpClient.GetAsync");
+                }
+
+                Console.WriteLine("No stack overflow exceptions!");
+                Console.WriteLine("All is well!");
             }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                return (int)ExitCode.UnknownError;
+            }
+
+            return (int)ExitCode.Success;
         }
     }
 
@@ -41,5 +54,11 @@ namespace HttpMessageHandler.StackOverflow
             Console.WriteLine("Called base.SendAsync()");
             return result;
         }
+    }
+
+    enum ExitCode : int
+    {
+        Success = 0,
+        UnknownError = -10
     }
 }
