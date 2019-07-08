@@ -1,6 +1,5 @@
 #include "util.h"
 
-#include <algorithm>
 #include <cwctype>
 #include <iterator>
 #include <sstream>
@@ -83,9 +82,4 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name) {
   return GetEnvironmentValues(name, L';');
 }
 
-bool Contains(const std::vector<WSTRING>& items, const WSTRING& value) {
-  return !items.empty() &&
-         std::find(items.begin(), items.end(), value) != items.end();
-}
-
-} // namespace trace
+}  // namespace trace
