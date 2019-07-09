@@ -90,6 +90,21 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Fact]
+        public void StringParameterAsObject_WithExplicitTypeSpecified_ProperlyCalls_StringMethod()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            object parameter = string.Empty;
+            var expected = MethodReference.Get(() => instance.Method(string.Empty));
+            var methodResult =
+                Build<Action<object, object>>(expected.Name)
+                   .WithParameters(parameter)
+                   .WithExplicitParameterTypes(typeof(string))
+                   .Build();
+            methodResult.Invoke(instance, parameter);
+            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+        }
+
+        [Fact]
         public void DeclaringTypeGenericParameter_ProperlyCalls_ClosedGenericMethod()
         {
             var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
@@ -128,6 +143,25 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                    .WithMethodGenerics(typeof(int))
                    .Build();
             methodResult.Invoke(instance, parameter1, parameter2);
+            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+        }
+
+        [Fact]
+        public void WrongMetadataToken_NonSpecificDelegateSignature_GetsCorrectMethodAnyways()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            var wrongMethod = MethodReference.Get(() => instance.Method(1));
+
+            string parameter = string.Empty;
+            var expected = MethodReference.Get(() => instance.Method(parameter));
+
+            var methodResult = MethodBuilder<Action<object, object>> // Proper use should be Action<object, string>
+                              .Start(_thisAssembly, wrongMethod.MetadataToken, (int)OpCodeValue.Callvirt, "Method")
+                              .WithConcreteType(_testType)
+                              .WithParameters(parameter) // The parameter is the saving grace
+                              .Build();
+
+            methodResult.Invoke(instance, parameter);
             Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 
