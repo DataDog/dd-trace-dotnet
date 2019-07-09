@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData(1)]
+        [InlineData(3)]
         [InlineData(10)]
         [InlineData(100)]
         public void Accurate_Duration(int minimumDurationMilliseconds)
@@ -128,11 +128,11 @@ namespace Datadog.Trace.Tests
 
             var averageElapsedTime = totalElapsedTime.TotalMilliseconds / iterations;
             var averageSpanTime = totalSpanTime.TotalMilliseconds / iterations;
-            var diff = Math.Abs(averageElapsedTime - minimumDurationMilliseconds);
+            var diff = Math.Abs(averageElapsedTime - minimumDurationMilliseconds); // Should be less than the threshold
 
             _output.WriteLine($"Average elapsed time: {averageElapsedTime:0.0} ms");
             _output.WriteLine($"Average span time: {averageSpanTime:0.0} ms");
-            Assert.True(diff < threshold, $"Span duration outside of allowed threshold. Expected: {minimumDurationMilliseconds}ms, actual average: {averageElapsedTime}ms");
+            Assert.True(diff < threshold, $"Span duration outside of allowed threshold. Expected max average of: {threshold}ms, actual average: {averageSpanTime}ms");
         }
     }
 }
