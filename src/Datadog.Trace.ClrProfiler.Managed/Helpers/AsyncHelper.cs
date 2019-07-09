@@ -29,27 +29,6 @@ namespace Datadog.Trace.ClrProfiler.Helpers
             return asyncDelegate.Invoke(null, parametersToPass);
         }
 
-        internal static object InvokeGenericTaskDelegateWithExplicitParameterTypes(
-            Type owningType,
-            Type taskResultType,
-            string nameOfIntegrationMethod,
-            Type integrationType,
-            Type[] parameterTypes,
-            params object[] parametersToPass)
-        {
-            var methodKey =
-                Interception.MethodKey(
-                    owningType: owningType,
-                    returnType: taskResultType,
-                    genericTypes: Interception.NullTypeArray,
-                    parameterTypes: parameterTypes);
-
-            var asyncDelegate =
-                MethodCache.GetOrAdd(methodKey, _ => GetGenericAsyncMethodInfo(taskResultType, nameOfIntegrationMethod, integrationType));
-
-            return asyncDelegate.Invoke(null, parametersToPass);
-        }
-
         private static MethodInfo GetGenericAsyncMethodInfo(Type taskResultType, string nameOfIntegrationMethod, Type integrationType)
         {
             var method = integrationType.GetMethod(nameOfIntegrationMethod, BindingFlags.Static | BindingFlags.NonPublic);

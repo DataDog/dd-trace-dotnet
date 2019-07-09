@@ -403,16 +403,12 @@
       {
         "caller": {},
         "target": {
-          "assembly": "GraphQL.Server.Core",
-          "type": "GraphQL.Server.Internal.IGraphQLExecuter",
+          "assembly": "GraphQL",
+          "type": "GraphQL.Execution.IExecutionStrategy",
           "method": "ExecuteAsync",
           "signature_types": [
             "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
-            "System.String",
-            "System.String",
-            "_",
-            "_",
-            "System.Threading.CancellationToken"
+            "_"
           ],
           "minimum_major": 0,
           "minimum_minor": 0,
@@ -425,7 +421,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.GraphQLIntegration",
           "method": "ExecuteAsync",
-          "signature": "00 08 1C 1C 1C 1C 1C 1C 1C 08 08"
+          "signature": "00 04 1C 1C 1C 08 08"
         }
       }
     ]

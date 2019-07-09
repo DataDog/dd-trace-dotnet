@@ -130,6 +130,21 @@ namespace Datadog.Trace
         public const string MongoDbCollection = "mongodb.collection";
 
         /// <summary>
+        /// The operation name of the GraphQL request.
+        /// </summary>
+        public const string GraphQLOperationName = "graphql.operation.name";
+
+        /// <summary>
+        /// The operation type of the GraphQL request.
+        /// </summary>
+        public const string GraphQLOperationType = "graphql.operation.type";
+
+        /// <summary>
+        /// The source defining the GraphQL request.
+        /// </summary>
+        public const string GraphQLSource = "graphql.source";
+
+        /// <summary>
         /// The sampling priority for the entire trace.
         /// </summary>
         public const string SamplingPriority = "sampling.priority";
