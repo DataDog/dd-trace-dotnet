@@ -90,6 +90,21 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Fact]
+        public void StringParameterAsObject_WithExplicitTypeSpecified_ProperlyCalls_StringMethod()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            object parameter = string.Empty;
+            var expected = MethodReference.Get(() => instance.Method(string.Empty));
+            var methodResult =
+                Build<Action<object, object>>(expected.Name)
+                   .WithParameters(parameter)
+                   .WithExplicitParameterTypes(typeof(string))
+                   .Build();
+            methodResult.Invoke(instance, parameter);
+            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+        }
+
+        [Fact]
         public void DeclaringTypeGenericParameter_ProperlyCalls_ClosedGenericMethod()
         {
             var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
