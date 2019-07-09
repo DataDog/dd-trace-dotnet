@@ -158,9 +158,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
             if (!requiresBestEffortMatching && _methodBase is MethodInfo info)
             {
                 methodInfo = info;
+                methodInfo = VerifyMethodFromToken(methodInfo);
             }
-            else
+
+            if (methodInfo == null)
             {
+                // mdToken didn't work out, fallback
                 methodInfo = TryFindMethod();
             }
 
@@ -263,6 +266,38 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             dynamicMethod.Return();
             return dynamicMethod.CreateDelegate();
+        }
+
+        private MethodInfo VerifyMethodFromToken(MethodInfo methodInfo)
+        {
+            // Verify baselines to ensure this isn't the wrong method somehow
+            var detailMessage = $"Unexpected method: {_concreteTypeName}.{_methodName} received for mdToken: {_mdToken} in assembly: {_callingAssembly.FullName}";
+
+            if (!string.Equals(_methodName, methodInfo.Name))
+            {
+                Log.Warn($"Method name mismatch: {detailMessage}");
+                return null;
+            }
+
+            if (methodInfo.DeclaringType?.IsAssignableFrom(_concreteType) ?? false)
+            {
+                Log.Warn($"Type mismatch: {detailMessage}");
+                return null;
+            }
+
+            if (!GenericsAreViable(methodInfo))
+            {
+                Log.Warn($"Generics not viable: {detailMessage}");
+                return null;
+            }
+
+            if (!ParametersAreViable(methodInfo))
+            {
+                Log.Warn($"Parameters not viable: {detailMessage}");
+                return null;
+            }
+
+            return methodInfo;
         }
 
         private void ValidateRequirements()
