@@ -158,8 +158,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (!requiresBestEffortMatching && _methodBase is MethodInfo info)
             {
-                methodInfo = info;
-                methodInfo = VerifyMethodFromToken(methodInfo);
+                methodInfo = VerifyMethodFromToken(info);
             }
 
             if (methodInfo == null)
