@@ -131,6 +131,25 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 
+        [Fact]
+        public void WrongMetadataToken_NonSpecificDelegateSignature_GetsCorrectMethodAnyways()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            var wrongMethod = MethodReference.Get(() => instance.Method(1));
+
+            string parameter = string.Empty;
+            var expected = MethodReference.Get(() => instance.Method(parameter));
+
+            var methodResult = MethodBuilder<Action<object, object>> // Proper use should be Action<object, string>
+                              .Start(_thisAssembly, wrongMethod.MetadataToken, (int)OpCodeValue.Callvirt, "Method")
+                              .WithConcreteType(_testType)
+                              .WithParameters(parameter) // The parameter is the saving grace
+                              .Build();
+
+            methodResult.Invoke(instance, parameter);
+            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+        }
+
         private MethodBuilder<T> Build<T>(string methodName, Type overrideType = null)
         {
             return MethodBuilder<T>
