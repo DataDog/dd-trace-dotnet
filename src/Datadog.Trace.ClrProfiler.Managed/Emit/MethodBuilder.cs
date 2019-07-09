@@ -111,7 +111,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 callingModule: _callingAssembly.ManifestModule,
                 mdToken: _mdToken,
                 callOpCode: _opCode,
-                concreteType: _concreteType, // Needed for Generic DeclaringType MethodSpec scenarios
+                concreteType: _concreteType,
+                explicitParameterTypes: _explicitParameterTypes,
                 methodGenerics: _methodGenerics,
                 declaringTypeGenerics: _declaringTypeGenerics);
 
@@ -532,12 +533,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
             public readonly OpCodeValue CallOpCode;
             public readonly string ConcreteTypeName;
             public readonly string GenericSpec;
+            public readonly string ExplicitParams;
 
             public Key(
                 Module callingModule,
                 int mdToken,
                 OpCodeValue callOpCode,
                 Type concreteType,
+                Type[] explicitParameterTypes,
                 Type[] methodGenerics,
                 Type[] declaringTypeGenerics)
             {
@@ -564,6 +567,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     {
                         GenericSpec = string.Concat(GenericSpec, $"_{declaringTypeGenerics[i].FullName}_");
                     }
+                }
+
+                ExplicitParams = string.Empty;
+
+                if (explicitParameterTypes != null)
+                {
+                    ExplicitParams = string.Join("_", explicitParameterTypes.Select(ept => ept.FullName));
                 }
             }
         }
@@ -592,6 +602,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     return false;
                 }
 
+                if (!string.Equals(x.ExplicitParams, y.ExplicitParams))
+                {
+                    return false;
+                }
+
                 if (!string.Equals(x.GenericSpec, y.GenericSpec))
                 {
                     return false;
@@ -610,6 +625,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     hash = (hash * 23) + obj.CallOpCode.GetHashCode();
                     hash = (hash * 23) + obj.ConcreteTypeName.GetHashCode();
                     hash = (hash * 23) + obj.GenericSpec.GetHashCode();
+                    hash = (hash * 23) + obj.ExplicitParams.GetHashCode();
                     return hash;
                 }
             }
