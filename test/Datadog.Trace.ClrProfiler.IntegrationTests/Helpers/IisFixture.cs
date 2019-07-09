@@ -20,9 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     var initialAgentPort = TcpPortProvider.GetOpenPort();
                     Agent = new MockTracerAgent(initialAgentPort);
-
                     HttpPort = TcpPortProvider.GetOpenPort();
-
                     _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort);
                 }
             }
