@@ -279,7 +279,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return null;
             }
 
-            if (methodInfo.DeclaringType?.IsAssignableFrom(_concreteType) ?? false)
+            if (!methodInfo.DeclaringType?.IsAssignableFrom(_concreteType) ?? false)
             {
                 Log.Warn($"Type mismatch: {detailMessage}");
                 return null;
