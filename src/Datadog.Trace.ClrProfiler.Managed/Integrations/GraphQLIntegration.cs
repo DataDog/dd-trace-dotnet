@@ -125,9 +125,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     return validationResult;
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
@@ -212,9 +212,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     var task = (Task<T>)originalMethod(executionStrategy, options);
                     return await task.ConfigureAwait(false);
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
