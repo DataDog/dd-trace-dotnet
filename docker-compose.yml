@@ -1,4 +1,23 @@
 version: '3'
+
+x-test-suite-reqs: &test-suite-reqs
+  environment:
+  - MONGO_HOST=mongo
+  - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+  - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+  - ELASTICSEARCH6_HOST=elasticsearch6:9200
+  - ELASTICSEARCH5_HOST=elasticsearch5:9200
+  - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
+  - POSTGRES_HOST=postgres
+  depends_on:
+  - servicestackredis
+  - stackexchangeredis
+  - elasticsearch6
+  - elasticsearch5
+  - sqlserver
+  - mongo
+  - postgres
+  
 services:
   servicestackredis:
     image: redis:4-alpine
@@ -173,7 +192,7 @@ services:
     depends_on:
     - mongo
 
-  Datadog.Trace.ClrProfiler.IntegrationTests:
+  Datadog.IntegrationTests:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
