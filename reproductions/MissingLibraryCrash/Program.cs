@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.TestHelpers;
@@ -42,6 +43,16 @@ namespace MissingLibraryCrash
                     Console.WriteLine("The managed library is missing.");
                 }
 
+                Console.WriteLine("Time to call some code that we instrument.");
+
+                var baseAddress = new Uri("https://www.example.com/");
+                var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
+
+                var responseTask = regularHttpClient.GetAsync("default-handler");
+                responseTask.Wait();
+
+                Console.WriteLine($"Received a response status of: {responseTask.Result.StatusCode}");
+                Console.WriteLine("We called our HttpClient.");
                 Console.WriteLine("The application didn't crash!");
                 Console.WriteLine("All is well!");
             }
