@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler;
+using SmokeTests.Core;
 
 namespace HttpMessageHandler.StackOverflowException
 {
@@ -54,11 +55,5 @@ namespace HttpMessageHandler.StackOverflowException
             Console.WriteLine("Called base.SendAsync()");
             return result;
         }
-    }
-
-    enum ExitCode : int
-    {
-        Success = 0,
-        UnknownError = -10
     }
 }

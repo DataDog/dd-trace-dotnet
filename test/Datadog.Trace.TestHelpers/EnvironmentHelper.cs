@@ -111,6 +111,11 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeFrameworkDescription.Contains("core");
         }
 
+        public static string GetRuntimeDescription()
+        {
+            return RuntimeFrameworkDescription;
+        }
+
         public static string GetRuntimeIdentifier()
         {
             return IsCoreClr()

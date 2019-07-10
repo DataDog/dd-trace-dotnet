@@ -8,4 +8,8 @@
     <PlatformTarget>$(Platform)</PlatformTarget>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SmokeTests.Core\SmokeTests.Core.csproj" />
+  </ItemGroup>
+
 </Project>

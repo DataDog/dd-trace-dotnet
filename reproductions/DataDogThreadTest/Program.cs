@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using log4net.Core;
+using SmokeTests.Core;
 using Tracer = Datadog.Trace.Tracer;
 
 namespace DataDogThreadTest
@@ -169,12 +170,6 @@ namespace DataDogThreadTest
             var loggingEvents = InMemoryLog4NetLogger.InMemoryAppender.GetEvents();
             var relevantLogEvents = loggingEvents.Where(e => e.RenderedMessage.Contains("TraceId: ")).ToArray();
             return relevantLogEvents;
-        }
-
-        enum ExitCode : int
-        {
-            Success = 0,
-            UnknownError = -10
         }
     }
 }

@@ -6,11 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="log4net" Version="2.0.8" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+      <ProjectReference Include="..\..\test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
       <ProjectReference Include="..\SmokeTests.Core\SmokeTests.Core.csproj" />
     </ItemGroup>
 
