@@ -12,13 +12,7 @@
             "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
             "System.Net.Http.HttpRequestMessage",
             "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 0,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 65535,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
+          ]
         },
         "wrapper": {
           "assembly": "BAD_Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
@@ -37,13 +31,7 @@
             "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
             "System.Net.Http.HttpRequestMessage",
             "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 0,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 65535,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
+          ]
         },
         "wrapper": {
           "assembly": "BAD_Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",

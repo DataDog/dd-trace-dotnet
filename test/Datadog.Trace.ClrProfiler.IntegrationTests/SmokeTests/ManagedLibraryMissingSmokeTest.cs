@@ -1,3 +1,4 @@
+using System.IO;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -7,8 +8,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class ManagedLibraryMissingSmokeTest : SmokeTestBase
     {
         public ManagedLibraryMissingSmokeTest(ITestOutputHelper output)
-            : base(output, "MissingLibraryCrash", maxTestRunSeconds: 20)
+            : base(output, "MissingLibraryCrash", maxTestRunSeconds: 15)
         {
+            var smokeTestOutputPath = EnvironmentHelper.GetSampleApplicationOutputDirectory();
+            var badIntegrationsFile = Path.Combine(smokeTestOutputPath, "bad-integrations.json");
+            IntegrationsFileOverride = badIntegrationsFile;
         }
 
         [Fact]

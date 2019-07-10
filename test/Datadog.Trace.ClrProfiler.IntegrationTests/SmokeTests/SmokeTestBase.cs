@@ -24,6 +24,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 prependSamplesToAppName: false);
         }
 
+        protected string IntegrationsFileOverride { get; set; }
+
         protected ITestOutputHelper Output { get; }
 
         protected EnvironmentHelper EnvironmentHelper { get; }
@@ -34,6 +36,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         protected void CheckForSmoke()
         {
+            if (IntegrationsFileOverride != null)
+            {
+                EnvironmentHelper.SetExplicitIntegrationsFile(IntegrationsFileOverride);
+            }
+
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
             Output.WriteLine($"Application path: {applicationPath}");
             var executable = EnvironmentHelper.GetSampleExecutionSource();

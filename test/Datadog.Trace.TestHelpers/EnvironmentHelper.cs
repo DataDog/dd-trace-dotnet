@@ -212,6 +212,16 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        public void SetExplicitIntegrationsFile(string integrationsFileLocation)
+        {
+            _integrationsFileLocation = integrationsFileLocation;
+
+            if (!File.Exists(_integrationsFileLocation))
+            {
+                throw new Exception($"Explicit integrations file not found at: {_integrationsFileLocation}");
+            }
+        }
+
         public string[] GetIntegrationsFilePaths()
         {
             if (_integrationsFileLocation == null)
