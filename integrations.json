@@ -404,6 +404,35 @@
         "caller": {},
         "target": {
           "assembly": "GraphQL",
+          "type": "GraphQL.Validation.IDocumentValidator",
+          "method": "Validate",
+          "signature_types": [
+            "GraphQL.Validation.IValidationResult",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"
+          ],
+          "minimum_major": 0,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 65535,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.4.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.GraphQLIntegration",
+          "method": "Validate",
+          "signature": "00 09 1C 1C 1C 1C 1C 1C 1C 1C 08 08"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "GraphQL",
           "type": "GraphQL.Execution.IExecutionStrategy",
           "method": "ExecuteAsync",
           "signature_types": [
