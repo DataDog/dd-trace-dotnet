@@ -18,6 +18,8 @@ for config in Debug Release ; do
         dotnet publish -f netcoreapp2.1 -c $config reproductions/$sample/$sample.csproj
     done
 
+	dotnet publish -f netcoreapp2.1 -c $config reproductions/MissingLibraryCrash/MissingLibraryCrash.csproj
+
     dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions
 
     for proj in Datadog.Trace.ClrProfiler.IntegrationTests ; do
