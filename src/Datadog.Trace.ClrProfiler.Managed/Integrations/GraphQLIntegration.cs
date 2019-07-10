@@ -18,10 +18,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "GraphQL";
         private const string ServiceName = "graphql";
 
-        private const string ParseOperationName = "graphql.parse";
+        private const string ParseOperationName = "graphql.parse"; // Instrumentation not yet implemented
         private const string ValidateOperationName = "graphql.validate";
         private const string ExecuteOperationName = "graphql.execute";
-        private const string ResolveOperationName = "graphql.resolve";
+        private const string ResolveOperationName = "graphql.resolve"; // Instrumentation not yet implemented
 
         private const string GraphQLAssemblyName = "GraphQL";
         private const string GraphQLDocumentValidatorInterfaceName = "GraphQL.Validation.IDocumentValidator";
@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            using (var scope = CreateScopeFromValidationInputs(document))
+            using (var scope = CreateScopeFromValidate(document))
             {
                 try
                 {
@@ -113,11 +113,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // Mark the span as an error if the validation failed
                     if (!validationResult.GetProperty<bool>("IsValid").GetValueOrDefault())
                     {
+                        var span = scope.Span;
+                        span.Error = true;
+
                         var errors = validationResult.GetProperty("Errors").GetValueOrDefault();
                         var errorCount = errors.GetProperty<int>("Count").GetValueOrDefault();
 
-                        var span = scope.Span;
-                        span.Error = true;
                         span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
                         span.SetTag(Trace.Tags.ErrorStack, ConstructErrorMessage(errors));
                         span.SetTag(Trace.Tags.ErrorType, "GraphQL.Validation.ValidationError");
@@ -205,7 +206,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object options,
             Func<object, object, object> originalMethod)
         {
-            using (var scope = CreateScopeFromExecutionContext(options))
+            using (var scope = CreateScopeFromExecuteAsync(options))
             {
                 try
                 {
@@ -220,7 +221,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScopeFromValidationInputs(object document)
+        private static Scope CreateScopeFromValidate(object document)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
@@ -255,7 +256,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return scope;
         }
 
-        private static Scope CreateScopeFromExecutionContext(object executionContext)
+        private static Scope CreateScopeFromExecuteAsync(object executionContext)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
