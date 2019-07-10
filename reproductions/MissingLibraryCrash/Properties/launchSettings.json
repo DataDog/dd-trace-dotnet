@@ -7,7 +7,7 @@
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
         "CORECLR_PROFILER_PATH": "$(ProjectDir)$(OutputPath)profiler-lib\\Datadog.Trace.ClrProfiler.Native.dll",
 
-        "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json"
+        "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)bad-integrations.json"
       },
       "nativeDebugging": true
     }

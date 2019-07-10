@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class ManagedLibraryMissingSmokeTest : SmokeTestBase
     {
         public ManagedLibraryMissingSmokeTest(ITestOutputHelper output)
-            : base(output, "MissingLibraryCrash", maxTestRunSeconds: 5)
+            : base(output, "MissingLibraryCrash", maxTestRunSeconds: 20)
         {
         }
 

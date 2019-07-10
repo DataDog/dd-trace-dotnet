@@ -10,4 +10,10 @@
       <ProjectReference Include="..\SmokeTests.Core\SmokeTests.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="bad-integrations.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

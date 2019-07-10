@@ -1,7 +1,8 @@
 using System;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.TestHelpers;
 using SmokeTests.Core;
 
@@ -13,9 +14,11 @@ namespace MissingLibraryCrash
         {
             try
             {
-                var profilerLoaded = Instrumentation.ProfilerAttached;
+                Console.WriteLine("Crash test initiated.");
 
-                if (!profilerLoaded)
+                bool profilerAttached = SmokeTestNativeMethods.IsProfilerAttachedExhaustive();
+
+                if (!profilerAttached)
                 {
                     throw new Exception("The profiler must be attached for this to be a valid test.");
                 }
@@ -29,25 +32,22 @@ namespace MissingLibraryCrash
                     throw new Exception("This test is not valid for anything but Core.");
                 }
 
-                try
-                {
-                    var managedLibrary = Assembly.Load("Datadog.Trace.ClrProfiler.Managed.dll");
+                var badIntegrationsFile = Environment.GetEnvironmentVariable("DD_INTEGRATIONS");
 
-                    if (managedLibrary != null)
-                    {
-                        throw new Exception("This test isn't valid unless we can't load the managed library");
-                    }
-                }
-                catch (Exception ex)
+                var badIntegrationsFileName = System.IO.Path.GetFileName(badIntegrationsFile);
+                var expectedFileName = "bad-integrations.json";
+
+                if (badIntegrationsFileName != expectedFileName)
                 {
-                    Console.WriteLine("The managed library is missing.");
+                    throw new Exception($"Test is not valid without integrations file: {expectedFileName}");
                 }
 
-                Console.WriteLine("Time to call some code that we instrument.");
+                Console.WriteLine($"Using integrations file: {badIntegrationsFile}");
+                Console.WriteLine("Expecting an attempted load from assembly: BAD_Datadog.Trace.ClrProfiler.Managed");
+                Console.WriteLine("Time to call some of our instrumented code.");
 
                 var baseAddress = new Uri("https://www.example.com/");
                 var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
-
                 var responseTask = regularHttpClient.GetAsync("default-handler");
                 responseTask.Wait();
 
