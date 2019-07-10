@@ -59,10 +59,10 @@ namespace MissingLibraryCrash
             catch (Exception ex)
             {
                 Console.Error.WriteLine(ex);
-                return (int)ExitCode.UnknownError;
+                return ExitCode.UnknownError;
             }
 
-            return (int)ExitCode.Success;
+            return ExitCode.Success;
         }
 
     }

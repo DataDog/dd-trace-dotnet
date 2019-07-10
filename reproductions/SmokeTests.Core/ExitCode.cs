@@ -1,8 +1,8 @@
 namespace SmokeTests.Core
 {
-    public enum ExitCode : int
+    public static class ExitCode
     {
-        Success = 0,
-        UnknownError = -10
+        public const int Success = 0;
+        public const int UnknownError = -10;
     }
 }
