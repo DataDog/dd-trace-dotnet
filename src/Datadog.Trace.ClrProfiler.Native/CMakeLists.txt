@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.8)
 cmake_policy(SET CMP0015 NEW)
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 1.4.1)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 1.5.0)
 
 add_compile_options(-std=c++11 -fPIC -fms-extensions)
 add_compile_options(-DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
