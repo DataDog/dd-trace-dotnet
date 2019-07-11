@@ -14,6 +14,8 @@ for config in Debug Release ; do
         dotnet publish -f netcoreapp2.1 -c $config samples/$sample/$sample.csproj
     done
 
+	dotnet publish -f netcoreapp2.1 -c $config reproductions/OrleansCrash/OrleansCrash.csproj
+	
 	dotnet publish -f netcoreapp2.1 -c $config reproductions/DataDogThreadTest/DataDogThreadTest.csproj
 
 	dotnet publish -f netcoreapp2.1 -c $config reproductions/HttpMessageHandler.StackOverflow/HttpMessageHandler.StackOverflow.csproj

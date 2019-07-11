@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -30,14 +31,24 @@ namespace OrleansCrash
             var clientTask = clientHost.RunAsync(tokenSource.Token);
             orleansTasks.Add(clientTask);
 
-            await Task.Delay(3_000, tokenSource.Token); // Give the cluster some time to start I guess
+            await Task.Delay(2_000, tokenSource.Token); // Give the cluster some time to start I guess
 
             var helloWorldClient = clientHost.Services.GetService<IHelloWorldHostedService>();
             var helloGrain = helloWorldClient.GimmeTheGrain();
-            var helloTask = helloGrain.SayHello("Oh, hi Mark!");
-            orleansTasks.Add(helloTask);
 
-            TriggerCancellationAfterThisManySeconds(15, tokenSource);
+            Task<string> hiMark;
+            string response;
+            int weSayHiManyTimes = 5;
+
+            while (weSayHiManyTimes-- > 0)
+            {
+                hiMark = helloGrain.SayHello($"{weSayHiManyTimes} - Oh, hi Mark!");
+                response = await hiMark;
+                Console.WriteLine(response);
+                orleansTasks.Add(hiMark);
+            }
+
+            TriggerCancellationAfterThisManySeconds(5, tokenSource);
 
             await Task.WhenAll(orleansTasks);
 
