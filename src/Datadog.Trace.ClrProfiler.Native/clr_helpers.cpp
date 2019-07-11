@@ -299,6 +299,126 @@ std::vector<IntegrationMethod> FilterIntegrationsByCaller(
   return enabled;
 }
 
+bool IsAssemblyAvailable(
+    const AssemblyReference& wrapper_assembly,
+    const ComPtr<IMetaDataAssemblyImport>& current_assembly_import,
+    const ModuleInfo& module_info) {
+  auto found = false;
+  for (auto& assembly_ref : EnumAssemblyRefs(current_assembly_import)) {
+    const auto metadata_ref =
+        GetReferencedAssemblyMetadata(current_assembly_import, assembly_ref);
+    if (metadata_ref.name == wrapper_assembly.name &&
+        metadata_ref.version == wrapper_assembly.version) {
+      return true;
+    }
+  }
+
+  // TODO: this is the GAC in many windows scenarios
+  // We need to get the app base path from the root assembly
+  WSTRING app_directory;
+  const size_t last_slash_idx = module_info.path.rfind('\\');
+  if (std::string::npos != last_slash_idx) {
+    app_directory = module_info.path.substr(0, last_slash_idx);
+  }
+
+  const auto import_assembly_name = wrapper_assembly.name.c_str();
+
+  // We only care about finding it once
+  // TODO: though, should we worry about multiple versions?
+  const ULONG max_matches = 5;
+  const auto assembly_matches = new IUnknown*[max_matches];
+  ULONG* matching_assembly_count = 0;
+
+  auto hr = current_assembly_import->FindAssembliesByName(
+      app_directory.c_str(), nullptr, import_assembly_name, assembly_matches,
+      max_matches,
+      matching_assembly_count);
+
+  if (FAILED(hr)) {
+    // Can't safely say the assembly is available
+    // return false;
+    // return true for now until we figure things out
+    // currently receiving an INVALID_POINTER result
+    return true;
+  }
+
+  for (ULONG i = 0; i < *matching_assembly_count; i++) {
+    const auto unknown_import = assembly_matches[i];
+
+    if (unknown_import == nullptr) {
+      continue;
+    }
+
+    // IMetaDataAssemblyImport* matching_import;
+    // 
+    // const HRESULT import_hr =
+    //     unknown_import->QueryInterface<IMetaDataAssemblyImport>(
+    //         &matching_import);
+    // 
+    // if (FAILED(import_hr)) {
+    //   // wot happen
+    //   continue;
+    // }
+
+    found = true;
+  }
+
+  return found;
+}
+
+std::vector<IntegrationMethod> FilterIntegrationsByAvailableWrapperAssembly(
+    const std::vector<IntegrationMethod>& integrations,
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+    const ModuleInfo& module_info) {
+  std::vector<IntegrationMethod> enabled_integrations;
+  std::vector<AssemblyReference> available_assembly_cache;
+  std::vector<AssemblyReference> unavailable_assembly_cache;
+
+  for (auto& i : integrations) {
+    auto enabled = false;
+    auto disabled = false;
+    const auto wrapper_assembly = i.replacement.wrapper_method.assembly;
+
+    for (auto&& assembly_ref : available_assembly_cache) {
+      if (wrapper_assembly == assembly_ref) {
+        enabled = true;
+        break;
+      }
+    }
+
+    if (enabled) {
+      enabled_integrations.push_back(i);
+      continue;
+    }
+
+    for (auto&& assembly_ref : unavailable_assembly_cache) {
+      if (wrapper_assembly == assembly_ref) {
+        disabled = true;
+        break;
+      }
+    }
+
+    if (disabled) {
+      Warn(
+          "Integration was not loaded because the wrapper assembly was not found: "_W +
+          i.integration_name);
+      continue;
+    }
+
+    if (IsAssemblyAvailable(wrapper_assembly, assembly_import, module_info)) {
+      available_assembly_cache.push_back(wrapper_assembly);
+      enabled_integrations.push_back(i);
+    } else {
+      unavailable_assembly_cache.push_back(wrapper_assembly);
+      Warn(
+          "Integration was not loaded because the wrapper assembly was not found: "_W +
+          i.integration_name);
+    }
+  }
+
+  return enabled_integrations;
+}
+
 bool AssemblyMeetsIntegrationRequirements(
     const AssemblyMetadata metadata,
     const MethodReplacement method_replacement) {

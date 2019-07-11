@@ -189,21 +189,26 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "System.Runtime"_W,
       "System.IO.FileSystem"_W,
       "System.Collections"_W,
+      "System.EnterpriseServices"_W,
       "System.Runtime.Extensions"_W,
       "System.Threading.Tasks"_W,
       "System.Runtime.InteropServices"_W,
       "System.Runtime.InteropServices.RuntimeInformation"_W,
       "System.ComponentModel"_W,
+      "System.ComponentModel.DataAnnotations"_W,
       "System.Console"_W,
       "System.Diagnostics.DiagnosticSource"_W,
       "Microsoft.Extensions.Options"_W,
       "Microsoft.Extensions.ObjectPool"_W,
       "System.Configuration"_W,
+      "System.Xml"_W,
       "System.Xml.Linq"_W,
+      "System.ValueTuple"_W,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
       "Microsoft.CSharp"_W,
-      "Newtonsoft.Json"_W, 
+      "Newtonsoft.Json"_W,
+      "Remotion.Linq"_W, 
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
 
@@ -253,6 +258,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Debug("ModuleLoadFinished skipping module (filtered by target): ",
+          module_id, " ", module_info.assembly.name);
+    return S_OK;
+  }
+
+  filtered_integrations = FilterIntegrationsByAvailableWrapperAssembly(
+      filtered_integrations, assembly_import, module_info);
+  if (filtered_integrations.empty()) {
+    // we don't need to instrument anything in this module, skip it
+    Debug("ModuleLoadFinished skipping module (filtered by available assemblies): ",
           module_id, " ", module_info.assembly.name);
     return S_OK;
   }

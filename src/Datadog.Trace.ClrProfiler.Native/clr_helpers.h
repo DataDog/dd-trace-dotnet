@@ -6,9 +6,9 @@
 #include <functional>
 #include <utility>
 
+#include <set>
 #include "com_ptr.h"
 #include "integration.h"
-#include <set>
 
 namespace trace {
 class ModuleMetadata;
@@ -307,6 +307,13 @@ std::vector<IntegrationMethod> FlattenIntegrations(
 std::vector<IntegrationMethod> FilterIntegrationsByCaller(
     const std::vector<IntegrationMethod>& integrations,
     const AssemblyInfo assembly);
+
+// FilterIntegrationsByAvailableWrapperAssembly removes any integrations where
+// the wrapper assembly can not be resolved
+std::vector<IntegrationMethod> FilterIntegrationsByAvailableWrapperAssembly(
+    const std::vector<IntegrationMethod>& integrations,
+    const ComPtr<IMetaDataAssemblyImport>& assembly_import,
+    const ModuleInfo& module_info);
 
 // FilterIntegrationsByTarget removes any integrations which have a target not
 // referenced by the module's assembly import
