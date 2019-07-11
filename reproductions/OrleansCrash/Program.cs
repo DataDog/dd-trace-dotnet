@@ -22,7 +22,7 @@ namespace OrleansCrash
 
             var tokenSource = new CancellationTokenSource();
 
-            var serverHost = BuildServerHost();
+            var serverHost = BuildClusterHost();
             var hostingTask = serverHost.RunAsync(tokenSource.Token);
             orleansTasks.Add(hostingTask);
 
@@ -30,7 +30,14 @@ namespace OrleansCrash
             var clientTask = clientHost.RunAsync(tokenSource.Token);
             orleansTasks.Add(clientTask);
 
-            TriggerCancellationAfterThisManySeconds(30, tokenSource);
+            await Task.Delay(3_000, tokenSource.Token); // Give the cluster some time to start I guess
+
+            var helloWorldClient = clientHost.Services.GetService<IHelloWorldHostedService>();
+            var helloGrain = helloWorldClient.GimmeTheGrain();
+            var helloTask = helloGrain.SayHello("Oh, hi Mark!");
+            orleansTasks.Add(helloTask);
+
+            TriggerCancellationAfterThisManySeconds(15, tokenSource);
 
             await Task.WhenAll(orleansTasks);
 
@@ -44,7 +51,7 @@ namespace OrleansCrash
             return 0;
         }
 
-        private static IHost BuildServerHost()
+        private static IHost BuildClusterHost()
         {
             var hostBuilder =
                 new HostBuilder()
@@ -105,7 +112,9 @@ namespace OrleansCrash
                             services.AddSingleton<IHostedService>(_ => _.GetService<ClusterClientHostedService>());
                             services.AddSingleton(_ => _.GetService<ClusterClientHostedService>().Client);
 
-                            services.AddHostedService<HelloWorldClientHostedService>();
+                            // services.AddHostedService<HelloWorldClientHostedService>();
+                            services.AddSingleton<HelloWorldClientHostedService>();
+                            services.AddSingleton<IHelloWorldHostedService>(_ => _.GetService<HelloWorldClientHostedService>());
 
                             services.Configure<ConsoleLifetimeOptions>(
                                 options =>

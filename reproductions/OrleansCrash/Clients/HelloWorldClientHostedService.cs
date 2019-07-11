@@ -6,7 +6,7 @@ using Orleans;
 
 namespace OrleansCrash.Clients
 {
-    public class HelloWorldClientHostedService : IHostedService
+    public class HelloWorldClientHostedService : IHelloWorldHostedService
     {
         private readonly IClusterClient _client;
 
@@ -18,7 +18,7 @@ namespace OrleansCrash.Clients
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             // example of calling grains from the initialized client
-            var friend = _client.GetGrain<Grains.IHello>(0);
+            var friend = GimmeTheGrain();
             var response = await friend.SayHello("Good morning, my friend!");
             Console.WriteLine("\n\n{0}\n\n", response);
         }
@@ -26,6 +26,11 @@ namespace OrleansCrash.Clients
         public Task StopAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
+        }
+
+        public Grains.IHello GimmeTheGrain()
+        {
+            return _client.GetGrain<Grains.IHello>(0);
         }
     }
 }
