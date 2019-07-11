@@ -23,6 +23,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public Func<MockTracerAgent.Span, List<string>> CustomAssertion { get; set; }
 
+        public virtual bool IsSimpleMatch(MockTracerAgent.Span span)
+        {
+            return span.Resource == ResourceName
+                && span.Name == OperationName
+                && span.Type == Type;
+        }
+
         public virtual bool IsMatch(MockTracerAgent.Span span, out string message)
         {
             var mismatches = new List<string>();
@@ -72,12 +79,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return !mismatches.Any();
         }
 
-        private string FailureMessage(string name, string actual, string expected)
+        protected string FailureMessage(string name, string actual, string expected)
         {
             return $"({name} mismatch: actual: {actual ?? "NULL"}, expected: {expected ?? "NULL"})";
         }
 
-        private string GetTag(MockTracerAgent.Span span, string tag)
+        protected string GetTag(MockTracerAgent.Span span, string tag)
         {
             if (span.Tags.ContainsKey(tag))
             {
