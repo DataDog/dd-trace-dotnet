@@ -408,12 +408,12 @@
           "method": "Validate",
           "signature_types": [
             "GraphQL.Validation.IValidationResult",
+            "System.String",
+            "GraphQL.Types.ISchema",
+            "GraphQL.Language.AST.Document",
+            "System.Collections.Generic.IEnumerable`1<GraphQL.Validation.IValidationRule>",
             "_",
-            "_",
-            "_",
-            "_",
-            "_",
-            "_"
+            "GraphQL.Inputs"
           ],
           "minimum_major": 0,
           "minimum_minor": 0,
@@ -437,7 +437,7 @@
           "method": "ExecuteAsync",
           "signature_types": [
             "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
-            "_"
+            "GraphQL.Execution.ExecutionContext"
           ],
           "minimum_major": 0,
           "minimum_minor": 0,

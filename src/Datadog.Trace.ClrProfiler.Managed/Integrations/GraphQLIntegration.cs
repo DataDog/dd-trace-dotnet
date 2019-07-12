@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = GraphQLAssemblyName,
             TargetType = GraphQLDocumentValidatorInterfaceName,
-            TargetSignatureTypes = new[] { GraphQLValidationResultInterfaceName, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore, ClrNames.Ignore })]
+            TargetSignatureTypes = new[] { GraphQLValidationResultInterfaceName, ClrNames.String, "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1<GraphQL.Validation.IValidationRule>", ClrNames.Ignore, "GraphQL.Inputs" })]
         public static object Validate(
             object documentValidator,
             object originalQuery,
@@ -145,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = GraphQLAssemblyName,
             TargetType = GraphQLExecutionStrategyInterfaceName,
-            TargetSignatureTypes = new[] { TaskOfGraphQLExecutionResult, ClrNames.Ignore })]
+            TargetSignatureTypes = new[] { TaskOfGraphQLExecutionResult, "GraphQL.Execution.ExecutionContext" })]
         public static object ExecuteAsync(object executionStrategy, object context, int opCode, int mdToken)
         {
             if (executionStrategy == null) { throw new ArgumentNullException(nameof(executionStrategy)); }
