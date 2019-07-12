@@ -109,21 +109,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     var validationResult = instrumentedMethod(documentValidator, originalQuery, schema, document, rules, userContext, inputs);
-
-                    // Mark the span as an error if the validation failed
-                    if (!validationResult.GetProperty<bool>("IsValid").GetValueOrDefault())
-                    {
-                        var span = scope.Span;
-                        span.Error = true;
-
-                        var errors = validationResult.GetProperty("Errors").GetValueOrDefault();
-                        var errorCount = errors.GetProperty<int>("Count").GetValueOrDefault();
-
-                        span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
-                        span.SetTag(Trace.Tags.ErrorStack, ConstructErrorMessage(errors));
-                        span.SetTag(Trace.Tags.ErrorType, "GraphQL.Validation.ValidationError");
-                    }
-
+                    RecordExecutionErrorsIfPresent(scope.Span, validationResult.GetProperty("Errors").GetValueOrDefault(), "GraphQL.Validation.ValidationError");
                     return validationResult;
                 }
                 catch (Exception ex)
@@ -211,7 +197,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     var task = (Task<T>)originalMethod(executionStrategy, options);
-                    return await task.ConfigureAwait(false);
+                    var executionResult = await task.ConfigureAwait(false);
+                    RecordExecutionErrorsIfPresent(scope.Span, executionResult.GetProperty("Errors").GetValueOrDefault(), "GraphQL.ExecutionError");
+                    return executionResult;
                 }
                 catch (Exception ex)
                 {
@@ -299,6 +287,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             return scope;
+        }
+
+        private static void RecordExecutionErrorsIfPresent(Span span, object executionErrors, string errorType)
+        {
+            var errorCount = executionErrors.GetProperty<int>("Count").GetValueOrDefault();
+
+            if (errorCount > 0)
+            {
+                span.Error = true;
+
+                span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
+                span.SetTag(Trace.Tags.ErrorStack, ConstructErrorMessage(executionErrors));
+                span.SetTag(Trace.Tags.ErrorType, errorType);
+            }
         }
 
         private static string ConstructErrorMessage(dynamic errors)
