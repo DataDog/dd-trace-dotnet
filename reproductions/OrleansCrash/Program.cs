@@ -19,43 +19,64 @@ namespace OrleansCrash
     {
         public static async Task<int> Main(string[] args)
         {
-            var orleansTasks = new List<Task>();
-
-            var tokenSource = new CancellationTokenSource();
-
-            var serverHost = BuildClusterHost();
-            var hostingTask = serverHost.RunAsync(tokenSource.Token);
-            orleansTasks.Add(hostingTask);
-
-            var clientHost = BuildClientHost();
-            var clientTask = clientHost.RunAsync(tokenSource.Token);
-            orleansTasks.Add(clientTask);
-
-            await Task.Delay(2_000, tokenSource.Token); // Give the cluster some time to start I guess
-
-            var helloWorldClient = clientHost.Services.GetService<IHelloWorldHostedService>();
-            var helloGrain = helloWorldClient.GimmeTheGrain();
-
-            Task<string> hiMark;
-            string response;
-            int weSayHiManyTimes = 5;
-
-            while (weSayHiManyTimes-- > 0)
+            try
             {
-                hiMark = helloGrain.SayHello($"{weSayHiManyTimes} - Oh, hi Mark!");
-                response = await hiMark;
-                Console.WriteLine(response);
-                orleansTasks.Add(hiMark);
+                var orleansTasks = new List<Task>();
+
+                var tokenSource = new CancellationTokenSource();
+
+                Console.WriteLine("Starting the orleans cluster.");
+
+                var serverHost = BuildClusterHost();
+                var hostingTask = serverHost.RunAsync(tokenSource.Token);
+                orleansTasks.Add(hostingTask);
+
+                Console.WriteLine("Starting the orleans client.");
+
+                var clientHost = BuildClientHost();
+                var clientTask = clientHost.RunAsync(tokenSource.Token);
+                orleansTasks.Add(clientTask);
+
+                await Task.Delay(2_000, tokenSource.Token); // Give the cluster some time to start I guess
+
+                Console.WriteLine("Grabbing an orleans singleton service.");
+                var helloWorldClient = clientHost.Services.GetService<IHelloWorldHostedService>();
+                var helloGrain = helloWorldClient.GimmeTheGrain();
+
+                Task<string> hiMark;
+                string response;
+                int weSayHiManyTimes = 5;
+
+                Console.WriteLine($"Calling the service {weSayHiManyTimes} times.");
+                while (weSayHiManyTimes-- > 0)
+                {
+                    hiMark = helloGrain.SayHello($"{weSayHiManyTimes} - Oh, hi Mark!");
+                    response = await hiMark;
+                    Console.WriteLine(response);
+                    orleansTasks.Add(hiMark);
+                }
+
+                TriggerCancellationAfterThisManySeconds(10, tokenSource);
+
+                while (!tokenSource.IsCancellationRequested)
+                {
+                    await Task.Delay(1000);
+                }
+
+                var aggregateTask = Task.WhenAll(orleansTasks);
+
+                var faultedTasks = orleansTasks.Where(t => t.IsFaulted).ToList();
+
+                if (faultedTasks.Any())
+                {
+                    throw aggregateTask.Exception ?? new Exception("Something went wrong.");
+                }
+
             }
-
-            TriggerCancellationAfterThisManySeconds(5, tokenSource);
-
-            await Task.WhenAll(orleansTasks);
-
-            var faultedTasks = orleansTasks.Where(t => t.IsFaulted).ToList();
-
-            if (faultedTasks.Any())
+            catch (Exception ex)
             {
+                Console.WriteLine($"We have encountered an exception, the smoke test fails: {ex.Message}");
+                Console.Error.WriteLine(ex);
                 return -10;
             }
 

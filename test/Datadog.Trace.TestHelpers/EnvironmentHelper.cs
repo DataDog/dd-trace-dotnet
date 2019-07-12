@@ -162,16 +162,17 @@ namespace Datadog.Trace.TestHelpers
             StringDictionary environmentVariables)
         {
             var processName = processPath;
+            var profilerEnabled = "1";
 
             if (IsCoreClr())
             {
-                environmentVariables["CORECLR_ENABLE_PROFILING"] = "1";
+                environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["CORECLR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
                 environmentVariables["CORECLR_PROFILER_PATH"] = GetProfilerPath();
             }
             else
             {
-                environmentVariables["COR_ENABLE_PROFILING"] = "1";
+                environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["COR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
                 environmentVariables["COR_PROFILER_PATH"] = GetProfilerPath();
 

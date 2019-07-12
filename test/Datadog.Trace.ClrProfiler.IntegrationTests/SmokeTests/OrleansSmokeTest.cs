@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class OrleansSmokeTest : SmokeTestBase
     {
         public OrleansSmokeTest(ITestOutputHelper output)
-            : base(output, "OrleansCrash", maxTestRunSeconds: 30)
+            : base(output, "OrleansCrash", maxTestRunSeconds: 40)
         {
         }
 
