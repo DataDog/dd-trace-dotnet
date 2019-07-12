@@ -257,6 +257,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     }
 
     if (!should_instrument) {
+    if (should_instrument) {
       // time to check the explicit bans
       for (auto&& skip_assembly : explicitly_banned_assemblies) {
         if (module_info.assembly.name == skip_assembly) {
