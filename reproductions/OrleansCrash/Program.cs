@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -72,6 +73,11 @@ namespace OrleansCrash
                     throw aggregateTask.Exception ?? new Exception("Something went wrong.");
                 }
 
+                // var allAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+                // var assemblyNames = allAssemblies.OrderBy(a => a.FullName).Select(a => a.FullName).ToList();
+                // var currentDirectory = Directory.GetCurrentDirectory();
+                // var outputPath = Path.Combine(currentDirectory, "orleans-libraries.txt");
+                // File.WriteAllText(outputPath, string.Join(Environment.NewLine, assemblyNames));
             }
             catch (Exception ex)
             {

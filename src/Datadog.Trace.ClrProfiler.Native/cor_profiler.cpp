@@ -214,8 +214,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                              "System.Transactions"_W,
                                              "System.Diagnostics"_W,
                                              "System.Memory"_W,
-                                             // "System.Net"_W,
-                                             // "System.Web"_W,
+                                             // "System.Net"_W, // TODO: disable this when we know we have the explicit assemblies
+                                             // "System.Web"_W, // TODO: disable this when we know we have the explicit assemblies
                                              "System.Threading"_W,
                                              "System.ComponentModel"_W,
                                              "System.ObjectModel"_W,
@@ -223,12 +223,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                              "System.AppContext"_W};
 
   WSTRING explicitly_allowed_assemblies[]{
-    "Microsoft.AspNetCore.Http.Abstractions"_W, 
-    "System.Web.Http"_W,
-    "System.Web.Mvc"_W,
-    "System.Net.Http"_W,
-    "System.Net.WebRequest."_W,
-    "System.ServiceModel"_W};
+      "Microsoft.AspNetCore.Http.Abstractions"_W,
+      "System.Net.Requests"_W,
+      "System.Net.HttpListener"_W,
+      "System.Net.WebClient"_W,
+      "System.Net.Mail"_W,
+      "System.Net.WebSockets.Client"_W,
+      "System.Net.Http"_W,
+      "System.Net.WebRequest"_W,
+      "System.Web.Http"_W,
+      "System.Web.Mvc"_W,
+      "System.ServiceModel"_W};
 
   bool should_instrument = true;
   bool is_explicitly_allowed = false;
@@ -345,14 +350,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     }
 
     if (assembly_needs_ref_emit) {
+      // TODO: The problem in OrleansCrash is in this code being called even once
       // for each wrapper assembly, emit an assembly reference
-      hr = metadata_builder.EmitAssemblyRef(
-          integration.replacement.wrapper_method.assembly);
-      if (FAILED(hr)) {
-        Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
-             module_id, " ", module_info.assembly.name);
-        return S_OK;
-      }
+      // hr = metadata_builder.EmitAssemblyRef(
+      //     integration.replacement.wrapper_method.assembly);
+      // if (FAILED(hr)) {
+      //   Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
+      //        module_id, " ", module_info.assembly.name);
+      //   return S_OK;
+      // }
       emitted_assembly_refs.push_back(
           integration.replacement.wrapper_method.assembly);
     }
@@ -466,7 +472,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
 
-  // hr = rewriter.Initialize();
   hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
