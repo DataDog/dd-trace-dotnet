@@ -174,46 +174,103 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // We must never try to add assembly references to
   // mscorlib or netstandard. Skip other known assemblies.
-  WSTRING skip_assemblies[]{
+  WSTRING explicitly_banned_assemblies[]{
       "mscorlib"_W,
       "netstandard"_W,
-      "Datadog.Trace"_W,
-      "Datadog.Trace.ClrProfiler.Managed"_W,
-      "MsgPack"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers2"_W,
-      "Sigil"_W,
-      "Sigil.Emit.DynamicAssembly"_W,
-      "System.Core"_W,
-      "System.Runtime"_W,
-      "System.IO.FileSystem"_W,
-      "System.Collections"_W,
-      "System.Runtime.Extensions"_W,
-      "System.Threading.Tasks"_W,
-      "System.Runtime.InteropServices"_W,
-      "System.Runtime.InteropServices.RuntimeInformation"_W,
-      "System.Runtime.InteropServices.PInvoke"_W,
-      "System.ComponentModel"_W,
-      "System.Console"_W,
-      "System.Diagnostics.DiagnosticSource"_W,
+      "coreclr"_W,
       "Microsoft.Extensions.Options"_W,
       "Microsoft.Extensions.ObjectPool"_W,
-      "System.Configuration"_W,
-      "System.Xml.Linq"_W,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
       "Microsoft.CSharp"_W,
-      "Newtonsoft.Json"_W,
       "Anonymously Hosted DynamicMethods Assembly"_W,
-      "ISymWrapper"_W};
+      "ISymWrapper"_W,
+  };
 
-  for (auto&& skip_assembly : skip_assemblies) {
-    if (module_info.assembly.name == skip_assembly) {
-      Debug("ModuleLoadFinished skipping known module: ", module_id, " ",
-            module_info.assembly.name);
-      return S_OK;
+  WSTRING banned_assemblies_that_begin_with[]{"Datadog.Trace"_W,
+                                             "Newtonsoft"_W,
+                                             "MsgPack"_W,
+                                             "Orleans"_W,
+                                             "Sigil"_W,
+                                             "ILFieldBuilder"_W,
+                                             "Microsoft.Extensions"_W,
+                                             "Microsoft.DotNet"_W,
+                                             "Microsoft.Win32"_W,
+                                             "System.Configuration"_W,
+                                             "System.Runtime"_W,
+                                             "System.Reflection"_W,
+                                             "System.Private"_W,
+                                             "System.Collections"_W,
+                                             "System.Core"_W,
+                                             "System.Console"_W,
+                                             "System.Numerics"_W,
+                                             "System.Resources"_W,
+                                             "System.Text"_W,
+                                             "System.Security"_W,
+                                             "System.IO"_W,
+                                             "System.Buffers"_W,
+                                             "System.Drawing"_W,
+                                             "System.Code"_W,
+                                             "System.Linq"_W,
+                                             "System.Buffers"_W,
+                                             "System.Diagnostics"_W,
+                                             "System.Transactions"_W,
+                                             "System.Diagnostics"_W,
+                                             "System.Memory"_W,
+                                             "System.Net"_W,
+                                             "System.Threading"_W,
+                                             "System.ComponentModel"_W,
+                                             "System.ObjectModel"_W,
+                                             "System.Xml"_W,
+                                             "System.AppContext"_W};
+
+  WSTRING explicitly_allowed_assemblies[]{
+    "System.Net.Http"_W, 
+    "System.Net.WebRequest."_W,
+    "System.ServiceModel"_W};
+
+  bool should_instrument = true;
+  bool is_explicitly_allowed = false;
+
+  for (auto&& always_allow : explicitly_allowed_assemblies) {
+    if (module_info.assembly.name == always_allow) {
+      is_explicitly_allowed = true;
+      break;
     }
+  }
+
+  if (!is_explicitly_allowed) {
+    // It's not explicitly allowed, so we need to check the ban lists
+    for (auto&& assembly_name_start : banned_assemblies_that_begin_with) {
+      auto match_length = assembly_name_start.length();
+      if (match_length > module_info.assembly.name.length()) {
+        continue;
+      }
+
+      auto possible_match = module_info.assembly.name.substr(0, match_length);
+
+      if (possible_match == assembly_name_start) {
+        // this module starts with a wildcard we have ban hammered
+        should_instrument = false;
+        break;
+      }
+    }
+
+    if (!should_instrument) {
+      // time to check the explicit bans
+      for (auto&& skip_assembly : explicitly_banned_assemblies) {
+        if (module_info.assembly.name == skip_assembly) {
+          should_instrument = false;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!should_instrument) {
+    Debug("ModuleLoadFinished skipping known module: ", module_id, " ",
+          module_info.assembly.name);
+    return S_OK;
   }
 
   std::vector<IntegrationMethod> filtered_integrations =
@@ -274,14 +331,29 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                          metadata_import, metadata_emit,
                                          assembly_import, assembly_emit);
 
+  std::vector<AssemblyReference> emitted_assembly_refs;
+
   for (const auto& integration : filtered_integrations) {
-    // for each wrapper assembly, emit an assembly reference
-    hr = metadata_builder.EmitAssemblyRef(
-        integration.replacement.wrapper_method.assembly);
-    if (FAILED(hr)) {
-      Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
-           module_id, " ", module_info.assembly.name);
-      return S_OK;
+    bool assembly_needs_ref_emit = true;
+
+    for (const auto& emission : emitted_assembly_refs) {
+      if (emission == integration.replacement.wrapper_method.assembly) {
+        assembly_needs_ref_emit = false;
+        break;
+      }
+    }
+
+    if (assembly_needs_ref_emit) {
+      // for each wrapper assembly, emit an assembly reference
+      hr = metadata_builder.EmitAssemblyRef(
+          integration.replacement.wrapper_method.assembly);
+      if (FAILED(hr)) {
+        Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
+             module_id, " ", module_info.assembly.name);
+        return S_OK;
+      }
+      emitted_assembly_refs.push_back(
+          integration.replacement.wrapper_method.assembly);
     }
 
     // for each method replacement in each enabled integration,
