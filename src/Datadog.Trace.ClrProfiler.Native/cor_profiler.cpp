@@ -178,10 +178,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "mscorlib"_W,
       "netstandard"_W,
       "coreclr"_W,
-      "Microsoft.Extensions.Options"_W,
-      "Microsoft.Extensions.ObjectPool"_W,
-      "Microsoft.AspNetCore.Razor.Language"_W,
-      "Microsoft.AspNetCore.Mvc.RazorPages"_W,
       "Microsoft.CSharp"_W,
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W,
@@ -190,10 +186,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   WSTRING banned_assemblies_that_begin_with[]{"Datadog.Trace"_W,
                                              "Newtonsoft"_W,
                                              "MsgPack"_W,
-                                             "Orleans"_W,
+                                             "Orleans."_W, // Why does this crash us???
                                              "Sigil"_W,
                                              "ILFieldBuilder"_W,
                                              "Microsoft.Extensions"_W,
+                                             "Microsoft.AspNetCore."_W,
                                              "Microsoft.DotNet"_W,
                                              "Microsoft.Win32"_W,
                                              "System.Configuration"_W,
@@ -217,7 +214,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                              "System.Transactions"_W,
                                              "System.Diagnostics"_W,
                                              "System.Memory"_W,
-                                             "System.Net"_W,
+                                             // "System.Net"_W,
+                                             // "System.Web"_W,
                                              "System.Threading"_W,
                                              "System.ComponentModel"_W,
                                              "System.ObjectModel"_W,
@@ -225,7 +223,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                              "System.AppContext"_W};
 
   WSTRING explicitly_allowed_assemblies[]{
-    "System.Net.Http"_W, 
+    "Microsoft.AspNetCore.Http.Abstractions"_W, 
+    "System.Web.Http"_W,
+    "System.Web.Mvc"_W,
+    "System.Net.Http"_W,
     "System.Net.WebRequest."_W,
     "System.ServiceModel"_W};
 
@@ -256,7 +257,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       }
     }
 
-    if (!should_instrument) {
     if (should_instrument) {
       // time to check the explicit bans
       for (auto&& skip_assembly : explicitly_banned_assemblies) {
