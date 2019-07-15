@@ -203,7 +203,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
       "Microsoft.CSharp"_W,
-      "Newtonsoft.Json"_W,
+      "Newtonsoft.Json"_W, 
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
 
