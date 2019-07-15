@@ -30,10 +30,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _expectedGraphQLValidateSpanCount = 0;
             _expectedGraphQLExecuteSpanCount = 0;
 
+            // SUCCESS: query using GET
             CreateGraphQLRequestsAndExpectations(url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", graphQLRequestBody: null, graphQLOperationType: "Query", graphQLOperationName: null, graphQLSource: "query{hero{name appearsIn} }");
+
+            // SUCCESS: query using POST (default)
             CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""query HeroQuery{hero {name appearsIn}}"",""operationName"": ""HeroQuery""}", graphQLOperationType: "Query", graphQLOperationName: "HeroQuery", graphQLSource: "query HeroQuery{hero{name appearsIn}}");
+
+            // SUCCESS: mutation
             CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}", graphQLOperationType: "Mutation", graphQLOperationName: "AddBobaFett", graphQLSource: "mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}");
+
+            // SUCCESS: subscription
+            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""subscription HumanAddedSub{humanAdded{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "HumanAddedSub", graphQLSource: "subscription HumanAddedSub{humanAdded{name}}");
+
+            // TODO: When parse is implemented, add a test that fails 'parse'
+
+            // FAILURE: query fails validation step
             CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", graphQLOperationType: "Query", graphQLOperationName: null, passesValidation: false, graphQLSource: "query HumanError{human(id:1){name apearsIn}}");
+
+            // FAILURE: query fails execution step
+
+            // TODO: When parse is implemented, add a test that fails 'resolve'
         }
 
         public GraphQLTests(ITestOutputHelper output)
@@ -107,6 +123,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string graphQLOperationName,
             string graphQLSource,
             bool passesValidation = true,
+            bool passesExecution = true,
             Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
         {
             _requests.Add(new RequestInfo()
@@ -129,6 +146,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 GraphQLOperationType = graphQLOperationType,
                 GraphQLOperationName = graphQLOperationName,
                 GraphQLSource = graphQLSource,
+                IsGraphQLError = !passesValidation,
             });
             _expectedGraphQLValidateSpanCount++;
 
@@ -147,6 +165,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     GraphQLOperationType = graphQLOperationType,
                     GraphQLOperationName = graphQLOperationName,
                     GraphQLSource = graphQLSource,
+                    IsGraphQLError = !passesExecution,
                 });
                 _expectedGraphQLExecuteSpanCount++;
             }

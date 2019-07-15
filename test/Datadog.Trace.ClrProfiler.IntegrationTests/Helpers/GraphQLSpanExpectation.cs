@@ -15,10 +15,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public string GraphQLSource { get; set; }
 
+        public bool IsGraphQLError { get; set; }
+
         public override bool IsSimpleMatch(MockTracerAgent.Span span)
         {
             return span.Name == OperationName
                 && span.Type == Type
+                && !string.IsNullOrEmpty(GetTag(span, Tags.ErrorMsg)) == IsGraphQLError
                 && SourceStringsAreEqual(GetTag(span, Tags.GraphQLSource), GraphQLSource);
         }
 
@@ -39,6 +42,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (span.Type != Type)
             {
                 mismatches.Add(FailureMessage(nameof(Type), actual: span.Type, expected: Type));
+            }
+
+            var spanIsError = !string.IsNullOrEmpty(GetTag(span, Tags.ErrorMsg));
+
+            if (spanIsError != IsGraphQLError)
+            {
+                mismatches.Add(FailureMessage(nameof(IsGraphQLError), actual: spanIsError.ToString(), expected: IsGraphQLError.ToString()));
             }
 
             var actualSource = GetTag(span, Tags.GraphQLSource);
