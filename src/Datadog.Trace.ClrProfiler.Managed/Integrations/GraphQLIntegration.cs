@@ -189,16 +189,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static async Task<T> CallGraphQLExecuteAsyncInternal<T>(
             object executionStrategy,
-            object options,
+            object executionContext,
             Func<object, object, object> originalMethod)
         {
-            using (var scope = CreateScopeFromExecuteAsync(options))
+            using (var scope = CreateScopeFromExecuteAsync(executionContext))
             {
                 try
                 {
-                    var task = (Task<T>)originalMethod(executionStrategy, options);
+                    var task = (Task<T>)originalMethod(executionStrategy, executionContext);
                     var executionResult = await task.ConfigureAwait(false);
-                    RecordExecutionErrorsIfPresent(scope.Span, "GraphQL.ExecutionError", executionResult.GetProperty("Errors").GetValueOrDefault());
+                    RecordExecutionErrorsIfPresent(scope.Span, "GraphQL.ExecutionError", executionContext.GetProperty("Errors").GetValueOrDefault());
                     return executionResult;
                 }
                 catch (Exception ex)

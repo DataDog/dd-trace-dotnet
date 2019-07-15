@@ -34,6 +34,13 @@ namespace Samples.GraphQL.StarWarsExtensions
                 Resolver = new FuncFieldResolver<Human>(ResolveMessage),
                 Subscriber = new EventStreamResolver<Human>(Subscribe)
             });
+            AddField(new EventStreamFieldType
+            {
+                Name = "throwNotImplementedException",
+                Type = typeof(HumanType),
+                Resolver = new FuncFieldResolver<Human>(ResolveMessage),
+                Subscriber = new EventStreamResolver<Human>(ThrowNotImplementedException)
+            });
         }
 
         private Human ResolveMessage(ResolveFieldContext context)
@@ -62,6 +69,11 @@ namespace Samples.GraphQL.StarWarsExtensions
             }
 
             return listOfHumans.ToObservable();
+        }
+
+        private IObservable<Human> ThrowNotImplementedException(ResolveEventStreamContext context)
+        {
+            throw new NotImplementedException("This API purposely throws a NotImplementedException");
         }
     }
 }

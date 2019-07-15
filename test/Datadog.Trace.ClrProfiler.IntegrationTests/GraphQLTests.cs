@@ -42,14 +42,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // SUCCESS: subscription
             CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""subscription HumanAddedSub{humanAdded{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "HumanAddedSub", graphQLSource: "subscription HumanAddedSub{humanAdded{name}}");
 
-            // TODO: When parse is implemented, add a test that fails 'parse'
+            // TODO: When parse is implemented, add a test that fails 'parse' step
 
-            // FAILURE: query fails validation step
+            // FAILURE: query fails 'validate' step
             CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", graphQLOperationType: "Query", graphQLOperationName: null, passesValidation: false, graphQLSource: "query HumanError{human(id:1){name apearsIn}}");
 
-            // FAILURE: query fails execution step
+            // FAILURE: query fails 'execute' step
+            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "NotImplementedSub", graphQLSource: "subscription NotImplementedSub{throwNotImplementedException{name}}", passesExecution: false);
 
-            // TODO: When parse is implemented, add a test that fails 'resolve'
+            // TODO: When parse is implemented, add a test that fails 'resolve' step
         }
 
         public GraphQLTests(ITestOutputHelper output)
