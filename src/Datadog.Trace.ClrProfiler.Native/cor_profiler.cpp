@@ -183,44 +183,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "ISymWrapper"_W,
   };
 
-  WSTRING banned_assemblies_that_begin_with[]{"Datadog.Trace"_W,
-                                             "Newtonsoft"_W,
-                                             "MsgPack"_W,
-                                             "Orleans."_W, // Why does this crash us???
-                                             "Sigil"_W,
-                                             "ILFieldBuilder"_W,
-                                             "Microsoft.Extensions"_W,
-                                             "Microsoft.AspNetCore."_W,
-                                             "Microsoft.DotNet"_W,
-                                             "Microsoft.Win32"_W,
-                                             "System.Configuration"_W,
-                                             "System.Runtime"_W,
-                                             "System.Reflection"_W,
-                                             "System.Private"_W,
-                                             "System.Collections"_W,
-                                             "System.Core"_W,
-                                             "System.Console"_W,
-                                             "System.Numerics"_W,
-                                             "System.Resources"_W,
-                                             "System.Text"_W,
-                                             "System.Security"_W,
-                                             "System.IO"_W,
-                                             "System.Buffers"_W,
-                                             "System.Drawing"_W,
-                                             "System.Code"_W,
-                                             "System.Linq"_W,
-                                             "System.Buffers"_W,
-                                             "System.Diagnostics"_W,
-                                             "System.Transactions"_W,
-                                             "System.Diagnostics"_W,
-                                             "System.Memory"_W,
-                                             // "System.Net"_W, // TODO: disable this when we know we have the explicit assemblies
-                                             // "System.Web"_W, // TODO: disable this when we know we have the explicit assemblies
-                                             "System.Threading"_W,
-                                             "System.ComponentModel"_W,
-                                             "System.ObjectModel"_W,
-                                             "System.Xml"_W,
-                                             "System.AppContext"_W};
+  WSTRING banned_assemblies_that_begin_with[]{
+      "Datadog.Trace"_W, "Newtonsoft"_W, "MsgPack"_W,
+      "Orleans."_W,  // Why does this crash us???
+      "Sigil"_W, "ILFieldBuilder"_W, "Microsoft.Extensions"_W,
+      "Microsoft.AspNetCore."_W, "Microsoft.DotNet"_W, "Microsoft.Win32"_W,
+      "System.Configuration"_W, "System.Runtime"_W, "System.Reflection"_W,
+      "System.Private"_W, "System.Collections"_W, "System.Core"_W,
+      "System.Console"_W, "System.Numerics"_W, "System.Resources"_W,
+      "System.Text"_W, "System.Security"_W, "System.IO"_W, "System.Buffers"_W,
+      "System.Drawing"_W, "System.Code"_W, "System.Linq"_W, "System.Buffers"_W,
+      "System.Diagnostics"_W, "System.Transactions"_W, "System.Diagnostics"_W,
+      "System.Memory"_W,
+      // "System.Net"_W, // TODO: disable this when we know we have the explicit
+      // assemblies "System.Web"_W, // TODO: disable this when we know we have
+      // the explicit assemblies
+      "System.Threading"_W, "System.ComponentModel"_W, "System.ObjectModel"_W,
+      "System.Xml"_W, "System.AppContext"_W};
 
   WSTRING explicitly_allowed_assemblies[]{
       "Microsoft.AspNetCore.Http.Abstractions"_W,
@@ -350,15 +329,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     }
 
     if (assembly_needs_ref_emit) {
-      // TODO: The problem in OrleansCrash is in this code being called even once
-      // for each wrapper assembly, emit an assembly reference
-      // hr = metadata_builder.EmitAssemblyRef(
-      //     integration.replacement.wrapper_method.assembly);
-      // if (FAILED(hr)) {
-      //   Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
-      //        module_id, " ", module_info.assembly.name);
-      //   return S_OK;
-      // }
+      // once for each wrapper assembly, emit an assembly reference
+      hr = metadata_builder.EmitAssemblyRef(
+          integration.replacement.wrapper_method.assembly);
+      if (FAILED(hr)) {
+        Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
+             module_id, " ", module_info.assembly.name);
+        return S_OK;
+      }
       emitted_assembly_refs.push_back(
           integration.replacement.wrapper_method.assembly);
     }
