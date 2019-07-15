@@ -21,8 +21,4 @@
     <Reference Include="System.ServiceModel" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Vendoring\Sigil\" />
-  </ItemGroup>
-
 </Project>

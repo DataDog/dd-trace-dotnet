@@ -18,8 +18,8 @@ namespace Sigil
 
         static Emit()
         {
-            // The fix is here. AppDomain does not have DefineDynamicAssembly in NETSTANDARD, so we need a preprocessor or condition.
-#if COREFX || NETSTANDARD
+            // AppDomain does not have DefineDynamicAssembly in NETSTANDARD, so we need a preprocessor or condition.
+#if NETSTANDARD
             var asm = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("Sigil.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
 #else
             var asm = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Sigil.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
