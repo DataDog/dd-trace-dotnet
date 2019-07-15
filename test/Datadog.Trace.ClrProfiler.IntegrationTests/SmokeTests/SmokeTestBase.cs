@@ -30,8 +30,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         protected int MaxTestRunMilliseconds { get; }
 
-        protected bool AssumeSuccessOnTimeout { get; set; }
-
         protected void CheckForSmoke()
         {
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
@@ -82,13 +80,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 }
 
                 var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds);
-
-                if (AssumeSuccessOnTimeout && !ranToCompletion)
-                {
-                    process.Kill();
-                    Assert.True(true, "No smoke is a good sign for this case, even on timeout.");
-                    return;
-                }
 
                 if (!ranToCompletion)
                 {
