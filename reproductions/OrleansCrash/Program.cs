@@ -28,13 +28,13 @@ namespace OrleansCrash
                 Console.WriteLine("Starting the orleans cluster.");
 
                 var serverHost = BuildClusterHost();
-                var hostingTask = serverHost.StartAsync(tokenSource.Token);
+                var hostingTask = serverHost.RunAsync(tokenSource.Token);
                 orleansTasks.Add(hostingTask);
 
                 Console.WriteLine("Starting the orleans client.");
 
                 var clientHost = BuildClientHost();
-                var clientTask = clientHost.StartAsync(tokenSource.Token);
+                var clientTask = clientHost.RunAsync(tokenSource.Token);
                 orleansTasks.Add(clientTask);
 
                 Console.WriteLine("Waiting a little before grabbing a service.");
