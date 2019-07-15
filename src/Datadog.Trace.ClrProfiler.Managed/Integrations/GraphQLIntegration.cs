@@ -1,8 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     var validationResult = instrumentedMethod(documentValidator, originalQuery, schema, document, rules, userContext, inputs);
-                    RecordExecutionErrorsIfPresent(scope.Span, validationResult.GetProperty("Errors").GetValueOrDefault(), "GraphQL.Validation.ValidationError");
+                    RecordExecutionErrorsIfPresent(scope.Span, "GraphQL.Validation.ValidationError", validationResult.GetProperty("Errors").GetValueOrDefault());
                     return validationResult;
                 }
                 catch (Exception ex)
@@ -198,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     var task = (Task<T>)originalMethod(executionStrategy, options);
                     var executionResult = await task.ConfigureAwait(false);
-                    RecordExecutionErrorsIfPresent(scope.Span, executionResult.GetProperty("Errors").GetValueOrDefault(), "GraphQL.ExecutionError");
+                    RecordExecutionErrorsIfPresent(scope.Span, "GraphQL.ExecutionError", executionResult.GetProperty("Errors").GetValueOrDefault());
                     return executionResult;
                 }
                 catch (Exception ex)
@@ -289,7 +289,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return scope;
         }
 
-        private static void RecordExecutionErrorsIfPresent(Span span, object executionErrors, string errorType)
+        private static void RecordExecutionErrorsIfPresent(Span span, string errorType, object executionErrors)
         {
             var errorCount = executionErrors.GetProperty<int>("Count").GetValueOrDefault();
 
@@ -298,14 +298,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.Error = true;
 
                 span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
-                span.SetTag(Trace.Tags.ErrorStack, ConstructErrorMessage(executionErrors));
                 span.SetTag(Trace.Tags.ErrorType, errorType);
+                span.SetTag(Trace.Tags.ErrorStack, ConstructErrorMessage(executionErrors));
             }
         }
 
-        private static string ConstructErrorMessage(dynamic errors)
+        private static string ConstructErrorMessage(object executionErrors)
         {
-            if (errors == null)
+            if (executionErrors == null)
             {
                 return string.Empty;
             }
@@ -314,35 +314,55 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tab = "    ";
             builder.AppendLine("errors: [");
 
-            foreach (var error in errors)
+            var enumerator = executionErrors.CallMethod<IEnumerator<object>>("GetEnumerator").GetValueOrDefault();
+
+            if (enumerator != null)
             {
-                builder.AppendLine($"{tab}{{");
-                builder.AppendLine($"{tab + tab}\"message\": \"{error.Message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
-
-                if (error.Path != null)
+                while (enumerator.MoveNext())
                 {
-                    builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", error.Path)}\",");
-                }
+                    var executionError = enumerator.GetProperty("Current").GetValueOrDefault();
 
-                if (error.Code != null)
-                {
-                    builder.AppendLine($"{tab + tab}\"code\": \"{error.Code}\",");
-                }
+                    builder.AppendLine($"{tab}{{");
 
-                builder.AppendLine($"{tab + tab}\"locations\": [");
-                if (error.Locations != null)
-                {
-                    foreach (var location in error.Locations)
+                    var message = executionError.GetProperty<string>("Message").GetValueOrDefault();
+                    if (message != null)
                     {
-                        builder.AppendLine($"{tab + tab + tab}{{");
-                        builder.AppendLine($"{tab + tab + tab + tab}\"line\": {location.Line},");
-                        builder.AppendLine($"{tab + tab + tab + tab}\"column\": {location.Column}");
-                        builder.AppendLine($"{tab + tab + tab}}},");
+                        builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
                     }
+
+                    var path = executionError.GetProperty<IEnumerable<string>>("Path").GetValueOrDefault();
+                    if (path != null)
+                    {
+                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", path)}\",");
+                    }
+
+                    var code = executionError.GetProperty<string>("Code").GetValueOrDefault();
+                    if (code != null)
+                    {
+                        builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
+                    }
+
+                    builder.AppendLine($"{tab + tab}\"locations\": [");
+                    var locations = executionError.GetProperty<IEnumerable<object>>("Locations").GetValueOrDefault();
+                    if (locations != null)
+                    {
+                        foreach (var location in locations)
+                        {
+                            var line = location.GetProperty<int>("Line").GetValueOrDefault();
+                            var column = location.GetProperty<int>("Column").GetValueOrDefault();
+
+                            builder.AppendLine($"{tab + tab + tab}{{");
+                            builder.AppendLine($"{tab + tab + tab + tab}\"line\": {line},");
+                            builder.AppendLine($"{tab + tab + tab + tab}\"column\": {column}");
+                            builder.AppendLine($"{tab + tab + tab}}},");
+                        }
+                    }
+
+                    builder.AppendLine($"{tab + tab}]");
+                    builder.AppendLine($"{tab}}},");
                 }
 
-                builder.AppendLine($"{tab + tab}]");
-                builder.AppendLine($"{tab}}},");
+                enumerator.Dispose();
             }
 
             builder.AppendLine("]");

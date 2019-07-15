@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string graphQLRequestBody,
             string graphQLOperationType,
             string graphQLOperationName,
-            string graphQLSource = null,
+            string graphQLSource,
             bool passesValidation = true,
             Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
         {
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 GraphQLRequestBody = graphQLRequestBody,
                 GraphQLOperationType = graphQLOperationType,
                 GraphQLOperationName = graphQLOperationName,
-                GraphQLSource = graphQLSource ?? graphQLRequestBody,
+                GraphQLSource = graphQLSource,
             });
             _expectedGraphQLValidateSpanCount++;
 
