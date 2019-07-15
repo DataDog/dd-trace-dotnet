@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // This shouldn't happen because the GraphQL assembly should have been loaded to construct various other types
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error calling {documentValidatorInstanceType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.ErrorException($"Error finding types in the GraphQL assembly.", ex);
                 throw;
             }
 
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error resolving {documentValidatorInstanceType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.ErrorException($"Error resolving {documentValidatorInterfaceType.Name}.{methodName}(...)", ex);
                 throw;
             }
 
@@ -155,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // This shouldn't happen because the GraphQL assembly should have been loaded to construct various other types
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error calling {executionStrategyInstanceType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.ErrorException($"Error finding types in the GraphQL assembly.", ex);
                 throw;
             }
 
@@ -173,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error resolving {executionStrategyInstanceType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.ErrorException($"Error resolving {executionStrategyInterfaceType.Name}.{methodName}(...)", ex);
                 throw;
             }
 
