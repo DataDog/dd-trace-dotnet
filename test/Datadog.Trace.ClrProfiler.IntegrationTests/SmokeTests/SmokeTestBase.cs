@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         protected int MaxTestRunMilliseconds { get; }
 
-        protected bool AssumeSuccessOnTimeout { get; set }
+        protected bool AssumeSuccessOnTimeout { get; set; }
 
         protected void CheckForSmoke()
         {
