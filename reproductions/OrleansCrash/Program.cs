@@ -91,12 +91,6 @@ namespace OrleansCrash
                 {
                     throw faultedTasks.FirstOrDefault()?.Exception ?? new Exception("Something went wrong.");
                 }
-
-                foreach (var orleansTask in orleansTasks)
-                {
-                    // The orleans startup tasks just kind of hang in oblivion it seems
-                    orleansTask.Dispose();
-                }
             }
             catch (Exception ex)
             {
