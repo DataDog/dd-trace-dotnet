@@ -45,10 +45,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // TODO: When parse is implemented, add a test that fails 'parse' step
 
             // FAILURE: query fails 'validate' step
-            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", graphQLOperationType: "Query", graphQLOperationName: null, passesValidation: false, graphQLSource: "query HumanError{human(id:1){name apearsIn}}");
+            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", graphQLOperationType: "Query", graphQLOperationName: null, failsValidation: true, graphQLSource: "query HumanError{human(id:1){name apearsIn}}");
 
             // FAILURE: query fails 'execute' step
-            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "NotImplementedSub", graphQLSource: "subscription NotImplementedSub{throwNotImplementedException{name}}", passesExecution: false);
+            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", graphQLRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "NotImplementedSub", graphQLSource: "subscription NotImplementedSub{throwNotImplementedException{name}}", failsExecution: true);
 
             // TODO: When parse is implemented, add a test that fails 'resolve' step
         }
@@ -123,8 +123,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string graphQLOperationType,
             string graphQLOperationName,
             string graphQLSource,
-            bool passesValidation = true,
-            bool passesExecution = true,
+            bool failsValidation = false,
+            bool failsExecution = false,
             Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
         {
             _requests.Add(new RequestInfo()
@@ -134,6 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 RequestBody = graphQLRequestBody,
             });
 
+            // Expect a 'validate' span
             _expectations.Add(new GraphQLSpanExpectation
             {
                 OriginalUri = url,
@@ -147,12 +148,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 GraphQLOperationType = graphQLOperationType,
                 GraphQLOperationName = graphQLOperationName,
                 GraphQLSource = graphQLSource,
-                IsGraphQLError = !passesValidation,
+                IsGraphQLError = failsValidation,
             });
             _expectedGraphQLValidateSpanCount++;
 
-            if (passesValidation)
+            if (failsValidation)
             {
+                // Expect an 'execute' span
                 _expectations.Add(new GraphQLSpanExpectation
                 {
                     OriginalUri = url,
@@ -166,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     GraphQLOperationType = graphQLOperationType,
                     GraphQLOperationName = graphQLOperationName,
                     GraphQLSource = graphQLSource,
-                    IsGraphQLError = !passesExecution,
+                    IsGraphQLError = failsExecution,
                 });
                 _expectedGraphQLExecuteSpanCount++;
             }
