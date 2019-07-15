@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -21,12 +21,14 @@ namespace Sigil.NonGeneric
 
         /// <summary>
         /// Returns the maxmimum number of items on the stack for the IL stream created with the current emit.
+        /// 
         /// This is not the maximum that *can be placed*, but the maximum that actually are.
         /// </summary>
         public int MaxStackSize { get { return InnerEmit.MaxStackSize; } }
 
         /// <summary>
         /// Lookup for the locals currently in scope by name.
+        /// 
         /// Locals go out of scope when released (by calling Dispose() directly, or via using) and go into scope
         /// immediately after a DeclareLocal()
         /// </summary>
@@ -52,6 +54,7 @@ namespace Sigil.NonGeneric
 
         /// <summary>
         /// Returns a string representation of the CIL opcodes written to this Emit to date.
+        /// 
         /// This method is meant for debugging purposes only.
         /// </summary>
         public string Instructions()

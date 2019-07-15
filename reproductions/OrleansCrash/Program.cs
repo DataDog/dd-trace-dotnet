@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -18,59 +18,84 @@ namespace OrleansCrash
 {
     public class Program
     {
-        public static async Task<int> Main(string[] args)
+        public static int Main(string[] args)
         {
             try
             {
                 var orleansTasks = new List<Task>();
-
                 var tokenSource = new CancellationTokenSource();
 
                 Console.WriteLine("Starting the orleans cluster.");
 
                 var serverHost = BuildClusterHost();
-                var hostingTask = serverHost.RunAsync(tokenSource.Token);
+                var hostingTask = serverHost.StartAsync(tokenSource.Token);
                 orleansTasks.Add(hostingTask);
 
                 Console.WriteLine("Starting the orleans client.");
 
                 var clientHost = BuildClientHost();
-                var clientTask = clientHost.RunAsync(tokenSource.Token);
+                var clientTask = clientHost.StartAsync(tokenSource.Token);
                 orleansTasks.Add(clientTask);
 
-                await Task.Delay(2_000, tokenSource.Token); // Give the cluster some time to start I guess
+                Console.WriteLine("Waiting a little before grabbing a service.");
+                // TODO: Make this based on a ping or something
+                Task.Delay(4_000, tokenSource.Token).Wait(); // Give the cluster time to start
 
                 Console.WriteLine("Grabbing an orleans singleton service.");
                 var helloWorldClient = clientHost.Services.GetService<IHelloWorldHostedService>();
                 var helloGrain = helloWorldClient.GimmeTheGrain();
 
-                Task<string> hiMark;
-                string response;
                 int weSayHiManyTimes = 5;
-
                 Console.WriteLine($"Calling the service {weSayHiManyTimes} times.");
                 while (weSayHiManyTimes-- > 0)
                 {
-                    hiMark = helloGrain.SayHello($"{weSayHiManyTimes} - Oh, hi Mark!");
-                    response = await hiMark;
+                    var hiMark = helloGrain.SayHello($"{weSayHiManyTimes} - Oh, hi Mark!");
+                    hiMark.Wait(tokenSource.Token);
+                    var response = hiMark.Result;
                     Console.WriteLine(response);
                     orleansTasks.Add(hiMark);
                 }
 
-                TriggerCancellationAfterThisManySeconds(10, tokenSource);
+                var serverStopTask = serverHost.StopAsync(tokenSource.Token);
+                var clientStopTask = clientHost.StopAsync(tokenSource.Token);
+
+                orleansTasks.Add(serverStopTask);
+                orleansTasks.Add(clientStopTask);
+
+                var ttlMilliseconds = 5_000;
+                tokenSource.CancelAfter(ttlMilliseconds);
+
+                var timer = new Stopwatch();
+                timer.Start();
 
                 while (!tokenSource.IsCancellationRequested)
                 {
-                    await Task.Delay(1000);
+                    Task.Delay(250).Wait();
+
+                    if (timer.Elapsed > TimeSpan.FromMilliseconds(ttlMilliseconds * 2))
+                    {
+                        break;
+                    }
+
+                    if (serverStopTask.IsCompleted && clientStopTask.IsCompleted)
+                    {
+                        break;
+                    }
                 }
 
-                var aggregateTask = Task.WhenAll(orleansTasks);
+                timer.Stop();
 
                 var faultedTasks = orleansTasks.Where(t => t.IsFaulted).ToList();
 
                 if (faultedTasks.Any())
                 {
-                    throw aggregateTask.Exception ?? new Exception("Something went wrong.");
+                    throw faultedTasks.FirstOrDefault()?.Exception ?? new Exception("Something went wrong.");
+                }
+
+                foreach (var orleansTask in orleansTasks)
+                {
+                    // The orleans startup tasks just kind of hang in oblivion it seems
+                    orleansTask.Dispose();
                 }
             }
             catch (Exception ex)
@@ -120,19 +145,6 @@ namespace OrleansCrash
             return serverHost;
         }
 
-        private static void TriggerCancellationAfterThisManySeconds(int seconds, CancellationTokenSource cancelTokenSource)
-        {
-            Task
-               .Delay(seconds * 1000, cancelTokenSource.Token)
-               .ContinueWith(
-                    t =>
-                    {
-                        cancelTokenSource.Cancel();
-                    },
-                    cancelTokenSource.Token)
-               .Ignore();
-        }
-
         private static IHost BuildClientHost()
         {
             var clientBuilder =
@@ -144,7 +156,6 @@ namespace OrleansCrash
                             services.AddSingleton<IHostedService>(_ => _.GetService<ClusterClientHostedService>());
                             services.AddSingleton(_ => _.GetService<ClusterClientHostedService>().Client);
 
-                            // services.AddHostedService<HelloWorldClientHostedService>();
                             services.AddSingleton<HelloWorldClientHostedService>();
                             services.AddSingleton<IHelloWorldHostedService>(_ => _.GetService<HelloWorldClientHostedService>());
 

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <RootNamespace>Sigil</RootNamespace>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>Properties\Sigil.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Sigil.Impl
 {
@@ -22,8 +22,10 @@ namespace Sigil.Impl
         ///   immediately follows an unconditional branch, and where X is not the target of an earlier branch 
         ///   instruction, then the state of the evaluation stack at X, clearly, cannot be derived from existing 
         ///   information. In this case, the CLI demands that the evaluation stack at X be empty.
+        /// 
         /// In practice, DynamicMethods don't need to follow this rule *but* that doesn't mean stricter
         /// verification won't be needed elsewhere.
+        /// 
         /// If this is set, then an "expectation of empty stack" transition is inserted before unconditional branches
         /// where needed.
         private bool UsesStrictBranchVerification;

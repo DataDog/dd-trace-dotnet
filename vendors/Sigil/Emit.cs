@@ -1,4 +1,4 @@
-using Sigil.Impl;
+﻿using Sigil.Impl;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -18,8 +18,7 @@ namespace Sigil
 
         static Emit()
         {
-            // AppDomain does not have DefineDynamicAssembly in NETSTANDARD, so we need a preprocessor or condition.
-#if NETSTANDARD
+#if COREFX
             var asm = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("Sigil.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
 #else
             var asm = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Sigil.Emit.DynamicAssembly"), AssemblyBuilderAccess.Run);
