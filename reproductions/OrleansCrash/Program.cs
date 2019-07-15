@@ -114,8 +114,8 @@ namespace OrleansCrash
                                .Configure<ClusterOptions>(
                                     options =>
                                     {
-                                        options.ClusterId = "dev";
-                                        options.ServiceId = "HelloWorldApp";
+                                        options.ClusterId = "orleans-crash-check";
+                                        options.ServiceId = "OrleansCrashCluster";
                                     })
                                .Configure<EndpointOptions>(options => options.AdvertisedIPAddress = IPAddress.Loopback)
                                .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(HelloGrain).Assembly).WithReferences());
