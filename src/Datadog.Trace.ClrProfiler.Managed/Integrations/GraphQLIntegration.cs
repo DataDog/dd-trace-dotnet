@@ -318,51 +318,59 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (enumerator != null)
             {
-                while (enumerator.MoveNext())
+                try
                 {
-                    var executionError = enumerator.GetProperty("Current").GetValueOrDefault();
-
-                    builder.AppendLine($"{tab}{{");
-
-                    var message = executionError.GetProperty<string>("Message").GetValueOrDefault();
-                    if (message != null)
+                    while (enumerator.MoveNext())
                     {
-                        builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
-                    }
+                        var executionError = enumerator.GetProperty("Current").GetValueOrDefault();
 
-                    var path = executionError.GetProperty<IEnumerable<string>>("Path").GetValueOrDefault();
-                    if (path != null)
-                    {
-                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", path)}\",");
-                    }
+                        builder.AppendLine($"{tab}{{");
 
-                    var code = executionError.GetProperty<string>("Code").GetValueOrDefault();
-                    if (code != null)
-                    {
-                        builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
-                    }
-
-                    builder.AppendLine($"{tab + tab}\"locations\": [");
-                    var locations = executionError.GetProperty<IEnumerable<object>>("Locations").GetValueOrDefault();
-                    if (locations != null)
-                    {
-                        foreach (var location in locations)
+                        var message = executionError.GetProperty<string>("Message").GetValueOrDefault();
+                        if (message != null)
                         {
-                            var line = location.GetProperty<int>("Line").GetValueOrDefault();
-                            var column = location.GetProperty<int>("Column").GetValueOrDefault();
-
-                            builder.AppendLine($"{tab + tab + tab}{{");
-                            builder.AppendLine($"{tab + tab + tab + tab}\"line\": {line},");
-                            builder.AppendLine($"{tab + tab + tab + tab}\"column\": {column}");
-                            builder.AppendLine($"{tab + tab + tab}}},");
+                            builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
                         }
+
+                        var path = executionError.GetProperty<IEnumerable<string>>("Path").GetValueOrDefault();
+                        if (path != null)
+                        {
+                            builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", path)}\",");
+                        }
+
+                        var code = executionError.GetProperty<string>("Code").GetValueOrDefault();
+                        if (code != null)
+                        {
+                            builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
+                        }
+
+                        builder.AppendLine($"{tab + tab}\"locations\": [");
+                        var locations = executionError.GetProperty<IEnumerable<object>>("Locations").GetValueOrDefault();
+                        if (locations != null)
+                        {
+                            foreach (var location in locations)
+                            {
+                                var line = location.GetProperty<int>("Line").GetValueOrDefault();
+                                var column = location.GetProperty<int>("Column").GetValueOrDefault();
+
+                                builder.AppendLine($"{tab + tab + tab}{{");
+                                builder.AppendLine($"{tab + tab + tab + tab}\"line\": {line},");
+                                builder.AppendLine($"{tab + tab + tab + tab}\"column\": {column}");
+                                builder.AppendLine($"{tab + tab + tab}}},");
+                            }
+                        }
+
+                        builder.AppendLine($"{tab + tab}]");
+                        builder.AppendLine($"{tab}}},");
                     }
 
-                    builder.AppendLine($"{tab + tab}]");
-                    builder.AppendLine($"{tab}}},");
+                    enumerator.Dispose();
                 }
-
-                enumerator.Dispose();
+                catch (Exception ex)
+                {
+                    Log.ErrorException("Error creating GraphQL error message.", ex);
+                    return "errors: []";
+                }
             }
 
             builder.AppendLine("]");
