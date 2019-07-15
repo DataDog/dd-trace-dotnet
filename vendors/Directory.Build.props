@@ -13,10 +13,5 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
-
-  <!-- StyleCop -->
-  <ItemGroup>
-    <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
-  </ItemGroup>
   
 </Project>

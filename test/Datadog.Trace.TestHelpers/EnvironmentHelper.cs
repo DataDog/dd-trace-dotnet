@@ -162,7 +162,7 @@ namespace Datadog.Trace.TestHelpers
             StringDictionary environmentVariables)
         {
             var processName = processPath;
-            var profilerEnabled = "1";
+            const string profilerEnabled = "1";
 
             if (IsCoreClr())
             {

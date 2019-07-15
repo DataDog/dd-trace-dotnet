@@ -53,7 +53,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vendors", "vendors", "{AA6F5582-F11C-49F5-AC6A-C305793B600A}"
 	ProjectSection(SolutionItems) = preProject
 		vendors\Directory.Build.props = vendors\Directory.Build.props
-		vendors\GlobalSuppressions.cs = vendors\GlobalSuppressions.cs
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed", "src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj", "{85F35AAF-D102-4960-8B41-3BD9CBD0E77F}"
