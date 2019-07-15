@@ -9,9 +9,9 @@
 
   <ItemGroup>
     <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**"
-          CopyToOutputDirectory="Always"
-          CopyToPublishDirectory="Always"
-          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+             CopyToOutputDirectory="Always"
+             CopyToPublishDirectory="Always"
+             Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
     <Content Include="..\..\integrations.json"
              CopyToOutputDirectory="Always"
              CopyToPublishDirectory="Always"
