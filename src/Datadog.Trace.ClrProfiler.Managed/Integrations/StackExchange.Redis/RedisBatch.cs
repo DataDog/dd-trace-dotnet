@@ -107,9 +107,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                     {
                         return await originalMethod(redisBase, message, processor, server).ConfigureAwait(false);
                     }
-                    catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                    catch (Exception ex)
                     {
-                        // unreachable code
+                        scope?.Span.SetException(ex);
                         throw;
                     }
                 }
