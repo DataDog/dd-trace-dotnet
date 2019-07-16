@@ -18,6 +18,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "GraphQL";
         private const string ServiceName = "graphql";
 
+        private const string Major2 = "2";
+        private const string Major2Minor3 = "2.3";
+
         private const string ParseOperationName = "graphql.parse"; // Instrumentation not yet implemented
         private const string ValidateOperationName = "graphql.validate";
         private const string ExecuteOperationName = "graphql.execute";
@@ -49,7 +52,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = GraphQLAssemblyName,
             TargetType = GraphQLDocumentValidatorInterfaceName,
-            TargetSignatureTypes = new[] { GraphQLValidationResultInterfaceName, ClrNames.String, "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1<GraphQL.Validation.IValidationRule>", ClrNames.Ignore, "GraphQL.Inputs" })]
+            TargetSignatureTypes = new[] { GraphQLValidationResultInterfaceName, ClrNames.String, "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1<GraphQL.Validation.IValidationRule>", ClrNames.Ignore, "GraphQL.Inputs" },
+            TargetMinimumVersion = Major2Minor3,
+            TargetMaximumVersion = Major2)]
         public static object Validate(
             object documentValidator,
             object originalQuery,
@@ -131,7 +136,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = GraphQLAssemblyName,
             TargetType = GraphQLExecutionStrategyInterfaceName,
-            TargetSignatureTypes = new[] { TaskOfGraphQLExecutionResult, "GraphQL.Execution.ExecutionContext" })]
+            TargetSignatureTypes = new[] { TaskOfGraphQLExecutionResult, "GraphQL.Execution.ExecutionContext" },
+            TargetMinimumVersion = Major2Minor3,
+            TargetMaximumVersion = Major2)]
         public static object ExecuteAsync(object executionStrategy, object context, int opCode, int mdToken)
         {
             if (executionStrategy == null) { throw new ArgumentNullException(nameof(executionStrategy)); }
