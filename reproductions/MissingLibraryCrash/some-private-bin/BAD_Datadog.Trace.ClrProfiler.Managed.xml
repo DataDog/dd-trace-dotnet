@@ -1,0 +1,761 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Datadog.Trace.ClrProfiler.Managed</name>
+    </assembly>
+    <members>
+        <member name="T:Datadog.Trace.ClrProfiler.DynamicMethodBuilder`1">
+            <summary>
+            Helper class to instances of <see cref="T:System.Reflection.Emit.DynamicMethod"/> using <see cref="N:System.Reflection.Emit"/>.
+            </summary>
+            <typeparam name="TDelegate">The type of delegate</typeparam>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.DynamicMethodBuilder`1.GetOrCreateMethodCallDelegate(System.Type,System.String,System.Type,System.Type[],System.Type[])">
+            <summary>
+            Memoizes CreateMethodCallDelegate
+            </summary>
+            <param name="type">The <see cref="T:System.Type"/> that contains the method.</param>
+            <param name="methodName">The name of the method.</param>
+            <param name="returnType">The method's return type.</param>
+            <param name="methodParameterTypes">optional types for the method parameters</param>
+            <param name="methodGenericArguments">optional generic type arguments for a generic method</param>
+            <returns>A <see cref="T:System.Delegate"/> that can be used to execute the dynamic method.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.DynamicMethodBuilder`1.CreateMethodCallDelegate(System.Type,System.String,System.Type[],System.Type[])">
+            <summary>
+            Creates a simple <see cref="T:System.Reflection.Emit.DynamicMethod"/> using <see cref="N:System.Reflection.Emit"/> that
+            calls a method with the specified name and parameter types.
+            </summary>
+            <param name="type">The <see cref="T:System.Type"/> that contains the method to call when the returned delegate is executed..</param>
+            <param name="methodName">The name of the method to call when the returned delegate is executed.</param>
+            <param name="methodParameterTypes">If not null, use method overload that matches the specified parameters.</param>
+            <param name="methodGenericArguments">If not null, use method overload that has the same number of generic arguments.</param>
+            <returns>A <see cref="T:System.Delegate"/> that can be used to execute the dynamic method.</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Emit.DynamicMethodBuilder`1">
+            <summary>
+            Helper class to create instances of <see cref="T:System.Reflection.Emit.DynamicMethod"/> using <see cref="N:System.Reflection.Emit"/>.
+            </summary>
+            <typeparam name="TDelegate">The type of delegate</typeparam>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Emit.DynamicMethodBuilder`1.GetOrCreateMethodCallDelegate(System.Type,System.String,Datadog.Trace.ClrProfiler.Emit.OpCodeValue,System.Type,System.Type[],System.Type[])">
+            <summary>
+            Gets a previously cache delegate used to call the specified method,
+            or creates and caches a new delegate if not found.
+            </summary>
+            <param name="type">The <see cref="T:System.Type"/> that contains the method.</param>
+            <param name="methodName">The name of the method.</param>
+            <param name="callOpCode">The OpCode to use in the method call.</param>
+            <param name="returnType">The method's return type.</param>
+            <param name="methodParameterTypes">optional types for the method parameters</param>
+            <param name="methodGenericArguments">optional generic type arguments for a generic method</param>
+            <returns>A <see cref="T:System.Delegate"/> that can be used to execute the dynamic method.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Emit.DynamicMethodBuilder`1.CreateMethodCallDelegate(System.Type,System.String,Datadog.Trace.ClrProfiler.Emit.OpCodeValue,System.Type[],System.Type[])">
+            <summary>
+            Creates a simple <see cref="T:System.Reflection.Emit.DynamicMethod"/> using <see cref="N:System.Reflection.Emit"/> that
+            calls a method with the specified name and parameter types.
+            </summary>
+            <param name="type">The <see cref="T:System.Type"/> that contains the method to call when the returned delegate is executed..</param>
+            <param name="methodName">The name of the method to call when the returned delegate is executed.</param>
+            <param name="callOpCode">The OpCode to use in the method call.</param>
+            <param name="methodParameterTypes">If not null, use method overload that matches the specified parameters.</param>
+            <param name="methodGenericArguments">If not null, use method overload that has the same number of generic arguments.</param>
+            <returns>A <see cref="T:System.Delegate"/> that can be used to execute the dynamic method.</returns>
+        </member>
+        <member name="F:Datadog.Trace.ClrProfiler.Emit.MemberResult`1.NotFound">
+            <summary>
+            A static value used to represent a member that was not found.
+            </summary>
+        </member>
+        <member name="F:Datadog.Trace.ClrProfiler.Emit.MethodBuilder`1.Cache">
+            <summary>
+            Global dictionary for caching reflected delegates
+            </summary>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Emit.ObjectExtensions">
+            <summary>
+            Provides helper methods to access object members by emitting IL dynamically.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Emit.ObjectExtensions.TryCallMethod``2(System.Object,System.String,``0,``1@)">
+            <summary>
+            Tries to call an instance method with the specified name, a single parameter, and a return value.
+            </summary>
+            <typeparam name="TArg1">The type of the method's single parameter.</typeparam>
+            <typeparam name="TResult">The type of the method's result value.</typeparam>
+            <param name="source">The object to call the method on.</param>
+            <param name="methodName">The name of the method to call.</param>
+            <param name="arg1">The value to pass as the method's single argument.</param>
+            <param name="value">The value returned by the method.</param>
+            <returns><c>true</c> if the method was found, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Emit.ObjectExtensions.TryGetPropertyValue``1(System.Object,System.String,``0@)">
+            <summary>
+            Tries to get the value of an instance property with the specified name.
+            </summary>
+            <typeparam name="TResult">The type of the property.</typeparam>
+            <param name="source">The value that contains the property.</param>
+            <param name="propertyName">The name of the property.</param>
+            <param name="value">The value of the property, or <c>null</c> if the property is not found.</param>
+            <returns><c>true</c> if the property exists, otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Emit.ObjectExtensions.TryGetFieldValue``1(System.Object,System.String,``0@)">
+            <summary>
+            Tries to get the value of an instance field with the specified name.
+            </summary>
+            <typeparam name="TResult">The type of the field.</typeparam>
+            <param name="source">The value that contains the field.</param>
+            <param name="fieldName">The name of the field.</param>
+            <param name="value">The value of the field, or <c>null</c> if the field is not found.</param>
+            <returns><c>true</c> if the field exists, otherwise <c>false</c>.</returns>
+        </member>
+        <member name="F:Datadog.Trace.ClrProfiler.Emit.OpCodeValue.Call">
+            <seealso cref="F:System.Reflection.Emit.OpCodes.Call"/>
+        </member>
+        <member name="F:Datadog.Trace.ClrProfiler.Emit.OpCodeValue.Callvirt">
+            <seealso cref="F:System.Reflection.Emit.OpCodes.Callvirt"/>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Helpers.Interception">
+            <summary>
+            Convenience properties and methods for integration definitions.
+            </summary>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Instrumentation">
+            <summary>
+            Provides instrumentation probes that can be injected into profiled code.
+            </summary>
+        </member>
+        <member name="F:Datadog.Trace.ClrProfiler.Instrumentation.ProfilerClsid">
+            <summary>
+            Gets the CLSID for the Datadog .NET profiler
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached">
+            <summary>
+            Gets a value indicating whether Datadog's profiler is attached to the current process.
+            </summary>
+            <value>
+              <c>true</c> if the profiler is currently attached; <c>false</c> otherwise.
+            </value>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration">
+            <summary>
+            AdoNetIntegration provides methods that add tracing to ADO.NET calls.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration.ExecuteDbDataReader(System.Object,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Wrapper method that instruments <see cref="M:System.Data.Common.DbCommand.ExecuteDbDataReader(System.Data.CommandBehavior)"/>.
+            </summary>
+            <param name="this">The <see cref="T:System.Data.Common.DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
+            <param name="behavior">A value from <see cref="T:System.Data.CommandBehavior"/>.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The value returned by the instrumented method.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration.ExecuteDbDataReaderAsync(System.Object,System.Int32,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Wrapper method that instruments <see cref="M:System.Data.Common.DbCommand.ExecuteDbDataReader(System.Data.CommandBehavior)"/>.
+            </summary>
+            <param name="this">The <see cref="T:System.Data.Common.DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
+            <param name="behavior">A value from <see cref="T:System.Data.CommandBehavior"/>.</param>
+            <param name="cancellationTokenSource">A cancellation token source that can be used to cancel the async operation.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The value returned by the instrumented method.</returns>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.Integrations.AspNetAmbientContext.Tracer">
+            <summary>
+            Gets the instance of the Tracer for this web request.
+            Ensure that the same Tracer instance is used throughout an entire request.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.Integrations.AspNetAmbientContext.RootSpan">
+            <summary>
+            Gets the root span for this web request.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.Integrations.AspNetAmbientContext.AbortRegistration">
+            <summary>
+            Gets a value indicating whether this context should be registered.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.AspNetAmbientContext.Initialize(System.Object)">
+            <summary>
+            Responsible for setting up an overarching Scope and then registering with the end of pipeline disposal.
+            </summary>
+            <param name="httpContext">Instance of Microsoft.AspNetCore.Http.DefaultHttpContext</param>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration">
+            <summary>
+            The ASP.NET Core MVC 2 integration.
+            </summary>
+        </member>
+        <member name="F:Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration.DiagnosticSource">
+            <summary>
+            Type for unobtrusive hooking into Microsoft.AspNetCore.Mvc.Core pipeline.
+            </summary>
+        </member>
+        <member name="F:Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration.ResourceInvoker">
+            <summary>
+            Base type used for traversing the pipeline in Microsoft.AspNetCore.Mvc.Core.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration.BeforeAction(System.Object,System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Wrapper method used to instrument Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.BeforeAction()
+            </summary>
+            <param name="diagnosticSource">The DiagnosticSource that this extension method was called on.</param>
+            <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
+            <param name="httpContext">The HttpContext for the current request.</param>
+            <param name="routeData">A RouteData with information about the current route.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration.AfterAction(System.Object,System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Wrapper method used to instrument Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.AfterAction()
+            </summary>
+            <param name="diagnosticSource">The DiagnosticSource that this extension method was called on.</param>
+            <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
+            <param name="httpContext">The HttpContext for the current request.</param>
+            <param name="routeData">A RouteData with information about the current route.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc2Integration.Rethrow(System.Object,System.Int32,System.Int32)">
+            <summary>
+            Wrapper method used to catch unhandled exceptions in the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
+            </summary>
+            <param name="context">The DiagnosticSource that this extension method was called on.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.HttpContextIntegration">
+            <summary>
+            Tracer integration ambient base for web server integrations.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.HttpContextIntegration.Initialize(System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Entry method for invoking the beginning of every web server request pipeline
+            </summary>
+            <param name="httpContext">Instance being instrumented.</param>
+            <param name="features">Initialize features.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet5Integration">
+            <summary>
+            Traces an Elasticsearch pipeline
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet5Integration.CallElasticsearch``1(System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Traces a synchronous call to Elasticsearch.
+            </summary>
+            <typeparam name="TResponse">The type of the response</typeparam>
+            <param name="pipeline">The pipeline for the original method</param>
+            <param name="requestData">The request data</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The original result</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet5Integration.CallElasticsearchAsync``1(System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Traces an asynchronous call to Elasticsearch.
+            </summary>
+            <typeparam name="TResponse">Type type of the response</typeparam>
+            <param name="pipeline">The pipeline for the original method</param>
+            <param name="requestData">The request data</param>
+            <param name="cancellationTokenSource">A cancellation token</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The original result</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet5Integration.CallElasticsearchAsyncInternal``1(System.Object,System.Object,System.Threading.CancellationToken,System.Func{System.Object,System.Object,System.Threading.CancellationToken,System.Object})">
+            <summary>
+            Traces an asynchronous call to Elasticsearch.
+            </summary>
+            <typeparam name="T">Type type of the Task</typeparam>
+            <param name="pipeline">The pipeline for the original method</param>
+            <param name="requestData">The request data</param>
+            <param name="cancellationToken">A cancellation token</param>
+            <param name="originalMethod">A delegate for the method we are instrumenting</param>
+            <returns>The original result</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet6Integration">
+            <summary>
+            Traces an Elasticsearch pipeline
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet6Integration.CallElasticsearch``1(System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Traces a synchronous call to Elasticsearch.
+            </summary>
+            <typeparam name="TResponse">The type of the response</typeparam>
+            <param name="pipeline">The pipeline for the original method</param>
+            <param name="requestData">The request data</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The original result</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet6Integration.CallElasticsearchAsync``1(System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Traces an asynchronous call to Elasticsearch.
+            </summary>
+            <typeparam name="TResponse">Type type of the response</typeparam>
+            <param name="pipeline">The pipeline for the original method</param>
+            <param name="requestData">The request data</param>
+            <param name="cancellationTokenSource">A cancellation token</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The original result</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet6Integration.CallElasticsearchAsyncInternal``1(System.Object,System.Object,System.Threading.CancellationToken)">
+            <summary>
+            Traces an asynchronous call to Elasticsearch.
+            </summary>
+            <typeparam name="TResponse">Type type of the response</typeparam>
+            <param name="pipeline">The pipeline for the original method</param>
+            <param name="requestData">The request data</param>
+            <param name="cancellationToken">A cancellation token</param>
+            <returns>The original result</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration">
+            <summary>
+            Tracer integration for HttpClientHandler.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration.HttpMessageHandler_SendAsync(System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Instrumentation wrapper for <see cref="M:System.Net.Http.HttpMessageHandler.SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)"/>.
+            </summary>
+            <param name="handler">The <see cref="F:Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration.HttpMessageHandler"/> instance to instrument.</param>
+            <param name="request">The <see cref="T:System.Net.Http.HttpRequestMessage"/> that represents the current HTTP request.</param>
+            <param name="cancellationTokenSource">The <see cref="T:System.Threading.CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>Returns the value returned by the inner method call.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration.HttpClientHandler_SendAsync(System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Instrumentation wrapper for <see cref="M:System.Net.Http.HttpClientHandler.SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)"/>.
+            </summary>
+            <param name="handler">The <see cref="F:Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration.HttpClientHandler"/> instance to instrument.</param>
+            <param name="request">The <see cref="T:System.Net.Http.HttpRequestMessage"/> that represents the current HTTP request.</param>
+            <param name="cancellationTokenSource">The <see cref="T:System.Threading.CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>Returns the value returned by the inner method call.</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration">
+            <summary>
+            Tracing integration for MongoDB.Driver.Core.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration.Execute(System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Wrap the original method by adding instrumentation code around it.
+            </summary>
+            <param name="wireProtocol">The IWireProtocol instance we are replacing.</param>
+            <param name="connection">The connection.</param>
+            <param name="cancellationTokenSource">A cancellation token source.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The original method's return value.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration.ExecuteGeneric(System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Wrap the original method by adding instrumentation code around it.
+            </summary>
+            <param name="wireProtocol">The IWireProtocol`1 instance we are replacing.</param>
+            <param name="connection">The connection.</param>
+            <param name="cancellationTokenSource">A cancellation token source.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The original method's return value.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration.ExecuteAsync(System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Wrap the original method by adding instrumentation code around it.
+            </summary>
+            <param name="wireProtocol">The IWireProtocol instance we are replacing.</param>
+            <param name="connection">The connection.</param>
+            <param name="cancellationTokenSource">A cancellation token source.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The original method's return value.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration.ExecuteAsyncGeneric(System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Wrap the original method by adding instrumentation code around it.
+            </summary>
+            <param name="wireProtocol">The IWireProtocol`1 instance we are replacing.</param>
+            <param name="connection">The connection.</param>
+            <param name="cancellationTokenSource">A cancellation token source.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The original method's return value.</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.ServiceStackRedisIntegration">
+            <summary>
+            Wraps a RedisNativeClient.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.ServiceStackRedisIntegration.SendReceive``1(System.Object,System.Byte[][],System.Object,System.Object,System.Boolean,System.Int32,System.Int32)">
+            <summary>
+            Traces SendReceive.
+            </summary>
+            <typeparam name="T">The return type</typeparam>
+            <param name="redisNativeClient">The redis native client</param>
+            <param name="cmdWithBinaryArgs">The command with args</param>
+            <param name="fn">The function</param>
+            <param name="completePipelineFn">An optional function to call to complete a pipeline</param>
+            <param name="sendWithoutRead">Whether or to send without waiting for the result</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The original result</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer">
+            <summary>
+            Wraps calls to the StackExchange redis library.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl``1(System.Object,System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Execute a synchronous redis operation.
+            </summary>
+            <typeparam name="T">The result type</typeparam>
+            <param name="multiplexer">The connection multiplexer running the command.</param>
+            <param name="message">The message to send to redis.</param>
+            <param name="processor">The processor to handle the result.</param>
+            <param name="server">The server to call.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>The result</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer.ExecuteAsyncImpl``1(System.Object,System.Object,System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Execute an asynchronous redis operation.
+            </summary>
+            <typeparam name="T">The result type</typeparam>
+            <param name="multiplexer">The connection multiplexer running the command.</param>
+            <param name="message">The message to send to redis.</param>
+            <param name="processor">The processor to handle the result.</param>
+            <param name="state">The state to use for the task.</param>
+            <param name="server">The server to call.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>An asynchronous task.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer.ExecuteAsyncImplInternal``1(System.Object,System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            Execute an asynchronous redis operation.
+            </summary>
+            <typeparam name="T">The result type</typeparam>
+            <param name="multiplexer">The connection multiplexer running the command.</param>
+            <param name="message">The message to send to redis.</param>
+            <param name="processor">The processor to handle the result.</param>
+            <param name="state">The state to use for the task.</param>
+            <param name="server">The server to call.</param>
+            <returns>An asynchronous task.</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch">
+            <summary>
+            Traces StackExchange.Redis.RedisBatch
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch.ExecuteAsync``1(System.Object,System.Object,System.Object,System.Object,System.Int32,System.Int32)">
+            <summary>
+            Execute an asynchronous redis operation.
+            </summary>
+            <typeparam name="T">The result type</typeparam>
+            <param name="redisBase">The object this method is called on</param>
+            <param name="message">The message</param>
+            <param name="processor">The result processor</param>
+            <param name="server">The server</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>An asynchronous task.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch.ExecuteAsyncInternal``1(System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            Execute an asynchronous redis operation.
+            </summary>
+            <typeparam name="T">The result type</typeparam>
+            <param name="redisBase">The object this method is called on</param>
+            <param name="message">The message</param>
+            <param name="processor">The result processor</param>
+            <param name="server">The server</param>
+            <returns>An asynchronous task.</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.StackExchangeRedisHelper">
+            <summary>
+            Base class for redis integration.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.StackExchangeRedisHelper.GetConfiguration(System.Object)">
+            <summary>
+            Get the configuration for the multiplexer.
+            </summary>
+            <param name="multiplexer">The multiplexer</param>
+            <returns>The configuration</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.StackExchangeRedisHelper.GetHostAndPort(System.String)">
+            <summary>
+            Get the host and port from the config
+            </summary>
+            <param name="config">The config</param>
+            <returns>The host and port</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.StackExchangeRedisHelper.GetRawCommand(System.Object,System.Object)">
+            <summary>
+            Get the raw command.
+            </summary>
+            <param name="multiplexer">The multiplexer</param>
+            <param name="message">The message</param>
+            <returns>The raw command</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.StackExchangeRedisHelper.GetMultiplexer(System.Object)">
+            <summary>
+            GetMultiplexer returns the Multiplexer for an object
+            </summary>
+            <param name="obj">The object</param>
+            <returns>The multiplexer</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration">
+            <summary>
+            Tracer integration for WebRequest.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration.GetResponse(System.Object,System.Int32,System.Int32)">
+            <summary>
+            Instrumentation wrapper for <see cref="M:System.Net.WebRequest.GetResponse"/>.
+            </summary>
+            <param name="webRequest">The <see cref="T:System.Net.WebRequest"/> instance to instrument.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>Returns the value returned by the inner method call.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration.GetResponseAsync(System.Object,System.Int32,System.Int32)">
+            <summary>
+            Instrumentation wrapper for <see cref="M:System.Net.WebRequest.GetResponseAsync"/>.
+            </summary>
+            <param name="request">The <see cref="T:System.Net.WebRequest"/> instance to instrument.</param>
+            <param name="opCode">The OpCode used in the original method call.</param>
+            <param name="mdToken">The mdToken of the original method call.</param>
+            <returns>Returns the value returned by the inner method call.</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.IntegrationVersionRange">
+            <summary>
+            Specifies a safe version range for an integration.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.IntegrationVersionRange.MinimumMajor">
+            <summary>
+            Gets the minimum major version.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.IntegrationVersionRange.MinimumMinor">
+            <summary>
+            Gets the minimum minor version.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.IntegrationVersionRange.MinimumPatch">
+            <summary>
+            Gets the minimum patch version.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.IntegrationVersionRange.MaximumMajor">
+            <summary>
+            Gets the maximum major version.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.IntegrationVersionRange.MaximumMinor">
+            <summary>
+            Gets the maximum minor version.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.IntegrationVersionRange.MaximumPatch">
+            <summary>
+            Gets the maximum patch version.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.IntegrationVersionRange.MinimumVersion">
+            <summary>
+            Gets the MinimumMajor, MinimumMinor, and MinimumPatch properties.
+            Convenience property for setting target minimum version.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.IntegrationVersionRange.MaximumVersion">
+            <summary>
+            Gets the MaximumMajor, MaximumMinor, and MaximumPatch properties.
+            Convenience property for setting target minimum version.
+            </summary>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.InterceptMethodAttribute">
+            <summary>
+            Attribute that indicates that the decorated method is meant to intercept calls
+            to another method. Used to generate the integration definitions file.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.Integration">
+            <summary>
+            Gets or sets the name of the integration.
+            </summary>
+            <remarks>
+            Multiple method replacements with the same integration name are grouped together.
+            </remarks>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.CallerAssembly">
+            <summary>
+            Gets or sets the name of the assembly where calls to the target method are searched.
+            If null, search in all loaded assemblies.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.CallerType">
+            <summary>
+            Gets or sets the name of the type where calls to the target method are searched.
+            If null, search in all types defined in loaded assemblies.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.CallerMethod">
+            <summary>
+            Gets or sets the name of the method where calls to the target method are searched.
+            If null, search in all loaded types.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.TargetAssembly">
+            <summary>
+            Gets or sets the name of the assembly that contains the target method to be intercepted.
+            Required.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.TargetType">
+            <summary>
+            Gets or sets the name of the type that contains the target method to be intercepted.
+            Required.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.TargetMethod">
+            <summary>
+            Gets or sets the name of the target method to be intercepted.
+            If null, default to the name of the decorated method.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.TargetSignature">
+            <summary>
+            Gets or sets the method signature that is matched to the target method to be intercepted.
+            If null, signature check is not done.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.TargetSignatureTypes">
+            <summary>
+            Gets or sets the explicit type array for the target method to be intercepted.
+            This is a required field.
+            Follows format:
+                new[] { return_type, param_1_type, param_2_type, ..., param_n_type }
+            Must match the wrapper method in count:
+                n (parameters) + 1 (return type) - (is_instance_method : 1 : 0) - 1 (opcode)
+            Indexes with "_" are ignored for comparison purposes.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.TargetVersionRange">
+            <summary>
+            Gets the target version range for <see cref="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.TargetAssembly"/>.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.TargetMinimumVersion">
+            <summary>
+            Gets or sets the target minimum version.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.InterceptMethodAttribute.TargetMaximumVersion">
+            <summary>
+            Gets or sets the target maximum version.
+            </summary>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.MemberAccessor">
+            <summary>
+            Provides helper methods to access object members by emitting IL dynamically.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.MemberAccessor.TryCallMethod``2(System.Object,System.String,``0,``1@)">
+            <summary>
+            Tries to call an instance method with the specified name, a single parameter, and a return value.
+            </summary>
+            <typeparam name="TArg1">The type of the method's single parameter.</typeparam>
+            <typeparam name="TResult">The type of the method's result value.</typeparam>
+            <param name="source">The object to call the method on.</param>
+            <param name="methodName">The name of the method to call.</param>
+            <param name="arg1">The value to pass as the method's single argument.</param>
+            <param name="value">The value returned by the method.</param>
+            <returns><c>true</c> if the method was found, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.MemberAccessor.TryGetPropertyValue``1(System.Object,System.String,``0@)">
+            <summary>
+            Tries to get the value of an instance property with the specified name.
+            </summary>
+            <typeparam name="TResult">The type of the property.</typeparam>
+            <param name="source">The value that contains the property.</param>
+            <param name="propertyName">The name of the property.</param>
+            <param name="value">The value of the property, or <c>null</c> if the property is not found.</param>
+            <returns><c>true</c> if the property exists, otherwise <c>false</c>.</returns>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.MemberAccessor.TryGetFieldValue``1(System.Object,System.String,``0@)">
+            <summary>
+            Tries to get the value of an instance field with the specified name.
+            </summary>
+            <typeparam name="TResult">The type of the field.</typeparam>
+            <param name="source">The value that contains the field.</param>
+            <param name="fieldName">The name of the field.</param>
+            <param name="value">The value of the field, or <c>null</c> if the field is not found.</param>
+            <returns><c>true</c> if the field exists, otherwise <c>false</c>.</returns>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.MetadataNames">
+            <summary>
+            Holds names obtained through the metadata interface.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.MetadataNames.#ctor(System.String,System.String,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Datadog.Trace.ClrProfiler.MetadataNames"/> class.
+            </summary>
+            <param name="moduleName">The module's name.</param>
+            <param name="typeName">The type's name.</param>
+            <param name="methodName">The method's name.</param>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.MetadataNames.ModuleName">
+            <summary>
+            Gets the module's name.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.MetadataNames.TypeName">
+            <summary>
+            Gets the type's full name.
+            </summary>
+        </member>
+        <member name="P:Datadog.Trace.ClrProfiler.MetadataNames.MethodName">
+            <summary>
+            Gets the method's name.
+            </summary>
+        </member>
+        <member name="T:Datadog.Trace.ClrProfiler.ScopeFactory">
+            <summary>
+            Convenience class that creates scopes and populates them with some standard details.
+            </summary>
+        </member>
+        <member name="M:Datadog.Trace.ClrProfiler.ScopeFactory.CreateOutboundHttpScope(Datadog.Trace.Tracer,System.String,System.Uri,System.String)">
+            <summary>
+            Creates a scope for outbound http requests and populates some common details.
+            </summary>
+            <param name="tracer">The tracer instance to use to create the new scope.</param>
+            <param name="httpMethod">The HTTP method used by the request.</param>
+            <param name="requestUri">The URI requested by the request.</param>
+            <param name="integrationName">The name of the integration creating this scope.</param>
+            <returns>A new pre-populated scope.</returns>
+        </member>
+    </members>
+</doc>

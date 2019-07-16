@@ -304,45 +304,84 @@ bool IsAssemblyAvailable(
     const ComPtr<IMetaDataAssemblyImport>& current_assembly_import,
     const ModuleInfo& module_info) {
   auto found = false;
-  for (auto& assembly_ref : EnumAssemblyRefs(current_assembly_import)) {
-    const auto metadata_ref =
-        GetReferencedAssemblyMetadata(current_assembly_import, assembly_ref);
-    if (metadata_ref.name == wrapper_assembly.name &&
-        metadata_ref.version == wrapper_assembly.version) {
-      return true;
-    }
-  }
+  // for (auto& assembly_ref : EnumAssemblyRefs(current_assembly_import)) {
+  //   const auto metadata_ref =
+  //       GetReferencedAssemblyMetadata(current_assembly_import, assembly_ref);
+  //   if (metadata_ref.name == wrapper_assembly.name &&
+  //       metadata_ref.version == wrapper_assembly.version) {
+  //     return true;
+  //   }
+  // }
 
   // TODO: this is the GAC in many windows scenarios
   // We need to get the app base path from the root assembly
   WSTRING app_directory;
   const size_t last_slash_idx = module_info.path.rfind('\\');
   if (std::string::npos != last_slash_idx) {
-    app_directory = module_info.path.substr(0, last_slash_idx);
+    app_directory = module_info.path.substr(0, last_slash_idx) + L"\\";
   }
 
-  const auto import_assembly_name = wrapper_assembly.name.c_str();
+  auto import_assembly_name = wrapper_assembly.name + ".dll"_W;
 
   // We only care about finding it once
   // TODO: though, should we worry about multiple versions?
   const ULONG max_matches = 5;
-  const auto assembly_matches = new IUnknown*[max_matches];
+  IUnknown** result_pointer = new IUnknown*[max_matches];
+  auto assembly_matches = new IUnknown*[max_matches];
   ULONG* matching_assembly_count = 0;
+  const auto private_bin =
+      L"C:\\Github\\DataDog\\dd-trace-"
+      L"dotnet\\reproductions\\MissingLibraryCrash\\some-private-bin\\";
 
-  auto hr = current_assembly_import->FindAssembliesByName(
-      app_directory.c_str(), nullptr, import_assembly_name, assembly_matches,
-      max_matches,
-      matching_assembly_count);
+  mdToken tkRS;
+  const void *pPKT, *pHash;
+  ULONG cHash, cName;
+  WCHAR wzName[2048];
+  ASSEMBLYMETADATA md;
+  WCHAR wzLocale[1024];
+  DWORD dwFlags;
+  IUnknown* pIAMDI[64];
+  memset(&md, 0, sizeof(ASSEMBLYMETADATA));
+  md.szLocale = wzLocale;
+  md.cbLocale = 1024;
 
-  if (FAILED(hr)) {
-    // Can't safely say the assembly is available
-    // return false;
-    // return true for now until we figure things out
-    // currently receiving an INVALID_POINTER result
-    return true;
+  struct Param {
+    ComPtr<IMetaDataAssemblyImport> pAssemblyImport;
+    WCHAR* wzName;
+    IUnknown** pIAMDI;
+    ULONG cPKT;
+  } param;
+  param.pAssemblyImport = current_assembly_import;
+  param.wzName = wzName;
+  param.pIAMDI = pIAMDI;
+  auto pParam = &param;
+  /*current_assembly_import->GetAssemblyRefProps(tkRS, &pPKT, &param.cPKT,
+     wzName, 2048, &cName, &md, &pHash, &cHash, &dwFlags);*/
+
+  auto gac_hr = pParam->pAssemblyImport->FindAssembliesByName(
+      NULL, NULL, (LPCWSTR)pParam->wzName, pParam->pIAMDI, 64, &pParam->cPKT);
+
+  if (!FAILED(gac_hr)) {
+     // WE GOOD!
+    // No need to evaluate the bins
+    return true;  
   }
 
-  for (ULONG i = 0; i < *matching_assembly_count; i++) {
+  auto direct_hr = current_assembly_import->FindAssembliesByName(
+      app_directory.c_str(), private_bin, import_assembly_name.c_str(),
+      result_pointer, max_matches, matching_assembly_count);
+
+  if (FAILED(direct_hr)) {
+    // Can't safely say the assembly is available
+    return false;
+    // return true for now until we figure things out
+    // currently receiving an INVALID_POINTER result
+    // return true;
+  }
+
+  assembly_matches = result_pointer;
+
+  for (ULONG i = 0; i >= *matching_assembly_count; i++) {
     const auto unknown_import = assembly_matches[i];
 
     if (unknown_import == nullptr) {
@@ -350,11 +389,11 @@ bool IsAssemblyAvailable(
     }
 
     // IMetaDataAssemblyImport* matching_import;
-    // 
+    //
     // const HRESULT import_hr =
     //     unknown_import->QueryInterface<IMetaDataAssemblyImport>(
     //         &matching_import);
-    // 
+    //
     // if (FAILED(import_hr)) {
     //   // wot happen
     //   continue;
