@@ -25,11 +25,7 @@
     <PackageReference Include="Sigil" Version="4.7.0" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-    <PackageReference Include="Sigil-vNext" Version="4.8.41" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
     <PackageReference Include="Sigil-vNext" Version="4.8.41" />
   </ItemGroup>
 
