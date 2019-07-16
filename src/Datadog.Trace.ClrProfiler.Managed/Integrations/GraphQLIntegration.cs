@@ -260,8 +260,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                                    .GetProperty<string>("Name")
                                                    .GetValueOrDefault();
             string operationType = executionContext.GetProperty("Operation")
-                                                   .GetProperty("OperationType")
-                                                   .ToString();
+                                                       .GetProperty<Enum>("OperationType")
+                                                       .GetValueOrDefault()
+                                                       .ToString();
             string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
             Scope scope = null;

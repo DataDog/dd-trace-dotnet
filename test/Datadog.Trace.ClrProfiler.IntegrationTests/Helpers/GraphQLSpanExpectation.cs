@@ -58,6 +58,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 mismatches.Add(FailureMessage(nameof(GraphQLSource), actual: actualSource, expected: GraphQLSource));
             }
 
+            var actualGraphQLOperationType = GetTag(span, Tags.GraphQLOperationType);
+
+            if (actualGraphQLOperationType != GraphQLOperationType)
+            {
+                mismatches.Add(FailureMessage(nameof(GraphQLOperationType), actual: actualGraphQLOperationType, expected: GraphQLOperationType));
+            }
+
             if (CustomAssertion != null)
             {
                 mismatches.AddRange(CustomAssertion(span));

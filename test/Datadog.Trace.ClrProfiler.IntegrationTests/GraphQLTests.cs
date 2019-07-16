@@ -145,33 +145,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 CustomAssertion = additionalCheck,
 
                 GraphQLRequestBody = graphQLRequestBody,
-                GraphQLOperationType = graphQLOperationType,
+                GraphQLOperationType = null,
                 GraphQLOperationName = graphQLOperationName,
                 GraphQLSource = graphQLSource,
                 IsGraphQLError = failsValidation,
             });
             _expectedGraphQLValidateSpanCount++;
 
-            if (failsValidation)
-            {
-                // Expect an 'execute' span
-                _expectations.Add(new GraphQLSpanExpectation
-                {
-                    OriginalUri = url,
-                    OperationName = _graphQLExecuteOperationName,
-                    ResourceName = _graphQLExecuteOperationName,
-                    ServiceName = "Samples.GraphQL-graphql",
-                    Type = SpanTypes.GraphQL,
-                    CustomAssertion = additionalCheck,
+            if (failsValidation) { return; }
 
-                    GraphQLRequestBody = graphQLRequestBody,
-                    GraphQLOperationType = graphQLOperationType,
-                    GraphQLOperationName = graphQLOperationName,
-                    GraphQLSource = graphQLSource,
-                    IsGraphQLError = failsExecution,
-                });
-                _expectedGraphQLExecuteSpanCount++;
-            }
+            // Expect an 'execute' span
+            _expectations.Add(new GraphQLSpanExpectation
+            {
+                OriginalUri = url,
+                OperationName = _graphQLExecuteOperationName,
+                ResourceName = _graphQLExecuteOperationName,
+                ServiceName = "Samples.GraphQL-graphql",
+                Type = SpanTypes.GraphQL,
+                CustomAssertion = additionalCheck,
+
+                GraphQLRequestBody = graphQLRequestBody,
+                GraphQLOperationType = graphQLOperationType,
+                GraphQLOperationName = graphQLOperationName,
+                GraphQLSource = graphQLSource,
+                IsGraphQLError = failsExecution,
+            });
+            _expectedGraphQLExecuteSpanCount++;
+
+            if (failsExecution) { return; }
         }
 
         private void SubmitRequests(int aspNetCorePort)
