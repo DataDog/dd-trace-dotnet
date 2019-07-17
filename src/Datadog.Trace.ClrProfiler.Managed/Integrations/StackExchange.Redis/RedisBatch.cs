@@ -64,6 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var thisType = redisBase.GetType();
             var genericType = typeof(T);
             var asm = thisType.Assembly;
+            var redisBaseType = asm.GetType("StackExchange.Redis.RedisBase");
             var batchType = asm.GetType("StackExchange.Redis.RedisBatch");
             var messageType = asm.GetType("StackExchange.Redis.Message");
             var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(genericType);
@@ -71,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, Task<T>>>
                .CreateMethodCallDelegate(
-                    thisType,
+                    redisBaseType,
                     methodName: "ExecuteAsync",
                     callOpCode,
                     methodParameterTypes: new[] { messageType, processorType, serverType },
