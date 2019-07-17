@@ -196,7 +196,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Major2)]
         public static void Rethrow(object context, int opCode, int mdToken)
         {
-            string methodDef = $"{ResourceInvoker}.{nameof(Rethrow)}({context?.GetType().FullName} context)";
+            string methodDef = $"{ResourceInvoker}.{nameof(Rethrow)}({context?.GetType().FullName + " "}context)";
             var shouldTrace = Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName);
 
             Action<object> instrumentedMethod = null;
