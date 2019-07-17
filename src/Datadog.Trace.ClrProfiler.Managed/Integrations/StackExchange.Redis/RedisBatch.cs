@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 
@@ -15,6 +17,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private const string RedisBaseTypeName = "StackExchange.Redis.RedisBase";
         private const string Major1 = "1";
         private const string Major2 = "2";
+
+        private static readonly ConcurrentDictionary<Type, Type> ProcessorTypes = new ConcurrentDictionary<Type, Type>();
+
+        private static Assembly _redisAssembly;
+        private static Type _redisBaseType;
+        private static Type _messageType;
+        private static Type _processorOpenType;
+        private static Type _serverType;
+        private static Type _batchType;
 
         /// <summary>
         /// Execute an asynchronous redis operation.
@@ -62,24 +73,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private static async Task<T> ExecuteAsyncInternal<T>(object redisBase, object message, object processor, object server, OpCodeValue callOpCode)
         {
             var thisType = redisBase.GetType();
+
+            if (_redisAssembly == null)
+            {
+                // get these only once and cache them,
+                // no need for locking, race conditions are not a problem
+                _redisAssembly = thisType.Assembly;
+                _redisBaseType = _redisAssembly.GetType("StackExchange.Redis.RedisBase");
+                _batchType = _redisAssembly.GetType("StackExchange.Redis.RedisBatch");
+                _messageType = _redisAssembly.GetType("StackExchange.Redis.Message");
+                _processorOpenType = _redisAssembly.GetType("StackExchange.Redis.ResultProcessor`1");
+                _serverType = _redisAssembly.GetType("StackExchange.Redis.ServerEndPoint");
+            }
+
+            // cache one processor type for each type of T
             var genericType = typeof(T);
-            var asm = thisType.Assembly;
-            var redisBaseType = asm.GetType("StackExchange.Redis.RedisBase");
-            var batchType = asm.GetType("StackExchange.Redis.RedisBatch");
-            var messageType = asm.GetType("StackExchange.Redis.Message");
-            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(genericType);
-            var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
+            var processorType = ProcessorTypes.GetOrAdd(genericType, t => _processorOpenType.MakeGenericType(t));
 
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, Task<T>>>
                                      .GetOrCreateMethodCallDelegate(
-                                          redisBaseType,
+                                          _redisBaseType,
                                           methodName: "ExecuteAsync",
                                           callOpCode,
-                                          methodParameterTypes: new[] { messageType, processorType, serverType },
+                                          methodParameterTypes: new[] { _messageType, processorType, _serverType },
                                           methodGenericArguments: new[] { genericType });
 
             // we only trace RedisBatch methods here
-            if (thisType == batchType)
+            if (thisType == _batchType)
             {
                 using (var scope = CreateScope(redisBase, message))
                 {
