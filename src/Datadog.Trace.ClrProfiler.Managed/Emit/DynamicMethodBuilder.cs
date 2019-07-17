@@ -125,9 +125,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
             if (methodGenericArguments != null)
             {
                 methods = methods.Where(
-                                      m => m.IsGenericMethodDefinition &&
-                                           m.GetGenericArguments().Length == methodGenericArguments.Length)
-                                 .ToArray();
+                    m => m.IsGenericMethodDefinition &&
+                         m.GetGenericArguments().Length == methodGenericArguments.Length);
             }
 
             MethodInfo methodInfo = methods.FirstOrDefault();
