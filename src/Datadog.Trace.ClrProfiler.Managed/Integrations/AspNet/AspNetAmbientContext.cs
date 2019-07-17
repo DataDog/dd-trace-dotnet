@@ -86,6 +86,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 var span = _rootScope.Span;
 
+                // DEBUGGING
+                span.SetTag(Tags.ManualKeep, "true");
+
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
                     method: httpMethod,
