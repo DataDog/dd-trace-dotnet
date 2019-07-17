@@ -194,14 +194,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             var dynamicMethod = Emit<TDelegate>.NewDynamicMethod(methodInfo.Name);
 
-            if (methodInfo.IsGenericMethodDefinition || methodInfo.IsGenericMethod)
+            if (methodInfo.IsGenericMethodDefinition)
             {
-                if (_methodGenerics == null || _methodGenerics.Length == 0)
-                {
-                    throw new ArgumentException($"Must specify {nameof(_methodGenerics)} for a generic method.");
-                }
-
-                methodInfo = methodInfo.MakeGenericMethod(_methodGenerics);
+                methodInfo = MakeGenericMethod(methodInfo);
             }
 
             Type[] effectiveParameterTypes;
@@ -266,6 +261,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             dynamicMethod.Return();
             return dynamicMethod.CreateDelegate();
+        }
+
+        private MethodInfo MakeGenericMethod(MethodInfo methodInfo)
+        {
+            if (_methodGenerics == null || _methodGenerics.Length == 0)
+            {
+                throw new ArgumentException($"Must specify {nameof(_methodGenerics)} for a generic method.");
+            }
+
+            return methodInfo.MakeGenericMethod(_methodGenerics);
         }
 
         private MethodInfo VerifyMethodFromToken(MethodInfo methodInfo)
