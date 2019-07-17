@@ -197,8 +197,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 throw new Exception($"Only Func<> or Action<> are supported in {nameof(MethodBuilder)}.");
             }
 
-            var dynamicMethod = Emit<TDelegate>.NewDynamicMethod(methodInfo.Name);
-
             if (methodInfo.IsGenericMethodDefinition)
             {
                 methodInfo = MakeGenericMethod(methodInfo);
@@ -220,6 +218,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
                                          .Concat(reflectedParameterTypes)
                                          .ToArray();
             }
+
+            var dynamicMethod = Emit<TDelegate>.NewDynamicMethod(methodInfo.Name);
 
             // load each argument and cast or unbox as necessary
             for (ushort argumentIndex = 0; argumentIndex < delegateParameterTypes.Length; argumentIndex++)
@@ -513,11 +513,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 if (actualGenericArg.IsGenericParameter)
                 {
-                var expectedGenericArg = _methodGenerics[actualGenericArg.GenericParameterPosition];
+                    var expectedGenericArg = _methodGenerics[actualGenericArg.GenericParameterPosition];
 
-                if (!MeetsGenericArgumentRequirements(actualGenericArg, expectedGenericArg))
-                {
-                    return false;
+                    if (!MeetsGenericArgumentRequirements(actualGenericArg, expectedGenericArg))
+                    {
+                        return false;
                     }
                 }
             }
