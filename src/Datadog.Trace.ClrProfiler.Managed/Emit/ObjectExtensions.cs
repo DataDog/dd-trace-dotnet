@@ -46,6 +46,36 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return false;
         }
 
+        /// <summary>
+        /// Tries to call an instance method with the specified name and a return value.
+        /// </summary>
+        /// <typeparam name="TResult">The type of the method's result value.</typeparam>
+        /// <param name="source">The object to call the method on.</param>
+        /// <param name="methodName">The name of the method to call.</param>
+        /// <param name="value">The value returned by the method.</param>
+        /// <returns><c>true</c> if the method was found, <c>false</c> otherwise.</returns>
+        public static bool TryCallMethod<TResult>(this object source, string methodName, out TResult value)
+        {
+            var type = source.GetType();
+
+            object cachedItem = Cache.GetOrAdd(
+                $"{type.AssemblyQualifiedName}.{methodName}",
+                key =>
+                    DynamicMethodBuilder<Func<object, TResult>>
+                       .CreateMethodCallDelegate(
+                            type,
+                            methodName));
+
+            if (cachedItem is Func<object, TResult> func)
+            {
+                value = func(source);
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
         public static MemberResult<TResult> CallMethod<TArg1, TResult>(this object source, string methodName, TArg1 arg1)
         {
             return source.TryCallMethod(methodName, arg1, out TResult result)
@@ -56,6 +86,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public static MemberResult<object> CallMethod<TArg1>(this object source, string methodName, TArg1 arg1)
         {
             return CallMethod<TArg1, object>(source, methodName, arg1);
+        }
+
+        public static MemberResult<TResult> CallMethod<TResult>(this object source, string methodName)
+        {
+            return source.TryCallMethod(methodName, out TResult result)
+                       ? new MemberResult<TResult>(result)
+                       : MemberResult<TResult>.NotFound;
         }
 
         /// <summary>

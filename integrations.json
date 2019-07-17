@@ -398,6 +398,64 @@
     ]
   },
   {
+    "name": "GraphQL",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "GraphQL",
+          "type": "GraphQL.Validation.IDocumentValidator",
+          "method": "Validate",
+          "signature_types": [
+            "GraphQL.Validation.IValidationResult",
+            "System.String",
+            "GraphQL.Types.ISchema",
+            "GraphQL.Language.AST.Document",
+            "System.Collections.Generic.IEnumerable`1<GraphQL.Validation.IValidationRule>",
+            "_",
+            "GraphQL.Inputs"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 3,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.5.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.GraphQLIntegration",
+          "method": "Validate",
+          "signature": "00 09 1C 1C 1C 1C 1C 1C 1C 1C 08 08"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "GraphQL",
+          "type": "GraphQL.Execution.IExecutionStrategy",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
+            "GraphQL.Execution.ExecutionContext"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 3,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.5.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.GraphQLIntegration",
+          "method": "ExecuteAsync",
+          "signature": "00 04 1C 1C 1C 08 08"
+        }
+      }
+    ]
+  },
+  {
     "name": "HttpContext",
     "method_replacements": [
       {

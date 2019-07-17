@@ -20,9 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var possibleSpans =
                     spans
-                       .Where(s => s.Resource == expectation.ResourceName)
-                       .Where(s => s.Name == expectation.OperationName)
-                       .Where(s => s.Type == expectation.Type)
+                       .Where(s => expectation.IsSimpleMatch(s))
                        .ToList();
 
                 var count = possibleSpans.Count();
