@@ -71,12 +71,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, Task<T>>>
-               .CreateMethodCallDelegate(
-                    redisBaseType,
-                    methodName: "ExecuteAsync",
-                    callOpCode,
-                    methodParameterTypes: new[] { messageType, processorType, serverType },
-                    methodGenericArguments: new[] { genericType });
+                                     .GetOrCreateMethodCallDelegate(
+                                          redisBaseType,
+                                          methodName: "ExecuteAsync",
+                                          callOpCode,
+                                          methodParameterTypes: new[] { messageType, processorType, serverType },
+                                          methodGenericArguments: new[] { genericType });
 
             // we only trace RedisBatch methods here
             if (thisType == batchType)
