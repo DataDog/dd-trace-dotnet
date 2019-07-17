@@ -21,11 +21,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private readonly object _httpContext;
         private readonly Scope _rootScope;
 
+        private readonly AmbientContextActiveScopeAccess _activeScopeAccess = new AmbientContextActiveScopeAccess();
+
         private AspNetAmbientContext(string integrationName, object httpContext)
         {
             try
             {
-                Tracer = Tracer.Instance;
+                TracerInstance = Tracer.Instance;
+                TracerInstance.RegisterScopeAccess(_activeScopeAccess);
                 _httpContext = httpContext;
 
                 var request = _httpContext.GetProperty("Request").GetValueOrDefault();
@@ -49,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 SpanContext propagatedContext = null;
 
-                if (Tracer.ActiveScope == null)
+                if (TracerInstance.ActiveScope == null)
                 {
                     try
                     {
@@ -80,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                _rootScope = Tracer.StartActive(TopLevelOperationName, propagatedContext);
+                _rootScope = TracerInstance.StartActive(TopLevelOperationName, propagatedContext);
 
                 RegisterForDisposal(_rootScope);
 
@@ -102,13 +105,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     span.SetTag(Tags.HttpStatusCode, statusCode.Value.ToString());
                 }
 
-                var analyticSampleRate = Tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: true);
+                var analyticSampleRate = TracerInstance.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: true);
                 span.SetMetric(Tags.Analytics, analyticSampleRate);
             }
             catch (Exception ex)
             {
                 // Don't crash client apps
                 Log.Error($"Exception when initializing {nameof(AspNetAmbientContext)}.", ex);
+                Tracer.Instance?.DeregisterScopeAccess(_activeScopeAccess);
             }
         }
 
@@ -116,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Gets the instance of the Tracer for this web request.
         /// Ensure that the same Tracer instance is used throughout an entire request.
         /// </summary>
-        internal Tracer Tracer { get; }
+        internal Tracer TracerInstance { get; }
 
         /// <summary>
         /// Gets the root span for this web request.
@@ -157,6 +161,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     // No exceptions in dispose
                     Log.Error($"Exception when disposing {registeredDisposable?.GetType().FullName ?? "NULL"}.", ex);
                 }
+            }
+
+            try
+            {
+                // Ensure this instance of the active scope access doesn't stick around.
+                // Ensure it is also the very last thing that happens
+                Tracer.Instance?.DeregisterScopeAccess(_activeScopeAccess);
+            }
+            catch (Exception ex)
+            {
+                // No exceptions in dispose
+                Log.Error(ex, $"Encountered exception when de-registering {nameof(AspNetAmbientContext)}.");
             }
         }
 
@@ -209,6 +225,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         internal bool TryRetrieveScope(string key, out Scope scope)
         {
             return _scopeStorage.TryGetValue(key, out scope);
+        }
+
+        internal bool TryFinishScope(string key, out Scope scope)
+        {
+            _scopeStorage.TryRemove(key, out scope);
+
+            if (scope != null)
+            {
+                // Scope.Dispose calls Close internally
+                scope.Dispose();
+                return true;
+            }
+
+            return false;
         }
 
         internal void RegisterForDisposal(IDisposable disposable)
@@ -296,6 +326,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 Log.Error($"Unable to register {disposable.GetType().FullName}", ex);
+            }
+        }
+
+        public class AmbientContextActiveScopeAccess : IActiveScopeAccess
+        {
+            private Scope _activeScope;
+
+            public int Priority { get; } = 50;
+
+            public Scope GetActiveScope()
+            {
+                return _activeScope;
+            }
+
+            public bool TrySetActiveScope(Scope scope)
+            {
+                _activeScope = scope;
+                return true;
             }
         }
     }

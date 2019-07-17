@@ -53,7 +53,7 @@ namespace Datadog.Trace
             // fall back to default implementations of each dependency if not provided
             Settings = settings ?? TracerSettings.FromDefaultSources();
             _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri));
-            _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
+            _scopeManager = scopeManager ?? new ScopeManager();
             Sampler = sampler ?? new RateByServiceSampler();
 
             // if not configured, try to determine an appropriate service name
@@ -238,6 +238,24 @@ namespace Datadog.Trace
         internal static Uri GetAgentUri(TracerSettings settings)
         {
             return settings.AgentUri;
+        }
+
+        /// <summary>
+        /// Register IActiveScopeAccess instance with the ScopeManager
+        /// </summary>
+        /// <param name="scopeAccess">The instance to register.</param>
+        internal void RegisterScopeAccess(IActiveScopeAccess scopeAccess)
+        {
+            _scopeManager.RegisterScopeAccess(scopeAccess);
+        }
+
+        /// <summary>
+        /// Register IActiveScopeAccess instance with the ScopeManager
+        /// </summary>
+        /// <param name="scopeAccess">The instance to register.</param>
+        internal void DeregisterScopeAccess(IActiveScopeAccess scopeAccess)
+        {
+            _scopeManager.DeRegisterScopeAccess(scopeAccess);
         }
 
         /// <summary>

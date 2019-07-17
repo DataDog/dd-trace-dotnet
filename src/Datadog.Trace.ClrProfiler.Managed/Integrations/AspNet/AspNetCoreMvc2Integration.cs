@@ -177,7 +177,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             finally
             {
-                aspNetCoreMvcActionScope?.Dispose();
+                integrationContext?.TryFinishScope(IntegrationName, out aspNetCoreMvcActionScope);
             }
         }
 
@@ -268,7 +268,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     resourceName: resourceName,
                     method: httpMethod);
 
-                var aspNetCoreMvcActionScope = ambientContext.Tracer.StartActive(OperationName);
+                var aspNetCoreMvcActionScope = ambientContext.TracerInstance.StartActive(OperationName);
 
                 aspNetCoreMvcActionScope.Span?.DecorateWebServerSpan(
                     resourceName: resourceName,

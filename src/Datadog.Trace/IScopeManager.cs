@@ -19,5 +19,9 @@ namespace Datadog.Trace
         Scope Activate(Span span, bool finishOnClose);
 
         void Close(Scope scope);
+
+        void RegisterScopeAccess(IActiveScopeAccess scopeAccess);
+
+        void DeRegisterScopeAccess(IActiveScopeAccess scopeAccess);
     }
 }
