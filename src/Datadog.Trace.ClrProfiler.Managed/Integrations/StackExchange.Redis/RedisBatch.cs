@@ -54,10 +54,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
-        public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server, int opCode, int mdToken)
+        public static object ExecuteAsync<T>(
+            object redisBase,
+            object message,
+            object processor,
+            object server,
+            int opCode,
+            int mdToken)
         {
-            var callOpCode = (OpCodeValue)opCode;
-            return ExecuteAsyncInternal<T>(redisBase, message, processor, server, callOpCode);
+            var callingAssembly = Assembly.GetCallingAssembly();
+            return ExecuteAsyncInternal<T>(redisBase, message, processor, server, opCode, mdToken, callingAssembly);
         }
 
         /// <summary>
@@ -69,8 +75,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="processor">The result processor</param>
         /// <param name="server">The server</param>
         /// <param name="callOpCode">The <see cref="OpCodeValue"/> used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="callingAssembly">The assembly of the method the invoked the target method.</param>
         /// <returns>An asynchronous task.</returns>
-        private static async Task<T> ExecuteAsyncInternal<T>(object redisBase, object message, object processor, object server, OpCodeValue callOpCode)
+        private static async Task<T> ExecuteAsyncInternal<T>(
+            object redisBase,
+            object message,
+            object processor,
+            object server,
+            int callOpCode,
+            int mdToken,
+            Assembly callingAssembly)
         {
             var thisType = redisBase.GetType();
 
@@ -88,15 +103,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
             // cache one processor type for each type of T
             var genericType = typeof(T);
-            var processorType = ProcessorTypes.GetOrAdd(genericType, t => _processorOpenType.MakeGenericType(t));
+            // var processorType = ProcessorTypes.GetOrAdd(genericType, t => _processorOpenType.MakeGenericType(t));
 
-            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, Task<T>>>
-                                     .GetOrCreateMethodCallDelegate(
-                                          _redisBaseType,
-                                          methodName: "ExecuteAsync",
-                                          callOpCode,
-                                          methodParameterTypes: new[] { _messageType, processorType, _serverType },
-                                          methodGenericArguments: new[] { genericType });
+            var instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
+                                    .Start(callingAssembly, mdToken, callOpCode, nameof(ExecuteAsync))
+                                    .WithConcreteType(_redisBaseType)
+                                    .WithMethodGenerics(genericType)
+                                    .WithParameters(message, processor, server)
+                                     // .WithExplicitParameterTypes(_messageType, processorType, _serverType)
+                                     // .ForceMethodDefinitionResolution()
+                                    .Build();
 
             // we only trace RedisBatch methods here
             if (thisType == _batchType)
@@ -105,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 {
                     try
                     {
-                        return await originalMethod(redisBase, message, processor, server).ConfigureAwait(false);
+                        return await instrumentedMethod(redisBase, message, processor, server).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -115,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 }
             }
 
-            return await originalMethod(redisBase, message, processor, server).ConfigureAwait(false);
+            return await instrumentedMethod(redisBase, message, processor, server).ConfigureAwait(false);
         }
 
         private static Scope CreateScope(object batch, object message)
