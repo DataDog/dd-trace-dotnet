@@ -18,13 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private const string Major1 = "1";
         private const string Major2 = "2";
 
-        private static readonly ConcurrentDictionary<Type, Type> ProcessorTypes = new ConcurrentDictionary<Type, Type>();
-
         private static Assembly _redisAssembly;
         private static Type _redisBaseType;
-        private static Type _messageType;
-        private static Type _processorOpenType;
-        private static Type _serverType;
         private static Type _batchType;
 
         /// <summary>
@@ -96,22 +91,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 _redisAssembly = thisType.Assembly;
                 _redisBaseType = _redisAssembly.GetType("StackExchange.Redis.RedisBase");
                 _batchType = _redisAssembly.GetType("StackExchange.Redis.RedisBatch");
-                _messageType = _redisAssembly.GetType("StackExchange.Redis.Message");
-                _processorOpenType = _redisAssembly.GetType("StackExchange.Redis.ResultProcessor`1");
-                _serverType = _redisAssembly.GetType("StackExchange.Redis.ServerEndPoint");
             }
-
-            // cache one processor type for each type of T
-            var genericType = typeof(T);
-            // var processorType = ProcessorTypes.GetOrAdd(genericType, t => _processorOpenType.MakeGenericType(t));
 
             var instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
                                     .Start(callingAssembly, mdToken, callOpCode, nameof(ExecuteAsync))
                                     .WithConcreteType(_redisBaseType)
-                                    .WithMethodGenerics(genericType)
+                                    .WithMethodGenerics(typeof(T))
                                     .WithParameters(message, processor, server)
-                                     // .WithExplicitParameterTypes(_messageType, processorType, _serverType)
-                                     // .ForceMethodDefinitionResolution()
                                     .Build();
 
             // we only trace RedisBatch methods here
