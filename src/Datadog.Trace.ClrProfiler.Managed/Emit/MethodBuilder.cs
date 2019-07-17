@@ -511,11 +511,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             foreach (var actualGenericArg in genericArgs)
             {
+                if (actualGenericArg.IsGenericParameter)
+                {
                 var expectedGenericArg = _methodGenerics[actualGenericArg.GenericParameterPosition];
 
                 if (!MeetsGenericArgumentRequirements(actualGenericArg, expectedGenericArg))
                 {
                     return false;
+                    }
                 }
             }
 
