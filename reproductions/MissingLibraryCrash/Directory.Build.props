@@ -9,4 +9,11 @@
     <ProfilerOutputDirectory>..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="$(ProfilerOutputDirectory)\*.dll;$(ProfilerOutputDirectory)\*.so;$(ProfilerOutputDirectory)\*.pdb"
+          CopyToOutputDirectory="Always"
+          CopyToPublishDirectory="Always"
+          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

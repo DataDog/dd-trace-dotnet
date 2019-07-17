@@ -321,7 +321,7 @@ bool IsAssemblyAvailable(
     app_directory = module_info.path.substr(0, last_slash_idx) + L"\\";
   }
 
-  auto import_assembly_name = wrapper_assembly.name + ".dll"_W;
+  auto import_assembly_name = wrapper_assembly.name.c_str();
 
   // We only care about finding it once
   // TODO: though, should we worry about multiple versions?
@@ -333,13 +333,8 @@ bool IsAssemblyAvailable(
       L"C:\\Github\\DataDog\\dd-trace-"
       L"dotnet\\reproductions\\MissingLibraryCrash\\some-private-bin\\";
 
-  mdToken tkRS;
-  const void *pPKT, *pHash;
-  ULONG cHash, cName;
-  WCHAR wzName[2048];
   ASSEMBLYMETADATA md;
   WCHAR wzLocale[1024];
-  DWORD dwFlags;
   IUnknown* pIAMDI[64];
   memset(&md, 0, sizeof(ASSEMBLYMETADATA));
   md.szLocale = wzLocale;
@@ -347,12 +342,12 @@ bool IsAssemblyAvailable(
 
   struct Param {
     ComPtr<IMetaDataAssemblyImport> pAssemblyImport;
-    WCHAR* wzName;
+    LPCWSTR* wzName;
     IUnknown** pIAMDI;
     ULONG cPKT;
   } param;
   param.pAssemblyImport = current_assembly_import;
-  param.wzName = wzName;
+  param.wzName = &import_assembly_name;
   param.pIAMDI = pIAMDI;
   auto pParam = &param;
   /*current_assembly_import->GetAssemblyRefProps(tkRS, &pPKT, &param.cPKT,
@@ -368,7 +363,7 @@ bool IsAssemblyAvailable(
   }
 
   auto direct_hr = current_assembly_import->FindAssembliesByName(
-      app_directory.c_str(), private_bin, import_assembly_name.c_str(),
+      app_directory.c_str(), private_bin, (LPCWSTR)pParam->wzName,
       result_pointer, max_matches, matching_assembly_count);
 
   if (FAILED(direct_hr)) {
