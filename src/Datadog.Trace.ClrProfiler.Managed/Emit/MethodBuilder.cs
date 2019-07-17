@@ -158,6 +158,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (!requiresBestEffortMatching && _methodBase is MethodInfo info)
             {
+                if (info.IsGenericMethodDefinition)
+                {
+                    info = MakeGenericMethod(info);
+                }
+
                 methodInfo = VerifyMethodFromToken(info);
             }
 
