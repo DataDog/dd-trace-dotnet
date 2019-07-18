@@ -40,7 +40,7 @@ namespace AspNetMvcCorePerformance
                     "home/index",
                     "status-code/200",
                     "delay/0",
-                    "delay/1",
+                    "delay/0",
                     "home/index" // 10
                 };
 

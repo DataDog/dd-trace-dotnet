@@ -12,8 +12,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
         private static readonly string CoreMvc = "Samples.AspNetCoreMvc2";
         private static readonly string LoadTestConsole = "AspNetMvcCorePerformance";
 
-        private static readonly int Threads = 5;
-        private static readonly int IterationsPerThread = 30;
+        private static readonly int Threads = 10;
+        private static readonly int IterationsPerThread = 20;
 
         public AspNetCoreMvc2LoadTests(ITestOutputHelper output)
             : base(output)
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 
             var spans = mvcPart.Agent.Spans;
 
-            var traces = spans.GroupBy(s => s.TraceId).ToList();
+            var traces = spans.GroupBy(s => s.TraceId).OrderByDescending(s => s.Count()).ToList();
 
             var expectedTraces = Threads * IterationsPerThread;
 

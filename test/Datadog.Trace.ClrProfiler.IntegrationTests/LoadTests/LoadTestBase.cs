@@ -160,6 +160,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
             try
             {
                 process = Process.Start(startInfo);
+
                 if (process == null)
                 {
                     throw new NullException("We need a reference to the process for this test.");
