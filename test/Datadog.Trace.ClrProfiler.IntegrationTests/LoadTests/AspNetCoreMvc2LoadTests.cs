@@ -9,8 +9,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
     {
         private static readonly string TopLevelOperationName = "web.request";
 
-        private const string CoreMvc = "Samples.AspNetCoreMvc2";
-        private const string LoadTestConsole = "AspNetMvcCorePerformance";
+        private static readonly string CoreMvc = "Samples.AspNetCoreMvc2";
+        private static readonly string LoadTestConsole = "AspNetMvcCorePerformance";
 
         public AspNetCoreMvc2LoadTests(ITestOutputHelper output)
             : base(output)
