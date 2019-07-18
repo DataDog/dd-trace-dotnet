@@ -11,6 +11,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 
         public bool IsAnchor { get; set; }
 
+        public bool TimeToSetSail { get; set; }
+
         public string[] CommandLineArgs { get; set; }
 
         public EnvironmentHelper EnvironmentHelper { get; set; }

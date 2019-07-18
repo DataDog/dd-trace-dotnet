@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                 output: Output,
                 samplesDirectory: directory,
                 prependSamplesToAppName: false,
-                requiresAgent: requiresAgent);
+                requiresProfiling: requiresAgent);
 
             loadTestPart.EnvironmentHelper = env;
 
@@ -199,15 +199,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
             }
             finally
             {
-                process?.Kill();
-                process?.Dispose();
-                loadTestPart.Agent?.Dispose();
+                loadTestPart.TimeToSetSail = true;
+
+                try
+                {
+                    if (process != null)
+                    {
+                        if (!process.HasExited)
+                        {
+                            process.Kill();
+                        }
+
+                        process.Dispose();
+                    }
+
+                    loadTestPart.Agent?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    // Don't care about any of this yet.
+                    Output.WriteLine(ex.ToString());
+                }
             }
         }
 
         private bool AnchorsAreRunning()
         {
-            return _anchors.Any(anchor => anchor.Process == null || (!anchor.Process.HasExited && anchor.ProcessResult == null));
+            return _anchors.Any(anchor => anchor.TimeToSetSail == false);
         }
     }
 }

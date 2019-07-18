@@ -41,12 +41,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
             foreach (var trace in traces)
             {
                 var spanCount = trace.Count();
+
+                if (spanCount <= 2)
+                {
+                    // Looking pretty normal here
+                    continue;
+                }
+
                 if (spanCount >= 5)
                 {
                     Output.WriteLine("Found a trace with 5 or more spans.");
                 }
 
-                Assert.True(spanCount > 10, "There is no chance there are supposed to be more than 10 spans in these traces");
+                Assert.False(spanCount > 10, "There is no chance there are supposed to be more than 10 spans in these traces");
             }
         }
     }

@@ -19,21 +19,20 @@ namespace AspNetMvcCorePerformance
                     urlBase = args[0];
                 }
 
-                var totalIterations = 200;
+                var totalIterations = 50;
                 var threadRepresentation = Enumerable.Range(0, 10).ToArray();
 
                 var exceptionBag = new ConcurrentBag<Exception>();
 
                 Console.WriteLine($"Running {threadRepresentation.Length} threads with {totalIterations} iterations.");
 
-                var resources = new List<string>()
+                var resources = new List<string>
                 {
                     "delay/0", // 1
                     "delay-async/0",
                     "delay-async/0",
                     "home/index",
                     "home/index",
-                    //"bad-request",
                     "home/index",
                     "status-code/200",
                     "delay/0",
