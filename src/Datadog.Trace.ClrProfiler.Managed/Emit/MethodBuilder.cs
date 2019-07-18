@@ -158,6 +158,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (!requiresBestEffortMatching && _methodBase is MethodInfo info)
             {
+                if (info.IsGenericMethodDefinition)
+                {
+                    info = MakeGenericMethod(info);
+                }
+
                 methodInfo = VerifyMethodFromToken(info);
             }
 
@@ -192,16 +197,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 throw new Exception($"Only Func<> or Action<> are supported in {nameof(MethodBuilder)}.");
             }
 
-            var dynamicMethod = Emit<TDelegate>.NewDynamicMethod(methodInfo.Name);
-
-            if (methodInfo.IsGenericMethodDefinition || methodInfo.IsGenericMethod)
+            if (methodInfo.IsGenericMethodDefinition)
             {
-                if (_methodGenerics == null || _methodGenerics.Length == 0)
-                {
-                    throw new ArgumentException($"Must specify {nameof(_methodGenerics)} for a generic method.");
-                }
-
-                methodInfo = methodInfo.MakeGenericMethod(_methodGenerics);
+                methodInfo = MakeGenericMethod(methodInfo);
             }
 
             Type[] effectiveParameterTypes;
@@ -220,6 +218,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
                                          .Concat(reflectedParameterTypes)
                                          .ToArray();
             }
+
+            var dynamicMethod = Emit<TDelegate>.NewDynamicMethod(methodInfo.Name);
 
             // load each argument and cast or unbox as necessary
             for (ushort argumentIndex = 0; argumentIndex < delegateParameterTypes.Length; argumentIndex++)
@@ -266,6 +266,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             dynamicMethod.Return();
             return dynamicMethod.CreateDelegate();
+        }
+
+        private MethodInfo MakeGenericMethod(MethodInfo methodInfo)
+        {
+            if (_methodGenerics == null || _methodGenerics.Length == 0)
+            {
+                throw new ArgumentException($"Must specify {nameof(_methodGenerics)} for a generic method.");
+            }
+
+            return methodInfo.MakeGenericMethod(_methodGenerics);
         }
 
         private MethodInfo VerifyMethodFromToken(MethodInfo methodInfo)
@@ -501,11 +511,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             foreach (var actualGenericArg in genericArgs)
             {
-                var expectedGenericArg = _methodGenerics[actualGenericArg.GenericParameterPosition];
-
-                if (!MeetsGenericArgumentRequirements(actualGenericArg, expectedGenericArg))
+                if (actualGenericArg.IsGenericParameter)
                 {
-                    return false;
+                    var expectedGenericArg = _methodGenerics[actualGenericArg.GenericParameterPosition];
+
+                    if (!MeetsGenericArgumentRequirements(actualGenericArg, expectedGenericArg))
+                    {
+                        return false;
+                    }
                 }
             }
 
