@@ -7,6 +7,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 {
     public class AspNetCoreMvc2LoadTests : LoadTestBase
     {
+        private static readonly string TopLevelOperationName = "web.request";
+
         private const string CoreMvc = "Samples.AspNetCoreMvc2";
         private const string LoadTestConsole = "AspNetMvcCorePerformance";
 
@@ -38,6 +40,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 
             var traces = spans.GroupBy(s => s.TraceId);
 
+            var maximumSpansPerTrace = 8;
+
             foreach (var trace in traces)
             {
                 var spanCount = trace.Count();
@@ -53,7 +57,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                     Output.WriteLine("Found a trace with 5 or more spans.");
                 }
 
-                Assert.False(spanCount > 10, "There is no chance there are supposed to be more than 10 spans in these traces");
+                var topLevelSpanCount = trace.Count(span => span.Name == TopLevelOperationName);
+
+                if (topLevelSpanCount > 1)
+                {
+                    // Not good, we're nesting spans we should be nesting
+                    Assert.True(topLevelSpanCount == 1, "There should only ever be one top level span.");
+                }
+
+                Assert.True(spanCount <= maximumSpansPerTrace, $"There should be no more than {maximumSpansPerTrace} per trace.");
             }
         }
     }
