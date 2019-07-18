@@ -44,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                      .GetOrCreateMethodCallDelegate(
                                           ElasticsearchNetCommon.RequestPipelineType,
                                           "CallElasticsearch",
+                                          (OpCodeValue)opCode,
                                           methodGenericArguments: new[] { typeof(TResponse) });
 
             using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.ClrProfiler.Emit;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -45,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                .GetOrCreateMethodCallDelegate(
                     redisNativeClient.GetType(),
                     "SendReceive",
+                    (OpCodeValue)opCode,
                     methodGenericArguments: new[] { typeof(T) });
 
             using (var scope = RedisHelper.CreateScope(

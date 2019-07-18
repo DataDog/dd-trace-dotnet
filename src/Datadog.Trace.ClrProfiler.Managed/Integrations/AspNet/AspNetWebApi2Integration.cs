@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -44,7 +45,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            return ExecuteAsyncInternal(apiController, controllerContext, cancellationToken);
+            var callOpCode = (OpCodeValue)opCode;
+            return ExecuteAsyncInternal(apiController, controllerContext, cancellationToken, callOpCode);
         }
 
         /// <summary>
@@ -53,8 +55,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="apiController">The Api Controller</param>
         /// <param name="controllerContext">The controller context for the call</param>
         /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="callOpCode">The <see cref="OpCodeValue"/> used in the original method call.</param>
         /// <returns>A task with the result</returns>
-        private static async Task<HttpResponseMessage> ExecuteAsyncInternal(object apiController, object controllerContext, CancellationToken cancellationToken)
+        private static async Task<HttpResponseMessage> ExecuteAsyncInternal(object apiController, object controllerContext, CancellationToken cancellationToken, OpCodeValue callOpCode)
         {
             Type controllerType = apiController.GetType();
 
@@ -62,9 +65,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // which is not public and has a different name, so try both
             var executeAsyncFunc =
                 Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
-                   .GetOrCreateMethodCallDelegate(controllerType, "ExecuteAsync") ??
+                    .GetOrCreateMethodCallDelegate(controllerType, "ExecuteAsync", callOpCode) ??
                 Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
-                   .GetOrCreateMethodCallDelegate(controllerType, "System.Web.Http.Controllers.IHttpController.ExecuteAsync");
+                    .GetOrCreateMethodCallDelegate(controllerType, "System.Web.Http.Controllers.IHttpController.ExecuteAsync", callOpCode);
 
             using (Scope scope = CreateScope(controllerContext))
             {

@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "HttpMessageHandler.StackOverflow": {
+    "StackExchange.Redis.StackOverflowException": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
