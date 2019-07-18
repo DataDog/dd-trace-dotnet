@@ -1,11 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
 
-namespace StackExchange.Redis.StackOverflow
+namespace StackExchange.Redis.StackOverflowException
 {
     internal class Program
     {

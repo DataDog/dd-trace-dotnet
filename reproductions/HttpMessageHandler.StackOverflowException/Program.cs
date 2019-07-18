@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler;
 
-namespace HttpMessageHandler.StackOverflow
+namespace HttpMessageHandler.StackOverflowException
 {
     internal class Program
     {

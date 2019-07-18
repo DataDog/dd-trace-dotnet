@@ -156,7 +156,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomapperTest", "reproduct
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMessageHandler.StackOverflow", "reproductions\HttpMessageHandler.StackOverflow\HttpMessageHandler.StackOverflow.csproj", "{F47F206E-4CCA-4AD0-AEBA-FD9F491E05EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HttpMessageHandler.StackOverflowException", "reproductions\HttpMessageHandler.StackOverflowException\HttpMessageHandler.StackOverflowException.csproj", "{F47F206E-4CCA-4AD0-AEBA-FD9F491E05EC}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
@@ -183,7 +183,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrleansCrash", "reproductio
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL", "samples\Samples.GraphQL\Samples.GraphQL.csproj", "{43782238-E7BB-49D0-9541-1121DACA6EB5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.StackOverflow", "reproductions\StackExchange.Redis.StackOverflow\StackExchange.Redis.StackOverflow.csproj", "{FA487690-E88C-4A57-9187-B71CB70C1AAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.StackOverflowException", "reproductions\StackExchange.Redis.StackOverflowException\StackExchange.Redis.StackOverflowException.csproj", "{FA487690-E88C-4A57-9187-B71CB70C1AAE}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection

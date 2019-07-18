@@ -4,10 +4,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
-    public class HttpHandlerStackOverflowSmokeTest : SmokeTestBase
+    public class HttpHandlerStackOverflowExceptionSmokeTest : SmokeTestBase
     {
-        public HttpHandlerStackOverflowSmokeTest(ITestOutputHelper output)
-            : base(output, "HttpMessageHandler.StackOverflow", maxTestRunSeconds: 15)
+        public HttpHandlerStackOverflowExceptionSmokeTest(ITestOutputHelper output)
+            : base(output, "HttpMessageHandler.StackOverflowException", maxTestRunSeconds: 15)
         {
         }
 
