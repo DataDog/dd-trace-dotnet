@@ -5,7 +5,7 @@ using System.Web;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
-    internal class AspNetActiveScopeAccess : IActiveScopeAccess
+    internal class AspNetAmbientContextAccess : IAmbientContextAccess
     {
         private readonly string _reservedHttpContextKey = $"__Data_dog_scope__{Guid.NewGuid()}";
 

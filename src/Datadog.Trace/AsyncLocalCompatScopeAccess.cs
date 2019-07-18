@@ -1,6 +1,6 @@
 namespace Datadog.Trace
 {
-    internal class AsyncLocalCompatScopeAccess : IActiveScopeAccess
+    internal class AsyncLocalCompatScopeAccess : IAmbientContextAccess
     {
         private readonly AsyncLocalCompat<Scope> _activeScope = new AsyncLocalCompat<Scope>();
 

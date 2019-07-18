@@ -13,15 +13,14 @@ namespace AspNetMvcCorePerformance
         {
             try
             {
-                var test = new HttpClient();
-                var testU = "http://localhost:54562/delay/0";
-                var task = test.GetAsync(testU);
-                task.Wait();
-                var res = task.Result;
+                string urlBase = "http://localhost:54562/";
+                if (args?.Length > 0)
+                {
+                    urlBase = args[0];
+                }
 
                 var totalIterations = 200;
                 var threadRepresentation = Enumerable.Range(0, 10).ToArray();
-                var threadCount = threadRepresentation.Length;
 
                 var exceptionBag = new ConcurrentBag<Exception>();
 
@@ -61,7 +60,7 @@ namespace AspNetMvcCorePerformance
                                         {
                                             Console.WriteLine($"(Thread: {myThread}, #: {i}) Calling: {myResource}");
                                             var client = new HttpClient();
-                                            var uri = $"http://localhost:54562/{myResource}";
+                                            var uri = $"{urlBase}{myResource}";
                                             var responseTask = client.GetAsync(uri);
                                             responseTask.Wait();
                                             var result = responseTask.Result;

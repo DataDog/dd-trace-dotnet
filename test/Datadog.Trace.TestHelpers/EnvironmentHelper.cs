@@ -41,7 +41,8 @@ namespace Datadog.Trace.TestHelpers
             ITestOutputHelper output,
             string samplesDirectory = "samples",
             string disabledIntegrations = null,
-            bool prependSamplesToAppName = true)
+            bool prependSamplesToAppName = true,
+            bool requiresAgent = true)
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? "samples";
@@ -50,6 +51,7 @@ namespace Datadog.Trace.TestHelpers
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = _anchorAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
+            RequiresAgent = requiresAgent;
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -70,6 +72,8 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public string SampleName { get; }
+
+        public bool RequiresAgent { get; }
 
         public static string GetExecutingAssembly()
         {

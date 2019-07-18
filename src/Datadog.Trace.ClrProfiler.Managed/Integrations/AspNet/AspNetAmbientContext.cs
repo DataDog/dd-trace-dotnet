@@ -21,14 +21,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private readonly object _httpContext;
         private readonly Scope _rootScope;
 
-        private readonly AmbientContextActiveScopeAccess _activeScopeAccess = new AmbientContextActiveScopeAccess();
+        private readonly AmbientContextAmbientContextAccess _ambientContextAccess = new AmbientContextAmbientContextAccess();
 
         private AspNetAmbientContext(string integrationName, object httpContext)
         {
             try
             {
                 TracerInstance = Tracer.Instance;
-                TracerInstance.RegisterScopeAccess(_activeScopeAccess);
+                TracerInstance.RegisterScopeAccess(_ambientContextAccess);
                 _httpContext = httpContext;
 
                 var request = _httpContext.GetProperty("Request").GetValueOrDefault();
@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // Don't crash client apps
                 Log.Error($"Exception when initializing {nameof(AspNetAmbientContext)}.", ex);
-                Tracer.Instance?.DeregisterScopeAccess(_activeScopeAccess);
+                Tracer.Instance?.DeregisterScopeAccess(_ambientContextAccess);
             }
         }
 
@@ -167,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // Ensure this instance of the active scope access doesn't stick around.
                 // Ensure it is also the very last thing that happens
-                Tracer.Instance?.DeregisterScopeAccess(_activeScopeAccess);
+                Tracer.Instance?.DeregisterScopeAccess(_ambientContextAccess);
             }
             catch (Exception ex)
             {
@@ -329,7 +329,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        public class AmbientContextActiveScopeAccess : IActiveScopeAccess
+        public class AmbientContextAmbientContextAccess : IAmbientContextAccess
         {
             private Scope _activeScope;
 

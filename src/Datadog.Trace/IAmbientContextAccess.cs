@@ -1,6 +1,6 @@
 namespace Datadog.Trace
 {
-    internal interface IActiveScopeAccess
+    internal interface IAmbientContextAccess
     {
         int Priority { get; }
 

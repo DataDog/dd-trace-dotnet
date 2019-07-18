@@ -1,14 +1,23 @@
 using System;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    internal class DatadogSpanContext
+    internal class DatadogSpanContext : IDisposable
     {
-        public int TraceId { get; set; }
+        private static readonly ILog Log = LogProvider.For<DatadogSpanContext>();
+        private readonly Action<DatadogSpanContext> _disposalTask;
 
-        public int ParentSpanId { get; set; }
+        public DatadogSpanContext(Action<DatadogSpanContext> disposalTask)
+        {
+            _disposalTask = disposalTask;
+        }
 
-        public int SpanId { get; set; }
+        public ulong TraceId { get; set; }
+
+        public ulong ParentSpanId { get; set; }
+
+        public ulong SpanId { get; set; }
 
         public Guid UniqueId { get; set; }
 
@@ -21,5 +30,18 @@ namespace Datadog.Trace
         public DateTime TimeToForceFlush { get; set; } = DateTime.UtcNow.AddMinutes(10);
 
         public TimeSpan TimeToLiveAfterTraceClose { get; set; } = TimeSpan.FromMinutes(2);
+
+        public void Dispose()
+        {
+            try
+            {
+                _disposalTask(this);
+            }
+            catch (Exception ex)
+            {
+                // No exceptions in dispose
+                Log.Error(ex, $"Error when disposing {nameof(DatadogSpanContext)}.");
+            }
+        }
     }
 }

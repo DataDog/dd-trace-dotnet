@@ -20,8 +20,8 @@ namespace Datadog.Trace
 
         void Close(Scope scope);
 
-        void RegisterScopeAccess(IActiveScopeAccess scopeAccess);
+        void RegisterScopeAccess(IAmbientContextAccess scopeAccess);
 
-        void DeRegisterScopeAccess(IActiveScopeAccess scopeAccess);
+        void DeRegisterScopeAccess(IAmbientContextAccess scopeAccess);
     }
 }

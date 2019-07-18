@@ -244,7 +244,7 @@ namespace Datadog.Trace
         /// Register IActiveScopeAccess instance with the ScopeManager
         /// </summary>
         /// <param name="scopeAccess">The instance to register.</param>
-        internal void RegisterScopeAccess(IActiveScopeAccess scopeAccess)
+        internal void RegisterScopeAccess(IAmbientContextAccess scopeAccess)
         {
             _scopeManager.RegisterScopeAccess(scopeAccess);
         }
@@ -253,7 +253,7 @@ namespace Datadog.Trace
         /// Register IActiveScopeAccess instance with the ScopeManager
         /// </summary>
         /// <param name="scopeAccess">The instance to register.</param>
-        internal void DeregisterScopeAccess(IActiveScopeAccess scopeAccess)
+        internal void DeregisterScopeAccess(IAmbientContextAccess scopeAccess)
         {
             _scopeManager.DeRegisterScopeAccess(scopeAccess);
         }

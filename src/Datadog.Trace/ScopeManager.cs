@@ -10,7 +10,7 @@ namespace Datadog.Trace
         private static readonly ILog Log = LogProvider.For<ScopeManager>();
 
         private readonly object _scopeAccessLock = new object();
-        private List<IActiveScopeAccess> _prioritizedScopeAccess = new List<IActiveScopeAccess>
+        private List<IAmbientContextAccess> _prioritizedAmbientAccess = new List<IAmbientContextAccess>
         {
             new AsyncLocalCompatScopeAccess()
         };
@@ -31,11 +31,11 @@ namespace Datadog.Trace
             {
                 lock (_scopeAccessLock)
                 {
-                    for (int i = 0; i < _prioritizedScopeAccess.Count; i++)
+                    for (int i = 0; i < _prioritizedAmbientAccess.Count; i++)
                     {
                         try
                         {
-                            var activeScope = _prioritizedScopeAccess[i].GetActiveScope();
+                            var activeScope = _prioritizedAmbientAccess[i].GetActiveScope();
                             if (activeScope != null)
                             {
                                 return activeScope;
@@ -43,7 +43,7 @@ namespace Datadog.Trace
                         }
                         catch (Exception ex)
                         {
-                            Log.ErrorException($"Active scope access failed: {_prioritizedScopeAccess[i]?.GetType().FullName}.", ex);
+                            Log.ErrorException($"Active scope access failed: {_prioritizedAmbientAccess[i]?.GetType().FullName}.", ex);
                             continue;
                         }
                     }
@@ -102,32 +102,32 @@ namespace Datadog.Trace
             }
         }
 
-        public void DeRegisterScopeAccess(IActiveScopeAccess scopeAccess)
+        public void DeRegisterScopeAccess(IAmbientContextAccess scopeAccess)
         {
             lock (_scopeAccessLock)
             {
-                _prioritizedScopeAccess =
-                    _prioritizedScopeAccess
+                _prioritizedAmbientAccess =
+                    _prioritizedAmbientAccess
                        .Where(psa => psa != scopeAccess)
                        .OrderByDescending(i => i.Priority)
                        .ToList();
             }
         }
 
-        public void RegisterScopeAccess(IActiveScopeAccess scopeAccess)
+        public void RegisterScopeAccess(IAmbientContextAccess scopeAccess)
         {
             lock (_scopeAccessLock)
             {
-                if (_prioritizedScopeAccess.Any(i => i.GetType() == scopeAccess.GetType()))
+                if (_prioritizedAmbientAccess.Any(i => i.GetType() == scopeAccess.GetType()))
                 {
                     // We don't want multiple instances as each type manages scope in an ambient fashion.
                     return;
                 }
 
-                _prioritizedScopeAccess.Add(scopeAccess);
+                _prioritizedAmbientAccess.Add(scopeAccess);
 
                 // Slower add for faster read
-                _prioritizedScopeAccess = _prioritizedScopeAccess.OrderByDescending(i => i.Priority).ToList();
+                _prioritizedAmbientAccess = _prioritizedAmbientAccess.OrderByDescending(i => i.Priority).ToList();
             }
         }
 
@@ -135,18 +135,18 @@ namespace Datadog.Trace
         {
             lock (_scopeAccessLock)
             {
-                for (int i = 0; i < _prioritizedScopeAccess.Count; i++)
+                for (int i = 0; i < _prioritizedAmbientAccess.Count; i++)
                 {
                     try
                     {
-                        if (_prioritizedScopeAccess[i].TrySetActiveScope(scope))
+                        if (_prioritizedAmbientAccess[i].TrySetActiveScope(scope))
                         {
                             return;
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.ErrorException($"Active scope set failed: {_prioritizedScopeAccess[i]?.GetType().FullName}.", ex);
+                        Log.ErrorException($"Active scope set failed: {_prioritizedAmbientAccess[i]?.GetType().FullName}.", ex);
                     }
                 }
             }
