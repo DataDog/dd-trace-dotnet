@@ -20,6 +20,8 @@ for config in Debug Release ; do
 
     dotnet publish -f netcoreapp2.1 -c $config reproductions/HttpMessageHandler.StackOverflowException/HttpMessageHandler.StackOverflowException.csproj
 
+    dotnet publish -f netcoreapp2.1 -c $config reproductions/StackExchange.Redis.StackOverflowException/StackExchange.Redis.StackOverflowException.csproj
+
     dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions
 
     for proj in Datadog.Trace.ClrProfiler.IntegrationTests ; do
