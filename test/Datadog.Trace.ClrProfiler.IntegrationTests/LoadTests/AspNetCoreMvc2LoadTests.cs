@@ -12,13 +12,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
         private static readonly string CoreMvc = "Samples.AspNetCoreMvc2";
         private static readonly string LoadTestConsole = "AspNetMvcCorePerformance";
 
+        private static readonly int Threads = 5;
+        private static readonly int IterationsPerThread = 30;
+
         public AspNetCoreMvc2LoadTests(ITestOutputHelper output)
             : base(output)
         {
             var aspNetCoreMvc2Port = TcpPortProvider.GetOpenPort();
             var aspNetCoreMvc2Url = GetUrl(aspNetCoreMvc2Port);
             RegisterPart(applicationName: CoreMvc, directory: "samples", requiresAgent: true, port: aspNetCoreMvc2Port);
-            RegisterPart(applicationName: LoadTestConsole, directory: "reproductions", isAnchor: true, requiresAgent: false, commandLineArgs: new[] { aspNetCoreMvc2Url });
+            RegisterPart(
+                applicationName: LoadTestConsole,
+                directory: "reproductions",
+                isAnchor: true,
+                requiresAgent: false,
+                commandLineArgs: new[] { aspNetCoreMvc2Url, Threads.ToString(), IterationsPerThread.ToString() });
         }
 
         [Fact]
@@ -38,34 +46,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 
             var spans = mvcPart.Agent.Spans;
 
-            var traces = spans.GroupBy(s => s.TraceId);
+            var traces = spans.GroupBy(s => s.TraceId).ToList();
 
-            var maximumSpansPerTrace = 8;
+            var expectedTraces = Threads * IterationsPerThread;
+
+            Assert.True(expectedTraces == traces.Count, $"We expected to receive {expectedTraces} unique traces, but we received {traces.Count}");
 
             foreach (var trace in traces)
             {
-                var spanCount = trace.Count();
-
-                if (spanCount <= 2)
-                {
-                    // Looking pretty normal here
-                    continue;
-                }
-
-                if (spanCount >= 5)
-                {
-                    Output.WriteLine("Found a trace with 5 or more spans.");
-                }
-
                 var topLevelSpanCount = trace.Count(span => span.Name == TopLevelOperationName);
 
                 if (topLevelSpanCount > 1)
                 {
-                    // Not good, we're nesting spans we should be nesting
+                    // Not good, we're nesting spans we should not be nesting
                     Assert.True(topLevelSpanCount == 1, "There should only ever be one top level span.");
                 }
-
-                Assert.True(spanCount <= maximumSpansPerTrace, $"There should be no more than {maximumSpansPerTrace} per trace.");
             }
         }
     }

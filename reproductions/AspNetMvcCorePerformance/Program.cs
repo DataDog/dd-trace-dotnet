@@ -14,17 +14,21 @@ namespace AspNetMvcCorePerformance
             try
             {
                 string urlBase = "http://localhost:54562/";
+                var threadCount = 10;
+                var iterationsPerThread = 50;
+
                 if (args?.Length > 0)
                 {
                     urlBase = args[0];
+                    threadCount = int.Parse(args[1]);
+                    iterationsPerThread = int.Parse(args[2]);
                 }
 
-                var totalIterations = 50;
-                var threadRepresentation = Enumerable.Range(0, 10).ToArray();
+                var threadRepresentation = Enumerable.Range(0, threadCount).ToArray();
 
                 var exceptionBag = new ConcurrentBag<Exception>();
 
-                Console.WriteLine($"Running {threadRepresentation.Length} threads with {totalIterations} iterations.");
+                Console.WriteLine($"Running {threadRepresentation.Length} threads with {iterationsPerThread} iterations.");
 
                 var resources = new List<string>
                 {
@@ -55,7 +59,7 @@ namespace AspNetMvcCorePerformance
 
                                         Thread.Sleep(2000);
                                         var i = 0;
-                                        while (i++ < totalIterations)
+                                        while (i++ < iterationsPerThread)
                                         {
                                             Console.WriteLine($"(Thread: {myThread}, #: {i}) Calling: {myResource}");
                                             var client = new HttpClient();
