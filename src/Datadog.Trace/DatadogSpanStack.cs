@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Immutable;
+using Datadog.Trace.Immutables;
 
 namespace Datadog.Trace
 {
@@ -12,7 +12,7 @@ namespace Datadog.Trace
         /// </summary>
         public static Span Active => CurrentContext.Peek();
 
-        private static ImmutableStack<Span> CurrentContext
+        private static DatadogImmutableStack<Span> CurrentContext
         {
             get => CurrentContextAmbientStorage.Get().Value;
             set => CurrentContextAmbientStorage.Set(new StackWrapper { Value = value });
@@ -58,7 +58,7 @@ namespace Datadog.Trace
         /// </summary>
         private sealed class StackWrapper : MarshalByRefObject
         {
-            public ImmutableStack<Span> Value { get; set; }
+            public DatadogImmutableStack<Span> Value { get; set; } = DatadogImmutableStack<Span>.Empty;
         }
     }
 }

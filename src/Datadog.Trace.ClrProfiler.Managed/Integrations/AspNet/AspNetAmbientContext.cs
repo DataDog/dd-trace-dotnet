@@ -28,8 +28,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
-                TracerInstance.RegisterScopeAccess(ActiveScopeAccess);
                 TracerInstance = Tracer.Instance;
+                // TracerInstance.RegisterScopeAccess(ActiveScopeAccess);
                 _httpContext = httpContext;
 
                 var request = _httpContext.GetProperty("Request").GetValueOrDefault();
