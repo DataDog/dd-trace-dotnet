@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                 commandLineArgs: new[] { aspNetCoreMvc2Url, Threads.ToString(), IterationsPerThread.ToString() });
         }
 
-        [Fact]
+        [Fact(Skip = "Hangs continuous integration because dotnet.exe stays around.")]
         [Trait("Category", "Load")]
         public void RunLoadTest_WithVerifications()
         {
