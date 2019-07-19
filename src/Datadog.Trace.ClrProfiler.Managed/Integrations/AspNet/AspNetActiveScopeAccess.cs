@@ -5,19 +5,23 @@ using System.Web;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
-    internal class AspNetAmbientContextAccess : IAmbientContextAccess
+    internal class AspNetActiveScopeAccess : IActiveScopeAccess
     {
         private readonly string _reservedHttpContextKey = $"__Data_dog_scope__{Guid.NewGuid()}";
 
+        public long CreatedAtTicks { get; } = DateTime.Now.Ticks;
+
+        public Guid? ContextGuid => null;
+
         public int Priority => 10;
 
-        public Scope GetActiveScope()
+        public Scope GetActiveScope(params object[] parameters)
         {
             var activeScope = HttpContext.Current?.Items[_reservedHttpContextKey] as Scope;
             return activeScope;
         }
 
-        public bool TrySetActiveScope(Scope scope)
+        public bool TrySetActiveScope(Scope scope, params object[] parameters)
         {
             try
             {

@@ -4,11 +4,7 @@ namespace Datadog.Trace
 {
     internal interface IScopeManager
     {
-        event EventHandler<SpanEventArgs> SpanOpened;
-
         event EventHandler<SpanEventArgs> SpanActivated;
-
-        event EventHandler<SpanEventArgs> SpanDeactivated;
 
         event EventHandler<SpanEventArgs> SpanClosed;
 
@@ -16,12 +12,12 @@ namespace Datadog.Trace
 
         Scope Active { get; }
 
-        Scope Activate(Span span, bool finishOnClose);
+        Scope Activate(Span span, bool finishOnClose, bool forceRootScope);
 
         void Close(Scope scope);
 
-        void RegisterScopeAccess(IAmbientContextAccess scopeAccess);
+        void RegisterScopeAccess(IActiveScopeAccess scopeAccess);
 
-        void DeRegisterScopeAccess(IAmbientContextAccess scopeAccess);
+        void DeRegisterScopeAccess(IActiveScopeAccess scopeAccess);
     }
 }

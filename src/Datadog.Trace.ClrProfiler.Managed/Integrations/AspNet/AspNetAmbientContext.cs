@@ -15,20 +15,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly string TopLevelOperationName = "web.request";
         private static readonly string StartupDiagnosticMethod = "DEBUG";
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetAmbientContext));
+        private static readonly HttpContextActiveScopeAccess ActiveScopeAccess = new HttpContextActiveScopeAccess();
 
         private readonly ConcurrentStack<IDisposable> _disposables = new ConcurrentStack<IDisposable>();
         private readonly ConcurrentDictionary<string, Scope> _scopeStorage = new ConcurrentDictionary<string, Scope>();
         private readonly object _httpContext;
         private readonly Scope _rootScope;
 
-        private readonly AmbientContextAmbientContextAccess _ambientContextAccess = new AmbientContextAmbientContextAccess();
+        private Scope _activeScope;
 
         private AspNetAmbientContext(string integrationName, object httpContext)
         {
             try
             {
+                TracerInstance.RegisterScopeAccess(ActiveScopeAccess);
                 TracerInstance = Tracer.Instance;
-                TracerInstance.RegisterScopeAccess(_ambientContextAccess);
                 _httpContext = httpContext;
 
                 var request = _httpContext.GetProperty("Request").GetValueOrDefault();
@@ -52,45 +53,39 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 SpanContext propagatedContext = null;
 
-                if (TracerInstance.ActiveScope == null)
+                try
                 {
-                    try
-                    {
-                        // extract propagated http headers
-                        var requestHeaders = request.GetProperty<IEnumerable>("Headers").GetValueOrDefault();
+                    // extract propagated http headers
+                    var requestHeaders = request.GetProperty<IEnumerable>("Headers").GetValueOrDefault();
 
-                        if (requestHeaders != null)
+                    if (requestHeaders != null)
+                    {
+                        var headersCollection = new DictionaryHeadersCollection();
+
+                        foreach (object header in requestHeaders)
                         {
-                            var headersCollection = new DictionaryHeadersCollection();
+                            var key = header.GetProperty<string>("Key").GetValueOrDefault();
+                            var values = header.GetProperty<IList<string>>("Value").GetValueOrDefault();
 
-                            foreach (object header in requestHeaders)
+                            if (key != null && values != null)
                             {
-                                var key = header.GetProperty<string>("Key").GetValueOrDefault();
-                                var values = header.GetProperty<IList<string>>("Value").GetValueOrDefault();
-
-                                if (key != null && values != null)
-                                {
-                                    headersCollection.Add(key, values);
-                                }
+                                headersCollection.Add(key, values);
                             }
-
-                            propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
                     }
                 }
+                catch (Exception ex)
+                {
+                    Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                }
 
-                _rootScope = TracerInstance.StartActive(TopLevelOperationName, propagatedContext);
+                _rootScope = TracerInstance.StartActive(TopLevelOperationName, propagatedContext, forceRootScope: true);
 
                 RegisterForDisposal(_rootScope);
 
                 var span = _rootScope.Span;
-
-                // DEBUGGING
-                span.SetTag(Tags.ManualKeep, "true");
 
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
@@ -112,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // Don't crash client apps
                 Log.Error($"Exception when initializing {nameof(AspNetAmbientContext)}.", ex);
-                Tracer.Instance?.DeregisterScopeAccess(_ambientContextAccess);
+                Tracer.Instance?.DeregisterScopeAccess(ActiveScopeAccess);
             }
         }
 
@@ -167,7 +162,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // Ensure this instance of the active scope access doesn't stick around.
                 // Ensure it is also the very last thing that happens
-                Tracer.Instance?.DeregisterScopeAccess(_ambientContextAccess);
+                // Tracer.Instance?.DeregisterScopeAccess(_activeScopeAccess);
+                DatadogCallContext.UniqueId.Set(null);
             }
             catch (Exception ex)
             {
@@ -182,10 +178,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="httpContext">Instance of Microsoft.AspNetCore.Http.DefaultHttpContext</param>
         internal static void Initialize(object httpContext)
         {
+            DatadogCallContext.UniqueId.Set(Guid.NewGuid());
+
+            var currentContext = RetrieveFromHttpContext(httpContext);
+            if (currentContext != null)
+            {
+                // uh oh, spaghetti-oh
+                return;
+            }
+
+            var currentTrace = Tracer.Instance.ActiveScope;
+
+            if (currentTrace != null)
+            {
+                // uh oh, spaghetti-oh, this should be the first item in a trace
+                return;
+            }
+
             var context = new AspNetAmbientContext(TopLevelOperationName, httpContext);
 
             if (context.AbortRegistration)
             {
+                DatadogCallContext.UniqueId.Set(null);
                 return;
             }
 
@@ -329,20 +343,40 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        public class AmbientContextAmbientContextAccess : IAmbientContextAccess
+        public class HttpContextActiveScopeAccess : IActiveScopeAccess
         {
-            private Scope _activeScope;
+            public long CreatedAtTicks { get; } = DateTime.Now.Ticks;
 
-            public int Priority { get; } = 50;
+            public Guid? ContextGuid => DatadogCallContext.UniqueId.Get();
 
-            public Scope GetActiveScope()
+            public int Priority => 50;
+
+            public Scope GetActiveScope(params object[] parameters)
             {
-                return _activeScope;
+                if (parameters.Length == 0)
+                {
+                    return null;
+                }
+
+                var ambientContext = RetrieveFromHttpContext(parameters[0]);
+                return ambientContext?._activeScope;
             }
 
-            public bool TrySetActiveScope(Scope scope)
+            public bool TrySetActiveScope(Scope scope, params object[] parameters)
             {
-                _activeScope = scope;
+                if (parameters.Length == 0)
+                {
+                    return false;
+                }
+
+                var ambientContext = RetrieveFromHttpContext(parameters[0]);
+                if (ambientContext == null)
+                {
+                    return false;
+                }
+
+                ambientContext._activeScope = scope;
+
                 return true;
             }
         }

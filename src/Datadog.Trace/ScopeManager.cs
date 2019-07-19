@@ -9,17 +9,13 @@ namespace Datadog.Trace
     {
         private static readonly ILog Log = LogProvider.For<ScopeManager>();
 
-        private readonly object _scopeAccessLock = new object();
-        private List<IAmbientContextAccess> _prioritizedAmbientAccess = new List<IAmbientContextAccess>
-        {
-            new AsyncLocalCompatScopeAccess()
-        };
+        private readonly AsyncLocalCompatScopeAccess _defaultScopeAccess = new AsyncLocalCompatScopeAccess();
+        private readonly object _activeScopeLock = new object();
+        private readonly object _scopingLock = new object();
 
-        public event EventHandler<SpanEventArgs> SpanOpened;
+        private List<IActiveScopeAccess> _prioritizedAmbientAccess = new List<IActiveScopeAccess>();
 
         public event EventHandler<SpanEventArgs> SpanActivated;
-
-        public event EventHandler<SpanEventArgs> SpanDeactivated;
 
         public event EventHandler<SpanEventArgs> SpanClosed;
 
@@ -29,10 +25,17 @@ namespace Datadog.Trace
         {
             get
             {
-                lock (_scopeAccessLock)
+                lock (_activeScopeLock)
                 {
+                    var callContextGuid = DatadogCallContext.UniqueId.Get();
+
                     for (int i = 0; i < _prioritizedAmbientAccess.Count; i++)
                     {
+                        if (callContextGuid != _prioritizedAmbientAccess[i].ContextGuid)
+                        {
+                            continue;
+                        }
+
                         try
                         {
                             var activeScope = _prioritizedAmbientAccess[i].GetActiveScope();
@@ -44,67 +47,94 @@ namespace Datadog.Trace
                         catch (Exception ex)
                         {
                             Log.ErrorException($"Active scope access failed: {_prioritizedAmbientAccess[i]?.GetType().FullName}.", ex);
-                            continue;
                         }
                     }
-                }
 
-                return null;
+                    // if all else fails, this is the one
+                    return _defaultScopeAccess.GetActiveScope();
+                }
             }
         }
 
-        public Scope Activate(Span span, bool finishOnClose)
+        public void SetActiveScope(Scope scope)
         {
-            var newParent = Active;
-            var scope = new Scope(newParent, span, this, finishOnClose);
-            var scopeOpenedArgs = new SpanEventArgs(span);
-
-            SpanOpened?.Invoke(this, scopeOpenedArgs);
-
-            SetActiveScope(scope);
-
-            if (newParent != null)
+            lock (_activeScopeLock)
             {
-                SpanDeactivated?.Invoke(this, new SpanEventArgs(newParent.Span));
+                for (int i = 0; i < _prioritizedAmbientAccess.Count; i++)
+                {
+                    try
+                    {
+                        _prioritizedAmbientAccess[i].TrySetActiveScope(scope);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.ErrorException($"Active scope set failed: {_prioritizedAmbientAccess[i]?.GetType().FullName}.", ex);
+                    }
+                }
+
+                // if all else fails, this is the one
+                _defaultScopeAccess.TrySetActiveScope(scope);
             }
+        }
 
-            SpanActivated?.Invoke(this, scopeOpenedArgs);
+        public Scope Activate(Span span, bool finishOnClose, bool forceRootScope)
+        {
+            lock (_scopingLock)
+            {
+                var originalScope = Active;
 
-            return scope;
+                Scope newParent = null;
+
+                if (!forceRootScope)
+                {
+                    newParent = originalScope;
+                }
+
+                var scope = new Scope(newParent, span, this, finishOnClose);
+                var scopeOpenedArgs = new SpanEventArgs(span);
+
+                SetActiveScope(scope);
+
+                SpanActivated?.Invoke(this, scopeOpenedArgs);
+
+                return scope;
+            }
         }
 
         public void Close(Scope scope)
         {
-            var current = Active;
-            var isRootSpan = scope.Parent == null;
-
-            if (current == null || current != scope)
+            lock (_scopingLock)
             {
-                // This is not the current scope for this context, bail out
-                return;
-            }
+                var current = Active;
+                var isRootSpan = scope.Parent == null;
 
-            // if the scope that was just closed was the active scope,
-            // set its parent as the new active scope
-            SetActiveScope(current.Parent);
-            SpanDeactivated?.Invoke(this, new SpanEventArgs(current.Span));
+                if (current == null || current != scope)
+                {
+                    // This is not the current scope for this context, bail out
+                    return;
+                }
 
-            if (!isRootSpan)
-            {
-                SpanActivated?.Invoke(this, new SpanEventArgs(current.Parent.Span));
-            }
+                // if the scope that was just closed was the active scope,
+                // set its parent as the new active scope
+                SetActiveScope(current.Parent);
 
-            SpanClosed?.Invoke(this, new SpanEventArgs(scope.Span));
+                if (!isRootSpan)
+                {
+                    SpanActivated?.Invoke(this, new SpanEventArgs(current.Parent.Span));
+                }
 
-            if (isRootSpan)
-            {
-                TraceEnded?.Invoke(this, new SpanEventArgs(scope.Span));
+                SpanClosed?.Invoke(this, new SpanEventArgs(scope.Span));
+
+                if (isRootSpan)
+                {
+                    TraceEnded?.Invoke(this, new SpanEventArgs(scope.Span));
+                }
             }
         }
 
-        public void DeRegisterScopeAccess(IAmbientContextAccess scopeAccess)
+        public void DeRegisterScopeAccess(IActiveScopeAccess scopeAccess)
         {
-            lock (_scopeAccessLock)
+            lock (_activeScopeLock)
             {
                 _prioritizedAmbientAccess =
                     _prioritizedAmbientAccess
@@ -114,41 +144,23 @@ namespace Datadog.Trace
             }
         }
 
-        public void RegisterScopeAccess(IAmbientContextAccess scopeAccess)
+        public void RegisterScopeAccess(IActiveScopeAccess scopeAccess)
         {
-            lock (_scopeAccessLock)
+            lock (_activeScopeLock)
             {
                 if (_prioritizedAmbientAccess.Any(i => i.GetType() == scopeAccess.GetType()))
                 {
-                    // We don't want multiple instances as each type manages scope in an ambient fashion.
                     return;
                 }
 
                 _prioritizedAmbientAccess.Add(scopeAccess);
 
                 // Slower add for faster read
-                _prioritizedAmbientAccess = _prioritizedAmbientAccess.OrderByDescending(i => i.Priority).ToList();
-            }
-        }
-
-        private void SetActiveScope(Scope scope)
-        {
-            lock (_scopeAccessLock)
-            {
-                for (int i = 0; i < _prioritizedAmbientAccess.Count; i++)
-                {
-                    try
-                    {
-                        if (_prioritizedAmbientAccess[i].TrySetActiveScope(scope))
-                        {
-                            return;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.ErrorException($"Active scope set failed: {_prioritizedAmbientAccess[i]?.GetType().FullName}.", ex);
-                    }
-                }
+                _prioritizedAmbientAccess =
+                    _prioritizedAmbientAccess
+                       .OrderByDescending(i => i.Priority)
+                       .ThenByDescending(i => i.CreatedAtTicks)
+                       .ToList();
             }
         }
     }

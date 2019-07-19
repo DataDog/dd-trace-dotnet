@@ -144,10 +144,11 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="span">The span to activate</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
+        /// <param name="forceRootScope">If set to true, the new Scope is forcibly made the root scope </param>
         /// <returns>A Scope object wrapping this span</returns>
-        public Scope ActivateSpan(Span span, bool finishOnClose = true)
+        public Scope ActivateSpan(Span span, bool finishOnClose = true, bool forceRootScope = false)
         {
-            return _scopeManager.Activate(span, finishOnClose);
+            return _scopeManager.Activate(span, finishOnClose, forceRootScope);
         }
 
         /// <summary>
@@ -159,11 +160,19 @@ namespace Datadog.Trace
         /// <param name="startTime">An explicit start time for that span</param>
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
+        /// <param name="forceRootScope">If set to true, the new Scope is forcibly made the root scope </param>
         /// <returns>A scope wrapping the newly created span</returns>
-        public Scope StartActive(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
+        public Scope StartActive(
+            string operationName,
+            ISpanContext parent = null,
+            string serviceName = null,
+            DateTimeOffset? startTime = null,
+            bool ignoreActiveScope = false,
+            bool finishOnClose = true,
+            bool forceRootScope = false)
         {
             var span = StartSpan(operationName, parent, serviceName, startTime, ignoreActiveScope);
-            return _scopeManager.Activate(span, finishOnClose);
+            return _scopeManager.Activate(span, finishOnClose, forceRootScope);
         }
 
         /// <summary>
@@ -244,7 +253,7 @@ namespace Datadog.Trace
         /// Register IActiveScopeAccess instance with the ScopeManager
         /// </summary>
         /// <param name="scopeAccess">The instance to register.</param>
-        internal void RegisterScopeAccess(IAmbientContextAccess scopeAccess)
+        internal void RegisterScopeAccess(IActiveScopeAccess scopeAccess)
         {
             _scopeManager.RegisterScopeAccess(scopeAccess);
         }
@@ -253,7 +262,7 @@ namespace Datadog.Trace
         /// Register IActiveScopeAccess instance with the ScopeManager
         /// </summary>
         /// <param name="scopeAccess">The instance to register.</param>
-        internal void DeregisterScopeAccess(IAmbientContextAccess scopeAccess)
+        internal void DeregisterScopeAccess(IActiveScopeAccess scopeAccess)
         {
             _scopeManager.DeRegisterScopeAccess(scopeAccess);
         }

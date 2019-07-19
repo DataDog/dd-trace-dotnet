@@ -51,6 +51,10 @@ namespace Datadog.Trace
                           : _random.Value.NextUInt63();
 
             ServiceName = serviceName;
+
+            DatadogCallContext.TraceId.Set(TraceId);
+            DatadogCallContext.SpanId.Set(SpanId);
+            DatadogCallContext.ParentSpanId.Set(ParentId);
         }
 
         /// <summary>
