@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -29,16 +30,7 @@ namespace Datadog.Trace
 
         public static void QueueSpanForFlush(Span span)
         {
-            long approximateByteCount = 0;
-
-            // TODO: REMOVE THIS ABOMINATION
-            var bf = new BinaryFormatter();
-            using (var ms = new MemoryStream())
-            {
-                bf.Serialize(ms, span);
-                approximateByteCount = ms.Length;
-            }
-
+            long approximateByteCount = 10_000;
             FlushTaskQueue.Enqueue(new FlushTask
             {
                 AttemptsRemaining = 2,
@@ -61,6 +53,11 @@ namespace Datadog.Trace
             {
                 readyToFlush.Add(task);
                 FlushTaskCount--;
+            }
+
+            if (!readyToFlush.Any())
+            {
+                return;
             }
 
             var backup = await toilet(readyToFlush);

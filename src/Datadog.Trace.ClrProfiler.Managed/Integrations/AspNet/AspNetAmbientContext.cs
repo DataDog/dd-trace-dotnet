@@ -165,21 +165,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="httpContext">Instance of Microsoft.AspNetCore.Http.DefaultHttpContext</param>
         internal static void Initialize(object httpContext)
         {
-            var currentContext = RetrieveFromHttpContext(httpContext);
-            if (currentContext != null)
-            {
-                // uh oh, spaghetti-oh
-                return;
-            }
-
-            var currentTrace = Tracer.Instance.ActiveScope;
-
-            if (currentTrace != null)
-            {
-                // uh oh, spaghetti-oh, this should be the first item in a trace
-                return;
-            }
-
             var context = new AspNetAmbientContext(TopLevelOperationName, httpContext);
 
             if (context.AbortRegistration)

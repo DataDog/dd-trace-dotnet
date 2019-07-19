@@ -14,7 +14,7 @@ namespace Datadog.Trace
 
         private static DatadogImmutableStack<Span> CurrentContext
         {
-            get => CurrentContextAmbientStorage.Get().Value;
+            get => CurrentContextAmbientStorage.Get()?.Value;
             set => CurrentContextAmbientStorage.Set(new StackWrapper { Value = value });
         }
 
