@@ -20,10 +20,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="features">Initialize features.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
-        [InterceptMethod(
-            TargetAssembly = "Microsoft.AspNetCore.Http.Abstractions",
-            TargetType = "Microsoft.AspNetCore.Http.DefaultHttpContext",
-            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore })]
+        // [InterceptMethod(
+        //     TargetAssembly = "Microsoft.AspNetCore.Http.Abstractions",
+        //     TargetType = "Microsoft.AspNetCore.Http.DefaultHttpContext",
+        //     TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore })]
+        // ***************************************************************
+        //  DISABLED UNTIL WE FIX SCOPING ISSUES AT HTTP CONTEXT LEVEL
+        // ***************************************************************
         public static void Initialize(object httpContext, object features, int opCode, int mdToken)
         {
             var httpContextType = httpContext.GetType();

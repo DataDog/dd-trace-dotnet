@@ -1,7 +1,10 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -9,8 +12,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// The ASP.NET Core MVC 2 integration.
     /// </summary>
-    public static class AspNetCoreMvc2Integration
+    public sealed class AspNetCoreMvc2Integration : IDisposable
     {
+        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations." + nameof(AspNetCoreMvc2Integration);
         private const string IntegrationName = "AspNetCoreMvc2";
         private const string OperationName = "aspnet-coremvc.request";
         private const string AspnetMvcCore = "Microsoft.AspNetCore.Mvc.Core";
@@ -27,6 +31,88 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string ResourceInvoker = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
+
+        private readonly object _httpContext;
+        private readonly Scope _scope;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AspNetCoreMvc2Integration"/> class.
+        /// </summary>
+        /// <param name="actionDescriptor">An ActionDescriptor with information about the current action.</param>
+        /// <param name="httpContext">The HttpContext for the current request.</param>
+        public AspNetCoreMvc2Integration(object actionDescriptor, object httpContext)
+        {
+            try
+            {
+                _httpContext = httpContext;
+                var request = _httpContext.GetProperty("Request").GetValueOrDefault();
+
+                GetTagValues(
+                   actionDescriptor,
+                   request,
+                   out string httpMethod,
+                   out string host,
+                   out string resourceName,
+                   out string url,
+                   out string controllerName,
+                   out string actionName);
+
+                SpanContext propagatedContext = null;
+                var tracer = Tracer.Instance;
+
+                if (tracer.ActiveScope == null)
+                {
+                    try
+                    {
+                        // extract propagated http headers
+                        var requestHeaders = request.GetProperty<IEnumerable>("Headers").GetValueOrDefault();
+
+                        if (requestHeaders != null)
+                        {
+                            var headersCollection = new DictionaryHeadersCollection();
+
+                            foreach (object header in requestHeaders)
+                            {
+                                var key = header.GetProperty<string>("Key").GetValueOrDefault();
+                                var values = header.GetProperty<IList<string>>("Value").GetValueOrDefault();
+
+                                if (key != null && values != null)
+                                {
+                                    headersCollection.Add(key, values);
+                                }
+                            }
+
+                            propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                    }
+                }
+
+                _scope = tracer.StartActive(OperationName, propagatedContext);
+                var span = _scope.Span;
+
+                span.DecorateWebServerSpan(
+                   resourceName: resourceName,
+                   method: httpMethod,
+                   host: host,
+                   httpUrl: url);
+
+                span.SetTag(Tags.AspNetController, controllerName);
+                span.SetTag(Tags.AspNetAction, actionName);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+            }
+            catch (Exception) when (DisposeObject(_scope))
+            {
+                // unreachable code
+                throw;
+            }
+        }
 
         /// <summary>
         /// Wrapper method used to instrument Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions.BeforeAction()
@@ -52,25 +138,26 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int opCode,
             int mdToken)
         {
+            AspNetCoreMvc2Integration integration = null;
+
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
                 // integration disabled
                 return;
             }
 
-            string methodDef = $"{DiagnosticSource}.{nameof(BeforeAction)}(...)";
-            var integrationContext = AspNetAmbientContext.RetrieveFromHttpContext(httpContext);
+            try
+            {
+                integration = new AspNetCoreMvc2Integration(actionDescriptor, httpContext);
 
-            if (integrationContext == null)
-            {
-                Log.Error($"Could not access {nameof(AspNetAmbientContext)} for {methodDef}.");
+                if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                {
+                    contextItems[HttpContextKey] = integration;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                SetAspNetCoreMvcSpecificData(
-                    ambientContext: integrationContext,
-                    actionDescriptor: actionDescriptor,
-                    httpContext: httpContext);
+                Log.ErrorExceptionForFilter($"Error creating {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
             Action<object, object, object, object> instrumentedMethod = null;
@@ -95,10 +182,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 instrumentedMethod?.Invoke(diagnosticSource, actionDescriptor, httpContext, routeData);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
-                // profiled app will continue working as expected without this method
-                Log.Error($"Exception when calling {methodDef}.", ex);
+                // unreachable code
                 throw;
             }
         }
@@ -127,27 +213,29 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int opCode,
             int mdToken)
         {
+            AspNetCoreMvc2Integration integration = null;
+
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
                 // integration disabled
                 return;
             }
 
-            string methodDef = $"{DiagnosticSource}.{nameof(AfterAction)}(...)";
-            var integrationContext = AspNetAmbientContext.RetrieveFromHttpContext(httpContext);
-
-            Scope aspNetCoreMvcActionScope = null;
-
-            if (integrationContext == null)
+            try
             {
-                Log.Error($"Could not access {nameof(AspNetAmbientContext)} for {methodDef}.");
+                if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                {
+                    integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                integrationContext.TryRetrieveScope(IntegrationName, out aspNetCoreMvcActionScope);
+                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
             }
 
             Action<object, object, object, object> instrumentedMethod = null;
+
+            string methodDef = $"{DiagnosticSource}.{nameof(AfterAction)}(...)";
 
             try
             {
@@ -171,13 +259,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will continue working as expected without this method
-                Log.Error($"Exception when calling {methodDef}.", ex);
+                integration?.SetException(ex);
+
                 throw;
             }
             finally
             {
-                aspNetCoreMvcActionScope?.Dispose();
+                integration?.Dispose();
             }
         }
 
@@ -196,6 +284,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Major2)]
         public static void Rethrow(object context, int opCode, int mdToken)
         {
+            if (context == null)
+            {
+                // Every rethrow method in every v2.x returns when the context is null
+                // We need the type of context to call the correct method as there are 3
+                // Remove this when we introduce the type arrays within the profiler
+                return;
+            }
+
             var shouldTrace = Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName);
 
             Action<object> instrumentedMethod = null;
@@ -218,87 +314,83 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            AspNetAmbientContext ambientContext = null;
-            var exceptionToGrab = context.GetProperty<Exception>("Exception");
-
+            AspNetCoreMvc2Integration integration = null;
             if (shouldTrace)
             {
-                var httpContextResult = context.GetProperty("HttpContext");
-
-                if (httpContextResult.HasValue)
+                try
                 {
-                    ambientContext = AspNetAmbientContext.RetrieveFromHttpContext(httpContextResult.Value);
+                    if (context.TryGetPropertyValue("HttpContext", out object httpContext))
+                    {
+                        if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                        {
+                            integration = contextItems?[HttpContextKey] as AspNetCoreMvc2Integration;
+                        }
+                    }
                 }
-
-                // The context parameter is often null when there are no exceptions to rethrow.
+                catch (Exception ex)
+                {
+                    Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
+                }
             }
 
             try
             {
                 // call the original method, catching and rethrowing any unhandled exceptions
-                instrumentedMethod(context);
+                instrumentedMethod.Invoke(context);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (integration?.SetException(ex) ?? false)
             {
-                ambientContext?.SetExceptionOnRootSpan(exceptionToGrab.GetValueOrDefault() ?? ex);
+                // unreachable code
                 throw;
             }
         }
 
-        private static void SetAspNetCoreMvcSpecificData(
-            AspNetAmbientContext ambientContext,
-            object actionDescriptor,
-            object httpContext)
+        /// <summary>
+        /// Tags the current span as an error. Called when an unhandled exception is thrown in the instrumented method.
+        /// </summary>
+        /// <param name="ex">The exception that was thrown and not handled in the instrumented method.</param>
+        /// <returns>Always <c>false</c>.</returns>
+        public bool SetException(Exception ex)
+        {
+            _scope?.Span?.SetException(ex);
+            return false;
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
         {
             try
             {
-                var request = httpContext.GetProperty("Request").GetValueOrDefault();
-
-                GetTagValues(
-                    actionDescriptor: actionDescriptor,
-                    request: request,
-                    httpMethod: out string httpMethod,
-                    resourceName: out string resourceName,
-                    controllerName: out string controllerName,
-                    actionName: out string actionName);
-
-                ambientContext.ResetWebServerRootTags(
-                    resourceName: resourceName,
-                    method: httpMethod);
-
-                var aspNetCoreMvcActionScope = ambientContext.Tracer.StartActive(OperationName);
-
-                aspNetCoreMvcActionScope.Span?.DecorateWebServerSpan(
-                    resourceName: resourceName,
-                    method: httpMethod,
-                    host: ambientContext.RootSpan?.GetHost(),
-                    httpUrl: ambientContext.RootSpan?.GetAbsoluteUrl());
-
-                aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetController, controllerName);
-                aspNetCoreMvcActionScope.Span?.SetTag(Tags.AspNetAction, actionName);
-
-                ambientContext.TryPersistScope(IntegrationName, aspNetCoreMvcActionScope);
+                if (_httpContext != null &&
+                    _httpContext.TryGetPropertyValue("Response", out object response) &&
+                    response.TryGetPropertyValue("StatusCode", out object statusCode))
+                {
+                    _scope?.Span?.SetTag("http.status_code", statusCode.ToString());
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                // swallow, don't crash applications
-                Log.Error($"Exception when decorating tags per {nameof(AspNetCoreMvc2Integration)}", ex);
+                _scope?.Dispose();
             }
         }
 
         private static void GetTagValues(
-            object actionDescriptor,
-            object request,
-            out string httpMethod,
-            out string resourceName,
-            out string controllerName,
-            out string actionName)
+           object actionDescriptor,
+           object request,
+           out string httpMethod,
+           out string host,
+           out string resourceName,
+           out string url,
+           out string controllerName,
+           out string actionName)
         {
             controllerName = actionDescriptor.GetProperty<string>("ControllerName").GetValueOrDefault()?.ToLowerInvariant();
 
             actionName = actionDescriptor.GetProperty<string>("ActionName").GetValueOrDefault()?.ToLowerInvariant();
 
-            string host = request.GetProperty("Host").GetProperty<string>("Value").GetValueOrDefault();
+            host = request.GetProperty("Host").GetProperty<string>("Value").GetValueOrDefault();
 
             httpMethod = request.GetProperty<string>("Method").GetValueOrDefault()?.ToUpperInvariant() ?? "UNKNOWN";
 
@@ -308,12 +400,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             string queryString = request.GetProperty("QueryString").GetProperty<string>("Value").GetValueOrDefault();
 
-            string url = $"{pathBase}{path}{queryString}";
+            url = $"{pathBase}{path}{queryString}";
 
             string resourceUrl = actionDescriptor.GetProperty("AttributeRouteInfo").GetProperty<string>("Template").GetValueOrDefault() ??
-                                 UriHelpers.GetRelativeUrl(new Uri($"https://{host}{url}"), tryRemoveIds: true).ToLowerInvariant();
+                                UriHelpers.GetRelativeUrl(new Uri($"https://{host}{url}"), tryRemoveIds: true).ToLowerInvariant();
 
             resourceName = $"{httpMethod} {resourceUrl}";
+        }
+
+        private bool DisposeObject(IDisposable disposable)
+        {
+            disposable?.Dispose();
+            return false;
         }
     }
 }
