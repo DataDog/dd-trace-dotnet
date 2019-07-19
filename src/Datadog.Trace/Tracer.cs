@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using Datadog.Trace.Agent;
@@ -144,11 +143,10 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="span">The span to activate</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
-        /// <param name="forceRootScope">If set to true, the new Scope is forcibly made the root scope </param>
         /// <returns>A Scope object wrapping this span</returns>
-        public Scope ActivateSpan(Span span, bool finishOnClose = true, bool forceRootScope = false)
+        public Scope ActivateSpan(Span span, bool finishOnClose = true)
         {
-            return _scopeManager.Activate(span, finishOnClose, forceRootScope);
+            return _scopeManager.Activate(span, finishOnClose);
         }
 
         /// <summary>
@@ -160,7 +158,6 @@ namespace Datadog.Trace
         /// <param name="startTime">An explicit start time for that span</param>
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
-        /// <param name="forceRootScope">If set to true, the new Scope is forcibly made the root scope </param>
         /// <returns>A scope wrapping the newly created span</returns>
         public Scope StartActive(
             string operationName,
@@ -168,11 +165,10 @@ namespace Datadog.Trace
             string serviceName = null,
             DateTimeOffset? startTime = null,
             bool ignoreActiveScope = false,
-            bool finishOnClose = true,
-            bool forceRootScope = false)
+            bool finishOnClose = true)
         {
             var span = StartSpan(operationName, parent, serviceName, startTime, ignoreActiveScope);
-            return _scopeManager.Activate(span, finishOnClose, forceRootScope);
+            return _scopeManager.Activate(span, finishOnClose);
         }
 
         /// <summary>
@@ -184,7 +180,12 @@ namespace Datadog.Trace
         /// <param name="startTime">An explicit start time for that span</param>
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <returns>The newly created span</returns>
-        public Span StartSpan(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false)
+        public Span StartSpan(
+            string operationName,
+            ISpanContext parent = null,
+            string serviceName = null,
+            DateTimeOffset? startTime = null,
+            bool ignoreActiveScope = false)
         {
             if (parent == null && !ignoreActiveScope)
             {
@@ -227,15 +228,6 @@ namespace Datadog.Trace
 
             traceContext.AddSpan(span);
             return span;
-        }
-
-        /// <summary>
-        /// Writes the specified <see cref="Span"/> collection to the agent writer.
-        /// </summary>
-        /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(List<Span> trace)
-        {
-            _agentWriter.WriteTrace(trace);
         }
 
         /// <summary>

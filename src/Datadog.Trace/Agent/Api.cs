@@ -48,12 +48,15 @@ namespace Datadog.Trace.Agent
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 
-        public async Task SendTracesAsync(IList<List<Span>> traces)
+        public async Task SendTracesAsync(List<Span> traces)
         {
             // retry up to 5 times with exponential backoff
             var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
+
+            // This is gross but I don't want to change the endpoint yet
+            var toSerialize = new List<List<Span>>() { traces };
 
             while (true)
             {
@@ -62,7 +65,7 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     // re-create content on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-                    using (var content = new MsgPackContent<IList<List<Span>>>(traces, _serializationContext))
+                    using (var content = new MsgPackContent<IList<List<Span>>>(toSerialize, _serializationContext))
                     {
                         responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
                         responseMessage.EnsureSuccessStatusCode();

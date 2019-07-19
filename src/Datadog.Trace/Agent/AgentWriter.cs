@@ -8,9 +8,9 @@ namespace Datadog.Trace.Agent
 {
     internal class AgentWriter : IAgentWriter
     {
-        private static readonly ILog _log = LogProvider.For<AgentWriter>();
+        private static readonly ILog Log = LogProvider.For<AgentWriter>();
 
-        private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(1000);
+        private readonly int _maximumSpansToFlushAtOneTime = 500;
         private readonly IApi _api;
         private readonly Task _flushTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
@@ -19,15 +19,6 @@ namespace Datadog.Trace.Agent
         {
             _api = api;
             _flushTask = Task.Run(FlushTracesTaskLoopAsync);
-        }
-
-        public void WriteTrace(List<Span> trace)
-        {
-            var success = _tracesBuffer.Push(trace);
-            if (!success)
-            {
-                _log.Debug("Trace buffer is full, dropping it.");
-            }
         }
 
         public async Task FlushAndCloseAsync()
@@ -42,41 +33,55 @@ namespace Datadog.Trace.Agent
 
             if (!_flushTask.IsCompleted)
             {
-                _log.Warn("Could not flush all traces before process exit");
+                Log.Warn("Could not flush all traces before process exit");
             }
         }
 
-        private async Task FlushTracesAsync()
+        private async Task<IEnumerable<DatadogSpanStagingArea.FlushTask>> AttemptFlush(IEnumerable<DatadogSpanStagingArea.FlushTask> flushTasks)
         {
-            var traces = _tracesBuffer.Pop();
-            if (traces.Any())
-            {
-                await _api.SendTracesAsync(traces).ConfigureAwait(false);
-            }
+            await _api.SendTracesAsync(flushTasks.Select(f => f.Span).ToList()).ConfigureAwait(false);
+            // TODO: Determine if re-queueing is wanted
+            return null;
         }
 
         private async Task FlushTracesTaskLoopAsync()
         {
+            const int maxPollingInterval = 30_000;
+            const int defaultBetweenPolling = 1_000;
+            var millisecondsBetweenPolling = defaultBetweenPolling;
+
+            void ResetDefault()
+            {
+                millisecondsBetweenPolling = defaultBetweenPolling;
+            }
+
+            // Will continue our lower polling interval when items are added
+            DatadogSpanStagingArea.RegisterForWakeup(ResetDefault);
+
             while (true)
             {
                 try
                 {
-                    await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(1)), _processExit.Task)
+                    await Task.WhenAny(Task.Delay(TimeSpan.FromMilliseconds(millisecondsBetweenPolling)), _processExit.Task)
                               .ConfigureAwait(false);
+
+                    if (DatadogSpanStagingArea.FlushTaskCount > 0)
+                    {
+                        await DatadogSpanStagingArea.Flush(_maximumSpansToFlushAtOneTime, AttemptFlush).ConfigureAwait(false);
+                    }
+                    else if (millisecondsBetweenPolling < maxPollingInterval)
+                    {
+                        millisecondsBetweenPolling += (int)(millisecondsBetweenPolling * .3m);
+                    }
 
                     if (_processExit.Task.IsCompleted)
                     {
-                        await FlushTracesAsync().ConfigureAwait(false);
                         return;
-                    }
-                    else
-                    {
-                        await FlushTracesAsync().ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.ErrorException("An unhandled error occurred during the flushing task", ex);
+                    Log.ErrorException("An unhandled error occurred during the flushing task", ex);
                 }
             }
         }

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Moq;
@@ -27,20 +24,19 @@ namespace Datadog.Trace.Tests
             _spanContext = new SpanContext(parentSpanContext.Object, traceContext.Object, serviceName: null);
         }
 
-        [Fact]
-        public async Task WriteTrace_2Traces_SendToApi()
-        {
-            // TODO:bertrand it is too complicated to setup such a simple test
-            var trace = new List<Span> { new Span(_spanContext, start: null) };
-            _agentWriter.WriteTrace(trace);
-            await Task.Delay(TimeSpan.FromSeconds(1.5));
-            _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
-
-            trace = new List<Span> { new Span(_spanContext, start: null) };
-            _agentWriter.WriteTrace(trace);
-            await Task.Delay(TimeSpan.FromSeconds(1.5));
-            _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
-        }
+        // [Fact]
+        // public async Task WriteTrace_2Traces_SendToApi()
+        // {
+        //     // TODO:bertrand it is too complicated to setup such a simple test
+        //     var trace = new List<Span> { new Span(_spanContext, start: null) };
+        //     _agentWriter.WriteTrace(trace);
+        //     await Task.Delay(TimeSpan.FromSeconds(1.5));
+        //     _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
+        //     trace = new List<Span> { new Span(_spanContext, start: null) };
+        //     _agentWriter.WriteTrace(trace);
+        //     await Task.Delay(TimeSpan.FromSeconds(1.5));
+        //     _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
+        // }
 
         [Fact]
         public async Task FlushTwice()

@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests
             var api = new Api(new Uri("http://localhost:1234"), handler);
 
             var span = _tracer.StartSpan("Operation");
-            var traces = new List<List<Span>> { new List<Span> { span } };
+            var traces = new List<Span> { span };
             await api.SendTracesAsync(traces);
 
             Assert.Equal(1, handler.RequestsCount);
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests
             var sw = new Stopwatch();
             sw.Start();
             var span = _tracer.StartSpan("Operation");
-            var traces = new List<List<Span>> { new List<Span> { span } };
+            var traces = new List<Span> { span };
             await api.SendTracesAsync(traces);
             sw.Stop();
 

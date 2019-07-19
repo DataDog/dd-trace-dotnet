@@ -27,15 +27,8 @@ namespace Datadog.Trace
             {
                 lock (_activeScopeLock)
                 {
-                    var callContextGuid = DatadogCallContext.UniqueId.Get();
-
                     for (int i = 0; i < _prioritizedAmbientAccess.Count; i++)
                     {
-                        if (callContextGuid != _prioritizedAmbientAccess[i].ContextGuid)
-                        {
-                            continue;
-                        }
-
                         try
                         {
                             var activeScope = _prioritizedAmbientAccess[i].GetActiveScope();
@@ -77,19 +70,11 @@ namespace Datadog.Trace
             }
         }
 
-        public Scope Activate(Span span, bool finishOnClose, bool forceRootScope)
+        public Scope Activate(Span span, bool finishOnClose)
         {
             lock (_scopingLock)
             {
-                var originalScope = Active;
-
-                Scope newParent = null;
-
-                if (!forceRootScope)
-                {
-                    newParent = originalScope;
-                }
-
+                var newParent = Active;
                 var scope = new Scope(newParent, span, this, finishOnClose);
                 var scopeOpenedArgs = new SpanEventArgs(span);
 
@@ -153,7 +138,8 @@ namespace Datadog.Trace
                     return;
                 }
 
-                _prioritizedAmbientAccess.Add(scopeAccess);
+                // TODO: will we ever need this?
+                // _prioritizedAmbientAccess.Add(scopeAccess);
 
                 // Slower add for faster read
                 _prioritizedAmbientAccess =

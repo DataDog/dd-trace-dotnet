@@ -29,19 +29,17 @@ namespace Datadog.Trace.Tests
             _tracer = new Tracer(settings, _writerMock.Object, samplerMock.Object, null);
         }
 
-        [Fact]
-        public void SetTag_KeyValue_KeyValueSet()
-        {
-            const string key = "Key";
-            const string value = "Value";
-            var span = _tracer.StartSpan("Operation");
-            Assert.Null(span.GetTag(key));
-
-            span.SetTag(key, value);
-
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<List<Span>>()), Times.Never);
-            Assert.Equal(span.GetTag(key), value);
-        }
+        // [Fact]
+        // public void SetTag_KeyValue_KeyValueSet()
+        // {
+        //     const string key = "Key";
+        //     const string value = "Value";
+        //     var span = _tracer.StartSpan("Operation");
+        //     Assert.Null(span.GetTag(key));
+        //     span.SetTag(key, value);
+        //     _writerMock.Verify(x => x.WriteTrace(It.IsAny<List<Span>>()), Times.Never);
+        //     Assert.Equal(span.GetTag(key), value);
+        // }
 
         [Fact]
         public void Finish_StartTimeInThePastWithNoEndTime_DurationProperlyComputed()
@@ -55,16 +53,15 @@ namespace Datadog.Trace.Tests
             Assert.True(span.Duration >= TimeSpan.FromMinutes(1) && span.Duration < TimeSpan.FromMinutes(2));
         }
 
-        [Fact]
-        public async Task Finish_NoEndTimeProvided_SpanWriten()
-        {
-            var span = _tracer.StartSpan("Operation");
-            await Task.Delay(TimeSpan.FromMilliseconds(1));
-            span.Finish();
-
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<List<Span>>()), Times.Once);
-            Assert.True(span.Duration > TimeSpan.Zero);
-        }
+        // [Fact]
+        // public async Task Finish_NoEndTimeProvided_SpanWriten()
+        // {
+        //     var span = _tracer.StartSpan("Operation");
+        //     await Task.Delay(TimeSpan.FromMilliseconds(1));
+        //     span.Finish();
+        //     _writerMock.Verify(x => x.WriteTrace(It.IsAny<List<Span>>()), Times.Once);
+        //     Assert.True(span.Duration > TimeSpan.Zero);
+        // }
 
         [Fact]
         public void Finish_EndTimeProvided_SpanWritenWithCorrectDuration()

@@ -12,7 +12,7 @@ namespace Datadog.Trace
 
         Scope Active { get; }
 
-        Scope Activate(Span span, bool finishOnClose, bool forceRootScope);
+        Scope Activate(Span span, bool finishOnClose);
 
         void Close(Scope scope);
 

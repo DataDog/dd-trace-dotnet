@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     Log.ErrorException("Error extracting propagated HTTP headers.", ex);
                 }
 
-                _rootScope = TracerInstance.StartActive(TopLevelOperationName, propagatedContext, forceRootScope: true);
+                _rootScope = TracerInstance.StartActive(TopLevelOperationName, propagatedContext, ignoreActiveScope: true);
 
                 RegisterForDisposal(_rootScope);
 
@@ -157,19 +157,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     Log.Error($"Exception when disposing {registeredDisposable?.GetType().FullName ?? "NULL"}.", ex);
                 }
             }
-
-            try
-            {
-                // Ensure this instance of the active scope access doesn't stick around.
-                // Ensure it is also the very last thing that happens
-                // Tracer.Instance?.DeregisterScopeAccess(_activeScopeAccess);
-                DatadogCallContext.UniqueId.Set(null);
-            }
-            catch (Exception ex)
-            {
-                // No exceptions in dispose
-                Log.Error(ex, $"Encountered exception when de-registering {nameof(AspNetAmbientContext)}.");
-            }
         }
 
         /// <summary>
@@ -178,8 +165,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="httpContext">Instance of Microsoft.AspNetCore.Http.DefaultHttpContext</param>
         internal static void Initialize(object httpContext)
         {
-            DatadogCallContext.UniqueId.Set(Guid.NewGuid());
-
             var currentContext = RetrieveFromHttpContext(httpContext);
             if (currentContext != null)
             {
@@ -199,7 +184,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (context.AbortRegistration)
             {
-                DatadogCallContext.UniqueId.Set(null);
                 return;
             }
 
@@ -347,7 +331,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             public long CreatedAtTicks { get; } = DateTime.Now.Ticks;
 
-            public Guid? ContextGuid => DatadogCallContext.UniqueId.Get();
+            public Guid? ContextGuid { get; } = Guid.NewGuid();
 
             public int Priority => 50;
 

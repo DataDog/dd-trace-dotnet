@@ -101,11 +101,6 @@ namespace Datadog.Trace
             lock (_lock)
             {
                 _openSpans--;
-
-                if (_openSpans == 0)
-                {
-                    Tracer.Write(_spans);
-                }
             }
         }
 
