@@ -32,6 +32,7 @@ namespace Datadog.Trace.TestHelpers
         private readonly Assembly _anchorAssembly;
         private readonly TargetFrameworkAttribute _targetFramework;
 
+        private bool _requiresProfiling;
         private string _integrationsFileLocation;
         private string _profilerFileLocation;
 
@@ -41,7 +42,8 @@ namespace Datadog.Trace.TestHelpers
             ITestOutputHelper output,
             string samplesDirectory = "samples",
             string disabledIntegrations = null,
-            bool prependSamplesToAppName = true)
+            bool prependSamplesToAppName = true,
+            bool requiresProfiling = true)
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? "samples";
@@ -50,6 +52,7 @@ namespace Datadog.Trace.TestHelpers
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = _anchorAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
+            _requiresProfiling = requiresProfiling;
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -162,7 +165,7 @@ namespace Datadog.Trace.TestHelpers
             StringDictionary environmentVariables)
         {
             var processName = processPath;
-            const string profilerEnabled = "1";
+            string profilerEnabled = _requiresProfiling ? "1" : "0";
 
             if (IsCoreClr())
             {
