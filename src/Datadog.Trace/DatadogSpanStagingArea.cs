@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
@@ -15,7 +13,7 @@ namespace Datadog.Trace
         private static readonly ConcurrentDictionary<Guid, Action> WakeUpTasks = new ConcurrentDictionary<Guid, Action>();
         private static readonly ConcurrentQueue<FlushTask> FlushTaskQueue = new ConcurrentQueue<FlushTask>();
 
-        public static ulong FlushTaskCount { get; private set; }
+        public static int FlushTaskCount { get; private set; }
 
         public static DateTime LastFlushRequest { get; private set; }
 
@@ -73,6 +71,12 @@ namespace Datadog.Trace
                 flushTask.LastAttemptAt = LastFlushRequest;
 
                 Retry(flushTask);
+            }
+
+            if (FlushTaskCount > maxTasks)
+            {
+                // We should go again, can't have the queue piling up
+                await Flush(maxTasks, toilet).ConfigureAwait(false);
             }
         }
 
