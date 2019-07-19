@@ -25,6 +25,11 @@ namespace Datadog.Trace
         /// <returns>A disposable which will clean the stack when this span finishes. </returns>
         public static IDisposable Push(Span span)
         {
+            if (CurrentContext == null)
+            {
+                CurrentContext = DatadogImmutableStack<Span>.Empty;
+            }
+
             CurrentContext = CurrentContext.Push(span);
             return new PopWhenDisposed();
         }
