@@ -40,11 +40,12 @@ namespace Datadog.Trace.Agent
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
             var interpreterVersion = GetInterpreterVersion();
+            var managedAssemblyVersion = this.GetType().Assembly.GetName().Version.ToString();
 
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, interpreterVersion.Item1);
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, interpreterVersion.Item2);
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, this.GetType().Assembly.GetName().Version.ToString());
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, managedAssemblyVersion);
 
             // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
