@@ -13,14 +13,10 @@ for config in Debug Release ; do
     for sample in Samples.AspNetCoreMvc2 Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStack.Redis Samples.StackExchange.Redis Samples.SqlServer Samples.MongoDB Samples.HttpMessageHandler Samples.Npgsql Samples.GraphQL ; do
         dotnet publish -f netcoreapp2.1 -c $config samples/$sample/$sample.csproj
     done
-
-    dotnet publish -f netcoreapp2.1 -c $config reproductions/OrleansCrash/OrleansCrash.csproj
-
-    dotnet publish -f netcoreapp2.1 -c $config reproductions/DataDogThreadTest/DataDogThreadTest.csproj
-
-    dotnet publish -f netcoreapp2.1 -c $config reproductions/HttpMessageHandler.StackOverflowException/HttpMessageHandler.StackOverflowException.csproj
-
-    dotnet publish -f netcoreapp2.1 -c $config reproductions/StackExchange.Redis.StackOverflowException/StackExchange.Redis.StackOverflowException.csproj
+	
+	    for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance ; do
+        dotnet publish -f netcoreapp2.1 -c $config reproductions/$sample/$sample.csproj
+    done
 
     dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions
 

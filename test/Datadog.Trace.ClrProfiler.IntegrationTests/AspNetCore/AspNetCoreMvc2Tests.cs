@@ -13,9 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public class AspNetCoreMvc2Tests : TestHelper
     {
-        private static readonly string _topLevelOperationName = "web.request";
-        // TODO: Test me
-        // private static readonly string _nestedOperationName = "aspnet-coremvc.request";
+        private static readonly string _topLevelOperationName = "aspnet-coremvc.request";
 
         private static readonly List<WebServerSpanExpectation> _expectations = new List<WebServerSpanExpectation>()
         {
