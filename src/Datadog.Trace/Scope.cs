@@ -1,3 +1,4 @@
+using System;
 using Datadog.Trace.Interfaces;
 
 namespace Datadog.Trace
@@ -10,15 +11,16 @@ namespace Datadog.Trace
     /// </summary>
     public class Scope : IScope
     {
-        private readonly IScopeManager _scopeManager;
         private readonly bool _finishOnClose;
 
-        internal Scope(Scope parent, Span span, IScopeManager scopeManager, bool finishOnClose)
+        private IDisposable _stackPopJob;
+
+        internal Scope(Scope parent, Span span, bool finishOnClose)
         {
             Parent = parent;
             Span = span;
-            _scopeManager = scopeManager;
             _finishOnClose = finishOnClose;
+            _stackPopJob = DatadogScopeStack.Push(this);
         }
 
         /// <summary>
@@ -39,12 +41,12 @@ namespace Datadog.Trace
         /// </summary>
         public void Close()
         {
-            _scopeManager.Close(this);
-
             if (_finishOnClose)
             {
                 Span.Finish();
             }
+
+            PopFromContextStack();
         }
 
         /// <summary>
@@ -55,12 +57,19 @@ namespace Datadog.Trace
             try
             {
                 Close();
+                PopFromContextStack();
             }
             catch
             {
                 // Ignore disposal exceptions here...
                 // TODO: Log? only in test/debug? How should Close() concerns be handled (i.e. independent?)
             }
+        }
+
+        private void PopFromContextStack()
+        {
+            _stackPopJob?.Dispose();
+            _stackPopJob = null;
         }
     }
 }

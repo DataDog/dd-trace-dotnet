@@ -3,16 +3,22 @@ using Datadog.Trace.Immutables;
 
 namespace Datadog.Trace
 {
-    internal static class DatadogSpanStack
+    internal static class DatadogScopeStack
     {
         private static readonly AsyncLocalCompat<StackWrapper> CurrentContextAmbientStorage = new AsyncLocalCompat<StackWrapper>();
+
+        public static event EventHandler<SpanEventArgs> SpanActivated;
+
+        public static event EventHandler<SpanEventArgs> SpanClosed;
+
+        public static event EventHandler<SpanEventArgs> TraceEnded;
 
         /// <summary>
         /// Gets the current active span.
         /// </summary>
-        public static Span Active => CurrentContext.Peek();
+        public static Scope Active => CurrentContext.Peek();
 
-        private static DatadogImmutableStack<Span> CurrentContext
+        private static DatadogImmutableStack<Scope> CurrentContext
         {
             get => CurrentContextAmbientStorage.Get()?.Value;
             set => CurrentContextAmbientStorage.Set(new StackWrapper { Value = value });
@@ -21,24 +27,35 @@ namespace Datadog.Trace
         /// <summary>
         /// Add a span to the current call context stack.
         /// </summary>
-        /// <param name="span">The new context. </param>
+        /// <param name="scope">The new context. </param>
         /// <returns>A disposable which will clean the stack when this span finishes. </returns>
-        public static IDisposable Push(Span span)
+        public static IDisposable Push(Scope scope)
         {
             if (CurrentContext == null)
             {
-                CurrentContext = DatadogImmutableStack<Span>.Empty;
+                CurrentContext = DatadogImmutableStack<Scope>.Empty;
             }
 
-            CurrentContext = CurrentContext.Push(span);
+            CurrentContext = CurrentContext.Push(scope);
+
+            SpanActivated?.Invoke(null, new SpanEventArgs(scope.Span));
+
             return new PopWhenDisposed();
         }
 
-        private static Span Pop()
+        private static Scope Pop()
         {
-            var closingSpan = Active;
+            var closingScope = Active;
             CurrentContext = CurrentContext.Pop();
-            return closingSpan;
+
+            SpanClosed?.Invoke(null, new SpanEventArgs(closingScope.Span));
+
+            if (closingScope.Parent == null)
+            {
+                TraceEnded?.Invoke(null, new SpanEventArgs(closingScope.Span));
+            }
+
+            return closingScope;
         }
 
         private sealed class PopWhenDisposed : IDisposable
@@ -52,7 +69,7 @@ namespace Datadog.Trace
                     return;
                 }
 
-                DatadogSpanStagingArea.QueueSpanForFlush(Pop());
+                DatadogSpanStagingArea.QueueSpanForFlush(Pop().Span);
 
                 _disposed = true;
             }
@@ -63,7 +80,7 @@ namespace Datadog.Trace
         /// </summary>
         private sealed class StackWrapper : MarshalByRefObject
         {
-            public DatadogImmutableStack<Span> Value { get; set; } = DatadogImmutableStack<Span>.Empty;
+            public DatadogImmutableStack<Scope> Value { get; set; } = DatadogImmutableStack<Scope>.Empty;
         }
     }
 }

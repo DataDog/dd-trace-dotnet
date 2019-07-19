@@ -20,14 +20,11 @@ namespace Datadog.Trace
 
         private readonly object _lock = new object();
 
-        private IDisposable _stackPopJob;
-
         internal Span(SpanContext context, DateTimeOffset? start)
         {
             Context = context;
             ServiceName = context.ServiceName;
             StartTime = start ?? Context.TraceContext.UtcNow;
-            _stackPopJob = DatadogSpanStack.Push(this);
         }
 
         /// <summary>
@@ -268,8 +265,6 @@ namespace Datadog.Trace
             {
                 Context.TraceContext.CloseSpan(this);
             }
-
-            PopFromContextStack();
         }
 
         /// <summary>
@@ -348,12 +343,6 @@ namespace Datadog.Trace
             }
 
             return this;
-        }
-
-        private void PopFromContextStack()
-        {
-            _stackPopJob?.Dispose();
-            _stackPopJob = null;
         }
     }
 }

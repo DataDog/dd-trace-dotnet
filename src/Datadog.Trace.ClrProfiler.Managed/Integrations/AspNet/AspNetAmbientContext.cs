@@ -15,7 +15,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly string TopLevelOperationName = "web.request";
         private static readonly string StartupDiagnosticMethod = "DEBUG";
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetAmbientContext));
-        private static readonly HttpContextActiveScopeAccess ActiveScopeAccess = new HttpContextActiveScopeAccess();
 
         private readonly ConcurrentStack<IDisposable> _disposables = new ConcurrentStack<IDisposable>();
         private readonly ConcurrentDictionary<string, Scope> _scopeStorage = new ConcurrentDictionary<string, Scope>();
@@ -29,7 +28,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 TracerInstance = Tracer.Instance;
-                // TracerInstance.RegisterScopeAccess(ActiveScopeAccess);
                 _httpContext = httpContext;
 
                 var request = _httpContext.GetProperty("Request").GetValueOrDefault();
@@ -107,7 +105,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // Don't crash client apps
                 Log.Error($"Exception when initializing {nameof(AspNetAmbientContext)}.", ex);
-                Tracer.Instance?.DeregisterScopeAccess(ActiveScopeAccess);
             }
         }
 
@@ -309,44 +306,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 Log.Error($"Unable to register {disposable.GetType().FullName}", ex);
-            }
-        }
-
-        public class HttpContextActiveScopeAccess : IActiveScopeAccess
-        {
-            public long CreatedAtTicks { get; } = DateTime.Now.Ticks;
-
-            public Guid? ContextGuid { get; } = Guid.NewGuid();
-
-            public int Priority => 50;
-
-            public Scope GetActiveScope(params object[] parameters)
-            {
-                if (parameters.Length == 0)
-                {
-                    return null;
-                }
-
-                var ambientContext = RetrieveFromHttpContext(parameters[0]);
-                return ambientContext?._activeScope;
-            }
-
-            public bool TrySetActiveScope(Scope scope, params object[] parameters)
-            {
-                if (parameters.Length == 0)
-                {
-                    return false;
-                }
-
-                var ambientContext = RetrieveFromHttpContext(parameters[0]);
-                if (ambientContext == null)
-                {
-                    return false;
-                }
-
-                ambientContext._activeScope = scope;
-
-                return true;
             }
         }
     }

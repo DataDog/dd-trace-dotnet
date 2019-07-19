@@ -5,8 +5,6 @@ namespace Datadog.Trace.Logging
 {
     internal class LibLogScopeEventSubscriber : IDisposable
     {
-        private readonly IScopeManager _scopeManager;
-
         // Each mapped context sets a key-value pair into the logging context
         // Disposing the context unsets the key-value pair
         //
@@ -16,12 +14,16 @@ namespace Datadog.Trace.Logging
         //            the opposite order
         private readonly ConcurrentStack<IDisposable> _contextDisposalStack = new ConcurrentStack<IDisposable>();
 
-        public LibLogScopeEventSubscriber(IScopeManager scopeManager)
+        private LibLogScopeEventSubscriber()
         {
-            _scopeManager = scopeManager;
-            _scopeManager.SpanActivated += OnSpanActivated;
-            _scopeManager.TraceEnded += OnTraceEnded;
+            DatadogScopeStack.SpanActivated += OnSpanActivated;
+            DatadogScopeStack.TraceEnded += OnTraceEnded;
             SetDefaultValues();
+        }
+
+        public static LibLogScopeEventSubscriber Initialize()
+        {
+            return new LibLogScopeEventSubscriber();
         }
 
         public void OnSpanActivated(object sender, SpanEventArgs spanEventArgs)
@@ -38,8 +40,8 @@ namespace Datadog.Trace.Logging
 
         public void Dispose()
         {
-            _scopeManager.SpanActivated -= OnSpanActivated;
-            _scopeManager.TraceEnded -= OnTraceEnded;
+            DatadogScopeStack.SpanActivated -= OnSpanActivated;
+            DatadogScopeStack.TraceEnded -= OnTraceEnded;
             DisposeAll();
         }
 

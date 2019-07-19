@@ -69,7 +69,7 @@ namespace Datadog.Trace
             // LibLog logging context when a scope is activated/closed
             if (Settings.LogsInjectionEnabled)
             {
-                InitializeLibLogScopeEventSubscriber(_scopeManager);
+                LibLogScopeEventSubscriber.Initialize();
             }
         }
 
@@ -242,24 +242,6 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Register IActiveScopeAccess instance with the ScopeManager
-        /// </summary>
-        /// <param name="scopeAccess">The instance to register.</param>
-        internal void RegisterScopeAccess(IActiveScopeAccess scopeAccess)
-        {
-            _scopeManager.RegisterScopeAccess(scopeAccess);
-        }
-
-        /// <summary>
-        /// Register IActiveScopeAccess instance with the ScopeManager
-        /// </summary>
-        /// <param name="scopeAccess">The instance to register.</param>
-        internal void DeregisterScopeAccess(IActiveScopeAccess scopeAccess)
-        {
-            _scopeManager.DeRegisterScopeAccess(scopeAccess);
-        }
-
-        /// <summary>
         /// Gets an "application name" for the executing application by looking at
         /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
         /// </summary>
@@ -286,11 +268,6 @@ namespace Datadog.Trace
                 Log.ErrorException("Error creating default service name.", ex);
                 return null;
             }
-        }
-
-        private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager)
-        {
-            new LibLogScopeEventSubscriber(scopeManager);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
