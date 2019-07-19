@@ -21,8 +21,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private readonly object _httpContext;
         private readonly Scope _rootScope;
 
-        private Scope _activeScope;
-
         private AspNetAmbientContext(string integrationName, object httpContext)
         {
             try
