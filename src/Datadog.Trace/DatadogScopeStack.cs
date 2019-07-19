@@ -16,7 +16,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the current active span.
         /// </summary>
-        public static Scope Active => CurrentContext.Peek();
+        public static Scope Active => CurrentContext?.Peek();
 
         private static DatadogImmutableStack<Scope> CurrentContext
         {

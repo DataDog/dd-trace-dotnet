@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     Log.ErrorException("Error extracting propagated HTTP headers.", ex);
                 }
 
-                _rootScope = TracerInstance.StartActive(TopLevelOperationName, propagatedContext, ignoreActiveScope: true);
+                _rootScope = TracerInstance.StartActive(TopLevelOperationName, propagatedContext);
 
                 RegisterForDisposal(_rootScope);
 
