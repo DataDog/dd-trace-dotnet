@@ -39,9 +39,11 @@ namespace Datadog.Trace.Agent
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
-            // TODO:bertrand add header for os version
+            var interpreterVersion = GetInterpreterVersion();
+
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, RuntimeInformation.FrameworkDescription);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, interpreterVersion.Item1);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, interpreterVersion.Item2);
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, this.GetType().Assembly.GetName().Version.ToString());
 
             // don't add automatic instrumentation to requests from this HttpClient
@@ -102,6 +104,21 @@ namespace Datadog.Trace.Agent
 
                 return;
             }
+        }
+
+        private static Tuple<string, string> GetInterpreterVersion()
+        {
+            // RuntimeInformation.FrameworkDescription returns string like ".NET Framework 4.7.2" or ".NET Core 2.1",
+            // we want to split the runtime from the version so we can report them as separate values
+            string frameworkDescription = RuntimeInformation.FrameworkDescription;
+            int index = RuntimeInformation.FrameworkDescription.LastIndexOf(' ');
+
+            // everything before the last space
+            string interpreter = frameworkDescription.Substring(0, index).Trim();
+
+            // everything after the last space
+            string version = frameworkDescription.Substring(index).Trim();
+            return Tuple.Create(interpreter, version);
         }
 
         internal class ApiResponse
