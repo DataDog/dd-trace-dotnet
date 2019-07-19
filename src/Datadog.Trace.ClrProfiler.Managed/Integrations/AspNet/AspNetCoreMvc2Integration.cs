@@ -196,7 +196,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Major2)]
         public static void Rethrow(object context, int opCode, int mdToken)
         {
-            string methodDef = $"{ResourceInvoker}.{nameof(Rethrow)}({context?.GetType().FullName} context)";
             var shouldTrace = Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName);
 
             Action<object> instrumentedMethod = null;
@@ -213,6 +212,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
+                var contextTypeName = (context == null) ? string.Empty : (context.GetType().FullName + " ");
+                var methodDef = $"{ResourceInvoker}.{nameof(Rethrow)}({contextTypeName}context)";
                 Log.ErrorException($"Error retrieving {methodDef}", ex);
                 throw;
             }
@@ -229,10 +230,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     ambientContext = AspNetAmbientContext.RetrieveFromHttpContext(httpContextResult.Value);
                 }
 
-                if (ambientContext == null)
-                {
-                    Log.Error($"Could not access {nameof(AspNetAmbientContext)} for {methodDef}.");
-                }
+                // The context parameter is often null when there are no exceptions to rethrow.
             }
 
             try
@@ -240,9 +238,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // call the original method, catching and rethrowing any unhandled exceptions
                 instrumentedMethod(context);
             }
-            catch (Exception ex) when (ambientContext?.SetExceptionOnRootSpan(exceptionToGrab.GetValueOrDefault() ?? ex) ?? false)
+            catch (Exception ex)
             {
-                // unreachable code
+                ambientContext?.SetExceptionOnRootSpan(exceptionToGrab.GetValueOrDefault() ?? ex);
                 throw;
             }
         }
