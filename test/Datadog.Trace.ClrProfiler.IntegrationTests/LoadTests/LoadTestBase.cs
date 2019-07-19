@@ -208,6 +208,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                     {
                         if (!process.HasExited)
                         {
+                            // Give the process a bit to finish flushing spans
+                            Thread.Sleep(5_000);
                             process.Kill();
                         }
 

@@ -44,11 +44,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
             var consolePart = loadTestParts.Single(i => i.Application == LoadTestConsole);
             var mvcPart = loadTestParts.Single(i => i.Application == CoreMvc);
 
+            var expectedTraces = Threads * IterationsPerThread;
+
+            // Wait until the agent actually gets the spans
+            mvcPart.Agent.WaitForSpans(operationName: TopLevelOperationName, count: expectedTraces);
+
             var spans = mvcPart.Agent.Spans;
 
             var traces = spans.GroupBy(s => s.TraceId).OrderByDescending(s => s.Count()).ToList();
-
-            var expectedTraces = Threads * IterationsPerThread;
 
             Assert.True(expectedTraces == traces.Count, $"We expected to receive {expectedTraces} unique traces, but we received {traces.Count}");
 
