@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net452</TargetFrameworks>
+    <Platforms>x64;x86</Platforms>
+    <PlatformTarget>$(Platform)</PlatformTarget>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+  </ItemGroup>
+
+</Project>
