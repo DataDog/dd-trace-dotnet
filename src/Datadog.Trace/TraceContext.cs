@@ -98,15 +98,22 @@ namespace Datadog.Trace
                 }
             }
 
+            List<Span> spansToWrite = null;
+
             lock (_lock)
             {
                 _openSpans--;
 
                 if (_openSpans == 0)
                 {
-                    Tracer.Write(_spans);
+                    spansToWrite = _spans;
                     _spans = new List<Span>();
                 }
+            }
+
+            if (spansToWrite != null)
+            {
+                Tracer.Write(spansToWrite);
             }
         }
 
