@@ -5,6 +5,7 @@ using Datadog.Trace.Logging.LogProviders;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Core;
+using log4net.Layout;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
@@ -18,8 +19,11 @@ namespace Datadog.Trace.Tests.Logging
 
         public Log4NetLogProviderTests()
         {
+            var repository = log4net.LogManager.GetRepository(typeof(log4net.LogManager).Assembly);
             _memoryAppender = new MemoryAppender();
-            var repository = log4net.LogManager.GetRepository(Assembly.GetAssembly(typeof(log4net.LogManager)));
+            var patternLayout = new PatternLayout();
+            _memoryAppender.Layout = patternLayout;
+            _memoryAppender.ActivateOptions();
             BasicConfigurator.Configure(repository, _memoryAppender);
 
             _logProvider = new Log4NetLogProvider();
