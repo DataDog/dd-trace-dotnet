@@ -28,8 +28,8 @@ namespace TraceContext.InvalidOperationException
                 ddTraceSettings.TraceEnabled = true;
                 var tracer = new Tracer(ddTraceSettings);
 
-                var totalIterations = 100_000;
-                var threadRepresentation = Enumerable.Range(0, 10).ToArray();
+                var totalIterations = 400_000;
+                var threadRepresentation = Enumerable.Range(0, 5).ToArray();
                 var threadCount = threadRepresentation.Length;
 
                 // Two logs per thread iteration + 1 extra log at the end of each thread
