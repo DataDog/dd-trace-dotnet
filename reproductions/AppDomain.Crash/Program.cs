@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Policy;
 using System.Threading;
+using AppDomain.Instance;
 using Datadog.Trace.TestHelpers;
 
 namespace AppDomain.Crash
@@ -16,21 +19,20 @@ namespace AppDomain.Crash
             {
                 Console.WriteLine("Starting AppDomain Crash Test");
 
-                List<Thread> workers = new List<Thread>();
+                var workers = new List<Thread>();
+                var unloads = new List<Thread>();
 
                 string commonFriendlyAppDomainName = "crash-dummy";
                 int index = 1;
 
-                var mainApplicationHelper = new EnvironmentHelper(
-                    sampleName: "AppDomain.Crash",
-                    anchorType: typeof(Program),
-                    output: null,
-                    samplesDirectory: "reproductions",
-                    prependSamplesToAppName: false,
-                    requiresProfiling: false);
+                var appPool = EnvironmentHelper.NonProfiledHelper(typeof(Program), "AppDomain.Crash", "reproductions");
+                var appInstance = EnvironmentHelper.NonProfiledHelper(typeof(Program), "AppDomain.Instance", "reproduction-dependencies");
 
-                var instanceDirectory = "C:\\Github\\DataDog\\dd-trace-dotnet\\reproductions\\AppDomain.Instance\\bin\\x64\\Debug\\net452"; // instanceHelper.GetSampleApplicationOutputDirectory();
-                var mainAppOutputDirectory = "C:\\Github\\DataDog\\dd-trace-dotnet\\reproductions\\AppDomain.Crash\\bin\\x64\\Debug\\net452"; // mainApplicationHelper.GetSampleApplicationOutputDirectory();
+                var appPoolBin = appPool.GetSampleApplicationOutputDirectory();
+                var instanceBin = appInstance.GetSampleApplicationOutputDirectory();
+
+                var deployDirectory = Path.Combine(appPool.GetSampleProjectDirectory(), "ApplicationInstance", "AppDomain.Instance");
+
                 var securityInfo = new Evidence();
 
                 var currentAssembly = Assembly.GetExecutingAssembly();
@@ -39,23 +41,63 @@ namespace AppDomain.Crash
                 var instanceName = instanceType.FullName;
 
                 System.AppDomain previousDomain = null;
-                AppDomainInstanceProgram previousProgram = null;
+                AppDomainInstanceProgram previousInstance = null;
 
-                var domainsToReplace = 5;
+                var domainsToInstantiate = 3;
 
-                while (domainsToReplace-- > 0)
+                while (domainsToInstantiate-- > 0)
                 {
                     if (previousDomain != null)
                     {
-                        System.AppDomain.Unload(previousDomain);
+                        var unloadTask = new Thread(
+                            () =>
+                            {
+                                var domainToUnload = previousDomain;
+                                var instanceToUnload = previousInstance;
+
+                                while (true)
+                                {
+                                    if (instanceToUnload?.WorkerProgram != null)
+                                    {
+                                        lock (instanceToUnload.WorkerProgram.CallLock)
+                                        {
+                                            if (instanceToUnload.WorkerProgram.CurrentCallCount > 0)
+                                            {
+                                                instanceToUnload.WorkerProgram.DenyAllCalls = true;
+                                                break;
+                                            }
+                                        }
+
+                                        Thread.Sleep(100);
+                                        continue;
+                                    }
+
+                                    break;
+                                }
+
+                                System.AppDomain.Unload(domainToUnload);
+                            });
+
+                        unloads.Add(unloadTask);
+
+                        Console.WriteLine($"Beginning deploy over instance {index - 1}");
+                        unloadTask.Start();
                     }
 
-                    var appDomainRoot = System.AppDomain.CreateDomain(commonFriendlyAppDomainName);
+                    XCopy(instanceBin, deployDirectory);
+
+                    var currentAppDomain =
+                        System.AppDomain.CreateDomain(
+                            friendlyName: commonFriendlyAppDomainName,
+                            securityInfo: securityInfo,
+                            appBasePath: deployDirectory,
+                            appRelativeSearchPath: appPoolBin,
+                            shadowCopyFiles: true);
 
                     Console.WriteLine($"Created AppDomain root for #{index} - {commonFriendlyAppDomainName}");
 
-                    var domainInstance =
-                        appDomainRoot.CreateInstanceAndUnwrap(
+                    var instanceOfProgram =
+                        currentAppDomain.CreateInstanceAndUnwrap(
                             instanceType.Assembly.FullName,
                             instanceName) as AppDomainInstanceProgram;
 
@@ -68,7 +110,7 @@ namespace AppDomain.Crash
                     var domainWorker = new Thread(
                         () =>
                         {
-                            domainInstance.Main(argsToPass);
+                            instanceOfProgram.Main(argsToPass);
                         });
 
                     domainWorker.Start();
@@ -78,7 +120,8 @@ namespace AppDomain.Crash
                     // Give the domain some time to enjoy life
                     Thread.Sleep(7500);
 
-                    previousDomain = appDomainRoot;
+                    previousDomain = currentAppDomain;
+                    previousInstance = instanceOfProgram;
                     index++;
                 }
 
@@ -97,6 +140,33 @@ namespace AppDomain.Crash
             }
 
             return 0;
+        }
+
+        private static void XCopy(string sourceDirectory, string targetDirectory)
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.CreateNoWindow = false;
+            startInfo.UseShellExecute = false;
+            startInfo.FileName = "xcopy";
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            startInfo.Arguments = "\"" + sourceDirectory + "\"" + " " + "\"" + targetDirectory + "\"" + @" /e /y /I";
+
+            Process xCopy = null;
+
+            try
+            {
+                xCopy = Process.Start(startInfo);
+                xCopy.WaitForExit(10_000);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"XCopy has failed: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                xCopy?.Dispose();
+            }
         }
     }
 }

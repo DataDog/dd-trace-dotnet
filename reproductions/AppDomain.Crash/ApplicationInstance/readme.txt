@@ -1,0 +1,1 @@
+﻿Deploy the code to this folder to mimic what happens in deployment scenarios for IIS

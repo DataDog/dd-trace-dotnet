@@ -200,7 +200,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetMvcCorePerformance", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Crash", "reproductions\AppDomain.Crash\AppDomain.Crash.csproj", "{D76BA89A-3BFF-424A-9529-83500C71C3CB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Instance", "reproductions\AppDomain.Instance\AppDomain.Instance.csproj", "{AAA687B0-71B7-423A-BC77-8F473928BED2}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reproduction-dependencies", "reproduction-dependencies", "{641C9C61-53FD-4504-B8D9-84008BDB89D1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Instance", "reproduction-dependencies\AppDomain.Instance\AppDomain.Instance.csproj", "{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -666,16 +668,16 @@ Global
 		{D76BA89A-3BFF-424A-9529-83500C71C3CB}.Release|x64.Build.0 = Release|x64
 		{D76BA89A-3BFF-424A-9529-83500C71C3CB}.Release|x86.ActiveCfg = Release|x86
 		{D76BA89A-3BFF-424A-9529-83500C71C3CB}.Release|x86.Build.0 = Release|x86
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Debug|x64.ActiveCfg = Debug|x64
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Debug|x64.Build.0 = Debug|x64
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Debug|x86.ActiveCfg = Debug|x86
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Debug|x86.Build.0 = Debug|x86
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Release|Any CPU.ActiveCfg = Release|x86
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Release|x64.ActiveCfg = Release|x64
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Release|x64.Build.0 = Release|x64
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Release|x86.ActiveCfg = Release|x86
-		{AAA687B0-71B7-423A-BC77-8F473928BED2}.Release|x86.Build.0 = Release|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|x64.ActiveCfg = Debug|x64
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|x64.Build.0 = Debug|x64
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|x86.ActiveCfg = Debug|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|x86.Build.0 = Debug|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|Any CPU.ActiveCfg = Release|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|x64.ActiveCfg = Release|x64
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|x64.Build.0 = Release|x64
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|x86.ActiveCfg = Release|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -723,7 +725,7 @@ Global
 		{FA487690-E88C-4A57-9187-B71CB70C1AAE} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{D76BA89A-3BFF-424A-9529-83500C71C3CB} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{AAA687B0-71B7-423A-BC77-8F473928BED2} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

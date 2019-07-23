@@ -1,7 +1,8 @@
 <Project>
   <PropertyGroup>
-	
-	<Platforms>x64;x86</Platforms>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
+    <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
     <RuntimeIdentifiers Condition="'$(TargetFramework)' == 'netcoreapp2.1'">win-x64;win-x86;linux-x64</RuntimeIdentifiers>
     <RuntimeIdentifier Condition="'$(TargetFramework)' != 'netcoreapp2.1'">win-$(Platform)</RuntimeIdentifier>
@@ -18,16 +19,5 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="$(ProfilerOutputDirectory)\*.dll;$(ProfilerOutputDirectory)\*.so;$(ProfilerOutputDirectory)\*.pdb"
-          CopyToOutputDirectory="Always"
-          CopyToPublishDirectory="Always"
-          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
-    <Content Include="..\..\integrations.json"
-             CopyToOutputDirectory="Always"
-             CopyToPublishDirectory="Always"
-             Link="profiler-lib\integrations.json" />
   </ItemGroup>
 </Project>

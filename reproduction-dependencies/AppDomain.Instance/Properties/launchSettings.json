@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "OrleansCrash": {
+    "AppDomain.Instance": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "0",

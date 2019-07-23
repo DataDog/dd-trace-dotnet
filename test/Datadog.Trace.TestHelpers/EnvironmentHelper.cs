@@ -77,6 +77,17 @@ namespace Datadog.Trace.TestHelpers
 
         public string SampleName { get; }
 
+        public static EnvironmentHelper NonProfiledHelper(Type anchor, string appName, string directory)
+        {
+            return new EnvironmentHelper(
+                sampleName: appName,
+                anchorType: anchor,
+                output: null,
+                samplesDirectory: directory,
+                prependSamplesToAppName: false,
+                requiresProfiling: false);
+        }
+
         public static string GetExecutingAssembly()
         {
             return ExecutingAssembly.Location;

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFrameworks>net452</TargetFrameworks>
     <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
