@@ -67,7 +67,7 @@ namespace AppDomain.Instance
             public bool DenyAllCalls { get; set; }
 
             private readonly string _connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true";
-            private readonly string _table = "GreatJoke";
+            private readonly string _jokeTable = "GreatJoke";
 
             public NestedProgram()
             {
@@ -96,12 +96,14 @@ namespace AppDomain.Instance
                         responseTask.Wait(1000);
                         if (responseTask.IsCompleted)
                         {
-                            Console.WriteLine("Storing joke in SQL");
                             var jokeReaderTask = responseTask.Result.Content.ReadAsStringAsync();
                             jokeReaderTask.Wait();
                             var joke = jokeReaderTask.Result;
+
                             StoreJoke(joke);
-                            Console.WriteLine($"Joke: {joke}");
+                            var lastStoredJoke = GetLastJoke();
+
+                            Console.WriteLine($"Joke: {lastStoredJoke}");
                         }
 
                         Console.WriteLine($"App {AppDomainIndex} - Finished client.GetAsync");
@@ -118,18 +120,33 @@ namespace AppDomain.Instance
                 }
             }
 
+            public string GetLastJoke()
+            {
+                using (var connection = (DbConnection)new SqlConnection(_connectionString))
+                using (var command = connection.CreateCommand())
+                {
+                    Console.WriteLine($"Reading last joke from SQL for instance #{AppDomainIndex}");
+                    command.CommandText = $"SELECT TOP 1 Text FROM {_jokeTable} ORDER BY Id DESC;";
+                    connection.Open();
+                    var reader = command.ExecuteReader();
+                    reader.Read();
+                    var result = reader[0];
+                    return result.ToString();
+                }
+            }
+
             public void StoreJoke(string joke)
             {
                 joke = joke.Replace("'", "`"); // horrible sanitization :)
                 using (var connection = new SqlConnection(_connectionString))
                 using (var command = new SqlCommand())
                 {
+                    Console.WriteLine($"Inserting joke into SQL for instance #{AppDomainIndex}");
                     connection.Open();
                     command.Connection = connection;
-                    command.CommandText = $"INSERT INTO {_table} (Text) VALUES ('{joke}')";
+                    command.CommandText = $"INSERT INTO {_jokeTable} (Text) VALUES ('{joke}')";
                     command.ExecuteNonQuery();
                     connection.Close();
-                    Console.WriteLine($"Inserted joke for instance #{AppDomainIndex}");
                 }
             }
 
@@ -140,8 +157,8 @@ namespace AppDomain.Instance
                 {
                     connection.Open();
                     command.Connection = connection;
-                    command.CommandText = $"IF NOT EXISTS( SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{_table}') " +
-                                          $"CREATE TABLE {_table} (Id int identity(1,1),Text VARCHAR(500))";
+                    command.CommandText = $"IF NOT EXISTS( SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{_jokeTable}') " +
+                                          $"CREATE TABLE {_jokeTable} (Id int identity(1,1),Text VARCHAR(500))";
                     command.ExecuteNonQuery();
                     connection.Close();
                     Console.WriteLine($"Created joke table for instance #{AppDomainIndex}");
