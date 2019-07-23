@@ -118,7 +118,10 @@ namespace AppDomain.Crash
                     workers.Add(domainWorker);
 
                     // Give the domain some time to enjoy life
-                    Thread.Sleep(7500);
+                    while (instanceOfProgram?.WorkerProgram == null || instanceOfProgram.WorkerProgram.TotalCallCount < 3)
+                    {
+                        Thread.Sleep(3000);
+                    }
 
                     previousDomain = currentAppDomain;
                     previousInstance = instanceOfProgram;
