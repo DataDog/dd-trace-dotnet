@@ -7,6 +7,8 @@ using System.Reflection;
 using System.Security.Policy;
 using System.Threading;
 using AppDomain.Instance;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.TestHelpers;
 
 namespace AppDomain.Crash
@@ -18,6 +20,13 @@ namespace AppDomain.Crash
             try
             {
                 Console.WriteLine("Starting AppDomain Crash Test");
+
+                Console.WriteLine($"Forcing load of {typeof(AdoNetIntegration).Assembly.FullName}");
+
+                if (Instrumentation.ProfilerAttached == false)
+                {
+                    throw new Exception("Profiler must be attached!");
+                }
 
                 var workers = new List<Thread>();
                 var unloads = new List<Thread>();
@@ -43,7 +52,7 @@ namespace AppDomain.Crash
                 System.AppDomain previousDomain = null;
                 AppDomainInstanceProgram previousInstance = null;
 
-                var domainsToInstantiate = 3;
+                var domainsToInstantiate = 4;
 
                 while (domainsToInstantiate-- > 0)
                 {
@@ -84,6 +93,14 @@ namespace AppDomain.Crash
                         unloadTask.Start();
                     }
 
+                    if (Directory.Exists(deployDirectory))
+                    {
+                        // Start fresh
+                        Directory.Delete(deployDirectory);
+                    }
+
+                    Directory.CreateDirectory(deployDirectory);
+
                     XCopy(instanceBin, deployDirectory);
 
                     var currentAppDomain =
@@ -92,7 +109,7 @@ namespace AppDomain.Crash
                             securityInfo: securityInfo,
                             appBasePath: deployDirectory,
                             appRelativeSearchPath: appPoolBin,
-                            shadowCopyFiles: true);
+                            shadowCopyFiles: false);
 
                     Console.WriteLine($"Created AppDomain root for #{index} - {commonFriendlyAppDomainName}");
 
@@ -118,10 +135,7 @@ namespace AppDomain.Crash
                     workers.Add(domainWorker);
 
                     // Give the domain some time to enjoy life
-                    while (instanceOfProgram?.WorkerProgram == null || instanceOfProgram.WorkerProgram.TotalCallCount < 3)
-                    {
-                        Thread.Sleep(3000);
-                    }
+                    Thread.Sleep(20_000);
 
                     previousDomain = currentAppDomain;
                     previousInstance = instanceOfProgram;
