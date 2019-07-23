@@ -19,6 +19,9 @@ namespace trace {
 
 CorProfiler* profiler = nullptr;
 
+//
+// ICorProfilerCallback methods
+//
 HRESULT STDMETHODCALLTYPE
 CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // check if debug mode is enabled
@@ -128,7 +131,16 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // set event mask to subscribe to events and disable NGEN images
-  hr = this->info_->SetEventMask(event_mask);
+  // get ICorProfilerInfo5 for net452+
+  ICorProfilerInfo5* info5;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo5>(&info5);
+  if (SUCCEEDED(hr)) {
+    Info("Interface ICorProfilerInfo5 found.");
+    hr = info5->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+  } else {
+    hr = this->info_->SetEventMask(event_mask);
+  }
+
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
     return E_FAIL;
@@ -594,6 +606,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     RETURN_OK_IF_FAILED(hr);
   }
 
+  return S_OK;
+}
+
+//
+// ICorProfilerCallback6 methods
+//
+HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
+    const WCHAR* wszAssemblyPath,
+    ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) {
+  Info("We got into GetAssemblyReferences!");
+  // this->info5_->GetAssemblyInfo()
   return S_OK;
 }
 

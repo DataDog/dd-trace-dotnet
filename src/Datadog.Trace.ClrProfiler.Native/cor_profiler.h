@@ -29,8 +29,13 @@ class CorProfiler : public CorProfilerBase {
 
   bool IsAttached() const;
 
+  //
+  // ICorProfilerCallback methods
+  //
   HRESULT STDMETHODCALLTYPE
   Initialize(IUnknown* cor_profiler_info_unknown) override;
+
+  HRESULT STDMETHODCALLTYPE Shutdown() override;
 
   HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id,
                                                HRESULT hr_status) override;
@@ -40,7 +45,12 @@ class CorProfiler : public CorProfilerBase {
   HRESULT STDMETHODCALLTYPE
   JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
 
-  HRESULT STDMETHODCALLTYPE Shutdown() override;
+  //
+  // ICorProfilerCallback6 methods
+  //
+  HRESULT STDMETHODCALLTYPE GetAssemblyReferences(
+      const WCHAR* wszAssemblyPath,
+      ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,
