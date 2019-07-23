@@ -23,9 +23,6 @@ namespace AppDomain.Crash
                 var workers = new List<Process>();
                 var unloads = new List<Thread>();
 
-                string commonFriendlyAppDomainName = "crash-dummy";
-                int index = 1;
-
                 var appPool = EnvironmentHelper.NonProfiledHelper(typeof(Program), "AppDomain.Orchestrator", "reproductions");
                 var appInstance = EnvironmentHelper.NonProfiledHelper(typeof(Program), "AppDomain.Crash", "reproductions");
 
@@ -53,16 +50,12 @@ namespace AppDomain.Crash
 
                 while (processesToStart-- > 0)
                 {
-
-
                     var exePath = Path.Combine(deployDirectory, "w3wp.exe");
                     var worker = Process.Start(exePath);
 
                     workers.Add(worker);
 
                     Thread.Sleep(8000);
-
-                    index++;
 
                     if (workers.Count > 3)
                     {

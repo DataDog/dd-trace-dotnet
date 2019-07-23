@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security;
+using System.Security.Permissions;
 using System.Security.Policy;
 using System.Threading;
 using AppDomain.Instance;
@@ -44,6 +46,10 @@ namespace AppDomain.Crash
 
                 var securityInfo = new Evidence();
 
+                var permissionSet = new PermissionSet(PermissionState.None);
+                var permission = new MockPermission(PermissionState.Unrestricted);
+                permissionSet.AddPermission(permission);
+
                 var currentAssembly = Assembly.GetExecutingAssembly();
 
                 var instanceType = typeof(AppDomainInstanceProgram);
@@ -53,6 +59,8 @@ namespace AppDomain.Crash
                 AppDomainInstanceProgram previousInstance = null;
 
                 var domainsToInstantiate = 4;
+
+                var usePermissionSet = false;
 
                 while (domainsToInstantiate-- > 0)
                 {
@@ -96,20 +104,40 @@ namespace AppDomain.Crash
                     if (Directory.Exists(deployDirectory))
                     {
                         // Start fresh
-                        Directory.Delete(deployDirectory);
+                        var files = Directory.GetFiles(deployDirectory);
+                        foreach (var file in files)
+                        {
+                            File.Delete(file);
+                        }
                     }
-
-                    Directory.CreateDirectory(deployDirectory);
+                    else
+                    {
+                        Directory.CreateDirectory(deployDirectory);
+                    }
 
                     XCopy(instanceBin, deployDirectory);
 
-                    var currentAppDomain =
-                        System.AppDomain.CreateDomain(
-                            friendlyName: commonFriendlyAppDomainName,
-                            securityInfo: securityInfo,
-                            appBasePath: deployDirectory,
-                            appRelativeSearchPath: appPoolBin,
-                            shadowCopyFiles: false);
+                    System.AppDomain currentAppDomain;
+
+                    if (usePermissionSet)
+                    {
+                        var identity = new ApplicationIdentity(commonFriendlyAppDomainName);
+                        var context = ActivationContext.CreatePartialActivationContext(identity);
+                        var setup = new AppDomainSetup(context);
+                        currentAppDomain =
+                            System.AppDomain.CreateDomain(commonFriendlyAppDomainName, securityInfo, info: setup, grantSet: permissionSet);
+                    }
+                    else {
+                        currentAppDomain =
+                            System.AppDomain.CreateDomain(
+                                friendlyName: commonFriendlyAppDomainName,
+                                securityInfo: securityInfo,
+                                appBasePath: deployDirectory,
+                                appRelativeSearchPath: appPoolBin,
+                                shadowCopyFiles: false);
+                    }
+
+                    usePermissionSet = !usePermissionSet;
 
                     Console.WriteLine($"Created AppDomain root for #{index} - {commonFriendlyAppDomainName}");
 
