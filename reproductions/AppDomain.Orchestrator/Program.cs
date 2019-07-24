@@ -3,14 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Security.Policy;
 using System.Threading;
-using AppDomain.Instance;
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.TestHelpers;
 
-namespace AppDomain.Crash
+namespace AppDomain.Orchestrator
 {
     public class Program
     {
@@ -47,11 +43,14 @@ namespace AppDomain.Crash
                 XCopy(instanceBin, deployDirectory);
 
                 var processesToStart = 10;
+                var processesStarted = 0;
 
                 while (processesToStart-- > 0)
                 {
                     var exePath = Path.Combine(deployDirectory, "w3wp.exe");
+                    Console.WriteLine("Starting a new process.");
                     var worker = Process.Start(exePath);
+                    Console.WriteLine($"Started process #{++processesStarted}");
 
                     workers.Add(worker);
 
@@ -59,6 +58,7 @@ namespace AppDomain.Crash
 
                     if (workers.Count > 3)
                     {
+                        Console.WriteLine("Killing a process.");
                         SafeKillFirst(workers);
                     }
                 }
@@ -71,6 +71,7 @@ namespace AppDomain.Crash
 
                     if (cyclesWaiting > 7)
                     {
+                        Console.WriteLine("Killing a process.");
                         SafeKillFirst(workers);
                     }
 

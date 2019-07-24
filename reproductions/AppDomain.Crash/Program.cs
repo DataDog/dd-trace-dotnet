@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Security;
 using System.Security.Permissions;
 using System.Security.Policy;
@@ -17,6 +16,7 @@ namespace AppDomain.Crash
 {
     public class Program
     {
+        [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
         public static int Main(string[] args)
         {
             try
@@ -27,7 +27,12 @@ namespace AppDomain.Crash
 
                 if (Instrumentation.ProfilerAttached == false)
                 {
-                    throw new Exception("Profiler must be attached!");
+                    Console.WriteLine("Profiler is not attached!");
+                    // throw new Exception("Profiler must be attached!");
+                }
+                else
+                {
+                    Console.WriteLine("Profiler is attached.");
                 }
 
                 var workers = new List<Thread>();
@@ -49,8 +54,6 @@ namespace AppDomain.Crash
                 var permissionSet = new PermissionSet(PermissionState.None);
                 var permission = new MockPermission(PermissionState.Unrestricted);
                 permissionSet.AddPermission(permission);
-
-                var currentAssembly = Assembly.GetExecutingAssembly();
 
                 var instanceType = typeof(AppDomainInstanceProgram);
                 var instanceName = instanceType.FullName;
@@ -78,7 +81,7 @@ namespace AppDomain.Crash
                                     {
                                         lock (instanceToUnload.WorkerProgram.CallLock)
                                         {
-                                            if (instanceToUnload.WorkerProgram.CurrentCallCount > 0)
+                                            if (instanceToUnload.WorkerProgram.CurrentCallCount == 0)
                                             {
                                                 instanceToUnload.WorkerProgram.DenyAllCalls = true;
                                                 break;
@@ -99,6 +102,11 @@ namespace AppDomain.Crash
 
                         Console.WriteLine($"Beginning deploy over instance {index - 1}");
                         unloadTask.Start();
+                    }
+
+                    while (unloads.Any(u => u.IsAlive))
+                    {
+                        Thread.Sleep(2000);
                     }
 
                     if (Directory.Exists(deployDirectory))
@@ -127,17 +135,18 @@ namespace AppDomain.Crash
                         currentAppDomain =
                             System.AppDomain.CreateDomain(commonFriendlyAppDomainName, securityInfo, info: setup, grantSet: permissionSet);
                     }
-                    else {
+                    else
+                    {
                         currentAppDomain =
                             System.AppDomain.CreateDomain(
                                 friendlyName: commonFriendlyAppDomainName,
                                 securityInfo: securityInfo,
                                 appBasePath: deployDirectory,
                                 appRelativeSearchPath: appPoolBin,
-                                shadowCopyFiles: false);
+                                shadowCopyFiles: true);
                     }
 
-                    usePermissionSet = !usePermissionSet;
+                    // usePermissionSet = !usePermissionSet;
 
                     Console.WriteLine($"Created AppDomain root for #{index} - {commonFriendlyAppDomainName}");
 
