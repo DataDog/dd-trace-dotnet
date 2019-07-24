@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="ApplicationInstance\AppDomain.Instance\**" />
-    <EmbeddedResource Remove="ApplicationInstance\AppDomain.Instance\**" />
-    <None Remove="ApplicationInstance\AppDomain.Instance\**" />
+    <Compile Remove="ApplicationInstance\AppDomain.Crash\**" />
+    <EmbeddedResource Remove="ApplicationInstance\AppDomain.Crash\**" />
+    <None Remove="ApplicationInstance\AppDomain.Crash\**" />
   </ItemGroup>
 
   <ItemGroup>

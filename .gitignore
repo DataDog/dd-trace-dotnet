@@ -11,7 +11,7 @@
 *.userprefs
 
 # Test directories
-[Aa]pplication[Ii]nstance/*/
+ApplicationInstance/*/
 
 # Build results
 [Dd]ebug/

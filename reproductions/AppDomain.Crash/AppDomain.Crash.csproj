@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ApplicationInstance\AppDomain.Instance\**" />
+    <EmbeddedResource Remove="ApplicationInstance\AppDomain.Instance\**" />
+    <None Remove="ApplicationInstance\AppDomain.Instance\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\reproduction-dependencies\AppDomain.Instance\AppDomain.Instance.csproj" />
     <ProjectReference Include="..\..\test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
   </ItemGroup>

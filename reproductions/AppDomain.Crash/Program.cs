@@ -49,11 +49,6 @@ namespace AppDomain.Crash
 
                 var deployDirectory = Path.Combine(appPool.GetSampleProjectDirectory(), "ApplicationInstance", "AppDomain.Instance");
 
-                var securityInfo = new Evidence();
-
-                var permissionSet = new PermissionSet(PermissionState.None);
-                var permission = new MockPermission(PermissionState.Unrestricted);
-                permissionSet.AddPermission(permission);
 
                 var instanceType = typeof(AppDomainInstanceProgram);
                 var instanceName = instanceType.FullName;
@@ -63,90 +58,49 @@ namespace AppDomain.Crash
 
                 var domainsToInstantiate = 4;
 
-                var usePermissionSet = false;
+                var usePermissionSet = true;
+
+                if (Directory.Exists(deployDirectory))
+                {
+                    // Start fresh
+                    var files = Directory.GetFiles(deployDirectory);
+                    foreach (var file in files)
+                    {
+                        File.Delete(file);
+                    }
+                }
+                else
+                {
+                    Directory.CreateDirectory(deployDirectory);
+                }
+
+                XCopy(instanceBin, deployDirectory);
 
                 while (domainsToInstantiate-- > 0)
                 {
                     if (previousDomain != null)
                     {
-                        var unloadTask = new Thread(
-                            () =>
-                            {
-                                var domainToUnload = previousDomain;
-                                var instanceToUnload = previousInstance;
-
-                                while (true)
-                                {
-                                    if (instanceToUnload?.WorkerProgram != null)
-                                    {
-                                        lock (instanceToUnload.WorkerProgram.CallLock)
-                                        {
-                                            if (instanceToUnload.WorkerProgram.CurrentCallCount == 0)
-                                            {
-                                                instanceToUnload.WorkerProgram.DenyAllCalls = true;
-                                                break;
-                                            }
-                                        }
-
-                                        Thread.Sleep(100);
-                                        continue;
-                                    }
-
-                                    break;
-                                }
-
-                                System.AppDomain.Unload(domainToUnload);
-                            });
-
-                        unloads.Add(unloadTask);
-
-                        Console.WriteLine($"Beginning deploy over instance {index - 1}");
-                        unloadTask.Start();
+                        System.AppDomain.Unload(previousDomain);
                     }
 
-                    while (unloads.Any(u => u.IsAlive))
+                    var appDomainName = $"{commonFriendlyAppDomainName}_{index}";
+
+                    var setup = new AppDomainSetup
                     {
-                        Thread.Sleep(2000);
-                    }
+                        ApplicationBase = deployDirectory,
+                        DisallowBindingRedirects = false,
+                        DisallowCodeDownload = true
+                    };
 
-                    if (Directory.Exists(deployDirectory))
-                    {
-                        // Start fresh
-                        var files = Directory.GetFiles(deployDirectory);
-                        foreach (var file in files)
-                        {
-                            File.Delete(file);
-                        }
-                    }
-                    else
-                    {
-                        Directory.CreateDirectory(deployDirectory);
-                    }
-
-                    XCopy(instanceBin, deployDirectory);
-
-                    System.AppDomain currentAppDomain;
-
+                    var permissionSet = new PermissionSet(PermissionState.Unrestricted);
+                    
                     if (usePermissionSet)
                     {
-                        var identity = new ApplicationIdentity(commonFriendlyAppDomainName);
-                        var context = ActivationContext.CreatePartialActivationContext(identity);
-                        var setup = new AppDomainSetup(context);
-                        currentAppDomain =
-                            System.AppDomain.CreateDomain(commonFriendlyAppDomainName, securityInfo, info: setup, grantSet: permissionSet);
-                    }
-                    else
-                    {
-                        currentAppDomain =
-                            System.AppDomain.CreateDomain(
-                                friendlyName: commonFriendlyAppDomainName,
-                                securityInfo: securityInfo,
-                                appBasePath: deployDirectory,
-                                appRelativeSearchPath: appPoolBin,
-                                shadowCopyFiles: true);
+                        permissionSet.AddPermission(new RegistryPermission(PermissionState.None));
                     }
 
-                    // usePermissionSet = !usePermissionSet;
+                    var currentAppDomain = System.AppDomain.CreateDomain(appDomainName, System.AppDomain.CurrentDomain.Evidence, setup, permissionSet);
+                    usePermissionSet = !usePermissionSet;
 
                     Console.WriteLine($"Created AppDomain root for #{index} - {commonFriendlyAppDomainName}");
 
@@ -172,7 +126,7 @@ namespace AppDomain.Crash
                     workers.Add(domainWorker);
 
                     // Give the domain some time to enjoy life
-                    Thread.Sleep(20_000);
+                    Thread.Sleep(10_000);
 
                     previousDomain = currentAppDomain;
                     previousInstance = instanceOfProgram;
