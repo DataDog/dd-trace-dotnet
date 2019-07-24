@@ -13,19 +13,18 @@ namespace AppDomain.Instance
 
         public int Main(string[] args)
         {
+            Console.WriteLine("Starting AppDomain Instance Test");
+
+            string appDomainName = "crash-dummy";
+            int index = 1;
+
+            if (args?.Length > 0)
+            {
+                appDomainName = args[0];
+                index = int.Parse(args[1]);
+            }
             try
             {
-                Console.WriteLine("Starting AppDomain Instance Test");
-
-                string appDomainName = "crash-dummy";
-                int index = 1;
-
-                if (args?.Length > 0)
-                {
-                    appDomainName = args[0];
-                    index = int.Parse(args[1]);
-                }
-
                 var instance = new NestedProgram()
                 {
                     AppDomainName = appDomainName,
@@ -49,7 +48,7 @@ namespace AppDomain.Instance
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"We have encountered an exception in this instance: {ex.Message}");
+                Console.WriteLine($"We have encountered an exception in this instance: {appDomainName} : {ex.Message}");
                 Console.Error.WriteLine(ex);
                 return -10;
             }
