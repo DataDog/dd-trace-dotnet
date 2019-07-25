@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Security;
 using System.Security.Permissions;
-using System.Security.Policy;
 using System.Threading;
 using AppDomain.Instance;
 using Datadog.Trace.ClrProfiler;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -10,6 +11,8 @@ namespace AppDomain.Orchestrator
 {
     public class Program
     {
+        private static ConcurrentQueue<Process> _workersToKill = new ConcurrentQueue<Process>();
+
         public static int Main(string[] args)
         {
             try
@@ -49,17 +52,26 @@ namespace AppDomain.Orchestrator
                 {
                     var exePath = Path.Combine(deployDirectory, "w3wp.exe");
                     Console.WriteLine("Starting a new process.");
-                    var worker = Process.Start(exePath);
+
+                    var startInfo = new ProcessStartInfo(exePath)
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        RedirectStandardInput = false
+                    };
+
+                    var worker = Process.Start(startInfo);
                     Console.WriteLine($"Started process #{++processesStarted}");
 
-                    workers.Add(worker);
+                    _workersToKill.Enqueue(worker);
 
-                    Thread.Sleep(8000);
+                    Thread.Sleep(15_000);
 
-                    if (workers.Count > 3)
+                    if (_workersToKill.Count > 3)
                     {
                         Console.WriteLine("Killing a process.");
-                        SafeKillFirst(workers);
+                        SafeKillFirst();
                     }
                 }
 
@@ -72,7 +84,7 @@ namespace AppDomain.Orchestrator
                     if (cyclesWaiting > 7)
                     {
                         Console.WriteLine("Killing a process.");
-                        SafeKillFirst(workers);
+                        SafeKillFirst();
                     }
 
                     Thread.Sleep(3000);
@@ -90,16 +102,39 @@ namespace AppDomain.Orchestrator
             return 0;
         }
 
-        private static void SafeKillFirst(List<Process> workers)
+        private static void LogStatus(Process worker)
         {
-            try
+            Console.WriteLine($"Worker {worker.Id} exited with code {worker.ExitCode}");
+            var error = worker.StandardError.ReadToEnd();
+            if (string.IsNullOrWhiteSpace(error))
             {
-                workers.FirstOrDefault(w => !w.HasExited)?.Kill();
+                Console.WriteLine($"Worker {worker.Id} has no errors to report.");
             }
-            catch (Exception killException)
+            else
             {
-                Console.WriteLine($"Unable to kill process because: {killException.Message}");
+                Console.WriteLine($"Worker {worker.Id} exception: {error}");
             }
+        }
+
+        private static void SafeKillFirst()
+        {
+            if (_workersToKill.TryDequeue(out var worker))
+            {
+                try
+                {
+
+                    if (!worker.HasExited)
+                    {
+                        worker.Kill();
+                    }
+                }
+                catch (Exception killException)
+                {
+                    Console.WriteLine($"Unable to kill process because: {killException.Message}");
+                }
+            }
+
+            LogStatus(worker);
         }
 
         private static void XCopy(string sourceDirectory, string targetDirectory)
@@ -130,7 +165,7 @@ namespace AppDomain.Orchestrator
 
             // Shenanigans to trick the profiler so we don't need to mess with environment variables
             System.IO.File.Move(
-                Path.Combine(targetDirectory, "AppDomain.Crash.exe"), 
+                Path.Combine(targetDirectory, "AppDomain.Crash.exe"),
                 Path.Combine(targetDirectory, "w3wp.exe"));
         }
     }
