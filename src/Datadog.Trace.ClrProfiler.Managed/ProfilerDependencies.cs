@@ -4,13 +4,6 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.ClrProfiler
 {
-    internal enum RuntimeType
-    {
-        Core,
-        Standard,
-        Framework
-    }
-
     internal class ProfilerDependencies
     {
         public OSPlatform[] SupportedPlatforms { get; set; }

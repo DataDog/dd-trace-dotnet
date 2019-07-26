@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 Log.Debug($"Entering {nameof(InitializeDatadogProfilerDependencies)}");
 
-                var RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
+                var runtimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
 
                 OSPlatform platform;
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     platform = OSPlatform.OSX;
                 }
 
-                bool isCore = RuntimeFrameworkDescription.Contains("core");
+                bool isCore = runtimeFrameworkDescription.Contains("core");
                 Architecture processArchitecture = RuntimeInformation.ProcessArchitecture;
 
                 int major, minor, patch, build;

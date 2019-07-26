@@ -77,10 +77,10 @@ namespace AppDomain.Crash
 
                 while (domainsToInstantiate-- > 0)
                 {
-                    if (previousDomain != null)
-                    {
-                        System.AppDomain.Unload(previousDomain);
-                    }
+                    // if (previousDomain != null)
+                    // {
+                    //     System.AppDomain.Unload(previousDomain);
+                    // }
 
                     var appDomainName = $"{commonFriendlyAppDomainName}_{index}";
 
