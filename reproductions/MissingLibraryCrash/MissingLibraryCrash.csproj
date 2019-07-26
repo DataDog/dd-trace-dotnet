@@ -2,12 +2,17 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <TargetFramework>net452</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-      <ProjectReference Include="..\SmokeTests.Core\SmokeTests.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="System.Net.Http">
+        <HintPath>..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Net.Http.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
     <ItemGroup>
