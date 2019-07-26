@@ -123,6 +123,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
+                     COR_PRF_MONITOR_ASSEMBLY_LOADS |
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
   if (DisableOptimizations()) {
@@ -154,6 +155,28 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   return S_OK;
 }
 
+HRESULT STDMETHODCALLTYPE
+CorProfiler::AssemblyLoadFinished(AssemblyID assembly_id, HRESULT hr_status) {
+  if (FAILED(hr_status)) {
+    // if assembly failed to load, skip it entirely,
+    // otherwise we can crash the process if assembly is not valid
+    CorProfilerBase::AssemblyLoadFinished(assembly_id, hr_status);
+    return S_OK;
+  }
+
+  if (!is_attached_) {
+    return S_OK;
+  }
+
+  const auto assembly_info = GetAssemblyInfo(this->info_, assembly_id);
+
+  Info("AssemblyLoadFinished: hr_status=", hr_status,
+       " assemblyID=", assembly_id, " assemblyName=", assembly_info.name,
+       " appDomainID=", assembly_info.app_domain_id,
+       " appDomainName=", assembly_info.app_domain_name);
+  return S_OK;
+}
+
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hr_status) {
   if (FAILED(hr_status)) {
@@ -173,6 +196,34 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   const auto module_info = GetModuleInfo(this->info_, module_id);
   if (!module_info.IsValid()) {
+    return S_OK;
+  }
+
+  AppDomainID app_domain_id = module_info.assembly.app_domain_id;
+
+  // Identify the AppDomain ID of mscorlib which will be the Shared Domain
+  // because mscorlib is always a domain-neutral assembly
+  if (!mscorlib_module_loaded && module_info.assembly.name == "mscorlib"_W) {
+    mscorlib_module_loaded = true;
+    mscorlib_app_domain_id = app_domain_id;
+    return S_OK;
+  }
+
+  // Identify the AppDomain ID of the managed profiler entrypoint
+  if (module_info.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+    managed_profiler_module_loaded = true;
+    managed_profiler_app_domain_id = app_domain_id;
+  }
+
+  // Do not modify the module if it has been loaded into the Shared Domain
+  // and the profiler is not in the Shared Domain
+  if (mscorlib_module_loaded && managed_profiler_module_loaded &&
+      app_domain_id == mscorlib_app_domain_id &&
+      mscorlib_app_domain_id != managed_profiler_app_domain_id) {
+    Info(
+        "ModuleLoadFinished skipping modifying assembly because it is "
+        "domain-neutral but the managed profiler is not: ",
+        module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -215,7 +266,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
       "Microsoft.CSharp"_W,
-      "Newtonsoft.Json"_W, 
+      "Newtonsoft.Json"_W,
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
 
@@ -230,8 +281,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   std::vector<IntegrationMethod> filtered_integrations =
       FlattenIntegrations(integrations_);
 
-  filtered_integrations =
-      FilterIntegrationsByCaller(filtered_integrations, module_info.assembly);
+  filtered_integrations = FilterIntegrationsByCaller(filtered_integrations,
+                                                     module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Debug("ModuleLoadFinished skipping module (filtered by caller): ",
@@ -308,10 +359,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
 
-  Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
-        module_info.assembly.name, " AppDomain ",
-        module_info.assembly.app_domain_id, " ",
-        module_info.assembly.app_domain_name, ". .");
+  Info("ModuleLoadFinished emitted new metadata into ", module_id, " ",
+       module_info.assembly.name, " AppDomain ",
+       module_info.assembly.app_domain_id, " ",
+       module_info.assembly.app_domain_name, ". .");
   return S_OK;
 }
 
@@ -615,8 +666,116 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
     const WCHAR* wszAssemblyPath,
     ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) {
-  Info("We got into GetAssemblyReferences!");
-  // this->info5_->GetAssemblyInfo()
+  /*
+  auto assemblyPathString = ToString(wszAssemblyPath);
+  auto filename =
+      assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
+  auto lastNiDllPeriodIndex = filename.rfind(".ni.dll");
+  auto lastDllPeriodIndex = filename.rfind(".dll");
+  if (lastNiDllPeriodIndex != std::string::npos) {
+    filename.erase(lastNiDllPeriodIndex, 7);
+  } else if (lastDllPeriodIndex != std::string::npos) {
+    filename.erase(lastDllPeriodIndex, 4);
+  }
+
+  // Get assembly name
+  const WSTRING assembly_name = ToWSTRING(filename);
+
+  // We must never try to add assembly references to
+  // mscorlib or netstandard. Skip other known assemblies.
+  WSTRING skip_assemblies[]{
+      "mscorlib"_W,
+      "netstandard"_W,
+      "Datadog.Trace"_W,
+      "Datadog.Trace.ClrProfiler.Managed"_W,
+      "MsgPack"_W,
+      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
+      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
+      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers2"_W,
+      "Sigil"_W,
+      "Sigil.Emit.DynamicAssembly"_W,
+      "System.Core"_W,
+      "System.Runtime"_W,
+      "System.IO.FileSystem"_W,
+      "System.Collections"_W,
+      "System.Runtime.Extensions"_W,
+      "System.Threading.Tasks"_W,
+      "System.Runtime.InteropServices"_W,
+      "System.Runtime.InteropServices.RuntimeInformation"_W,
+      "System.ComponentModel"_W,
+      "System.Console"_W,
+      "System.Diagnostics.DiagnosticSource"_W,
+      "Microsoft.Extensions.Options"_W,
+      "Microsoft.Extensions.ObjectPool"_W,
+      "System.Configuration"_W,
+      "System.Xml.Linq"_W,
+      "Microsoft.AspNetCore.Razor.Language"_W,
+      "Microsoft.AspNetCore.Mvc.RazorPages"_W,
+      "Microsoft.CSharp"_W,
+      "Newtonsoft.Json"_W,
+      "Anonymously Hosted DynamicMethods Assembly"_W,
+      "ISymWrapper"_W};
+
+  for (auto&& skip_assembly : skip_assemblies) {
+    if (assembly_name == skip_assembly) {
+      Debug("GetAssemblyReferences skipping known assembly: ", wszAssemblyPath);
+      return S_OK;
+    }
+  }
+
+  std::vector<IntegrationMethod> filtered_integrations =
+      FlattenIntegrations(integrations_);
+
+  const AssemblyReference assemblyReference = trace::AssemblyReference(
+      L"Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture="
+      L"neutral, PublicKeyToken=def86d061d0d2eeb");
+
+  ASSEMBLYMETADATA assembly_metadata{};
+  assembly_metadata.usMajorVersion = assemblyReference.version.major;
+  assembly_metadata.usMinorVersion = assemblyReference.version.minor;
+  assembly_metadata.usBuildNumber = assemblyReference.version.build;
+  assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
+  if (assemblyReference.locale == "neutral"_W) {
+    assembly_metadata.szLocale = nullptr;
+    assembly_metadata.cbLocale = 0;
+  } else {
+    assembly_metadata.szLocale =
+        const_cast<WCHAR*>(assemblyReference.locale.c_str());
+    assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
+  }
+
+  DWORD public_key_size = 8;
+  if (assemblyReference.public_key == trace::PublicKey()) {
+    public_key_size = 0;
+  }
+
+  for (auto& i : filtered_integrations) {
+    if (true) {
+      COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
+      asmRefInfo.pbPublicKeyOrToken =
+          (void*)&assemblyReference.public_key.data[0];
+      asmRefInfo.cbPublicKeyOrToken = public_key_size;
+      asmRefInfo.szName = assemblyReference.name.c_str();
+      asmRefInfo.pMetaData = &assembly_metadata;
+      asmRefInfo.pbHashValue = nullptr;
+      asmRefInfo.cbHashValue = 0;
+      asmRefInfo.dwAssemblyRefFlags = 0;
+      const COR_PRF_ASSEMBLY_REFERENCE_INFO* pAssemblyRefInfo = &asmRefInfo;
+
+      auto hr = pAsmRefProvider->AddAssemblyReference(pAssemblyRefInfo);
+
+      if (FAILED(hr)) {
+        Info("GetAssemblyReferences failed for call from ", wszAssemblyPath);
+        return S_OK;
+      }
+
+      Info("GetAssemblyReferences extending assembly closure for ",
+           assembly_name, " to include", asmRefInfo.szName);
+      return S_OK;
+    }
+  }
+  */
+
   return S_OK;
 }
 

@@ -13,6 +13,8 @@ namespace AppDomain.Instance
 
         public int Main(string[] args)
         {
+            Console.WriteLine("Loading Datadog.Trace.ClrProfiler.Managed to kick off ModuleLoadFinished logic"
+                + ". Profiler attached: " + Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached);
             Console.WriteLine("Starting AppDomain Instance Test");
 
             string appDomainName = "crash-dummy";

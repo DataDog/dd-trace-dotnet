@@ -21,6 +21,12 @@ class CorProfiler : public CorProfilerBase {
   bool is_attached_ = false;
   std::vector<Integration> integrations_;
 
+  bool mscorlib_module_loaded = false;
+  AppDomainID mscorlib_app_domain_id;
+
+  bool managed_profiler_module_loaded = false;
+  AppDomainID managed_profiler_app_domain_id;
+
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
 
@@ -36,6 +42,9 @@ class CorProfiler : public CorProfilerBase {
   Initialize(IUnknown* cor_profiler_info_unknown) override;
 
   HRESULT STDMETHODCALLTYPE Shutdown() override;
+
+  HRESULT STDMETHODCALLTYPE AssemblyLoadFinished(AssemblyID assembly_id,
+                                                 HRESULT hr_status) override;
 
   HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id,
                                                HRESULT hr_status) override;

@@ -204,7 +204,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reproduction-dependencies",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Instance", "reproduction-dependencies\AppDomain.Instance\AppDomain.Instance.csproj", "{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecurityGrant.FileNotFoundException", "reproductions\SecurityGrant.FileNotFoundException\SecurityGrant.FileNotFoundException.csproj", "{B61F0405-F228-41CE-AC5B-28996C27DD64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SecurityGrant.FileNotFoundException", "reproductions\SecurityGrant.FileNotFoundException\SecurityGrant.FileNotFoundException.csproj", "{B61F0405-F228-41CE-AC5B-28996C27DD64}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
