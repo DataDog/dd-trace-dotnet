@@ -19,13 +19,12 @@ namespace trace {
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
+  bool dot_net_assembly_is_loaded = false;
   bool entry_assembly_is_loaded = false;
   bool managed_assembly_is_loaded_ = false;
   bool attempted_pre_load_managed_assembly_ = false;
 
-  int reflection_location_module_id_;
-  const WSTRING reflection_namespace_ = "System.Reflection"_W;
-
+  ModuleMetadata* dot_net_metadata_;
   const WSTRING datadog_managed_assembly_name_ =
       "Datadog.Trace.ClrProfiler.Managed"_W;
 

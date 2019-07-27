@@ -172,11 +172,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
+  auto is_dot_net_assembly = false;
+  if (!dot_net_assembly_is_loaded) {
+    Debug("ModuleLoadFinished .NET assembly has been loaded - ", module_id, " ",
+          module_info.assembly.name);
+    reflection_location_module_id_ = module_id;
+    dot_net_assembly_is_loaded = true;
+    return S_OK;
+  }
+
+  auto is_entry_assembly = false;
   if (!entry_assembly_is_loaded) {
     Debug("ModuleLoadFinished Entry assembly has been loaded - ", module_id,
           " ", module_info.assembly.name);
-    reflection_location_module_id_ = module_id;
     entry_assembly_is_loaded = true;
+    is_entry_assembly = true;
     return S_OK;
   }
 
@@ -188,7 +198,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  if (!managed_assembly_is_loaded_) {
+  if (!managed_assembly_is_loaded_ && !is_entry_assembly &&
+      !is_dot_net_assembly) {
     Debug("[ModuleLoadFinished] Requirements not pre-loaded - skipping: ",
           module_id, " ", module_info.assembly.name);
     return S_OK;
@@ -273,6 +284,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       IID_IMetaDataAssemblyImport);
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+  if (is_dot_net_assembly) {
+    // Save the metadata and exit out
+    dot_net_metadata_ =
+        new ModuleMetadata(metadata_import, metadata_emit,
+                           module_info.assembly.name, filtered_integrations);
+    return S_OK;
+  }
 
   filtered_integrations =
       FilterIntegrationsByTarget(filtered_integrations, assembly_import);
@@ -475,13 +494,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
-  
   if (!attempted_pre_load_managed_assembly_) {
-    if (module_id_to_info_map_.count(reflection_location_module_id_) > 0) {
-      auto entry_module_metadata =
-          module_id_to_info_map_[reflection_location_module_id_];
       const auto assembly_load_method =
-          FindAssemblyLoadMethod(entry_module_metadata->metadata_import);
+          FindAssemblyLoadMethod(dot_net_metadata_->metadata_import);
 
       if (assembly_load_method.IsValid()) {
         // Time to inject a call to this method wrapped in a try catch
