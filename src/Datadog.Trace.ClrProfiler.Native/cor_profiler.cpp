@@ -167,8 +167,30 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (module_info.IsWindowsRuntime()) {
     // We cannot obtain writable metadata interfaces on Windows Runtime modules
     // or instrument their IL.
-    Debug("ModuleLoadFinished skipping Windows Metadata module: ", module_id,
+    Debug("[ModuleLoadFinished] skipping Windows Metadata module: ", module_id,
           " ", module_info.assembly.name);
+    return S_OK;
+  }
+
+  if (!entry_assembly_is_loaded) {
+    Debug("ModuleLoadFinished Entry assembly has been loaded - ", module_id,
+          " ", module_info.assembly.name);
+    reflection_location_module_id_ = module_id;
+    entry_assembly_is_loaded = true;
+    return S_OK;
+  }
+
+  if (module_info.assembly.name == datadog_managed_assembly_name_) {
+    Debug(
+        "[ModuleLoadFinished] Datadog.Trace.ClrProfiler.Managed has finished "
+        "loading.");
+    managed_assembly_is_loaded_ = true;
+    return S_OK;
+  }
+
+  if (!managed_assembly_is_loaded_) {
+    Debug("[ModuleLoadFinished] Requirements not pre-loaded - skipping: ",
+          module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -178,7 +200,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "mscorlib"_W,
       "netstandard"_W,
       "Datadog.Trace"_W,
-      "Datadog.Trace.ClrProfiler.Managed"_W,
       "MsgPack"_W,
       "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
       "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
@@ -208,13 +229,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
       "Microsoft.CSharp"_W,
       "Newtonsoft.Json"_W,
-      "Remotion.Linq"_W, 
+      "Remotion.Linq"_W,
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
 
   for (auto&& skip_assembly : skip_assemblies) {
     if (module_info.assembly.name == skip_assembly) {
-      Debug("ModuleLoadFinished skipping known module: ", module_id, " ",
+      Debug("[ModuleLoadFinished] skipping known module: ", module_id, " ",
             module_info.assembly.name);
       return S_OK;
     }
@@ -227,7 +248,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByCaller(filtered_integrations, module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Debug("ModuleLoadFinished skipping module (filtered by caller): ",
+    Debug("[ModuleLoadFinished] skipping module (filtered by caller): ",
           module_id, " ", module_info.assembly.name);
     return S_OK;
   }
@@ -257,7 +278,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       FilterIntegrationsByTarget(filtered_integrations, assembly_import);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Debug("ModuleLoadFinished skipping module (filtered by target): ",
+    Debug("[ModuleLoadFinished] skipping module (filtered by target): ",
           module_id, " ", module_info.assembly.name);
     return S_OK;
   }
@@ -266,8 +287,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       filtered_integrations, assembly_import, module_info);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
-    Debug("ModuleLoadFinished skipping module (filtered by available assemblies): ",
-          module_id, " ", module_info.assembly.name);
+    Debug(
+        "ModuleLoadFinished skipping module (filtered by available "
+        "assemblies): ",
+        module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -310,7 +333,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
 
-  Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
+  Debug("[ModuleLoadFinished] emitted new metadata into ", module_id, " ",
         module_info.assembly.name, " AppDomain ",
         module_info.assembly.app_domain_id, " ",
         module_info.assembly.app_domain_name, ". .");
@@ -353,6 +376,48 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
 
   is_attached_ = false;
   return S_OK;
+}
+
+FunctionInfo FindAssemblyLoadMethod(
+    const ComPtr<IMetaDataImport2>& entry_assembly_import) {
+  auto type_def_tokens = EnumTypeDefs(entry_assembly_import);
+
+  for (auto type_def_token : type_def_tokens) {
+    auto type_info = GetTypeInfo(entry_assembly_import, type_def_token);
+
+    if (type_info.name != "System.Reflection.Assembly"_W) {
+      continue;
+    }
+
+    auto method_tokens = EnumMethods(entry_assembly_import, type_def_token);
+
+    for (auto method_token : method_tokens) {
+      auto method_info = GetFunctionInfo(entry_assembly_import, method_token);
+
+      if (method_info.signature.NumberOfArguments() != 1) {
+        continue;
+      }
+      if (method_info.name != "Load"_W) {
+        continue;
+      }
+
+      std::vector<WSTRING> sig_types;
+      const auto parsed_load_assembly_candidate =
+          TryParseSignatureTypes(entry_assembly_import, method_info, sig_types);
+
+      if (!parsed_load_assembly_candidate) {
+        continue;
+      }
+
+      if (sig_types[0] != "System.String"_W) {
+        continue;
+      }
+
+      return method_info;
+    }
+  }
+
+  return {};
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
@@ -409,6 +474,44 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // hr = rewriter.Initialize();
   hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
+
+  
+  if (!attempted_pre_load_managed_assembly_) {
+    if (module_id_to_info_map_.count(reflection_location_module_id_) > 0) {
+      auto entry_module_metadata =
+          module_id_to_info_map_[reflection_location_module_id_];
+      const auto assembly_load_method =
+          FindAssemblyLoadMethod(entry_module_metadata->metadata_import);
+
+      if (assembly_load_method.IsValid()) {
+        // Time to inject a call to this method wrapped in a try catch
+        ILRewriterWrapper rewriter_wrapper(&rewriter);
+
+        const auto entry_method_instructions = rewriter.GetILList();
+        const auto first_instruction = &entry_method_instructions[0];
+        const auto assembly_name_arg =
+            (LPCSTR)datadog_managed_assembly_name_.c_str();
+
+        ILInstr* load_assembly_name_str = rewriter.NewILInstr();
+        load_assembly_name_str->m_opcode = CEE_LDSTR;
+        load_assembly_name_str->m_ArgString = assembly_name_arg;
+
+        ILInstr* call_assembly_load = rewriter.NewILInstr();
+        load_assembly_name_str->m_opcode = CEE_CALL;
+        load_assembly_name_str->m_Arg32 = assembly_load_method.id;
+
+        ILInstr* exception_swallow = rewriter.NewILInstr();
+        load_assembly_name_str->m_opcode = CEE_NOP;
+
+        rewriter.InsertBefore(first_instruction, load_assembly_name_str);
+        rewriter.InsertBefore(first_instruction, call_assembly_load);
+
+        // auto error_handling_section = COR_ILMETHOD_SECT_EH();
+        // rewriter.ImportEH(&error_handling_section, 2);
+      }
+    }
+    attempted_pre_load_managed_assembly_ = true;
+  }
 
   for (auto& method_replacement : method_replacements) {
     const auto& wrapper_method_key =

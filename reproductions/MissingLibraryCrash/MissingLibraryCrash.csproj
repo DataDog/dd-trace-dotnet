@@ -10,12 +10,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="System.Net.Http">
-        <HintPath>..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Microsoft\Microsoft.NET.Build.Extensions\net461\lib\System.Net.Http.dll</HintPath>
-      </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
       <None Update="bad-integrations.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>

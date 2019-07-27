@@ -217,7 +217,7 @@ struct MethodReference {
 struct MethodReplacement {
   const MethodReference caller_method;
   const MethodReference target_method;
-  const MethodReference wrapper_method;
+  MethodReference wrapper_method;
 
   MethodReplacement() {}
 

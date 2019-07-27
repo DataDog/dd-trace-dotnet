@@ -321,52 +321,28 @@ bool IsAssemblyAvailable(
     app_directory = module_info.path.substr(0, last_slash_idx) + L"\\";
   }
 
-  auto import_assembly_name = wrapper_assembly.name.c_str();
+  const auto import_assembly_short_name = wrapper_assembly.name.c_str();
+  const auto import_assembly_full_name = wrapper_assembly.str().c_str();
+  const auto app_base = app_directory.c_str();
 
-  // We only care about finding it once
-  // TODO: though, should we worry about multiple versions?
-  const ULONG max_matches = 5;
-  IUnknown** result_pointer = new IUnknown*[max_matches];
-  auto assembly_matches = new IUnknown*[max_matches];
+  const ULONG max_matches = 1;
+  IUnknown* assembly_matches[max_matches];
   ULONG* matching_assembly_count = 0;
   const auto private_bin =
-      L"C:\\Github\\DataDog\\dd-trace-"
-      L"dotnet\\reproductions\\MissingLibraryCrash\\some-private-bin\\";
+      L"C:\\Github\\DataDog\\dd-trace-dotnet\\reproductions\\MissingLibraryCrash\\some-private-bin\\";
 
-  ASSEMBLYMETADATA md;
-  WCHAR wzLocale[1024];
-  IUnknown* pIAMDI[64];
-  memset(&md, 0, sizeof(ASSEMBLYMETADATA));
-  md.szLocale = wzLocale;
-  md.cbLocale = 1024;
+  auto assembly_ref_found_hr = current_assembly_import->FindAssembliesByName(
+      app_base, nullptr, (LPCWSTR)import_assembly_full_name,
+      assembly_matches, max_matches, matching_assembly_count);
 
-  struct Param {
-    ComPtr<IMetaDataAssemblyImport> pAssemblyImport;
-    LPCWSTR* wzName;
-    IUnknown** pIAMDI;
-    ULONG cPKT;
-  } param;
-  param.pAssemblyImport = current_assembly_import;
-  param.wzName = &import_assembly_name;
-  param.pIAMDI = pIAMDI;
-  auto pParam = &param;
-  /*current_assembly_import->GetAssemblyRefProps(tkRS, &pPKT, &param.cPKT,
-     wzName, 2048, &cName, &md, &pHash, &cHash, &dwFlags);*/
-
-  auto gac_hr = pParam->pAssemblyImport->FindAssembliesByName(
-      NULL, NULL, (LPCWSTR)pParam->wzName, pParam->pIAMDI, 64, &pParam->cPKT);
-
-  if (!FAILED(gac_hr)) {
-     // WE GOOD!
-    // No need to evaluate the bins
-    return true;  
+  if (FAILED(assembly_ref_found_hr))
+  {
+    assembly_ref_found_hr = current_assembly_import->FindAssembliesByName(
+        app_base, nullptr, (LPCWSTR)import_assembly_short_name,
+        assembly_matches, max_matches, matching_assembly_count);
   }
 
-  auto direct_hr = current_assembly_import->FindAssembliesByName(
-      app_directory.c_str(), private_bin, (LPCWSTR)pParam->wzName,
-      result_pointer, max_matches, matching_assembly_count);
-
-  if (FAILED(direct_hr)) {
+  if (FAILED(assembly_ref_found_hr)) {
     // Can't safely say the assembly is available
     return false;
     // return true for now until we figure things out
@@ -374,30 +350,12 @@ bool IsAssemblyAvailable(
     // return true;
   }
 
-  assembly_matches = result_pointer;
-
-  for (ULONG i = 0; i >= *matching_assembly_count; i++) {
-    const auto unknown_import = assembly_matches[i];
-
-    if (unknown_import == nullptr) {
-      continue;
-    }
-
-    // IMetaDataAssemblyImport* matching_import;
-    //
-    // const HRESULT import_hr =
-    //     unknown_import->QueryInterface<IMetaDataAssemblyImport>(
-    //         &matching_import);
-    //
-    // if (FAILED(import_hr)) {
-    //   // wot happen
-    //   continue;
-    // }
-
-    found = true;
+  if (assembly_matches[0] == nullptr) {
+    return false;
   }
 
-  return found;
+  // TODO: is this enough?
+  return true;
 }
 
 std::vector<IntegrationMethod> FilterIntegrationsByAvailableWrapperAssembly(
