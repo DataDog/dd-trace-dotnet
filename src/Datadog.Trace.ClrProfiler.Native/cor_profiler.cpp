@@ -495,35 +495,34 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   RETURN_OK_IF_FAILED(hr);
 
   if (!attempted_pre_load_managed_assembly_) {
-      const auto assembly_load_method =
-          FindAssemblyLoadMethod(dot_net_metadata_->metadata_import);
+    const auto assembly_load_method =
+        FindAssemblyLoadMethod(dot_net_metadata_->metadata_import);
 
-      if (assembly_load_method.IsValid()) {
-        // Time to inject a call to this method wrapped in a try catch
-        ILRewriterWrapper rewriter_wrapper(&rewriter);
+    if (assembly_load_method.IsValid()) {
+      // Time to inject a call to this method wrapped in a try catch
+      ILRewriterWrapper rewriter_wrapper(&rewriter);
 
-        const auto entry_method_instructions = rewriter.GetILList();
-        const auto first_instruction = &entry_method_instructions[0];
-        const auto assembly_name_arg =
-            (LPCSTR)datadog_managed_assembly_name_.c_str();
+      const auto entry_method_instructions = rewriter.GetILList();
+      const auto first_instruction = &entry_method_instructions[0];
+      const auto assembly_name_arg =
+          (LPCSTR)datadog_managed_assembly_name_.c_str();
 
-        ILInstr* load_assembly_name_str = rewriter.NewILInstr();
-        load_assembly_name_str->m_opcode = CEE_LDSTR;
-        load_assembly_name_str->m_ArgString = assembly_name_arg;
+      ILInstr* load_assembly_name_str = rewriter.NewILInstr();
+      load_assembly_name_str->m_opcode = CEE_LDSTR;
+      load_assembly_name_str->m_ArgString = assembly_name_arg;
 
-        ILInstr* call_assembly_load = rewriter.NewILInstr();
-        load_assembly_name_str->m_opcode = CEE_CALL;
-        load_assembly_name_str->m_Arg32 = assembly_load_method.id;
+      ILInstr* call_assembly_load = rewriter.NewILInstr();
+      load_assembly_name_str->m_opcode = CEE_CALL;
+      load_assembly_name_str->m_Arg32 = assembly_load_method.id;
 
-        ILInstr* exception_swallow = rewriter.NewILInstr();
-        load_assembly_name_str->m_opcode = CEE_NOP;
+      ILInstr* exception_swallow = rewriter.NewILInstr();
+      load_assembly_name_str->m_opcode = CEE_NOP;
 
-        rewriter.InsertBefore(first_instruction, load_assembly_name_str);
-        rewriter.InsertBefore(first_instruction, call_assembly_load);
+      rewriter.InsertBefore(first_instruction, load_assembly_name_str);
+      rewriter.InsertBefore(first_instruction, call_assembly_load);
 
-        // auto error_handling_section = COR_ILMETHOD_SECT_EH();
-        // rewriter.ImportEH(&error_handling_section, 2);
-      }
+      // auto error_handling_section = COR_ILMETHOD_SECT_EH();
+      // rewriter.ImportEH(&error_handling_section, 2);
     }
     attempted_pre_load_managed_assembly_ = true;
   }
