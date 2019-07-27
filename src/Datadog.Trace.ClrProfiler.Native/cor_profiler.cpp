@@ -176,7 +176,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (!dot_net_assembly_is_loaded) {
     Debug("ModuleLoadFinished .NET assembly has been loaded - ", module_id, " ",
           module_info.assembly.name);
-    reflection_location_module_id_ = module_id;
+    is_dot_net_assembly = true;
     dot_net_assembly_is_loaded = true;
     return S_OK;
   }
