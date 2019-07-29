@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class TraceContextSmokeTest : SmokeTestBase
     {
         public TraceContextSmokeTest(ITestOutputHelper output)
-            : base(output, "TraceContext.InvalidOperationException", maxTestRunSeconds: 180)
+            : base(output, "TraceContext.InvalidOperationException", maxTestRunSeconds: 240)
         {
         }
 
