@@ -39,19 +39,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Version5)]
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData, int opCode, int mdToken)
         {
-            // TResponse CallElasticsearch<TResponse>(RequestData requestData) where TResponse : class, IElasticsearchResponse, new();
-            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object>>
-                                     .GetOrCreateMethodCallDelegate(
-                                          ElasticsearchNetCommon.RequestPipelineType,
-                                          "CallElasticsearch",
-                                          (OpCodeValue)opCode,
-                                          methodGenericArguments: new[] { typeof(TResponse) });
+            const string methodName = nameof(CallElasticsearch);
+            Func<object, object, object> callElasticSearch;
+            var pipelineType = pipeline.GetType();
+            var genericArgument = typeof(TResponse);
+
+            try
+            {
+                callElasticSearch =
+                    MethodBuilder<Func<object, object, object>>
+                    .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                    .WithConcreteType(pipelineType)
+                    .WithMethodGenerics(genericArgument)
+                    .WithParameters(requestData)
+                    .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error retrieving {pipelineType.Name}.{methodName}(RequestData requestData)", ex);
+                throw;
+            }
 
             using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
             {
                 try
                 {
-                    return originalMethod(pipeline, requestData);
+                    return callElasticSearch(pipeline, requestData);
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
@@ -80,7 +94,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Version5)]
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource, int opCode, int mdToken)
         {
-            // Task<ElasticsearchResponse<TReturn>> CallElasticsearchAsync<TReturn>(RequestData requestData, CancellationToken cancellationToken) where TReturn : class;
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
