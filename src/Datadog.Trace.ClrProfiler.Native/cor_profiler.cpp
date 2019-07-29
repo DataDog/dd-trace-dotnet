@@ -174,24 +174,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   auto is_dot_net_assembly = false;
   if (!dot_net_assembly_is_loaded) {
-    Debug("ModuleLoadFinished .NET assembly has been loaded - ", module_id, " ",
+    Info("ModuleLoadFinished .NET assembly has been loaded - ", module_id, " ",
           module_info.assembly.name);
     is_dot_net_assembly = true;
     dot_net_assembly_is_loaded = true;
-    return S_OK;
   }
 
   auto is_entry_assembly = false;
-  if (!entry_assembly_is_loaded) {
-    Debug("ModuleLoadFinished Entry assembly has been loaded - ", module_id,
+  if (!is_dot_net_assembly && !entry_assembly_is_loaded) {
+    Info("ModuleLoadFinished Entry assembly has been loaded - ", module_id,
           " ", module_info.assembly.name);
     entry_assembly_is_loaded = true;
     is_entry_assembly = true;
-    return S_OK;
   }
 
   if (module_info.assembly.name == datadog_managed_assembly_name_) {
-    Debug(
+    Info(
         "[ModuleLoadFinished] Datadog.Trace.ClrProfiler.Managed has finished "
         "loading.");
     managed_assembly_is_loaded_ = true;
@@ -200,7 +198,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   if (!managed_assembly_is_loaded_ && !is_entry_assembly &&
       !is_dot_net_assembly) {
-    Debug("[ModuleLoadFinished] Requirements not pre-loaded - skipping: ",
+    Info("[ModuleLoadFinished] Requirements not pre-loaded - skipping: ",
           module_id, " ", module_info.assembly.name);
     return S_OK;
   }
@@ -208,8 +206,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // We must never try to add assembly references to
   // mscorlib or netstandard. Skip other known assemblies.
   WSTRING skip_assemblies[]{
-      "mscorlib"_W,
-      "netstandard"_W,
       "Datadog.Trace"_W,
       "MsgPack"_W,
       "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
@@ -302,8 +298,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  filtered_integrations = FilterIntegrationsByAvailableWrapperAssembly(
-      filtered_integrations, assembly_import, module_info);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Debug(
@@ -428,7 +422,11 @@ FunctionInfo FindAssemblyLoadMethod(
         continue;
       }
 
-      if (sig_types[0] != "System.String"_W) {
+      if (sig_types[0] != "System.Reflection.Assembly"_W) {
+        continue;
+      }
+
+      if (sig_types[1] != "System.String"_W) {
         continue;
       }
 
@@ -504,8 +502,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       const auto entry_method_instructions = rewriter.GetILList();
       const auto first_instruction = &entry_method_instructions[0];
-      const auto assembly_name_arg =
-          (LPCSTR)datadog_managed_assembly_name_.c_str();
+      const auto assembly_name_arg = datadog_managed_assembly_name_.c_str();
 
       ILInstr* load_assembly_name_str = rewriter.NewILInstr();
       load_assembly_name_str->m_opcode = CEE_LDSTR;

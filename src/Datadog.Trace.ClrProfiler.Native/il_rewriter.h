@@ -7,6 +7,7 @@
 
 #include <corhlpr.h>
 #include <corprof.h>
+#include <string>
 
 typedef enum {
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, ctrl) c,
@@ -30,7 +31,7 @@ struct ILInstr {
     INT16 m_Arg16;
     INT32 m_Arg32;
     INT64 m_Arg64;
-    LPCSTR m_ArgString;
+    const wchar_t* m_ArgString;
   };
 };
 
