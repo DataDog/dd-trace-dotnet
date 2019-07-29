@@ -126,9 +126,12 @@ struct AssemblyReference {
 struct MethodSignature {
  public:
   const std::vector<BYTE> data;
+  PCCOR_SIGNATURE original_signature;
 
   MethodSignature() {}
-  MethodSignature(const std::vector<BYTE>& data) : data(data) {}
+  MethodSignature(const std::vector<BYTE>& data,
+                  const PCCOR_SIGNATURE original_signature)
+      : data(data), original_signature(original_signature) {}
 
   inline bool operator==(const MethodSignature& other) const {
     return data == other.data;
@@ -190,7 +193,7 @@ struct MethodReference {
       : assembly(assembly_name),
         type_name(type_name),
         method_name(method_name),
-        method_signature(method_signature),
+        method_signature(method_signature, nullptr),
         min_version(min_version),
         max_version(max_version),
         signature_types(signature_types) {}

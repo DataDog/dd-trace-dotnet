@@ -142,6 +142,53 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   return S_OK;
 }
 
+FunctionInfo FindAssemblyLoadMethod(
+    const ComPtr<IMetaDataImport2>& assembly_import) {
+  auto type_def_tokens = EnumTypeDefs(assembly_import);
+
+  for (auto token : type_def_tokens) {
+    auto type_info = GetTypeInfo(assembly_import, token);
+
+    if (type_info.name != "System.Reflection.Assembly"_W) {
+      continue;
+    }
+
+    auto method_tokens = EnumMethods(assembly_import, token);
+
+    for (auto method_token : method_tokens) {
+      auto method_info = GetFunctionInfo(assembly_import, method_token);
+
+      if (method_info.signature.NumberOfArguments() != 1) {
+        continue;
+      }
+
+      if (method_info.name != "Load"_W) {
+        continue;
+      }
+
+      std::vector<WSTRING> sig_types;
+      const auto parsed_load_assembly_candidate =
+          TryParseSignatureTypes(assembly_import, method_info, sig_types);
+
+      if (!parsed_load_assembly_candidate) {
+        continue;
+      }
+
+      if (sig_types[0] != "System.Reflection.Assembly"_W) {
+        continue;
+      }
+
+      if (sig_types[1] != "System.String"_W) {
+        continue;
+      }
+
+      return method_info;
+    }
+  }
+
+  return {};
+}
+
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hr_status) {
   if (FAILED(hr_status)) {
@@ -174,16 +221,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   auto is_dot_net_assembly = false;
   if (!dot_net_assembly_is_loaded) {
+    dot_net_entry_assembly_name_ = module_info.assembly.name;
     Info("ModuleLoadFinished .NET assembly has been loaded - ", module_id, " ",
-          module_info.assembly.name);
+         dot_net_entry_assembly_name_);
     is_dot_net_assembly = true;
     dot_net_assembly_is_loaded = true;
   }
 
   auto is_entry_assembly = false;
   if (!is_dot_net_assembly && !entry_assembly_is_loaded) {
-    Info("ModuleLoadFinished Entry assembly has been loaded - ", module_id,
-          " ", module_info.assembly.name);
+    Info("ModuleLoadFinished Entry assembly has been loaded - ", module_id, " ",
+         module_info.assembly.name);
     entry_assembly_is_loaded = true;
     is_entry_assembly = true;
   }
@@ -199,7 +247,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (!managed_assembly_is_loaded_ && !is_entry_assembly &&
       !is_dot_net_assembly) {
     Info("[ModuleLoadFinished] Requirements not pre-loaded - skipping: ",
-          module_id, " ", module_info.assembly.name);
+         module_id, " ", module_info.assembly.name);
     return S_OK;
   }
 
@@ -323,6 +371,37 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                          metadata_import, metadata_emit,
                                          assembly_import, assembly_emit);
 
+  if (is_entry_assembly) {
+    hr = metadata_builder.EmitAssemblyRef(dot_net_entry_assembly_name_);
+    if (FAILED(hr)) {
+      Warn("ModuleLoadFinished failed to emit dot net entry assembly ref for ",
+           module_id, " ", module_info.assembly.name);
+      return S_OK;
+    }
+
+    auto assembly_load_method =
+        FindAssemblyLoadMethod(dot_net_metadata_->metadata_import);
+
+    mdMemberRef member_ref = mdMemberRefNil;
+    mdTypeRef type_ref = mdTypeRefNil;
+
+    hr = module_metadata->metadata_import->FindMemberRef(
+        type_ref, assembly_load_method.name.c_str(),
+        assembly_load_method.signature.original_signature,
+        (DWORD)(assembly_load_method.signature.data.size()), &member_ref);
+
+    if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
+      // if memberRef not found, create it by emitting a metadata token
+      hr = module_metadata->metadata_emit->DefineMemberRef(
+          type_ref, assembly_load_method.name.c_str(),
+          assembly_load_method.signature.original_signature,
+          (DWORD)(assembly_load_method.signature.data.size()), &member_ref);
+
+      entry_load_assembly_member_ref = member_ref;
+      entry_load_assembly_type_ref = type_ref;
+    }
+  }
+
   for (const auto& integration : filtered_integrations) {
     // for each wrapper assembly, emit an assembly reference
     hr = metadata_builder.EmitAssemblyRef(
@@ -391,52 +470,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown() {
   return S_OK;
 }
 
-FunctionInfo FindAssemblyLoadMethod(
-    const ComPtr<IMetaDataImport2>& entry_assembly_import) {
-  auto type_def_tokens = EnumTypeDefs(entry_assembly_import);
-
-  for (auto type_def_token : type_def_tokens) {
-    auto type_info = GetTypeInfo(entry_assembly_import, type_def_token);
-
-    if (type_info.name != "System.Reflection.Assembly"_W) {
-      continue;
-    }
-
-    auto method_tokens = EnumMethods(entry_assembly_import, type_def_token);
-
-    for (auto method_token : method_tokens) {
-      auto method_info = GetFunctionInfo(entry_assembly_import, method_token);
-
-      if (method_info.signature.NumberOfArguments() != 1) {
-        continue;
-      }
-      if (method_info.name != "Load"_W) {
-        continue;
-      }
-
-      std::vector<WSTRING> sig_types;
-      const auto parsed_load_assembly_candidate =
-          TryParseSignatureTypes(entry_assembly_import, method_info, sig_types);
-
-      if (!parsed_load_assembly_candidate) {
-        continue;
-      }
-
-      if (sig_types[0] != "System.Reflection.Assembly"_W) {
-        continue;
-      }
-
-      if (sig_types[1] != "System.String"_W) {
-        continue;
-      }
-
-      return method_info;
-    }
-  }
-
-  return {};
-}
-
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     FunctionID function_id, BOOL is_safe_to_block) {
   if (!is_attached_ || !is_safe_to_block) {
@@ -493,36 +526,42 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   RETURN_OK_IF_FAILED(hr);
 
   if (!attempted_pre_load_managed_assembly_) {
-    const auto assembly_load_method =
-        FindAssemblyLoadMethod(dot_net_metadata_->metadata_import);
-
-    if (assembly_load_method.IsValid()) {
+    if (entry_load_assembly_member_ref != mdMemberRefNil) {
       // Time to inject a call to this method wrapped in a try catch
-      ILRewriterWrapper rewriter_wrapper(&rewriter);
+      LPCWSTR lpcstr_assembly_name_arg = datadog_managed_assembly_name_.c_str();
+      const auto assembly_name_length = datadog_managed_assembly_name_.size();
 
-      const auto entry_method_instructions = rewriter.GetILList();
-      const auto first_instruction = &entry_method_instructions[0];
-      auto assembly_name_arg = datadog_managed_assembly_name_.c_str();
-      auto assembly_pointer = &assembly_name_arg;
-      intptr_t assembly_pointer_int32 =
-          reinterpret_cast<std::intptr_t>(assembly_pointer);
+      mdString assembly_name_token;
+      auto df_hr = module_metadata->metadata_emit->DefineUserString(
+          lpcstr_assembly_name_arg, assembly_name_length, &assembly_name_token);
+
+      if (FAILED(df_hr)) {
+        Warn("Colin doesn't understand strings.");
+      }
 
       ILInstr* load_assembly_name_str = rewriter.NewILInstr();
       load_assembly_name_str->m_opcode = CEE_LDSTR;
-      load_assembly_name_str->m_Arg32 = assembly_pointer_int32;
+      load_assembly_name_str->m_Arg64 = assembly_name_token;
 
       ILInstr* call_assembly_load = rewriter.NewILInstr();
       call_assembly_load->m_opcode = CEE_CALL;
-      call_assembly_load->m_Arg32 = assembly_load_method.id;
+      call_assembly_load->m_Arg32 = entry_load_assembly_member_ref;
 
-      ILInstr* exception_swallow = rewriter.NewILInstr();
-      exception_swallow->m_opcode = CEE_NOP;
+      ILInstr* no_op_instruction = rewriter.NewILInstr();
+      no_op_instruction->m_opcode = CEE_NOP;
 
+      const auto first_instruction = rewriter.GetILList()->m_pNext;
       rewriter.InsertBefore(first_instruction, load_assembly_name_str);
       rewriter.InsertBefore(first_instruction, call_assembly_load);
+      rewriter.InsertBefore(first_instruction, no_op_instruction);
 
       // auto error_handling_section = COR_ILMETHOD_SECT_EH();
       // rewriter.ImportEH(&error_handling_section, 2);
+      hr = rewriter.Export();
+
+      if (FAILED(hr)) {
+        Warn("All is lost!");
+      }
     }
     attempted_pre_load_managed_assembly_ = true;
   }
