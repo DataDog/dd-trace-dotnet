@@ -502,18 +502,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       const auto entry_method_instructions = rewriter.GetILList();
       const auto first_instruction = &entry_method_instructions[0];
-      const auto assembly_name_arg = datadog_managed_assembly_name_.c_str();
+      auto assembly_name_arg = datadog_managed_assembly_name_.c_str();
+      auto assembly_pointer = &assembly_name_arg;
+      intptr_t assembly_pointer_int32 =
+          reinterpret_cast<std::intptr_t>(assembly_pointer);
 
       ILInstr* load_assembly_name_str = rewriter.NewILInstr();
       load_assembly_name_str->m_opcode = CEE_LDSTR;
-      load_assembly_name_str->m_ArgString = assembly_name_arg;
+      load_assembly_name_str->m_Arg32 = assembly_pointer_int32;
 
       ILInstr* call_assembly_load = rewriter.NewILInstr();
-      load_assembly_name_str->m_opcode = CEE_CALL;
-      load_assembly_name_str->m_Arg32 = assembly_load_method.id;
+      call_assembly_load->m_opcode = CEE_CALL;
+      call_assembly_load->m_Arg32 = assembly_load_method.id;
 
       ILInstr* exception_swallow = rewriter.NewILInstr();
-      load_assembly_name_str->m_opcode = CEE_NOP;
+      exception_swallow->m_opcode = CEE_NOP;
 
       rewriter.InsertBefore(first_instruction, load_assembly_name_str);
       rewriter.InsertBefore(first_instruction, call_assembly_load);

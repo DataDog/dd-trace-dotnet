@@ -31,7 +31,6 @@ struct ILInstr {
     INT16 m_Arg16;
     INT32 m_Arg32;
     INT64 m_Arg64;
-    const wchar_t* m_ArgString;
   };
 };
 
