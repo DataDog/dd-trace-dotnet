@@ -51,16 +51,39 @@ AssemblyMetadata GetAssemblyImportMetadata(
   DWORD assembly_flags = 0;
   const ModuleID placeholder_module_id = 0;
 
-  hr = assembly_import->GetAssemblyProps(current, nullptr, nullptr, nullptr,
-                                         name, kNameMaxSize, &name_len,
-                                         &assembly_metadata, &assembly_flags);
+  const void* public_key;
+  ULONG public_key_size;
+  ULONG hashAlgToken;
+
+  hr = assembly_import->GetAssemblyProps(
+      current, &public_key, &public_key_size, &hashAlgToken,
+      name, kNameMaxSize, &name_len, &assembly_metadata, &assembly_flags);
   if (FAILED(hr) || name_len == 0) {
     return {};
   }
+
+  WSTRING locale = "neutral"_W;
+
+  if (assembly_metadata.cbLocale > 0) {
+    locale = ToWSTRING(ToString(assembly_metadata.szLocale));
+  }
+
+  WSTRING public_key_string;
+
+  if (public_key_size > 0) {
+
+    std::vector<char> data(public_key_size);
+    for (ULONG i = 0; i < public_key_size; i++) {
+      data[i] = reinterpret_cast<const unsigned char*>(public_key)[i];
+    }
+
+    public_key_string = ToWSTRING(std::string(data.begin(), data.end()));
+  }
+
   return AssemblyMetadata(
       placeholder_module_id, name, current, assembly_metadata.usMajorVersion,
       assembly_metadata.usMinorVersion, assembly_metadata.usBuildNumber,
-      assembly_metadata.usRevisionNumber);
+      assembly_metadata.usRevisionNumber, locale, public_key_string);
 }
 
 AssemblyMetadata GetReferencedAssemblyMetadata(
@@ -70,6 +93,7 @@ AssemblyMetadata GetReferencedAssemblyMetadata(
   DWORD name_len = 0;
   ASSEMBLYMETADATA assembly_metadata{};
   DWORD assembly_flags = 0;
+
   const ModuleID module_id_placeholder = 0;
   const auto hr = assembly_import->GetAssemblyRefProps(
       assembly_ref, nullptr, nullptr, name, kNameMaxSize, &name_len,
@@ -329,14 +353,14 @@ bool IsAssemblyAvailable(
   IUnknown* assembly_matches[max_matches];
   ULONG* matching_assembly_count = 0;
   const auto private_bin =
-      L"C:\\Github\\DataDog\\dd-trace-dotnet\\reproductions\\MissingLibraryCrash\\some-private-bin\\";
+      L"C:\\Github\\DataDog\\dd-trace-"
+      L"dotnet\\reproductions\\MissingLibraryCrash\\some-private-bin\\";
 
   auto assembly_ref_found_hr = current_assembly_import->FindAssembliesByName(
-      app_base, nullptr, (LPCWSTR)import_assembly_full_name,
-      assembly_matches, max_matches, matching_assembly_count);
+      app_base, nullptr, (LPCWSTR)import_assembly_full_name, assembly_matches,
+      max_matches, matching_assembly_count);
 
-  if (FAILED(assembly_ref_found_hr))
-  {
+  if (FAILED(assembly_ref_found_hr)) {
     assembly_ref_found_hr = current_assembly_import->FindAssembliesByName(
         app_base, nullptr, (LPCWSTR)import_assembly_short_name,
         assembly_matches, max_matches, matching_assembly_count);

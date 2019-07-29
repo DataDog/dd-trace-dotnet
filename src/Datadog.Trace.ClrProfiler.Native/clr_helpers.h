@@ -191,8 +191,13 @@ struct AssemblyMetadata {
   const WSTRING name;
   const mdAssembly assembly_token;
   const Version version;
+  const WSTRING locale;
+  const WSTRING public_key;
 
-  AssemblyMetadata() : module_id(0), name(""_W), assembly_token(mdTokenNil) {}
+  AssemblyMetadata()
+      : module_id(0),
+        name(""_W),
+        assembly_token(mdTokenNil) {}
 
   AssemblyMetadata(ModuleID module_id, WSTRING name, mdAssembly assembly_token,
                    USHORT major, USHORT minor, USHORT build, USHORT revision)
@@ -201,7 +206,24 @@ struct AssemblyMetadata {
         assembly_token(assembly_token),
         version(Version(major, minor, build, revision)) {}
 
-  bool is_valid() const { return module_id != 0; }
+  AssemblyMetadata(ModuleID module_id, WSTRING name, mdAssembly assembly_token,
+                   USHORT major, USHORT minor, USHORT build, USHORT revision,
+                   WSTRING locale, WSTRING public_key)
+      : module_id(module_id),
+        name(name),
+        assembly_token(assembly_token),
+        version(Version(major, minor, build, revision)),
+        locale(locale),
+        public_key(public_key) {}
+
+  [[nodiscard]] bool is_valid() const { return module_id != 0; }
+
+  [[nodiscard]] WSTRING long_name() const {
+    WSTRINGSTREAM ss;
+    ss << name << ", Version="_W << version.str() << ", Culture="_W << locale
+       << ", PublicKeyToken="_W << public_key;
+    return ss.str();
+  }
 };
 
 struct ModuleInfo {
@@ -328,8 +350,8 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
 bool DisableOptimizations();
 
 bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
-                         const FunctionInfo& function_info,
-                         std::vector<WSTRING>& signature_result);
+                            const FunctionInfo& function_info,
+                            std::vector<WSTRING>& signature_result);
 }  // namespace trace
 
 #endif  // DD_CLR_PROFILER_CLR_HELPERS_H_

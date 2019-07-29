@@ -19,7 +19,6 @@ namespace trace {
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
-  WSTRING dot_net_entry_assembly_name_;
   bool dot_net_assembly_is_loaded = false;
 
   WSTRING entry_assembly_name_;
@@ -30,7 +29,9 @@ class CorProfiler : public CorProfilerBase {
   bool managed_assembly_is_loaded_ = false;
   bool attempted_pre_load_managed_assembly_ = false;
 
-  ModuleMetadata* dot_net_metadata_;
+  ModuleMetadata* dotnet_module_metadata_;
+  AssemblyMetadata* dotnet_assembly_metadata_;
+
   const WSTRING datadog_managed_assembly_name_ =
       "Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W;
 

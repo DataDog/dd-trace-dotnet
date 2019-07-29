@@ -221,16 +221,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   auto is_dot_net_assembly = false;
   if (!dot_net_assembly_is_loaded) {
-    dot_net_entry_assembly_name_ = module_info.assembly.name;
-    Info("ModuleLoadFinished .NET assembly has been loaded - ", module_id, " ",
-         dot_net_entry_assembly_name_);
+    Info("[ModuleLoadFinished] .NET assembly has been loaded - ", module_id, " ",
+         module_info.assembly.name);
     is_dot_net_assembly = true;
     dot_net_assembly_is_loaded = true;
   }
 
   auto is_entry_assembly = false;
   if (!is_dot_net_assembly && !entry_assembly_is_loaded) {
-    Info("ModuleLoadFinished Entry assembly has been loaded - ", module_id, " ",
+    Info("[ModuleLoadFinished] Entry assembly has been loaded - ", module_id, " ",
          module_info.assembly.name);
     entry_assembly_is_loaded = true;
     is_entry_assembly = true;
@@ -331,9 +330,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   if (is_dot_net_assembly) {
     // Save the metadata and exit out
-    dot_net_metadata_ =
+    dotnet_module_metadata_ =
         new ModuleMetadata(metadata_import, metadata_emit,
                            module_info.assembly.name, filtered_integrations);
+    auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
+    dotnet_assembly_metadata_ = &assembly_metadata;
     return S_OK;
   }
 
@@ -372,7 +373,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                          assembly_import, assembly_emit);
 
   if (is_entry_assembly) {
-    hr = metadata_builder.EmitAssemblyRef(dot_net_entry_assembly_name_);
+    // hr = metadata_builder.EmitAssemblyRef(dotnet_assembly_metadata_.long_name());
     if (FAILED(hr)) {
       Warn("ModuleLoadFinished failed to emit dot net entry assembly ref for ",
            module_id, " ", module_info.assembly.name);
@@ -380,7 +381,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     }
 
     auto assembly_load_method =
-        FindAssemblyLoadMethod(dot_net_metadata_->metadata_import);
+        FindAssemblyLoadMethod(dotnet_module_metadata_->metadata_import);
 
     mdMemberRef member_ref = mdMemberRefNil;
     mdTypeRef type_ref = mdTypeRefNil;
