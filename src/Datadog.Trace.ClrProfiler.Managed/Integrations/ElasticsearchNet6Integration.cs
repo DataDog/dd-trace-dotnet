@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -35,19 +36,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Version6)]
         public static object CallElasticsearch<TResponse>(object pipeline, object requestData, int opCode, int mdToken)
         {
-            // TResponse CallElasticsearch<TResponse>(RequestData requestData) where TResponse : class, IElasticsearchResponse, new();
-            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, TResponse>>
-                                     .GetOrCreateMethodCallDelegate(
-                                          ElasticsearchNetCommon.RequestPipelineType,
-                                          "CallElasticsearch",
-                                          (OpCodeValue)opCode,
-                                          methodGenericArguments: new[] { typeof(TResponse) });
+            const string methodName = nameof(CallElasticsearch);
+            Func<object, object, TResponse> callElasticSearch;
+            var pipelineType = pipeline.GetType();
+            var genericArgument = typeof(TResponse);
+
+            try
+            {
+                callElasticSearch =
+                    MethodBuilder<Func<object, object, TResponse>>
+                    .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                    .WithConcreteType(pipelineType)
+                    .WithMethodGenerics(genericArgument)
+                    .WithParameters(requestData)
+                    .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error retrieving {pipelineType.Name}.{methodName}(RequestData requestData)", ex);
+                throw;
+            }
 
             using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
             {
                 try
                 {
-                    return originalMethod(pipeline, requestData);
+                    return callElasticSearch(pipeline, requestData);
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
@@ -76,11 +91,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Version6)]
         public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource, int opCode, int mdToken)
         {
-            // Task<TResponse> CallElasticsearchAsync<TResponse>(RequestData requestData, CancellationToken cancellationToken) where TResponse : class, IElasticsearchResponse, new();
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            var callOpCode = (OpCodeValue)opCode;
-            return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken, callOpCode);
+            return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken, opCode, mdToken);
         }
 
         /// <summary>
@@ -90,23 +103,38 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="pipeline">The pipeline for the original method</param>
         /// <param name="requestData">The request data</param>
         /// <param name="cancellationToken">A cancellation token</param>
-        /// <param name="callOpCode">The <see cref="OpCodeValue"/> used in the original method call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The original result</returns>
-        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken, OpCodeValue callOpCode)
+        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken, int opCode, int mdToken)
         {
-            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
-                                     .GetOrCreateMethodCallDelegate(
-                                          ElasticsearchNetCommon.RequestPipelineType,
-                                          "CallElasticsearchAsync",
-                                          callOpCode,
-                                          methodParameterTypes: new[] { ElasticsearchNetCommon.RequestDataType, ElasticsearchNetCommon.CancellationTokenType },
-                                          methodGenericArguments: new[] { typeof(TResponse) });
+            const string methodName = "CallElasticsearchAsync";
+            Func<object, object, CancellationToken, Task<TResponse>> callElasticSearchAsync;
+            var pipelineType = pipeline.GetType();
+            var genericArgument = typeof(TResponse);
+
+            try
+            {
+                callElasticSearchAsync =
+                    MethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
+                    .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                    .WithConcreteType(pipelineType)
+                    .WithMethodGenerics(genericArgument)
+                    .WithParameters(requestData, cancellationToken)
+                    .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error retrieving {pipelineType.Name}.{methodName}(RequestData requestData, CancellationToken cancellationToken)", ex);
+                throw;
+            }
 
             using (var scope = ElasticsearchNetCommon.CreateScope(Tracer.Instance, IntegrationName, pipeline, requestData))
             {
                 try
                 {
-                    return await originalMethod(pipeline, requestData, cancellationToken).ConfigureAwait(false);
+                    return await callElasticSearchAsync(pipeline, requestData, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
