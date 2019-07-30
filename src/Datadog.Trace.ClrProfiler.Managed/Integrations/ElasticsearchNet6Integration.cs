@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken, opCode, mdToken);
+            return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken, opCode, mdToken, Assembly.GetCallingAssembly());
         }
 
         /// <summary>
@@ -105,8 +105,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="cancellationToken">A cancellation token</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="callingAssembly">The calling assembly of the original method call.</param>
         /// <returns>The original result</returns>
-        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken, int opCode, int mdToken)
+        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken, int opCode, int mdToken, Assembly callingAssembly)
         {
             const string methodName = "CallElasticsearchAsync";
             Func<object, object, CancellationToken, Task<TResponse>> callElasticSearchAsync;
@@ -117,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 callElasticSearchAsync =
                     MethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
-                    .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                    .Start(callingAssembly, mdToken, opCode, methodName)
                     .WithConcreteType(pipelineType)
                     .WithMethodGenerics(genericArgument)
                     .WithParameters(requestData, cancellationToken)
