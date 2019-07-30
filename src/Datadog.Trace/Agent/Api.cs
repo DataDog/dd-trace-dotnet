@@ -16,12 +16,17 @@ namespace Datadog.Trace.Agent
         private static readonly ILog _log = LogProvider.For<Api>();
         private static readonly SerializationContext _serializationContext = new SerializationContext();
         private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(_serializationContext);
+        private static readonly string FrameworkName;
+        private static readonly string FrameworkVersion;
+        private static readonly string TracerVersion = typeof(Api).Assembly.GetName().Version.ToString();
 
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
 
         static Api()
         {
+            GetFrameworkDescription(out FrameworkName, out FrameworkVersion);
+
             _serializationContext.ResolveSerializer += (sender, eventArgs) =>
             {
                 if (eventArgs.TargetType == typeof(Span))
@@ -39,13 +44,10 @@ namespace Datadog.Trace.Agent
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
-            var interpreterVersion = GetInterpreterVersion();
-            var managedAssemblyVersion = this.GetType().Assembly.GetName().Version.ToString();
-
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, interpreterVersion.Item1);
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, interpreterVersion.Item2);
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, managedAssemblyVersion);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, FrameworkName);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, FrameworkVersion);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, TracerVersion);
 
             // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
@@ -107,7 +109,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private static Tuple<string, string> GetInterpreterVersion()
+        private static void GetFrameworkDescription(out string name, out string version)
         {
             // RuntimeInformation.FrameworkDescription returns string like ".NET Framework 4.7.2" or ".NET Core 2.1",
             // we want to split the runtime from the version so we can report them as separate values
@@ -115,11 +117,10 @@ namespace Datadog.Trace.Agent
             int index = RuntimeInformation.FrameworkDescription.LastIndexOf(' ');
 
             // everything before the last space
-            string interpreter = frameworkDescription.Substring(0, index).Trim();
+            name = frameworkDescription.Substring(0, index).Trim();
 
             // everything after the last space
-            string version = frameworkDescription.Substring(index).Trim();
-            return Tuple.Create(interpreter, version);
+            version = frameworkDescription.Substring(index).Trim();
         }
 
         internal class ApiResponse
