@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -16,17 +17,12 @@ namespace Datadog.Trace.Agent
         private static readonly ILog _log = LogProvider.For<Api>();
         private static readonly SerializationContext _serializationContext = new SerializationContext();
         private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(_serializationContext);
-        private static readonly string FrameworkName;
-        private static readonly string FrameworkVersion;
-        private static readonly string TracerVersion = typeof(Api).Assembly.GetName().Version.ToString();
 
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
 
         static Api()
         {
-            GetFrameworkDescription(out FrameworkName, out FrameworkVersion);
-
             _serializationContext.ResolveSerializer += (sender, eventArgs) =>
             {
                 if (eventArgs.TargetType == typeof(Span))
@@ -44,10 +40,13 @@ namespace Datadog.Trace.Agent
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
+            GetFrameworkDescription(out string frameworkName, out string frameworkVersion);
+            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, FrameworkName);
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, FrameworkVersion);
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, TracerVersion);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, frameworkName);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, frameworkVersion);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, tracerVersion);
 
             // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
