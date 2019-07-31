@@ -23,6 +23,7 @@ class CorProfiler : public CorProfilerBase {
 
   WSTRING entry_assembly_name_;
   bool entry_assembly_is_loaded = false;
+  mdMemberRef console_write_line_member_ref_ = mdMemberRefNil;
   mdMemberRef entry_load_assembly_member_ref_ = mdMemberRefNil;
   mdTypeRef entry_load_assembly_type_ref_ = mdTypeRefNil;
 
