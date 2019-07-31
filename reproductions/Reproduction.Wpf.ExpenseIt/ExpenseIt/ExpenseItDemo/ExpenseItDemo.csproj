@@ -131,10 +131,6 @@
       <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
       <Name>Datadog.Trace.ClrProfiler.Managed</Name>
     </ProjectReference>
-    <ProjectReference Include="..\EditBoxControlLibrary\EditBoxControlLibrary.csproj">
-      <Project>{558eee03-6927-4fe6-aeb6-972769960849}</Project>
-      <Name>EditBoxControlLibrary</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Watermark.png" />
