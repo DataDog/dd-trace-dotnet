@@ -9,7 +9,8 @@
 namespace trace {
 
 HRESULT MetadataBuilder::EmitAssemblyRef(
-    const trace::AssemblyReference& assembly_ref) const {
+    const trace::AssemblyReference& assembly_ref, mdAssemblyRef
+        *assembly_ref_out) const {
   ASSEMBLYMETADATA assembly_metadata{};
   assembly_metadata.usMajorVersion = assembly_ref.version.major;
   assembly_metadata.usMinorVersion = assembly_ref.version.minor;
@@ -29,7 +30,6 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
     public_key_size = 0;
   }
 
-  mdAssemblyRef assembly_ref_out;
   const HRESULT hr = assembly_emit_->DefineAssemblyRef(
       &assembly_ref.public_key.data[0], public_key_size,
       assembly_ref.name.c_str(), &assembly_metadata,
@@ -38,7 +38,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(
       // cb of hash blob
       0,
       // flags
-      0, &assembly_ref_out);
+      0, assembly_ref_out);
 
   if (FAILED(hr)) {
     Warn("DefineAssemblyRef failed");

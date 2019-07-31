@@ -23,16 +23,24 @@ class CorProfiler : public CorProfilerBase {
 
   WSTRING entry_assembly_name_;
   bool entry_assembly_is_loaded = false;
-  mdMemberRef entry_load_assembly_member_ref = mdMemberRefNil;
-  mdTypeRef entry_load_assembly_type_ref = mdTypeRefNil;
+  mdMemberRef entry_load_assembly_member_ref_ = mdMemberRefNil;
+  mdTypeRef entry_load_assembly_type_ref_ = mdTypeRefNil;
 
   bool managed_assembly_is_loaded_ = false;
   bool attempted_pre_load_managed_assembly_ = false;
 
   ModuleMetadata* dotnet_module_metadata_;
-  AssemblyMetadata* dotnet_assembly_metadata_;
+  WSTRING dotnet_assembly_long_name_ =
+      "mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"_W;
 
-  const WSTRING datadog_managed_assembly_name_ =
+  WSTRING dotnet_assembly_strong_name_;
+  WSTRING dotnet_assembly_short_name_;
+  WSTRING dotnet_assembly_public_key_;
+  Version dotnet_assembly_version_;
+
+  const WSTRING datadog_managed_assembly_short_name_ =
+      "Datadog.Trace.ClrProfiler.Managed"_W;
+  const WSTRING datadog_managed_assembly_long_name_ =
       "Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W;
 
   std::vector<Integration> integrations_;

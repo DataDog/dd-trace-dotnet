@@ -68,10 +68,9 @@ AssemblyMetadata GetAssemblyImportMetadata(
     locale = ToWSTRING(ToString(assembly_metadata.szLocale));
   }
 
-  WSTRING public_key_string;
+  WSTRING public_key_string = "b77a5c561934e089"_W;
 
-  if (public_key_size > 0) {
-
+  if (public_key_string.size() == 0 && public_key_size > 0) {
     std::vector<char> data(public_key_size);
     for (ULONG i = 0; i < public_key_size; i++) {
       data[i] = reinterpret_cast<const unsigned char*>(public_key)[i];

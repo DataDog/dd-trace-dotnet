@@ -92,6 +92,10 @@ struct Version {
     }
     return false;
   }
+
+  inline Version operator=(const Version& other) const {
+    return Version(other.major, other.minor, other.build, other.revision);
+  }
 };
 
 // An AssemblyReference is a reference to a .Net assembly. In general it will

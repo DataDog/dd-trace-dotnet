@@ -149,9 +149,12 @@ FunctionInfo FindAssemblyLoadMethod(
   for (auto token : type_def_tokens) {
     auto type_info = GetTypeInfo(assembly_import, token);
 
-    if (type_info.name != "System.Reflection.Assembly"_W) {
+    if (type_info.name != "System.Console"_W) {
       continue;
     }
+    // if (type_info.name != "System.Reflection.Assembly"_W) {
+    //   continue;
+    // }
 
     auto method_tokens = EnumMethods(assembly_import, token);
 
@@ -162,7 +165,11 @@ FunctionInfo FindAssemblyLoadMethod(
         continue;
       }
 
-      if (method_info.name != "Load"_W) {
+      // if (method_info.name != "Load"_W) {
+      //   continue;
+      // }
+
+      if (method_info.name != "WriteLine"_W) {
         continue;
       }
 
@@ -174,9 +181,9 @@ FunctionInfo FindAssemblyLoadMethod(
         continue;
       }
 
-      if (sig_types[0] != "System.Reflection.Assembly"_W) {
-        continue;
-      }
+      // if (sig_types[0] != "System.Reflection.Assembly"_W) {
+      //   continue;
+      // }
 
       if (sig_types[1] != "System.String"_W) {
         continue;
@@ -221,21 +228,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   auto is_dot_net_assembly = false;
   if (!dot_net_assembly_is_loaded) {
-    Info("[ModuleLoadFinished] .NET assembly has been loaded - ", module_id, " ",
-         module_info.assembly.name);
+    Info("[ModuleLoadFinished] .NET assembly has been loaded - ", module_id,
+         " ", module_info.assembly.name);
     is_dot_net_assembly = true;
     dot_net_assembly_is_loaded = true;
   }
 
   auto is_entry_assembly = false;
   if (!is_dot_net_assembly && !entry_assembly_is_loaded) {
-    Info("[ModuleLoadFinished] Entry assembly has been loaded - ", module_id, " ",
-         module_info.assembly.name);
+    Info("[ModuleLoadFinished] Entry assembly has been loaded - ", module_id,
+         " ", module_info.assembly.name);
     entry_assembly_is_loaded = true;
     is_entry_assembly = true;
   }
 
-  if (module_info.assembly.name == datadog_managed_assembly_name_) {
+  if (module_info.assembly.name == datadog_managed_assembly_short_name_) {
     Info(
         "[ModuleLoadFinished] Datadog.Trace.ClrProfiler.Managed has finished "
         "loading.");
@@ -247,7 +254,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       !is_dot_net_assembly) {
     Info("[ModuleLoadFinished] Requirements not pre-loaded - skipping: ",
          module_id, " ", module_info.assembly.name);
-    return S_OK;
+    // return S_OK;
   }
 
   // We must never try to add assembly references to
@@ -328,13 +335,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
+  mdModule module;
+  hr = metadata_import->GetModuleFromScope(&module);
+  if (FAILED(hr)) {
+    Warn("ModuleLoadFinished failed to get module metadata token for ",
+         module_id, " ", module_info.assembly.name);
+    return S_OK;
+  }
+
   if (is_dot_net_assembly) {
     // Save the metadata and exit out
     dotnet_module_metadata_ =
         new ModuleMetadata(metadata_import, metadata_emit,
                            module_info.assembly.name, filtered_integrations);
     auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
-    dotnet_assembly_metadata_ = &assembly_metadata;
+    dotnet_assembly_strong_name_ = assembly_metadata.long_name();
+    dotnet_assembly_short_name_ = module_info.assembly.name;
+    dotnet_assembly_public_key_ = assembly_metadata.public_key;
+    dotnet_assembly_version_ = assembly_metadata.version;
     return S_OK;
   }
 
@@ -356,14 +374,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  mdModule module;
-  hr = metadata_import->GetModuleFromScope(&module);
-  if (FAILED(hr)) {
-    Warn("ModuleLoadFinished failed to get module metadata token for ",
-         module_id, " ", module_info.assembly.name);
-    return S_OK;
-  }
-
   ModuleMetadata* module_metadata =
       new ModuleMetadata(metadata_import, metadata_emit,
                          module_info.assembly.name, filtered_integrations);
@@ -372,41 +382,91 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                          metadata_import, metadata_emit,
                                          assembly_import, assembly_emit);
 
-  if (is_entry_assembly) {
-    // hr = metadata_builder.EmitAssemblyRef(dotnet_assembly_metadata_.long_name());
+  if (is_entry_assembly && entry_load_assembly_member_ref_ == mdMemberRefNil) {
+
+    mdAssemblyRef dotnet_assembly_ref_token =
+        FindAssemblyRef(assembly_import, dotnet_assembly_short_name_);
+
+    if (dotnet_assembly_ref_token == mdAssemblyRefNil) {
+      // Does this ever even happen?
+      hr = metadata_builder.EmitAssemblyRef(dotnet_assembly_long_name_,
+                                            &dotnet_assembly_ref_token);
+    }
+
     if (FAILED(hr)) {
-      Warn("ModuleLoadFinished failed to emit dot net entry assembly ref for ",
-           module_id, " ", module_info.assembly.name);
+      Warn("ModuleLoadFinished failed to emit assembly ref",
+           dotnet_assembly_long_name_, " ref for ", module_id, " ",
+           module_info.assembly.name);
       return S_OK;
     }
 
     auto assembly_load_method =
         FindAssemblyLoadMethod(dotnet_module_metadata_->metadata_import);
 
-    mdMemberRef member_ref = mdMemberRefNil;
-    mdTypeRef type_ref = mdTypeRefNil;
+    if (!assembly_load_method.IsValid()) {
+      Warn("ModuleLoadFinished failed to find required Assembly.Load method definition within ",
+          dotnet_assembly_short_name_);
+      return S_OK;
+    }
+
+    auto method_name_c_str = assembly_load_method.name.c_str();
+    auto type_name_c_str = assembly_load_method.type.name.c_str();
+
+    mdTypeRef assembly_type_ref = mdTypeRefNil;
+    hr = module_metadata->metadata_import->FindTypeRef(
+        dotnet_assembly_ref_token, type_name_c_str,
+        &assembly_type_ref);
+
+    auto type_ref_not_found =
+        hr == HRESULT(0x80131130); /* record not found on lookup */
+
+    if (type_ref_not_found) {
+      hr = module_metadata->metadata_emit->DefineTypeRefByName(
+          dotnet_assembly_ref_token, type_name_c_str,
+          &assembly_type_ref);
+    }
+
+    if (FAILED(hr)) {
+      Warn("ModuleLoadFinished failed to define TypeRef for ",
+           assembly_load_method.type.name);
+      return S_OK;
+    }
+
+    mdMemberRef assembly_load_method_member_ref = mdMemberRefNil;
 
     hr = module_metadata->metadata_import->FindMemberRef(
-        type_ref, assembly_load_method.name.c_str(),
+        assembly_type_ref, method_name_c_str,
         assembly_load_method.signature.original_signature,
-        (DWORD)(assembly_load_method.signature.data.size()), &member_ref);
+        (DWORD)(assembly_load_method.signature.data.size()),
+        &assembly_load_method_member_ref);
 
-    if (hr == HRESULT(0x80131130) /* record not found on lookup */) {
-      // if memberRef not found, create it by emitting a metadata token
+    auto assembly_load_member_ref_not_found =
+        hr == HRESULT(0x80131130); /* record not found on lookup */
+
+    if (assembly_load_member_ref_not_found) {
       hr = module_metadata->metadata_emit->DefineMemberRef(
-          type_ref, assembly_load_method.name.c_str(),
+          assembly_type_ref, method_name_c_str,
           assembly_load_method.signature.original_signature,
-          (DWORD)(assembly_load_method.signature.data.size()), &member_ref);
-
-      entry_load_assembly_member_ref = member_ref;
-      entry_load_assembly_type_ref = type_ref;
+          (DWORD)(assembly_load_method.signature.data.size()),
+          &assembly_load_method_member_ref);
     }
+    
+    if (FAILED(hr)) {
+      Warn("ModuleLoadFinished failed to define MemberRef for ",
+           assembly_load_method.name, " for ", assembly_load_method.type.name);
+      return S_OK;
+    }
+
+    entry_load_assembly_member_ref_ = assembly_load_method_member_ref;
+    entry_load_assembly_type_ref_ = assembly_type_ref;
   }
 
   for (const auto& integration : filtered_integrations) {
     // for each wrapper assembly, emit an assembly reference
+    mdAssemblyRef datadog_managed_assembly_ref_token;
     hr = metadata_builder.EmitAssemblyRef(
-        integration.replacement.wrapper_method.assembly);
+        integration.replacement.wrapper_method.assembly,
+        &datadog_managed_assembly_ref_token);
     if (FAILED(hr)) {
       Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
            module_id, " ", module_info.assembly.name);
@@ -525,12 +585,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // hr = rewriter.Initialize();
   hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
-
+  // attempted_pre_load_managed_assembly_ = true;
   if (!attempted_pre_load_managed_assembly_) {
-    if (entry_load_assembly_member_ref != mdMemberRefNil) {
+    if (entry_load_assembly_member_ref_ != mdMemberRefNil) {
       // Time to inject a call to this method wrapped in a try catch
-      LPCWSTR lpcstr_assembly_name_arg = datadog_managed_assembly_name_.c_str();
-      const auto assembly_name_length = datadog_managed_assembly_name_.size();
+      LPCWSTR lpcstr_assembly_name_arg =
+          datadog_managed_assembly_long_name_.c_str();
+      const auto assembly_name_length =
+          datadog_managed_assembly_long_name_.size();
 
       mdString assembly_name_token;
       auto df_hr = module_metadata->metadata_emit->DefineUserString(
@@ -546,7 +608,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       ILInstr* call_assembly_load = rewriter.NewILInstr();
       call_assembly_load->m_opcode = CEE_CALL;
-      call_assembly_load->m_Arg32 = entry_load_assembly_member_ref;
+      call_assembly_load->m_Arg32 = entry_load_assembly_member_ref_;
 
       ILInstr* no_op_instruction = rewriter.NewILInstr();
       no_op_instruction->m_opcode = CEE_NOP;

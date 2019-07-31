@@ -36,7 +36,8 @@ class MetadataBuilder {
   HRESULT StoreWrapperMethodRef(
       const MethodReplacement& method_replacement) const;
 
-  HRESULT EmitAssemblyRef(const trace::AssemblyReference& assembly_ref) const;
+  HRESULT EmitAssemblyRef(const trace::AssemblyReference& assembly_ref,
+                          mdAssemblyRef *assembly_ref_out) const;
 };
 
 }  // namespace trace

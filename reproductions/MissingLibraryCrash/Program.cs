@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Reflection;
 using Datadog.Trace.TestHelpers;
 
 namespace MissingLibraryCrash
@@ -10,6 +11,15 @@ namespace MissingLibraryCrash
         {
             try
             {
+                try
+                {
+                    Assembly.Load("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+
                 Console.WriteLine("Crash test initiated.");
 
                 // bool profilerAttached = SmokeTestNativeMethods.IsProfilerAttachedExhaustive();
