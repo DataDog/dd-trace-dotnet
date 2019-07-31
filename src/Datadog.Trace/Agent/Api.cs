@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -39,10 +40,13 @@ namespace Datadog.Trace.Agent
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
-            // TODO:bertrand add header for os version
+            GetFrameworkDescription(out string frameworkName, out string frameworkVersion);
+            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, RuntimeInformation.FrameworkDescription);
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, this.GetType().Assembly.GetName().Version.ToString());
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, frameworkName);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, frameworkVersion);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, tracerVersion);
 
             // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
@@ -102,6 +106,20 @@ namespace Datadog.Trace.Agent
 
                 return;
             }
+        }
+
+        private static void GetFrameworkDescription(out string name, out string version)
+        {
+            // RuntimeInformation.FrameworkDescription returns string like ".NET Framework 4.7.2" or ".NET Core 2.1",
+            // we want to split the runtime from the version so we can report them as separate values
+            string frameworkDescription = RuntimeInformation.FrameworkDescription;
+            int index = RuntimeInformation.FrameworkDescription.LastIndexOf(' ');
+
+            // everything before the last space
+            name = frameworkDescription.Substring(0, index).Trim();
+
+            // everything after the last space
+            version = frameworkDescription.Substring(index).Trim();
         }
 
         internal class ApiResponse
