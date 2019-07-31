@@ -198,25 +198,22 @@ FunctionInfo FindMethodDefinition(
 }
 
 HRESULT RegisterMethodReferenceIfMissing(
-    ModuleMetadata* module_metadata, 
-    mdAssemblyRef source_assembly_ref_token,
-    const FunctionInfo& method_to_register, 
-    mdTypeRef& assembly_type_ref, 
-    mdMemberRef& assembly_load_method_member_ref)
-{
+    ModuleMetadata* module_metadata, mdAssemblyRef source_assembly_ref_token,
+    const FunctionInfo& method_to_register, mdTypeRef& type_ref_token,
+    mdMemberRef& method_member_ref_token) {
   const auto method_name_c_str = method_to_register.name.c_str();
   const auto type_name_c_str = method_to_register.type.name.c_str();
 
-  assembly_type_ref = mdTypeRefNil;
+  type_ref_token = mdTypeRefNil;
   HRESULT hr = module_metadata->metadata_import->FindTypeRef(
-    source_assembly_ref_token, type_name_c_str, &assembly_type_ref);
+      source_assembly_ref_token, type_name_c_str, &type_ref_token);
 
   const auto record_not_found_hr =
       HRESULT(0x80131130); /* record not found on lookup */
 
   if (hr == record_not_found_hr) {
     hr = module_metadata->metadata_emit->DefineTypeRefByName(
-      source_assembly_ref_token, type_name_c_str, &assembly_type_ref);
+        source_assembly_ref_token, type_name_c_str, &type_ref_token);
   }
 
   if (FAILED(hr)) {
@@ -225,26 +222,25 @@ HRESULT RegisterMethodReferenceIfMissing(
     return S_FALSE;
   }
 
-  assembly_load_method_member_ref = mdMemberRefNil;
+  method_member_ref_token = mdMemberRefNil;
 
   hr = module_metadata->metadata_import->FindMemberRef(
-    assembly_type_ref, method_name_c_str,
-    method_to_register.signature.original_signature,
-    (DWORD)(method_to_register.signature.data.size()),
-    &assembly_load_method_member_ref);
+      type_ref_token, method_name_c_str,
+      method_to_register.signature.original_signature,
+      (DWORD)(method_to_register.signature.data.size()),
+      &method_member_ref_token);
 
   if (hr == record_not_found_hr) {
     hr = module_metadata->metadata_emit->DefineMemberRef(
-      assembly_type_ref, method_name_c_str,
-      method_to_register.signature.original_signature,
-      (DWORD)(method_to_register.signature.data.size()),
-      &assembly_load_method_member_ref);
+        type_ref_token, method_name_c_str,
+        method_to_register.signature.original_signature,
+        (DWORD)(method_to_register.signature.data.size()),
+        &method_member_ref_token);
   }
 
   if (FAILED(hr)) {
     Warn("ModuleLoadFinished failed to define MemberRef for ",
-         method_to_register.name, " for ",
-         method_to_register.type.name);
+         method_to_register.name, " for ", method_to_register.type.name);
     return S_FALSE;
   }
 
@@ -459,8 +455,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
         "WriteLine"_W, {"System.Void"_W, "System.String"_W});
 
     const auto assembly_load_method_def = FindMethodDefinition(
-        dotnet_module_metadata_->metadata_import, "System.Reflection.Assembly"_W,
-        "Load"_W, {"System.Reflection.Assembly"_W, "System.String"_W});
+        dotnet_module_metadata_->metadata_import,
+        "System.Reflection.Assembly"_W, "Load"_W,
+        {"System.Reflection.Assembly"_W, "System.String"_W});
 
     if (!assembly_load_method_def.IsValid()) {
       Warn(
@@ -470,31 +467,37 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       return S_OK;
     }
 
-    
     mdTypeRef console_type_token = mdTypeRefNil;
     mdMemberRef console_write_line_method_token = mdMemberRefNil;
 
     HRESULT register_hr = RegisterMethodReferenceIfMissing(
-        module_metadata, dotnet_assembly_ref_token, console_write_line_method_def,
-        console_type_token, console_write_line_method_token);
+        module_metadata, dotnet_assembly_ref_token,
+        console_write_line_method_def, console_type_token,
+        console_write_line_method_token);
 
     mdTypeRef assembly_type_ref = mdTypeRefNil;
     mdMemberRef assembly_load_method_member_ref = mdMemberRefNil;
 
-    register_hr = RegisterMethodReferenceIfMissing(
-        module_metadata, dotnet_assembly_ref_token, assembly_load_method_def,
-        assembly_type_ref, assembly_load_method_member_ref);
+    // register_hr = RegisterMethodReferenceIfMissing(
+    //     module_metadata, dotnet_assembly_ref_token, assembly_load_method_def,
+    //     assembly_type_ref, assembly_load_method_member_ref);
 
     if (FAILED(register_hr)) {
       Warn(
           "[ModuleLoadFinished] failed to register required MemberRef for "
           "method ",
-          assembly_load_method_def.type.name, ".", assembly_load_method_def.name);
+          assembly_load_method_def.type.name, ".",
+          assembly_load_method_def.name);
       return S_OK;
     }
 
+    // mdToken from c#: 100680220
+    // mdToken from dotPeek: 167772186
     console_write_line_member_ref_ = console_write_line_method_token;
     entry_load_assembly_member_ref_ = assembly_load_method_member_ref;
+    if (entry_load_assembly_member_ref_ != 167772186) {
+      entry_load_assembly_member_ref_ = 167772186;
+    }
     entry_load_assembly_type_ref_ = assembly_type_ref;
   }
 
@@ -636,25 +639,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           lpcstr_assembly_name_arg, assembly_name_length, &assembly_name_token);
 
       if (FAILED(hr)) {
-        Warn("Unable to define user string for managed assembly ", datadog_managed_assembly_long_name_);
+        Warn("Unable to define user string for managed assembly ",
+             datadog_managed_assembly_long_name_);
         return S_OK;
       }
 
-      auto starting = "Starting forced assembly load."_W;
+      auto starting = "[ICorProfiler] Starting forced assembly load."_W;
       mdString assembly_load_start_log;
       hr = module_metadata->metadata_emit->DefineUserString(
-          starting.c_str(), starting.size(),
-          &assembly_load_start_log);
+          starting.c_str(), starting.size(), &assembly_load_start_log);
 
-      auto finished = "Finished forced assembly load call."_W;
+      auto finished = "[ICorProfiler] Finished forced assembly load call."_W;
       mdString assembly_load_end_log;
       hr = module_metadata->metadata_emit->DefineUserString(
-          finished.c_str(), finished.size(),
-          &assembly_load_end_log);
+          finished.c_str(), finished.size(), &assembly_load_end_log);
 
       ILInstr* load_start_string = rewriter.NewILInstr();
       load_start_string->m_opcode = CEE_LDSTR;
-      load_start_string->m_Arg64 = assembly_load_start_log;
+      load_start_string->m_Arg32 = assembly_load_start_log;
 
       ILInstr* call_console_log_start = rewriter.NewILInstr();
       call_console_log_start->m_opcode = CEE_CALL;
@@ -662,36 +664,50 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       ILInstr* load_end_string = rewriter.NewILInstr();
       load_end_string->m_opcode = CEE_LDSTR;
-      load_end_string->m_Arg64 = assembly_load_end_log;
+      load_end_string->m_Arg32 = assembly_load_end_log;
 
       ILInstr* call_console_log_end = rewriter.NewILInstr();
       call_console_log_end->m_opcode = CEE_CALL;
       call_console_log_end->m_Arg32 = console_write_line_member_ref_;
-      
+
       ILInstr* load_assembly_name_str = rewriter.NewILInstr();
       load_assembly_name_str->m_opcode = CEE_LDSTR;
-      load_assembly_name_str->m_Arg64 = assembly_name_token;
+      load_assembly_name_str->m_Arg32 = assembly_name_token;
 
       ILInstr* call_assembly_load = rewriter.NewILInstr();
       call_assembly_load->m_opcode = CEE_CALL;
       call_assembly_load->m_Arg32 = entry_load_assembly_member_ref_;
 
-      ILInstr* no_op_instruction = rewriter.NewILInstr();
-      no_op_instruction->m_opcode = CEE_NOP;
+      ILInstr* nop_instruction = rewriter.NewILInstr();
+      nop_instruction->m_opcode = CEE_NOP;
+      nop_instruction->m_Arg32 = 0;
+
+      ILInstr* pop_instruction = rewriter.NewILInstr();
+      pop_instruction->m_opcode = CEE_POP;
+      pop_instruction->m_Arg32 = 0;
 
       const auto first_instruction = rewriter.GetILList()->m_pNext;
-      
-      rewriter.InsertBefore(first_instruction, load_start_string);
-      rewriter.InsertBefore(first_instruction, call_console_log_start);
 
-      rewriter.InsertBefore(first_instruction, load_assembly_name_str);
-      rewriter.InsertBefore(first_instruction, call_assembly_load);
-      
-      rewriter.InsertBefore(first_instruction, load_end_string);
-      rewriter.InsertBefore(first_instruction, call_console_log_end);
+      std::vector<ILInstr*> main_instructions_to_inject = {
+
+          // nop_instruction,
+
+          load_start_string, call_console_log_start,
+          // nop_instruction,
+
+          load_assembly_name_str, call_assembly_load, pop_instruction,
+
+          load_end_string, call_console_log_end,
+          // nop_instruction
+      };
+
+      for (auto instr : main_instructions_to_inject) {
+        rewriter.InsertBefore(first_instruction, instr);
+      }
 
       // auto error_handling_section = COR_ILMETHOD_SECT_EH();
       // rewriter.ImportEH(&error_handling_section, 2);
+
       hr = rewriter.Export();
 
       if (FAILED(hr)) {

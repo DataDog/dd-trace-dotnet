@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using Datadog.Trace.TestHelpers;
@@ -11,14 +12,34 @@ namespace MissingLibraryCrash
         {
             try
             {
-                try
+                // try
+                // {
+                //     Assembly.Load("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
+                // }
+                // catch (Exception ex)
+                // {
+                //     Console.WriteLine(ex);
+                // }
+
+                var assemblyMethods = typeof(Assembly).GetMethods();
+                var assemblyLoadMethodCandidates =
+                    assemblyMethods
+                       .Where(m => m.Name == "Load")
+                       .Where(m => m.ReturnType == typeof(Assembly))
+                       .Where(m => m.GetParameters().Length == 1)
+                       .Where(m => m.GetParameters()[0].ParameterType == typeof(string))
+                       .ToList();
+
+                foreach(var method in assemblyLoadMethodCandidates)
                 {
-                    Assembly.Load("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
+                    Console.WriteLine($"We need an mdToken of {method.MetadataToken}");
+                    Console.WriteLine($"Calling conventions {method.CallingConvention}");
+                    Console.WriteLine($"Is abstract {method.IsAbstract}");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                }
+
+                var mscorlib = Assembly.Load("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
+
+                // Assembly.Load("Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
                 Console.WriteLine("Crash test initiated.");
 
