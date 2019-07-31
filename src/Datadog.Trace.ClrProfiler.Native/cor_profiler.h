@@ -21,6 +21,8 @@ class CorProfiler : public CorProfilerBase {
   bool is_attached_ = false;
   std::vector<Integration> integrations_;
 
+  bool first_jit_compilation_completed = false;
+
   bool mscorlib_module_loaded = false;
   AppDomainID mscorlib_app_domain_id;
 
@@ -30,10 +32,16 @@ class CorProfiler : public CorProfilerBase {
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
 
+  HRESULT CreateVoidMethod(const ModuleID module_id, mdMethodDef* ret_method_token);
+  HRESULT TryLoadManagedCode(const ComPtr<IMetaDataEmit2>&, const ModuleID module_id,
+                             const mdToken function_token);
+
  public:
   CorProfiler() = default;
 
   bool IsAttached() const;
+
+  void GetAssemblyBytes(BYTE** pArray, int* size) const;
 
   //
   // ICorProfilerCallback methods

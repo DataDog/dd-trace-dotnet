@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Datadog.Trace.ClrProfiler.EntrypointManaged</RootNamespace>
+    <TargetFrameworks>netstandard1.1</TargetFrameworks>
+    <OutputPath>..\bin\ProfilerResources\</OutputPath>
+
+    <!-- NuGet -->
+    <Version>1.6.0</Version>
+  </PropertyGroup>
+
+</Project>

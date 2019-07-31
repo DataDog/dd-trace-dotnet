@@ -14,6 +14,9 @@
 #include "module_metadata.h"
 #include "pal.h"
 #include "util.h"
+#include "resource.h"
+#include "dllmain.h"
+
 
 namespace trace {
 
@@ -281,8 +284,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   std::vector<IntegrationMethod> filtered_integrations =
       FlattenIntegrations(integrations_);
 
-  filtered_integrations = FilterIntegrationsByCaller(filtered_integrations,
-                                                     module_info.assembly);
+  filtered_integrations =
+      FilterIntegrationsByCaller(filtered_integrations, module_info.assembly);
   if (filtered_integrations.empty()) {
     // we don't need to instrument anything in this module, skip it
     Debug("ModuleLoadFinished skipping module (filtered by caller): ",
@@ -446,6 +449,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
+  if (!first_jit_compilation_completed) {
+    first_jit_compilation_completed = true;
+    hr = TryLoadManagedCode(module_metadata->metadata_emit, module_id,
+                            function_token);
+    RETURN_OK_IF_FAILED(hr);
+  }
+
   auto method_replacements =
       module_metadata->GetMethodReplacementsForCaller(caller);
   if (method_replacements.empty()) {
@@ -455,7 +465,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
 
-  // hr = rewriter.Initialize();
   hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
@@ -781,4 +790,171 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
 
 bool CorProfiler::IsAttached() const { return is_attached_; }
 
+// Helper methods
+
+HRESULT CorProfiler::TryLoadManagedCode(
+    const ComPtr<IMetaDataEmit2>& metadata_emit, const ModuleID module_id,
+    const mdToken function_token) {
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+
+  mdMethodDef ret_method_token;
+  auto hr = CreateVoidMethod(module_id, &ret_method_token);
+  if (FAILED(hr)) {
+    Warn("TryLoadManagedCode: Call to CreateVoidMethod(", module_id, ") failed");
+    return S_OK;
+  }
+
+  hr = rewriter.Import();
+  RETURN_OK_IF_FAILED(hr);
+
+  ILRewriterWrapper rewriter_wrapper(&rewriter);
+
+  // Get first instruction and set the rewriter to that location
+  ILInstr* pInstr = rewriter.GetILList()->m_pNext;
+  rewriter_wrapper.SetILPosition(pInstr);
+  rewriter_wrapper.CallMember(ret_method_token, false);
+  hr = rewriter.Export();
+  RETURN_OK_IF_FAILED(hr);
+
+  metadata_emit->Save(
+      L"C:\\Users\\zach.montoya\\dd\\dd-trace-dotnet\\inmemory.dll", 0);
+
+  return S_OK;
+}
+
+HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id, mdMethodDef* ret_method_token) {
+  ComPtr<IUnknown> metadata_interfaces;
+
+  auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
+                                           IID_IMetaDataImport2,
+                                           metadata_interfaces.GetAddressOf());
+
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: failed to get metadata interface for ", module_id);
+    return S_OK;
+  }
+
+  const auto metadata_import =
+      metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+  const auto metadata_emit =
+      metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
+      IID_IMetaDataAssemblyImport);
+  const auto assembly_emit =
+      metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+  mdTypeDef new_type_def;
+
+  // Get reference to mscorlib so I can get a type ref for System.Object
+  mdModuleRef mscorlib_ref;
+  ASSEMBLYMETADATA metadata;
+  ZeroMemory(&metadata, sizeof(metadata));
+  metadata.usMajorVersion = 4;
+  metadata.usMinorVersion = 0;
+  metadata.usBuildNumber = 0;
+  metadata.usRevisionNumber = 0;
+  BYTE public_key[] = { 0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89 };
+  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), L"mscorlib", &metadata, NULL, 0, 0, &mscorlib_ref);
+  
+  // Create a new class that extends System.Object
+  mdTypeRef object_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, L"System.Object", &object_type_ref);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: failed to create a TypeRef for System.Object for new emitted class, ", module_id);
+    return S_OK;
+  }
+
+  metadata_emit->DefineTypeDef(L"__DDVoidMethodType__", tdAbstract | tdSealed,
+                               object_type_ref, NULL, &new_type_def);
+  BYTE initialize_signature [] = {
+    0, // IMAGE_CEE_CS_CALLCONV_DEFAULT
+    0,
+    ELEMENT_TYPE_VOID, // ret = ELEMENT_TYPE_VOID
+    ELEMENT_TYPE_OBJECT
+  };
+
+  metadata_emit->DefineMethod(new_type_def, L"__DDVoidMethodCall__", mdStatic, initialize_signature, sizeof(initialize_signature), 0, 0, ret_method_token);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: failed to create a MethodDef for __DDVoidMethodType__.Initialize, ", module_id);
+    return S_OK;
+  }
+
+  // Now we need to add IL instructions into the void method
+  ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
+  rewriter_void.InitializeTiny();
+
+  ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
+
+  ILInstr* pNewInstr = NULL;
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_RET;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  hr = rewriter_void.Export();
+  RETURN_OK_IF_FAILED(hr);
+
+
+
+  /*
+
+  COR_SIGNATURE get_assembly_bytes_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,
+      0,
+      ELEMENT_TYPE_VOID
+  };
+
+  mdModuleRef profiler_ref;
+  hr = metadata_emit->DefineModuleRef(L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL", &profiler_ref);
+
+  mdMethodDef pinvoke_method_def;
+  metadata_emit->DefineMethod(
+      new_type_def,
+      L"GetAssemblyBytes",
+      mdStatic | mdPinvokeImpl,
+      get_assembly_bytes_signature,
+      sizeof(get_assembly_bytes_signature),
+      0,
+      0,
+      &pinvoke_method_def);
+
+  hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def,
+      pmCallConvStdcall | pmNoMangle,
+      L"GetAssemblyBytes",
+      profiler_ref);
+
+  ILRewriterWrapper rewriter_wrapper_void(&rewriter_void);
+  */
+
+  // Get first instruction and set the rewriter to that location
+  // ILInstr* pInstr = rewriter_void.GetILList()->m_pNext;
+  // rewriter_wrapper_void.SetILPosition(pInstr);
+  // rewriter_wrapper_void.CallMember(pinvoke_method_def, false);
+  // rewriter_wrapper_void.Pop();
+
+  // byte* array1;
+  // int size;
+  // GetAssemblyBytes(&array1, &size);
+
+  // Create a new method that will
+  // 1) P/Invoke into the CorProfiler::GetAssemblyBytes()
+  // 2) Call Assembly.Load(bytes)
+  // 3) Create a new instance of LoadInstance
+  // 4) Call LoadManagedProfiler
+  // metadata_emit->DefineMethod(new_type_def, L"InvokeVoidMethod")
+
+  // Call Assembly.Load(bytes)
+
+  // Call static method
+
+  return S_OK;
+}
+
+void CorProfiler::GetAssemblyBytes(BYTE** pArray, int* size) const {
+  HINSTANCE hInstance = DllHandle;
+  HRSRC hResInfo = FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT), L"ASSEMBLY");
+  HGLOBAL hRes = LoadResource(hInstance, hResInfo);
+  *size = SizeofResource(hInstance, hResInfo);
+  *pArray = (LPBYTE)LockResource(hRes);
+  return;
+}
 }  // namespace trace

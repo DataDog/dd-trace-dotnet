@@ -11,10 +11,21 @@ namespace AppDomain.Instance
     {
         public NestedProgram WorkerProgram { get; set; }
 
+        private void InitiateLoadThing()
+        {
+            try
+            {
+                System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Load failed");
+            }
+        }
+
         public int Main(string[] args)
         {
-            Console.WriteLine("Loading Datadog.Trace.ClrProfiler.Managed to kick off ModuleLoadFinished logic"
-                + ". Profiler attached: " + Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached);
+            // InitiateLoadThing();
             Console.WriteLine("Starting AppDomain Instance Test");
 
             string appDomainName = "crash-dummy";

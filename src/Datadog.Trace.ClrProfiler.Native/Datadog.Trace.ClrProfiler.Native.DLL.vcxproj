@@ -201,6 +201,7 @@
     <ClCompile Include="interop.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dllmain.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

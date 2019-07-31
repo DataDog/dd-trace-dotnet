@@ -11,3 +11,7 @@
 EXTERN_C BOOL STDAPICALLTYPE IsProfilerAttached() {
   return trace::profiler->IsAttached();
 }
+
+EXTERN_C VOID STDAPICALLTYPE GetAssemblyBytes(BYTE** pArray, int* size) {
+  return trace::profiler->GetAssemblyBytes(pArray, size);
+}
