@@ -29,7 +29,7 @@ namespace AppDomain.Instance
 
         public int Main(string[] args)
         {
-            LoadTheHelperType();
+            // LoadTheHelperType();
             Console.WriteLine("Starting AppDomain Instance Test");
 
             string appDomainName = "crash-dummy";

@@ -5,6 +5,7 @@
 #include "corhlpr.h"
 
 #include "clr_helpers.h"
+#include "dllmain.h"
 #include "environment_variables.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
@@ -13,10 +14,8 @@
 #include "metadata_builder.h"
 #include "module_metadata.h"
 #include "pal.h"
-#include "util.h"
 #include "resource.h"
-#include "dllmain.h"
-
+#include "util.h"
 
 namespace trace {
 
@@ -443,8 +442,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     return S_OK;
   }
 
-  if (debug_logging_enabled) {
-    Debug("JITCompilationStarted: function_id=", function_id,
+  if (true) {
+    Info("JITCompilationStarted: function_id=", function_id,
           " token=", function_token, " name=", caller.type.name, ".",
           caller.name, "()");
   }
@@ -466,6 +465,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   bool modified = false;
 
   hr = rewriter.Import();
+
+  // TODO: REMOVE
+  // Let's print out the local variable token
+  mdSignature localvarsig = rewriter.GetTkLocalVarSig();
+  PCCOR_SIGNATURE rgbOrigSig = NULL;
+  ULONG cbOrigSig;
+  module_metadata->metadata_import->GetSigFromToken(localvarsig, &rgbOrigSig,
+                                                    &cbOrigSig);
+  //
   RETURN_OK_IF_FAILED(hr);
 
   for (auto& method_replacement : method_replacements) {
@@ -681,7 +689,8 @@ HRESULT CorProfiler::TryLoadManagedCode(
   mdMethodDef ret_method_token;
   auto hr = CreateVoidMethod(module_id, &ret_method_token);
   if (FAILED(hr)) {
-    Warn("TryLoadManagedCode: Call to CreateVoidMethod(", module_id, ") failed");
+    Warn("TryLoadManagedCode: Call to CreateVoidMethod(", module_id,
+         ") failed");
     return S_OK;
   }
 
@@ -694,7 +703,7 @@ HRESULT CorProfiler::TryLoadManagedCode(
   ILInstr* pInstr = rewriter.GetILList()->m_pNext;
   rewriter_wrapper.SetILPosition(pInstr);
   rewriter_wrapper.CallMember(ret_method_token, false);
-  hr = rewriter.Export();
+  hr = rewriter.Export(); // TODO Uncomment the export call once I figure out the right signature token
   RETURN_OK_IF_FAILED(hr);
 
   metadata_emit->Save(
@@ -703,7 +712,8 @@ HRESULT CorProfiler::TryLoadManagedCode(
   return S_OK;
 }
 
-HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id, mdMethodDef* ret_method_token) {
+HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
+                                      mdMethodDef* ret_method_token) {
   ComPtr<IUnknown> metadata_interfaces;
 
   auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
@@ -734,57 +744,48 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id, mdMethodDef* ret
   metadata.usMinorVersion = 0;
   metadata.usBuildNumber = 0;
   metadata.usRevisionNumber = 0;
-  BYTE public_key[] = { 0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89 };
-  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), L"mscorlib", &metadata, NULL, 0, 0, &mscorlib_ref);
-  
+  BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
+  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), L"mscorlib",
+                                   &metadata, NULL, 0, 0, &mscorlib_ref);
+
   // Create a new class that extends System.Object
   mdTypeRef object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, L"System.Object", &object_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, L"System.Object",
+                                          &object_type_ref);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: failed to create a TypeRef for System.Object for new emitted class, ", module_id);
+    Warn(
+        "CreateVoidMethod: failed to create a TypeRef for System.Object for "
+        "new emitted class, ",
+        module_id);
     return S_OK;
   }
 
   metadata_emit->DefineTypeDef(L"__DDVoidMethodType__", tdAbstract | tdSealed,
                                object_type_ref, NULL, &new_type_def);
-  BYTE initialize_signature [] = {
-    0, // IMAGE_CEE_CS_CALLCONV_DEFAULT
-    0,
-    ELEMENT_TYPE_VOID, // ret = ELEMENT_TYPE_VOID
-    ELEMENT_TYPE_OBJECT
-  };
+  BYTE initialize_signature[] = {0,  // IMAGE_CEE_CS_CALLCONV_DEFAULT
+                                 0,
+                                 ELEMENT_TYPE_VOID,  // ret = ELEMENT_TYPE_VOID
+                                 ELEMENT_TYPE_OBJECT};
 
-  metadata_emit->DefineMethod(new_type_def, L"__DDVoidMethodCall__", mdStatic, initialize_signature, sizeof(initialize_signature), 0, 0, ret_method_token);
+  metadata_emit->DefineMethod(
+      new_type_def, L"__DDVoidMethodCall__", mdStatic, initialize_signature,
+      sizeof(initialize_signature), 0, 0, ret_method_token);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: failed to create a MethodDef for __DDVoidMethodType__.Initialize, ", module_id);
+    Warn(
+        "CreateVoidMethod: failed to create a MethodDef for "
+        "__DDVoidMethodType__.Initialize, ",
+        module_id);
     return S_OK;
   }
 
-  // Now we need to add IL instructions into the void method
-  ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
-  rewriter_void.InitializeTiny();
-  ILRewriterWrapper rewriter_wrapper_void(&rewriter_void);
-  ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
-  ILInstr* pNewInstr = NULL;
-  
-  // Create a new method that will
-  // 1) P/Invoke into the CorProfiler::GetAssemblyBytes()
-  // 2) Call Assembly.Load(bytes)
-  // 3) Call STATIC METHOD Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper.LoadManagedProfiler
-
-  // 1) P/Invoke into the CorProfiler::GetAssemblyBytes()
-  // byte* array1;
-  // int size;
-  // GetAssemblyBytes(&array1, &size);
   COR_SIGNATURE get_assembly_bytes_signature[] = {
       IMAGE_CEE_CS_CALLCONV_DEFAULT,
       2,
-      ELEMENT_TYPE_VOID, // ret = ELEMENT_TYPE_VOID
+      ELEMENT_TYPE_VOID,  // ret = ELEMENT_TYPE_VOID
       ELEMENT_TYPE_BYREF,
       ELEMENT_TYPE_I,
       ELEMENT_TYPE_BYREF,
-      ELEMENT_TYPE_I4
-  };
+      ELEMENT_TYPE_I4};
 
   mdModuleRef profiler_ref;
   hr = metadata_emit->DefineModuleRef(L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL",
@@ -798,52 +799,259 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id, mdMethodDef* ret
   metadata_emit->SetMethodImplFlags(pinvoke_method_def, miPreserveSig);
 
   mdParamDef data_param_def;
-  hr = metadata_emit->DefineParam(pinvoke_method_def, 1, L"data",
-                                 pdOut, 0, NULL, 0, &data_param_def);
+  hr = metadata_emit->DefineParam(pinvoke_method_def, 1, L"data", pdOut, 0,
+                                  NULL, 0, &data_param_def);
 
   mdParamDef size_param_def;
   hr = metadata_emit->DefineParam(pinvoke_method_def, 2, L"size",
-                                 pdOut | pdHasFieldMarshal, 0, NULL, 0,
+                                  pdOut | pdHasFieldMarshal, 0, NULL, 0,
                                   &size_param_def);
 
   hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def,
-      0, // pmCallConvStdcall | pmNoMangle,
-      L"GetAssemblyBytes",
-      profiler_ref);
+                                       0,  // pmCallConvStdcall | pmNoMangle,
+                                       L"GetAssemblyBytes", profiler_ref);
 
-  // Push address of Intptr (local 0)
+  // Helper routines to get metadata tokens
+  // Get a TypeRef token for System.Byte
+  mdTypeRef byte_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, L"System.Byte",
+                                          &byte_type_ref);
+  if (FAILED(hr)) {
+    Warn(
+        "CreateVoidMethod: fail quickly",
+        module_id);
+    return S_OK;
+  }
+
+  // Get a MemberRef for System.Runtime.InteropSercies.Marshal.Copy(IntPtr, Byte[], int, int)
+  mdTypeRef marshal_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, L"System.Runtime.InteropServices.Marshal",
+                                          &marshal_type_ref);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
+  COR_SIGNATURE marshal_copy_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,
+      4,
+      ELEMENT_TYPE_VOID,  // ret = System.Reflection.Assembly
+      ELEMENT_TYPE_I,
+      ELEMENT_TYPE_SZARRAY,
+      ELEMENT_TYPE_U1,
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_I4
+  };
+
+  mdMemberRef marshal_copy_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      marshal_type_ref, L"Copy", marshal_copy_signature,
+      sizeof(marshal_copy_signature), &marshal_copy_member_ref);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
+  // Get a MemberRef for System.Reflection.Assembly.Load(byte[])
+  // and System.Reflection.Assembly.CreateInstance
+  mdTypeRef system_reflection_assembly_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+                                          L"System.Reflection.Assembly",
+                                          &system_reflection_assembly_type_ref);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
+  COR_SIGNATURE system_reflection_assembly_type_ref_compressed;
+  CorSigCompressToken(system_reflection_assembly_type_ref,
+                      &system_reflection_assembly_type_ref_compressed);
+  COR_SIGNATURE assembly_load_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,
+      1,
+      ELEMENT_TYPE_CLASS,  // ret = System.Reflection.Assembly
+      system_reflection_assembly_type_ref_compressed,
+      ELEMENT_TYPE_SZARRAY,
+      ELEMENT_TYPE_U1
+  };
+  COR_SIGNATURE assembly_create_instance_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_HASTHIS,
+      1,
+      ELEMENT_TYPE_OBJECT,  // ret = System.Object
+      ELEMENT_TYPE_STRING
+  };
+
+  mdMemberRef assembly_load_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      system_reflection_assembly_type_ref, L"Load", assembly_load_signature,
+      sizeof(assembly_load_signature), &assembly_load_member_ref);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+  mdMemberRef assembly_create_instance_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      system_reflection_assembly_type_ref, L"CreateInstance",
+      assembly_create_instance_signature,
+      sizeof(assembly_create_instance_signature),
+      &assembly_create_instance_member_ref);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
+  // Create a string representing "Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper"
+  LPCWSTR load_helper_str =
+      L"Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper";
+  mdString load_helper_token;
+  hr = metadata_emit->DefineUserString(load_helper_str, sizeof(load_helper_str),
+                                  &load_helper_token);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
+  // Generate a signature to describe the local variables
+  mdSignature locals_signature_token;
+  COR_SIGNATURE locals_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_LOCAL_SIG,
+      4,
+      ELEMENT_TYPE_I,
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_SZARRAY,
+      ELEMENT_TYPE_U1,
+      ELEMENT_TYPE_CLASS,
+      system_reflection_assembly_type_ref_compressed,
+  };
+  hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature),
+                                 &locals_signature_token);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
+  /////////////////////////////////////////////
+  // Now we need to add IL instructions into the void method
+  ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
+  rewriter_void.InitializeTiny();
+  ILRewriterWrapper rewriter_wrapper_void(&rewriter_void);
+  ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
+  ILInstr* pNewInstr = NULL;
+
+  // Step 0) Define the locals so they appear in the following order:
+  //         [0] System.IntPtr
+  //         [1] System.Int32
+  //         [2] System.Byte[]
+  //         [3] class System.Reflection.Assembly
+  rewriter_void.SetTkLocalVarSig(locals_signature_token);
+
+  // Step 1) Call GetAssemblyBytes(ref IntPtr, ref int)
+
+  // ldloca.s 0 : Load the address of the System.IntPtr local variable
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOCA_S;
   pNewInstr->m_Arg32 = 0;
-  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // Push address of int32 (local 1)
+  // ldloca.s 1 : Load the address of the System.32 local variable
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOCA_S;
   pNewInstr->m_Arg32 = 1;
-  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
+  // call void GetAssemblyBytes(native int&, int32&)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_CALL;
   pNewInstr->m_Arg32 = pinvoke_method_def;
-  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
+  // Step 2) Call Marshal::Copy(IntPtr, byte[], int, int)
 
-  // POP instruction for whenever we need it
+  // ldloc.1 : Load the size of the returned byte array
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_1;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // newarr System.Byte : Create a new Byte[] to hold a managed copy of the data
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_NEWARR;
+  pNewInstr->m_Arg32 = byte_type_ref;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // stloc.2 : Assign the Byte[] to our local variable
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_STLOC_2;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldloc.0 : Load the address of the unmanaged byte array
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_0;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldloc.2 : Load the byte array
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_2;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldc.i4.0 : Load the integer 0 for the Marshal.Copy startIndex parameter
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDC_I4_0;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldloc.1 : Load the size variable for the Marshal.Copy length parameter
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_1;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // call void [mscorlib]System.Runtime.InteropServices.Marshal::Copy(native int, uint8[], int32, int32)
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_CALL;
+  pNewInstr->m_Arg32 = marshal_copy_member_ref;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // Step 3) Call Assembly.Load(bytes)
+  // ldloc.2 : Load the byte array for the Assembly.Load rawAssembly parameter
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_2;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // call class [mscorlib]System.Reflection.Assembly [mscorlib]System.Reflection.Assembly::Load(uint8[])
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_CALL;
+  pNewInstr->m_Arg32 = assembly_load_member_ref;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // stloc.3 : Assign the Assembly object to our local variable
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_STLOC_3;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // Step 4) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper.LoadManagedProfiler")
+
+  // ldloc.3 : Load the Assembly object to call Assembly.CreateInstance
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_3;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldstr "Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper"
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDSTR;
+  pNewInstr->m_Arg32 = load_helper_token;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // callvirt instance object
+  // [mscorlib]System.Reflection.Assembly::CreateInstance(string)
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_CALLVIRT;
+  pNewInstr->m_Arg32 = assembly_create_instance_member_ref;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // pop : Remove the LoadHelper object from the stack
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_POP;
-  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // rewriter_wrapper_void.SetILPosition(pFirstInstr);
-  // rewriter_wrapper_void.Pop();
-
-  // 2) Call Assembly.Load(bytes)
-
-  // 3) Call STATIC METHOD Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper.LoadManagedProfiler
-  // pNewInstr = rewriter_void.NewILInstr();
-  // pNewInstr->m_opcode = CEE_CALL;
-  // pNewInstr->m_Arg32 = member_ref; // INSERT STATIC METHOD HERE
-  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+  //////////////////////////////////////////
 
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_RET;
@@ -857,7 +1065,8 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id, mdMethodDef* ret
 
 void CorProfiler::GetAssemblyBytes(BYTE** pArray, int* size) const {
   HINSTANCE hInstance = DllHandle;
-  HRSRC hResInfo = FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT), L"ASSEMBLY");
+  HRSRC hResInfo =
+      FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT), L"ASSEMBLY");
   HGLOBAL hRes = LoadResource(hInstance, hResInfo);
   *size = SizeofResource(hInstance, hResInfo);
   *pArray = (LPBYTE)LockResource(hRes);

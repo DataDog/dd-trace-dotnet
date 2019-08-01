@@ -86,6 +86,10 @@ class ILRewriter {
 
   void InitializeTiny();
 
+  void SetTkLocalVarSig(mdToken tkLocalVarSig);
+
+  mdToken GetTkLocalVarSig(); // TODO: REMOVE
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //
   // I M P O R T
