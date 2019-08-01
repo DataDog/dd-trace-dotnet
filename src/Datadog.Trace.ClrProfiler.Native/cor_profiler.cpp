@@ -654,6 +654,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       hr = module_metadata->metadata_emit->DefineUserString(
           finished.c_str(), finished.size(), &assembly_load_end_log);
 
+      auto exception =
+          "[ICorProfiler] Exception when loading managed assembly."_W;
+      mdString assembly_load_exception_log;
+      hr = module_metadata->metadata_emit->DefineUserString(
+          exception.c_str(), exception.size(), &assembly_load_exception_log);
+
+      ILInstr* load_exception_string = rewriter.NewILInstr();
+      load_exception_string->m_opcode = CEE_LDSTR;
+      load_exception_string->m_Arg32 = assembly_load_exception_log;
+
+      ILInstr* call_console_exception_start = rewriter.NewILInstr();
+      call_console_exception_start->m_opcode = CEE_CALL;
+      call_console_exception_start->m_Arg32 = console_write_line_member_ref_;
+
       ILInstr* load_start_string = rewriter.NewILInstr();
       load_start_string->m_opcode = CEE_LDSTR;
       load_start_string->m_Arg32 = assembly_load_start_log;
@@ -688,25 +702,34 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       const auto first_instruction = rewriter.GetILList()->m_pNext;
 
+      auto eh_clause = EHClause();
+
+      eh_clause.m_pTryBegin = load_start_string;
+      eh_clause.m_pTryEnd = call_console_log_end;
+      eh_clause.m_pHandlerBegin = load_exception_string;
+      eh_clause.m_pHandlerEnd = call_console_exception_start;
+
       std::vector<ILInstr*> main_instructions_to_inject = {
 
-          // nop_instruction,
-
           load_start_string, call_console_log_start,
-          // nop_instruction,
 
           load_assembly_name_str, call_assembly_load, pop_instruction,
 
           load_end_string, call_console_log_end,
-          // nop_instruction
-      };
 
+          load_exception_string, call_console_exception_start};
+
+      ILInstr* previous = nullptr;
       for (auto instr : main_instructions_to_inject) {
+        // if (previous != nullptr) {
+        //   previous->m_pNext = instr;
+        //   instr->m_pPrev = previous;
+        // }
         rewriter.InsertBefore(first_instruction, instr);
+        previous = instr;
       }
 
-      // auto error_handling_section = COR_ILMETHOD_SECT_EH();
-      // rewriter.ImportEH(&error_handling_section, 2);
+      rewriter.AddNewEHClause(eh_clause);
 
       hr = rewriter.Export();
 

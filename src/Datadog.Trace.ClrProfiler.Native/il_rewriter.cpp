@@ -6,6 +6,7 @@
 #include <corhlpr.cpp>
 
 #include "il_rewriter.h"
+#include <vector>
 
 #undef IfFailRet
 #define IfFailRet(EXPR)  \
@@ -112,7 +113,6 @@ ILRewriter::ILRewriter(
       m_moduleId(moduleID),
       m_tkMethod(tkMethod),
       m_fGenerateTinyHeader(false),
-      m_pEH(nullptr),
       m_pOffsetToInstr(nullptr),
       m_pOutputBuffer(nullptr),
       m_pIMethodMalloc(nullptr) {
@@ -129,7 +129,7 @@ ILRewriter::~ILRewriter() {
     delete p;
     p = t;
   }
-  delete[] m_pEH;
+  // delete[] error_handling_clauses;
   delete[] m_pOffsetToInstr;
   delete[] m_pOutputBuffer;
 
@@ -287,14 +287,18 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 }
 
 HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
-  assert(m_pEH == NULL);
 
-  m_nEH = nEH;
+  number_of_error_handling_clauses = nEH;
 
   if (nEH == 0) return S_OK;
 
-  IfNullRet(m_pEH = new EHClause[m_nEH]);
-  for (unsigned iEH = 0; iEH < m_nEH; iEH++) {
+  error_handling_clauses = {};
+  auto remaining_to_init = nEH;
+  while (remaining_to_init-- > 0) {
+    error_handling_clauses.push_back(EHClause());
+  }
+
+  for (unsigned iEH = 0; iEH < number_of_error_handling_clauses; iEH++) {
     // If the EH clause is in tiny form, the call to pILEH->EHClause() below
     // will use this as a scratch buffer to expand the EH clause into its fat
     // form.
@@ -303,7 +307,7 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
     const COR_ILMETHOD_SECT_EH_CLAUSE_FAT* ehInfo;
     ehInfo = (COR_ILMETHOD_SECT_EH_CLAUSE_FAT*)pILEH->EHClause(iEH, &scratch);
 
-    EHClause* clause = &(m_pEH[iEH]);
+    auto clause = &(error_handling_clauses[iEH]);
     clause->m_Flags = ehInfo->GetFlags();
 
     clause->m_pTryBegin = GetInstrFromOffset(ehInfo->GetTryOffset());
@@ -319,6 +323,12 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
       clause->m_pFilter = GetInstrFromOffset(ehInfo->GetFilterOffset());
   }
 
+  return S_OK;
+}
+
+HRESULT ILRewriter::AddNewEHClause(EHClause new_clause){
+  number_of_error_handling_clauses++;
+  error_handling_clauses.push_back(new_clause);
   return S_OK;
 }
 
@@ -516,8 +526,8 @@ again:
     unsigned alignedCodeSize = (offset + 3) & ~3;
 
     totalSize = sizeof(IMAGE_COR_ILMETHOD_FAT) + alignedCodeSize +
-                (m_nEH ? (sizeof(IMAGE_COR_ILMETHOD_SECT_FAT) +
-                          sizeof(IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT) * m_nEH)
+                (number_of_error_handling_clauses ? (sizeof(IMAGE_COR_ILMETHOD_SECT_FAT) +
+                          sizeof(IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT) * number_of_error_handling_clauses)
                        : 0);
 
     pBody = AllocateILMemory(totalSize);
@@ -527,7 +537,7 @@ again:
 
     IMAGE_COR_ILMETHOD_FAT* pHeader = (IMAGE_COR_ILMETHOD_FAT*)pCurrent;
     pHeader->Flags =
-        m_flags | (m_nEH ? CorILMethod_MoreSects : 0) | CorILMethod_FatFormat;
+        m_flags | (number_of_error_handling_clauses ? CorILMethod_MoreSects : 0) | CorILMethod_FatFormat;
     pHeader->Size = sizeof(IMAGE_COR_ILMETHOD_FAT) / sizeof(DWORD);
     pHeader->MaxStack = m_maxStack;
     pHeader->CodeSize = offset;
@@ -538,17 +548,17 @@ again:
     CopyMemory(pCurrent, m_pOutputBuffer, codeSize);
     pCurrent += alignedCodeSize;
 
-    if (m_nEH != 0) {
+    if (number_of_error_handling_clauses != 0) {
       IMAGE_COR_ILMETHOD_SECT_FAT* pEH = (IMAGE_COR_ILMETHOD_SECT_FAT*)pCurrent;
       pEH->Kind = CorILMethod_Sect_EHTable | CorILMethod_Sect_FatFormat;
       pEH->DataSize =
           (unsigned)(sizeof(IMAGE_COR_ILMETHOD_SECT_FAT) +
-                     sizeof(IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT) * m_nEH);
+                     sizeof(IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT) * number_of_error_handling_clauses);
 
       pCurrent = (BYTE*)(pEH + 1);
 
-      for (unsigned iEH = 0; iEH < m_nEH; iEH++) {
-        EHClause* pSrc = &(m_pEH[iEH]);
+      for (unsigned iEH = 0; iEH < number_of_error_handling_clauses; iEH++) {
+        auto pSrc = &(error_handling_clauses[iEH]);
         IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT* pDst =
             (IMAGE_COR_ILMETHOD_SECT_EH_CLAUSE_FAT*)pCurrent;
 

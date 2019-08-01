@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 
 namespace MissingLibraryCrash
@@ -12,15 +14,15 @@ namespace MissingLibraryCrash
         {
             try
             {
-                // try
-                // {
-                //     Assembly.Load("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
-                // }
-                // catch (Exception ex)
-                // {
-                //     Console.WriteLine(ex);
-                // }
+                Assembly.Load("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
 
+            try
+            {
                 var assemblyMethods = typeof(Assembly).GetMethods();
                 var assemblyLoadMethodCandidates =
                     assemblyMethods
@@ -38,8 +40,6 @@ namespace MissingLibraryCrash
                 }
 
                 var mscorlib = Assembly.Load("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
-
-                // Assembly.Load("Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
                 Console.WriteLine("Crash test initiated.");
 

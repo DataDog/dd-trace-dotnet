@@ -8,6 +8,7 @@
 #include <corhlpr.h>
 #include <corprof.h>
 #include <string>
+#include <vector>
 
 typedef enum {
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, ctrl) c,
@@ -62,8 +63,8 @@ class ILRewriter {
 
   ILInstr m_IL;  // Double linked list of all il instructions
 
-  unsigned m_nEH;
-  EHClause* m_pEH;
+  unsigned number_of_error_handling_clauses;
+  std::vector<EHClause> error_handling_clauses;
 
   // Helper table for importing.  Sparse array that maps BYTE offset of
   // beginning of an instruction to that instruction's ILInstr*.  BYTE offsets
@@ -96,6 +97,8 @@ class ILRewriter {
   HRESULT ImportIL(LPCBYTE pIL);
 
   HRESULT ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH);
+
+  HRESULT AddNewEHClause(EHClause new_clause);
 
   ILInstr* NewILInstr();
 
