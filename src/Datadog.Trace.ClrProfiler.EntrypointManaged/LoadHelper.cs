@@ -6,13 +6,13 @@ namespace Datadog.Trace.ClrProfiler.EntrypointManaged
     /// <summary>
     /// A class that attempts to load the Datadog.Trace.ClrProfiler.Managed .NET assembly.
     /// </summary>
-    public static class LoadHelper
+    public class LoadHelper
     {
         /// <summary>
-        /// A method that attempts to load the Datadog.Trace.ClrProfiler.Managed .NET assembly.
+        /// Initializes static members of the <see cref="LoadHelper"/> class.
+        /// This method also attempts to load the Datadog.Trace.ClrProfiler.Managed. NET assembly.
         /// </summary>
-        // /// <returns>A bool representing success/failure.</returns>
-        public static void LoadManagedProfiler()
+        static LoadHelper()
         {
             try
             {
@@ -21,6 +21,13 @@ namespace Datadog.Trace.ClrProfiler.EntrypointManaged
             catch
             {
             }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LoadHelper"/> class.
+        /// </summary>
+        public LoadHelper()
+        {
         }
     }
 }

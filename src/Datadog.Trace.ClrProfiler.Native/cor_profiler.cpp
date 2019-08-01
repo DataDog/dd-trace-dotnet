@@ -669,125 +669,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   return S_OK;
 }
 
-//
-// ICorProfilerCallback6 methods
-//
-HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
-    const WCHAR* wszAssemblyPath,
-    ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) {
-  /*
-  auto assemblyPathString = ToString(wszAssemblyPath);
-  auto filename =
-      assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
-  auto lastNiDllPeriodIndex = filename.rfind(".ni.dll");
-  auto lastDllPeriodIndex = filename.rfind(".dll");
-  if (lastNiDllPeriodIndex != std::string::npos) {
-    filename.erase(lastNiDllPeriodIndex, 7);
-  } else if (lastDllPeriodIndex != std::string::npos) {
-    filename.erase(lastDllPeriodIndex, 4);
-  }
-
-  // Get assembly name
-  const WSTRING assembly_name = ToWSTRING(filename);
-
-  // We must never try to add assembly references to
-  // mscorlib or netstandard. Skip other known assemblies.
-  WSTRING skip_assemblies[]{
-      "mscorlib"_W,
-      "netstandard"_W,
-      "Datadog.Trace"_W,
-      "Datadog.Trace.ClrProfiler.Managed"_W,
-      "MsgPack"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers2"_W,
-      "Sigil"_W,
-      "Sigil.Emit.DynamicAssembly"_W,
-      "System.Core"_W,
-      "System.Runtime"_W,
-      "System.IO.FileSystem"_W,
-      "System.Collections"_W,
-      "System.Runtime.Extensions"_W,
-      "System.Threading.Tasks"_W,
-      "System.Runtime.InteropServices"_W,
-      "System.Runtime.InteropServices.RuntimeInformation"_W,
-      "System.ComponentModel"_W,
-      "System.Console"_W,
-      "System.Diagnostics.DiagnosticSource"_W,
-      "Microsoft.Extensions.Options"_W,
-      "Microsoft.Extensions.ObjectPool"_W,
-      "System.Configuration"_W,
-      "System.Xml.Linq"_W,
-      "Microsoft.AspNetCore.Razor.Language"_W,
-      "Microsoft.AspNetCore.Mvc.RazorPages"_W,
-      "Microsoft.CSharp"_W,
-      "Newtonsoft.Json"_W,
-      "Anonymously Hosted DynamicMethods Assembly"_W,
-      "ISymWrapper"_W};
-
-  for (auto&& skip_assembly : skip_assemblies) {
-    if (assembly_name == skip_assembly) {
-      Debug("GetAssemblyReferences skipping known assembly: ", wszAssemblyPath);
-      return S_OK;
-    }
-  }
-
-  std::vector<IntegrationMethod> filtered_integrations =
-      FlattenIntegrations(integrations_);
-
-  const AssemblyReference assemblyReference = trace::AssemblyReference(
-      L"Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture="
-      L"neutral, PublicKeyToken=def86d061d0d2eeb");
-
-  ASSEMBLYMETADATA assembly_metadata{};
-  assembly_metadata.usMajorVersion = assemblyReference.version.major;
-  assembly_metadata.usMinorVersion = assemblyReference.version.minor;
-  assembly_metadata.usBuildNumber = assemblyReference.version.build;
-  assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
-  if (assemblyReference.locale == "neutral"_W) {
-    assembly_metadata.szLocale = nullptr;
-    assembly_metadata.cbLocale = 0;
-  } else {
-    assembly_metadata.szLocale =
-        const_cast<WCHAR*>(assemblyReference.locale.c_str());
-    assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
-  }
-
-  DWORD public_key_size = 8;
-  if (assemblyReference.public_key == trace::PublicKey()) {
-    public_key_size = 0;
-  }
-
-  for (auto& i : filtered_integrations) {
-    if (true) {
-      COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
-      asmRefInfo.pbPublicKeyOrToken =
-          (void*)&assemblyReference.public_key.data[0];
-      asmRefInfo.cbPublicKeyOrToken = public_key_size;
-      asmRefInfo.szName = assemblyReference.name.c_str();
-      asmRefInfo.pMetaData = &assembly_metadata;
-      asmRefInfo.pbHashValue = nullptr;
-      asmRefInfo.cbHashValue = 0;
-      asmRefInfo.dwAssemblyRefFlags = 0;
-      const COR_PRF_ASSEMBLY_REFERENCE_INFO* pAssemblyRefInfo = &asmRefInfo;
-
-      auto hr = pAsmRefProvider->AddAssemblyReference(pAssemblyRefInfo);
-
-      if (FAILED(hr)) {
-        Info("GetAssemblyReferences failed for call from ", wszAssemblyPath);
-        return S_OK;
-      }
-
-      Info("GetAssemblyReferences extending assembly closure for ",
-           assembly_name, " to include", asmRefInfo.szName);
-      return S_OK;
-    }
-  }
-  */
-
-  return S_OK;
-}
-
 bool CorProfiler::IsAttached() const { return is_attached_; }
 
 // Helper methods
@@ -882,69 +763,94 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id, mdMethodDef* ret
   // Now we need to add IL instructions into the void method
   ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
   rewriter_void.InitializeTiny();
-
+  ILRewriterWrapper rewriter_wrapper_void(&rewriter_void);
   ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
-
   ILInstr* pNewInstr = NULL;
+  
+  // Create a new method that will
+  // 1) P/Invoke into the CorProfiler::GetAssemblyBytes()
+  // 2) Call Assembly.Load(bytes)
+  // 3) Call STATIC METHOD Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper.LoadManagedProfiler
+
+  // 1) P/Invoke into the CorProfiler::GetAssemblyBytes()
+  // byte* array1;
+  // int size;
+  // GetAssemblyBytes(&array1, &size);
+  COR_SIGNATURE get_assembly_bytes_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,
+      2,
+      ELEMENT_TYPE_VOID, // ret = ELEMENT_TYPE_VOID
+      ELEMENT_TYPE_BYREF,
+      ELEMENT_TYPE_I,
+      ELEMENT_TYPE_BYREF,
+      ELEMENT_TYPE_I4
+  };
+
+  mdModuleRef profiler_ref;
+  hr = metadata_emit->DefineModuleRef(L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL",
+                                      &profiler_ref);
+  mdMethodDef pinvoke_method_def;
+  metadata_emit->DefineMethod(
+      new_type_def, L"GetAssemblyBytes", mdStatic | mdPinvokeImpl | mdHideBySig,
+      get_assembly_bytes_signature, sizeof(get_assembly_bytes_signature), 0, 0,
+      &pinvoke_method_def);
+
+  metadata_emit->SetMethodImplFlags(pinvoke_method_def, miPreserveSig);
+
+  mdParamDef data_param_def;
+  hr = metadata_emit->DefineParam(pinvoke_method_def, 1, L"data",
+                                 pdOut, 0, NULL, 0, &data_param_def);
+
+  mdParamDef size_param_def;
+  hr = metadata_emit->DefineParam(pinvoke_method_def, 2, L"size",
+                                 pdOut | pdHasFieldMarshal, 0, NULL, 0,
+                                  &size_param_def);
+
+  hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def,
+      0, // pmCallConvStdcall | pmNoMangle,
+      L"GetAssemblyBytes",
+      profiler_ref);
+
+  // Push address of Intptr (local 0)
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOCA_S;
+  pNewInstr->m_Arg32 = 0;
+  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // Push address of int32 (local 1)
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOCA_S;
+  pNewInstr->m_Arg32 = 1;
+  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_CALL;
+  pNewInstr->m_Arg32 = pinvoke_method_def;
+  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+
+  // POP instruction for whenever we need it
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_POP;
+  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // rewriter_wrapper_void.SetILPosition(pFirstInstr);
+  // rewriter_wrapper_void.Pop();
+
+  // 2) Call Assembly.Load(bytes)
+
+  // 3) Call STATIC METHOD Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper.LoadManagedProfiler
+  // pNewInstr = rewriter_void.NewILInstr();
+  // pNewInstr->m_opcode = CEE_CALL;
+  // pNewInstr->m_Arg32 = member_ref; // INSERT STATIC METHOD HERE
+  // rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_RET;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
   hr = rewriter_void.Export();
   RETURN_OK_IF_FAILED(hr);
-
-
-
-  /*
-
-  COR_SIGNATURE get_assembly_bytes_signature[] = {
-      IMAGE_CEE_CS_CALLCONV_DEFAULT,
-      0,
-      ELEMENT_TYPE_VOID
-  };
-
-  mdModuleRef profiler_ref;
-  hr = metadata_emit->DefineModuleRef(L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL", &profiler_ref);
-
-  mdMethodDef pinvoke_method_def;
-  metadata_emit->DefineMethod(
-      new_type_def,
-      L"GetAssemblyBytes",
-      mdStatic | mdPinvokeImpl,
-      get_assembly_bytes_signature,
-      sizeof(get_assembly_bytes_signature),
-      0,
-      0,
-      &pinvoke_method_def);
-
-  hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def,
-      pmCallConvStdcall | pmNoMangle,
-      L"GetAssemblyBytes",
-      profiler_ref);
-
-  ILRewriterWrapper rewriter_wrapper_void(&rewriter_void);
-  */
-
-  // Get first instruction and set the rewriter to that location
-  // ILInstr* pInstr = rewriter_void.GetILList()->m_pNext;
-  // rewriter_wrapper_void.SetILPosition(pInstr);
-  // rewriter_wrapper_void.CallMember(pinvoke_method_def, false);
-  // rewriter_wrapper_void.Pop();
-
-  // byte* array1;
-  // int size;
-  // GetAssemblyBytes(&array1, &size);
-
-  // Create a new method that will
-  // 1) P/Invoke into the CorProfiler::GetAssemblyBytes()
-  // 2) Call Assembly.Load(bytes)
-  // 3) Create a new instance of LoadInstance
-  // 4) Call LoadManagedProfiler
-  // metadata_emit->DefineMethod(new_type_def, L"InvokeVoidMethod")
-
-  // Call Assembly.Load(bytes)
-
-  // Call static method
 
   return S_OK;
 }

@@ -3,6 +3,8 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace AppDomain.Instance
@@ -11,21 +13,23 @@ namespace AppDomain.Instance
     {
         public NestedProgram WorkerProgram { get; set; }
 
-        private void InitiateLoadThing()
+        [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+        static extern void GetAssemblyBytes(out IntPtr data, out int size);
+
+        private void LoadTheHelperType()
         {
-            try
-            {
-                System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Load failed");
-            }
+            IntPtr data;
+            int size;
+            GetAssemblyBytes(out data, out size);
+            byte[] managedData = new byte[size];
+            Marshal.Copy(data, managedData, 0, size);
+            Assembly newAssembly = Assembly.Load(managedData);
+            newAssembly.CreateInstance("Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper");
         }
 
         public int Main(string[] args)
         {
-            // InitiateLoadThing();
+            LoadTheHelperType();
             Console.WriteLine("Starting AppDomain Instance Test");
 
             string appDomainName = "crash-dummy";
