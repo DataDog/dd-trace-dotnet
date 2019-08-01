@@ -126,6 +126,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
                      COR_PRF_MONITOR_ASSEMBLY_LOADS |
+                     COR_PRF_MONITOR_CLASS_LOADS |
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
   if (DisableOptimizations()) {
@@ -176,6 +177,55 @@ CorProfiler::AssemblyLoadFinished(AssemblyID assembly_id, HRESULT hr_status) {
        " assemblyID=", assembly_id, " assemblyName=", assembly_info.name,
        " appDomainID=", assembly_info.app_domain_id,
        " appDomainName=", assembly_info.app_domain_name);
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadFinished(ClassID class_id,
+                                            HRESULT hr_status) {
+  if (FAILED(hr_status)) {
+    // if assembly failed to load, skip it entirely,
+    // otherwise we can crash the process if assembly is not valid
+    CorProfilerBase::ClassLoadFinished(class_id, hr_status);
+    return S_OK;
+  }
+
+  if (!is_attached_) {
+    return S_OK;
+  }
+
+  ModuleID module_id;
+  mdTypeDef type_def_token;
+  auto hr = this->info_->GetClassIDInfo(class_id, &module_id, &type_def_token);
+  if (FAILED(hr)) {
+    Info("ClassLoadFinished: Failed to get information on classID=", class_id);
+    return S_OK;
+  }
+
+  const auto module_info = GetModuleInfo(this->info_, module_id);
+  ComPtr<IUnknown> metadata_interfaces;
+  hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
+                                           IID_IMetaDataImport2,
+                                           metadata_interfaces.GetAddressOf());
+
+  if (FAILED(hr)) {
+    Warn("ClassLoadFinished failed to get metadata interface for ", module_id,
+         " ", module_info.assembly.name);
+    return S_OK;
+  }
+
+  const auto metadata_import =
+      metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+  const auto metadata_emit =
+      metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
+      IID_IMetaDataAssemblyImport);
+  const auto assembly_emit =
+      metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+  auto typeinfo = GetTypeInfo(metadata_import, type_def_token);
+
+  Info("ClassLoadFinished: hr_status=", hr_status, " classID=", class_id,
+       " TypeDefToken=", type_def_token, " Name=", typeinfo.name);
   return S_OK;
 }
 
@@ -778,14 +828,32 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
     return S_OK;
   }
 
+  mdMethodDef consume_object_md;
+  BYTE consume_object_signature[] = {
+      0,  // IMAGE_CEE_CS_CALLCONV_DEFAULT
+      1,
+      ELEMENT_TYPE_VOID,  // ret = ELEMENT_TYPE_VOID
+      ELEMENT_TYPE_OBJECT
+  };
+
+  metadata_emit->DefineMethod(new_type_def, L"__DDMethodCallConsumesObject__",
+                              mdStatic, consume_object_signature,
+                              sizeof(consume_object_signature), 0, 0,
+                              &consume_object_md);
+
   COR_SIGNATURE get_assembly_bytes_signature[] = {
       IMAGE_CEE_CS_CALLCONV_DEFAULT,
-      2,
+      4,
       ELEMENT_TYPE_VOID,  // ret = ELEMENT_TYPE_VOID
       ELEMENT_TYPE_BYREF,
       ELEMENT_TYPE_I,
       ELEMENT_TYPE_BYREF,
-      ELEMENT_TYPE_I4};
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_BYREF,
+      ELEMENT_TYPE_I,
+      ELEMENT_TYPE_BYREF,
+      ELEMENT_TYPE_I4,
+  };
 
   mdModuleRef profiler_ref;
   hr = metadata_emit->DefineModuleRef(L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL",
@@ -835,7 +903,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   COR_SIGNATURE marshal_copy_signature[] = {
       IMAGE_CEE_CS_CALLCONV_DEFAULT,
       4,
-      ELEMENT_TYPE_VOID,  // ret = System.Reflection.Assembly
+      ELEMENT_TYPE_VOID,  // ret = void
       ELEMENT_TYPE_I,
       ELEMENT_TYPE_SZARRAY,
       ELEMENT_TYPE_U1,
@@ -852,8 +920,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
     return S_OK;
   }
 
-  // Get a MemberRef for System.Reflection.Assembly.Load(byte[])
-  // and System.Reflection.Assembly.CreateInstance
+  // Get a TypeRef for System.Reflection.Assembly
   mdTypeRef system_reflection_assembly_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
                                           L"System.Reflection.Assembly",
@@ -863,16 +930,40 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
     return S_OK;
   }
 
+  // Get a MemberRef for System.Reflection.AppDomain.get_CurrentDomain()
+  // and System.AppDomain.Assembly.Load(byte[], byte[])
+  mdTypeRef system_appdomain_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+                                          L"System.AppDomain",
+                                          &system_appdomain_type_ref);
+  
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
   COR_SIGNATURE system_reflection_assembly_type_ref_compressed;
   CorSigCompressToken(system_reflection_assembly_type_ref,
                       &system_reflection_assembly_type_ref_compressed);
-  COR_SIGNATURE assembly_load_signature[] = {
+  COR_SIGNATURE system_appdomain_type_ref_compressed;
+  CorSigCompressToken(system_appdomain_type_ref,
+                      &system_appdomain_type_ref_compressed);
+
+  COR_SIGNATURE appdomain_get_current_domain_signature[] = {
       IMAGE_CEE_CS_CALLCONV_DEFAULT,
-      1,
+      0,
+      ELEMENT_TYPE_CLASS, // ret = System.AppDomain
+      system_appdomain_type_ref_compressed,
+  };
+  COR_SIGNATURE appdomain_load_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_HASTHIS,
+      2,
       ELEMENT_TYPE_CLASS,  // ret = System.Reflection.Assembly
       system_reflection_assembly_type_ref_compressed,
       ELEMENT_TYPE_SZARRAY,
-      ELEMENT_TYPE_U1
+      ELEMENT_TYPE_U1,
+      ELEMENT_TYPE_SZARRAY,
+      ELEMENT_TYPE_U1,
   };
   COR_SIGNATURE assembly_create_instance_signature[] = {
       IMAGE_CEE_CS_CALLCONV_HASTHIS,
@@ -881,10 +972,20 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
       ELEMENT_TYPE_STRING
   };
 
-  mdMemberRef assembly_load_member_ref;
+  mdMemberRef appdomain_get_current_domain_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_reflection_assembly_type_ref, L"Load", assembly_load_signature,
-      sizeof(assembly_load_signature), &assembly_load_member_ref);
+      system_appdomain_type_ref, L"get_CurrentDomain",
+      appdomain_get_current_domain_signature,
+      sizeof(appdomain_get_current_domain_signature),
+      &appdomain_get_current_domain_member_ref);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+  mdMemberRef appdomain_load_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      system_appdomain_type_ref, L"Load", appdomain_load_signature,
+      sizeof(appdomain_load_signature), &appdomain_load_member_ref);
   if (FAILED(hr)) {
     Warn("CreateVoidMethod: fail quickly", module_id);
     return S_OK;
@@ -911,13 +1012,25 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
     return S_OK;
   }
 
+  // Step 0) Define the locals so they appear in the following order:
+  //         [0] System.IntPtr
+  //         [1] System.Int32
+  //         [2] System.IntPtr
+  //         [3] System.Int32
+  //         [4] System.Byte[]
+  //         [5] System.Byte[]
+  //         [6] class System.Reflection.Assembly
   // Generate a signature to describe the local variables
   mdSignature locals_signature_token;
   COR_SIGNATURE locals_signature[] = {
       IMAGE_CEE_CS_CALLCONV_LOCAL_SIG,
-      4,
+      7,
       ELEMENT_TYPE_I,
       ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_I,
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_SZARRAY,
+      ELEMENT_TYPE_U1,
       ELEMENT_TYPE_SZARRAY,
       ELEMENT_TYPE_U1,
       ELEMENT_TYPE_CLASS,
@@ -931,66 +1044,86 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   }
 
   /////////////////////////////////////////////
+  // Define the method that just consumes the object
+  ILRewriter rewriter_consumer(this->info_, nullptr, module_id, consume_object_md);
+  rewriter_consumer.InitializeTiny();
+
+  ILInstr* pFirstInstr = rewriter_consumer.GetILList()->m_pNext;
+  ILInstr* pNewInstr = rewriter_consumer.NewILInstr();
+  pNewInstr->m_opcode = CEE_RET;
+  rewriter_consumer.InsertBefore(pFirstInstr, pNewInstr);
+
+  hr = rewriter_consumer.Export();
+  RETURN_OK_IF_FAILED(hr);
+  /////////////////////////////////////////////
+
+  /////////////////////////////////////////////
   // Now we need to add IL instructions into the void method
   ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
   rewriter_void.InitializeTiny();
-  ILRewriterWrapper rewriter_wrapper_void(&rewriter_void);
-  ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
-  ILInstr* pNewInstr = NULL;
-
-  // Step 0) Define the locals so they appear in the following order:
-  //         [0] System.IntPtr
-  //         [1] System.Int32
-  //         [2] System.Byte[]
-  //         [3] class System.Reflection.Assembly
   rewriter_void.SetTkLocalVarSig(locals_signature_token);
+  pFirstInstr = rewriter_void.GetILList()->m_pNext;
 
-  // Step 1) Call GetAssemblyBytes(ref IntPtr, ref int)
+  // Step 1) Call GetAssemblyBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
 
-  // ldloca.s 0 : Load the address of the System.IntPtr local variable
+  // ldloca.s 0 : Load the address of the System.IntPtr local variable assemblyPtr
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOCA_S;
   pNewInstr->m_Arg32 = 0;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloca.s 1 : Load the address of the System.32 local variable
+  // ldloca.s 1 : Load the address of the int local variable assemblySize
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOCA_S;
   pNewInstr->m_Arg32 = 1;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // call void GetAssemblyBytes(native int&, int32&)
+  // ldloca.s 2 : Load the address of the System.IntPtr local variable symbolsPtr
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOCA_S;
+  pNewInstr->m_Arg32 = 2;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldloca.s 3 : Load the address of the int local variable symbolsSize
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOCA_S;
+  pNewInstr->m_Arg32 = 3;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // call void GetAssemblyBytes(native int&, int32&, natve int&, int32&)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_CALL;
   pNewInstr->m_Arg32 = pinvoke_method_def;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // Step 2) Call Marshal::Copy(IntPtr, byte[], int, int)
+  // Step 2) Call Marshal::Copy(IntPtr, byte[], int, int) to populate the assembly bytes
 
-  // ldloc.1 : Load the size of the returned byte array
+  // ldloc.1 : Load the assembly size variable (at index 1)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_1;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // newarr System.Byte : Create a new Byte[] to hold a managed copy of the data
+  // newarr System.Byte : Create a new Byte[] to hold a managed copy of the assembly data
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_NEWARR;
   pNewInstr->m_Arg32 = byte_type_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // stloc.2 : Assign the Byte[] to our local variable
+  // stloc.s 4 : Assign the Byte[] to the local variable at index 4
   pNewInstr = rewriter_void.NewILInstr();
-  pNewInstr->m_opcode = CEE_STLOC_2;
+  pNewInstr->m_opcode = CEE_STLOC_S;
+  pNewInstr->m_Arg8 = 4;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloc.0 : Load the address of the unmanaged byte array
+  // ldloc.0 : Load the value of the System.IntPtr local variable assemblyPtr (at index 0)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_0;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloc.2 : Load the byte array
+  // ldloc.s 4 : Load the value of the Byte[] local variable at index 4
   pNewInstr = rewriter_void.NewILInstr();
-  pNewInstr->m_opcode = CEE_LDLOC_2;
+  pNewInstr->m_opcode = CEE_LDLOC_S;
+  pNewInstr->m_Arg8 = 4;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
   // ldc.i4.0 : Load the integer 0 for the Marshal.Copy startIndex parameter
@@ -998,7 +1131,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   pNewInstr->m_opcode = CEE_LDC_I4_0;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloc.1 : Load the size variable for the Marshal.Copy length parameter
+  // ldloc.1 : Load the assembly size variable (at index 1) for the Marshal.Copy length parameter
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_1;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
@@ -1009,28 +1142,90 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   pNewInstr->m_Arg32 = marshal_copy_member_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // Step 3) Call Assembly.Load(bytes)
-  // ldloc.2 : Load the byte array for the Assembly.Load rawAssembly parameter
+  // Step 3) Call Marshal::Copy(IntPtr, byte[], int, int) to populate the symbols bytes
+
+  // ldloc.3 : Load the symbols size variable (at index 3)
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_3;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // newarr System.Byte : Create a new Byte[] to hold a managed copy of the assembly data
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_NEWARR;
+  pNewInstr->m_Arg32 = byte_type_ref;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // stloc.s 5 : Assign the Byte[] to the local variable at index 5
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_STLOC_S;
+  pNewInstr->m_Arg8 = 5;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldloc.2 : Load the value of the System.IntPtr local variable symbolsPtr (at index 2)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_2;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // call class [mscorlib]System.Reflection.Assembly [mscorlib]System.Reflection.Assembly::Load(uint8[])
+  // ldloc.s 5 : Load the value of the Byte[] local variable at index 5
   pNewInstr = rewriter_void.NewILInstr();
-  pNewInstr->m_opcode = CEE_CALL;
-  pNewInstr->m_Arg32 = assembly_load_member_ref;
+  pNewInstr->m_opcode = CEE_LDLOC_S;
+  pNewInstr->m_Arg8 = 5;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // stloc.3 : Assign the Assembly object to our local variable
+  // ldc.i4.0 : Load the integer 0 for the Marshal.Copy startIndex parameter
   pNewInstr = rewriter_void.NewILInstr();
-  pNewInstr->m_opcode = CEE_STLOC_3;
+  pNewInstr->m_opcode = CEE_LDC_I4_0;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldloc.3 : Load the symbols size variable (at index 3) for the Marshal.Copy length parameter
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_3;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // call void [mscorlib]System.Runtime.InteropServices.Marshal::Copy(native int, uint8[], int32, int32)
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_CALL;
+  pNewInstr->m_Arg32 = marshal_copy_member_ref;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // Step 4) Call System.AppDomain.CurrentDomain.Load(byte[], byte[]))
+
+  // call class [mscorlib]System.AppDomain [mscorlib]System.AppDomain::get_CurrentDomain()
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_CALL;
+  pNewInstr->m_Arg32 = appdomain_get_current_domain_member_ref;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldloc.s 4 : Load the assembly byte array (at index 4) for the first byte[] parameter of AppDomain.Load(byte[], byte[])
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_S;
+  pNewInstr->m_Arg8 = 4;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // ldloc.s 5 : Load the symbols byte array (at index 5) for the second byte[] parameter of AppDomain.Load(byte[], byte[])
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_LDLOC_S;
+  pNewInstr->m_Arg8 = 5;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // callvirt instance class [mscorlib]System.Reflection.Assembly [mscorlib]System.AppDomain.Load(uint8[], uint8[])
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_CALLVIRT;
+  pNewInstr->m_Arg32 = appdomain_load_member_ref;
+  rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
+
+  // stloc.s 6 : Assign the Assembly object to our local variable (at index 6)
+  pNewInstr = rewriter_void.NewILInstr();
+  pNewInstr->m_opcode = CEE_STLOC_S;
+  pNewInstr->m_Arg8 = 6;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
   // Step 4) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper.LoadManagedProfiler")
 
-  // ldloc.3 : Load the Assembly object to call Assembly.CreateInstance
+  // ldloc.s 6 : Load the Assembly object (at index 6) to call Assembly.CreateInstance
   pNewInstr = rewriter_void.NewILInstr();
-  pNewInstr->m_opcode = CEE_LDLOC_3;
+  pNewInstr->m_opcode = CEE_LDLOC_S;
+  pNewInstr->m_Arg8 = 6;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
   // ldstr "Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper"
@@ -1039,18 +1234,17 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   pNewInstr->m_Arg32 = load_helper_token;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // callvirt instance object
-  // [mscorlib]System.Reflection.Assembly::CreateInstance(string)
+  // callvirt instance object [mscorlib]System.Reflection.Assembly::CreateInstance(string)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_CALLVIRT;
   pNewInstr->m_Arg32 = assembly_create_instance_member_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // pop : Remove the LoadHelper object from the stack
+  // call instance void __DDMethodCallConsumesObject__(object)
   pNewInstr = rewriter_void.NewILInstr();
-  pNewInstr->m_opcode = CEE_POP;
+  pNewInstr->m_opcode = CEE_CALL;
+  pNewInstr->m_Arg32 = consume_object_md;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
-
   //////////////////////////////////////////
 
   pNewInstr = rewriter_void.NewILInstr();
@@ -1063,13 +1257,20 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   return S_OK;
 }
 
-void CorProfiler::GetAssemblyBytes(BYTE** pArray, int* size) const {
+void CorProfiler::GetAssemblyBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
   HINSTANCE hInstance = DllHandle;
-  HRSRC hResInfo =
+
+  HRSRC hResAssemblyInfo =
       FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT), L"ASSEMBLY");
-  HGLOBAL hRes = LoadResource(hInstance, hResInfo);
-  *size = SizeofResource(hInstance, hResInfo);
-  *pArray = (LPBYTE)LockResource(hRes);
+  HGLOBAL hResAssembly = LoadResource(hInstance, hResAssemblyInfo);
+  *assemblySize = SizeofResource(hInstance, hResAssemblyInfo);
+  *pAssemblyArray = (LPBYTE)LockResource(hResAssembly);
+
+  HRSRC hResSymbolsInfo =
+      FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT_SYMBOLS), L"SYMBOLS");
+  HGLOBAL hResSymbols = LoadResource(hInstance, hResSymbolsInfo);
+  *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
+  *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
   return;
 }
 }  // namespace trace

@@ -32,8 +32,10 @@ class CorProfiler : public CorProfilerBase {
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
 
-  HRESULT CreateVoidMethod(const ModuleID module_id, mdMethodDef* ret_method_token);
-  HRESULT TryLoadManagedCode(const ComPtr<IMetaDataEmit2>&, const ModuleID module_id,
+  HRESULT CreateVoidMethod(const ModuleID module_id,
+                           mdMethodDef* ret_method_token);
+  HRESULT TryLoadManagedCode(const ComPtr<IMetaDataEmit2>&,
+                             const ModuleID module_id,
                              const mdToken function_token);
 
  public:
@@ -41,7 +43,8 @@ class CorProfiler : public CorProfilerBase {
 
   bool IsAttached() const;
 
-  void GetAssemblyBytes(BYTE** pArray, int* size) const;
+  void GetAssemblyBytes(BYTE** pAssemblyArray, int* assemblySize,
+                        BYTE** pSymbolsArray, int* symbolsSize) const;
 
   //
   // ICorProfilerCallback methods
@@ -53,6 +56,9 @@ class CorProfiler : public CorProfilerBase {
 
   HRESULT STDMETHODCALLTYPE AssemblyLoadFinished(AssemblyID assembly_id,
                                                  HRESULT hr_status) override;
+  
+  HRESULT STDMETHODCALLTYPE ClassLoadFinished(ClassID class_id,
+                                              HRESULT hr_status) override;
 
   HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id,
                                                HRESULT hr_status) override;

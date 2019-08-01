@@ -14,22 +14,34 @@ namespace AppDomain.Instance
         public NestedProgram WorkerProgram { get; set; }
 
         [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
-        static extern void GetAssemblyBytes(out IntPtr data, out int size);
+        static extern void GetAssemblyBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize);
 
         private void LoadTheHelperType()
         {
-            IntPtr data;
-            int size;
-            GetAssemblyBytes(out data, out size);
-            byte[] managedData = new byte[size];
-            Marshal.Copy(data, managedData, 0, size);
-            Assembly newAssembly = Assembly.Load(managedData);
-            newAssembly.CreateInstance("Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper");
+            IntPtr assemblyPtr;
+            int assemblySize;
+            IntPtr symbolsPtr;
+            int symbolsSize;
+            GetAssemblyBytes(out assemblyPtr, out assemblySize, out symbolsPtr, out symbolsSize);
+
+            byte[] assemblyBytes = new byte[assemblySize];
+            Marshal.Copy(assemblyPtr, assemblyBytes, 0, assemblySize);
+
+            byte[] symbolsBytes = new byte[symbolsSize];
+            Marshal.Copy(symbolsPtr, symbolsBytes, 0, symbolsSize);
+
+            Assembly newAssembly = System.AppDomain.CurrentDomain.Load(assemblyBytes, symbolsBytes);
+            EmptyMethod(newAssembly.CreateInstance("Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper"));
+        }
+
+        private void EmptyMethod(object assembly)
+        {
+
         }
 
         public int Main(string[] args)
         {
-            // LoadTheHelperType();
+            LoadTheHelperType();
             Console.WriteLine("Starting AppDomain Instance Test");
 
             string appDomainName = "crash-dummy";
