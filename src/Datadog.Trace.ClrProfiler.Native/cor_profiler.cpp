@@ -752,7 +752,7 @@ HRESULT CorProfiler::TryLoadManagedCode(
   ILInstr* pInstr = rewriter.GetILList()->m_pNext;
   rewriter_wrapper.SetILPosition(pInstr);
   rewriter_wrapper.CallMember(ret_method_token, false);
-  // hr = rewriter.Export(); // TODO Uncomment the export call once I figure out the right signature token
+  hr = rewriter.Export(); // TODO Uncomment the export call once I figure out the right signature token
   RETURN_OK_IF_FAILED(hr);
 
   metadata_emit->Save(
