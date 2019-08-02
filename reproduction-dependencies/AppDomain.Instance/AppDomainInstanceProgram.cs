@@ -31,7 +31,8 @@ namespace AppDomain.Instance
             Marshal.Copy(symbolsPtr, symbolsBytes, 0, symbolsSize);
 
             Assembly newAssembly = System.AppDomain.CurrentDomain.Load(assemblyBytes, symbolsBytes);
-            EmptyMethod(newAssembly.CreateInstance("Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper"));
+            object newobj = newAssembly.CreateInstance("Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper");
+            newobj.ToString();
         }
 
         private void EmptyMethod(object assembly)
@@ -41,7 +42,7 @@ namespace AppDomain.Instance
 
         public int Main(string[] args)
         {
-            LoadTheHelperType();
+            // LoadTheHelperType();
             Console.WriteLine("Starting AppDomain Instance Test");
 
             string appDomainName = "crash-dummy";

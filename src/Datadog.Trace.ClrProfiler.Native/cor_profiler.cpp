@@ -126,7 +126,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
                      COR_PRF_MONITOR_ASSEMBLY_LOADS |
-                     COR_PRF_MONITOR_CLASS_LOADS |
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
   if (DisableOptimizations()) {
@@ -930,6 +929,31 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
     return S_OK;
   }
 
+  // Get a MemberRef for System.Object.ToString()
+  mdTypeRef system_object_type_ref;
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+                                          L"System.Object",
+                                          &system_object_type_ref);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
+  COR_SIGNATURE object_tostring_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_HASTHIS,
+      0,
+      ELEMENT_TYPE_STRING,
+  };
+
+  mdMemberRef object_tostring_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      system_object_type_ref, L"ToString", object_tostring_signature,
+                                      sizeof(object_tostring_signature), &object_tostring_member_ref);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
   // Get a MemberRef for System.Reflection.AppDomain.get_CurrentDomain()
   // and System.AppDomain.Assembly.Load(byte[], byte[])
   mdTypeRef system_appdomain_type_ref;
@@ -1004,9 +1028,19 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   // Create a string representing "Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper"
   LPCWSTR load_helper_str =
       L"Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper";
+  DWORD load_helper_str_size = wcslen(load_helper_str);
   mdString load_helper_token;
-  hr = metadata_emit->DefineUserString(load_helper_str, sizeof(load_helper_str),
+  hr = metadata_emit->DefineUserString(load_helper_str, load_helper_str_size,
                                   &load_helper_token);
+  if (FAILED(hr)) {
+    Warn("CreateVoidMethod: fail quickly", module_id);
+    return S_OK;
+  }
+
+  DWORD string_len = 0;
+  WCHAR string_contents[kNameMaxSize]{};
+  hr = metadata_import->GetUserString(load_helper_token, string_contents,
+                                      kNameMaxSize, &string_len);
   if (FAILED(hr)) {
     Warn("CreateVoidMethod: fail quickly", module_id);
     return S_OK;

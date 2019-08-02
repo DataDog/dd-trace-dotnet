@@ -22,12 +22,5 @@ namespace Datadog.Trace.ClrProfiler.EntrypointManaged
             {
             }
         }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LoadHelper"/> class.
-        /// </summary>
-        public LoadHelper()
-        {
-        }
     }
 }
