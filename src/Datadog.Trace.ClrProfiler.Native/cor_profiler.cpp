@@ -949,16 +949,16 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   // Create a string representing "Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper"
   LPCWSTR load_helper_str =
       L"Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper";
-  DWORD load_helper_str_size = wcslen(load_helper_str);
+  auto load_helper_str_size = wcslen(load_helper_str);
   mdString load_helper_token;
-  hr = metadata_emit->DefineUserString(load_helper_str, load_helper_str_size,
+  hr = metadata_emit->DefineUserString(load_helper_str, (ULONG) load_helper_str_size,
                                   &load_helper_token);
   if (FAILED(hr)) {
     Warn("CreateVoidMethod: fail quickly", module_id);
     return S_OK;
   }
 
-  DWORD string_len = 0;
+  ULONG string_len = 0;
   WCHAR string_contents[kNameMaxSize]{};
   hr = metadata_import->GetUserString(load_helper_token, string_contents,
                                       kNameMaxSize, &string_len);
