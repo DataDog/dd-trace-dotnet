@@ -14,7 +14,7 @@ namespace AppDomain.Instance
         public NestedProgram WorkerProgram { get; set; }
 
         [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
-        static extern void GetAssemblyBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize);
+        static extern void GetAssemblyAndSymbolBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize);
 
         private void LoadTheHelperType()
         {
@@ -22,7 +22,7 @@ namespace AppDomain.Instance
             int assemblySize;
             IntPtr symbolsPtr;
             int symbolsSize;
-            GetAssemblyBytes(out assemblyPtr, out assemblySize, out symbolsPtr, out symbolsSize);
+            GetAssemblyAndSymbolBytes(out assemblyPtr, out assemblySize, out symbolsPtr, out symbolsSize);
 
             byte[] assemblyBytes = new byte[assemblySize];
             Marshal.Copy(assemblyPtr, assemblyBytes, 0, assemblySize);

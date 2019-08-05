@@ -43,8 +43,8 @@ class CorProfiler : public CorProfilerBase {
 
   bool IsAttached() const;
 
-  void GetAssemblyBytes(BYTE** pAssemblyArray, int* assemblySize,
-                        BYTE** pSymbolsArray, int* symbolsSize) const;
+  void GetAssemblyAndSymbolBytes(BYTE** pAssemblyArray, int* assemblySize,
+                                 BYTE** pSymbolsArray, int* symbolsSize) const;
 
   //
   // ICorProfilerCallback methods

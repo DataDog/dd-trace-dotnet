@@ -780,7 +780,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
                                       &profiler_ref);
   mdMethodDef pinvoke_method_def;
   metadata_emit->DefineMethod(
-      new_type_def, L"GetAssemblyBytes", mdStatic | mdPinvokeImpl | mdHideBySig,
+      new_type_def, L"GetAssemblyAndSymbolBytes", mdStatic | mdPinvokeImpl | mdHideBySig,
       get_assembly_bytes_signature, sizeof(get_assembly_bytes_signature), 0, 0,
       &pinvoke_method_def);
 
@@ -797,7 +797,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
 
   hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def,
                                        0,  // pmCallConvStdcall | pmNoMangle,
-                                       L"GetAssemblyBytes", profiler_ref);
+                                       L"GetAssemblyAndSymbolBytes", profiler_ref);
 
   // Helper routines to get metadata tokens
   // Get a TypeRef token for System.Byte
@@ -1019,7 +1019,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   rewriter_void.SetTkLocalVarSig(locals_signature_token);
   pFirstInstr = rewriter_void.GetILList()->m_pNext;
 
-  // Step 1) Call GetAssemblyBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
+  // Step 1) Call GetAssemblyAndSymbolBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
 
   // ldloca.s 0 : Load the address of the System.IntPtr local variable assemblyPtr
   pNewInstr = rewriter_void.NewILInstr();
@@ -1045,7 +1045,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   pNewInstr->m_Arg32 = 3;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // call void GetAssemblyBytes(native int&, int32&, natve int&, int32&)
+  // call void GetAssemblyAndSymbolBytes(native int&, int32&, natve int&, int32&)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_CALL;
   pNewInstr->m_Arg32 = pinvoke_method_def;
@@ -1212,7 +1212,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   return S_OK;
 }
 
-void CorProfiler::GetAssemblyBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
+void CorProfiler::GetAssemblyAndSymbolBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
   HINSTANCE hInstance = DllHandle;
 
   HRSRC hResAssemblyInfo =
