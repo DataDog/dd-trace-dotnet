@@ -16,6 +16,14 @@
                 <td>@Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached</td>
             </tr>
             <tr>
+                <th scope="row">Current directory</th>
+                <td>@(Environment.CurrentDirectory)</td>
+            </tr>
+            <tr>
+                <th scope="row">MapPath("~")</th>
+                <td>@(System.Web.Hosting.HostingEnvironment.IsHosted ? System.Web.Hosting.HostingEnvironment.MapPath("~") : null)</td>
+            </tr>
+            <tr>
                 <th scope="row">Datadog.Trace.dll path</th>
                 <td>@typeof(Datadog.Trace.Tracer).Assembly.Location</td>
             </tr>
