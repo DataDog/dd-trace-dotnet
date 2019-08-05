@@ -170,9 +170,20 @@ namespace Datadog.Trace.Configuration
 #endif
             };
 
+            string currentDirectory = System.Environment.CurrentDirectory;
+
+#if !NETSTANDARD2_0
+            // on .NET Framework only, use application's root folder
+            // as default path when looking for datadog.json
+            if (System.Web.Hosting.HostingEnvironment.IsHosted)
+            {
+                currentDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~");
+            }
+#endif
+
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
-                                        Path.Combine(System.Environment.CurrentDirectory, "datadog.json");
+                                        Path.Combine(currentDirectory, "datadog.json");
 
             if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
                 File.Exists(configurationFileName))
