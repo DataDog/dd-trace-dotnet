@@ -946,9 +946,9 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
     return S_OK;
   }
 
-  // Create a string representing "Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper"
+  // Create a string representing "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
   LPCWSTR load_helper_str =
-      L"Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper";
+      L"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
   auto load_helper_str_size = wcslen(load_helper_str);
   mdString load_helper_token;
   hr = metadata_emit->DefineUserString(load_helper_str, (ULONG) load_helper_str_size,
@@ -1175,7 +1175,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   pNewInstr->m_Arg8 = 6;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // Step 4) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper.LoadManagedProfiler")
+  // Step 4) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
 
   // ldloc.s 6 : Load the Assembly object (at index 6) to call Assembly.CreateInstance
   pNewInstr = rewriter_void.NewILInstr();
@@ -1183,7 +1183,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   pNewInstr->m_Arg8 = 6;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldstr "Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper"
+  // ldstr "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDSTR;
   pNewInstr->m_Arg32 = load_helper_token;

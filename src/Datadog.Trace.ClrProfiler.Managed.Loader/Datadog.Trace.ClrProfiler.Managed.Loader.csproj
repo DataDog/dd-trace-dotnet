@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Datadog.Trace.ClrProfiler.EntrypointManaged</RootNamespace>
+    <RootNamespace>Datadog.Trace.ClrProfiler.Managed.Loader</RootNamespace>
     <TargetFrameworks>netstandard1.1</TargetFrameworks>
     <OutputPath>..\bin\ProfilerResources\</OutputPath>
 

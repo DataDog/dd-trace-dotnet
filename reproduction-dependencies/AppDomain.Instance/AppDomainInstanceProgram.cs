@@ -31,7 +31,7 @@ namespace AppDomain.Instance
             Marshal.Copy(symbolsPtr, symbolsBytes, 0, symbolsSize);
 
             Assembly newAssembly = System.AppDomain.CurrentDomain.Load(assemblyBytes, symbolsBytes);
-            object newobj = newAssembly.CreateInstance("Datadog.Trace.ClrProfiler.EntrypointManaged.LoadHelper");
+            object newobj = newAssembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup");
             newobj.ToString();
         }
 
