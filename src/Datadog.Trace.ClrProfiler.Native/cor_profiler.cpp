@@ -515,14 +515,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   hr = rewriter.Import();
 
-  // TODO: REMOVE
-  // Let's print out the local variable token
-  mdSignature localvarsig = rewriter.GetTkLocalVarSig();
-  PCCOR_SIGNATURE rgbOrigSig = NULL;
-  ULONG cbOrigSig;
-  module_metadata->metadata_import->GetSigFromToken(localvarsig, &rgbOrigSig,
-                                                    &cbOrigSig);
-  //
   RETURN_OK_IF_FAILED(hr);
 
   for (auto& method_replacement : method_replacements) {
@@ -752,7 +744,7 @@ HRESULT CorProfiler::TryLoadManagedCode(
   ILInstr* pInstr = rewriter.GetILList()->m_pNext;
   rewriter_wrapper.SetILPosition(pInstr);
   rewriter_wrapper.CallMember(ret_method_token, false);
-  hr = rewriter.Export(); // TODO Uncomment the export call once I figure out the right signature token
+  hr = rewriter.Export();
   RETURN_OK_IF_FAILED(hr);
 
   metadata_emit->Save(

@@ -52,9 +52,7 @@ class CorProfiler : public CorProfilerBase {
   HRESULT STDMETHODCALLTYPE
   Initialize(IUnknown* cor_profiler_info_unknown) override;
 
-  HRESULT STDMETHODCALLTYPE Shutdown() override;
-
-  HRESULT STDMETHODCALLTYPE AssemblyLoadFinished(AssemblyID assembly_id,
+    HRESULT STDMETHODCALLTYPE AssemblyLoadFinished(AssemblyID assembly_id,
                                                  HRESULT hr_status) override;
   
   HRESULT STDMETHODCALLTYPE ClassLoadFinished(ClassID class_id,
@@ -67,6 +65,8 @@ class CorProfiler : public CorProfilerBase {
 
   HRESULT STDMETHODCALLTYPE
   JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
+
+  HRESULT STDMETHODCALLTYPE Shutdown() override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,

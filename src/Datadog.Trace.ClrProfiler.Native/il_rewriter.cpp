@@ -152,8 +152,6 @@ void ILRewriter::SetTkLocalVarSig(mdToken tkLocalVarSig) {
   m_fGenerateTinyHeader = false;
 }
 
-mdToken ILRewriter::GetTkLocalVarSig() { return m_tkLocalVarSig; }
-
 HRESULT ILRewriter::Import() {
   LPCBYTE pMethodBytes;
 
