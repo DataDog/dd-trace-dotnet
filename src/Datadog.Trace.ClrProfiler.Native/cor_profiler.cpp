@@ -157,77 +157,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE
-CorProfiler::AssemblyLoadFinished(AssemblyID assembly_id, HRESULT hr_status) {
-  if (FAILED(hr_status)) {
-    // if assembly failed to load, skip it entirely,
-    // otherwise we can crash the process if assembly is not valid
-    CorProfilerBase::AssemblyLoadFinished(assembly_id, hr_status);
-    return S_OK;
-  }
-
-  if (!is_attached_) {
-    return S_OK;
-  }
-
-  const auto assembly_info = GetAssemblyInfo(this->info_, assembly_id);
-
-  Info("AssemblyLoadFinished: hr_status=", hr_status,
-       " assemblyID=", assembly_id, " assemblyName=", assembly_info.name,
-       " appDomainID=", assembly_info.app_domain_id,
-       " appDomainName=", assembly_info.app_domain_name);
-  return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadFinished(ClassID class_id,
-                                            HRESULT hr_status) {
-  if (FAILED(hr_status)) {
-    // if assembly failed to load, skip it entirely,
-    // otherwise we can crash the process if assembly is not valid
-    CorProfilerBase::ClassLoadFinished(class_id, hr_status);
-    return S_OK;
-  }
-
-  if (!is_attached_) {
-    return S_OK;
-  }
-
-  ModuleID module_id;
-  mdTypeDef type_def_token;
-  auto hr = this->info_->GetClassIDInfo(class_id, &module_id, &type_def_token);
-  if (FAILED(hr)) {
-    Info("ClassLoadFinished: Failed to get information on classID=", class_id);
-    return S_OK;
-  }
-
-  const auto module_info = GetModuleInfo(this->info_, module_id);
-  ComPtr<IUnknown> metadata_interfaces;
-  hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
-                                           IID_IMetaDataImport2,
-                                           metadata_interfaces.GetAddressOf());
-
-  if (FAILED(hr)) {
-    Warn("ClassLoadFinished failed to get metadata interface for ", module_id,
-         " ", module_info.assembly.name);
-    return S_OK;
-  }
-
-  const auto metadata_import =
-      metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-  const auto metadata_emit =
-      metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
-      IID_IMetaDataAssemblyImport);
-  const auto assembly_emit =
-      metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
-
-  auto typeinfo = GetTypeInfo(metadata_import, type_def_token);
-
-  Info("ClassLoadFinished: hr_status=", hr_status, " classID=", class_id,
-       " TypeDefToken=", type_def_token, " Name=", typeinfo.name);
-  return S_OK;
-}
-
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
                                                           HRESULT hr_status) {
   if (FAILED(hr_status)) {
@@ -1287,7 +1216,7 @@ void CorProfiler::GetAssemblyBytes(BYTE** pAssemblyArray, int* assemblySize, BYT
   HINSTANCE hInstance = DllHandle;
 
   HRSRC hResAssemblyInfo =
-      FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT), L"ASSEMBLY");
+      FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT_DLL), L"ASSEMBLY");
   HGLOBAL hResAssembly = LoadResource(hInstance, hResAssemblyInfo);
   *assemblySize = SizeofResource(hInstance, hResAssemblyInfo);
   *pAssemblyArray = (LPBYTE)LockResource(hResAssembly);

@@ -52,12 +52,6 @@ class CorProfiler : public CorProfilerBase {
   HRESULT STDMETHODCALLTYPE
   Initialize(IUnknown* cor_profiler_info_unknown) override;
 
-    HRESULT STDMETHODCALLTYPE AssemblyLoadFinished(AssemblyID assembly_id,
-                                                 HRESULT hr_status) override;
-  
-  HRESULT STDMETHODCALLTYPE ClassLoadFinished(ClassID class_id,
-                                              HRESULT hr_status) override;
-
   HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id,
                                                HRESULT hr_status) override;
 
