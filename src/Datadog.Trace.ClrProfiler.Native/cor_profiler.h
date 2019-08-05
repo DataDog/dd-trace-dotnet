@@ -32,9 +32,13 @@ class CorProfiler : public CorProfilerBase {
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
 
-  HRESULT CreateVoidMethod(const ModuleID module_id,
+  //
+  // Startup methods
+  //
+  HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
                            mdMethodDef* ret_method_token);
-  HRESULT TryLoadManagedCode(const ComPtr<IMetaDataEmit2>&,
+
+  HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&,
                              const ModuleID module_id,
                              const mdToken function_token);
 

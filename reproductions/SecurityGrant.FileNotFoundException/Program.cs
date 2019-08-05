@@ -19,11 +19,11 @@ namespace SecurityGrant.FileNotFoundException
             int index = 0;
 
             PermissionSet ps = new PermissionSet(PermissionState.Unrestricted);
-            System.AppDomain appDomain1 = CreateAndRunAppDomain("AppDomain1", index++, ps);
-            System.AppDomain appDomain2 = CreateAndRunAppDomain("AppDomain2", index++, ps);
+            System.AppDomain appDomain1 = CreateAndRunAppDomain(index++, ps);
+            System.AppDomain appDomain2 = CreateAndRunAppDomain(index++, ps);
         }
 
-        private static System.AppDomain CreateAndRunAppDomain(string name, int index, PermissionSet grantSet)
+        private static System.AppDomain CreateAndRunAppDomain(int index, PermissionSet grantSet)
         {
             // Construct and initialize settings for a second AppDomain.
             AppDomainSetup ads = new AppDomainSetup();
@@ -34,6 +34,7 @@ namespace SecurityGrant.FileNotFoundException
             ads.ConfigurationFile =
                 System.AppDomain.CurrentDomain.SetupInformation.ConfigurationFile;
 
+            string name = "AppDomain" + index;
             System.AppDomain appDomain1 = System.AppDomain.CreateDomain(
                 name,
                 System.AppDomain.CurrentDomain.Evidence,

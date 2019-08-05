@@ -125,7 +125,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
-                     COR_PRF_MONITOR_ASSEMBLY_LOADS |
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
   if (DisableOptimizations()) {
@@ -134,16 +133,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // set event mask to subscribe to events and disable NGEN images
-  // get ICorProfilerInfo5 for net452+
-  ICorProfilerInfo5* info5;
-  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo5>(&info5);
-  if (SUCCEEDED(hr)) {
-    Info("Interface ICorProfilerInfo5 found.");
-    hr = info5->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
-  } else {
-    hr = this->info_->SetEventMask(event_mask);
-  }
-
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
     return E_FAIL;
@@ -271,7 +260,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   ComPtr<IUnknown> metadata_interfaces;
-
   auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
                                            IID_IMetaDataImport2,
                                            metadata_interfaces.GetAddressOf());
@@ -339,7 +327,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
 
-  Info("ModuleLoadFinished emitted new metadata into ", module_id, " ",
+  Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
        module_info.assembly.name, " AppDomain ",
        module_info.assembly.app_domain_id, " ",
        module_info.assembly.app_domain_name, ". .");
@@ -420,15 +408,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     return S_OK;
   }
 
-  if (true) {
-    Info("JITCompilationStarted: function_id=", function_id,
+  if (debug_logging_enabled) {
+    Debug("JITCompilationStarted: function_id=", function_id,
           " token=", function_token, " name=", caller.type.name, ".",
           caller.name, "()");
   }
 
   if (!first_jit_compilation_completed) {
     first_jit_compilation_completed = true;
-    hr = TryLoadManagedCode(module_metadata->metadata_emit, module_id,
+    hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                             function_token);
     RETURN_OK_IF_FAILED(hr);
   }
@@ -443,7 +431,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   bool modified = false;
 
   hr = rewriter.Import();
-
   RETURN_OK_IF_FAILED(hr);
 
   for (auto& method_replacement : method_replacements) {
@@ -649,21 +636,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
 bool CorProfiler::IsAttached() const { return is_attached_; }
 
-// Helper methods
-
-HRESULT CorProfiler::TryLoadManagedCode(
-    const ComPtr<IMetaDataEmit2>& metadata_emit, const ModuleID module_id,
-    const mdToken function_token) {
-  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
-
+//
+// Startup methods
+//
+HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emit,
+                                      const ModuleID module_id,
+                                      const mdToken function_token) {
   mdMethodDef ret_method_token;
-  auto hr = CreateVoidMethod(module_id, &ret_method_token);
+  auto hr = GenerateVoidILStartupMethod(module_id, &ret_method_token);
   if (FAILED(hr)) {
-    Warn("TryLoadManagedCode: Call to CreateVoidMethod(", module_id,
+    Warn("RunILStartupHook: Call to GenerateVoidILStartupMethod(", module_id,
          ") failed");
     return S_OK;
   }
 
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
@@ -682,16 +669,15 @@ HRESULT CorProfiler::TryLoadManagedCode(
   return S_OK;
 }
 
-HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
-                                      mdMethodDef* ret_method_token) {
+HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
+                                                mdMethodDef* ret_method_token) {
   ComPtr<IUnknown> metadata_interfaces;
-
   auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
                                            IID_IMetaDataImport2,
                                            metadata_interfaces.GetAddressOf());
 
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: failed to get metadata interface for ", module_id);
+    Warn("GenerateVoidILStartupMethod: failed to get metadata interface for ", module_id);
     return S_OK;
   }
 
@@ -704,9 +690,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  mdTypeDef new_type_def;
-
-  // Get reference to mscorlib so I can get a type ref for System.Object
+  // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
   mdModuleRef mscorlib_ref;
   ASSEMBLYMETADATA metadata;
   ZeroMemory(&metadata, sizeof(metadata));
@@ -718,125 +702,114 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), L"mscorlib",
                                    &metadata, NULL, 0, 0, &mscorlib_ref);
 
-  // Create a new class that extends System.Object
+  // Define a TypeRef for System.Object
   mdTypeRef object_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, L"System.Object",
                                           &object_type_ref);
   if (FAILED(hr)) {
     Warn(
-        "CreateVoidMethod: failed to create a TypeRef for System.Object for "
+        "GenerateVoidILStartupMethod: failed to create a TypeRef for System.Object for "
         "new emitted class, ",
         module_id);
     return S_OK;
   }
 
+  // Emit a new class that extends System.Object
+  mdTypeDef new_type_def;
   metadata_emit->DefineTypeDef(L"__DDVoidMethodType__", tdAbstract | tdSealed,
                                object_type_ref, NULL, &new_type_def);
-  BYTE initialize_signature[] = {0,  // IMAGE_CEE_CS_CALLCONV_DEFAULT
-                                 0,
-                                 ELEMENT_TYPE_VOID,  // ret = ELEMENT_TYPE_VOID
-                                 ELEMENT_TYPE_OBJECT};
 
-  metadata_emit->DefineMethod(
-      new_type_def, L"__DDVoidMethodCall__", mdStatic, initialize_signature,
-      sizeof(initialize_signature), 0, 0, ret_method_token);
+  // Emit a new static method (on the new type) that has a void return type and takes no arguments
+  BYTE initialize_signature[] = {
+    IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
+    0,                             // Number of parameters
+    ELEMENT_TYPE_VOID,             // Return type
+    ELEMENT_TYPE_OBJECT            // List of parameter types
+  };
+  metadata_emit->DefineMethod(new_type_def,
+                              L"__DDVoidMethodCall__",
+                              mdStatic,
+                              initialize_signature,
+                              sizeof(initialize_signature),
+                              0,
+                              0,
+                              ret_method_token);
   if (FAILED(hr)) {
     Warn(
-        "CreateVoidMethod: failed to create a MethodDef for "
+        "GenerateVoidILStartupMethod: failed to create a MethodDef for "
         "__DDVoidMethodType__.Initialize, ",
         module_id);
     return S_OK;
   }
 
-  mdMethodDef consume_object_md;
-  BYTE consume_object_signature[] = {
-      0,  // IMAGE_CEE_CS_CALLCONV_DEFAULT
-      1,
-      ELEMENT_TYPE_VOID,  // ret = ELEMENT_TYPE_VOID
-      ELEMENT_TYPE_OBJECT
-  };
-
-  metadata_emit->DefineMethod(new_type_def, L"__DDMethodCallConsumesObject__",
-                              mdStatic, consume_object_signature,
-                              sizeof(consume_object_signature), 0, 0,
-                              &consume_object_md);
-
-  COR_SIGNATURE get_assembly_bytes_signature[] = {
-      IMAGE_CEE_CS_CALLCONV_DEFAULT,
-      4,
-      ELEMENT_TYPE_VOID,  // ret = ELEMENT_TYPE_VOID
-      ELEMENT_TYPE_BYREF,
-      ELEMENT_TYPE_I,
-      ELEMENT_TYPE_BYREF,
-      ELEMENT_TYPE_I4,
-      ELEMENT_TYPE_BYREF,
-      ELEMENT_TYPE_I,
-      ELEMENT_TYPE_BYREF,
-      ELEMENT_TYPE_I4,
-  };
-
-  mdModuleRef profiler_ref;
-  hr = metadata_emit->DefineModuleRef(L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL",
-                                      &profiler_ref);
+  // Define a method on the managed side that will PInvoke into the profiler method:
+  // void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize)
   mdMethodDef pinvoke_method_def;
+  COR_SIGNATURE get_assembly_bytes_signature[] = {
+      IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
+      4,                             // Number of parameters
+      ELEMENT_TYPE_VOID,             // Return type
+      ELEMENT_TYPE_BYREF,            // List of parameter types
+      ELEMENT_TYPE_I,
+      ELEMENT_TYPE_BYREF,
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_BYREF,
+      ELEMENT_TYPE_I,
+      ELEMENT_TYPE_BYREF,
+      ELEMENT_TYPE_I4,
+  };
   metadata_emit->DefineMethod(
       new_type_def, L"GetAssemblyAndSymbolsBytes", mdStatic | mdPinvokeImpl | mdHideBySig,
       get_assembly_bytes_signature, sizeof(get_assembly_bytes_signature), 0, 0,
       &pinvoke_method_def);
-
   metadata_emit->SetMethodImplFlags(pinvoke_method_def, miPreserveSig);
 
-  mdParamDef data_param_def;
-  hr = metadata_emit->DefineParam(pinvoke_method_def, 1, L"data", pdOut, 0,
-                                  NULL, 0, &data_param_def);
-
-  mdParamDef size_param_def;
-  hr = metadata_emit->DefineParam(pinvoke_method_def, 2, L"size",
-                                  pdOut | pdHasFieldMarshal, 0, NULL, 0,
-                                  &size_param_def);
-
+  mdModuleRef profiler_ref;
+  hr = metadata_emit->DefineModuleRef(L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL",
+                                      &profiler_ref);
   hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def,
-                                       0,  // pmCallConvStdcall | pmNoMangle,
-                                       L"GetAssemblyAndSymbolsBytes", profiler_ref);
+                                       0,
+                                       L"GetAssemblyAndSymbolsBytes",
+                                       profiler_ref);
 
   // Helper routines to get metadata tokens
   // Get a TypeRef token for System.Byte
   mdTypeRef byte_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, L"System.Byte",
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+                                          L"System.Byte",
                                           &byte_type_ref);
   if (FAILED(hr)) {
-    Warn(
-        "CreateVoidMethod: fail quickly",
-        module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
-  // Get a MemberRef for System.Runtime.InteropSercies.Marshal.Copy(IntPtr, Byte[], int, int)
+  // Get a Type Ref for System.Runtime.InteropServices.Marshal
   mdTypeRef marshal_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, L"System.Runtime.InteropServices.Marshal",
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
+                                          L"System.Runtime.InteropServices.Marshal",
                                           &marshal_type_ref);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
+  // Get a MemberRef for System.Runtime.InteropServices.Marshal.Copy(IntPtr, Byte[], int, int)
+  mdMemberRef marshal_copy_member_ref;
   COR_SIGNATURE marshal_copy_signature[] = {
-      IMAGE_CEE_CS_CALLCONV_DEFAULT,
-      4,
-      ELEMENT_TYPE_VOID,  // ret = void
-      ELEMENT_TYPE_I,
+      IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
+      4,                             // Number of parameters
+      ELEMENT_TYPE_VOID,             // Return type
+      ELEMENT_TYPE_I,                // List of parameter types
       ELEMENT_TYPE_SZARRAY,
       ELEMENT_TYPE_U1,
       ELEMENT_TYPE_I4,
       ELEMENT_TYPE_I4
   };
-
-  mdMemberRef marshal_copy_member_ref;
   hr = metadata_emit->DefineMemberRef(
       marshal_type_ref, L"Copy", marshal_copy_signature,
       sizeof(marshal_copy_signature), &marshal_copy_member_ref);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
@@ -846,7 +819,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
                                           L"System.Reflection.Assembly",
                                           &system_reflection_assembly_type_ref);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
@@ -856,7 +829,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
                                           L"System.Object",
                                           &system_object_type_ref);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
@@ -871,7 +844,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
       system_object_type_ref, L"ToString", object_tostring_signature,
                                       sizeof(object_tostring_signature), &object_tostring_member_ref);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
@@ -883,7 +856,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
                                           &system_appdomain_type_ref);
   
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
@@ -924,7 +897,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
       sizeof(appdomain_get_current_domain_signature),
       &appdomain_get_current_domain_member_ref);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
   mdMemberRef appdomain_load_member_ref;
@@ -932,7 +905,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
       system_appdomain_type_ref, L"Load", appdomain_load_signature,
       sizeof(appdomain_load_signature), &appdomain_load_member_ref);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
   mdMemberRef assembly_create_instance_member_ref;
@@ -942,7 +915,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
       sizeof(assembly_create_instance_signature),
       &assembly_create_instance_member_ref);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
@@ -954,7 +927,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   hr = metadata_emit->DefineUserString(load_helper_str, (ULONG) load_helper_str_size,
                                   &load_helper_token);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
@@ -963,7 +936,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   hr = metadata_import->GetUserString(load_helper_token, string_contents,
                                       kNameMaxSize, &string_len);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
 
@@ -978,9 +951,9 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   // Generate a signature to describe the local variables
   mdSignature locals_signature_token;
   COR_SIGNATURE locals_signature[] = {
-      IMAGE_CEE_CS_CALLCONV_LOCAL_SIG,
-      7,
-      ELEMENT_TYPE_I,
+      IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
+      7,                               // Number of variables
+      ELEMENT_TYPE_I,                  // List of variable types
       ELEMENT_TYPE_I4,
       ELEMENT_TYPE_I,
       ELEMENT_TYPE_I4,
@@ -994,30 +967,17 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
   hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature),
                                  &locals_signature_token);
   if (FAILED(hr)) {
-    Warn("CreateVoidMethod: fail quickly", module_id);
+    Warn("GenerateVoidILStartupMethod: fail quickly", module_id);
     return S_OK;
   }
-
-  /////////////////////////////////////////////
-  // Define the method that just consumes the object
-  ILRewriter rewriter_consumer(this->info_, nullptr, module_id, consume_object_md);
-  rewriter_consumer.InitializeTiny();
-
-  ILInstr* pFirstInstr = rewriter_consumer.GetILList()->m_pNext;
-  ILInstr* pNewInstr = rewriter_consumer.NewILInstr();
-  pNewInstr->m_opcode = CEE_RET;
-  rewriter_consumer.InsertBefore(pFirstInstr, pNewInstr);
-
-  hr = rewriter_consumer.Export();
-  RETURN_OK_IF_FAILED(hr);
-  /////////////////////////////////////////////
 
   /////////////////////////////////////////////
   // Now we need to add IL instructions into the void method
   ILRewriter rewriter_void(this->info_, nullptr, module_id, *ret_method_token);
   rewriter_void.InitializeTiny();
   rewriter_void.SetTkLocalVarSig(locals_signature_token);
-  pFirstInstr = rewriter_void.GetILList()->m_pNext;
+  ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
+  ILInstr* pNewInstr = NULL;
 
   // Step 1) Call GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
 
@@ -1197,8 +1157,7 @@ HRESULT CorProfiler::CreateVoidMethod(const ModuleID module_id,
 
   // call instance void __DDMethodCallConsumesObject__(object)
   pNewInstr = rewriter_void.NewILInstr();
-  pNewInstr->m_opcode = CEE_CALL;
-  pNewInstr->m_Arg32 = consume_object_md;
+  pNewInstr->m_opcode = CEE_POP;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
   //////////////////////////////////////////
 
