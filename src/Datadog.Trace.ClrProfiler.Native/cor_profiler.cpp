@@ -21,6 +21,39 @@ namespace trace {
 
 CorProfiler* profiler = nullptr;
 
+WSTRING skip_assemblies[]{
+    "mscorlib"_W,
+    "netstandard"_W,
+    "Datadog.Trace"_W,
+    "Datadog.Trace.ClrProfiler.Managed"_W,
+    "MsgPack"_W,
+    "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
+    "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
+    "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers2"_W,
+    "Sigil"_W,
+    "Sigil.Emit.DynamicAssembly"_W,
+    "System.Core"_W,
+    "System.Runtime"_W,
+    "System.IO.FileSystem"_W,
+    "System.Collections"_W,
+    "System.Runtime.Extensions"_W,
+    "System.Threading.Tasks"_W,
+    "System.Runtime.InteropServices"_W,
+    "System.Runtime.InteropServices.RuntimeInformation"_W,
+    "System.ComponentModel"_W,
+    "System.Console"_W,
+    "System.Diagnostics.DiagnosticSource"_W,
+    "Microsoft.Extensions.Options"_W,
+    "Microsoft.Extensions.ObjectPool"_W,
+    "System.Configuration"_W,
+    "System.Xml.Linq"_W,
+    "Microsoft.AspNetCore.Razor.Language"_W,
+    "Microsoft.AspNetCore.Mvc.RazorPages"_W,
+    "Microsoft.CSharp"_W,
+    "Newtonsoft.Json"_W,
+    "Anonymously Hosted DynamicMethods Assembly"_W,
+    "ISymWrapper"_W};
+
 //
 // ICorProfilerCallback methods
 //
@@ -133,7 +166,15 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // set event mask to subscribe to events and disable NGEN images
-  hr = this->info_->SetEventMask(event_mask);
+  // get ICorProfilerInfo5 for net452+
+  ICorProfilerInfo5* info5;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo5>(&info5);
+  if (SUCCEEDED(hr)) {
+    Debug("Interface ICorProfilerInfo5 found.");
+    hr = info5->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+  } else {
+    hr = this->info_->SetEventMask(event_mask);
+  }
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
     return E_FAIL;
@@ -213,39 +254,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // We must never try to add assembly references to
   // mscorlib or netstandard. Skip other known assemblies.
-  WSTRING skip_assemblies[]{
-      "mscorlib"_W,
-      "netstandard"_W,
-      "Datadog.Trace"_W,
-      "Datadog.Trace.ClrProfiler.Managed"_W,
-      "MsgPack"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers2"_W,
-      "Sigil"_W,
-      "Sigil.Emit.DynamicAssembly"_W,
-      "System.Core"_W,
-      "System.Runtime"_W,
-      "System.IO.FileSystem"_W,
-      "System.Collections"_W,
-      "System.Runtime.Extensions"_W,
-      "System.Threading.Tasks"_W,
-      "System.Runtime.InteropServices"_W,
-      "System.Runtime.InteropServices.RuntimeInformation"_W,
-      "System.ComponentModel"_W,
-      "System.Console"_W,
-      "System.Diagnostics.DiagnosticSource"_W,
-      "Microsoft.Extensions.Options"_W,
-      "Microsoft.Extensions.ObjectPool"_W,
-      "System.Configuration"_W,
-      "System.Xml.Linq"_W,
-      "Microsoft.AspNetCore.Razor.Language"_W,
-      "Microsoft.AspNetCore.Mvc.RazorPages"_W,
-      "Microsoft.CSharp"_W,
-      "Newtonsoft.Json"_W,
-      "Anonymously Hosted DynamicMethods Assembly"_W,
-      "ISymWrapper"_W};
-
   for (auto&& skip_assembly : skip_assemblies) {
     if (module_info.assembly.name == skip_assembly) {
       Debug("ModuleLoadFinished skipping known module: ", module_id, " ",
@@ -636,6 +644,92 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (modified) {
     hr = rewriter.Export();
     RETURN_OK_IF_FAILED(hr);
+  }
+
+  return S_OK;
+}
+
+//
+// ICorProfilerCallback6 methods
+//
+HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
+    const WCHAR* wszAssemblyPath,
+    ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) {
+
+  auto assemblyPathString = ToString(wszAssemblyPath);
+  auto filename =
+      assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
+  auto lastNiDllPeriodIndex = filename.rfind(".ni.dll");
+  auto lastDllPeriodIndex = filename.rfind(".dll");
+  if (lastNiDllPeriodIndex != std::string::npos) {
+    filename.erase(lastNiDllPeriodIndex, 7);
+  } else if (lastDllPeriodIndex != std::string::npos) {
+    filename.erase(lastDllPeriodIndex, 4);
+  }
+
+  // Get assembly name
+  const WSTRING assembly_name = ToWSTRING(filename);
+
+  // We must never try to add assembly references to
+  // mscorlib or netstandard. Skip other known assemblies.
+  for (auto&& skip_assembly : skip_assemblies) {
+    if (assembly_name == skip_assembly) {
+      Debug("GetAssemblyReferences skipping known assembly: ", wszAssemblyPath);
+      return S_OK;
+    }
+  }
+
+  std::vector<IntegrationMethod> filtered_integrations =
+      FlattenIntegrations(integrations_);
+
+  // TODO: Make this assembly reference dynamic vs hard-coded
+  const AssemblyReference assemblyReference = trace::AssemblyReference(
+      L"Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture="
+      L"neutral, PublicKeyToken=def86d061d0d2eeb");
+
+  ASSEMBLYMETADATA assembly_metadata{};
+  assembly_metadata.usMajorVersion = assemblyReference.version.major;
+  assembly_metadata.usMinorVersion = assemblyReference.version.minor;
+  assembly_metadata.usBuildNumber = assemblyReference.version.build;
+  assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
+  if (assemblyReference.locale == "neutral"_W) {
+    assembly_metadata.szLocale = nullptr;
+    assembly_metadata.cbLocale = 0;
+  } else {
+    assembly_metadata.szLocale =
+        const_cast<WCHAR*>(assemblyReference.locale.c_str());
+    assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
+  }
+
+  DWORD public_key_size = 8;
+  if (assemblyReference.public_key == trace::PublicKey()) {
+    public_key_size = 0;
+  }
+
+  for (auto& i : filtered_integrations) {
+    if (true) {
+      COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
+      asmRefInfo.pbPublicKeyOrToken =
+          (void*)&assemblyReference.public_key.data[0];
+      asmRefInfo.cbPublicKeyOrToken = public_key_size;
+      asmRefInfo.szName = assemblyReference.name.c_str();
+      asmRefInfo.pMetaData = &assembly_metadata;
+      asmRefInfo.pbHashValue = nullptr;
+      asmRefInfo.cbHashValue = 0;
+      asmRefInfo.dwAssemblyRefFlags = 0;
+
+      auto hr = pAsmRefProvider->AddAssemblyReference(&asmRefInfo);
+
+      // This currently returns 0x8007000b (ERROR_BAD_FORMAT: An attempt was made to load a program with an incorrect format.)
+      if (FAILED(hr)) {
+        Warn("GetAssemblyReferences failed for call from ", wszAssemblyPath);
+        return S_OK;
+      }
+
+      Debug("GetAssemblyReferences extending assembly closure for ",
+           assembly_name, " to include", asmRefInfo.szName);
+      return S_OK;
+    }
   }
 
   return S_OK;
