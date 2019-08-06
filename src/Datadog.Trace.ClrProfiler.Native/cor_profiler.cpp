@@ -614,6 +614,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
+      if (!managed_profiler_module_loaded) {
+        Info(
+            "JITCompilationStarted skipping method: Method replacement "
+            "found but the managed profiler has not yet been loaded. "
+            "function_id=",
+            function_id, " token=", function_token, " name=", caller.type.name,
+            ".", caller.name, "()");
+        continue;
+      }
+
       const auto original_argument = pInstr->m_Arg32;
 
       // insert the opcode and signature token as
