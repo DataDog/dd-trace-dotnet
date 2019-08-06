@@ -133,6 +133,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // set event mask to subscribe to events and disable NGEN images
+  hr = this->info_->SetEventMask(event_mask);
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
     return E_FAIL;
@@ -166,6 +167,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const auto module_info = GetModuleInfo(this->info_, module_id);
   if (!module_info.IsValid()) {
     return S_OK;
+  }
+
+  if (debug_logging_enabled) {
+    Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
+            " AppDomain ", module_info.assembly.app_domain_id, " ",
+            module_info.assembly.app_domain_name);
   }
 
   AppDomainID app_domain_id = module_info.assembly.app_domain_id;
