@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net45</TargetFrameworks>
+    <TargetFrameworks>net452</TargetFrameworks>
     <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
     <IsPackable>false</IsPackable>
