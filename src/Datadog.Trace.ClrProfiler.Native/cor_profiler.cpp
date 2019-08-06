@@ -958,29 +958,48 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   // Get a MemberRef for System.AppDomain.get_CurrentDomain()
   // and System.AppDomain.Assembly.Load(byte[], byte[])
-  COR_SIGNATURE system_reflection_assembly_type_ref_compressed;
-  CorSigCompressToken(system_reflection_assembly_type_ref,
-                      &system_reflection_assembly_type_ref_compressed);
-  COR_SIGNATURE system_appdomain_type_ref_compressed;
-  CorSigCompressToken(system_appdomain_type_ref,
-                      &system_appdomain_type_ref_compressed);
 
-  COR_SIGNATURE appdomain_get_current_domain_signature[] = {
+  // Create method signature for AppDomain.CurrentDomain property
+  BYTE appdomain_get_current_domain_signature[7];
+  COR_SIGNATURE appdomain_get_current_domain_signature_start[] = {
       IMAGE_CEE_CS_CALLCONV_DEFAULT,
       0,
       ELEMENT_TYPE_CLASS, // ret = System.AppDomain
-      system_appdomain_type_ref_compressed,
+      // insert compressed token for System.AppDomain TypeRef here
   };
-  COR_SIGNATURE appdomain_load_signature[] = {
+
+  memcpy(appdomain_get_current_domain_signature,
+         appdomain_get_current_domain_signature_start,
+         sizeof(appdomain_get_current_domain_signature_start));
+  CorSigCompressToken(system_appdomain_type_ref,
+                      &appdomain_get_current_domain_signature[sizeof(appdomain_get_current_domain_signature_start)]);
+
+  // Create method signature for AppDomain.Load(byte[], byte[])
+  BYTE appdomain_load_signature[11];
+  COR_SIGNATURE appdomain_load_signature_start[] = {
       IMAGE_CEE_CS_CALLCONV_HASTHIS,
       2,
-      ELEMENT_TYPE_CLASS,  // ret = System.Reflection.Assembly
-      system_reflection_assembly_type_ref_compressed,
-      ELEMENT_TYPE_SZARRAY,
-      ELEMENT_TYPE_U1,
-      ELEMENT_TYPE_SZARRAY,
-      ELEMENT_TYPE_U1,
+      ELEMENT_TYPE_CLASS  // ret = System.Reflection.Assembly
+      // insert compressed token for System.Reflection.Assembly TypeRef here
   };
+  COR_SIGNATURE appdomain_load_signature_end[] = {
+      ELEMENT_TYPE_SZARRAY,
+      ELEMENT_TYPE_U1,
+      ELEMENT_TYPE_SZARRAY,
+      ELEMENT_TYPE_U1
+  };
+  ULONG start_length = sizeof(appdomain_load_signature_start);
+
+  memcpy(appdomain_load_signature,
+         appdomain_load_signature_start,
+         start_length);
+  ULONG token_count = CorSigCompressToken(system_reflection_assembly_type_ref,
+                                          &appdomain_load_signature[start_length]);
+  memcpy(&appdomain_load_signature[start_length + token_count],
+         appdomain_load_signature_end,
+         sizeof(appdomain_load_signature_end));
+
+  // Create method signature for Assembly.CreateInstance(string)
   COR_SIGNATURE assembly_create_instance_signature[] = {
       IMAGE_CEE_CS_CALLCONV_HASTHIS,
       1,
@@ -1050,7 +1069,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   //   [5] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
   //   [6] class System.Reflection.Assembly ("loadedAssembly" - assembly instance to save loaded assembly)
   mdSignature locals_signature_token;
-  COR_SIGNATURE locals_signature[] = {
+  COR_SIGNATURE locals_signature[15] = {
       IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
       7,                               // Number of variables
       ELEMENT_TYPE_I,                  // List of variable types
@@ -1061,9 +1080,11 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       ELEMENT_TYPE_U1,
       ELEMENT_TYPE_SZARRAY,
       ELEMENT_TYPE_U1,
-      ELEMENT_TYPE_CLASS,
-      system_reflection_assembly_type_ref_compressed,
+      ELEMENT_TYPE_CLASS
+      // insert compressed token for System.Reflection.Assembly TypeRef here
   };
+  CorSigCompressToken(system_reflection_assembly_type_ref,
+                      &locals_signature[11]);
   hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature),
                                  &locals_signature_token);
   if (FAILED(hr)) {
@@ -1268,6 +1289,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   hr = rewriter_void.Export();
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: Unable to save the IL body. ModuleID=", module_id);
+    return hr;
   }
 
   return S_OK;
