@@ -1,7 +1,6 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Datadog.Trace;
 
 namespace AssemblyLoad.FileNotFoundException
 {
@@ -14,10 +13,7 @@ namespace AssemblyLoad.FileNotFoundException
                 var baseAddress = new Uri("https://www.example.com/");
                 var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
 
-                using (var scope = Tracer.Instance.StartActive("main"))
-                {
-                    await regularHttpClient.GetAsync("default-handler");
-                }
+                await regularHttpClient.GetAsync("default-handler");
 
                 Console.WriteLine("All is well!");
             }
