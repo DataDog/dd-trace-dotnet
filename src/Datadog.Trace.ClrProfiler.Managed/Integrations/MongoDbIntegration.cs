@@ -294,7 +294,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     var taskObject = originalMethod(wireProtocol, connection, cancellationToken);
                     var task = (Task)taskObject;
-                    await task.ConfigureAwait(false);
+                    await task;
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
@@ -316,7 +316,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     var taskObject = originalMethod(wireProtocol, connection, cancellationToken);
                     var typedTask = (Task<T>)taskObject;
-                    return await typedTask.ConfigureAwait(false);
+                    return await typedTask;
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {

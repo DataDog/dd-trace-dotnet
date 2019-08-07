@@ -154,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             {
                 try
                 {
-                    return await originalMethod(multiplexer, message, processor, state, server).ConfigureAwait(false);
+                    return await originalMethod(multiplexer, message, processor, state, server);
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {

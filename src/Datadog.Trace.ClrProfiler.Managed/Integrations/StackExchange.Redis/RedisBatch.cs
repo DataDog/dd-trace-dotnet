@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 {
                     try
                     {
-                        return await instrumentedMethod(redisBase, message, processor, server).ConfigureAwait(false);
+                        return await instrumentedMethod(redisBase, message, processor, server);
                     }
                     catch (Exception ex)
                     {
@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 }
             }
 
-            return await instrumentedMethod(redisBase, message, processor, server).ConfigureAwait(false);
+            return await instrumentedMethod(redisBase, message, processor, server);
         }
 
         private static Scope CreateScope(object batch, object message)

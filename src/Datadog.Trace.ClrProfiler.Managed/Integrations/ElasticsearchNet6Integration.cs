@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    return await callElasticSearchAsync(pipeline, requestData, cancellationToken).ConfigureAwait(false);
+                    return await callElasticSearchAsync(pipeline, requestData, cancellationToken);
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {

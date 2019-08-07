@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     var task = (Task<T>)originalMethod(pipeline, requestData, cancellationToken);
-                    return await task.ConfigureAwait(false);
+                    return await task;
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {

@@ -145,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             if (!(handler is HttpClientHandler) || !IsTracingEnabled(request))
             {
                 // skip instrumentation
-                return await sendAsync(handler, request, cancellationToken).ConfigureAwait(false);
+                return await sendAsync(handler, request, cancellationToken);
             }
 
             string httpMethod = request.Method?.Method;
@@ -162,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
 
-                    HttpResponseMessage response = await sendAsync(handler, request, cancellationToken).ConfigureAwait(false);
+                    HttpResponseMessage response = await sendAsync(handler, request, cancellationToken);
 
                     // this tag can only be set after the response is returned
                     scope?.Span.SetTag(Tags.HttpStatusCode, ((int)response.StatusCode).ToString());

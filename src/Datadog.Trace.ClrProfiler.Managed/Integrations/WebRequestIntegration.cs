@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             if (!(request is HttpWebRequest) || !IsTracingEnabled(request))
             {
-                return await request.GetResponseAsync().ConfigureAwait(false);
+                return await request.GetResponseAsync();
             }
 
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationName))
@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
 
-                    WebResponse response = await request.GetResponseAsync().ConfigureAwait(false);
+                    WebResponse response = await request.GetResponseAsync();
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {

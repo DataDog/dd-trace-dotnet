@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    return await executeReader(command, behavior, cancellationToken).ConfigureAwait(false);
+                    return await executeReader(command, behavior, cancellationToken);
                 }
                 catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {

@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     // call the original method, inspecting (but not catching) any unhandled exceptions
-                    var responseMessage = await executeAsyncFunc(apiController, controllerContext, cancellationToken).ConfigureAwait(false);
+                    var responseMessage = await executeAsyncFunc(apiController, controllerContext, cancellationToken);
 
                     if (scope != null)
                     {

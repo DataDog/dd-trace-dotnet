@@ -204,7 +204,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     var task = (Task<T>)originalMethod(executionStrategy, executionContext);
-                    var executionResult = await task.ConfigureAwait(false);
+                    var executionResult = await task;
                     RecordExecutionErrorsIfPresent(scope.Span, "GraphQL.ExecutionError", executionContext.GetProperty("Errors").GetValueOrDefault());
                     return executionResult;
                 }
