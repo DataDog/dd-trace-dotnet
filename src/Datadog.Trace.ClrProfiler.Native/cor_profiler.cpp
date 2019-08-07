@@ -718,9 +718,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
 
   for (auto& i : filtered_integrations) {
     if (true) {
-      COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
+      COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo{};
       asmRefInfo.pbPublicKeyOrToken =
-          (void*)&assemblyReference.public_key.data[0];
+          (void*)assemblyReference.public_key.data;
       asmRefInfo.cbPublicKeyOrToken = public_key_size;
       asmRefInfo.szName = assemblyReference.name.c_str();
       asmRefInfo.pMetaData = &assembly_metadata;
@@ -799,8 +799,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   // TODO fix this for .NET Core
   // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
   mdModuleRef mscorlib_ref;
-  ASSEMBLYMETADATA metadata;
-  ZeroMemory(&metadata, sizeof(metadata));
+  ASSEMBLYMETADATA metadata{};
   metadata.usMajorVersion = 4;
   metadata.usMinorVersion = 0;
   metadata.usBuildNumber = 0;
