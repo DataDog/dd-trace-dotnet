@@ -10,7 +10,7 @@
     <CppTestProject Include="test\**\*.vcxproj"/>
     <SampleProject Include="samples*\**\*.csproj"/>
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
-    <ClrProfilerManagedLoaderProject Include="src\**\Datadog.Trace.ClrProfiler.EntrypointManaged.csproj" />
+    <ClrProfilerManagedLoaderProject Include="src\**\Datadog.Trace.ClrProfiler.Managed.Loader.csproj" />
   </ItemGroup>
 
   <Import Project="PackageVersions.g.props" />
