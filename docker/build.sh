@@ -14,7 +14,7 @@ for config in Debug Release ; do
         dotnet publish -f netcoreapp2.1 -c $config samples/$sample/$sample.csproj
     done
 	
-	    for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance ; do
+	for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance ; do
         dotnet publish -f netcoreapp2.1 -c $config reproductions/$sample/$sample.csproj
     done
 
