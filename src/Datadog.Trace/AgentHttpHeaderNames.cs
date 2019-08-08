@@ -29,5 +29,10 @@ namespace Datadog.Trace
         /// The version of the tracer that generated this span.
         /// </summary>
         public const string TracerVersion = "Datadog-Meta-Tracer-Version";
+
+        /// <summary>
+        /// The number of unique traces per request.
+        /// </summary>
+        public const string TraceCount = "X-Datadog-Trace-Count";
     }
 }

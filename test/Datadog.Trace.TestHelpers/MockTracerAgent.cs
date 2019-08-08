@@ -62,6 +62,8 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<Span> Spans { get; private set; } = ImmutableList<Span>.Empty;
 
+        public IImmutableList<HttpListenerRequest> RawRequests { get; private set; } = ImmutableList<HttpListenerRequest>.Empty;
+
         /// <summary>
         /// Wait for the given number of spans to appear.
         /// </summary>
@@ -98,6 +100,23 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 Thread.Sleep(500);
+            }
+
+            foreach (var request in RawRequests)
+            {
+                // This is the place to check against headers we expect
+                AssertHeader(
+                    request,
+                    "X-Datadog-Trace-Count",
+                    header =>
+                    {
+                        if (int.TryParse(header, out int traceCount))
+                        {
+                            return traceCount > 0;
+                        }
+
+                        return false;
+                    });
             }
 
             if (!returnAllOperations)
@@ -151,6 +170,24 @@ namespace Datadog.Trace.TestHelpers
             return new List<Span>();
         }
 
+        private void AssertHeader(
+            HttpListenerRequest request,
+            string headerKey,
+            Func<string, bool> assertion)
+        {
+            var header = request.Headers.Get(headerKey);
+
+            if (string.IsNullOrEmpty(header))
+            {
+                throw new Exception($"Every submission to the agent should have a {headerKey} header.");
+            }
+
+            if (!assertion(header))
+            {
+                throw new Exception($"Failed assertion for {headerKey} on {header}");
+            }
+        }
+
         private void HandleHttpRequests()
         {
             while (_listener.IsListening)
@@ -166,6 +203,7 @@ namespace Datadog.Trace.TestHelpers
                         // we only need to lock when replacing the span collection,
                         // not when reading it because it is immutable
                         Spans = Spans.AddRange(spans);
+                        RawRequests = RawRequests.Add(ctx.Request);
                     }
 
                     ctx.Response.ContentType = "application/json";
