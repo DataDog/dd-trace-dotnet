@@ -153,7 +153,7 @@ namespace Datadog.Trace.TestHelpers
 
                     if (currentDirectory == null || !currentDirectory.Exists)
                     {
-                        throw new Exception($"Unable to find solution directory from: {startDirectory}");
+                        throw new Exception($"Unable to find solution directory from: {startDirectory}. Current directory: {currentDirectory}");
                     }
                 }
 
