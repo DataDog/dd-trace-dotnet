@@ -204,6 +204,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Crash", "reproductions\AppDomain.Crash\AppDomain.Crash.csproj", "{D76BA89A-3BFF-424A-9529-83500C71C3CB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reproduction-dependencies", "reproduction-dependencies", "{641C9C61-53FD-4504-B8D9-84008BDB89D1}"
+	ProjectSection(SolutionItems) = preProject
+		reproduction-dependencies\Directory.Build.props = reproduction-dependencies\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Instance", "reproduction-dependencies\AppDomain.Instance\AppDomain.Instance.csproj", "{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}"
 EndProject

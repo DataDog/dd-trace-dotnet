@@ -337,7 +337,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
        module_info.assembly.name, " AppDomain ",
        module_info.assembly.app_domain_id, " ",
-       module_info.assembly.app_domain_name, ". .");
+       module_info.assembly.app_domain_name);
   return S_OK;
 }
 
