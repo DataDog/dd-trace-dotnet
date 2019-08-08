@@ -12,6 +12,7 @@ trigger:
 variables:
   buildConfiguration: debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+  dotnetCoreSdkVersion: 2.2.300
 
 jobs:
 
@@ -46,3 +47,92 @@ jobs:
       testResultsFormat: VSTest
       testResultsFiles: test/**/*.trx
     condition: succeededOrFailed()
+
+- job: windows
+
+  pool:
+    vmImage: windows-2019
+
+  variables:
+    buildPlatform: 'x64'
+
+  steps:
+  - task: NuGetCommand@2
+    displayName: nuget restore native
+    inputs:
+      restoreSolution: Datadog.Trace.Native.sln
+      vstsFeed: $(packageFeed)
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: msbuild native
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:BuildCpp
+      maximumCpuCount: true
+
+  - task: DotNetCoreInstaller@0
+    displayName: install dotnet core sdk
+    inputs:
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore
+    inputs:
+      command: restore
+      projects: |
+        src/**/*.csproj
+        test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        reproductions/**/*.csproj
+        !reproductions/**/ExpenseItDemo*.csproj
+      vstsFeed: $(packageFeed)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      projects: |
+        src/**/*.csproj
+        test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        reproductions/**/*.csproj
+        !reproductions/**/ExpenseItDemo*.csproj
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform)
+
+
+
+#  - task: MSBuild@1
+#    displayName: 'Build sample apps (x64 or x86)'
+#    inputs:
+#      solution: Datadog.Trace.proj
+#      platform: '$(buildPlatform)'
+#      configuration: '$(buildConfiguration)'
+#      msbuildArguments: '/t:BuildSamples'
+#      maximumCpuCount: true
+
+#  - script: |
+#    choco install redis-64
+#    redis-server --service-install
+#    redis-server --service-start
+#    displayName: 'Install Redis'
+
+#  - script: |
+#    choco install elasticsearch
+#    net start elasticsearch-service-x64
+#    displayName: 'Install Elasticsearch'
+
+#  - task: PowerShell@2
+#    displayName: 'PowerShell Script'
+#    inputs:
+#      targetType: filePath
+#      filePath: './ci/install-sqlserver.ps1'
+#    enabled: false
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+      arguments: '--filter Category=Smoke -p:Platform=$(buildPlatform)'
