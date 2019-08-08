@@ -21,6 +21,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 return;
             }
 
+            if (!EnvironmentHelper.IsWindows())
+            {
+                Output.WriteLine("Ignored for non-Windows OS for now.");
+                return;
+            }
+
             CheckForSmoke();
         }
     }
