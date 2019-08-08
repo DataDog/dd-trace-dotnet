@@ -14,16 +14,16 @@ namespace Datadog.Trace.Agent
     {
         private const string TracesPath = "/v0.4/traces";
 
-        private static readonly ILog _log = LogProvider.For<Api>();
-        private static readonly SerializationContext _serializationContext = new SerializationContext();
-        private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(_serializationContext);
+        private static readonly ILog Log = LogProvider.For<Api>();
+        private static readonly SerializationContext SerializationContext = new SerializationContext();
+        private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(SerializationContext);
 
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
 
         static Api()
         {
-            _serializationContext.ResolveSerializer += (sender, eventArgs) =>
+            SerializationContext.ResolveSerializer += (sender, eventArgs) =>
             {
                 if (eventArgs.TargetType == typeof(Span))
                 {
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Agent
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
         {
-            // retry up to 5 times with exponential backoff
+            // retry up to 5 times with exponential back-off
             var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
@@ -65,9 +65,12 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
+                    var traceIds = GetUniqueTraceIds(traces);
+
                     // re-create content on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-                    using (var content = new MsgPackContent<IList<List<Span>>>(traces, _serializationContext))
+                    using (var content = new MsgPackContent<IList<List<Span>>>(traces, SerializationContext))
                     {
+                        content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
                         responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
                         responseMessage.EnsureSuccessStatusCode();
                     }
@@ -77,7 +80,7 @@ namespace Datadog.Trace.Agent
                     if (retryCount >= retryLimit)
                     {
                         // stop retrying
-                        _log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
+                        Log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
                         return;
                     }
 
@@ -101,11 +104,26 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    _log.ErrorException("Traces sent successfully to the Agent at {Endpoint}, but an error occurred deserializing the response.", ex, _tracesEndpoint);
+                    Log.ErrorException("Traces sent successfully to the Agent at {Endpoint}, but an error occurred deserializing the response.", ex, _tracesEndpoint);
                 }
 
                 return;
             }
+        }
+
+        private static HashSet<ulong> GetUniqueTraceIds(IList<List<Span>> traces)
+        {
+            var uniqueTraceIds = new HashSet<ulong>();
+
+            foreach (var trace in traces)
+            {
+                foreach (var span in trace)
+                {
+                    uniqueTraceIds.Add(span.TraceId);
+                }
+            }
+
+            return uniqueTraceIds;
         }
 
         private static void GetFrameworkDescription(out string name, out string version)
