@@ -882,22 +882,40 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   // and System.AppDomain.Assembly.Load(byte[], byte[])
 
   // Create method signature for AppDomain.CurrentDomain property
-  BYTE appdomain_get_current_domain_signature[7];
   COR_SIGNATURE appdomain_get_current_domain_signature_start[] = {
       IMAGE_CEE_CS_CALLCONV_DEFAULT,
       0,
       ELEMENT_TYPE_CLASS, // ret = System.AppDomain
       // insert compressed token for System.AppDomain TypeRef here
   };
+  auto start_length = sizeof(appdomain_get_current_domain_signature_start);
 
+  BYTE system_appdomain_type_ref_compressed_token[4];
+  ULONG token_length = CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
+
+  COR_SIGNATURE* appdomain_get_current_domain_signature = new COR_SIGNATURE[start_length + token_length];
   memcpy(appdomain_get_current_domain_signature,
          appdomain_get_current_domain_signature_start,
-         sizeof(appdomain_get_current_domain_signature_start));
-  CorSigCompressToken(system_appdomain_type_ref,
-                      &appdomain_get_current_domain_signature[sizeof(appdomain_get_current_domain_signature_start)]);
+         start_length);
+  memcpy(&appdomain_get_current_domain_signature[start_length],
+         system_appdomain_type_ref_compressed_token,
+         token_length);
+
+  mdMemberRef appdomain_get_current_domain_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      system_appdomain_type_ref,
+      "get_CurrentDomain"_W.c_str(),
+      appdomain_get_current_domain_signature,
+      start_length + token_length,
+      &appdomain_get_current_domain_member_ref);
+  delete[] appdomain_get_current_domain_signature;
+
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+    return hr;
+  }
 
   // Create method signature for AppDomain.Load(byte[], byte[])
-  BYTE appdomain_load_signature[11];
   COR_SIGNATURE appdomain_load_signature_start[] = {
       IMAGE_CEE_CS_CALLCONV_HASTHIS,
       2,
@@ -910,16 +928,35 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       ELEMENT_TYPE_SZARRAY,
       ELEMENT_TYPE_U1
   };
-  ULONG start_length = sizeof(appdomain_load_signature_start);
+  start_length = sizeof(appdomain_load_signature_start);
+  auto end_length = sizeof(appdomain_load_signature_end);
 
+  BYTE system_reflection_assembly_type_ref_compressed_token[4];
+  token_length = CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
+
+  COR_SIGNATURE* appdomain_load_signature = new COR_SIGNATURE[start_length + token_length + end_length];
   memcpy(appdomain_load_signature,
          appdomain_load_signature_start,
          start_length);
-  ULONG token_count = CorSigCompressToken(system_reflection_assembly_type_ref,
-                                          &appdomain_load_signature[start_length]);
-  memcpy(&appdomain_load_signature[start_length + token_count],
+  memcpy(&appdomain_load_signature[start_length],
+         system_reflection_assembly_type_ref_compressed_token,
+         token_length);
+  memcpy(&appdomain_load_signature[start_length + token_length],
          appdomain_load_signature_end,
-         sizeof(appdomain_load_signature_end));
+         end_length);
+
+  mdMemberRef appdomain_load_member_ref;
+  hr = metadata_emit->DefineMemberRef(
+      system_appdomain_type_ref, "Load"_W.c_str(),
+      appdomain_load_signature,
+      start_length + token_length + end_length,
+      &appdomain_load_member_ref);
+  delete[] appdomain_load_signature;
+
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+    return hr;
+  }
 
   // Create method signature for Assembly.CreateInstance(string)
   COR_SIGNATURE assembly_create_instance_signature[] = {
@@ -929,27 +966,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       ELEMENT_TYPE_STRING
   };
 
-  mdMemberRef appdomain_get_current_domain_member_ref;
-  hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, "get_CurrentDomain"_W.c_str(),
-      appdomain_get_current_domain_signature,
-      sizeof(appdomain_get_current_domain_signature),
-      &appdomain_get_current_domain_member_ref);
-  if (FAILED(hr)) {
-    Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
-    return hr;
-  }
-
-  mdMemberRef appdomain_load_member_ref;
-  hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, "Load"_W.c_str(), appdomain_load_signature,
-      sizeof(appdomain_load_signature), &appdomain_load_member_ref);
-  if (FAILED(hr)) {
-    Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
-    return hr;
-  }
-
-  // Get a MemberRef for System.Reflection.Assembly.CreateInstance(string)
   mdMemberRef assembly_create_instance_member_ref;
   hr = metadata_emit->DefineMemberRef(
       system_reflection_assembly_type_ref, "CreateInstance"_W.c_str(),
