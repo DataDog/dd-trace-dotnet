@@ -694,8 +694,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
 
   // TODO: Make this assembly reference dynamic vs hard-coded
   const AssemblyReference assemblyReference = trace::AssemblyReference(
-      L"Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture="
-      L"neutral, PublicKeyToken=def86d061d0d2eeb");
+      "Datadog.Trace.ClrProfiler.Managed, Version=1.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W);
 
   ASSEMBLYMETADATA assembly_metadata{};
   assembly_metadata.usMajorVersion = assemblyReference.version.major;
@@ -805,12 +804,12 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   metadata.usBuildNumber = 0;
   metadata.usRevisionNumber = 0;
   BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
-  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), L"mscorlib",
+  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), "mscorlib"_W.c_str(),
                                    &metadata, NULL, 0, 0, &mscorlib_ref);
 
   // Define a TypeRef for System.Object
   mdTypeRef object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, L"System.Object",
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.Object"_W.c_str(),
                                           &object_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -819,7 +818,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   // Define a new TypeDef __DDVoidMethodType__ that extends System.Object
   mdTypeDef new_type_def;
-  hr = metadata_emit->DefineTypeDef(L"__DDVoidMethodType__", tdAbstract | tdSealed,
+  hr = metadata_emit->DefineTypeDef("__DDVoidMethodType__"_W.c_str(), tdAbstract | tdSealed,
                                object_type_ref, NULL, &new_type_def);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeDef failed");
@@ -834,7 +833,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
     ELEMENT_TYPE_OBJECT            // List of parameter types
   };
   hr = metadata_emit->DefineMethod(new_type_def,
-                              L"__DDVoidMethodCall__",
+                              "__DDVoidMethodCall__"_W.c_str(),
                               mdStatic,
                               initialize_signature,
                               sizeof(initialize_signature),
@@ -864,7 +863,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       ELEMENT_TYPE_I4,
   };
   hr = metadata_emit->DefineMethod(
-      new_type_def, L"GetAssemblyAndSymbolsBytes", mdStatic | mdPinvokeImpl | mdHideBySig,
+      new_type_def, "GetAssemblyAndSymbolsBytes"_W.c_str(), mdStatic | mdPinvokeImpl | mdHideBySig,
       get_assembly_bytes_signature, sizeof(get_assembly_bytes_signature), 0, 0,
       &pinvoke_method_def);
   if (FAILED(hr)) {
@@ -879,7 +878,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   }
 
   mdModuleRef profiler_ref;
-  hr = metadata_emit->DefineModuleRef(L"DATADOG.TRACE.CLRPROFILER.NATIVE.DLL",
+  hr = metadata_emit->DefineModuleRef("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W.c_str(),
                                       &profiler_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineModuleRef failed");
@@ -888,7 +887,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def,
                                        0,
-                                       L"GetAssemblyAndSymbolsBytes",
+                                       "GetAssemblyAndSymbolsBytes"_W.c_str(),
                                        profiler_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefinePinvokeMap failed");
@@ -898,7 +897,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   // Get a TypeRef for System.Byte
   mdTypeRef byte_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          L"System.Byte",
+                                          "System.Byte"_W.c_str(),
                                           &byte_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -908,7 +907,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   // Get a TypeRef for System.Runtime.InteropServices.Marshal
   mdTypeRef marshal_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          L"System.Runtime.InteropServices.Marshal",
+                                          "System.Runtime.InteropServices.Marshal"_W.c_str(),
                                           &marshal_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -928,7 +927,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       ELEMENT_TYPE_I4
   };
   hr = metadata_emit->DefineMemberRef(
-      marshal_type_ref, L"Copy", marshal_copy_signature,
+      marshal_type_ref, "Copy"_W.c_str(), marshal_copy_signature,
       sizeof(marshal_copy_signature), &marshal_copy_member_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
@@ -938,7 +937,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   // Get a TypeRef for System.Reflection.Assembly
   mdTypeRef system_reflection_assembly_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          L"System.Reflection.Assembly",
+                                          "System.Reflection.Assembly"_W.c_str(),
                                           &system_reflection_assembly_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -948,7 +947,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   // Get a MemberRef for System.Object.ToString()
   mdTypeRef system_object_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          L"System.Object",
+                                          "System.Object"_W.c_str(),
                                           &system_object_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -958,7 +957,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   // Get a TypeRef for System.AppDomain
   mdTypeRef system_appdomain_type_ref;
   hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          L"System.AppDomain",
+                                          "System.AppDomain"_W.c_str(),
                                           &system_appdomain_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -1018,7 +1017,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   mdMemberRef appdomain_get_current_domain_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, L"get_CurrentDomain",
+      system_appdomain_type_ref, "get_CurrentDomain"_W.c_str(),
       appdomain_get_current_domain_signature,
       sizeof(appdomain_get_current_domain_signature),
       &appdomain_get_current_domain_member_ref);
@@ -1029,7 +1028,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   mdMemberRef appdomain_load_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, L"Load", appdomain_load_signature,
+      system_appdomain_type_ref, "Load"_W.c_str(), appdomain_load_signature,
       sizeof(appdomain_load_signature), &appdomain_load_member_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
@@ -1039,7 +1038,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   // Get a MemberRef for System.Reflection.Assembly.CreateInstance(string)
   mdMemberRef assembly_create_instance_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_reflection_assembly_type_ref, L"CreateInstance",
+      system_reflection_assembly_type_ref, "CreateInstance"_W.c_str(),
       assembly_create_instance_signature,
       sizeof(assembly_create_instance_signature),
       &assembly_create_instance_member_ref);
@@ -1049,9 +1048,20 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   }
 
   // Create a string representing "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
+  // Due to differences in wide characters between Windows and Linux and incorrect
+  // behavior on Windows when using
+  // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str(), create two implementations
+#ifdef _WIN32
   LPCWSTR load_helper_str =
       L"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
   auto load_helper_str_size = wcslen(load_helper_str);
+#else
+  char16_t load_helper_str[] =
+      u"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
+  auto load_helper_str_size = std::char_traits<char16_t>::length(load_helper_str);
+//   auto load_helper_str_size = wcslen(load_helper_str);
+#endif
+
   mdString load_helper_token;
   hr = metadata_emit->DefineUserString(load_helper_str, (ULONG) load_helper_str_size,
                                   &load_helper_token);
