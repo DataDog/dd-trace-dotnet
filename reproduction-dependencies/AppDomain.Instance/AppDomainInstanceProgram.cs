@@ -41,7 +41,7 @@ namespace AppDomain.Instance
                     Thread.Sleep(500);
                     instance.MakeSomeCall();
 
-                    if (instance.TotalCallCount > 20)
+                    if (instance.TotalCallCount > 3)
                     {
                         // Meh, call it quits
                         break;

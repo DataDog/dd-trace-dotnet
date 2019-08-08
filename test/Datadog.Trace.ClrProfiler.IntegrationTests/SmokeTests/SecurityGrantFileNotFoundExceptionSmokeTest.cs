@@ -1,4 +1,4 @@
-#if NET452 || NET461
+#if (NET452 || NET461)
 
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class SecurityGrantFileNotFoundExceptionSmokeTest : SmokeTestBase
     {
         public SecurityGrantFileNotFoundExceptionSmokeTest(ITestOutputHelper output)
-            : base(output, "SecurityGrant.FileNotFoundException")
+            : base(output, "SecurityGrant.FileNotFoundException", maxTestRunSeconds: 30)
         {
         }
 
