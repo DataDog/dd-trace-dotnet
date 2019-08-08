@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
         private static readonly ILog Log = LogProvider.GetLogger(typeof(MethodBuilder<TDelegate>));
 
-        private readonly Assembly _callingAssembly;
+        private readonly Assembly _resolutionAssembly;
         private readonly int _mdToken;
         private readonly int _originalOpCodeValue;
         private readonly OpCodeValue _opCode;
@@ -36,9 +36,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private Type[] _methodGenerics;
         private bool _forceMethodDefResolve;
 
-        private MethodBuilder(Assembly callingAssembly, int mdToken, int opCode, string methodName)
+        private MethodBuilder(Assembly resolutionAssembly, int mdToken, int opCode, string methodName)
         {
-            _callingAssembly = callingAssembly;
+            _resolutionAssembly = resolutionAssembly;
             _mdToken = mdToken;
             _opCode = (OpCodeValue)opCode;
             _originalOpCodeValue = opCode;
@@ -46,9 +46,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             _forceMethodDefResolve = false;
         }
 
-        public static MethodBuilder<TDelegate> Start(Assembly callingAssembly, int mdToken, int opCode, string methodName)
+        public static MethodBuilder<TDelegate> Start(Assembly resolutionAssembly, int mdToken, int opCode, string methodName)
         {
-            return new MethodBuilder<TDelegate>(callingAssembly, mdToken, opCode, methodName);
+            return new MethodBuilder<TDelegate>(resolutionAssembly, mdToken, opCode, methodName);
         }
 
         public MethodBuilder<TDelegate> WithConcreteType(Type type)
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public MethodBuilder<TDelegate> WithConcreteTypeName(string typeName)
         {
-            var concreteType = _callingAssembly.GetType(typeName);
+            var concreteType = _resolutionAssembly.GetType(typeName);
             return this.WithConcreteType(concreteType);
         }
 
@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public TDelegate Build()
         {
             var cacheKey = new Key(
-                callingModule: _callingAssembly.ManifestModule,
+                callingModule: _resolutionAssembly.ManifestModule,
                 mdToken: _mdToken,
                 callOpCode: _opCode,
                 concreteType: _concreteType,
@@ -136,12 +136,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 if (_forceMethodDefResolve || (_declaringTypeGenerics == null && _methodGenerics == null))
                 {
                     _methodBase =
-                        _callingAssembly.ManifestModule.ResolveMethod(metadataToken: _mdToken);
+                        _resolutionAssembly.ManifestModule.ResolveMethod(metadataToken: _mdToken);
                 }
                 else
                 {
                     _methodBase =
-                        _callingAssembly.ManifestModule.ResolveMethod(
+                        _resolutionAssembly.ManifestModule.ResolveMethod(
                             metadataToken: _mdToken,
                             genericTypeArguments: _declaringTypeGenerics,
                             genericMethodArguments: _methodGenerics);
@@ -281,7 +281,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private MethodInfo VerifyMethodFromToken(MethodInfo methodInfo)
         {
             // Verify baselines to ensure this isn't the wrong method somehow
-            var detailMessage = $"Unexpected method: {_concreteTypeName}.{_methodName} received for mdToken: {_mdToken} in assembly: {_callingAssembly.FullName}";
+            var detailMessage = $"Unexpected method: {_concreteTypeName}.{_methodName} received for mdToken: {_mdToken} in assembly: {_resolutionAssembly.FullName}";
 
             if (!string.Equals(_methodName, methodInfo.Name))
             {
