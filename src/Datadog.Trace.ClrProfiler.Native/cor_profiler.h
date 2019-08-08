@@ -65,13 +65,6 @@ class CorProfiler : public CorProfilerBase {
   JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
 
   HRESULT STDMETHODCALLTYPE Shutdown() override;
-
-  //
-  // ICorProfilerCallback6 methods
-  //
-  HRESULT STDMETHODCALLTYPE GetAssemblyReferences(
-      const WCHAR* wszAssemblyPath,
-      ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) override;
 };
 
 // Note: Generally you should not have a single, global callback implementation,
