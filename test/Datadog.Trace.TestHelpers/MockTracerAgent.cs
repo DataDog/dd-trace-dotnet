@@ -151,6 +151,24 @@ namespace Datadog.Trace.TestHelpers
             return new List<Span>();
         }
 
+        private void AssertHeader(
+            HttpListenerRequest request,
+            string headerKey,
+            Func<string, bool> assertion)
+        {
+            var header = request.Headers.Get(headerKey);
+
+            if (string.IsNullOrEmpty(header))
+            {
+                throw new Exception($"Every submission to the agent should have a {headerKey} header.");
+            }
+
+            if (!assertion(header))
+            {
+                throw new Exception($"Failed assertion for {headerKey} on {header}");
+            }
+        }
+
         private void HandleHttpRequests()
         {
             while (_listener.IsListening)
@@ -158,6 +176,20 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var ctx = _listener.GetContext();
+
+                    AssertHeader(
+                        ctx.Request,
+                        "X-Datadog-Trace-Count",
+                        header =>
+                        {
+                            if (int.TryParse(header, out int traceCount))
+                            {
+                                return traceCount > 0;
+                            }
+
+                            return false;
+                        });
+
                     var rawSpans = MessagePackSerializer.Deserialize<dynamic>(ctx.Request.InputStream);
                     var spans = ToSpans(rawSpans);
 
