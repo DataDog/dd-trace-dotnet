@@ -21,14 +21,17 @@ class CorProfiler : public CorProfilerBase {
   bool is_attached_ = false;
   std::vector<Integration> integrations_;
 
+  // Startup helper variables
   bool first_jit_compilation_completed = false;
 
   bool mscorlib_module_loaded = false;
   AppDomainID mscorlib_app_domain_id;
-
   bool managed_profiler_module_loaded = false;
   AppDomainID managed_profiler_app_domain_id;
 
+  //
+  // Module helper variables
+  //
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
 

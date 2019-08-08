@@ -14,9 +14,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class SecurityGrantFileNotFoundExceptionSmokeTest : SmokeTestBase
     {
         public SecurityGrantFileNotFoundExceptionSmokeTest(ITestOutputHelper output)
-            : base(output, "OrleansCrash", maxTestRunSeconds: 30)
+            : base(output, "SecurityGrant.FileNotFoundException")
         {
-            AssumeSuccessOnTimeout = true;
         }
 
         [Fact]

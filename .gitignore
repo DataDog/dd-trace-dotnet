@@ -10,9 +10,6 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
-# Test directories
-[Aa]pplication[Ii]nstance/*/
-
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

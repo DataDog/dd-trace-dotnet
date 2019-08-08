@@ -51,13 +51,5 @@ namespace SecurityGrant.FileNotFoundException
             Console.WriteLine("**********************************************");
             return appDomain1;
         }
-
-        public class AppDomainPreProgram : MarshalByRefObject
-        {
-            public void Run()
-            {
-
-            }
-        }
     }
 }
