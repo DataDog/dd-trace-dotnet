@@ -138,7 +138,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 var startDirectory = Environment.CurrentDirectory;
                 var currentDirectory = Directory.GetParent(startDirectory);
-                const string searchItem = @"Datadog.Trace.Managed.sln";
+                const string searchItem = @"Datadog.Trace.sln";
 
                 while (true)
                 {
@@ -153,7 +153,7 @@ namespace Datadog.Trace.TestHelpers
 
                     if (currentDirectory == null || !currentDirectory.Exists)
                     {
-                        throw new Exception($"Unable to find solution directory from: {startDirectory}. Current directory: {currentDirectory}");
+                        throw new Exception($"Unable to find solution directory from: {startDirectory}");
                     }
                 }
 
