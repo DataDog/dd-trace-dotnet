@@ -431,9 +431,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   if (!first_jit_compilation_completed) {
     first_jit_compilation_completed = true;
+
+#ifdef _WIN32
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                             function_token);
     RETURN_OK_IF_FAILED(hr);
+#else
+    Debug("JITCompilationStarted: RunILStartupHook skipped because it is not yet implemented on non-Windows platforms.");
+#endif
   }
 
   auto method_replacements =
@@ -614,6 +619,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
+#ifdef _WIN32
       if (!managed_profiler_module_loaded) {
         Info(
             "JITCompilationStarted skipping method: Method replacement "
@@ -623,6 +629,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
             ".", caller.name, "()");
         continue;
       }
+#endif
 
       const auto original_argument = pInstr->m_Arg32;
 
@@ -1048,9 +1055,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   }
 
   // Create a string representing "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
-  // Due to differences in wide characters between Windows and Linux and incorrect
-  // behavior on Windows when using
-  // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str(), create two implementations
+  // Create OS-specific implementations because on Windows, creating the string via
+  // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str() does not create the
+  // proper string for CreateInstance to successfully call
 #ifdef _WIN32
   LPCWSTR load_helper_str =
       L"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
@@ -1059,7 +1066,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   char16_t load_helper_str[] =
       u"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
   auto load_helper_str_size = std::char_traits<char16_t>::length(load_helper_str);
-//   auto load_helper_str_size = wcslen(load_helper_str);
 #endif
 
   mdString load_helper_token;
@@ -1316,7 +1322,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
   HINSTANCE hInstance = DllHandle;
-
+#ifdef _WIN32
   HRSRC hResAssemblyInfo =
       FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT_DLL), L"ASSEMBLY");
   HGLOBAL hResAssembly = LoadResource(hInstance, hResAssemblyInfo);
@@ -1328,6 +1334,7 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
   HGLOBAL hResSymbols = LoadResource(hInstance, hResSymbolsInfo);
   *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
   *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
+#endif
   return;
 }
 }  // namespace trace
