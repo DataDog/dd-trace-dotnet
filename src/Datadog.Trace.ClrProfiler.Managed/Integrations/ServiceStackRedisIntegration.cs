@@ -46,16 +46,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int opCode,
             int mdToken)
         {
-            var runtimeType = redisNativeClient.GetType();
-
             Func<object, byte[][], object, object, bool, T> instrumentedMethod = null;
 
             try
             {
+                var instrumentedType = redisNativeClient.GetInstrumentedType(RedisNativeClient);
                 instrumentedMethod =
                     MethodBuilder<Func<object, byte[][], object, object, bool, T>>
-                       .Start(runtimeType.Assembly, mdToken, opCode, nameof(SendReceive))
-                       .WithConcreteType(runtimeType)
+                       .Start(instrumentedType.Assembly, mdToken, opCode, nameof(SendReceive))
+                       .WithConcreteType(instrumentedType)
                        .WithParameters(cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead)
                        .Build();
             }
