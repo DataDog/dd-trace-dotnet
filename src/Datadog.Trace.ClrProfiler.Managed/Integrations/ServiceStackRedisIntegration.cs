@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -13,6 +14,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "ServiceStackRedis";
         private const string Major4 = "4";
         private const string Major5 = "5";
+        private const string RedisNativeClient = "ServiceStack.Redis.RedisNativeClient";
+
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(ServiceStackRedisIntegration));
 
         /// <summary>
         /// Traces SendReceive.
@@ -29,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = "ServiceStack.Redis",
             TargetAssembly = "ServiceStack.Redis",
-            TargetType = "ServiceStack.Redis.RedisNativeClient",
+            TargetType = RedisNativeClient,
             TargetSignatureTypes = new[] { "T", "System.Byte[][]", "System.Func`1<T>", "System.Action`1<System.Func`1<T>>", ClrNames.Bool },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major5)]
@@ -42,12 +46,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int opCode,
             int mdToken)
         {
-            var originalMethod = Emit.DynamicMethodBuilder<Func<object, byte[][], object, object, bool, T>>
-               .GetOrCreateMethodCallDelegate(
-                    redisNativeClient.GetType(),
-                    "SendReceive",
-                    (OpCodeValue)opCode,
-                    methodGenericArguments: new[] { typeof(T) });
+            var runtimeType = redisNativeClient.GetType();
+
+            Func<object, byte[][], object, object, bool, T> instrumentedMethod = null;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<object, byte[][], object, object, bool, T>>
+                       .Start(runtimeType.Assembly, mdToken, opCode, nameof(SendReceive))
+                       .WithConcreteType(runtimeType)
+                       .WithParameters(cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException($"Error resolving {RedisNativeClient}.{nameof(SendReceive)}(...)", ex);
+                throw;
+            }
 
             using (var scope = RedisHelper.CreateScope(
                 Tracer.Instance,
@@ -58,11 +74,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    return originalMethod(redisNativeClient, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead);
+                    return instrumentedMethod(redisNativeClient, cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead);
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span?.SetException(ex);
                     throw;
                 }
             }
