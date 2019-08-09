@@ -139,6 +139,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
+  runtime_information_ = GetRuntimeInformation(this->info_);
+
   // we're in!
   Info("Profiler attached.");
   this->info_->AddRef();
@@ -193,7 +195,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // Do not modify the module if it has been loaded into the Shared Domain
   // and the profiler is not in the Shared Domain
-  if (mscorlib_module_loaded && managed_profiler_module_loaded &&
+  if (runtime_information_.is_desktop() &&
+      mscorlib_module_loaded && managed_profiler_module_loaded &&
       app_domain_id == mscorlib_app_domain_id &&
       mscorlib_app_domain_id != managed_profiler_app_domain_id) {
     Info(
