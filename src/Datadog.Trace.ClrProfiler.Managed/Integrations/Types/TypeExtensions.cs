@@ -2,7 +2,9 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static class TypeExtensions
     {
-        public static System.Type GetInstrumentedType(this object runtimeObject, string name)
+        public static System.Type GetInstrumentedType(
+            this object runtimeObject,
+            string instrumentedTypeName)
         {
             if (runtimeObject == null)
             {
@@ -13,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler
 
             while (currentType != null)
             {
-                if (currentType.FullName.Contains(name))
+                if ($"{currentType.Namespace}.{currentType.Name}" == instrumentedTypeName)
                 {
                     return currentType;
                 }
