@@ -430,13 +430,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (!first_jit_compilation_completed) {
     first_jit_compilation_completed = true;
 
-#ifdef _WIN32
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                             function_token);
     RETURN_OK_IF_FAILED(hr);
-#else
-    Debug("JITCompilationStarted: RunILStartupHook skipped because it is not yet implemented on non-Windows platforms.");
-#endif
   }
 
   auto method_replacements =
@@ -617,7 +613,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-#ifdef _WIN32
       if (!managed_profiler_module_loaded) {
         Info(
             "JITCompilationStarted skipping method: Method replacement "
@@ -627,7 +622,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
             ".", caller.name, "()");
         continue;
       }
-#endif
 
       const auto original_argument = pInstr->m_Arg32;
 
@@ -691,6 +685,8 @@ HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emi
   rewriter_wrapper.CallMember(ret_method_token, false);
   hr = rewriter.Export();
   RETURN_OK_IF_FAILED(hr);
+
+  metadata_emit->Save("/project/mem.dll"_W.c_str(), 0);
 
   return S_OK;
 }
@@ -797,8 +793,17 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
     return hr;
   }
 
+#ifdef _WIN32
+  WSTRING native_profiler_file = "DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W;
+  native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
+#else
+  WSTRING native_profiler_file = "Datadog.Trace.ClrProfiler.Native"_W;
+  // WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
+  Info("Value of native_profiler_file is ", native_profiler_file);
+#endif
+
   mdModuleRef profiler_ref;
-  hr = metadata_emit->DefineModuleRef("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W.c_str(),
+  hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(),
                                       &profiler_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineModuleRef failed");
@@ -1249,6 +1254,14 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   return S_OK;
 }
 
+#ifndef _WIN32
+extern uint8_t dll_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_start");
+extern uint8_t dll_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_end");
+
+extern uint8_t pdb_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_start");
+extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
+#endif
+
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
   HINSTANCE hInstance = DllHandle;
 #ifdef _WIN32
@@ -1263,6 +1276,12 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
   HGLOBAL hResSymbols = LoadResource(hInstance, hResSymbolsInfo);
   *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
   *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
+#else
+  *assemblySize = dll_end - dll_start;
+  *pAssemblyArray = (BYTE*)dll_start;
+
+  *symbolsSize = (int)(pdb_end - pdb_start);
+  *pSymbolsArray = (BYTE*)pdb_start;
 #endif
   return;
 }
