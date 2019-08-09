@@ -795,11 +795,8 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
 #ifdef _WIN32
   WSTRING native_profiler_file = "DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W;
-  native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
 #else
-  WSTRING native_profiler_file = "Datadog.Trace.ClrProfiler.Native"_W;
-  // WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
-  Info("Value of native_profiler_file is ", native_profiler_file);
+  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
 #endif
 
   mdModuleRef profiler_ref;
