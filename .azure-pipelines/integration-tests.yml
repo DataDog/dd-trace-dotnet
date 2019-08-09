@@ -84,6 +84,7 @@ jobs:
       command: restore
       projects: |
         src/**/*.csproj
+        samples/Samples.HttpMessageHandler/Samples.HttpMessageHandler.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         reproductions/**/*.csproj
         !reproductions/**/ExpenseItDemo*.csproj
@@ -95,6 +96,7 @@ jobs:
       command: build
       projects: |
         src/**/*.csproj
+        samples/Samples.HttpMessageHandler/Samples.HttpMessageHandler.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         reproductions/**/*.csproj
         !reproductions/**/ExpenseItDemo*.csproj
@@ -135,4 +137,4 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: '--filter Category=Smoke -p:Platform=$(buildPlatform)'
+      arguments: '--filter "FullyQualifiedName~Datadog.Trace.ClrProfiler.IntegrationTests.HttpClientTests|Category=Smoke" -p:Platform=$(buildPlatform)'
