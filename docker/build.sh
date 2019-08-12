@@ -6,6 +6,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd "$DIR/.."
 
 for config in Debug Release ; do
+    dotnet build -c $config src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+
     for proj in Datadog.Trace Datadog.Trace.ClrProfiler.Managed Datadog.Trace.OpenTracing ; do
         dotnet publish -f netstandard2.0 -c $config src/$proj/$proj.csproj
     done
@@ -14,7 +16,7 @@ for config in Debug Release ; do
         dotnet publish -f netcoreapp2.1 -c $config samples/$sample/$sample.csproj
     done
 	
-	    for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance ; do
+	for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance AssemblyLoad.FileNotFoundException ; do
         dotnet publish -f netcoreapp2.1 -c $config reproductions/$sample/$sample.csproj
     done
 

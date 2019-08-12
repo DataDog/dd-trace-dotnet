@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -62,7 +63,7 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<Span> Spans { get; private set; } = ImmutableList<Span>.Empty;
 
-        public IImmutableList<HttpListenerRequest> RawRequests { get; private set; } = ImmutableList<HttpListenerRequest>.Empty;
+        public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -102,11 +103,11 @@ namespace Datadog.Trace.TestHelpers
                 Thread.Sleep(500);
             }
 
-            foreach (var request in RawRequests)
+            foreach (var headers in RequestHeaders)
             {
                 // This is the place to check against headers we expect
                 AssertHeader(
-                    request,
+                    headers,
                     "X-Datadog-Trace-Count",
                     header =>
                     {
@@ -171,11 +172,11 @@ namespace Datadog.Trace.TestHelpers
         }
 
         private void AssertHeader(
-            HttpListenerRequest request,
+            NameValueCollection headers,
             string headerKey,
             Func<string, bool> assertion)
         {
-            var header = request.Headers.Get(headerKey);
+            var header = headers.Get(headerKey);
 
             if (string.IsNullOrEmpty(header))
             {
@@ -203,7 +204,7 @@ namespace Datadog.Trace.TestHelpers
                         // we only need to lock when replacing the span collection,
                         // not when reading it because it is immutable
                         Spans = Spans.AddRange(spans);
-                        RawRequests = RawRequests.Add(ctx.Request);
+                        RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
                     }
 
                     ctx.Response.ContentType = "application/json";

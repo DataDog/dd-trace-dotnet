@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
+#include "dllmain.h"
 #include "class_factory.h"
 
 const IID IID_IUnknown = {0x00000000,
@@ -15,9 +16,12 @@ const IID IID_IClassFactory = {
     0x0000,
     {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
+HINSTANCE DllHandle;
+
 extern "C" {
 BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_call,
                                LPVOID lpReserved) {
+  DllHandle = hModule;
   return TRUE;
 }
 

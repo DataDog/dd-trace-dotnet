@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461</TargetFrameworks>
+    <Platforms>x64;x86</Platforms>
+    <PlatformTarget>$(Platform)</PlatformTarget>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\reproduction-dependencies\AppDomain.Instance\AppDomain.Instance.csproj" />
+  </ItemGroup>
+
+</Project>

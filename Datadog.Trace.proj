@@ -10,6 +10,7 @@
     <CppTestProject Include="test\**\*.vcxproj"/>
     <SampleProject Include="samples*\**\*.csproj"/>
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
+    <ClrProfilerManagedLoaderProject Include="src\**\Datadog.Trace.ClrProfiler.Managed.Loader.csproj" />
   </ItemGroup>
 
   <Import Project="PackageVersions.g.props" />
@@ -42,7 +43,7 @@
   </Target>
 
   <Target Name="BuildCpp">
-    <MSBuild Targets="Build" Projects="@(CppProject)">
+    <MSBuild Targets="Build" Projects="@(ClrProfilerManagedLoaderProject);@(CppProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>

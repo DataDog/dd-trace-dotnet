@@ -138,6 +138,20 @@ ILRewriter::~ILRewriter() {
   }
 }
 
+void ILRewriter::InitializeTiny() {
+  m_tkLocalVarSig = 0;
+  m_maxStack = 8;
+  m_flags = CorILMethod_TinyFormat;
+  m_CodeSize = 0;
+  m_nEH = 0;
+  m_fGenerateTinyHeader = true;
+}
+
+void ILRewriter::SetTkLocalVarSig(mdToken tkLocalVarSig) {
+  m_tkLocalVarSig = tkLocalVarSig;
+  m_fGenerateTinyHeader = false;
+}
+
 HRESULT ILRewriter::Import() {
   LPCBYTE pMethodBytes;
 

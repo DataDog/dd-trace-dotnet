@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Specialized;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.TestHelpers
         private static readonly Assembly EntryAssembly = Assembly.GetEntryAssembly();
         private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
+
+        private static string _solutionDirectory;
 
         private readonly ITestOutputHelper _output;
         private readonly int _major;
@@ -74,6 +77,17 @@ namespace Datadog.Trace.TestHelpers
 
         public string SampleName { get; }
 
+        public static EnvironmentHelper NonProfiledHelper(Type anchor, string appName, string directory)
+        {
+            return new EnvironmentHelper(
+                sampleName: appName,
+                anchorType: anchor,
+                output: null,
+                samplesDirectory: directory,
+                prependSamplesToAppName: false,
+                requiresProfiling: false);
+        }
+
         public static string GetExecutingAssembly()
         {
             return ExecutingAssembly.Location;
@@ -81,9 +95,9 @@ namespace Datadog.Trace.TestHelpers
 
         public static string GetOS()
         {
-            return IsWindows()                                       ? "win" :
+            return IsWindows() ? "win" :
                    RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
-                   RuntimeInformation.IsOSPlatform(OSPlatform.OSX)   ? "osx" :
+                   RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" :
                                                                        string.Empty;
         }
 
@@ -120,12 +134,33 @@ namespace Datadog.Trace.TestHelpers
 
         public static string GetSolutionDirectory()
         {
-            string currentDirectory = Environment.CurrentDirectory;
+            if (_solutionDirectory == null)
+            {
+                var startDirectory = Environment.CurrentDirectory;
+                var currentDirectory = Directory.GetParent(startDirectory);
+                const string searchItem = @"Datadog.Trace.sln";
 
-            int index = currentDirectory.Replace('\\', '/')
-                                        .LastIndexOf("/test/", StringComparison.OrdinalIgnoreCase);
+                while (true)
+                {
+                    var slnFile = currentDirectory.GetFiles(searchItem).SingleOrDefault();
 
-            return currentDirectory.Substring(0, index);
+                    if (slnFile != null)
+                    {
+                        break;
+                    }
+
+                    currentDirectory = currentDirectory.Parent;
+
+                    if (currentDirectory == null || !currentDirectory.Exists)
+                    {
+                        throw new Exception($"Unable to find solution directory from: {startDirectory}");
+                    }
+                }
+
+                _solutionDirectory = currentDirectory.FullName;
+            }
+
+            return _solutionDirectory;
         }
 
         public static void ClearProfilerEnvironmentVariables()
@@ -227,7 +262,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (!File.Exists(_integrationsFileLocation))
                 {
-                    _output.WriteLine($"Attempt 1: Unable to find integrations at {_integrationsFileLocation}.");
+                    _output?.WriteLine($"Attempt 1: Unable to find integrations at {_integrationsFileLocation}.");
                     // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
                     _integrationsFileLocation = Path.Combine(
                         GetExecutingProjectBin(),
@@ -236,7 +271,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (!File.Exists(_integrationsFileLocation))
                 {
-                    _output.WriteLine($"Attempt 2: Unable to find integrations at {_integrationsFileLocation}.");
+                    _output?.WriteLine($"Attempt 2: Unable to find integrations at {_integrationsFileLocation}.");
                     // One last attempt at the solution root
                     _integrationsFileLocation = Path.Combine(
                         GetSolutionDirectory(),
@@ -248,7 +283,7 @@ namespace Datadog.Trace.TestHelpers
                     throw new Exception($"Attempt 3: Unable to find integrations at {_integrationsFileLocation}");
                 }
 
-                _output.WriteLine($"Found integrations at {_integrationsFileLocation}.");
+                _output?.WriteLine($"Found integrations at {_integrationsFileLocation}.");
             }
 
             return new[]
@@ -281,7 +316,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    _output.WriteLine($"Attempt 1: Unable to find profiler at {_profilerFileLocation}.");
+                    _output?.WriteLine($"Attempt 1: Unable to find profiler at {_profilerFileLocation}.");
                     // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
                     _profilerFileLocation = Path.Combine(
                         GetExecutingProjectBin(),
@@ -290,7 +325,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    _output.WriteLine($"Attempt 2: Unable to find profiler at {_profilerFileLocation}.");
+                    _output?.WriteLine($"Attempt 2: Unable to find profiler at {_profilerFileLocation}.");
                     // One last attempt at the actual native project directory
                     _profilerFileLocation = Path.Combine(
                         GetProfilerProjectBin(),
@@ -302,7 +337,7 @@ namespace Datadog.Trace.TestHelpers
                     throw new Exception($"Attempt 3: Unable to find profiler at {_profilerFileLocation}");
                 }
 
-                _output.WriteLine($"Found profiler at {_profilerFileLocation}.");
+                _output?.WriteLine($"Found profiler at {_profilerFileLocation}.");
             }
 
             return _profilerFileLocation;

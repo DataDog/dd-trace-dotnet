@@ -19,16 +19,47 @@ namespace trace {
 class CorProfiler : public CorProfilerBase {
  private:
   bool is_attached_ = false;
+  RuntimeInformation runtime_information_;
   std::vector<Integration> integrations_;
 
+  // Startup helper variables
+  bool first_jit_compilation_completed = false;
+
+  bool corlib_module_loaded = false;
+  AppDomainID corlib_app_domain_id;
+  ModuleID corlib_module_id;
+
+  bool managed_profiler_module_loaded = false;
+  AppDomainID managed_profiler_app_domain_id;
+  ModuleID managed_profiler_module_id;
+
+  //
+  // Module helper variables
+  //
   std::mutex module_id_to_info_map_lock_;
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
+
+  //
+  // Startup methods
+  //
+  HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
+                           mdMethodDef* ret_method_token);
+
+  HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&,
+                             const ModuleID module_id,
+                             const mdToken function_token);
 
  public:
   CorProfiler() = default;
 
   bool IsAttached() const;
 
+  void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize,
+                                 BYTE** pSymbolsArray, int* symbolsSize) const;
+
+  //
+  // ICorProfilerCallback methods
+  //
   HRESULT STDMETHODCALLTYPE
   Initialize(IUnknown* cor_profiler_info_unknown) override;
 

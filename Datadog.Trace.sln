@@ -5,6 +5,9 @@ MinimumVisualStudioVersion = 15.0.26124.0
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native", "src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native.DLL", "src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj", "{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace", "src\Datadog.Trace\Datadog.Trace.csproj", "{5DFDF781-F24C-45B1-82EF-9125875A80A4}"
 EndProject
@@ -197,6 +200,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.StackOv
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetMvcCorePerformance", "reproductions\AspNetMvcCorePerformance\AspNetMvcCorePerformance.csproj", "{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reproduction-dependencies", "reproduction-dependencies", "{641C9C61-53FD-4504-B8D9-84008BDB89D1}"
+	ProjectSection(SolutionItems) = preProject
+		reproduction-dependencies\Directory.Build.props = reproduction-dependencies\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppDomain.Instance", "reproduction-dependencies\AppDomain.Instance\AppDomain.Instance.csproj", "{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SecurityGrant.FileNotFoundException", "reproductions\SecurityGrant.FileNotFoundException\SecurityGrant.FileNotFoundException.csproj", "{B61F0405-F228-41CE-AC5B-28996C27DD64}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Loader", "src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj", "{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoad.FileNotFoundException", "reproductions\AssemblyLoad.FileNotFoundException\AssemblyLoad.FileNotFoundException.csproj", "{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -652,6 +668,48 @@ Global
 		{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E}.Release|x64.Build.0 = Release|x64
 		{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E}.Release|x86.ActiveCfg = Release|x86
 		{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E}.Release|x86.Build.0 = Release|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|x64.ActiveCfg = Debug|x64
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|x64.Build.0 = Debug|x64
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|x86.ActiveCfg = Debug|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Debug|x86.Build.0 = Debug|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|Any CPU.ActiveCfg = Release|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|x64.ActiveCfg = Release|x64
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|x64.Build.0 = Release|x64
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|x86.ActiveCfg = Release|x86
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2}.Release|x86.Build.0 = Release|x86
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Debug|x64.ActiveCfg = Debug|x64
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Debug|x64.Build.0 = Debug|x64
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Debug|x86.ActiveCfg = Debug|x86
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Debug|x86.Build.0 = Debug|x86
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Release|Any CPU.ActiveCfg = Release|x86
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Release|x64.ActiveCfg = Release|x64
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Release|x64.Build.0 = Release|x64
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Release|x86.ActiveCfg = Release|x86
+		{B61F0405-F228-41CE-AC5B-28996C27DD64}.Release|x86.Build.0 = Release|x86
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Debug|x64.Build.0 = Debug|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Debug|x86.Build.0 = Debug|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Release|x64.ActiveCfg = Release|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Release|x64.Build.0 = Release|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Release|x86.ActiveCfg = Release|Any CPU
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}.Release|x86.Build.0 = Release|Any CPU
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Debug|x64.ActiveCfg = Debug|x64
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Debug|x64.Build.0 = Debug|x64
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Debug|x86.ActiveCfg = Debug|x86
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Debug|x86.Build.0 = Debug|x86
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Release|Any CPU.ActiveCfg = Release|x86
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Release|x64.ActiveCfg = Release|x64
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Release|x64.Build.0 = Release|x64
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Release|x86.ActiveCfg = Release|x86
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -698,6 +756,10 @@ Global
 		{43782238-E7BB-49D0-9541-1121DACA6EB5} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{FA487690-E88C-4A57-9187-B71CB70C1AAE} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{191824FD-94CA-4FC6-9CA2-EC8DC322DB3E} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
+		{B61F0405-F228-41CE-AC5B-28996C27DD64} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

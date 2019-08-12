@@ -11,6 +11,21 @@
 
 namespace trace {
 
+RuntimeInformation GetRuntimeInformation(ICorProfilerInfo3* info) {
+  COR_PRF_RUNTIME_TYPE runtime_type;
+  USHORT major_version;
+  USHORT minor_version;
+  USHORT build_version;
+  USHORT qfe_version;
+
+  auto hr = info->GetRuntimeInformation(nullptr, &runtime_type, &major_version, &minor_version, &build_version, &qfe_version, 0, nullptr, nullptr);
+  if (FAILED(hr)) {
+    return {};
+  }
+
+  return {runtime_type, major_version, minor_version, build_version, qfe_version};
+}
+
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
                              const AssemblyID& assembly_id) {
   WCHAR assembly_name[kNameMaxSize];

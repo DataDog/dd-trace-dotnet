@@ -1,6 +1,8 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by Resource.rc
+#define MANAGED_ENTRYPOINT_DLL          401
+#define MANAGED_ENTRYPOINT_SYMBOLS      402
 
 // Next default values for new objects
 // 
