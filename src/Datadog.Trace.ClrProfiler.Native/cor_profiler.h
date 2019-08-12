@@ -25,10 +25,13 @@ class CorProfiler : public CorProfilerBase {
   // Startup helper variables
   bool first_jit_compilation_completed = false;
 
-  bool mscorlib_module_loaded = false;
-  AppDomainID mscorlib_app_domain_id;
+  bool corlib_module_loaded = false;
+  AppDomainID corlib_app_domain_id;
+  ModuleID corlib_module_id;
+
   bool managed_profiler_module_loaded = false;
   AppDomainID managed_profiler_app_domain_id;
+  ModuleID managed_profiler_module_id;
 
   //
   // Module helper variables

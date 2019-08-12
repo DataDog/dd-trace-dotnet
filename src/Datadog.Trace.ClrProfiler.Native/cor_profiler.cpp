@@ -181,9 +181,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // Identify the AppDomain ID of mscorlib which will be the Shared Domain
   // because mscorlib is always a domain-neutral assembly
-  if (!mscorlib_module_loaded && module_info.assembly.name == "mscorlib"_W) {
-    mscorlib_module_loaded = true;
-    mscorlib_app_domain_id = app_domain_id;
+  if (!corlib_module_loaded && (module_info.assembly.name == "mscorlib"_W ||
+                                module_info.assembly.name == "System.Private.CoreLib"_W)) {
+    corlib_module_loaded = true;
+    corlib_app_domain_id = app_domain_id;
+    corlib_module_id = module_id;
     return S_OK;
   }
 
@@ -191,14 +193,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (module_info.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
     managed_profiler_module_loaded = true;
     managed_profiler_app_domain_id = app_domain_id;
+    managed_profiler_module_id = module_id;
   }
 
   // Do not modify the module if it has been loaded into the Shared Domain
   // and the profiler is not in the Shared Domain
   if (runtime_information_.is_desktop() &&
-      mscorlib_module_loaded && managed_profiler_module_loaded &&
-      app_domain_id == mscorlib_app_domain_id &&
-      mscorlib_app_domain_id != managed_profiler_app_domain_id) {
+      corlib_module_loaded && managed_profiler_module_loaded &&
+      app_domain_id == corlib_app_domain_id &&
+      corlib_app_domain_id != managed_profiler_app_domain_id) {
     Info(
         "ModuleLoadFinished skipping modifying assembly because it is "
         "domain-neutral but the managed profiler is not: ",
