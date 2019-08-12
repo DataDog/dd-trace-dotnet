@@ -80,7 +80,7 @@ namespace Datadog.Trace.Agent
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
-                        _log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}\n{Exception}", ex, _tracesEndpoint, ex.ToString());
+                        Log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}\n{Exception}", ex, _tracesEndpoint, ex.ToString());
                         return;
                     }
 #endif
