@@ -216,6 +216,11 @@ namespace Datadog.Trace.TestHelpers
                     // listener was stopped,
                     // ignore to let the loop end and the method return
                 }
+                catch (ObjectDisposedException)
+                {
+                    // listener was disposed,
+                    // ignore to let the loop end and the method return
+                }
             }
         }
 
