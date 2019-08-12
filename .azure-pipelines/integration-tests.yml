@@ -57,6 +57,14 @@ jobs:
     buildPlatform: 'x64'
 
   steps:
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build src/**/*.csproj
+    inputs:
+      command: build
+      projects: |
+        src/**/*.csproj
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform)
+
   - task: NuGetCommand@2
     displayName: nuget restore native
     inputs:
@@ -83,7 +91,6 @@ jobs:
     inputs:
       command: restore
       projects: |
-        src/**/*.csproj
         samples/Samples.HttpMessageHandler/Samples.HttpMessageHandler.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         reproductions/**/*.csproj
@@ -95,7 +102,6 @@ jobs:
     inputs:
       command: build
       projects: |
-        src/**/*.csproj
         samples/Samples.HttpMessageHandler/Samples.HttpMessageHandler.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         reproductions/**/*.csproj
