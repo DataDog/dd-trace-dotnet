@@ -76,7 +76,7 @@ services:
     volumes:
     - ./:/project
 
-  Datadog.Trace.ClrProfiler.Native:
+  Profiler:
     build:
       context: ./
       dockerfile: ./docker/native.dockerfile
@@ -175,7 +175,7 @@ services:
     depends_on:
     - mongo
 
-  ddtestsuite:
+  IntegrationTests:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile

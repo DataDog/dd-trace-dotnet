@@ -29,17 +29,17 @@ jobs:
       dockerComposeCommand: run -e TestAllPackageVersions=true build
 
   - task: DockerCompose@0
-    displayName: docker-compose run Datadog.Trace.ClrProfiler.Native
+    displayName: docker-compose run Profiler
     inputs:
       containerregistrytype: Container Registry
       dockerComposeFileArgs: TestAllPackageVersions=true
-      dockerComposeCommand: run Datadog.Trace.ClrProfiler.Native
+      dockerComposeCommand: run Profiler
 
   - task: DockerCompose@0
-    displayName: docker-compose run ddtestsuite
+    displayName: docker-compose run IntegrationTests
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true ddtestsuite
+      dockerComposeCommand: run -e TestAllPackageVersions=true IntegrationTests
 
   - task: PublishTestResults@2
     displayName: publish test results

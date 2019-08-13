@@ -11,7 +11,7 @@ jobs:
     - run:
         name: Build native
         command: |
-          docker-compose run Datadog.Trace.ClrProfiler.Native
+          docker-compose run Profiler
     - run:
         name: Run integration tests
         command: |
