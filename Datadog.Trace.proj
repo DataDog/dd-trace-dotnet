@@ -3,10 +3,6 @@
     <BuildInParallel Condition="'$(BuildInParallel)' == ''">true</BuildInParallel>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'==''">
-    <Configuration>Debug</Configuration>
-  </PropertyGroup>
-
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj"/>
     <CsharpTestProject Include="test\**\*.csproj"/>
