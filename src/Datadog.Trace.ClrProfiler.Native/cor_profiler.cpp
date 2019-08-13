@@ -793,9 +793,26 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
 #ifdef _WIN32
   WSTRING native_profiler_file = "DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W;
-#else
-  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
-#endif
+#else // _WIN32
+
+#ifdef BIT64
+  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH_64"_W);
+  Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+  if (native_profiler_file == ""_W) {
+    native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
+    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+  }
+#else // BIT64
+  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH_32"_W);
+  Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+  if (native_profiler_file == ""_W) {
+    native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
+    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+  }
+#endif // BIT64
+Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler library path to ", native_profiler_file);
+
+#endif // _WIN32
 
   mdModuleRef profiler_ref;
   hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(),
