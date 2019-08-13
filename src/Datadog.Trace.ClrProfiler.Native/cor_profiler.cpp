@@ -686,8 +686,6 @@ HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emi
   hr = rewriter.Export();
   RETURN_OK_IF_FAILED(hr);
 
-  metadata_emit->Save("/project/mem.dll"_W.c_str(), 0);
-
   return S_OK;
 }
 
@@ -1260,8 +1258,9 @@ extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_p
 #endif
 
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
-  HINSTANCE hInstance = DllHandle;
 #ifdef _WIN32
+  HINSTANCE hInstance = DllHandle;
+
   HRSRC hResAssemblyInfo =
       FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT_DLL), L"ASSEMBLY");
   HGLOBAL hResAssembly = LoadResource(hInstance, hResAssemblyInfo);
@@ -1277,7 +1276,7 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
   *assemblySize = dll_end - dll_start;
   *pAssemblyArray = (BYTE*)dll_start;
 
-  *symbolsSize = (int)(pdb_end - pdb_start);
+  *symbolsSize = pdb_end - pdb_start;
   *pSymbolsArray = (BYTE*)pdb_start;
 #endif
   return;

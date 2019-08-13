@@ -68,6 +68,4 @@ add_library("Datadog.Trace.ClrProfiler.Native" SHARED
     interop.cpp
 )
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
-target_link_libraries("Datadog.Trace.ClrProfiler.Native"
-    "Datadog.Trace.ClrProfiler.Native.static"
-)
+target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static")

@@ -12,8 +12,6 @@ for config in Debug Release ; do
         dotnet publish -f netstandard2.0 -c $config src/$proj/$proj.csproj
     done
 
-    dotnet build -c $config src/Datadog.Trace.ClrProfiler.Managed.Loader
-
     for sample in Samples.AspNetCoreMvc2 Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStack.Redis Samples.StackExchange.Redis Samples.SqlServer Samples.MongoDB Samples.HttpMessageHandler Samples.Npgsql Samples.GraphQL ; do
         dotnet publish -f netcoreapp2.1 -c $config samples/$sample/$sample.csproj
     done
