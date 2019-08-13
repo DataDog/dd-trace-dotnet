@@ -62,7 +62,7 @@ services:
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
     environment:
-    - buildConfiguration=debug
+    - buildConfiguration=Debug
     command: /project/docker/build.sh
     volumes:
     - ./:/project
@@ -175,7 +175,7 @@ services:
     depends_on:
     - mongo
 
-  Datadog.Trace.ClrProfiler.IntegrationTests:
+  ddtestsuite:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile

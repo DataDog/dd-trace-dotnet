@@ -19,7 +19,7 @@ for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowExc
     dotnet publish -f netcoreapp2.1 -c $buildConfiguration reproductions/$sample/$sample.csproj
 done
 
-dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions
+dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions -p:Configuration=$buildConfiguration
 
 for proj in Datadog.Trace.ClrProfiler.IntegrationTests ; do
     dotnet publish -f netcoreapp2.1 -c $buildConfiguration test/$proj/$proj.csproj

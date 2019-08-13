@@ -3,6 +3,10 @@
     <BuildInParallel Condition="'$(BuildInParallel)' == ''">true</BuildInParallel>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)'==''">
+    <Configuration>Debug</Configuration>
+  </PropertyGroup>
+
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj"/>
     <CsharpTestProject Include="test\**\*.csproj"/>
@@ -55,6 +59,7 @@
   </Target>
 
   <Target Name="RestoreAndBuildSamplesForPackageVersions" Condition="'$(TestAllPackageVersions)'=='true'">
+
     <!-- Build the core C# projects first, so that the sample project builds do not need to build them and can be run
          concurrently -->
     <MSBuild Targets="Restore" Projects="@(CsharpProject)" BuildInParallel="false">
