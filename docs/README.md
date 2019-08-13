@@ -93,10 +93,10 @@ You can use [Docker Compose](https://docs.docker.com/compose/) with Linux contai
 docker-compose run build
 
 # build C++ project
-docker-compose run Datadog.Trace.ClrProfiler.Native
+docker-compose run Profiler
 
 # run integration tests
-docker-compose run Datadog.Trace.ClrProfiler.IntegrationTests
+docker-compose run IntegrationTests
 ```
 
 ## Further Reading

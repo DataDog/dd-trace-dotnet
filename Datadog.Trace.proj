@@ -55,6 +55,7 @@
   </Target>
 
   <Target Name="RestoreAndBuildSamplesForPackageVersions" Condition="'$(TestAllPackageVersions)'=='true'">
+
     <!-- Build the core C# projects first, so that the sample project builds do not need to build them and can be run
          concurrently -->
     <MSBuild Targets="Restore" Projects="@(CsharpProject)" BuildInParallel="false">
