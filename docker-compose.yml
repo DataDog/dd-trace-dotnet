@@ -61,6 +61,8 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
+    environment:
+    - buildConfiguration=debug
     command: /project/docker/build.sh
     volumes:
     - ./:/project
