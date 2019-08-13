@@ -93,7 +93,7 @@ You can use [Docker Compose](https://docs.docker.com/compose/) with Linux contai
 docker-compose run build
 
 # build C++ project
-docker-compose run NativeBuild
+docker-compose run Profiler
 
 # run integration tests
 docker-compose run IntegrationTests
