@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
 
@@ -8,8 +9,8 @@ namespace SynchronizeVersions
     public class Program
     {
         private static int major = 1;
-        private static int minor = 7;
-        private static int patch = 0;
+        private static int minor = 6;
+        private static int patch = 1;
 
         public static void Main(string[] args)
         {
@@ -47,8 +48,8 @@ namespace SynchronizeVersions
                 "src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
                 text =>
                 {
-                    text = FullVersionReplace(text, ".");
                     text = FullVersionReplace(text, ",");
+                    text = FullVersionReplace(text, ".");
                     return text;
                 });
 
@@ -87,6 +88,8 @@ namespace SynchronizeVersions
             var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
             var fullPath = Path.Combine(solutionDirectory, path);
 
+            Console.WriteLine($"Updating version instances for {path}");
+
             if (!File.Exists(fullPath))
             {
                 throw new Exception($"File not found to version: {path}");
@@ -95,12 +98,7 @@ namespace SynchronizeVersions
             var fileContent = File.ReadAllText(fullPath);
             var newFileContent = transform(fileContent);
 
-            if (newFileContent == fileContent)
-            {
-                throw new Exception($"Nothing changed within: {path}");
-            }
-
-            File.WriteAllText(fullPath, newFileContent);
+            File.WriteAllText(fullPath, newFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
 
         private static string VersionString(string split = ".")
@@ -110,6 +108,11 @@ namespace SynchronizeVersions
 
         private static string VersionPattern(string split = ".")
         {
+            if (split == ".")
+            {
+                split = @"\.";
+            }
+
             return $@"\d+{split}\d+{split}\d+";
         }
 
