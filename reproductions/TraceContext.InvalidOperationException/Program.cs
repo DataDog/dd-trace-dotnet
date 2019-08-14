@@ -123,8 +123,6 @@ namespace TraceContext.InvalidOperationException
                 var invalidOperationExceptionEvents = loggingEvents.Where(e => e.RenderedMessage.Contains("InvalidOperationException"));
                 int invalidOperationExceptionCount = invalidOperationExceptionEvents.Count();
 
-                Console.WriteLine($"Expecting {expectedLogCount} total log events.");
-                Console.WriteLine($"Received {loggingEvents.Length} total log events.");
                 Console.WriteLine($"Received {invalidOperationExceptionCount} log events containing 'InvalidOperationException'.");
 
                 if (loggingEvents.Length != expectedLogCount && invalidOperationExceptionEvents.Count() > 0)

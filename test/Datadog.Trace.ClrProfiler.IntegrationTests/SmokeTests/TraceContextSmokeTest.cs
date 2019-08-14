@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class TraceContextSmokeTest : SmokeTestBase
     {
         public TraceContextSmokeTest(ITestOutputHelper output)
-            : base(output, "TraceContext.InvalidOperationException", maxTestRunSeconds: 240)
+            : base(output, "TraceContext.InvalidOperationException", maxTestRunSeconds: 60 * 10)
         {
         }
 
@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 return;
             }
 
-            CheckForSmoke();
+            CheckForSmoke(shouldSerializeTraces: false);
         }
     }
 }

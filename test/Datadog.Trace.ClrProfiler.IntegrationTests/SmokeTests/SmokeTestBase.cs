@@ -32,7 +32,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         protected bool AssumeSuccessOnTimeout { get; set; }
 
-        protected void CheckForSmoke()
+        /// <summary>
+        /// Method to execute a smoke test.
+        /// </summary>
+        /// <param name="shouldSerializeTraces">Optimization parameter, pass false when the resulting traces aren't being verified</param>
+        protected void CheckForSmoke(bool shouldSerializeTraces = true)
         {
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
             Output.WriteLine($"Application path: {applicationPath}");
@@ -74,42 +78,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             ProcessResult result;
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var process = Process.Start(startInfo))
             {
-                if (process == null)
+                agent.ShouldSerializeTraces = shouldSerializeTraces;
+                using (var process = Process.Start(startInfo))
                 {
-                    throw new NullException("We need a reference to the process for this test.");
+                    if (process == null)
+                    {
+                        throw new NullException("We need a reference to the process for this test.");
+                    }
+
+                    var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds);
+
+                    if (AssumeSuccessOnTimeout && !ranToCompletion)
+                    {
+                        process.Kill();
+                        Assert.True(true, "No smoke is a good sign for this case, even on timeout.");
+                        return;
+                    }
+
+                    if (!ranToCompletion)
+                    {
+                        throw new TimeoutException("The smoke test is running for too long or was lost.");
+                    }
+
+                    string standardOutput = process.StandardOutput.ReadToEnd();
+                    string standardError = process.StandardError.ReadToEnd();
+                    int exitCode = process.ExitCode;
+
+                    if (!string.IsNullOrWhiteSpace(standardOutput))
+                    {
+                        Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(standardError))
+                    {
+                        Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+                    }
+
+                    result = new ProcessResult(process, standardOutput, standardError, exitCode);
                 }
-
-                var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds);
-
-                if (AssumeSuccessOnTimeout && !ranToCompletion)
-                {
-                    process.Kill();
-                    Assert.True(true, "No smoke is a good sign for this case, even on timeout.");
-                    return;
-                }
-
-                if (!ranToCompletion)
-                {
-                    throw new TimeoutException("The smoke test is running for too long or was lost.");
-                }
-
-                string standardOutput = process.StandardOutput.ReadToEnd();
-                string standardError = process.StandardError.ReadToEnd();
-                int exitCode = process.ExitCode;
-
-                if (!string.IsNullOrWhiteSpace(standardOutput))
-                {
-                    Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(standardError))
-                {
-                    Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
-                }
-
-                result = new ProcessResult(process, standardOutput, standardError, exitCode);
             }
 
             var successCode = 0;
