@@ -49,17 +49,18 @@ namespace Datadog.Trace
             if (current == null || current != scope)
             {
                 // This is not the current scope for this context, bail out
+                SpanClosed?.Invoke(this, new SpanEventArgs(scope.Span));
                 return;
             }
 
             // if the scope that was just closed was the active scope,
             // set its parent as the new active scope
-            _activeScope.Set(current.Parent);
-            SpanDeactivated?.Invoke(this, new SpanEventArgs(current.Span));
+            _activeScope.Set(scope.Parent);
+            SpanDeactivated?.Invoke(this, new SpanEventArgs(scope.Span));
 
             if (!isRootSpan)
             {
-                SpanActivated?.Invoke(this, new SpanEventArgs(current.Parent.Span));
+                SpanActivated?.Invoke(this, new SpanEventArgs(scope.Parent.Span));
             }
 
             SpanClosed?.Invoke(this, new SpanEventArgs(scope.Span));

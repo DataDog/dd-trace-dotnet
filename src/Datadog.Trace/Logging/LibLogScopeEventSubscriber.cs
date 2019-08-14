@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
 {
@@ -19,9 +21,28 @@ namespace Datadog.Trace.Logging
         public LibLogScopeEventSubscriber(IScopeManager scopeManager)
         {
             _scopeManager = scopeManager;
-            _scopeManager.SpanActivated += OnSpanActivated;
-            _scopeManager.TraceEnded += OnTraceEnded;
-            SetDefaultValues();
+
+            var logProvider = LogProvider.CurrentLogProvider ?? LogProvider.ResolveLogProvider();
+            if (logProvider is SerilogLogProvider)
+            {
+                _scopeManager.SpanOpened += SerilogOnSpanOpened;
+                _scopeManager.SpanClosed += SerilogOnSpanClosed;
+            }
+            else
+            {
+                _scopeManager.SpanActivated += OnSpanActivated;
+                _scopeManager.TraceEnded += OnTraceEnded;
+            }
+        }
+
+        public void SerilogOnSpanOpened(object sender, SpanEventArgs spanEventArgs)
+        {
+            SetLoggingValues(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+        }
+
+        public void SerilogOnSpanClosed(object sender, SpanEventArgs spanEventArgs)
+        {
+            DisposeLastPair();
         }
 
         public void OnSpanActivated(object sender, SpanEventArgs spanEventArgs)
@@ -33,7 +54,6 @@ namespace Datadog.Trace.Logging
         public void OnTraceEnded(object sender, SpanEventArgs spanEventArgs)
         {
             DisposeAll();
-            SetDefaultValues();
         }
 
         public void Dispose()
@@ -43,9 +63,22 @@ namespace Datadog.Trace.Logging
             DisposeAll();
         }
 
-        private void SetDefaultValues()
+        private void DisposeLastPair()
         {
-            SetLoggingValues(0, 0);
+            for (int i = 0; i < 2; i++)
+            {
+                if (_contextDisposalStack.TryPop(out IDisposable ctxDisposable))
+                {
+                    ctxDisposable.Dispose();
+                }
+                else
+                {
+                    // There is nothing left to pop so do nothing.
+                    // Though we are in a strange circumstance if we did not balance
+                    // the stack properly
+                    Debug.Fail($"{nameof(DisposeLastPair)} call failed. Too few items on the context stack.");
+                }
+            }
         }
 
         private void DisposeAll()
