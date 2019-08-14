@@ -214,6 +214,28 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoad.FileNotFoundException", "reproductions\AssemblyLoad.FileNotFoundException\AssemblyLoad.FileNotFoundException.csproj", "{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD006-E206-488E-ACA1-1AA73F9B5146}"
+	ProjectSection(SolutionItems) = preProject
+		docker\build.sh = docker\build.sh
+		docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
+		docker\Datadog.Trace.ClrProfiler.Native.sh = docker\Datadog.Trace.ClrProfiler.Native.sh
+		docker\dotnet.dockerfile = docker\dotnet.dockerfile
+		docker\native.dockerfile = docker\native.dockerfile
+		docker\package.dockerfile = docker\package.dockerfile
+		docker\package.sh = docker\package.sh
+		docker\with-profiler-logs.bash = docker\with-profiler-logs.bash
+		docker\with-profiler.bash = docker\with-profiler.bash
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-pipelines", "{C52D6695-4E05-4930-88F8-0EFF8056A967}"
+	ProjectSection(SolutionItems) = preProject
+		.azure-pipelines\integration-tests.yml = .azure-pipelines\integration-tests.yml
+		.azure-pipelines\packages.yml = .azure-pipelines\packages.yml
+		.azure-pipelines\unit-tests.yml = .azure-pipelines\unit-tests.yml
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SynchronizeVersions", "tools\SynchronizeVersions\SynchronizeVersions.csproj", "{7F0BD409-FA74-4FB1-853F-D10D888E1542}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -710,6 +732,18 @@ Global
 		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Release|x64.Build.0 = Release|x64
 		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Release|x86.ActiveCfg = Release|x86
 		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}.Release|x86.Build.0 = Release|x86
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Debug|x64.Build.0 = Debug|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Debug|x86.Build.0 = Debug|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Release|x64.ActiveCfg = Release|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Release|x64.Build.0 = Release|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Release|x86.ActiveCfg = Release|Any CPU
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -760,6 +794,9 @@ Global
 		{B61F0405-F228-41CE-AC5B-28996C27DD64} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{6ABAD006-E206-488E-ACA1-1AA73F9B5146} = {FEBCE7DC-9FD1-48A6-B911-71ABB240A030}
+		{C52D6695-4E05-4930-88F8-0EFF8056A967} = {FEBCE7DC-9FD1-48A6-B911-71ABB240A030}
+		{7F0BD409-FA74-4FB1-853F-D10D888E1542} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
