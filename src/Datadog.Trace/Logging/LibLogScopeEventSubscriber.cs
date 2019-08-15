@@ -5,17 +5,23 @@ using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
 {
+    /// <summary>
+    /// Subscriber to ScopeManager events that sets/unsets correlation identifier
+    /// properties in the application's logging context.
+    /// </summary>
     internal class LibLogScopeEventSubscriber : IDisposable
     {
         private readonly IScopeManager _scopeManager;
 
         // Each mapped context sets a key-value pair into the logging context
-        // Disposing the context unsets the key-value pair
+        // Disposing the returned context unsets the key-value pair
+        // Keep a stack to retain the history of our correlation identifier properties
+        // (the stack is particularly important for Serilog, see below).
         //
-        // IMPORTANT: The contexts must be closed in reverse-order of opening,
-        //            so by convention always open the TraceId context before
-        //            opening the SpanId context, and close the contexts in
-        //            the opposite order
+        // IMPORTANT: Serilog -- The logging contexts (throughout the entire application)
+        //            are maintained in a stack, as opposed to a map, and must be closed
+        //            in reverse-order of opening. When operating on the stack-based model,
+        //            it is only valid to add the properties once unset them once.
         private readonly ConcurrentStack<IDisposable> _contextDisposalStack = new ConcurrentStack<IDisposable>();
 
         public LibLogScopeEventSubscriber(IScopeManager scopeManager)
@@ -25,45 +31,45 @@ namespace Datadog.Trace.Logging
             var logProvider = LogProvider.CurrentLogProvider ?? LogProvider.ResolveLogProvider();
             if (logProvider is SerilogLogProvider)
             {
-                _scopeManager.SpanOpened += SerilogOnSpanOpened;
-                _scopeManager.SpanClosed += SerilogOnSpanClosed;
+                _scopeManager.SpanOpened += StackOnSpanOpened;
+                _scopeManager.SpanClosed += StackOnSpanClosed;
             }
             else
             {
-                _scopeManager.SpanActivated += OnSpanActivated;
-                _scopeManager.TraceEnded += OnTraceEnded;
+                _scopeManager.SpanActivated += MapOnSpanActivated;
+                _scopeManager.TraceEnded += MapOnTraceEnded;
             }
         }
 
-        public void SerilogOnSpanOpened(object sender, SpanEventArgs spanEventArgs)
+        public void StackOnSpanOpened(object sender, SpanEventArgs spanEventArgs)
         {
-            SetLoggingValues(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            SetCorrelationIdentifierContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
         }
 
-        public void SerilogOnSpanClosed(object sender, SpanEventArgs spanEventArgs)
+        public void StackOnSpanClosed(object sender, SpanEventArgs spanEventArgs)
         {
-            DisposeLastPair();
+            RemoveLastCorrelationIdentifierContext();
         }
 
-        public void OnSpanActivated(object sender, SpanEventArgs spanEventArgs)
+        public void MapOnSpanActivated(object sender, SpanEventArgs spanEventArgs)
         {
-            DisposeAll();
-            SetLoggingValues(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            RemoveAllCorrelationIdentifierContexts();
+            SetCorrelationIdentifierContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
         }
 
-        public void OnTraceEnded(object sender, SpanEventArgs spanEventArgs)
+        public void MapOnTraceEnded(object sender, SpanEventArgs spanEventArgs)
         {
-            DisposeAll();
+            RemoveAllCorrelationIdentifierContexts();
         }
 
         public void Dispose()
         {
-            _scopeManager.SpanActivated -= OnSpanActivated;
-            _scopeManager.TraceEnded -= OnTraceEnded;
-            DisposeAll();
+            _scopeManager.SpanActivated -= MapOnSpanActivated;
+            _scopeManager.TraceEnded -= MapOnTraceEnded;
+            RemoveAllCorrelationIdentifierContexts();
         }
 
-        private void DisposeLastPair()
+        private void RemoveLastCorrelationIdentifierContext()
         {
             for (int i = 0; i < 2; i++)
             {
@@ -76,12 +82,12 @@ namespace Datadog.Trace.Logging
                     // There is nothing left to pop so do nothing.
                     // Though we are in a strange circumstance if we did not balance
                     // the stack properly
-                    Debug.Fail($"{nameof(DisposeLastPair)} call failed. Too few items on the context stack.");
+                    Debug.Fail($"{nameof(RemoveLastCorrelationIdentifierContext)} call failed. Too few items on the context stack.");
                 }
             }
         }
 
-        private void DisposeAll()
+        private void RemoveAllCorrelationIdentifierContexts()
         {
             while (_contextDisposalStack.TryPop(out IDisposable ctxDisposable))
             {
@@ -89,7 +95,7 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        private void SetLoggingValues(ulong traceId, ulong spanId)
+        private void SetCorrelationIdentifierContext(ulong traceId, ulong spanId)
         {
             _contextDisposalStack.Push(
                 LogProvider.OpenMappedContext(
