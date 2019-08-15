@@ -4,10 +4,11 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Moq;
+using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    internal class LoggingProviderTestHelpers
+    internal static class LoggingProviderTestHelpers
     {
         internal static readonly string CustomPropertyName = "custom";
         internal static readonly int CustomPropertyValue = 1;
@@ -43,6 +44,32 @@ namespace Datadog.Trace.Tests.Logging
 
             parentScope.Close();
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Closed child scope so there is no active scope.");
+        }
+
+        internal static void Contains(this log4net.Core.LoggingEvent logEvent, Scope scope)
+        {
+            logEvent.Contains(scope.Span.TraceId, scope.Span.SpanId);
+        }
+
+        internal static void Contains(this log4net.Core.LoggingEvent logEvent, ulong traceId, ulong spanId)
+        {
+            Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal<ulong>(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal<ulong>(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+        }
+
+        internal static void Contains(this Serilog.Events.LogEvent logEvent, Scope scope)
+        {
+            logEvent.Contains(scope.Span.TraceId, scope.Span.SpanId);
+        }
+
+        internal static void Contains(this Serilog.Events.LogEvent logEvent, ulong traceId, ulong spanId)
+        {
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.Equal<ulong>(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.Equal<ulong>(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
         }
     }
 }

@@ -88,8 +88,8 @@ namespace Datadog.Trace.Tests.Logging
             // Scope: N/A
             // Custom property: N/A
             logString = filteredLogs[logIndex++];
-            Assert.Contains($"{CorrelationIdentifier.SpanIdKey}=", logString);
-            Assert.Contains($"{CorrelationIdentifier.TraceIdKey}=", logString);
+            Assert.Contains($"{CorrelationIdentifier.SpanIdKey}=0", logString);
+            Assert.Contains($"{CorrelationIdentifier.TraceIdKey}=0", logString);
             Assert.Contains($"{LoggingProviderTestHelpers.CustomPropertyName}=", logString);
         }
 

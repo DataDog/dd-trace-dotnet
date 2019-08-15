@@ -13,7 +13,7 @@ namespace DataDogThreadTest
     {
         internal static readonly string TraceIdKey = "dd.trace_id";
         internal static readonly string SpanIdKey = "dd.span_id";
-        internal static readonly string NonTraceMessage = "TraceId: , SpanId: ";
+        internal static readonly string NonTraceMessage = "TraceId: 0, SpanId: 0";
 
         static int Main(string[] args)
         {
@@ -142,12 +142,11 @@ namespace DataDogThreadTest
                 logger.Info(NonTraceMessage);
 
                 var lastLog = RelevantLogs().Last();
-                var expectedOutOfTraceLog = "TraceId: , SpanId: ";
                 var lastLogTraceId = lastLog.Properties[TraceIdKey];
                 var lastLogSpanIdId = lastLog.Properties[SpanIdKey];
                 var actual = $"TraceId: {lastLogTraceId}, SpanId: {lastLogSpanIdId}";
 
-                if (!actual.Equals(expectedOutOfTraceLog))
+                if (!actual.Equals(NonTraceMessage))
                 {
                     throw new Exception($"Unexpected TraceId or SpanId: {actual}");
                 }
