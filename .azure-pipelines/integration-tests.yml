@@ -12,7 +12,7 @@ trigger:
 variables:
   buildConfiguration: Debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
-  dotnetCoreSdkVersion: 2.2.300
+  dotnetCoreSdkVersion: 2.2.401
 
 jobs:
 
