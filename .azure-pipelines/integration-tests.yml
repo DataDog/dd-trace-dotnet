@@ -57,6 +57,11 @@ jobs:
     buildPlatform: 'x64'
 
   steps:
+  - task: DotNetCoreInstaller@0
+    displayName: install dotnet core sdk
+    inputs:
+      version: $(dotnetCoreSdkVersion)
+
   - task: DotNetCoreCLI@2
     displayName: dotnet build src/**/*.csproj
     inputs:
@@ -80,11 +85,6 @@ jobs:
       configuration: $(buildConfiguration)
       msbuildArguments: /t:BuildCpp
       maximumCpuCount: true
-
-  - task: DotNetCoreInstaller@0
-    displayName: install dotnet core sdk
-    inputs:
-      version: $(dotnetCoreSdkVersion)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
