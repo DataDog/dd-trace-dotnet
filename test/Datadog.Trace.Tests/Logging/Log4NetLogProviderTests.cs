@@ -127,6 +127,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Scope: N/A
             // Custom property: SET
+            logEvent = filteredLogs[logIndex++];
             Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
