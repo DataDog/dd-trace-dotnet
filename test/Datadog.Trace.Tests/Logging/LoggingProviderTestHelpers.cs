@@ -23,12 +23,12 @@ namespace Datadog.Trace.Tests.Logging
             return new Tracer(settings, writerMock.Object, samplerMock.Object, null);
         }
 
-        internal static void PerformParentChildScopeSequence(Tracer tracer, ILog logger, out Scope parentScope, out Scope childScope)
+        internal static void PerformParentChildScopeSequence(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
         {
             parentScope = tracer.StartActive("parent");
             logger.Log(LogLevel.Info, () => "Started and activated parent scope.");
 
-            var customPropertyContext = LogProvider.OpenMappedContext(CustomPropertyName, CustomPropertyValue);
+            var customPropertyContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false);
             logger.Log(LogLevel.Info, () => "Added custom property to MDC");
 
             childScope = tracer.StartActive("child");

@@ -10,6 +10,7 @@ namespace Datadog.Trace.Tests.Logging
     [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class NLogLogProviderTests
     {
+        private readonly ILogProvider _logProvider;
         private readonly ILog _logger;
         private readonly MemoryTarget _target;
 
@@ -26,8 +27,9 @@ namespace Datadog.Trace.Tests.Logging
             LogManager.Configuration = config;
             SimpleConfigurator.ConfigureForTargetLogging(_target, NLog.LogLevel.Trace);
 
-            LogProvider.SetCurrentLogProvider(new NLogLogProvider());
-            _logger = LogProvider.GetLogger(typeof(NLogLogProviderTests));
+            _logProvider = new NLogLogProvider();
+            LogProvider.SetCurrentLogProvider(_logProvider);
+            _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("test"));
         }
 
         [Fact]
@@ -38,7 +40,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             int logIndex = 0;
             string logString;
@@ -94,7 +96,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             int logIndex = 0;
             string logString;

@@ -11,6 +11,7 @@ namespace Datadog.Trace.Tests.Logging
     [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class SerilogLogProviderTests
     {
+        private readonly ILogProvider _logProvider;
         private readonly ILog _logger;
         private readonly List<LogEvent> _logEvents;
 
@@ -20,10 +21,11 @@ namespace Datadog.Trace.Tests.Logging
                 .Enrich.FromLogContext()
                 .WriteTo.Observers(obs => obs.Subscribe(logEvent => _logEvents.Add(logEvent)))
                 .CreateLogger();
-
-            LogProvider.SetCurrentLogProvider(new SerilogLogProvider());
-            _logger = LogProvider.GetLogger(typeof(SerilogLogProviderTests));
             _logEvents = new List<LogEvent>();
+
+            _logProvider = new SerilogLogProvider();
+            LogProvider.SetCurrentLogProvider(_logProvider);
+            _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("Test"));
         }
 
         [Fact]
@@ -34,7 +36,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             var logIndex = 0;
             LogEvent logEvent;
@@ -103,7 +105,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             int logIndex = 0;
             LogEvent logEvent;

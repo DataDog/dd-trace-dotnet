@@ -11,8 +11,9 @@ namespace Datadog.Trace.Tests.Logging
     [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class Log4NetLogProviderTests
     {
+        private readonly ILogProvider _logProvider;
+        private readonly ILog _logger;
         private readonly MemoryAppender _memoryAppender;
-        private ILog _logger;
 
         public Log4NetLogProviderTests()
         {
@@ -20,8 +21,9 @@ namespace Datadog.Trace.Tests.Logging
             var repository = log4net.LogManager.GetRepository(Assembly.GetAssembly(typeof(log4net.LogManager)));
             BasicConfigurator.Configure(repository, _memoryAppender);
 
-            LogProvider.SetCurrentLogProvider(new Log4NetLogProvider());
-            _logger = LogProvider.GetLogger(typeof(Log4NetLogProviderTests));
+            _logProvider = new Log4NetLogProvider();
+            LogProvider.SetCurrentLogProvider(_logProvider);
+            _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("Test"));
         }
 
         [Fact]
@@ -32,7 +34,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             int logIndex = 0;
             var logEvents = _memoryAppender.GetEvents();
@@ -103,7 +105,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             int logIndex = 0;
             var logEvents = _memoryAppender.GetEvents();
