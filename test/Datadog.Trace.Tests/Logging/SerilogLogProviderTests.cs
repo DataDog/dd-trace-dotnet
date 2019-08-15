@@ -38,6 +38,9 @@ namespace Datadog.Trace.Tests.Logging
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
             LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+
             var logIndex = 0;
             LogEvent logEvent;
 
@@ -106,6 +109,9 @@ namespace Datadog.Trace.Tests.Logging
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
             LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
 
             int logIndex = 0;
             LogEvent logEvent;

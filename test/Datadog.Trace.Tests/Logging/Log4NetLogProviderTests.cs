@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.LogProviders;
@@ -36,13 +37,16 @@ namespace Datadog.Trace.Tests.Logging
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
             LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
+            // Filter the logs
+            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
+            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+
             int logIndex = 0;
-            var logEvents = _memoryAppender.GetEvents();
             LoggingEvent logEvent;
 
             // Scope: Parent scope
             // Custom property: N/A
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.Equal<ulong>(parentScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
@@ -51,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Scope: Parent scope
             // Custom property: SET
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.Equal<ulong>(parentScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
@@ -61,7 +65,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Scope: Child scope
             // Custom property: SET
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.Equal<ulong>(childScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
@@ -71,7 +75,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Scope: Parent scope
             // Custom property: SET
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.Equal<ulong>(parentScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
@@ -82,7 +86,7 @@ namespace Datadog.Trace.Tests.Logging
             // EXISTING: Verify the log event is decorated with the parent scope properties
             // Scope: Parent scope
             // Custom property: N/A
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.Equal<ulong>(parentScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
@@ -91,7 +95,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Scope: N/A
             // Custom property: N/A
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
@@ -107,20 +111,22 @@ namespace Datadog.Trace.Tests.Logging
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
             LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
+            // Filter the logs
+            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
+            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+
             int logIndex = 0;
-            var logEvents = _memoryAppender.GetEvents();
             LoggingEvent logEvent;
 
             // Scope: N/A
             // Custom property: N/A
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
 
             // Scope: N/A
             // Custom property: SET
-            logEvent = logEvents[logIndex++];
             Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
@@ -128,7 +134,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Scope: N/A
             // Custom property: SET
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
@@ -136,7 +142,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Scope: N/A
             // Custom property: SET
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
@@ -144,14 +150,14 @@ namespace Datadog.Trace.Tests.Logging
 
             // Scope: N/A
             // Custom property: N/A
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
 
             // Scope: N/A
             // Custom property: N/A
-            logEvent = logEvents[logIndex++];
+            logEvent = filteredLogs[logIndex++];
             Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
