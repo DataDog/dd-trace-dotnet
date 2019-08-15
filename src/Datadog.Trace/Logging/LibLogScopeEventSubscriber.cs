@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Logging.LogProviders;
 
@@ -12,6 +13,7 @@ namespace Datadog.Trace.Logging
     internal class LibLogScopeEventSubscriber : IDisposable
     {
         private readonly IScopeManager _scopeManager;
+        private readonly ILogProvider _logProvider;
 
         // Each mapped context sets a key-value pair into the logging context
         // Disposing the returned context unsets the key-value pair
@@ -28,14 +30,17 @@ namespace Datadog.Trace.Logging
         {
             _scopeManager = scopeManager;
 
-            var logProvider = LogProvider.CurrentLogProvider ?? LogProvider.ResolveLogProvider();
-            if (logProvider is SerilogLogProvider)
+            _logProvider = LogProvider.CurrentLogProvider ?? LogProvider.ResolveLogProvider();
+            if (_logProvider is SerilogLogProvider)
             {
+                // Do not set default values for Serilog because it is unsafe to set
+                // except at the application startup, but this would require auto-instrumentation
                 _scopeManager.SpanOpened += StackOnSpanOpened;
                 _scopeManager.SpanClosed += StackOnSpanClosed;
             }
             else
             {
+                SetDefaultValues();
                 _scopeManager.SpanActivated += MapOnSpanActivated;
                 _scopeManager.TraceEnded += MapOnTraceEnded;
             }
@@ -60,13 +65,28 @@ namespace Datadog.Trace.Logging
         public void MapOnTraceEnded(object sender, SpanEventArgs spanEventArgs)
         {
             RemoveAllCorrelationIdentifierContexts();
+            SetDefaultValues();
         }
 
         public void Dispose()
         {
-            _scopeManager.SpanActivated -= MapOnSpanActivated;
-            _scopeManager.TraceEnded -= MapOnTraceEnded;
+            if (_logProvider is SerilogLogProvider)
+            {
+                _scopeManager.SpanOpened -= StackOnSpanOpened;
+                _scopeManager.SpanClosed -= StackOnSpanClosed;
+            }
+            else
+            {
+                _scopeManager.SpanActivated -= MapOnSpanActivated;
+                _scopeManager.TraceEnded -= MapOnTraceEnded;
+            }
+
             RemoveAllCorrelationIdentifierContexts();
+        }
+
+        private void SetDefaultValues()
+        {
+            SetCorrelationIdentifierContext(0, 0);
         }
 
         private void RemoveLastCorrelationIdentifierContext()
