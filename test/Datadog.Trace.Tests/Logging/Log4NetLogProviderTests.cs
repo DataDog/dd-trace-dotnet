@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests.Logging
             logEvent.Contains(parentScope);
             Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
 
-            // Scope: N/A
+            // Scope: Default values of TraceId=0,SpanId=0
             // Custom property: N/A
             logEvent = filteredLogs[logIndex++];
             logEvent.Contains(traceId: 0, spanId: 0);
