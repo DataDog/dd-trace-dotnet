@@ -412,8 +412,7 @@ namespace Datadog.Trace.TestHelpers
                     packageVersion,
                     GetPlatform(),
                     GetBuildConfiguration(),
-                    GetTargetFramework(),
-                    EnvironmentHelper.GetRuntimeIdentifier());
+                    GetTargetFramework());
             }
             else
             {
@@ -422,7 +421,6 @@ namespace Datadog.Trace.TestHelpers
                     packageVersion,
                     GetBuildConfiguration(),
                     GetTargetFramework(),
-                    EnvironmentHelper.GetRuntimeIdentifier(),
                     "publish");
             }
 
