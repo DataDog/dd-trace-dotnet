@@ -56,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(instrumentedType.Assembly, mdToken, opCode, nameof(SendReceive))
                        .WithConcreteType(instrumentedType)
                        .WithParameters(cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead)
+                       .WithMethodGenerics(typeof(T))
                        .Build();
             }
             catch (Exception ex)
