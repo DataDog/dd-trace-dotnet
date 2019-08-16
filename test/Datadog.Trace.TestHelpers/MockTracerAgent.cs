@@ -203,7 +203,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     var ctx = _listener.GetContext();
 
-                    if (ShouldDeserializeTraces )
+                    if (ShouldDeserializeTraces)
                     {
                         var rawSpans = MessagePackSerializer.Deserialize<dynamic>(ctx.Request.InputStream);
                         var spans = ToSpans(rawSpans);
