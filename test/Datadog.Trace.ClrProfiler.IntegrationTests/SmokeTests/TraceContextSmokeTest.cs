@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 return;
             }
 
-            CheckForSmoke(shouldSerializeTraces: false);
+            CheckForSmoke(shouldDeserializeTraces: false);
         }
     }
 }
