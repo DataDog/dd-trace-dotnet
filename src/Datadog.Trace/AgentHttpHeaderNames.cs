@@ -34,5 +34,10 @@ namespace Datadog.Trace
         /// The number of unique traces per request.
         /// </summary>
         public const string TraceCount = "X-Datadog-Trace-Count";
+
+        /// <summary>
+        /// The id of the container where the traced application is running.
+        /// </summary>
+        public const string ContainerId = "Datadog-Container-ID";
     }
 }
