@@ -46,12 +46,15 @@ namespace Datadog.Trace.Agent
 
             var containerId = ContainerInfo.GetContainerId();
 
+            // report runtime details
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, frameworkName);
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, frameworkVersion);
+
+            // report Tracer version
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, tracerVersion);
 
-            // linux container id
+            // report container id (only Linux containers supported for now)
             if (containerId != null)
             {
                 _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.ContainerId, containerId);
