@@ -11,6 +11,7 @@ namespace Datadog.Trace.Tests.Logging
     [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class SerilogLogProviderTests
     {
+        private readonly ILogProvider _logProvider;
         private readonly ILog _logger;
         private readonly List<LogEvent> _logEvents;
 
@@ -20,10 +21,11 @@ namespace Datadog.Trace.Tests.Logging
                 .Enrich.FromLogContext()
                 .WriteTo.Observers(obs => obs.Subscribe(logEvent => _logEvents.Add(logEvent)))
                 .CreateLogger();
-
-            LogProvider.SetCurrentLogProvider(new SerilogLogProvider());
-            _logger = LogProvider.GetLogger(typeof(SerilogLogProviderTests));
             _logEvents = new List<LogEvent>();
+
+            _logProvider = new SerilogLogProvider();
+            LogProvider.SetCurrentLogProvider(_logProvider);
+            _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("Test"));
         }
 
         [Fact]
@@ -34,38 +36,53 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
 
             var logIndex = 0;
             LogEvent logEvent;
 
-            // Verify the log event is decorated with the parent scope properties
+            // Scope: Parent scope
+            // Custom property: N/A
             logEvent = _logEvents[logIndex++];
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal<ulong>(parentScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal<ulong>(parentScope.Span.TraceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            logEvent.Contains(parentScope);
+            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
 
-            // Verify the log event is decorated with the child scope properties
+            // Scope: Parent scope
+            // Custom property: SET
             logEvent = _logEvents[logIndex++];
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal<ulong>(childScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal<ulong>(childScope.Span.TraceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            logEvent.Contains(parentScope);
+            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
 
-            // Verify the log event is decorated with the parent scope properties
+            // Scope: Child scope
+            // Custom property: SET
             logEvent = _logEvents[logIndex++];
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal<ulong>(parentScope.Span.SpanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal<ulong>(parentScope.Span.TraceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            logEvent.Contains(childScope);
+            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
 
-            // Verify the log event is decorated with zero values
+            // Scope: Parent scope
+            // Custom property: SET
             logEvent = _logEvents[logIndex++];
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal<ulong>(0, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal<ulong>(0, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            logEvent.Contains(parentScope);
+            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
+
+            // Scope: Parent scope
+            // Custom property: N/A
+            logEvent = _logEvents[logIndex++];
+            logEvent.Contains(parentScope);
+            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+
+            // Scope: N/A
+            // Custom property: N/A
+            logEvent = _logEvents[logIndex++];
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
         }
 
         [Fact]
@@ -76,30 +93,58 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
 
             int logIndex = 0;
             LogEvent logEvent;
 
-            // Verify the log event is not decorated with the properties
+            // Scope: N/A
+            // Custom property: N/A
             logEvent = _logEvents[logIndex++];
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
 
-            // Verify the log event is not decorated with the properties
+            // Scope: N/A
+            // Custom property: SET
             logEvent = _logEvents[logIndex++];
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
 
-            // Verify the log event is not decorated with the properties
+            // Scope: N/A
+            // Custom property: SET
             logEvent = _logEvents[logIndex++];
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
 
-            // Verify the log event is not decorated with the properties
+            // Scope: N/A
+            // Custom property: SET
             logEvent = _logEvents[logIndex++];
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
+
+            // Scope: N/A
+            // Custom property: N/A
+            logEvent = _logEvents[logIndex++];
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+
+            // Scope: N/A
+            // Custom property: N/A
+            logEvent = _logEvents[logIndex++];
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
         }
     }
 }

@@ -142,12 +142,11 @@ namespace DataDogThreadTest
                 logger.Info(NonTraceMessage);
 
                 var lastLog = RelevantLogs().Last();
-                var expectedOutOfTraceLog = "TraceId: 0, SpanId: 0";
                 var lastLogTraceId = lastLog.Properties[TraceIdKey];
                 var lastLogSpanIdId = lastLog.Properties[SpanIdKey];
                 var actual = $"TraceId: {lastLogTraceId}, SpanId: {lastLogSpanIdId}";
 
-                if (!actual.Equals(expectedOutOfTraceLog))
+                if (!actual.Equals(NonTraceMessage))
                 {
                     throw new Exception($"Unexpected TraceId or SpanId: {actual}");
                 }
