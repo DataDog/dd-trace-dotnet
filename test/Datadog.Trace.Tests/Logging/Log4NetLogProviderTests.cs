@@ -19,11 +19,8 @@ namespace Datadog.Trace.Tests.Logging
 
         public Log4NetLogProviderTests()
         {
-            var repository = log4net.LogManager.GetRepository(typeof(log4net.LogManager).Assembly);
             _memoryAppender = new MemoryAppender();
-            var patternLayout = new PatternLayout();
-            _memoryAppender.Layout = patternLayout;
-            _memoryAppender.ActivateOptions();
+            var repository = log4net.LogManager.GetRepository(Assembly.GetAssembly(typeof(log4net.LogManager)));
             BasicConfigurator.Configure(repository, _memoryAppender);
 
             _logProvider = new Log4NetLogProvider();

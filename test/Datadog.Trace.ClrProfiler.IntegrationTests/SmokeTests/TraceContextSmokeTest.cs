@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact]
+        [Fact(Skip ="Skipping until this test is refactored into a different assembly. The load may be interrupting the rest of the test suite.")]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
