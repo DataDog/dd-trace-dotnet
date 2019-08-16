@@ -58,7 +58,7 @@ namespace Datadog.Trace.TestHelpers
         /// <summary>
         /// Gets or sets a value indicating whether to skip serialization of traces.
         /// </summary>
-        public bool ShouldSerializeTraces { get; set; } = true;
+        public bool ShouldDeserializeTraces { get; set; } = true;
 
         /// <summary>
         /// Gets the TCP port that this Agent is listening on.
@@ -203,7 +203,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     var ctx = _listener.GetContext();
 
-                    if (ShouldSerializeTraces)
+                    if (ShouldDeserializeTraces )
                     {
                         var rawSpans = MessagePackSerializer.Deserialize<dynamic>(ctx.Request.InputStream);
                         var spans = ToSpans(rawSpans);
