@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         /// Method to execute a smoke test.
         /// </summary>
         /// <param name="shouldSerializeTraces">Optimization parameter, pass false when the resulting traces aren't being verified</param>
-        protected void CheckForSmoke(bool shouldSerializeTraces = true)
+        protected void CheckForSmoke(bool shouldDeserializeTraces = true)
         {
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
             Output.WriteLine($"Application path: {applicationPath}");
@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
             using (var agent = new MockTracerAgent(agentPort))
             {
-                agent.ShouldSerializeTraces = shouldSerializeTraces;
+                agent.ShouldDeserializeTraces = shouldDeserializeTraces;
                 using (var process = Process.Start(startInfo))
                 {
                     if (process == null)
