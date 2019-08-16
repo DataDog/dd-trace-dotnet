@@ -16,7 +16,7 @@ variables:
 
 jobs:
 
-- job: linux
+- job: Linux
 
   pool:
     vmImage: ubuntu-16.04
@@ -48,7 +48,7 @@ jobs:
       testResultsFiles: test/**/*.trx
     condition: succeededOrFailed()
 
-- job: windows
+- job: Windows
 
   pool:
     vmImage: windows-2019
