@@ -32,6 +32,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         protected bool AssumeSuccessOnTimeout { get; set; }
 
+        protected virtual void AssertProcessResultIsSuccessful(ProcessResult result)
+        {
+            var successCode = 0;
+            Assert.True(successCode == result.ExitCode, $"Non-success exit code {result.ExitCode}");
+            Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
+        }
+
         protected void CheckForSmoke()
         {
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
@@ -112,9 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 result = new ProcessResult(process, standardOutput, standardError, exitCode);
             }
 
-            var successCode = 0;
-            Assert.True(successCode == result.ExitCode, $"Non-success exit code {result.ExitCode}");
-            Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
+            AssertProcessResultIsSuccessful(result);
         }
     }
 }
