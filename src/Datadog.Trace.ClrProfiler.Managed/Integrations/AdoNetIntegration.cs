@@ -1,11 +1,9 @@
 using System;
 using System.Data;
 using System.Data.Common;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -18,11 +16,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
-        private const string FrameworkAssembly = "System.Data";
-        private const string CoreAssembly = "System.Data.Common";
-        private const string DbCommand = "System.Data.Common.DbCommand";
-        private const string DbDataReader = "System.Data.Common.DbDataReader";
-        private const string CommandBehavior = "System.Data.CommandBehavior";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AdoNetIntegration));
 
@@ -35,49 +28,37 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssembly = FrameworkAssembly,
-            TargetType = DbCommand,
-            TargetSignatureTypes = new[] { DbDataReader, CommandBehavior },
+            TargetAssembly = "System.Data", // .NET Framework
+            TargetType = "System.Data.Common.DbCommand",
+            TargetSignatureTypes = new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
-            TargetAssembly = CoreAssembly,
-            TargetType = DbCommand,
-            TargetSignatureTypes = new[] { DbDataReader, CommandBehavior },
+            TargetAssembly = "System.Data.Common", // .NET Core
+            TargetType = "System.Data.Common.DbCommand",
+            TargetSignatureTypes = new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReader(object @this, int behavior, int opCode, int mdToken)
         {
             var command = (DbCommand)@this;
             var commandBehavior = (CommandBehavior)behavior;
-            var instanceType = command.GetType();
 
-            Func<object, CommandBehavior, object> instrumentedMethod = null;
-
-            try
-            {
-                instrumentedMethod =
-                    MethodBuilder<Func<object, CommandBehavior, object>>
-                       .Start(instanceType.Assembly, mdToken, opCode, nameof(ExecuteDbDataReader))
-                       .WithConcreteType(typeof(DbCommand))
-                       .WithParameters(commandBehavior)
-                       .Build();
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorException($"Error resolving {DbCommand}.{nameof(ExecuteDbDataReader)}(...)", ex);
-                throw;
-            }
+            var executeReader = Emit.DynamicMethodBuilder<Func<object, CommandBehavior, object>>
+                                    .GetOrCreateMethodCallDelegate(
+                                         typeof(DbCommand),
+                                         "ExecuteDbDataReader",
+                                         (OpCodeValue)opCode);
 
             using (var scope = CreateScope(command))
             {
                 try
                 {
-                    return instrumentedMethod(command, commandBehavior);
+                    return executeReader(command, commandBehavior);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope?.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
@@ -93,77 +74,50 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssembly = FrameworkAssembly,
-            TargetType = DbCommand,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", CommandBehavior, ClrNames.CancellationToken },
+            TargetAssembly = "System.Data", // .NET Framework
+            TargetType = "System.Data.Common.DbCommand",
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
-            TargetAssembly = CoreAssembly,
-            TargetType = DbCommand,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", CommandBehavior, ClrNames.CancellationToken },
+            TargetAssembly = "System.Data.Common", // .NET Core
+            TargetType = "System.Data.Common.DbCommand",
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object ExecuteDbDataReaderAsync(
-            object @this,
-            int behavior,
-            object cancellationTokenSource,
-            int opCode,
-            int mdToken)
+        public static object ExecuteDbDataReaderAsync(object @this, int behavior, object cancellationTokenSource, int opCode, int mdToken)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
             var command = (DbCommand)@this;
-            var instanceType = command.GetType();
             var commandBehavior = (CommandBehavior)behavior;
-            var callingAssembly = Assembly.GetCallingAssembly();
-            var dataReaderType = callingAssembly.GetType(DbDataReader);
+            var callOpCode = (OpCodeValue)opCode;
 
-            Func<object, object, object, object> instrumentedMethod = null;
-
-            try
-            {
-                instrumentedMethod =
-                    MethodBuilder<Func<object, object, object, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(ExecuteDbDataReaderAsync))
-                       .WithConcreteType(typeof(DbCommand))
-                       .WithParameters(commandBehavior, cancellationToken)
-                       .Build();
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorException($"Error resolving {DbCommand}.{nameof(ExecuteDbDataReaderAsync)}(...)", ex);
-                throw;
-            }
-
-            return AsyncHelper.InvokeGenericTaskDelegate(
-                instanceType,
-                dataReaderType,
-                nameof(ExecuteDbDataReaderAsyncInternal),
-                typeof(AdoNetIntegration),
-                command,
-                commandBehavior,
-                cancellationToken,
-                instrumentedMethod);
+            return ExecuteDbDataReaderAsyncInternal(command, commandBehavior, cancellationToken, callOpCode);
         }
 
-        private static async Task<T> ExecuteDbDataReaderAsyncInternal<T>(
+        private static async Task<object> ExecuteDbDataReaderAsyncInternal(
             DbCommand command,
             CommandBehavior behavior,
             CancellationToken cancellationToken,
-            Func<object, object, object, object> originalMethod)
+            OpCodeValue callOpCode)
         {
+            var executeReader = Emit.DynamicMethodBuilder<Func<object, CommandBehavior, CancellationToken, Task<object>>>
+                                    .GetOrCreateMethodCallDelegate(
+                                         typeof(DbCommand),
+                                         "ExecuteDbDataReaderAsync",
+                                         callOpCode);
+
             using (var scope = CreateScope(command))
             {
                 try
                 {
-                    var awaitable = (Task<T>)originalMethod(command, behavior, cancellationToken);
-                    return await awaitable.ConfigureAwait(false);
+                    return await executeReader(command, behavior, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
                 {
-                    scope?.Span.SetException(ex);
+                    // unreachable code
                     throw;
                 }
             }
