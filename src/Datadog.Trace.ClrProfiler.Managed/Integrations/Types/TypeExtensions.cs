@@ -25,5 +25,28 @@ namespace Datadog.Trace.ClrProfiler
 
             return null;
         }
+
+        public static System.Type GetInstrumentedInterface(
+            this object runtimeObject,
+            string instrumentedInterfaceName)
+        {
+            if (runtimeObject == null)
+            {
+                return null;
+            }
+
+            var currentType = runtimeObject.GetType();
+            var implementedInterfaces = currentType.GetInterfaces();
+
+            foreach (var interfaceType in implementedInterfaces)
+            {
+                if ($"{currentType.Namespace}.{currentType.Name}" == instrumentedInterfaceName)
+                {
+                    return interfaceType;
+                }
+            }
+
+            return null;
+        }
     }
 }

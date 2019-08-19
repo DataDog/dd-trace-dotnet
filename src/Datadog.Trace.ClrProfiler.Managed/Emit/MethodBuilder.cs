@@ -158,8 +158,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
                 Log.Error(message, ex);
                 requiresBestEffortMatching = true;
-                _methodBase = null; // Be extra sure the assignment never happened
-
 #if DEBUG
                 // Add a secondary preprocessor directive to prevent this from ever happening in release mode, even when it's configured to
                 if (ThrowExceptionWhenNoTokenMatch)
@@ -304,15 +302,15 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return null;
             }
 
-            if (!GenericsAreViable(methodInfo))
-            {
-                Log.Warn($"Generics not viable: {detailMessage}");
-                return null;
-            }
-
             if (!ParametersAreViable(methodInfo))
             {
                 Log.Warn($"Parameters not viable: {detailMessage}");
+                return null;
+            }
+
+            if (!GenericsAreViable(methodInfo))
+            {
+                Log.Warn($"Generics not viable: {detailMessage}");
                 return null;
             }
 
@@ -377,8 +375,15 @@ namespace Datadog.Trace.ClrProfiler.Emit
             methods =
                 methodEnumerable
                    .Where(ParametersAreViable)
-                   .Where(GenericsAreViable)
                    .ToArray();
+
+            if (methods.Count() > 1)
+            {
+                methods =
+                    methodEnumerable
+                       .Where(GenericsAreViable)
+                       .ToArray();
+            }
 
             var methodText = $"mdToken: {_mdToken}, expectedName: {_methodName}, resolvedMethodBaseName: {_methodBase?.Name ?? "NULL"}";
 

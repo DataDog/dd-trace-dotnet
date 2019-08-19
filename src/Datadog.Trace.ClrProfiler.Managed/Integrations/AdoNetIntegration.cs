@@ -119,7 +119,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var command = (DbCommand)@this;
             var instanceType = command.GetType();
             var commandBehavior = (CommandBehavior)behavior;
-            var callingAssembly = Assembly.GetCallingAssembly();
             var instrumentedType = @this.GetInstrumentedType(DbCommand);
             var dataReaderType = instrumentedType.Assembly.GetType(DbDataReader);
 
