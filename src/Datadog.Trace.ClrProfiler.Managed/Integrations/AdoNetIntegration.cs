@@ -51,6 +51,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var command = (DbCommand)@this;
             var commandBehavior = (CommandBehavior)behavior;
             var instanceType = command.GetType();
+            var instrumentedType = @this.GetInstrumentedType(DbCommand);
+            var dataReaderType = instrumentedType.Assembly.GetType(DbDataReader);
 
             Func<object, CommandBehavior, object> instrumentedMethod = null;
 
@@ -58,8 +60,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
-                       .Start(instanceType.Assembly, mdToken, opCode, nameof(ExecuteDbDataReader))
-                       .WithConcreteType(typeof(DbCommand))
+                       .Start(instrumentedType.Assembly, mdToken, opCode, nameof(ExecuteDbDataReader))
+                       .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior)
                        .Build();
             }
@@ -118,7 +120,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var instanceType = command.GetType();
             var commandBehavior = (CommandBehavior)behavior;
             var callingAssembly = Assembly.GetCallingAssembly();
-            var dataReaderType = callingAssembly.GetType(DbDataReader);
+            var instrumentedType = @this.GetInstrumentedType(DbCommand);
+            var dataReaderType = instrumentedType.Assembly.GetType(DbDataReader);
 
             Func<object, object, object, object> instrumentedMethod = null;
 
@@ -126,8 +129,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(ExecuteDbDataReaderAsync))
-                       .WithConcreteType(typeof(DbCommand))
+                       .Start(instrumentedType.Assembly, mdToken, opCode, nameof(ExecuteDbDataReaderAsync))
+                       .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .Build();
             }

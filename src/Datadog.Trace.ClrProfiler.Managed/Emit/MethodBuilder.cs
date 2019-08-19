@@ -152,6 +152,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
                 Log.Error(message, ex);
                 requiresBestEffortMatching = true;
+                _methodBase = null; // Be extra sure the assignment never happened
             }
 
             MethodInfo methodInfo = null;
@@ -304,6 +305,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return methodInfo;
         }
 
+        /// <summary>
+        /// These should only ever blow up in development. These requirements are here to make sure all needed arguments are specified.
+        /// </summary>
         private void ValidateRequirements()
         {
             if (_concreteType == null)
@@ -350,26 +354,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
             // prevent multiple enumerations
             var methodEnumerable = methods.AsEnumerable();
 
-            if (_methodBase != null)
-            {
-                // For the case I haven't encountered, where MethodBase is not MethodInfo
-                methodEnumerable =
-                    methodEnumerable.Where(
-                        mi => mi.IsGenericMethod == _methodBase.IsGenericMethod
-                           && mi.IsAbstract == _methodBase.IsAbstract
-                           && mi.IsPrivate == _methodBase.IsPrivate
-                           && mi.IsPublic == _methodBase.IsPublic
-                           && mi.IsVirtual == _methodBase.IsVirtual
-                           && mi.Name == _methodBase.Name);
-            }
-            else
-            {
-                // A legacy fallback attempt to match on the concrete type
-                methodEnumerable =
-                    methodEnumerable
-                       .Where(mi => mi.Name == _methodName)
-                       .Where(mi => _returnType == null || mi.ReturnType == _returnType);
-            }
+            // A legacy fallback attempt to match on the concrete type
+            methodEnumerable =
+                methodEnumerable
+                   .Where(mi => mi.Name == _methodName)
+                   .Where(mi => _returnType == null || mi.ReturnType == _returnType);
 
             methods =
                 methodEnumerable
@@ -377,24 +366,43 @@ namespace Datadog.Trace.ClrProfiler.Emit
                    .Where(GenericsAreViable)
                    .ToArray();
 
+            var methodText = $"mdToken: {_mdToken}, expectedName: {_methodName}, resolvedMethodBaseName: {_methodBase?.Name ?? "NULL"}";
+
             if (methods.Length > 1)
             {
                 // Attempt to trim down further
-                methods = methods.Where(ParametersAreExact).ToArray();
-            }
+                Log.Info($"Viable parameters return {methods.Length} methods ({methodText}). Trying to trim down matches.");
 
-            var methodText = _methodBase?.Name ?? _methodName ?? $"mdToken: {_mdToken}";
+                var highestMatchGroup =
+                    methods
+                    .GroupBy(mi => CountOfExactParameterMatches(mi))
+                    .OrderByDescending(group => group.Key)
+                    .First()
+                    .ToList();
+
+                if (highestMatchGroup.Count() == 1)
+                {
+                    // We have filtered enough
+                    methods = highestMatchGroup.ToArray();
+                }
+                else
+                {
+                    // Last attempt at filtering
+                    Log.Info($"There are still too many methods ({methodText}) (Count: {highestMatchGroup.Count()}). Attempting full exact match.");
+                    methods = highestMatchGroup.Where(ParametersAreExact).ToArray();
+                }
+            }
 
             if (methods.Length > 1)
             {
-                throw new ArgumentException($"Unable to safely resolve method {methodText} for {_concreteTypeName}");
+                throw new ArgumentException($"Unable to safely resolve method ({methodText}) for {_concreteTypeName}, found {methods.Length} matches in {_resolutionAssembly.FullName}.");
             }
 
             var methodInfo = methods.SingleOrDefault();
 
             if (methodInfo == null)
             {
-                throw new ArgumentException($"Unable to resolve method {methodText} for {_concreteTypeName}");
+                throw new ArgumentException($"Unable to resolve method ({methodText}) for {_concreteTypeName} in {_resolutionAssembly.FullName}");
             }
 
             return methodInfo;
@@ -446,6 +454,24 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return true;
         }
 
+        private int CountOfExactParameterMatches(MethodInfo mi)
+        {
+            int exactMatches = 0;
+
+            // We can already assume that the counts match by this point
+            var parameters = mi.GetParameters();
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (ParameterIsExact(parameters, i) == true)
+                {
+                    exactMatches++;
+                }
+            }
+
+            return exactMatches;
+        }
+
         private bool ParametersAreExact(MethodInfo mi)
         {
             // We can already assume that the counts match by this point
@@ -453,25 +479,38 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             for (var i = 0; i < parameters.Length; i++)
             {
-                var candidateParameter = parameters[i];
-
-                var parameterType = candidateParameter.ParameterType;
-
-                var actualArgumentType = GetExpectedParameterTypeByIndex(i);
-
-                if (actualArgumentType == null)
+                if (ParameterIsExact(parameters, i) != true)
                 {
-                    // Skip the rest of this check, as we can't know the type
-                    continue;
-                }
-
-                if (parameterType != actualArgumentType)
-                {
+                    // This will return false on NULL or False.
                     return false;
                 }
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// True is exact match.
+        /// NULL if the passed parameter is null, which stands for unknown.
+        /// False if not an exact match.
+        /// </summary>
+        /// <param name="parameters">The parameters of a candidate method.</param>
+        /// <param name="index">The index of the parameters being inspected.</param>
+        /// <returns>Nullable bool stating whether this is a known exact match.</returns>
+        private bool? ParameterIsExact(ParameterInfo[] parameters, int index)
+        {
+            var candidateParameter = parameters[index];
+
+            var parameterType = candidateParameter.ParameterType;
+
+            var actualArgumentType = GetExpectedParameterTypeByIndex(index);
+
+            if (actualArgumentType == null)
+            {
+                return null;
+            }
+
+            return parameterType == actualArgumentType;
         }
 
         private Type GetExpectedParameterTypeByIndex(int i)
