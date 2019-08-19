@@ -46,6 +46,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
             _forceMethodDefResolve = false;
         }
 
+#if DEBUG
+        public bool ThrowExceptionWhenNoTokenMatch { get; set; } = true;
+#else
+        public bool ThrowExceptionWhenNoTokenMatch { get; set; } = false;
+#endif
+
         public static MethodBuilder<TDelegate> Start(Assembly resolutionAssembly, int mdToken, int opCode, string methodName)
         {
             return new MethodBuilder<TDelegate>(resolutionAssembly, mdToken, opCode, methodName);
@@ -153,6 +159,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 Log.Error(message, ex);
                 requiresBestEffortMatching = true;
                 _methodBase = null; // Be extra sure the assignment never happened
+
+#if DEBUG
+                // Add a secondary preprocessor directive to prevent this from ever happening in release mode, even when it's configured to
+                if (ThrowExceptionWhenNoTokenMatch)
+                {
+                    throw;
+                }
+#endif
             }
 
             MethodInfo methodInfo = null;
