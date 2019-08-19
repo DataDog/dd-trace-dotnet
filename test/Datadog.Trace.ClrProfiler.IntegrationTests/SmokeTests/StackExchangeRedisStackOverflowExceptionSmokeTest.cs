@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,13 +22,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             }
 
             CheckForSmoke();
-        }
-
-        protected override void AssertProcessResultIsSuccessful(ProcessResult result)
-        {
-            var successCodes = new HashSet<int> { 0, 139 };
-            Assert.True(successCodes.Contains(result.ExitCode), $"Non-success exit code {result.ExitCode}. Expected exit codes: {string.Join(",", successCodes)}");
-            Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
         }
     }
 }
