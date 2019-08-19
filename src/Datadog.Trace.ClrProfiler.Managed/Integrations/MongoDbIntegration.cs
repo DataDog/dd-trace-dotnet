@@ -49,6 +49,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             const string methodName = nameof(Execute);
             Func<object, object, CancellationToken, object> execute;
             var wireProtocolType = wireProtocol.GetType();
+            var instrumentedInterface = wireProtocol.GetInstrumentedInterface(IWireProtocol);
 
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
@@ -57,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                       .Start(wireProtocolType.Assembly, mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
                        .Build();
@@ -106,6 +107,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             const string methodName = nameof(Execute);
             Func<object, object, CancellationToken, object> execute;
             var wireProtocolType = wireProtocol.GetType();
+            var instrumentedInterface = wireProtocol.GetInstrumentedInterface(IWireProtocolGeneric);
 
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
@@ -114,8 +116,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
-                       .WithConcreteType(wireProtocolType)
+                       .Start(wireProtocolType.Assembly, mdToken, opCode, methodName)
+                       .WithConcreteType(instrumentedInterface)
                        .WithParameters(connection, cancellationToken)
                        .Build();
             }
@@ -165,7 +167,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             const string methodName = nameof(ExecuteAsync);
             var wireProtocolType = wireProtocol.GetType();
-            var wireProtocolGenericArgs = GetGenericsFromWireProtocol(wireProtocolType);
+            var instrumentedInterface = wireProtocol.GetInstrumentedInterface(IWireProtocolGeneric);
+            var wireProtocolGenericArgs = instrumentedInterface.GetGenericArguments();
 
             Func<object, object, CancellationToken, object> executeAsync;
 
@@ -214,7 +217,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
             var wireProtocolType = wireProtocol.GetType();
-            var wireProtocolGenericArgs = GetGenericsFromWireProtocol(wireProtocolType);
+            var instrumentedInterface = wireProtocol.GetInstrumentedInterface(IWireProtocolGeneric);
+            var wireProtocolGenericArgs = instrumentedInterface.GetGenericArguments();
 
             const string methodName = nameof(ExecuteAsync);
             Func<object, object, CancellationToken, object> executeAsync;
@@ -245,36 +249,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 connection,
                 cancellationToken,
                 executeAsync);
-        }
-
-        private static Type[] GetGenericsFromWireProtocol(Type wireProtocolType)
-        {
-            var interfaces = wireProtocolType.GetInterfaces();
-            Type typeWeInstrument = null;
-
-            for (var i = 0; i < interfaces.Length; i++)
-            {
-                if (string.Equals($"{interfaces[i].Namespace}.{interfaces[i].Name}", IWireProtocolGeneric))
-                {
-                    typeWeInstrument = interfaces[i];
-                    break;
-                }
-            }
-
-            if (typeWeInstrument == null)
-            {
-                // We're likely in a non-generic context
-                return null;
-            }
-
-            var genericArgs = typeWeInstrument.GetGenericArguments();
-
-            if (genericArgs.Length == 0)
-            {
-                throw new ArgumentException($"Expected generics to determine TaskResult from {wireProtocolType.AssemblyQualifiedName}");
-            }
-
-            return genericArgs;
         }
 
         private static async Task ExecuteAsyncInternalNonGeneric(

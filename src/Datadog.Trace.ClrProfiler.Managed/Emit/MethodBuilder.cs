@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static readonly ILog Log = LogProvider.GetLogger(typeof(MethodBuilder<TDelegate>));
 
         private readonly Assembly _resolutionAssembly;
+        private readonly Module _resolutionModule;
         private readonly int _mdToken;
         private readonly int _originalOpCodeValue;
         private readonly OpCodeValue _opCode;
@@ -36,8 +37,20 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private Type[] _methodGenerics;
         private bool _forceMethodDefResolve;
 
+        private MethodBuilder(Module resolutionModule, int mdToken, int opCode, string methodName)
+        {
+            _resolutionModule = resolutionModule;
+            _resolutionAssembly = resolutionModule.Assembly;
+            _mdToken = mdToken;
+            _opCode = (OpCodeValue)opCode;
+            _originalOpCodeValue = opCode;
+            _methodName = methodName;
+            _forceMethodDefResolve = false;
+        }
+
         private MethodBuilder(Assembly resolutionAssembly, int mdToken, int opCode, string methodName)
         {
+            _resolutionModule = resolutionAssembly.ManifestModule;
             _resolutionAssembly = resolutionAssembly;
             _mdToken = mdToken;
             _opCode = (OpCodeValue)opCode;
@@ -55,6 +68,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public static MethodBuilder<TDelegate> Start(Assembly resolutionAssembly, int mdToken, int opCode, string methodName)
         {
             return new MethodBuilder<TDelegate>(resolutionAssembly, mdToken, opCode, methodName);
+        }
+
+        public static MethodBuilder<TDelegate> Start(Module resolutionModule, int mdToken, int opCode, string methodName)
+        {
+            return new MethodBuilder<TDelegate>(resolutionModule, mdToken, opCode, methodName);
         }
 
         public MethodBuilder<TDelegate> WithConcreteType(Type type)
@@ -114,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public TDelegate Build()
         {
             var cacheKey = new Key(
-                callingModule: _resolutionAssembly.ManifestModule,
+                callingModule: _resolutionModule,
                 mdToken: _mdToken,
                 callOpCode: _opCode,
                 concreteType: _concreteType,
@@ -142,12 +160,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 if (_forceMethodDefResolve || (_declaringTypeGenerics == null && _methodGenerics == null))
                 {
                     _methodBase =
-                        _resolutionAssembly.ManifestModule.ResolveMethod(metadataToken: _mdToken);
+                        _resolutionModule.ResolveMethod(metadataToken: _mdToken);
                 }
                 else
                 {
                     _methodBase =
-                        _resolutionAssembly.ManifestModule.ResolveMethod(
+                        _resolutionModule.ResolveMethod(
                             metadataToken: _mdToken,
                             genericTypeArguments: _declaringTypeGenerics,
                             genericMethodArguments: _methodGenerics);

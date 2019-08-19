@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,12 +56,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var dataReaderType = instrumentedType.Assembly.GetType(DbDataReader);
 
             Func<object, CommandBehavior, object> instrumentedMethod = null;
+            var callStack = new StackTrace();
+            var callingFrame = callStack.GetFrame(1);
+            var callingMethod = callingFrame.GetMethod();
+            var callingModule = callingMethod.Module;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
-                       .Start(instrumentedType.Assembly, mdToken, opCode, nameof(ExecuteDbDataReader))
+                       .Start(callingModule, mdToken, opCode, nameof(ExecuteDbDataReader))
                        .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior)
                        .Build();
