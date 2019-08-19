@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.1-sdk-alpine
+FROM microsoft/dotnet:2.1-sdk-ubuntu
 
 RUN apk add bash libc6-compat
 
