@@ -350,32 +350,26 @@ namespace Datadog.Trace.ClrProfiler.Emit
             // prevent multiple enumerations
             var methodEnumerable = methods.AsEnumerable();
 
-            if (_methodBase != null)
-            {
-                // For the case I haven't encountered, where MethodBase is not MethodInfo
-                methodEnumerable =
-                    methodEnumerable.Where(
-                        mi => mi.IsGenericMethod == _methodBase.IsGenericMethod
-                           && mi.IsAbstract == _methodBase.IsAbstract
-                           && mi.IsPrivate == _methodBase.IsPrivate
-                           && mi.IsPublic == _methodBase.IsPublic
-                           && mi.IsVirtual == _methodBase.IsVirtual
-                           && mi.Name == _methodBase.Name);
-            }
-            else
-            {
-                // A legacy fallback attempt to match on the concrete type
-                methodEnumerable =
-                    methodEnumerable
-                       .Where(mi => mi.Name == _methodName)
-                       .Where(mi => _returnType == null || mi.ReturnType == _returnType);
-            }
+            // A legacy fallback attempt to match on the concrete type
+            methodEnumerable =
+                methodEnumerable
+                   .Where(mi => mi.Name == _methodName)
+                   .Where(mi => _returnType == null || mi.ReturnType == _returnType);
 
             methods =
                 methodEnumerable
                    .Where(ParametersAreViable)
-                   .Where(GenericsAreViable)
                    .ToArray();
+
+            if (methods.Length > 1)
+            {
+                methods =
+                    methods
+                       .Where(GenericsAreViable)
+                       .ToArray();
+            }
+
+            var methodText = $"mdToken: {_mdToken}, expectedName: {_methodName}, resolvedMethodBaseName: {_methodBase?.Name ?? "NULL"}";
 
             if (methods.Length > 1)
             {
@@ -383,18 +377,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 methods = methods.Where(ParametersAreExact).ToArray();
             }
 
-            var methodText = _methodBase?.Name ?? _methodName ?? $"mdToken: {_mdToken}";
-
             if (methods.Length > 1)
             {
-                throw new ArgumentException($"Unable to safely resolve method {methodText} for {_concreteTypeName}");
+                throw new ArgumentException($"Unable to safely resolve method ({methodText}) for {_concreteTypeName}");
             }
 
             var methodInfo = methods.SingleOrDefault();
 
             if (methodInfo == null)
             {
-                throw new ArgumentException($"Unable to resolve method {methodText} for {_concreteTypeName}");
+                throw new ArgumentException($"Unable to resolve method ({methodText}) for {_concreteTypeName}");
             }
 
             return methodInfo;
