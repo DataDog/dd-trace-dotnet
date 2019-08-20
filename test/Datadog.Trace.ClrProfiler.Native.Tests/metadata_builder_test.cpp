@@ -56,9 +56,14 @@ class MetadataBuilderTest : public ::testing::Test {
         metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
     const std::wstring assemblyName = L"Samples.ExampleLibrary";
+
+    GUID module_version_id;
+    metadataImport->GetScopeProps(NULL, 1024, nullptr, &module_version_id);
+
     const std::vector<IntegrationMethod> integrations;
     module_metadata_ =
-        new ModuleMetadata(metadataImport, metadataEmit, assemblyName, integrations);
+        new ModuleMetadata(metadataImport, metadataEmit, assemblyName,
+                           module_version_id, integrations);
 
     mdModule module;
     hr = metadataImport->GetModuleFromScope(&module);
