@@ -451,32 +451,44 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
-  for (auto& method_replacement : method_replacements) {
-    const auto& wrapper_method_key =
-        method_replacement.wrapper_method.get_method_cache_key();
-    mdMemberRef wrapper_method_ref = mdMemberRefNil;
+  ILInstr* last_instr = nullptr;
 
-    if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                 wrapper_method_ref)) {
-      // no method ref token found for wrapper method, we can't do the
-      // replacement, this should never happen because we always try to
-      // add the method ref in ModuleLoadFinished()
-      // TODO: log this
-      return S_OK;
+  // for each IL instruction
+  for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
+       pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
+
+    if (pInstr->m_opcode != CEE_RET) {
+      // We should only skip TCO when we instrument the last instruction before the return
+      last_instr = nullptr;
     }
 
-    // for each IL instruction
-    for (ILInstr* pInstr = rewriter.GetILList()->m_pNext;
-         pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext) {
-      // only CALL or CALLVIRT
-      if (pInstr->m_opcode != CEE_CALL && pInstr->m_opcode != CEE_CALLVIRT) {
-        continue;
-      }
+    // only CALL or CALLVIRT
+    if (pInstr->m_opcode != CEE_CALL && pInstr->m_opcode != CEE_CALLVIRT) {
+      continue;
+    }
 
-      // get the target function info, continue if its invalid
-      auto target =
-          GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
-      if (!target.IsValid()) {
+    // get the target function info, continue if its invalid
+    auto target =
+        GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
+    if (!target.IsValid()) {
+      continue;
+    }
+
+    auto current_instruction_swapped = false;
+
+    for (auto& method_replacement : method_replacements) {
+      const auto& wrapper_method_key =
+          method_replacement.wrapper_method.get_method_cache_key();
+      mdMemberRef wrapper_method_ref = mdMemberRefNil;
+
+      if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
+                                                   wrapper_method_ref)) {
+        // no method ref token found for wrapper method, we can't do the
+        // replacement, this should never happen because we always try to
+        // add the method ref in ModuleLoadFinished()
+        Warn(
+            "JITCompilationStarted: Failed to find method ref for wrapper method for key ",
+            wrapper_method_key);
         continue;
       }
 
@@ -643,8 +655,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       // replace with a call to the instrumentation wrapper
       pInstr->m_Arg32 = wrapper_method_ref;
 
-      modified = true;
-
       Info("*** JITCompilationStarted() replaced calls from ", caller.type.name,
            ".", caller.name, "() to ",
            method_replacement.target_method.type_name, ".",
@@ -653,10 +663,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
            method_replacement.wrapper_method.type_name, ".",
            method_replacement.wrapper_method.method_name, "() ",
            wrapper_method_ref);
+
+      modified = true;
+      current_instruction_swapped = true;
+      // No point in checking the other method wrappers
+      break;
+    }
+
+    if (current_instruction_swapped) {
+      last_instr = pInstr;
     }
   }
 
   if (modified) {
+    if (last_instr != nullptr) {
+      auto pSkipTailCallInstr = rewriter.NewILInstr();
+      pSkipTailCallInstr->m_opcode = CEE_NOP;
+      rewriter.InsertAfter(last_instr, pSkipTailCallInstr);
+    }
+
     hr = rewriter.Export();
     RETURN_OK_IF_FAILED(hr);
   }
