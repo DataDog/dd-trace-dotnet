@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>1.6.1</Version>
+    <Version>1.6.2</Version>
     <Title>Datadog APM</Title>
     <Description>Manual instrumentation library for Datadog APM</Description>
     <Authors>lucas.pimentel.datadog;bmermet</Authors>
