@@ -39,34 +39,34 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             SetLastCall(MethodBase.GetCurrentMethod(), i);
         }
 
-        public void Method(ClassB p1, ClassC p2)
+        public void Method(ClassB p1, ClassC p2, ClassC p3)
         {
-            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2);
+            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2, p3);
         }
 
-        public void Method(object p1, object p2)
+        public void Method(object p1, object p2, object p3)
         {
-            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2);
+            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2, p3);
         }
 
-        public void Method(ClassA p1, ClassA p2)
+        public void Method(ClassA p1, ClassA p2, ClassA p3)
         {
-            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2);
+            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2, p3);
         }
 
-        public void Method(ClassA p1, ClassB p2)
+        public void Method(ClassA p1, ClassB p2, ClassB p3)
         {
-            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2);
+            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2, p3);
         }
 
-        public void Method(AbstractAlphabetClass p1, AbstractAlphabetClass p2)
+        public void Method(AbstractAlphabetClass p1, AbstractAlphabetClass p2, AbstractAlphabetClass p3)
         {
-            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2);
+            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2, p3);
         }
 
-        public void Method(ClassB p1, ClassB p2)
+        public void Method(ClassB p1, ClassB p2, ClassB p3)
         {
-            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2);
+            SetLastCall(MethodBase.GetCurrentMethod(), p1, p2, p3);
         }
 
         // There is intentionally no method matching double ClassC signature to force non-explicit fuzzy matching
