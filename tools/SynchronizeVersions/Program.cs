@@ -10,7 +10,7 @@ namespace SynchronizeVersions
     {
         private static int major = 1;
         private static int minor = 6;
-        private static int patch = 1;
+        private static int patch = 2;
 
         public static void Main(string[] args)
         {
