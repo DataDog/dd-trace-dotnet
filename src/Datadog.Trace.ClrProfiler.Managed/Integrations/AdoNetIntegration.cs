@@ -2,7 +2,7 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Reflection;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -61,11 +61,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var callingMethod = callingFrame.GetMethod();
             var callingModule = callingMethod.Module;
 
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var modules = assemblies.SelectMany(a => a.Modules).ToList();
+
+            var moduleMatches = modules.Where(m => m.MetadataToken == instrumentedType.Module.MetadataToken).ToList();
+
+            var moduleWeNeed_Maybe = moduleMatches.FirstOrDefault();
+
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
-                       .Start(callingModule, mdToken, opCode, nameof(ExecuteDbDataReader))
+                       .Start(moduleWeNeed_Maybe, mdToken, opCode, nameof(ExecuteDbDataReader))
                        .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior)
                        .Build();
