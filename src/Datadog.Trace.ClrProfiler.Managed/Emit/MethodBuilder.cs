@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private string _concreteTypeName;
         private object[] _parameters = new object[0];
         private Type[] _explicitParameterTypes = null;
-        private string[] _namespaceNameFilters = null;
+        private string[] _namespaceAndNameFilter = null;
 
         private Type[] _declaringTypeGenerics;
         private Type[] _methodGenerics;
@@ -66,9 +66,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return this.WithConcreteType(concreteType);
         }
 
-        public MethodBuilder<TDelegate> WithSimpleNameFilters(params string[] namespaceNameFilters)
+        public MethodBuilder<TDelegate> WithNamespaceAndNameFilters(params string[] namespaceNameFilters)
         {
-            _namespaceNameFilters = namespaceNameFilters;
+            _namespaceAndNameFilter = namespaceNameFilters;
             return this;
         }
 
@@ -331,9 +331,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 throw new ArgumentException($"There must be a {nameof(_methodName)} specified to ensure fallback {nameof(TryFindMethod)} is viable.");
             }
 
-            if (_namespaceNameFilters != null && _namespaceNameFilters.Length != _parameters.Length + 1)
+            if (_namespaceAndNameFilter != null && _namespaceAndNameFilter.Length != _parameters.Length + 1)
             {
-                throw new ArgumentException($"The length of {nameof(_namespaceNameFilters)} must match the length of {nameof(_parameters)} + 1 for the return type.");
+                throw new ArgumentException($"The length of {nameof(_namespaceAndNameFilter)} must match the length of {nameof(_parameters)} + 1 for the return type.");
             }
 
             if (_explicitParameterTypes != null)
@@ -378,13 +378,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             var matchesOnNameAndReturn = methods.Length;
 
-            if (_namespaceNameFilters != null)
+            if (_namespaceAndNameFilter != null)
             {
                 methods = methods.Where(m =>
                 {
                     var parameters = m.GetParameters();
 
-                    if ((parameters.Length + 1) != _namespaceNameFilters.Length)
+                    if ((parameters.Length + 1) != _namespaceAndNameFilter.Length)
                     {
                         return false;
                     }
@@ -392,13 +392,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     var typesToCheck = new Type[] { m.ReturnType }.Concat(m.GetParameters().Select(p => p.ParameterType)).ToArray();
                     for (var i = 0; i < typesToCheck.Length; i++)
                     {
-                        if (_namespaceNameFilters == null)
+                        if (_namespaceAndNameFilter == null)
                         {
                             // Allow for not specifying
                             continue;
                         }
 
-                        if ($"{typesToCheck[i].Namespace}.{typesToCheck[i].Name}" != _namespaceNameFilters[i])
+                        if ($"{typesToCheck[i].Namespace}.{typesToCheck[i].Name}" != _namespaceAndNameFilter[i])
                         {
                             return false;
                         }

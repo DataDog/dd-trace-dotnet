@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var methodResult =
                 Build<Action<object, object, object, object>>(expected.Name)
                 .WithParameters(p1, p2, p3)
-                .WithSimpleNameFilters(
+                .WithNamespaceAndNameFilters(
                     "System.Void",
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassB",
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassC",
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var methodResult =
                 Build<Action<object, object, object, object>>(expected.Name)
                 .WithParameters(p1, p2, p3)
-                .WithSimpleNameFilters(
+                .WithNamespaceAndNameFilters(
                     "System.Void",
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassA",
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassA",
@@ -185,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var methodResult =
                 Build<Action<object, object>>(expected.Name)
                 .WithParameters(parameter)
-                .WithSimpleNameFilters(ClrNames.Void, ClrNames.Object)
+                .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.Object)
                 .Build();
             methodResult(instance, parameter);
             Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
