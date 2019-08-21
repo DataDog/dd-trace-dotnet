@@ -310,7 +310,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   GUID module_version_id;
-  metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
+  hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
+  if (FAILED(hr)) {
+    Warn("ModuleLoadFinished failed to get module_version_id for ",
+         module_id, " ", module_info.assembly.name);
+    return S_OK;
+  }
 
   ModuleMetadata* module_metadata = new ModuleMetadata(
       metadata_import, metadata_emit, module_info.assembly.name,
