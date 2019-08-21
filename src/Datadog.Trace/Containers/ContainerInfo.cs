@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Datadog.Trace.Containers
 {
@@ -19,6 +21,8 @@ namespace Datadog.Trace.Containers
                                                 @"([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64})" +
                                                 @"(?:\.scope|\.slice)?$";
 
+        private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
+
         /// <summary>
         /// Gets the id of the container executing the code.
         /// Return <c>null</c> if code is not executing inside a supported container.
@@ -26,13 +30,7 @@ namespace Datadog.Trace.Containers
         /// <returns>The container id or <c>null</c>.</returns>
         public static string GetContainerId()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && File.Exists(ControlGroupsFilePath))
-            {
-                IEnumerable<string> lines = File.ReadLines(ControlGroupsFilePath);
-                return ParseCgroupLines(lines);
-            }
-
-            return null;
+            return ContainerId.Value;
         }
 
         /// <summary>
@@ -116,6 +114,17 @@ namespace Datadog.Trace.Containers
                 {
                     return containerIdMatch.Groups[1].Value;
                 }
+            }
+
+            return null;
+        }
+
+        private static string GetContainerIdInternal()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && File.Exists(ControlGroupsFilePath))
+            {
+                IEnumerable<string> lines = File.ReadLines(ControlGroupsFilePath);
+                return ParseCgroupLines(lines);
             }
 
             return null;
