@@ -1,6 +1,6 @@
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
-    public class ClassA : AbstractAlphabetClass
+    public class ClassC : ClassB
     {
     }
 }

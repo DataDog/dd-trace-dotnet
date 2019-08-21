@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 using Sigil;
 
@@ -31,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private string _concreteTypeName;
         private object[] _parameters = new object[0];
         private Type[] _explicitParameterTypes = null;
+        private string[] _namespaceAndNameFilter = null;
 
         private Type[] _declaringTypeGenerics;
         private Type[] _methodGenerics;
@@ -62,6 +64,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             var concreteType = _resolutionAssembly.GetType(typeName);
             return this.WithConcreteType(concreteType);
+        }
+
+        public MethodBuilder<TDelegate> WithNamespaceAndNameFilters(params string[] namespaceNameFilters)
+        {
+            _namespaceAndNameFilter = namespaceNameFilters;
+            return this;
         }
 
         public MethodBuilder<TDelegate> WithParameters(params object[] parameters)
@@ -107,12 +115,19 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public TDelegate Build()
         {
+            var parameterTypesForCache = _explicitParameterTypes;
+
+            if (parameterTypesForCache == null)
+            {
+                parameterTypesForCache = Interception.ParamsToTypes(_parameters);
+            }
+
             var cacheKey = new Key(
                 callingModule: _resolutionAssembly.ManifestModule,
                 mdToken: _mdToken,
                 callOpCode: _opCode,
                 concreteType: _concreteType,
-                explicitParameterTypes: _explicitParameterTypes,
+                explicitParameterTypes: parameterTypesForCache,
                 methodGenerics: _methodGenerics,
                 declaringTypeGenerics: _declaringTypeGenerics);
 
@@ -316,6 +331,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 throw new ArgumentException($"There must be a {nameof(_methodName)} specified to ensure fallback {nameof(TryFindMethod)} is viable.");
             }
 
+            if (_namespaceAndNameFilter != null && _namespaceAndNameFilter.Length != _parameters.Length + 1)
+            {
+                throw new ArgumentException($"The length of {nameof(_namespaceAndNameFilter)} must match the length of {nameof(_parameters)} + 1 for the return type.");
+            }
+
             if (_explicitParameterTypes != null)
             {
                 if (_explicitParameterTypes.Length != _parameters.Length)
@@ -344,49 +364,91 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         private MethodInfo TryFindMethod()
         {
+            var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionAssembly.FullName}";
+            Log.Warn($"Using fallback method matching ({logDetail})");
+
             var methods =
                 _concreteType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
 
-            // prevent multiple enumerations
-            var methodEnumerable = methods.AsEnumerable();
-
             // A legacy fallback attempt to match on the concrete type
-            methodEnumerable =
-                methodEnumerable
-                   .Where(mi => mi.Name == _methodName)
-                   .Where(mi => _returnType == null || mi.ReturnType == _returnType);
+            methods =
+                methods
+                   .Where(mi => mi.Name == _methodName && (_returnType == null || mi.ReturnType == _returnType))
+                   .ToArray();
+
+            var matchesOnNameAndReturn = methods.Length;
+
+            if (_namespaceAndNameFilter != null)
+            {
+                methods = methods.Where(m =>
+                {
+                    var parameters = m.GetParameters();
+
+                    if ((parameters.Length + 1) != _namespaceAndNameFilter.Length)
+                    {
+                        return false;
+                    }
+
+                    var typesToCheck = new Type[] { m.ReturnType }.Concat(m.GetParameters().Select(p => p.ParameterType)).ToArray();
+                    for (var i = 0; i < typesToCheck.Length; i++)
+                    {
+                        if (_namespaceAndNameFilter == null)
+                        {
+                            // Allow for not specifying
+                            continue;
+                        }
+
+                        if ($"{typesToCheck[i].Namespace}.{typesToCheck[i].Name}" != _namespaceAndNameFilter[i])
+                        {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }).ToArray();
+            }
+
+            if (methods.Length == 1)
+            {
+                Log.Info($"Resolved by name and namespaceName filters ({logDetail})");
+                return methods[0];
+            }
 
             methods =
-                methodEnumerable
+                methods
                    .Where(ParametersAreViable)
                    .ToArray();
 
-            if (methods.Length > 1)
+            if (methods.Length == 1)
             {
-                methods =
-                    methods
-                       .Where(GenericsAreViable)
-                       .ToArray();
+                Log.Info($"Resolved by viable parameters ({logDetail})");
+                return methods[0];
             }
 
-            var methodText = $"mdToken: {_mdToken}, expectedName: {_methodName}, resolvedMethodBaseName: {_methodBase?.Name ?? "NULL"}";
+            methods =
+                methods
+                   .Where(GenericsAreViable)
+                   .ToArray();
 
-            if (methods.Length > 1)
+            if (methods.Length == 1)
             {
-                // Attempt to trim down further
-                methods = methods.Where(ParametersAreExact).ToArray();
+                Log.Info($"Resolved by viable generics ({logDetail})");
+                return methods[0];
             }
 
+            // Attempt to trim down further
+            methods = methods.Where(ParametersAreExact).ToArray();
+
             if (methods.Length > 1)
             {
-                throw new ArgumentException($"Unable to safely resolve method ({methodText}) for {_concreteTypeName}");
+                throw new ArgumentException($"Unable to safely resolve method, found {methods.Length} matches ({logDetail})");
             }
 
             var methodInfo = methods.SingleOrDefault();
 
             if (methodInfo == null)
             {
-                throw new ArgumentException($"Unable to resolve method ({methodText}) for {_concreteTypeName}");
+                throw new ArgumentException($"Unable to resolve method, started with {matchesOnNameAndReturn} by name match ({logDetail})");
             }
 
             return methodInfo;
@@ -559,7 +621,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 {
                     for (var i = 0; i < methodGenerics.Length; i++)
                     {
-                        GenericSpec = string.Concat(GenericSpec, $"_{methodGenerics[i].FullName}_");
+                        GenericSpec = string.Concat(GenericSpec, $"_{methodGenerics[i]?.FullName ?? "NULL"}_");
                     }
                 }
 
@@ -569,7 +631,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 {
                     for (var i = 0; i < declaringTypeGenerics.Length; i++)
                     {
-                        GenericSpec = string.Concat(GenericSpec, $"_{declaringTypeGenerics[i].FullName}_");
+                        GenericSpec = string.Concat(GenericSpec, $"_{declaringTypeGenerics[i]?.FullName ?? "NULL"}_");
                     }
                 }
 
@@ -577,7 +639,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
                 if (explicitParameterTypes != null)
                 {
-                    ExplicitParams = string.Join("_", explicitParameterTypes.Select(ept => ept.FullName));
+                    ExplicitParams = string.Join("_", explicitParameterTypes.Select(ept => ept?.FullName ?? "NULL"));
                 }
             }
         }

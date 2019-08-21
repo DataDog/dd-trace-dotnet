@@ -14,13 +14,111 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         private readonly Type _testType = typeof(ObscenelyAnnoyingClass);
 
         [Fact]
+        public void AmbiguousParameters_ClassASystemObjectClassA_CallsExpectedMethod()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            var p1 = new ClassA();
+            var p2 = new object();
+            var p3 = new ClassA();
+            var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
+            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
+            methodResult(instance, p1, p2, p3);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+        }
+
+        [Fact]
+        public void AmbiguousParameters_ClassAClassAClassA_CallsExpectedMethod()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            var p1 = new ClassA();
+            var p2 = new ClassA();
+            var p3 = new ClassA();
+            var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
+            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
+            methodResult(instance, p1, p2, p3);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+        }
+
+        [Fact]
+        public void AmbiguousParameters_ClassAClassBClassB_CallsExpectedMethod()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            var p1 = new ClassA();
+            var p2 = new ClassB();
+            var p3 = new ClassB();
+            var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
+            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
+            methodResult(instance, p1, p2, p3);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+        }
+
+        [Fact]
+        public void AmbiguousParameters_ClassBClassCClassC_CallsExpectedMethod()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            var p1 = new ClassB();
+            var p2 = new ClassC();
+            var p3 = new ClassC();
+            var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
+            var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
+            methodResult(instance, p1, p2, p3);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+        }
+
+        [Fact]
+        public void AmbiguousParameters_ClassCClassCClassC_CallsExpectedMethod_WithNamespaceNameFilter()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            var p1 = new ClassC();
+            var p2 = new ClassC();
+            var p3 = new ClassC();
+            var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
+
+            var methodResult =
+                Build<Action<object, object, object, object>>(expected.Name)
+                .WithParameters(p1, p2, p3)
+                .WithNamespaceAndNameFilters(
+                    "System.Void",
+                    "Datadog.Trace.ClrProfiler.Managed.Tests.ClassB",
+                    "Datadog.Trace.ClrProfiler.Managed.Tests.ClassC",
+                    "Datadog.Trace.ClrProfiler.Managed.Tests.ClassC")
+                .Build();
+
+            methodResult(instance, p1, p2, p3);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+        }
+
+        [Fact]
+        public void AmbiguousParameters_ClassCClassBClassA_CallsExpectedMethod_WithNamespaceNameFilter()
+        {
+            var instance = new ObscenelyAnnoyingClass();
+            var p1 = new ClassC();
+            var p2 = new ClassB();
+            var p3 = new ClassA();
+            var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
+
+            var methodResult =
+                Build<Action<object, object, object, object>>(expected.Name)
+                .WithParameters(p1, p2, p3)
+                .WithNamespaceAndNameFilters(
+                    "System.Void",
+                    "Datadog.Trace.ClrProfiler.Managed.Tests.ClassA",
+                    "Datadog.Trace.ClrProfiler.Managed.Tests.ClassA",
+                    "Datadog.Trace.ClrProfiler.Managed.Tests.ClassA")
+                .Build();
+
+            methodResult(instance, p1, p2, p3);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+        }
+
+        [Fact]
         public void NoParameters_ProperlyCalled()
         {
             var instance = new ObscenelyAnnoyingClass();
             var expected = MethodReference.Get(() => instance.Method());
             var methodResult = Build<Action<object>>(expected.Name).Build();
-            methodResult.Invoke(instance);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            methodResult(instance);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
         [Fact]
@@ -30,8 +128,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             int parameter = 1;
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, int>>(expected.Name).WithParameters(parameter).Build();
-            methodResult.Invoke(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            methodResult(instance, parameter);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
         [Fact]
@@ -41,8 +139,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             long parameter = 1;
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, long>>(expected.Name).WithParameters(parameter).Build();
-            methodResult.Invoke(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            methodResult(instance, parameter);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
         [Fact]
@@ -52,8 +150,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             short parameter = 1;
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, short>>(expected.Name).WithParameters(parameter).Build();
-            methodResult.Invoke(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            methodResult(instance, parameter);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
         [Fact]
@@ -63,8 +161,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             object parameter = new object();
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, object>>(expected.Name).WithParameters(parameter).Build();
-            methodResult.Invoke(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            methodResult(instance, parameter);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
         [Fact]
@@ -74,34 +172,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             string parameter = string.Empty;
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, string>>(expected.Name).WithParameters(parameter).Build();
-            methodResult.Invoke(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            methodResult(instance, parameter);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
         [Fact]
-        public void StringParameterAsObject_ProperlyCalls_ObjectMethod()
+        public void StringParameterAsObject_ProperlyCalls_ObjectMethod_WithNamespaceNameFilter()
         {
             var instance = new ObscenelyAnnoyingClass();
             object parameter = string.Empty;
             var expected = MethodReference.Get(() => instance.Method(parameter));
-            var methodResult = Build<Action<object, object>>(expected.Name).WithParameters(parameter).Build();
-            methodResult.Invoke(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
-        }
-
-        [Fact]
-        public void StringParameterAsObject_WithExplicitTypeSpecified_ProperlyCalls_StringMethod()
-        {
-            var instance = new ObscenelyAnnoyingClass();
-            object parameter = string.Empty;
-            var expected = MethodReference.Get(() => instance.Method(string.Empty));
             var methodResult =
                 Build<Action<object, object>>(expected.Name)
-                   .WithParameters(parameter)
-                   .WithExplicitParameterTypes(typeof(string))
-                   .Build();
-            methodResult.Invoke(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+                .WithParameters(parameter)
+                .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.Object)
+                .Build();
+            methodResult(instance, parameter);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
         [Fact]
@@ -111,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var parameter = new ClassA();
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, object>>(expected.Name, overrideType: instance.GetType()).WithParameters(parameter).Build();
-            methodResult.Invoke(instance, parameter);
+            methodResult(instance, parameter);
             Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 
@@ -126,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                    .WithParameters(parameter)
                    .WithMethodGenerics(typeof(int))
                    .Build();
-            methodResult.Invoke(instance, parameter);
+            methodResult(instance, parameter);
             Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 
@@ -142,7 +229,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                    .WithParameters(parameter1, parameter2)
                    .WithMethodGenerics(typeof(int))
                    .Build();
-            methodResult.Invoke(instance, parameter1, parameter2);
+            methodResult(instance, parameter1, parameter2);
             Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 
@@ -161,8 +248,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                               .WithParameters(parameter) // The parameter is the saving grace
                               .Build();
 
-            methodResult.Invoke(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            methodResult(instance, parameter);
+            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
         private MethodBuilder<T> Build<T>(string methodName, Type overrideType = null)
