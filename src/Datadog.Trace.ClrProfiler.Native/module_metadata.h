@@ -20,14 +20,17 @@ class ModuleMetadata {
   const ComPtr<IMetaDataImport2> metadata_import{};
   const ComPtr<IMetaDataEmit2> metadata_emit{};
   WSTRING assemblyName = ""_W;
+  GUID module_version_id;
   std::vector<IntegrationMethod> integrations = {};
 
   ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
                  ComPtr<IMetaDataEmit2> metadata_emit, WSTRING assembly_name,
+                 GUID module_version_id,
                  std::vector<IntegrationMethod> integrations)
       : metadata_import(metadata_import),
         metadata_emit(metadata_emit),
         assemblyName(assembly_name),
+        module_version_id(module_version_id),
         integrations(integrations) {}
 
   bool TryGetWrapperMemberRef(const WSTRING& keyIn,
