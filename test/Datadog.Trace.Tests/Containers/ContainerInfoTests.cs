@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tests.Containers
         [MemberData(nameof(GetCgroupFiles))]
         public void ParseFile(string file, string expected)
         {
-            string actual = ContainerInfo.ParseFile(file);
+            string actual = ContainerInfo.ParseCgroupText(file);
             Assert.Equal(expected, actual);
         }
     }

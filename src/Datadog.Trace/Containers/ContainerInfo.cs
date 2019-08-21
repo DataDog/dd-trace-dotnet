@@ -29,31 +29,47 @@ namespace Datadog.Trace.Containers
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && File.Exists(ControlGroupsFilePath))
             {
                 IEnumerable<string> lines = File.ReadLines(ControlGroupsFilePath);
-                return ParseLines(lines);
+                return ParseCgroupLines(lines);
             }
 
             return null;
         }
 
-        internal static string ParseFile(string file)
+        /// <summary>
+        /// Extract the container id from the specified cgroup file contents.
+        /// </summary>
+        /// <remarks>
+        /// This method is used when passing the entire cgroup text for testing purposes.
+        /// When reading from file system, we only read one line at a time until we find a match,
+        /// which is usually the first line.
+        /// </remarks>
+        /// <param name="contents">The contents of a cgroup file.</param>
+        /// <returns>The container id if a match is found; otherwise, <c>null</c>.</returns>
+        internal static string ParseCgroupText(string contents)
         {
-            if (file == null)
+            if (contents == null)
             {
                 return null;
             }
 
-            IEnumerable<string> lines = SplitLines(file);
-            return ParseLines(lines);
+            IEnumerable<string> lines = SplitLines(contents);
+            return ParseCgroupLines(lines);
         }
 
-        internal static IEnumerable<string> SplitLines(string lines)
+        /// <summary>
+        /// Used by <see cref="ParseCgroupText"/> to split the entire file contents
+        /// into individual lines to mock <see cref="File.ReadLines(string)"/>.
+        /// </summary>
+        /// <param name="contents">The multi-line string.</param>
+        /// <returns>An enumerable that returns each line from <paramref name="contents"/> when iterated.</returns>
+        internal static IEnumerable<string> SplitLines(string contents)
         {
-            if (lines == null)
+            if (contents == null)
             {
                 yield break;
             }
 
-            using (var reader = new StringReader(lines))
+            using (var reader = new StringReader(contents))
             {
                 while (true)
                 {
@@ -69,13 +85,23 @@ namespace Datadog.Trace.Containers
             }
         }
 
-        internal static string ParseLines(IEnumerable<string> lines)
+        /// <summary>
+        /// Uses regular expression to try to extract a container id from the specified string.
+        /// </summary>
+        /// <param name="lines">Lines of text from a cgroup file.</param>
+        /// <returns>The container id if found; otherwise, <c>null</c>.</returns>
+        internal static string ParseCgroupLines(IEnumerable<string> lines)
         {
-            return lines.Select(ParseLine)
+            return lines.Select(ParseCgroupLine)
                         .FirstOrDefault(id => !string.IsNullOrWhiteSpace(id));
         }
 
-        internal static string ParseLine(string line)
+        /// <summary>
+        /// Uses regular expression to try to extract a container id from the specified string.
+        /// </summary>
+        /// <param name="line">A single line from a cgroup file.</param>
+        /// <returns>The container id if found; otherwise, <c>null</c>.</returns>
+        internal static string ParseCgroupLine(string line)
         {
             var lineMatch = Regex.Match(line, LineRegex);
 
