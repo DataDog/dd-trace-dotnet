@@ -45,7 +45,7 @@ namespace Datadog.Trace.Containers
         /// </remarks>
         /// <param name="contents">The contents of a cgroup file.</param>
         /// <returns>The container id if a match is found; otherwise, <c>null</c>.</returns>
-        internal static string ParseCgroupText(string contents)
+        public static string ParseCgroupText(string contents)
         {
             if (contents == null)
             {
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Containers
         /// </summary>
         /// <param name="contents">The multi-line string.</param>
         /// <returns>An enumerable that returns each line from <paramref name="contents"/> when iterated.</returns>
-        internal static IEnumerable<string> SplitLines(string contents)
+        public static IEnumerable<string> SplitLines(string contents)
         {
             if (contents == null)
             {
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Containers
         /// </summary>
         /// <param name="lines">Lines of text from a cgroup file.</param>
         /// <returns>The container id if found; otherwise, <c>null</c>.</returns>
-        internal static string ParseCgroupLines(IEnumerable<string> lines)
+        public static string ParseCgroupLines(IEnumerable<string> lines)
         {
             return lines.Select(ParseCgroupLine)
                         .FirstOrDefault(id => !string.IsNullOrWhiteSpace(id));
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Containers
         /// </summary>
         /// <param name="line">A single line from a cgroup file.</param>
         /// <returns>The container id if found; otherwise, <c>null</c>.</returns>
-        internal static string ParseCgroupLine(string line)
+        public static string ParseCgroupLine(string line)
         {
             var lineMatch = Regex.Match(line, LineRegex);
 
