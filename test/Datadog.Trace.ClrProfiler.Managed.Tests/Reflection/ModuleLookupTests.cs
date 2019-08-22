@@ -21,16 +21,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             for (var i = 0; i < 20; i++)
             {
-                var task = new Task(() =>
+                tasks[i] = Task.Run(() =>
                 {
                     resetEvent.Wait();
-                    var module = ModuleLookup.Get(systemDataGuid);
-                    bag.Add(module);
+                    bag.Add(ModuleLookup.Get(systemDataGuid));
                 });
-
-                task.Start();
-
-                tasks[i] = task;
             }
 
             resetEvent.Set();
