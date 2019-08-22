@@ -65,13 +65,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
 #if NET45
             // deprecated
-            var guid = (Guid)Marshal.PtrToStructure(ptr, typeof(Guid));
+            var moduleVersionId = (Guid)Marshal.PtrToStructure(ptr, typeof(Guid));
 #else
             // added in net451
-            var guid = Marshal.PtrToStructure<Guid>(ptr);
+            var moduleVersionId = Marshal.PtrToStructure<Guid>(ptr);
 #endif
 
-            return new MethodBuilder<TDelegate>(guid, mdToken, opCode, methodName);
+            return new MethodBuilder<TDelegate>(moduleVersionId, mdToken, opCode, methodName);
         }
 
         public MethodBuilder<TDelegate> WithConcreteType(Type type)
