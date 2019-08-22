@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server to call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The result</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -49,7 +50,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             object processor,
             object server,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
             var resultType = typeof(T);
             var multiplexerType = multiplexer.GetType();
@@ -59,12 +61,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
 
             var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, T>>
-               .CreateMethodCallDelegate(
-                    multiplexerType,
-                    methodName: "ExecuteSyncImpl",
-                    (OpCodeValue)opCode,
-                    methodParameterTypes: new[] { messageType, processorType, serverType },
-                    methodGenericArguments: new[] { resultType });
+                                     .CreateMethodCallDelegate(
+                                          multiplexerType,
+                                          methodName: "ExecuteSyncImpl",
+                                          (OpCodeValue)opCode,
+                                          methodParameterTypes: new[] { messageType, processorType, serverType },
+                                          methodGenericArguments: new[] { resultType });
 
             using (var scope = CreateScope(multiplexer, message))
             {
@@ -91,6 +93,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server to call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -115,7 +118,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             object state,
             object server,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
             var callOpCode = (OpCodeValue)opCode;
             return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server, callOpCode);

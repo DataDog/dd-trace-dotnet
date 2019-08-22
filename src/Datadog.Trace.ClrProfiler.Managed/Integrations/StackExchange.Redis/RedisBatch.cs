@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>An asynchronous task.</returns>
         [InterceptMethod(
             Integration = IntegrationName,
@@ -55,7 +56,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             object processor,
             object server,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
             var callingAssembly = Assembly.GetCallingAssembly();
             return ExecuteAsyncInternal<T>(redisBase, message, processor, server, opCode, mdToken, callingAssembly);

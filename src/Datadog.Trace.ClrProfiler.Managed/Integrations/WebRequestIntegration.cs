@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="webRequest">The <see cref="WebRequest"/> instance to instrument.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System", // .NET Framework
@@ -32,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Net.WebResponse" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object GetResponse(object webRequest, int opCode, int mdToken)
+        public static object GetResponse(object webRequest, int opCode, int mdToken, long moduleVersionPtr)
         {
             var request = (WebRequest)webRequest;
 
@@ -74,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="request">The <see cref="WebRequest"/> instance to instrument.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Net",
@@ -81,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.WebResponse>" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object GetResponseAsync(object request, int opCode, int mdToken)
+        public static object GetResponseAsync(object request, int opCode, int mdToken, long moduleVersionPtr)
         {
             return GetResponseAsyncInternal((WebRequest)request);
         }

@@ -167,6 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="state">An object that holds the state of the async operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the <see cref="IAsyncResult "/> returned by the original BeginInvokeAction() that is later passed to <see cref="EndInvokeAction"/>.</returns>
         [InterceptMethod(
             CallerAssembly = AssemblyName,
@@ -182,7 +183,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object callback,
             object state,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
             Scope scope = null;
 
@@ -224,6 +226,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="asyncResult">The <see cref="IAsyncResult"/> returned by <see cref="BeginInvokeAction"/>.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the <see cref="bool"/> returned by the original EndInvokeAction().</returns>
         [InterceptMethod(
             CallerAssembly = AssemblyName,
@@ -232,7 +235,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { ClrNames.Bool, ClrNames.IAsyncResult },
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
-        public static bool EndInvokeAction(object asyncControllerActionInvoker, object asyncResult, int opCode, int mdToken)
+        public static bool EndInvokeAction(
+            object asyncControllerActionInvoker,
+            object asyncResult,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
             Scope scope = null;
             var httpContext = HttpContext.Current;

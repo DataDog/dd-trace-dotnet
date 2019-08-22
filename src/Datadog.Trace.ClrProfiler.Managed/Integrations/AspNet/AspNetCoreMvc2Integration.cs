@@ -123,6 +123,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="routeData">A RouteData with information about the current route.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
@@ -136,7 +137,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object httpContext,
             object routeData,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
             AspNetCoreMvc2Integration integration = null;
 
@@ -198,6 +200,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="routeData">A RouteData with information about the current route.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
@@ -211,7 +214,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object httpContext,
             object routeData,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
             AspNetCoreMvc2Integration integration = null;
 
@@ -275,6 +279,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
@@ -282,7 +287,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
-        public static void Rethrow(object context, int opCode, int mdToken)
+        public static void Rethrow(object context, int opCode, int mdToken, long moduleVersionPtr)
         {
             if (context == null)
             {
