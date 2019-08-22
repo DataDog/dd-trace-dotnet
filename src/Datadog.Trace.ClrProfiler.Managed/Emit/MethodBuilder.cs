@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 using Sigil;
@@ -62,6 +63,21 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public static MethodBuilder<TDelegate> Start(Guid moduleVersionId, int mdToken, int opCode, string methodName)
         {
             return new MethodBuilder<TDelegate>(moduleVersionId, mdToken, opCode, methodName);
+        }
+
+        public static MethodBuilder<TDelegate> Start(long moduleVersionPtr, int mdToken, int opCode, string methodName)
+        {
+            var ptr = new IntPtr(moduleVersionPtr);
+
+#if NET45
+            // deprecated
+            var guid = (Guid)Marshal.PtrToStructure(ptr, typeof(Guid));
+#else
+            // added in net451
+            var guid = Marshal.PtrToStructure<Guid>(ptr);
+#endif
+
+            return new MethodBuilder<TDelegate>(guid, mdToken, opCode, methodName);
         }
 
         public MethodBuilder<TDelegate> WithConcreteType(Type type)
@@ -143,12 +159,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 declaringTypeGenerics: _declaringTypeGenerics);
 
             return Cache.GetOrAdd(cacheKey, key =>
-            {
-                // Validate requirements at the last possible moment
-                // Don't do more than needed before checking the cache
-                ValidateRequirements();
-                return EmitDelegate();
-            });
+                {
+                    // Validate requirements at the last possible moment
+                    // Don't do more than needed before checking the cache
+                    ValidateRequirements();
+                    return EmitDelegate();
+                });
         }
 
         private TDelegate EmitDelegate()
@@ -399,30 +415,30 @@ namespace Datadog.Trace.ClrProfiler.Emit
             if (_namespaceAndNameFilter != null)
             {
                 methods = methods.Where(m =>
-                {
-                    var parameters = m.GetParameters();
+                                      {
+                                          var parameters = m.GetParameters();
 
-                    if ((parameters.Length + 1) != _namespaceAndNameFilter.Length)
-                    {
-                        return false;
-                    }
+                                          if ((parameters.Length + 1) != _namespaceAndNameFilter.Length)
+                                          {
+                                              return false;
+                                          }
 
-                    var typesToCheck = new Type[] { m.ReturnType }.Concat(m.GetParameters().Select(p => p.ParameterType)).ToArray();
-                    for (var i = 0; i < typesToCheck.Length; i++)
-                    {
-                        if (_namespaceAndNameFilter == null)
-                        {
-                            // Allow for not specifying
-                            continue;
-                        }
+                                          var typesToCheck = new Type[] { m.ReturnType }.Concat(m.GetParameters().Select(p => p.ParameterType)).ToArray();
+                                          for (var i = 0; i < typesToCheck.Length; i++)
+                                          {
+                                              if (_namespaceAndNameFilter == null)
+                                              {
+                                                  // Allow for not specifying
+                                                  continue;
+                                              }
 
-                        if ($"{typesToCheck[i].Namespace}.{typesToCheck[i].Name}" != _namespaceAndNameFilter[i])
-                        {
-                            return false;
-                        }
-                    }
+                                              if ($"{typesToCheck[i].Namespace}.{typesToCheck[i].Name}" != _namespaceAndNameFilter[i])
+                                              {
+                                                  return false;
+                                              }
+                                          }
 
-                    return true;
+                                          return true;
                 }).ToArray();
             }
 
