@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void WrapperMethodHasMdTokenArgument(MethodInfo wrapperMethod)
         {
             // all wrapper methods should have an additional Int32
-            // parameter for the original method call's opcode
+            // parameter for the original method call's mdToken
             var parameters = wrapperMethod.GetParameters();
             var param = parameters[parameters.Length - 2];
             Assert.Equal(typeof(int), param.ParameterType);
@@ -61,8 +61,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [MemberData(nameof(GetWrapperMethods))]
         public void WrapperMethodHasModuleVersionPtrArgument(MethodInfo wrapperMethod)
         {
-            // all wrapper methods should have an additional Int32
-            // parameter for the original method call's opcode
+            // all wrapper methods should have an additional Int64
+            // parameter for the address of calling module's moduleVersionId
             var parameters = wrapperMethod.GetParameters();
             var param = parameters[parameters.Length - 1];
             Assert.Equal(typeof(long), param.ParameterType);
