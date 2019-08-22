@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(BeforeAction))
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(BeforeAction))
                        .WithConcreteTypeName(DiagnosticSource)
                        .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
                        .Build();
@@ -245,7 +245,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(AfterAction))
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(AfterAction))
                        .WithConcreteTypeName(DiagnosticSource)
                        .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
                        .Build();
@@ -305,7 +305,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Action<object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(Rethrow))
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(Rethrow))
                        .WithConcreteTypeName(ResourceInvoker)
                        .WithParameters(context)
                        .Build();

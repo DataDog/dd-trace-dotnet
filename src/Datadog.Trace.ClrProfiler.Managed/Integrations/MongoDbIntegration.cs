@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
                        .Build();
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 execute =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
                        .Build();
@@ -194,7 +194,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 executeAsync =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
                        .WithParameters(connection, cancellationToken)
@@ -251,7 +251,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 executeAsync =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
                        .WithParameters(connection, cancellationToken)

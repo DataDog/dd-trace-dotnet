@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object, object, object, object, object, object>>
-                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                         .WithConcreteType(documentValidatorInstanceType)
                         .WithParameters(originalQuery, schema, document, rules, userContext, inputs)
                         .Build();
@@ -174,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object>>
-                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                         .WithConcreteType(executionStrategyInstanceType)
                         .WithParameters(context)
                         .Build();

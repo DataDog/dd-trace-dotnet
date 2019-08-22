@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, SendAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpMessageHandler)
                        .WithParameters(request, cancellationToken)
                        .Build();
@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, SendAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpClientHandler)
                        .WithParameters(request, cancellationToken)
                        .Build();

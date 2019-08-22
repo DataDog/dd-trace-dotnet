@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     /// </summary>
     public class MethodBuilderTests
     {
-        private readonly Assembly _thisAssembly = Assembly.GetExecutingAssembly();
+        private readonly Guid _moduleVersionId = Assembly.GetExecutingAssembly().ManifestModule.ModuleVersionId;
         private readonly Type _testType = typeof(ObscenelyAnnoyingClass);
 
         [Fact]
@@ -243,7 +243,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(parameter));
 
             var methodResult = MethodBuilder<Action<object, object>> // Proper use should be Action<object, string>
-                              .Start(_thisAssembly, wrongMethod.MetadataToken, (int)OpCodeValue.Callvirt, "Method")
+                              .Start(_moduleVersionId, wrongMethod.MetadataToken, (int)OpCodeValue.Callvirt, "Method")
                               .WithConcreteType(_testType)
                               .WithParameters(parameter) // The parameter is the saving grace
                               .Build();
@@ -255,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         private MethodBuilder<T> Build<T>(string methodName, Type overrideType = null)
         {
             return MethodBuilder<T>
-                  .Start(_thisAssembly, 0, (int)OpCodeValue.Callvirt, methodName)
+                  .Start(_moduleVersionId, 0, (int)OpCodeValue.Callvirt, methodName)
                   .WithConcreteType(overrideType ?? _testType);
         }
     }

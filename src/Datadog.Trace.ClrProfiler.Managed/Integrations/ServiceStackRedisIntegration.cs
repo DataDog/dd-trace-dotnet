@@ -48,14 +48,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<object, byte[][], object, object, bool, T> instrumentedMethod = null;
+            Func<object, byte[][], object, object, bool, T> instrumentedMethod;
 
             try
             {
                 var instrumentedType = redisNativeClient.GetInstrumentedType(RedisNativeClient);
                 instrumentedMethod =
                     MethodBuilder<Func<object, byte[][], object, object, bool, T>>
-                       .Start(instrumentedType.Assembly, mdToken, opCode, nameof(SendReceive))
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(SendReceive))
                        .WithConcreteType(instrumentedType)
                        .WithParameters(cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead)
                        .WithMethodGenerics(typeof(T))

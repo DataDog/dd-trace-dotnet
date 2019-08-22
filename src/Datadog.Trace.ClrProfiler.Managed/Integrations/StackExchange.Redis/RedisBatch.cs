@@ -59,8 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             int mdToken,
             long moduleVersionPtr)
         {
-            var callingAssembly = Assembly.GetCallingAssembly();
-            return ExecuteAsyncInternal<T>(redisBase, message, processor, server, opCode, mdToken, callingAssembly);
+            return ExecuteAsyncInternal<T>(redisBase, message, processor, server, opCode, mdToken, moduleVersionPtr);
         }
 
         /// <summary>
@@ -73,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="server">The server</param>
         /// <param name="callOpCode">The <see cref="OpCodeValue"/> used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <param name="callingAssembly">The assembly of the method the invoked the target method.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>An asynchronous task.</returns>
         private static async Task<T> ExecuteAsyncInternal<T>(
             object redisBase,
@@ -82,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             object server,
             int callOpCode,
             int mdToken,
-            Assembly callingAssembly)
+            long moduleVersionPtr)
         {
             var thisType = redisBase.GetType();
 
@@ -96,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             }
 
             var instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
-                                    .Start(callingAssembly, mdToken, callOpCode, nameof(ExecuteAsync))
+                                    .Start(moduleVersionPtr, mdToken, callOpCode, nameof(ExecuteAsync))
                                     .WithConcreteType(_redisBaseType)
                                     .WithMethodGenerics(typeof(T))
                                     .WithParameters(message, processor, server)

@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 callElasticSearch =
                     MethodBuilder<Func<object, object, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(pipelineType)
                        .WithMethodGenerics(genericArgument)
                        .WithParameters(requestData)
@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(CallElasticsearchAsync))
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(CallElasticsearchAsync))
                        .WithConcreteType(pipeline.GetType())
                        .WithMethodGenerics(genericArgument)
                        .WithParameters(requestData, cancellationToken)
