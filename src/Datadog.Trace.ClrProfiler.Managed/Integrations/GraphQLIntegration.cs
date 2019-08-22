@@ -153,8 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 var graphQLAssembly = AppDomain.CurrentDomain.GetAssemblies()
-                                        .Where(a => a.GetName().Name.Equals(GraphQLAssemblyName))
-                                        .Single();
+                                               .Single(a => a.GetName().Name.Equals(GraphQLAssemblyName));
                 graphQLExecutionResultType = graphQLAssembly.GetType(GraphQLExecutionResultName, throwOnError: true);
                 executionStrategyInterfaceType = graphQLAssembly.GetType(GraphQLExecutionStrategyInterfaceName, throwOnError: true);
             }
@@ -162,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // This shouldn't happen because the GraphQL assembly should have been loaded to construct various other types
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error finding types in the GraphQL assembly.", ex);
+                Log.ErrorException("Error finding types in the GraphQL assembly.", ex);
                 throw;
             }
 
