@@ -106,7 +106,7 @@ namespace GenerateIntegrationDefinitions
             var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
 
             var requiredParameterTypes = new[] { typeof(int), typeof(int), typeof(long) };
-            var lastParameterTypes = parameters.Skip(parameters.Length - requiredParameterTypes.Length).ToArray();
+            var lastParameterTypes = parameters.Skip(parameters.Length - requiredParameterTypes.Length);
 
             if (!lastParameterTypes.SequenceEqual(requiredParameterTypes))
             {
