@@ -504,11 +504,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         // Drop out for safety
         if (debug_logging_enabled) {
           Debug(
-              "JITCompilationStarted skipping method: signature too short. "
-              "function_id=",
+              "JITCompilationStarted skipping function call: wrapper signature "
+              "too short. function_id=",
               function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()",
-              " wrapper_method_signature_size=", wrapper_method_signature_size);
+              " wrapper_method=", method_replacement.wrapper_method.type_name,
+              ".", method_replacement.wrapper_method.method_name,
+              "() wrapper_method_signature_size=",
+              wrapper_method_signature_size);
         }
 
         continue;
@@ -532,11 +534,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         // Number of arguments does not match our wrapper method
         if (debug_logging_enabled) {
           Debug(
-              "JITCompilationStarted skipping method: argument counts don't "
-              "match. function_id=",
+              "JITCompilationStarted skipping function call: argument counts "
+              "don't match. function_id=",
               function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()",
-              " expected_number_args=", expected_number_args,
+              " target_name=", target.type.name, ".", target.name,
+              "() expected_number_args=", expected_number_args,
               " target_arg_count=", target_arg_count);
         }
 
@@ -569,10 +571,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       if (!successfully_parsed_signature) {
         if (debug_logging_enabled) {
           Debug(
-              "JITCompilationStarted skipping method: failed to parse "
+              "JITCompilationStarted skipping function call: failed to parse "
               "signature. function_id=",
               function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()",
+              " target_name=", target.type.name, ".", target.name, "()",
               " successfully_parsed_signature=", successfully_parsed_signature,
               " sig_types.size()=", sig_types.size(),
               " expected_sig_types.size()=", expected_sig_types.size());
@@ -585,11 +587,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         // we can't safely assume our wrapper methods handle the types
         if (debug_logging_enabled) {
           Debug(
-              "JITCompilationStarted skipping method: unexpected type count. "
-              "function_id=",
+              "JITCompilationStarted skipping function call: unexpected type "
+              "count. function_id=",
               function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()",
-              " successfully_parsed_signature=", successfully_parsed_signature,
+              " target_name=", target.type.name, ".", target.name,
+              "() successfully_parsed_signature=",
+              successfully_parsed_signature,
               " sig_types.size()=", sig_types.size(),
               " expected_sig_types.size()=", expected_sig_types.size());
         }
@@ -607,12 +610,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           // we have a type mismatch, drop out
           if (debug_logging_enabled) {
             Debug(
-                "JITCompilationStarted skipping method: types don't match. "
-                "function_id=",
+                "JITCompilationStarted skipping function call: types don't "
+                "match. function_id=",
                 function_id, " token=", function_token,
-                " name=", caller.type.name, ".", caller.name, "()",
-                " expected_sig_types[", i, "]=", expected_sig_types[i],
-                " sig_types[", i, "]=", sig_types[i]);
+                " target_name=", target.type.name, ".", target.name,
+                "() sig_types[", i, "]=", sig_types[i], "expected_sig_types[",
+                i, "]=", expected_sig_types[i]);
           }
 
           is_match = false;
@@ -631,8 +634,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
             "JITCompilationStarted skipping method: Method replacement "
             "found but the managed profiler has not yet been loaded. "
             "function_id=",
-            function_id, " token=", function_token, " name=", caller.type.name,
-            ".", caller.name, "()");
+            function_id, " token=", function_token, " target_name=", target.type.name,
+            ".", target.name, "()");
         continue;
       }
 #endif
