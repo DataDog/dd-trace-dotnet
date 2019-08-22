@@ -18,29 +18,34 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
         private static readonly ILog Log = LogProvider.GetLogger(typeof(MethodBuilder<TDelegate>));
 
-        private readonly Assembly _resolutionAssembly;
+        private readonly Module _resolutionModule;
         private readonly int _mdToken;
         private readonly int _originalOpCodeValue;
         private readonly OpCodeValue _opCode;
-
-        // Legacy fallback mechanisms
         private readonly string _methodName;
-        private Type _returnType;
+        private readonly Guid? _moduleVersionId;
 
+        private Type _returnType;
         private MethodBase _methodBase;
         private Type _concreteType;
         private string _concreteTypeName;
         private object[] _parameters = new object[0];
         private Type[] _explicitParameterTypes = null;
         private string[] _namespaceAndNameFilter = null;
-
         private Type[] _declaringTypeGenerics;
         private Type[] _methodGenerics;
         private bool _forceMethodDefResolve;
 
-        private MethodBuilder(Assembly resolutionAssembly, int mdToken, int opCode, string methodName)
+        private MethodBuilder(Guid moduleVersionId, int mdToken, int opCode, string methodName)
+            : this(ModuleLookup.Get(moduleVersionId), mdToken, opCode, methodName)
         {
-            _resolutionAssembly = resolutionAssembly;
+            // Save the Guid for logging purposes
+            _moduleVersionId = moduleVersionId;
+        }
+
+        private MethodBuilder(Module resolutionModule, int mdToken, int opCode, string methodName)
+        {
+            _resolutionModule = resolutionModule;
             _mdToken = mdToken;
             _opCode = (OpCodeValue)opCode;
             _originalOpCodeValue = opCode;
@@ -50,19 +55,25 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public static MethodBuilder<TDelegate> Start(Assembly resolutionAssembly, int mdToken, int opCode, string methodName)
         {
-            return new MethodBuilder<TDelegate>(resolutionAssembly, mdToken, opCode, methodName);
+            // This method is deprecated in favor of the newer ModuleVersionId lookup
+            return new MethodBuilder<TDelegate>(resolutionAssembly.ManifestModule, mdToken, opCode, methodName);
+        }
+
+        public static MethodBuilder<TDelegate> Start(Guid moduleVersionId, int mdToken, int opCode, string methodName)
+        {
+            return new MethodBuilder<TDelegate>(moduleVersionId, mdToken, opCode, methodName);
         }
 
         public MethodBuilder<TDelegate> WithConcreteType(Type type)
         {
             _concreteType = type;
-            _concreteTypeName = type.FullName;
+            _concreteTypeName = type?.FullName;
             return this;
         }
 
         public MethodBuilder<TDelegate> WithConcreteTypeName(string typeName)
         {
-            var concreteType = _resolutionAssembly.GetType(typeName);
+            var concreteType = _resolutionModule?.GetType(typeName);
             return this.WithConcreteType(concreteType);
         }
 
@@ -123,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
 
             var cacheKey = new Key(
-                callingModule: _resolutionAssembly.ManifestModule,
+                callingModule: _resolutionModule,
                 mdToken: _mdToken,
                 callOpCode: _opCode,
                 concreteType: _concreteType,
@@ -144,29 +155,36 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             var requiresBestEffortMatching = false;
 
-            try
+            if (_resolutionModule != null)
             {
-                // Don't resolve until we build, as it may be an unnecessary lookup because of the cache
-                // We also may need the generics which were specified
-                if (_forceMethodDefResolve || (_declaringTypeGenerics == null && _methodGenerics == null))
+                try
                 {
-                    _methodBase =
-                        _resolutionAssembly.ManifestModule.ResolveMethod(metadataToken: _mdToken);
+                    // Don't resolve until we build, as it may be an unnecessary lookup because of the cache
+                    // We also may need the generics which were specified
+                    if (_forceMethodDefResolve || (_declaringTypeGenerics == null && _methodGenerics == null))
+                    {
+                        _methodBase =
+                            _resolutionModule.ResolveMethod(metadataToken: _mdToken);
+                    }
+                    else
+                    {
+                        _methodBase =
+                            _resolutionModule.ResolveMethod(
+                                metadataToken: _mdToken,
+                                genericTypeArguments: _declaringTypeGenerics,
+                                genericMethodArguments: _methodGenerics);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    _methodBase =
-                        _resolutionAssembly.ManifestModule.ResolveMethod(
-                            metadataToken: _mdToken,
-                            genericTypeArguments: _declaringTypeGenerics,
-                            genericMethodArguments: _methodGenerics);
+                    string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
+                    Log.Error(message, ex);
+                    requiresBestEffortMatching = true;
                 }
             }
-            catch (Exception ex)
+            else
             {
-                string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
-                Log.Error(message, ex);
-                requiresBestEffortMatching = true;
+                Log.Warn($"Unable to resolve module version id {_moduleVersionId}. Using method builder fallback.");
             }
 
             MethodInfo methodInfo = null;
@@ -296,7 +314,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private MethodInfo VerifyMethodFromToken(MethodInfo methodInfo)
         {
             // Verify baselines to ensure this isn't the wrong method somehow
-            var detailMessage = $"Unexpected method: {_concreteTypeName}.{_methodName} received for mdToken: {_mdToken} in assembly: {_resolutionAssembly.FullName}";
+            var detailMessage = $"Unexpected method: {_concreteTypeName}.{_methodName} received for mdToken: {_mdToken} in module: {_resolutionModule?.FullyQualifiedName ?? "NULL"}, {_resolutionModule?.ModuleVersionId ?? _moduleVersionId}";
 
             if (!string.Equals(_methodName, methodInfo.Name))
             {
@@ -364,7 +382,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         private MethodInfo TryFindMethod()
         {
-            var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionAssembly.FullName}";
+            var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionModule?.FullyQualifiedName ?? "NULL"}, {_resolutionModule?.ModuleVersionId ?? _moduleVersionId}";
             Log.Warn($"Using fallback method matching ({logDetail})");
 
             var methods =
