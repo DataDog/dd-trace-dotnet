@@ -54,12 +54,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
             _forceMethodDefResolve = false;
         }
 
-        public static MethodBuilder<TDelegate> Start(Assembly resolutionAssembly, int mdToken, int opCode, string methodName)
-        {
-            // This method is deprecated in favor of the newer ModuleVersionId lookup
-            return new MethodBuilder<TDelegate>(resolutionAssembly.ManifestModule, mdToken, opCode, methodName);
-        }
-
         public static MethodBuilder<TDelegate> Start(Guid moduleVersionId, int mdToken, int opCode, string methodName)
         {
             return new MethodBuilder<TDelegate>(moduleVersionId, mdToken, opCode, methodName);
