@@ -642,6 +642,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 #endif
 
       const auto original_argument = pInstr->m_Arg32;
+      const void* module_version_id_ptr = &module_metadata->module_version_id;
 
       // insert the opcode and signature token as
       // additional arguments for the wrapper method
@@ -649,9 +650,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       rewriter_wrapper.SetILPosition(pInstr);
       rewriter_wrapper.LoadInt32(pInstr->m_opcode);
       rewriter_wrapper.LoadInt32(method_def_md_token);
-
-      void* module_version_id = &module_metadata->module_version_id;
-      rewriter_wrapper.LoadInt64(reinterpret_cast<INT64>(module_version_id));
+      rewriter_wrapper.LoadInt64(reinterpret_cast<INT64>(module_version_id_ptr));
 
       // always use CALL because the wrappers methods are all static
       pInstr->m_opcode = CEE_CALL;
