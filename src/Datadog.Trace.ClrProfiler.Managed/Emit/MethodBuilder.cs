@@ -370,7 +370,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         private MethodInfo TryFindMethod()
         {
-            var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionAssembly.FullName}";
+            var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionModule}, {_resolutionModule.ModuleVersionId}";
             Log.Warn($"Using fallback method matching ({logDetail})");
 
             var methods =
