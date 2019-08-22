@@ -23,11 +23,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public static Module Get(Guid moduleVersionId)
         {
-            Module value = null;
+            // First attempt at cached values with no blocking
+            if (_modules.TryGetValue(moduleVersionId, out Module value))
+            {
+                return value;
+            }
 
             // Block if a population event is happening
             _populationResetEvent.Wait();
 
+            // See if the previous population event populated what we need
             if (_modules.TryGetValue(moduleVersionId, out value))
             {
                 return value;
