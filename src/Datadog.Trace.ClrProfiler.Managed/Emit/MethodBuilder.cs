@@ -153,12 +153,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 declaringTypeGenerics: _declaringTypeGenerics);
 
             return Cache.GetOrAdd(cacheKey, key =>
-                {
-                    // Validate requirements at the last possible moment
-                    // Don't do more than needed before checking the cache
-                    ValidateRequirements();
-                    return EmitDelegate();
-                });
+            {
+                // Validate requirements at the last possible moment
+                // Don't do more than needed before checking the cache
+                ValidateRequirements();
+                return EmitDelegate();
+            });
         }
 
         private TDelegate EmitDelegate()
@@ -409,30 +409,30 @@ namespace Datadog.Trace.ClrProfiler.Emit
             if (_namespaceAndNameFilter != null)
             {
                 methods = methods.Where(m =>
-                                      {
-                                          var parameters = m.GetParameters();
+                {
+                    var parameters = m.GetParameters();
 
-                                          if ((parameters.Length + 1) != _namespaceAndNameFilter.Length)
-                                          {
-                                              return false;
-                                          }
+                    if ((parameters.Length + 1) != _namespaceAndNameFilter.Length)
+                    {
+                        return false;
+                    }
 
-                                          var typesToCheck = new Type[] { m.ReturnType }.Concat(m.GetParameters().Select(p => p.ParameterType)).ToArray();
-                                          for (var i = 0; i < typesToCheck.Length; i++)
-                                          {
-                                              if (_namespaceAndNameFilter == null)
-                                              {
-                                                  // Allow for not specifying
-                                                  continue;
-                                              }
+                    var typesToCheck = new Type[] { m.ReturnType }.Concat(m.GetParameters().Select(p => p.ParameterType)).ToArray();
+                    for (var i = 0; i < typesToCheck.Length; i++)
+                    {
+                        if (_namespaceAndNameFilter == null)
+                        {
+                            // Allow for not specifying
+                            continue;
+                        }
 
-                                              if ($"{typesToCheck[i].Namespace}.{typesToCheck[i].Name}" != _namespaceAndNameFilter[i])
-                                              {
-                                                  return false;
-                                              }
-                                          }
+                        if ($"{typesToCheck[i].Namespace}.{typesToCheck[i].Name}" != _namespaceAndNameFilter[i])
+                        {
+                            return false;
+                        }
+                    }
 
-                                          return true;
+                    return true;
                 }).ToArray();
             }
 
