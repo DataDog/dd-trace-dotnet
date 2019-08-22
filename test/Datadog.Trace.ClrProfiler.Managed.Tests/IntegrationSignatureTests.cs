@@ -40,9 +40,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // all wrapper methods should have an additional Int32
             // parameter for the original method call's opcode
             var parameters = wrapperMethod.GetParameters();
-            ParameterInfo expectedOpCodeParam = parameters[parameters.Length - 2];
-            Assert.Equal(typeof(int), expectedOpCodeParam.ParameterType);
-            Assert.Equal("opCode", expectedOpCodeParam.Name);
+            var param = parameters[parameters.Length - 3];
+            Assert.Equal(typeof(int), param.ParameterType);
+            Assert.Equal("opCode", param.Name);
         }
 
         [Theory]
@@ -50,11 +50,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void WrapperMethodHasMdTokenArgument(MethodInfo wrapperMethod)
         {
             // all wrapper methods should have an additional Int32
-            // parameter for the original method call's opcode
+            // parameter for the original method call's mdToken
             var parameters = wrapperMethod.GetParameters();
-            ParameterInfo expectedOpCodeParam = parameters.Last();
-            Assert.Equal(typeof(int), expectedOpCodeParam.ParameterType);
-            Assert.Equal("mdToken", expectedOpCodeParam.Name);
+            var param = parameters[parameters.Length - 2];
+            Assert.Equal(typeof(int), param.ParameterType);
+            Assert.Equal("mdToken", param.Name);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetWrapperMethods))]
+        public void WrapperMethodHasModuleVersionPtrArgument(MethodInfo wrapperMethod)
+        {
+            // all wrapper methods should have an additional Int64
+            // parameter for the address of calling module's moduleVersionId
+            var parameters = wrapperMethod.GetParameters();
+            var param = parameters[parameters.Length - 1];
+            Assert.Equal(typeof(long), param.ParameterType);
+            Assert.Equal("moduleVersionPtr", param.Name);
         }
 
         [Theory]
@@ -65,13 +77,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 attribute.TargetSignatureTypes != null,
                 $"{wrapperMethod.DeclaringType.Name}.{wrapperMethod.Name}: {nameof(attribute.TargetSignatureTypes)} definition missing.");
 
-            // Return type and opcode and cancel out for count
-            // mdToken means minus 1
-            var expectedParameterCount = wrapperMethod.GetParameters().Length - 1;
+            // add 1 for return type, subtract 3 for extra parameters (opcode, mdToken, moduleVersionPtr)
+            // 1 - 3 = -2
+            var expectedParameterCount = wrapperMethod.GetParameters().Length - 2;
 
             if (!StaticInstrumentations.Contains(wrapperMethod))
             {
-                // Subtract for the instance (this) parameter
+                // Subtract the instance (this) parameter
                 expectedParameterCount--;
             }
 

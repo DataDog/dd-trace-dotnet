@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 using Sigil;
@@ -53,14 +54,23 @@ namespace Datadog.Trace.ClrProfiler.Emit
             _forceMethodDefResolve = false;
         }
 
-        public static MethodBuilder<TDelegate> Start(Assembly resolutionAssembly, int mdToken, int opCode, string methodName)
-        {
-            // This method is deprecated in favor of the newer ModuleVersionId lookup
-            return new MethodBuilder<TDelegate>(resolutionAssembly.ManifestModule, mdToken, opCode, methodName);
-        }
-
         public static MethodBuilder<TDelegate> Start(Guid moduleVersionId, int mdToken, int opCode, string methodName)
         {
+            return new MethodBuilder<TDelegate>(moduleVersionId, mdToken, opCode, methodName);
+        }
+
+        public static MethodBuilder<TDelegate> Start(long moduleVersionPtr, int mdToken, int opCode, string methodName)
+        {
+            var ptr = new IntPtr(moduleVersionPtr);
+
+#if NET45
+            // deprecated
+            var moduleVersionId = (Guid)Marshal.PtrToStructure(ptr, typeof(Guid));
+#else
+            // added in net451
+            var moduleVersionId = Marshal.PtrToStructure<Guid>(ptr);
+#endif
+
             return new MethodBuilder<TDelegate>(moduleVersionId, mdToken, opCode, methodName);
         }
 

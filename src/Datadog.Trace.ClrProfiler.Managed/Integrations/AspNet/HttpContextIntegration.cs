@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
@@ -20,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="features">Initialize features.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         // [InterceptMethod(
         //     TargetAssembly = "Microsoft.AspNetCore.Http.Abstractions",
         //     TargetType = "Microsoft.AspNetCore.Http.DefaultHttpContext",
@@ -27,18 +27,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         // ***************************************************************
         //  DISABLED UNTIL WE FIX SCOPING ISSUES AT HTTP CONTEXT LEVEL
         // ***************************************************************
-        public static void Initialize(object httpContext, object features, int opCode, int mdToken)
+        public static void Initialize(object httpContext, object features, int opCode, int mdToken, long moduleVersionPtr)
         {
             var httpContextType = httpContext.GetType();
             string methodDef = $"{httpContextType.FullName}.Initialize(IFeatureCollection features)";
 
-            Action<object, object> instrumentedMethod = null;
+            Action<object, object> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Action<object, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(Initialize))
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(Initialize))
                        .WithConcreteType(httpContextType)
                        .WithParameters(features)
                        .Build();

@@ -48,6 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="inputs">The input variables.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetAssembly = GraphQLAssemblyName,
@@ -64,7 +65,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object userContext,
             object inputs,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
             if (documentValidator == null) { throw new ArgumentNullException(nameof(documentValidator)); }
 
@@ -97,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object, object, object, object, object, object>>
-                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                         .WithConcreteType(documentValidatorInstanceType)
                         .WithParameters(originalQuery, schema, document, rules, userContext, inputs)
                         .Build();
@@ -132,6 +134,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="context">The execution context of the GraphQL operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
             TargetAssembly = GraphQLAssemblyName,
@@ -139,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { TaskOfGraphQLExecutionResult, "GraphQL.Execution.ExecutionContext" },
             TargetMinimumVersion = Major2Minor3,
             TargetMaximumVersion = Major2)]
-        public static object ExecuteAsync(object executionStrategy, object context, int opCode, int mdToken)
+        public static object ExecuteAsync(object executionStrategy, object context, int opCode, int mdToken, long moduleVersionPtr)
         {
             if (executionStrategy == null) { throw new ArgumentNullException(nameof(executionStrategy)); }
 
@@ -153,8 +156,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 var graphQLAssembly = AppDomain.CurrentDomain.GetAssemblies()
-                                        .Where(a => a.GetName().Name.Equals(GraphQLAssemblyName))
-                                        .Single();
+                                               .Single(a => a.GetName().Name.Equals(GraphQLAssemblyName));
                 graphQLExecutionResultType = graphQLAssembly.GetType(GraphQLExecutionResultName, throwOnError: true);
                 executionStrategyInterfaceType = graphQLAssembly.GetType(GraphQLExecutionStrategyInterfaceName, throwOnError: true);
             }
@@ -162,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // This shouldn't happen because the GraphQL assembly should have been loaded to construct various other types
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error finding types in the GraphQL assembly.", ex);
+                Log.ErrorException("Error finding types in the GraphQL assembly.", ex);
                 throw;
             }
 
@@ -172,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object>>
-                        .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                         .WithConcreteType(executionStrategyInstanceType)
                         .WithParameters(context)
                         .Build();

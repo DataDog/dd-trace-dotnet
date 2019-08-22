@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="cancellationTokenSource">The cancellation token source</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>A task with the result</returns>
         [InterceptMethod(
             TargetAssembly = "System.Web.Http",
@@ -39,7 +40,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, "System.Web.Http.Controllers.HttpControllerContext", ClrNames.CancellationToken },
             TargetMinimumVersion = Major5Minor2,
             TargetMaximumVersion = Major5)]
-        public static object ExecuteAsync(object apiController, object controllerContext, object cancellationTokenSource, int opCode, int mdToken)
+        public static object ExecuteAsync(
+            object apiController,
+            object controllerContext,
+            object cancellationTokenSource,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
             if (apiController == null) { throw new ArgumentNullException(nameof(apiController)); }
 

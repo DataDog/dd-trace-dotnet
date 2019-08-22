@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="behavior">A value from <see cref="CommandBehavior"/>.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
@@ -39,7 +40,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object ExecuteDbDataReader(object @this, int behavior, int opCode, int mdToken)
+        public static object ExecuteDbDataReader(
+            object @this,
+            int behavior,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
             var command = (DbCommand)@this;
             var commandBehavior = (CommandBehavior)behavior;
@@ -72,6 +78,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="cancellationTokenSource">A cancellation token source that can be used to cancel the async operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Data", // .NET Framework
@@ -85,7 +92,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object ExecuteDbDataReaderAsync(object @this, int behavior, object cancellationTokenSource, int opCode, int mdToken)
+        public static object ExecuteDbDataReaderAsync(
+            object @this,
+            int behavior,
+            object cancellationTokenSource,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;

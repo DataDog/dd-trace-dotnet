@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="requestData">The request data</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
             CallerAssembly = "Elasticsearch.Net",
@@ -34,7 +35,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "T", "Elasticsearch.Net.RequestData" },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
-        public static object CallElasticsearch<TResponse>(object pipeline, object requestData, int opCode, int mdToken)
+        public static object CallElasticsearch<TResponse>(
+            object pipeline,
+            object requestData,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
             const string methodName = nameof(CallElasticsearch);
             Func<object, object, TResponse> callElasticSearch;
@@ -45,11 +51,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 callElasticSearch =
                     MethodBuilder<Func<object, object, TResponse>>
-                    .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
-                    .WithConcreteType(pipelineType)
-                    .WithMethodGenerics(genericArgument)
-                    .WithParameters(requestData)
-                    .Build();
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(pipelineType)
+                       .WithMethodGenerics(genericArgument)
+                       .WithParameters(requestData)
+                       .Build();
             }
             catch (Exception ex)
             {
@@ -81,6 +87,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="cancellationTokenSource">A cancellation token</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
             CallerAssembly = "Elasticsearch.Net",
@@ -89,11 +96,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
-        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource, int opCode, int mdToken)
+        public static object CallElasticsearchAsync<TResponse>(
+            object pipeline,
+            object requestData,
+            object cancellationTokenSource,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken, opCode, mdToken, Assembly.GetCallingAssembly());
+            return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken, opCode, mdToken, moduleVersionPtr);
         }
 
         /// <summary>
@@ -105,9 +118,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="cancellationToken">A cancellation token</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <param name="callingAssembly">The calling assembly of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original result</returns>
-        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(object pipeline, object requestData, CancellationToken cancellationToken, int opCode, int mdToken, Assembly callingAssembly)
+        private static async Task<TResponse> CallElasticsearchAsyncInternal<TResponse>(
+            object pipeline,
+            object requestData,
+            CancellationToken cancellationToken,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
             const string methodName = "CallElasticsearchAsync";
             Func<object, object, CancellationToken, Task<TResponse>> callElasticSearchAsync;
@@ -118,11 +137,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 callElasticSearchAsync =
                     MethodBuilder<Func<object, object, CancellationToken, Task<TResponse>>>
-                    .Start(callingAssembly, mdToken, opCode, methodName)
-                    .WithConcreteType(pipelineType)
-                    .WithMethodGenerics(genericArgument)
-                    .WithParameters(requestData, cancellationToken)
-                    .Build();
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(pipelineType)
+                       .WithMethodGenerics(genericArgument)
+                       .WithParameters(requestData, cancellationToken)
+                       .Build();
             }
             catch (Exception ex)
             {

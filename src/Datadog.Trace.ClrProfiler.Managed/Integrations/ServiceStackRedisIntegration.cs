@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="sendWithoutRead">Whether or to send without waiting for the result</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
             CallerAssembly = "ServiceStack.Redis",
@@ -44,16 +45,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object completePipelineFn,
             bool sendWithoutRead,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
-            Func<object, byte[][], object, object, bool, T> instrumentedMethod = null;
+            Func<object, byte[][], object, object, bool, T> instrumentedMethod;
 
             try
             {
                 var instrumentedType = redisNativeClient.GetInstrumentedType(RedisNativeClient);
                 instrumentedMethod =
                     MethodBuilder<Func<object, byte[][], object, object, bool, T>>
-                       .Start(instrumentedType.Assembly, mdToken, opCode, nameof(SendReceive))
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(SendReceive))
                        .WithConcreteType(instrumentedType)
                        .WithParameters(cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead)
                        .WithMethodGenerics(typeof(T))

@@ -105,6 +105,16 @@ namespace GenerateIntegrationDefinitions
             var returnType = method.ReturnType;
             var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
 
+            var requiredParameterTypes = new[] { typeof(int), typeof(int), typeof(long) };
+            var lastParameterTypes = parameters.Skip(parameters.Length - requiredParameterTypes.Length);
+
+            if (!lastParameterTypes.SequenceEqual(requiredParameterTypes))
+            {
+                  throw new Exception(
+                    $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
+                    "Wrapper methods must have at least 3 parameters and the last 3 must be of types Int32 (opCode), Int32 (mdToken), and Int64 (moduleVersionPtr).");
+            }
+
             var signatureHelper = SignatureHelper.GetMethodSigHelper(method.CallingConvention, returnType);
             signatureHelper.AddArguments(parameters, requiredCustomModifiers: null, optionalCustomModifiers: null);
             var signatureBytes = signatureHelper.GetSignature();

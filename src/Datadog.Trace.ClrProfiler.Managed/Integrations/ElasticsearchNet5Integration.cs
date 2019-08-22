@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="requestData">The request data</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
             CallerAssembly = ElasticsearchAssembly,
@@ -37,7 +38,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "Elasticsearch.Net.ElasticsearchResponse`1<T>", "Elasticsearch.Net.RequestData" },
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
-        public static object CallElasticsearch<TResponse>(object pipeline, object requestData, int opCode, int mdToken)
+        public static object CallElasticsearch<TResponse>(
+            object pipeline,
+            object requestData,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
             const string methodName = nameof(CallElasticsearch);
             Func<object, object, object> callElasticSearch;
@@ -48,11 +54,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 callElasticSearch =
                     MethodBuilder<Func<object, object, object>>
-                    .Start(Assembly.GetCallingAssembly(), mdToken, opCode, methodName)
-                    .WithConcreteType(pipelineType)
-                    .WithMethodGenerics(genericArgument)
-                    .WithParameters(requestData)
-                    .Build();
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(pipelineType)
+                       .WithMethodGenerics(genericArgument)
+                       .WithParameters(requestData)
+                       .Build();
             }
             catch (Exception ex)
             {
@@ -84,6 +90,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="cancellationTokenSource">A cancellation token</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
             CallerAssembly = ElasticsearchAssembly,
@@ -92,7 +99,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
-        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object cancellationTokenSource, int opCode, int mdToken)
+        public static object CallElasticsearchAsync<TResponse>(
+            object pipeline,
+            object requestData,
+            object cancellationTokenSource,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
@@ -106,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, CancellationToken, object>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, nameof(CallElasticsearchAsync))
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(CallElasticsearchAsync))
                        .WithConcreteType(pipeline.GetType())
                        .WithMethodGenerics(genericArgument)
                        .WithParameters(requestData, cancellationToken)

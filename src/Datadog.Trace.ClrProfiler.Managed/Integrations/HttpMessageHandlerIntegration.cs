@@ -33,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = SystemNetHttp,
@@ -46,7 +47,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object request,
             object cancellationTokenSource,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
             // original signature:
             // Task<HttpResponseMessage> HttpMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -61,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, SendAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpMessageHandler)
                        .WithParameters(request, cancellationToken)
                        .Build();
@@ -88,6 +90,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = SystemNetHttp,
@@ -101,7 +104,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object request,
             object cancellationTokenSource,
             int opCode,
-            int mdToken)
+            int mdToken,
+            long moduleVersionPtr)
         {
             // original signature:
             // Task<HttpResponseMessage> HttpClientHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -116,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>
-                       .Start(Assembly.GetCallingAssembly(), mdToken, opCode, SendAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpClientHandler)
                        .WithParameters(request, cancellationToken)
                        .Build();
