@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Xunit;
 
@@ -11,30 +12,32 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     public class ModuleLookupTests
     {
         [Fact]
-        public void Lookup_SystemData_Succeeds_WithTwentyThreads()
+        public void Lookup_SystemData_Succeeds_WithTwentyConcurrentTries()
         {
-            var threads = new List<Thread>();
-
-            var systemDataGuid = typeof(System.Data.DataTable).Assembly.ManifestModule.ModuleVersionId;
-
+            var tasks = new Task[20];
+            var resetEvent = new ManualResetEventSlim(initialState: false);
             var bag = new ConcurrentBag<Module>();
+            var systemDataGuid = typeof(System.Data.DataTable).Assembly.ManifestModule.ModuleVersionId;
 
             for (var i = 0; i < 20; i++)
             {
-                threads.Add(new Thread(thread =>
+                var task = new Task(() =>
                 {
+                    resetEvent.Wait();
+                    var module = ModuleLookup.Get(systemDataGuid);
                     bag.Add(ModuleLookup.Get(systemDataGuid));
-                }));
+                });
+
+                task.Start();
+
+                tasks[i] = task;
             }
 
-            System.Threading.Tasks.Parallel.ForEach(threads, t => t.Start());
+            resetEvent.Set();
 
-            while (threads.Any(t => t.IsAlive))
-            {
-                Thread.Sleep(200);
-            }
+            Task.WaitAll(tasks);
 
-            Assert.True(bag.All(m => m.ModuleVersionId == systemDataGuid) && bag.Count() == threads.Count());
+            Assert.True(bag.All(m => m.ModuleVersionId == systemDataGuid) && bag.Count() == tasks.Length);
         }
 
         [Fact]
