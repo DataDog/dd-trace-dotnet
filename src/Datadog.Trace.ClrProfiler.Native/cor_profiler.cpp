@@ -649,6 +649,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       rewriter_wrapper.LoadInt32(pInstr->m_opcode);
       rewriter_wrapper.LoadInt32(method_def_md_token);
 
+      void* module_version_id = &module_metadata->module_version_id;
+      rewriter_wrapper.LoadInt64(reinterpret_cast<INT64>(module_version_id));
+
       // always use CALL because the wrappers methods are all static
       pInstr->m_opcode = CEE_CALL;
       // replace with a call to the instrumentation wrapper
