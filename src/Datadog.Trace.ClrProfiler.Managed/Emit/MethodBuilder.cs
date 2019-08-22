@@ -420,7 +420,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     var typesToCheck = new Type[] { m.ReturnType }.Concat(m.GetParameters().Select(p => p.ParameterType)).ToArray();
                     for (var i = 0; i < typesToCheck.Length; i++)
                     {
-                        if (_namespaceAndNameFilter == null)
+                        if (_namespaceAndNameFilter[i] == ClrNames.Ignore)
                         {
                             // Allow for not specifying
                             continue;
