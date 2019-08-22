@@ -52,6 +52,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.7.3" },
                 new object[] { "2.8.0" },
                 new object[] { "2.8.1" },
+                new object[] { "2.9.0" },
+                new object[] { "2.9.1" },
 #endif
             };
         public static IEnumerable<object[]> ElasticSearch6 =>
@@ -76,6 +78,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.6.0" },
                 new object[] { "6.7.0" },
                 new object[] { "6.8.0" },
+                new object[] { "6.8.1" },
+                new object[] { "6.8.2" },
 #endif
             };
         public static IEnumerable<object[]> ElasticSearch5 =>
@@ -113,6 +117,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.5" },
                 new object[] { "4.0.6" },
                 new object[] { "4.0.7" },
+                new object[] { "4.0.8" },
+                new object[] { "4.0.9" },
 #endif
             };
         public static IEnumerable<object[]> SqlServer =>
@@ -138,6 +144,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.2.2" },
                 new object[] { "2.2.3" },
                 new object[] { "2.2.4" },
+                new object[] { "2.2.6" },
 #endif
             };
         public static IEnumerable<object[]> StackExchangeRedis =>
@@ -238,6 +245,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.2.0" },
                 new object[] { "5.4.0" },
                 new object[] { "5.5.0" },
+                new object[] { "5.6.0" },
 #endif
             };
         public static IEnumerable<object[]> AspNetCoreMvc2 =>
