@@ -521,6 +521,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       auto expected_number_args = method_replacement.wrapper_method
                                       .method_signature.NumberOfArguments();
 
+      // subtract the last arguments we add to every wrapper
       expected_number_args = expected_number_args - added_parameters_count;
 
       if (target.signature.IsInstanceMethod()) {
