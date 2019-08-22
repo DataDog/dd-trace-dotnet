@@ -494,14 +494,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
+      // we add 3 parameters to every wrapper method: opcode, mdToken, and
+      // module_version_id
+      const short added_parameters_count = 3;
+
       auto wrapper_method_signature_size =
           method_replacement.wrapper_method.method_signature.data.size();
 
-      if (wrapper_method_signature_size < 5) {
-        // This is invalid, we should always have the wrapper fully defined
-        // Minimum:
-        // 0:{CallingConvention}|1:{ParamCount}|2:{ReturnType}|3:{OpCode}|4:{mdToken}
-        // Drop out for safety
+      if (wrapper_method_signature_size < (added_parameters_count + 3)) {
+        // wrapper signature must have at least 6 bytes
+        // 0:{CallingConvention}|1:{ParamCount}|2:{ReturnType}|3:{OpCode}|4:{mdToken}|5:{ModuleVersionId}
         if (debug_logging_enabled) {
           Debug(
               "JITCompilationStarted skipping function call: wrapper signature "
@@ -519,9 +521,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       auto expected_number_args = method_replacement.wrapper_method
                                       .method_signature.NumberOfArguments();
 
-      // We pass the opcode and mdToken as the last arguments to every wrapper
-      // method
-      expected_number_args = expected_number_args - 2;
+      expected_number_args = expected_number_args - added_parameters_count;
 
       if (target.signature.IsInstanceMethod()) {
         // We always pass the instance as the first argument
