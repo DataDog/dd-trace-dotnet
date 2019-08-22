@@ -22,21 +22,26 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private readonly int _mdToken;
         private readonly int _originalOpCodeValue;
         private readonly OpCodeValue _opCode;
-
-        // Legacy fallback mechanisms
         private readonly string _methodName;
-        private Type _returnType;
+        private readonly Guid? _moduleVersionId;
 
+        private Type _returnType;
         private MethodBase _methodBase;
         private Type _concreteType;
         private string _concreteTypeName;
         private object[] _parameters = new object[0];
         private Type[] _explicitParameterTypes = null;
         private string[] _namespaceAndNameFilter = null;
-
         private Type[] _declaringTypeGenerics;
         private Type[] _methodGenerics;
         private bool _forceMethodDefResolve;
+
+        private MethodBuilder(Guid moduleVersionId, int mdToken, int opCode, string methodName)
+            : this(ModuleLookup.Get(moduleVersionId), mdToken, opCode, methodName)
+        {
+            // Save the Guid for logging purposes
+            _moduleVersionId = moduleVersionId;
+        }
 
         private MethodBuilder(Module resolutionModule, int mdToken, int opCode, string methodName)
         {
@@ -56,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public static MethodBuilder<TDelegate> Start(Guid moduleVersionId, int mdToken, int opCode, string methodName)
         {
-            return new MethodBuilder<TDelegate>(ModuleLookup.Get(moduleVersionId), mdToken, opCode, methodName);
+            return new MethodBuilder<TDelegate>(moduleVersionId, mdToken, opCode, methodName);
         }
 
         public MethodBuilder<TDelegate> WithConcreteType(Type type)
@@ -150,29 +155,36 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             var requiresBestEffortMatching = false;
 
-            try
+            if (_resolutionModule != null)
             {
-                // Don't resolve until we build, as it may be an unnecessary lookup because of the cache
-                // We also may need the generics which were specified
-                if (_forceMethodDefResolve || (_declaringTypeGenerics == null && _methodGenerics == null))
+                try
                 {
-                    _methodBase =
-                        _resolutionModule.ResolveMethod(metadataToken: _mdToken);
+                    // Don't resolve until we build, as it may be an unnecessary lookup because of the cache
+                    // We also may need the generics which were specified
+                    if (_forceMethodDefResolve || (_declaringTypeGenerics == null && _methodGenerics == null))
+                    {
+                        _methodBase =
+                            _resolutionModule.ResolveMethod(metadataToken: _mdToken);
+                    }
+                    else
+                    {
+                        _methodBase =
+                            _resolutionModule.ResolveMethod(
+                                metadataToken: _mdToken,
+                                genericTypeArguments: _declaringTypeGenerics,
+                                genericMethodArguments: _methodGenerics);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    _methodBase =
-                        _resolutionModule.ResolveMethod(
-                            metadataToken: _mdToken,
-                            genericTypeArguments: _declaringTypeGenerics,
-                            genericMethodArguments: _methodGenerics);
+                    string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
+                    Log.Error(message, ex);
+                    requiresBestEffortMatching = true;
                 }
             }
-            catch (Exception ex)
+            else
             {
-                string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
-                Log.Error(message, ex);
-                requiresBestEffortMatching = true;
+                Log.Warn($"Unable to resolve module version id {_moduleVersionId}. Using method builder fallback.");
             }
 
             MethodInfo methodInfo = null;

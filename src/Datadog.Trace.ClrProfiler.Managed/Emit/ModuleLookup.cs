@@ -8,10 +8,18 @@ namespace Datadog.Trace.ClrProfiler.Emit
 {
     internal static class ModuleLookup
     {
+        /// <summary>
+        /// Some naive upper limit to resolving assemblies that we can use to stop making expensive calls.
+        /// </summary>
+        private const int MaxFailures = 50;
+
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ModuleLookup));
 
         private static ManualResetEventSlim _populationResetEvent = new ManualResetEventSlim(initialState: true);
         private static ConcurrentDictionary<Guid, Module> _modules = new ConcurrentDictionary<Guid, Module>();
+
+        private static int _failures = 0;
+        private static bool _shortCircuitLogicHasLogged = false;
 
         public static Module Get(Guid moduleVersionId)
         {
@@ -25,6 +33,17 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 return value;
             }
 
+            if (_failures >= MaxFailures)
+            {
+                // For some unforeseeable reason we have failed on a lot of AppDomain lookups
+                if (!_shortCircuitLogicHasLogged)
+                {
+                    Log.Warn("Datadog is unable to continue attempting module lookups for this AppDomain. Falling back to legacy method lookups.");
+                }
+
+                return null;
+            }
+
             // Block threads on this event
             _populationResetEvent.Reset();
 
@@ -34,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
             catch (Exception ex)
             {
+                _failures++;
                 Log.Error("Error when populating modules.", ex);
             }
             finally

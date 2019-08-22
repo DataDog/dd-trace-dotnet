@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 {
                     resetEvent.Wait();
                     var module = ModuleLookup.Get(systemDataGuid);
-                    bag.Add(ModuleLookup.Get(systemDataGuid));
+                    bag.Add(module);
                 });
 
                 task.Start();
