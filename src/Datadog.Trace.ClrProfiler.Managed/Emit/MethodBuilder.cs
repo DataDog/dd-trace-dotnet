@@ -67,13 +67,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
         public MethodBuilder<TDelegate> WithConcreteType(Type type)
         {
             _concreteType = type;
-            _concreteTypeName = type.FullName;
+            _concreteTypeName = type?.FullName;
             return this;
         }
 
         public MethodBuilder<TDelegate> WithConcreteTypeName(string typeName)
         {
-            var concreteType = _resolutionModule.GetType(typeName);
+            var concreteType = _resolutionModule?.GetType(typeName);
             return this.WithConcreteType(concreteType);
         }
 
@@ -314,7 +314,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private MethodInfo VerifyMethodFromToken(MethodInfo methodInfo)
         {
             // Verify baselines to ensure this isn't the wrong method somehow
-            var detailMessage = $"Unexpected method: {_concreteTypeName}.{_methodName} received for mdToken: {_mdToken} in module: {_resolutionModule.Name}, {_resolutionModule.ModuleVersionId}";
+            var detailMessage = $"Unexpected method: {_concreteTypeName}.{_methodName} received for mdToken: {_mdToken} in module: {_resolutionModule?.FullyQualifiedName ?? "NULL"}, {_resolutionModule?.ModuleVersionId ?? _moduleVersionId}";
 
             if (!string.Equals(_methodName, methodInfo.Name))
             {
@@ -382,7 +382,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         private MethodInfo TryFindMethod()
         {
-            var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionModule}, {_resolutionModule.ModuleVersionId}";
+            var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionModule?.FullyQualifiedName ?? "NULL"}, {_resolutionModule?.ModuleVersionId ?? _moduleVersionId}";
             Log.Warn($"Using fallback method matching ({logDetail})");
 
             var methods =
