@@ -201,20 +201,36 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Log.ErrorException("Error instrumenting method {0}", ex, "System.Web.Mvc.Async.IAsyncActionInvoker.BeginInvokeAction()");
             }
 
-            var beginInvokeAction = Emit.DynamicMethodBuilder<Func<object, object, object, object, object, object>>
-                                        .GetOrCreateMethodCallDelegate(
-                                             AsyncActionInvokerType,
-                                             "BeginInvokeAction",
-                                             (OpCodeValue)opCode);
+            Func<object, object, object, object, object, object> instrumentedMethod;
+
+            try
+            {
+                instrumentedMethod = MethodBuilder<Func<object, object, object, object, object, object>>
+                                    .Start(moduleVersionPtr, mdToken, opCode, nameof(BeginInvokeAction))
+                                    .WithConcreteType(AsyncActionInvokerType)
+                                    .WithParameters(controllerContext, actionName, callback, state)
+                                    .WithNamespaceAndNameFilters(
+                                         ClrNames.IAsyncResult,
+                                         "System.Web.Mvc.ControllerContext",
+                                         ClrNames.String,
+                                         ClrNames.AsyncCallback,
+                                         ClrNames.Object)
+                                    .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException($"Error resolving {AsyncActionInvokerTypeName}.{nameof(BeginInvokeAction)}(...)", ex);
+                throw;
+            }
 
             try
             {
                 // call the original method, inspecting (but not catching) any unhandled exceptions
-                return beginInvokeAction(asyncControllerActionInvoker, controllerContext, actionName, callback, state);
+                return instrumentedMethod(asyncControllerActionInvoker, controllerContext, actionName, callback, state);
             }
-            catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+            catch (Exception ex)
             {
-                // unreachable code
+                scope?.Span.SetException(ex);
                 throw;
             }
         }
@@ -254,20 +270,31 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Log.ErrorException("Error instrumenting method {0}", ex, $"{AsyncActionInvokerTypeName}.EndInvokeAction()");
             }
 
-            var endInvokeAction = Emit.DynamicMethodBuilder<Func<object, object, bool>>
-                                      .GetOrCreateMethodCallDelegate(
-                                           AsyncActionInvokerType,
-                                           "EndInvokeAction",
-                                           (OpCodeValue)opCode);
+            Func<object, object, bool> instrumentedMethod;
+
+            try
+            {
+                instrumentedMethod = MethodBuilder<Func<object, object, bool>>
+                                    .Start(moduleVersionPtr, mdToken, opCode, nameof(EndInvokeAction))
+                                    .WithConcreteType(AsyncActionInvokerType)
+                                    .WithParameters(asyncResult)
+                                    .WithNamespaceAndNameFilters(ClrNames.Bool, ClrNames.IAsyncResult)
+                                    .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException($"Error resolving {AsyncActionInvokerTypeName}.{nameof(EndInvokeAction)}(...)", ex);
+                throw;
+            }
 
             try
             {
                 // call the original method, inspecting (but not catching) any unhandled exceptions
-                return endInvokeAction(asyncControllerActionInvoker, asyncResult);
+                return instrumentedMethod(asyncControllerActionInvoker, asyncResult);
             }
-            catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+            catch (Exception ex)
             {
-                // unreachable code
+                scope?.Span.SetException(ex);
                 throw;
             }
             finally
