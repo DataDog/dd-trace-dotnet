@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 Build<Action<object, object, object, object>>(expected.Name)
                 .WithParameters(p1, p2, p3)
                 .WithNamespaceAndNameFilters(
-                    "System.Void",
+                    ClrNames.Void,
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassB",
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassC",
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassC")
@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 Build<Action<object, object, object, object>>(expected.Name)
                 .WithParameters(p1, p2, p3)
                 .WithNamespaceAndNameFilters(
-                    "System.Void",
+                    ClrNames.Void,
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassA",
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassA",
                     "Datadog.Trace.ClrProfiler.Managed.Tests.ClassA")

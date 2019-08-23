@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -66,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpMessageHandler)
                        .WithParameters(request, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -123,6 +123,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpClientHandler)
                        .WithParameters(request, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)

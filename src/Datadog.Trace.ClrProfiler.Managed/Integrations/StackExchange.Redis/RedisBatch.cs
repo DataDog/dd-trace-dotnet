@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -99,6 +98,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                                     .WithConcreteType(_redisBaseType)
                                     .WithMethodGenerics(typeof(T))
                                     .WithParameters(message, processor, server)
+                                    .WithNamespaceAndNameFilters(
+                                        ClrNames.GenericTask,
+                                        "StackExchange.Redis.Message",
+                                        "StackExchange.Redis.ResultProcessor`1",
+                                        "StackExchange.Redis.ServerEndPoint")
                                     .Build();
 
             // we only trace RedisBatch methods here

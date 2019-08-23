@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -171,6 +170,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(BeforeAction))
                        .WithConcreteTypeName(DiagnosticSource)
                        .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
+                       .WithNamespaceAndNameFilters(
+                            ClrNames.Void,
+                            ClrNames.Ignore,
+                            "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
+                            "Microsoft.AspNetCore.Http.HttpContext",
+                            "Microsoft.AspNetCore.Routing.RouteData")
                        .Build();
             }
             catch (Exception ex)
@@ -248,6 +253,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(AfterAction))
                        .WithConcreteTypeName(DiagnosticSource)
                        .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
+                       .WithNamespaceAndNameFilters(
+                            ClrNames.Void,
+                            ClrNames.Ignore,
+                            "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
+                            "Microsoft.AspNetCore.Http.HttpContext",
+                            "Microsoft.AspNetCore.Routing.RouteData")
                        .Build();
             }
             catch (Exception ex)
@@ -308,6 +319,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(Rethrow))
                        .WithConcreteTypeName(ResourceInvoker)
                        .WithParameters(context)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.Ignore)
                        .Build();
             }
             catch (Exception ex)

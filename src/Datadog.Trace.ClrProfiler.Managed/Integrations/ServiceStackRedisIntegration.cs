@@ -59,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithConcreteType(instrumentedType)
                        .WithParameters(cmdWithBinaryArgs, fn, completePipelineFn, sendWithoutRead)
                        .WithMethodGenerics(typeof(T))
+                       .WithNamespaceAndNameFilters(ClrNames.Ignore, "System.Byte[][]", "System.Func`1", "System.Action`1", ClrNames.Bool)
                        .Build();
             }
             catch (Exception ex)

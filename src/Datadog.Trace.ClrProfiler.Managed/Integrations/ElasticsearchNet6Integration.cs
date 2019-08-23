@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -55,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithConcreteType(pipelineType)
                        .WithMethodGenerics(genericArgument)
                        .WithParameters(requestData)
+                       .WithNamespaceAndNameFilters(ClrNames.Ignore, "Elasticsearch.Net.RequestData")
                        .Build();
             }
             catch (Exception ex)
@@ -141,6 +141,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithConcreteType(pipelineType)
                        .WithMethodGenerics(genericArgument)
                        .WithParameters(requestData, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, "Elasticsearch.Net.RequestData", ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)

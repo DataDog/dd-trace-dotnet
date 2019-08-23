@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -102,6 +101,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
                         .WithConcreteType(documentValidatorInstanceType)
                         .WithParameters(originalQuery, schema, document, rules, userContext, inputs)
+                        .WithNamespaceAndNameFilters(
+                            GraphQLValidationResultInterfaceName,
+                            ClrNames.String,
+                            "GraphQL.Types.ISchema",
+                            "GraphQL.Language.AST.Document",
+                            "System.Collections.Generic.IEnumerable`1",
+                            ClrNames.Ignore,
+                            "GraphQL.Inputs")
                         .Build();
             }
             catch (Exception ex)
@@ -177,6 +184,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
                         .WithConcreteType(executionStrategyInstanceType)
                         .WithParameters(context)
+                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, "GraphQL.Execution.ExecutionContext")
                         .Build();
             }
             catch (Exception ex)

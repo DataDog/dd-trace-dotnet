@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -57,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(pipelineType)
                        .WithMethodGenerics(genericArgument)
+                       .WithNamespaceAndNameFilters("Elasticsearch.Net.ElasticsearchResponse`1", "Elasticsearch.Net.RequestData")
                        .WithParameters(requestData)
                        .Build();
             }
@@ -123,6 +123,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithConcreteType(pipeline.GetType())
                        .WithMethodGenerics(genericArgument)
                        .WithParameters(requestData, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, "Elasticsearch.Net.RequestData", ClrNames.CancellationToken)
                        .ForceMethodDefinitionResolution()
                        .Build();
             }

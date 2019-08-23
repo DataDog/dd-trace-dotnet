@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -67,6 +66,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -131,6 +131,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(wireProtocolType)
                        .WithParameters(connection, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.Ignore, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -198,6 +199,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithConcreteType(wireProtocolType)
                        .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
                        .WithParameters(connection, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.Task, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -255,6 +257,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithConcreteType(wireProtocolType)
                        .WithDeclaringTypeGenerics(wireProtocolGenericArgs)
                        .WithParameters(connection, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
