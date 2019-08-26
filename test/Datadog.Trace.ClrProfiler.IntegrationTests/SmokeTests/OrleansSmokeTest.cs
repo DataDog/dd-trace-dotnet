@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             AssumeSuccessOnTimeout = true;
         }
 
-        [CoreClrFact]
+        [TargetFrameworkVersionsFact("netcoreapp2.1")]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
