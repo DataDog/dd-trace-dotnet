@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string OperationName = "aspnet-webapi.request";
         private const string Major5Minor2 = "5.2";
         private const string Major5 = "5";
+        private const string TargetType = "System.Web.Http.Controllers.IHttpController";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebApi2Integration));
 
@@ -36,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>A task with the result</returns>
         [InterceptMethod(
             TargetAssembly = "System.Web.Http",
-            TargetType = "System.Web.Http.Controllers.IHttpController",
+            TargetType = TargetType,
             TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, "System.Web.Http.Controllers.HttpControllerContext", ClrNames.CancellationToken },
             TargetMinimumVersion = Major5Minor2,
             TargetMaximumVersion = Major5)]
@@ -52,8 +53,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            var callOpCode = (OpCodeValue)opCode;
-            return ExecuteAsyncInternal(apiController, controllerContext, cancellationToken, callOpCode);
+            return ExecuteAsyncInternal(apiController, controllerContext, cancellationToken, opCode, mdToken, moduleVersionPtr);
         }
 
         /// <summary>
@@ -62,26 +62,44 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="apiController">The Api Controller</param>
         /// <param name="controllerContext">The controller context for the call</param>
         /// <param name="cancellationToken">The cancellation token</param>
-        /// <param name="callOpCode">The <see cref="OpCodeValue"/> used in the original method call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>A task with the result</returns>
-        private static async Task<HttpResponseMessage> ExecuteAsyncInternal(object apiController, object controllerContext, CancellationToken cancellationToken, OpCodeValue callOpCode)
+        private static async Task<HttpResponseMessage> ExecuteAsyncInternal(
+            object apiController,
+            object controllerContext,
+            CancellationToken cancellationToken,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
         {
-            Type controllerType = apiController.GetType();
+            Func<object, object, CancellationToken, Task<HttpResponseMessage>> instrumentedMethod;
 
-            // in some cases, ExecuteAsync() is an explicit interface implementation,
-            // which is not public and has a different name, so try both
-            var executeAsyncFunc =
-                Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
-                    .GetOrCreateMethodCallDelegate(controllerType, "ExecuteAsync", callOpCode) ??
-                Emit.DynamicMethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
-                    .GetOrCreateMethodCallDelegate(controllerType, "System.Web.Http.Controllers.IHttpController.ExecuteAsync", callOpCode);
+            try
+            {
+                instrumentedMethod = MethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
+                                    .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteAsync))
+                                    .WithConcreteTypeName(TargetType)
+                                    .WithParameters(controllerContext, cancellationToken)
+                                    .WithNamespaceAndNameFilters(
+                                         ClrNames.HttpResponseMessageTask,
+                                         "System.Web.Http.Controllers.HttpControllerContext",
+                                         ClrNames.CancellationToken)
+                                    .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException($"Error resolving {TargetType}.{nameof(ExecuteAsync)}(...)", ex);
+                throw;
+            }
 
             using (Scope scope = CreateScope(controllerContext))
             {
                 try
                 {
                     // call the original method, inspecting (but not catching) any unhandled exceptions
-                    var responseMessage = await executeAsyncFunc(apiController, controllerContext, cancellationToken).ConfigureAwait(false);
+                    var responseMessage = await instrumentedMethod(apiController, controllerContext, cancellationToken).ConfigureAwait(false);
 
                     if (scope != null)
                     {
@@ -91,9 +109,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     return responseMessage;
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
