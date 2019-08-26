@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Reproduction.EntityFramework6x.MethodLookup
+namespace EntityFramework6x.MdTokenLookupFailure
 {
     using System;
     using System.Data.Entity;

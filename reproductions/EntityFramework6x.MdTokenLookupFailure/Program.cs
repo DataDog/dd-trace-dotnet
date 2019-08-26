@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
 
-namespace Reproduction.EntityFramework6x.MethodLookup
+namespace EntityFramework6x.MdTokenLookupFailure
 {
     class Program
     {

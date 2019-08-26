@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Reproduction.EntityFramework6x.MethodLookup")]
+[assembly: AssemblyTitle("EntityFramework6x.MdTokenLookupFailure")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Reproduction.EntityFramework6x.MethodLookup")]
+[assembly: AssemblyProduct("EntityFramework6x.MdTokenLookupFailure")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
