@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Sigil;
 
@@ -18,6 +19,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// </summary>
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
         private static readonly ILog Log = LogProvider.GetLogger(typeof(MethodBuilder<TDelegate>));
+        private static readonly bool ForceMdTokenLookup;
+        private static readonly bool ForceFallbackLookup;
 
         private readonly Module _resolutionModule;
         private readonly int _mdToken;
@@ -36,6 +39,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private Type[] _declaringTypeGenerics;
         private Type[] _methodGenerics;
         private bool _forceMethodDefResolve;
+
+        static MethodBuilder()
+        {
+            ForceMdTokenLookup = bool.TryParse(Environment.GetEnvironmentVariable(ConfigurationKeys.Debug.ForceMdTokenLookup), out bool result)
+                    ? result
+                    : false;
+            ForceFallbackLookup = bool.TryParse(Environment.GetEnvironmentVariable(ConfigurationKeys.Debug.ForceFallbackLookup), out result)
+                    ? result && !ForceMdTokenLookup
+                    : false;
+        }
 
         private MethodBuilder(Guid moduleVersionId, int mdToken, int opCode, string methodName)
             : this(ModuleLookup.Get(moduleVersionId), mdToken, opCode, methodName)
@@ -209,7 +222,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 methodInfo = VerifyMethodFromToken(info);
             }
 
-            if (methodInfo == null)
+            if (methodInfo == null && ForceMdTokenLookup)
+            {
+                throw new Exception($"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}. Exiting because {nameof(ForceMdTokenLookup)}() is true.");
+            }
+            else if (methodInfo == null || ForceFallbackLookup)
             {
                 // mdToken didn't work out, fallback
                 methodInfo = TryFindMethod();
