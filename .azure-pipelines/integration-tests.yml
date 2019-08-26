@@ -110,7 +110,14 @@ jobs:
         !reproductions/**/EntityFramework6x*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform)
 
-
+  - task: MSBuild@1
+    displayName: 'Build .NET Framework projects (not SDK-based projects)'
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
+      msbuildArguments: '/t:BuildFrameworkReproductions'
+      maximumCpuCount: true
 
 #  - task: MSBuild@1
 #    displayName: 'Build sample apps (x64 or x86)'

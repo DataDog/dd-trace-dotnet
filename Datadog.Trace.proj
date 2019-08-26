@@ -13,6 +13,10 @@
     <ClrProfilerManagedLoaderProject Include="src\**\Datadog.Trace.ClrProfiler.Managed.Loader.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <FrameworkReproduction Include="reproductions\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
+  </ItemGroup>
+
   <Import Project="PackageVersions.g.props" />
 
   <Target Name="Restore">
@@ -26,6 +30,12 @@
   <!-- default target -->
   <Target Name="Build">
     <MSBuild Targets="Build" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="BuildFrameworkReproductions">
+    <MSBuild Targets="Build" Projects="@(FrameworkReproduction)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
