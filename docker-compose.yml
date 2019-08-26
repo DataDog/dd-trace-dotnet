@@ -43,6 +43,16 @@ services:
     ports:
     - "127.0.0.1:5432:5432"
 
+  mysql:
+    image: mysql/mysql-server:5.7
+    environment:
+    - MYSQL_DATABASE=world
+    - MYSQL_ROOT_PASSWORD=mysqldb
+    - MYSQL_USER=mysqldb
+    - MYSQL_PASSWORD=mysqldb
+    ports:
+    - "127.0.0.1:3306:3306"
+
   sqlserver:
     image: microsoft/mssql-server-linux:latest
     ports:
@@ -163,6 +173,19 @@ services:
     - POSTGRES_HOST=postgres
     depends_on:
     - postgres
+    
+  Samples.MySql:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mysql:3306 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MySql/bin/Release/netcoreapp2.1/publish/Samples.MySql.dll"
+    volumes:
+    - ./:/project
+    environment:
+    - MYSQL_HOST=mysql
+    depends_on:
+    - mysql
 
   Samples.MongoDB:
     build:
@@ -191,6 +214,7 @@ services:
     - ELASTICSEARCH5_HOST=elasticsearch5:9200
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
     - POSTGRES_HOST=postgres
+    - MYSQL_HOST=mysql
     depends_on:
     - servicestackredis
     - stackexchangeredis

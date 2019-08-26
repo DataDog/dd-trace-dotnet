@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    return instrumentedMethod(@this, behavior);
+                    return instrumentedMethod(@this, commandBehavior);
                 }
                 catch (Exception ex)
                 {
@@ -153,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             DbCommand command,
             CommandBehavior behavior,
             CancellationToken cancellationToken,
-            Func<object, object, object, object> instrumentedMethod)
+            Func<object, CommandBehavior, object, object> instrumentedMethod)
         {
             using (var scope = CreateScope(command))
             {
