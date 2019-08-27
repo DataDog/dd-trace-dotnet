@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace Samples.SqlServer
 {
@@ -22,13 +23,34 @@ namespace Samples.SqlServer
                     db.SaveChanges();
                 }
 
-                // Display all Blogs from the database
+                // Display all Blogs from the database synchronously
                 var query = from b in db.Blogs
                             orderby b.Name
                             select b;
 
-                Console.WriteLine("All blogs in the database:");
+                Console.WriteLine("All blogs in the database from the synchronous call:");
                 foreach (var item in query)
+                {
+                    Console.WriteLine(item.Name);
+                }
+
+                var asyncName = "test-async";
+
+                var asyncBlog = (from b in db.Blogs where b.Name == asyncName select b).FirstOrDefaultAsync();
+                if (asyncBlog.Result == null)
+                {
+                    blog = new Blog { Name = asyncName };
+                    db.Blogs.Add(blog);
+                    db.SaveChangesAsync().Wait();
+                }
+
+                // Display all Blogs from the database asynchronously
+                var asyncQueryTask = db.Blogs.Where(b => b.Name == asyncName).ToListAsync();
+
+                asyncQueryTask.Wait();
+
+                Console.WriteLine("All blogs in the database from the async call:");
+                foreach (var item in asyncQueryTask.Result)
                 {
                     Console.WriteLine(item.Name);
                 }

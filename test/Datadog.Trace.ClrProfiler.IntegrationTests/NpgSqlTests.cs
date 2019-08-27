@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(1);
+                var spans = agent.WaitForSpans(3);
                 Assert.True(spans.Count > 0, "expected at least one span");
                 foreach (var span in spans)
                 {
