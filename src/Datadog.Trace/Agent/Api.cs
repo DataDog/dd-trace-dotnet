@@ -77,6 +77,13 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
+#if DEBUG
+                    if (ex.InnerException is InvalidOperationException ioe)
+                    {
+                        Log.ErrorException("An error occurred while sending traces to the agent at {Endpoint}\n{Exception}", ex, _tracesEndpoint, ex.ToString());
+                        return;
+                    }
+#endif
                     if (retryCount >= retryLimit)
                     {
                         // stop retrying

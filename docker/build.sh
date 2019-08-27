@@ -15,7 +15,7 @@ for sample in Samples.AspNetCoreMvc2 Samples.Elasticsearch Samples.Elasticsearch
     dotnet publish -f netcoreapp2.1 -c $buildConfiguration samples/$sample/$sample.csproj
 done
 
-for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance AssemblyLoad.FileNotFoundException ; do
+for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance AssemblyLoad.FileNotFoundException TraceContext.InvalidOperationException ; do
     dotnet publish -f netcoreapp2.1 -c $buildConfiguration reproductions/$sample/$sample.csproj
 done
 

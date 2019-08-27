@@ -4,6 +4,8 @@
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
     <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
+    <RuntimeIdentifiers Condition="'$(TargetFramework)' == 'netcoreapp2.1'">win-x64;win-x86;linux-x64</RuntimeIdentifiers>
+    <RuntimeIdentifier Condition="'$(TargetFramework)' != 'netcoreapp2.1'">win-$(Platform)</RuntimeIdentifier>
 
     <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
     <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>

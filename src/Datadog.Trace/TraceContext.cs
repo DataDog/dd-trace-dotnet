@@ -10,10 +10,10 @@ namespace Datadog.Trace
         private static readonly ILog Log = LogProvider.For<TraceContext>();
 
         private readonly object _lock = new object();
-        private readonly List<Span> _spans = new List<Span>();
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
 
+        private List<Span> _spans = new List<Span>();
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
         private bool _samplingPriorityLocked;
@@ -98,14 +98,22 @@ namespace Datadog.Trace
                 }
             }
 
+            List<Span> spansToWrite = null;
+
             lock (_lock)
             {
                 _openSpans--;
 
                 if (_openSpans == 0)
                 {
-                    Tracer.Write(_spans);
+                    spansToWrite = _spans;
+                    _spans = new List<Span>();
                 }
+            }
+
+            if (spansToWrite != null)
+            {
+                Tracer.Write(spansToWrite);
             }
         }
 

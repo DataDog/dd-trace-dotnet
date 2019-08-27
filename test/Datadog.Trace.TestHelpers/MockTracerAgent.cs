@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
@@ -53,6 +54,11 @@ namespace Datadog.Trace.TestHelpers
                 listener.Close();
             }
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to skip serialization of traces.
+        /// </summary>
+        public bool ShouldDeserializeTraces { get; set; } = true;
 
         /// <summary>
         /// Gets the TCP port that this Agent is listening on.
@@ -196,15 +202,19 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var ctx = _listener.GetContext();
-                    var rawSpans = MessagePackSerializer.Deserialize<dynamic>(ctx.Request.InputStream);
-                    var spans = ToSpans(rawSpans);
 
-                    lock (this)
+                    if (ShouldDeserializeTraces)
                     {
-                        // we only need to lock when replacing the span collection,
-                        // not when reading it because it is immutable
-                        Spans = Spans.AddRange(spans);
-                        RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
+                        var rawSpans = MessagePackSerializer.Deserialize<dynamic>(ctx.Request.InputStream);
+                        var spans = ToSpans(rawSpans);
+
+                        lock (this)
+                        {
+                            // we only need to lock when replacing the span collection,
+                            // not when reading it because it is immutable
+                            Spans = Spans.AddRange(spans);
+                            RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
+                        }
                     }
 
                     ctx.Response.ContentType = "application/json";
