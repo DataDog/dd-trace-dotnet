@@ -13,7 +13,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    /// AspNetWeb5Integration wraps the Web API.
+    /// Contains instrumentation wrappers for ASP.NET Web API 5.
     /// </summary>
     public static class AspNetWebApi2Integration
     {
@@ -21,7 +21,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string OperationName = "aspnet-webapi.request";
         private const string Major5Minor2 = "5.2";
         private const string Major5 = "5";
-        private const string TargetType = "System.Web.Http.Controllers.IHttpController";
+
+        private const string SystemWebHttpAssemblyName = "System.Web.Http";
+        private const string HttpControllerTypeName = "System.Web.Http.Controllers.IHttpController";
+
+        private static readonly Type HttpControllerType = Type.GetType($"{HttpControllerTypeName}, {SystemWebHttpAssemblyName}");
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebApi2Integration));
 
@@ -36,8 +40,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>A task with the result</returns>
         [InterceptMethod(
-            TargetAssembly = "System.Web.Http",
-            TargetType = TargetType,
+            TargetAssembly = SystemWebHttpAssemblyName,
+            TargetType = HttpControllerTypeName,
             TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, "System.Web.Http.Controllers.HttpControllerContext", ClrNames.CancellationToken },
             TargetMinimumVersion = Major5Minor2,
             TargetMaximumVersion = Major5)]
@@ -80,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod = MethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
                                     .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteAsync))
-                                    .WithConcreteTypeName(TargetType)
+                                    .WithConcreteType(HttpControllerType)
                                     .WithParameters(controllerContext, cancellationToken)
                                     .WithNamespaceAndNameFilters(
                                          ClrNames.HttpResponseMessageTask,
@@ -90,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {TargetType}.{nameof(ExecuteAsync)}(...)", ex);
+                Log.ErrorException($"Error resolving {HttpControllerTypeName}.{nameof(ExecuteAsync)}(...)", ex);
                 throw;
             }
 
