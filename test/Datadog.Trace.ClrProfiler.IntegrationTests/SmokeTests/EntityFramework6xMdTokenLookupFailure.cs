@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class EntityFramework6xMdTokenLookupFailure : SmokeTestBase
     {
         public EntityFramework6xMdTokenLookupFailure(ITestOutputHelper output)
-            : base(output, "EntityFramework6x.MdTokenLookupFailure")
+            : base(output, "EntityFramework6x.MdTokenLookupFailure", maxTestRunSeconds: 60)
         {
         }
 
