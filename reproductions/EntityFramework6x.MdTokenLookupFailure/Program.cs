@@ -14,82 +14,98 @@ namespace EntityFramework6x.MdTokenLookupFailure
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
-
-            using (var ctx = new SchoolDbContextEntities())
+            try
             {
-                // create database if missing
-                ctx.Database.CreateIfNotExists();
+                Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
 
-                var student = new Student() { StudentName = "Bill", Age = 12 };
+                using (var ctx = new SchoolDbContextEntities())
+                {
+                    // create database if missing
+                    ctx.Database.CreateIfNotExists();
 
-                ctx.Students.Add(student);
-                ctx.SaveChanges();
-            }
+                    var student = new Student() { StudentName = "Bill", Age = 12 };
 
-            // Specify the provider name, server and database.
-            string providerName = "System.Data.SqlClient";
-            string serverName = @"(localdb)\MSSQLLocalDB";
-            string databaseName = "SchoolDbContext";
+                    ctx.Students.Add(student);
+                    ctx.SaveChanges();
+                }
 
-            // Initialize the connection string builder for the
-            // underlying provider.
-            SqlConnectionStringBuilder sqlBuilder =
-                new SqlConnectionStringBuilder();
+                // Specify the provider name, server and database.
+                string providerName = "System.Data.SqlClient";
+                string serverName = @"(localdb)\MSSQLLocalDB";
+                string databaseName = "SchoolDbContext";
 
-            // Set the properties for the data source.
-            sqlBuilder.DataSource = serverName;
-            sqlBuilder.InitialCatalog = databaseName;
-            sqlBuilder.IntegratedSecurity = true;
+                // Initialize the connection string builder for the
+                // underlying provider.
+                SqlConnectionStringBuilder sqlBuilder =
+                    new SqlConnectionStringBuilder();
 
-            // Build the SqlConnection connection string.
-            string providerString = sqlBuilder.ToString();
+                // Set the properties for the data source.
+                sqlBuilder.DataSource = serverName;
+                sqlBuilder.InitialCatalog = databaseName;
+                sqlBuilder.IntegratedSecurity = true;
 
-            // Initialize the EntityConnectionStringBuilder.
-            EntityConnectionStringBuilder entityBuilder =
-                new EntityConnectionStringBuilder();
+                // Build the SqlConnection connection string.
+                string providerString = sqlBuilder.ToString();
 
-            //Set the provider name.
-            entityBuilder.Provider = providerName;
+                // Initialize the EntityConnectionStringBuilder.
+                EntityConnectionStringBuilder entityBuilder =
+                    new EntityConnectionStringBuilder();
 
-            // Set the provider-specific connection string.
-            entityBuilder.ProviderConnectionString = providerString;
+                //Set the provider name.
+                entityBuilder.Provider = providerName;
 
-            // Set the Metadata location.
-            entityBuilder.Metadata = @"res://*/SchoolModel.csdl|
+                // Set the provider-specific connection string.
+                entityBuilder.ProviderConnectionString = providerString;
+
+                // Set the Metadata location.
+                entityBuilder.Metadata = @"res://*/SchoolModel.csdl|
                             res://*/SchoolModel.ssdl|
                             res://*/SchoolModel.msl";
-            Console.WriteLine(entityBuilder.ToString());
+                Console.WriteLine(entityBuilder.ToString());
 
-            using (EntityConnection conn =
-                new EntityConnection(entityBuilder.ToString()))
-            {
-                conn.Open();
-
-                using (EntityCommand cmd = conn.CreateCommand())
+                using (EntityConnection conn =
+                    new EntityConnection(entityBuilder.ToString()))
                 {
-                    Console.WriteLine("Creating an EntityCommand with this EntityConnection.");
-                    cmd.CommandText = "SELECT VALUE AVG(s.Age) FROM SchoolDbContextEntities.Students as s";
-                    // Execute the command.
-                    using (EntityDataReader rdr =
-                        cmd.ExecuteReader(CommandBehavior.SequentialAccess))
-                    {
-                        // Start reading results.
-                        while (rdr.Read())
-                        {
-                            IExtendedDataRecord record = rdr as IExtendedDataRecord;
-                            // For PrimitiveType 
-                            // the record contains exactly one field.
-                            int fieldIndex = 0;
-                            Console.WriteLine("Value: " + record.GetValue(fieldIndex));
-                        }
-                    }
+                    conn.Open();
 
-                    conn.Close();
+                    using (EntityCommand cmd = conn.CreateCommand())
+                    {
+                        Console.WriteLine("Creating an EntityCommand with this EntityConnection.");
+                        cmd.CommandText = "SELECT VALUE AVG(s.Age) FROM SchoolDbContextEntities.Students as s";
+                        // Execute the command.
+                        using (EntityDataReader rdr =
+                            cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+                        {
+                            // Start reading results.
+                            while (rdr.Read())
+                            {
+                                IExtendedDataRecord record = rdr as IExtendedDataRecord;
+                                // For PrimitiveType 
+                                // the record contains exactly one field.
+                                int fieldIndex = 0;
+                                Console.WriteLine("Value: " + record.GetValue(fieldIndex));
+                            }
+                        }
+
+                        conn.Close();
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                return (int)ExitCode.UnknownError;
+            }
+
+            return (int)ExitCode.Success;
         }
+    }
+
+    enum ExitCode : int
+    {
+        Success = 0,
+        UnknownError = -10
     }
 }

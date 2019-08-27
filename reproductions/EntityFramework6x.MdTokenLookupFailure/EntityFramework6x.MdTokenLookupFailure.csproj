@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{9E66138F-5515-4492-A71B-70DEE0C3B153}</ProjectGuid>
+    <ProjectGuid>{E1706893-D3A5-43B9-9036-AEF49DB9600B}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>EntityFramework6x.MdTokenLookupFailure</RootNamespace>
     <AssemblyName>EntityFramework6x.MdTokenLookupFailure</AssemblyName>
