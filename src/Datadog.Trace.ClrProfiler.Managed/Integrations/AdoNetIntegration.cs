@@ -20,9 +20,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string Major4 = "4";
         private const string FrameworkAssembly = "System.Data";
         private const string CoreAssembly = "System.Data.Common";
-        private const string DbCommand = "System.Data.Common.DbCommand";
-        private const string DbDataReader = "System.Data.Common.DbDataReader";
-        private const string CommandBehavior = "System.Data.CommandBehavior";
+        private const string SystemDataCommonDbCommand = "System.Data.Common.DbCommand";
+        private const string SystemDataCommonDbDataReader = "System.Data.Common.DbDataReader";
+        private const string SystemDataCommonCommandBehavior = "System.Data.CommandBehavior";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AdoNetIntegration));
 
@@ -37,14 +37,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = FrameworkAssembly, // .NET Framework
-            TargetType = DbCommand,
-            TargetSignatureTypes = new[] { DbDataReader, CommandBehavior },
+            TargetType = SystemDataCommonDbCommand,
+            TargetSignatureTypes = new[] { SystemDataCommonDbDataReader, SystemDataCommonCommandBehavior },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = CoreAssembly, // .NET Core
-            TargetType = DbCommand,
-            TargetSignatureTypes = new[] { DbDataReader, CommandBehavior },
+            TargetType = SystemDataCommonDbCommand,
+            TargetSignatureTypes = new[] { SystemDataCommonDbDataReader, SystemDataCommonCommandBehavior },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReader(
@@ -65,12 +65,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteDbDataReader))
                        .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior)
-                       .WithNamespaceAndNameFilters(DbDataReader, CommandBehavior)
+                       .WithNamespaceAndNameFilters(SystemDataCommonDbDataReader, SystemDataCommonCommandBehavior)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {DbCommand}.{nameof(ExecuteDbDataReader)}(...)", ex);
+                Log.ErrorException($"Error resolving {SystemDataCommonDbCommand}.{nameof(ExecuteDbDataReader)}(...)", ex);
                 throw;
             }
 
@@ -100,14 +100,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = FrameworkAssembly, // .NET Framework
-            TargetType = DbCommand,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", CommandBehavior, ClrNames.CancellationToken },
+            TargetType = SystemDataCommonDbCommand,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", SystemDataCommonCommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = CoreAssembly, // .NET Core
-            TargetType = DbCommand,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", CommandBehavior, ClrNames.CancellationToken },
+            TargetType = SystemDataCommonDbCommand,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", SystemDataCommonCommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReaderAsync(
@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             var instrumentedType = typeof(DbCommand);
-            var dataReaderType = instrumentedType.Assembly.GetType(DbDataReader);
+            var dataReaderType = instrumentedType.Assembly.GetType(SystemDataCommonDbDataReader);
             var commandBehavior = (CommandBehavior)behavior;
             Func<object, CommandBehavior, object, object> instrumentedMethod = null;
 
@@ -132,12 +132,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteDbDataReaderAsync))
                        .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, CommandBehavior, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, SystemDataCommonCommandBehavior, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {DbCommand}.{nameof(ExecuteDbDataReaderAsync)}(...)", ex);
+                Log.ErrorException($"Error resolving {SystemDataCommonDbCommand}.{nameof(ExecuteDbDataReaderAsync)}(...)", ex);
                 throw;
             }
 
