@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                var instrumentedType = @this.GetInstrumentedType(DbCommand);
+                var instrumentedType = typeof(DbCommand);
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteDbDataReader))
@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
-            var instrumentedType = @this.GetInstrumentedType(DbCommand);
+            var instrumentedType = typeof(DbCommand);
             var dataReaderType = instrumentedType.Assembly.GetType(DbDataReader);
             var commandBehavior = (CommandBehavior)behavior;
             Func<object, CommandBehavior, object, object> instrumentedMethod = null;
@@ -159,8 +159,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    var awaitable = (Task<T>)instrumentedMethod(command, behavior, cancellationToken);
-                    return await awaitable.ConfigureAwait(false);
+                    var task = (Task<T>)instrumentedMethod(command, behavior, cancellationToken);
+                    return await task.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
