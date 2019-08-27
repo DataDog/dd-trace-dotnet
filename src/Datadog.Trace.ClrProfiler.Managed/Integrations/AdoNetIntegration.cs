@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             var instrumentedType = typeof(DbCommand);
-            var dataReaderType = instrumentedType.Assembly.GetType(SystemDataCommonDbDataReader);
+            var dataReaderType = typeof(DbDataReader);
             var commandBehavior = (CommandBehavior)behavior;
             Func<object, CommandBehavior, object, object> instrumentedMethod = null;
 

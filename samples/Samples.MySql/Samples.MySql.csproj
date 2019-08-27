@@ -2,10 +2,6 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">8.0.17</ApiVersion>
-
-    <!-- override to remove net452 -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1</TargetFrameworks>
-
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
