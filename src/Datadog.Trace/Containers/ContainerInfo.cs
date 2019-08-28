@@ -17,9 +17,7 @@ namespace Datadog.Trace.Containers
 
         private const string LineRegex = @"^(?:\d+):(?:[^:]*):(.+)$";
 
-        private const string ContainerIdRegex = @"(?:pod)?" +
-                                                @"([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64})" +
-                                                @"(?:\.scope|\.slice)?$";
+        private const string ContainerIdRegex = @"([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64})(?:\.scope)?$";
 
         private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
