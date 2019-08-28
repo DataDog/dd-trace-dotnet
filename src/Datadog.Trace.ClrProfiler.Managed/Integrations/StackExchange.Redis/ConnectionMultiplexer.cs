@@ -167,7 +167,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                         .WithConcreteType(multiplexerType)
                         .WithParameters(message, processor, state, server)
                         .WithMethodGenerics(genericType)
-                        // .ForceMethodDefinitionResolution()
                         .WithNamespaceAndNameFilters(
                             ClrNames.GenericTask,
                             StackExchangeRedisMessage,
