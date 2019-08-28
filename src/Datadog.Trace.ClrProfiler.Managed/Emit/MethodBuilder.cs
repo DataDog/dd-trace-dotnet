@@ -81,12 +81,6 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithConcreteTypeName(string typeName)
-        {
-            var concreteType = _resolutionModule?.GetType(typeName);
-            return this.WithConcreteType(concreteType);
-        }
-
         public MethodBuilder<TDelegate> WithNamespaceAndNameFilters(params string[] namespaceNameFilters)
         {
             _namespaceAndNameFilter = namespaceNameFilters;
