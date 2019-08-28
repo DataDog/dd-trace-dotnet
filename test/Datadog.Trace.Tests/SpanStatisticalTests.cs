@@ -17,8 +17,12 @@ namespace Datadog.Trace.Tests
         /// The max value of the Ids we create should be a 63 bit unsigned number
         /// </summary>
         private static ulong _maxId = ulong.MaxValue / 2;
-        private static ulong _bucketSize = _maxId / 20;
-        private static ulong _numberOfIdsToGenerate = 20_000_000;
+        private static int _numberOfBuckets = 20;
+        private static ulong _numberOfIdsToGenerate = 2_000_000;
+
+        // Helper numbers for logging and calculating
+        private static decimal _bucketSizePercentage = 100 / _numberOfBuckets;
+        private static ulong _bucketSize = _maxId / (ulong)_numberOfBuckets;
 
         private readonly ITestOutputHelper _output;
 
@@ -33,7 +37,7 @@ namespace Datadog.Trace.Tests
             BlastOff();
             var rangeBound = _maxId - _bucketSize;
             var keysWithinRange = _generatedIds.Keys.Where(i => i >= rangeBound).ToList();
-            _output.WriteLine($"Found {keysWithinRange.Count()} above {rangeBound}.");
+            _output.WriteLine($"Found {keysWithinRange.Count()} above {rangeBound}, the top {_bucketSizePercentage}% of values.");
             Assert.True(keysWithinRange.Count() > 0);
         }
 
@@ -43,7 +47,7 @@ namespace Datadog.Trace.Tests
             BlastOff();
             var rangeBound = _bucketSize;
             var keysWithinRange = _generatedIds.Keys.Where(i => i <= rangeBound).ToList();
-            _output.WriteLine($"Found {keysWithinRange.Count()} below {rangeBound}.");
+            _output.WriteLine($"Found {keysWithinRange.Count()} below {rangeBound}, the bottom {_bucketSizePercentage}% of values.");
             Assert.True(keysWithinRange.Count() > 0);
         }
 
@@ -70,44 +74,32 @@ namespace Datadog.Trace.Tests
         {
             BlastOff();
             var currentBucket = _bucketSize;
-            var orderedKeys = _generatedIds.Keys.OrderBy(key => key);
-            var buckets = new Dictionary<ulong, ulong>();
-
-            buckets.Add(currentBucket, 0);
-
-            foreach (var key in orderedKeys)
+            var buckets = new List<ulong>();
+            for (var i = 0; i < _numberOfBuckets; i++)
             {
-                if (key <= currentBucket)
-                {
-                    // Add the number of keys to the bucket
-                    buckets[currentBucket] += _generatedIds[key];
-                }
-                else
-                {
-                    // Time to start new buckets
-                    while (key > currentBucket)
-                    {
-                        currentBucket += _bucketSize;
-                        buckets.Add(currentBucket, 0);
-                    }
-
-                    buckets[currentBucket] += _generatedIds[key];
-                }
+                buckets.Add(0);
             }
 
-            var bucketsWithNoKeys = new List<ulong>();
+            _output.WriteLine($"Organizing {_numberOfBuckets} buckets with a range size of {_bucketSize} which is {_bucketSizePercentage}%.");
+
+            foreach (var key in _generatedIds.Keys)
+            {
+                var percentile = ((decimal)key / _maxId) * 100m;
+                var bucketIndex = (int)(percentile / _bucketSizePercentage);
+                var numberOfHits = _generatedIds[key];
+                buckets[bucketIndex] += numberOfHits;
+            }
+
+            var bucketsWithNoKeys = new List<int>();
             ulong minCount = ulong.MaxValue;
             ulong maxCount = 0;
-            var orderedBucketKeys = buckets.Keys.OrderBy(key => key);
 
-            foreach (var bucketKey in orderedBucketKeys)
+            for (var i = 0; i < _numberOfBuckets; i++)
             {
-                var bucketCount = buckets[bucketKey];
-
+                var bucketCount = buckets[i];
                 if (bucketCount == 0)
                 {
-                    bucketsWithNoKeys.Add(bucketKey);
-                    continue;
+                    bucketsWithNoKeys.Add(i);
                 }
 
                 if (bucketCount < minCount)
@@ -119,12 +111,18 @@ namespace Datadog.Trace.Tests
                 {
                     maxCount = bucketCount;
                 }
+
+                var readableIndex = i + 1;
+                var lowerPercent = (readableIndex - 1) * _bucketSizePercentage;
+                var upperPercent = (readableIndex) * _bucketSizePercentage;
+                _output.WriteLine($"Bucket {readableIndex} has {buckets[i]} keys between {lowerPercent}-{upperPercent}%.");
             }
 
             Assert.True(bucketsWithNoKeys.Count() == 0, "There should be no buckets which have no keys.");
 
             var variance = (decimal)(maxCount - minCount) / (decimal)maxCount;
             var maximumVariance = 0.01m;
+            _output.WriteLine($"The maximum variance between buckets is {variance}.");
             Assert.True(maximumVariance >= variance, $"The variance between buckets should be less than {maximumVariance}, but it is {variance}.");
         }
 
