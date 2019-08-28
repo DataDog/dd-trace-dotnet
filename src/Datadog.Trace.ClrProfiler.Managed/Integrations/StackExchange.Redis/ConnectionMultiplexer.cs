@@ -62,6 +62,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             int mdToken,
             long moduleVersionPtr)
         {
+            if (multiplexer == null)
+            {
+                throw new ArgumentNullException(nameof(multiplexer));
+            }
+
             var genericType = typeof(T);
             var multiplexerType = multiplexer.GetInstrumentedType(ConnectionMultiplexerTypeName);
             var redisAssembly = multiplexerType.Assembly;
@@ -148,6 +153,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             int mdToken,
             long moduleVersionPtr)
         {
+            if (multiplexer == null)
+            {
+                throw new ArgumentNullException(nameof(multiplexer));
+            }
+
             var genericType = typeof(T);
             var multiplexerType = multiplexer.GetInstrumentedType(ConnectionMultiplexerTypeName);
             var redisAssembly = multiplexerType.Assembly;
