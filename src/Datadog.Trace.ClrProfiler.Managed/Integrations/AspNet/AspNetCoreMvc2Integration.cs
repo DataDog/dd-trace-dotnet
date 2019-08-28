@@ -312,7 +312,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             var shouldTrace = Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName);
 
-            Action<object> instrumentedMethod = null;
+            Action<object> instrumentedMethod;
 
             try
             {
@@ -327,8 +327,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                var contextTypeName = (context == null) ? string.Empty : (context.GetType().FullName + " ");
-                var methodDef = $"{ResourceInvoker}.{nameof(Rethrow)}({contextTypeName}context)";
+                var contextTypeName = context.GetType().FullName + " ";
+                var methodDef = $"{ResourceInvoker}.{nameof(Rethrow)}({contextTypeName} context)";
                 Log.ErrorException($"Error retrieving {methodDef}", ex);
                 throw;
             }
