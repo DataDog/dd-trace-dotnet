@@ -15,9 +15,7 @@ namespace Datadog.Trace.Containers
     {
         private const string ControlGroupsFilePath = "/proc/self/cgroup";
 
-        private const string LineRegex = @"^(?:\d+):(?:[^:]*):(.+)$";
-
-        private const string ContainerIdRegex = @"([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64})(?:\.scope)?$";
+        private const string ContainerIdRegex = @"^(?:\d+):(?:[^:]*):/?(?:.+/)([0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}|[0-9a-f]{64}(?:\.scope)?)$";
 
         private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -99,22 +97,11 @@ namespace Datadog.Trace.Containers
         /// <returns>The container id if found; otherwise, <c>null</c>.</returns>
         public static string ParseCgroupLine(string line)
         {
-            var lineMatch = Regex.Match(line, LineRegex);
+            var lineMatch = Regex.Match(line, ContainerIdRegex);
 
-            if (lineMatch.Success)
-            {
-                string path = lineMatch.Groups[1].Value;
-                string lastPathPart = path.Split('/').Last();
-
-                var containerIdMatch = Regex.Match(lastPathPart, ContainerIdRegex);
-
-                if (containerIdMatch.Success)
-                {
-                    return containerIdMatch.Groups[1].Value;
-                }
-            }
-
-            return null;
+            return lineMatch.Success
+                       ? lineMatch.Groups[1].Value
+                       : null;
         }
 
         private static string GetContainerIdInternal()
