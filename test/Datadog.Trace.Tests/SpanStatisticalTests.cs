@@ -84,6 +84,7 @@ namespace Datadog.Trace.Tests
             BlastOff();
 
             var expectedApproximateBucketSize = _numberOfIdsToGenerate / (ulong)_numberOfBuckets;
+            var actualApproximateBucketSize = (ulong)_generatedIds.Keys.Count() / (ulong)_numberOfBuckets;
             var buckets = new List<ulong>();
             for (var i = 0; i < _numberOfBuckets; i++)
             {
@@ -91,7 +92,8 @@ namespace Datadog.Trace.Tests
             }
 
             _output.WriteLine($"Requested {_numberOfIdsToGenerate} keys, received {_generatedIds.Keys.Count()} unique keys.");
-            _output.WriteLine($"Expecting approximately {expectedApproximateBucketSize} keys per bucket.");
+            _output.WriteLine($"Expected approximately {expectedApproximateBucketSize} keys per bucket.");
+            _output.WriteLine($"Receiving approximately {actualApproximateBucketSize} keys per bucket.");
             _output.WriteLine($"Organizing {_numberOfBuckets} buckets with a range size of {_bucketSize} which is {_bucketSizePercentage}%.");
 
             foreach (var key in _generatedIds.Keys)
@@ -133,10 +135,10 @@ namespace Datadog.Trace.Tests
             Assert.True(bucketsWithNoKeys.Count() == 0, "There should be no buckets which have no keys.");
 
             // Variance is the deviation from the expected mean or average
-            var maxDiff = Math.Abs((decimal)(maxCount - expectedApproximateBucketSize));
-            var minDiff = Math.Abs((decimal)(expectedApproximateBucketSize - minCount));
+            var maxDiff = Math.Abs((decimal)(maxCount - actualApproximateBucketSize));
+            var minDiff = Math.Abs((decimal)(actualApproximateBucketSize - minCount));
             var biggestDiff = new[] { maxDiff, minDiff }.Max();
-            var variance = biggestDiff / expectedApproximateBucketSize;
+            var variance = biggestDiff / actualApproximateBucketSize;
 
             var maximumVariance = 0.01m;
             _output.WriteLine($"The maximum variance in all buckets is {variance}.");
