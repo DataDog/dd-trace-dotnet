@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -52,6 +53,14 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void GeneratedIds_Contain_Nothing_Above_Expected_Max()
+        {
+            BlastOff();
+            var keysOutOfRange = _generatedIds.Keys.Any(i => i > _maxId);
+            Assert.False(keysOutOfRange, $"We should never generate keys above {_maxId}.");
+        }
+
+        [Fact]
         public void GeneratedIds_Contain_Reasonably_Few_Duplicates()
         {
             BlastOff();
@@ -73,7 +82,8 @@ namespace Datadog.Trace.Tests
         public void GeneratedIds_Are_Evenly_Distributed()
         {
             BlastOff();
-            var currentBucket = _bucketSize;
+
+            var expectedApproximateBucketSize = _numberOfIdsToGenerate / (ulong)_numberOfBuckets;
             var buckets = new List<ulong>();
             for (var i = 0; i < _numberOfBuckets; i++)
             {
@@ -81,7 +91,7 @@ namespace Datadog.Trace.Tests
             }
 
             _output.WriteLine($"Requested {_numberOfIdsToGenerate} keys, received {_generatedIds.Keys.Count()} unique keys.");
-            _output.WriteLine($"Expecting approximately {_numberOfIdsToGenerate / (ulong)_numberOfBuckets} keys per bucket.");
+            _output.WriteLine($"Expecting approximately {expectedApproximateBucketSize} keys per bucket.");
             _output.WriteLine($"Organizing {_numberOfBuckets} buckets with a range size of {_bucketSize} which is {_bucketSizePercentage}%.");
 
             foreach (var key in _generatedIds.Keys)
@@ -122,9 +132,14 @@ namespace Datadog.Trace.Tests
 
             Assert.True(bucketsWithNoKeys.Count() == 0, "There should be no buckets which have no keys.");
 
-            var variance = (decimal)(maxCount - minCount) / (decimal)maxCount;
-            var maximumVariance = 0.015m;
-            _output.WriteLine($"The maximum variance between buckets is {variance}.");
+            // Variance is the deviation from the expected mean or average
+            var maxDiff = Math.Abs((decimal)(maxCount - expectedApproximateBucketSize));
+            var minDiff = Math.Abs((decimal)(expectedApproximateBucketSize - minCount));
+            var biggestDiff = new[] { maxDiff, minDiff }.Max();
+            var variance = biggestDiff / expectedApproximateBucketSize;
+
+            var maximumVariance = 0.01m;
+            _output.WriteLine($"The maximum variance in all buckets is {variance}.");
             Assert.True(maximumVariance >= variance, $"The variance between buckets should be less than {maximumVariance}, but it is {variance}.");
         }
 
