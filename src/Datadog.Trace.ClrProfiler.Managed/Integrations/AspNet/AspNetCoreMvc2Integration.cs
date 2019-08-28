@@ -29,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         private const string ResourceInvoker = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
 
+        private static readonly Type DiagnosticSourceType = Type.GetType($"{DiagnosticSource}, {AspnetMvcCore}");
+        private static readonly Type ResourceInvokerType = Type.GetType($"{ResourceInvoker}, {AspnetMvcCore}");
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
         private readonly object _httpContext;
@@ -168,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(BeforeAction))
-                       .WithConcreteTypeName(DiagnosticSource)
+                       .WithConcreteType(DiagnosticSourceType)
                        .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
                        .WithNamespaceAndNameFilters(
                             ClrNames.Void,
@@ -251,7 +253,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(AfterAction))
-                       .WithConcreteTypeName(DiagnosticSource)
+                       .WithConcreteType(DiagnosticSourceType)
                        .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
                        .WithNamespaceAndNameFilters(
                             ClrNames.Void,
@@ -317,7 +319,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Action<object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(Rethrow))
-                       .WithConcreteTypeName(ResourceInvoker)
+                       .WithConcreteType(ResourceInvokerType)
                        .WithParameters(context)
                        .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.Ignore)
                        .Build();
