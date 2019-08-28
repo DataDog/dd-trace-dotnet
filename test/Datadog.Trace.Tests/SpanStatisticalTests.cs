@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests
         /// </summary>
         private static ulong _maxId = ulong.MaxValue / 2;
         private static int _numberOfBuckets = 20;
-        private static ulong _numberOfIdsToGenerate = 2_000_000;
+        private static ulong _numberOfIdsToGenerate = 3_000_000;
 
         // Helper numbers for logging and calculating
         private static decimal _bucketSizePercentage = 100 / _numberOfBuckets;
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests
         {
             BlastOff();
             var duplicateKeys = _generatedIds.Where(kvp => kvp.Value > 1).ToList();
-            var acceptablePercentageOfDuplicates = 0.01m;
+            var acceptablePercentageOfDuplicates = 0.001m;
 
             ulong duplicateKeyCount = 0;
             foreach (var kvp in duplicateKeys)
@@ -80,6 +80,8 @@ namespace Datadog.Trace.Tests
                 buckets.Add(0);
             }
 
+            _output.WriteLine($"Requested {_numberOfIdsToGenerate} keys, received {_generatedIds.Keys.Count()} unique keys.");
+            _output.WriteLine($"Expecting approximately {_numberOfIdsToGenerate / (ulong)_numberOfBuckets} keys per bucket.");
             _output.WriteLine($"Organizing {_numberOfBuckets} buckets with a range size of {_bucketSize} which is {_bucketSizePercentage}%.");
 
             foreach (var key in _generatedIds.Keys)
