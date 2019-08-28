@@ -87,6 +87,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             int mdToken,
             long moduleVersionPtr)
         {
+            if (redisBase == null)
+            {
+                throw new ArgumentNullException(nameof(redisBase));
+            }
+
             var thisType = redisBase.GetType();
 
             if (_redisAssembly == null)
