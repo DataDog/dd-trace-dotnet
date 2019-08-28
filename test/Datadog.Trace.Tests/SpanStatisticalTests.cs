@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,7 +10,7 @@ namespace Datadog.Trace.Tests
 {
     public class SpanStatisticalTests
     {
-        private static readonly ManualResetEventSlim _populatedEvent = new ManualResetEventSlim(initialState: false);
+        private static readonly object _populationLock = new object();
         private static readonly ConcurrentDictionary<ulong, ulong> _generatedIds = new ConcurrentDictionary<ulong, ulong>();
 
         /// <summary>
@@ -132,31 +130,28 @@ namespace Datadog.Trace.Tests
 
         private void BlastOff()
         {
-            if (_generatedIds.Keys.Count == 0)
+            lock (_populationLock)
             {
-                _populatedEvent.Reset();
-            }
-            else
-            {
-                _populatedEvent.Wait();
-                return;
-            }
+                if (_generatedIds.Keys.Count > 0)
+                {
+                    return;
+                }
 
-            _output.WriteLine($"Starting key generation.");
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            // populate the dictionary for all tests
-            Parallel.For(0L, (long)_numberOfIdsToGenerate, i =>
-            {
-                var id = GenerateId();
-                _generatedIds.AddOrUpdate(
-                    key: id,
-                    addValue: 1,
-                    updateValueFactory: (key, oldValue) => oldValue++);
-            });
-            stopwatch.Stop();
-            _output.WriteLine($"It took {stopwatch.ElapsedMilliseconds / 1000d} seconds to generate {_numberOfIdsToGenerate} keys.");
-            _populatedEvent.Set();
+                _output.WriteLine($"Starting key generation.");
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+                // populate the dictionary for all tests
+                Parallel.For(0L, (long)_numberOfIdsToGenerate, i =>
+                {
+                    var id = GenerateId();
+                    _generatedIds.AddOrUpdate(
+                        key: id,
+                        addValue: 1,
+                        updateValueFactory: (key, oldValue) => oldValue++);
+                });
+                stopwatch.Stop();
+                _output.WriteLine($"It took {stopwatch.ElapsedMilliseconds / 1000d} seconds to generate {_numberOfIdsToGenerate} keys.");
+            }
         }
 
         private ulong GenerateId()
