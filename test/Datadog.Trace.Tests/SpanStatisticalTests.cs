@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tests
             Assert.True(bucketsWithNoKeys.Count() == 0, "There should be no buckets which have no keys.");
 
             var variance = (decimal)(maxCount - minCount) / (decimal)maxCount;
-            var maximumVariance = 0.01m;
+            var maximumVariance = 0.015m;
             _output.WriteLine($"The maximum variance between buckets is {variance}.");
             Assert.True(maximumVariance >= variance, $"The variance between buckets should be less than {maximumVariance}, but it is {variance}.");
         }
