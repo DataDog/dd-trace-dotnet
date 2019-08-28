@@ -908,7 +908,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       ELEMENT_TYPE_CLASS, // ret = System.AppDomain
       // insert compressed token for System.AppDomain TypeRef here
   };
-  auto start_length = sizeof(appdomain_get_current_domain_signature_start);
+  ULONG start_length = sizeof(appdomain_get_current_domain_signature_start);
 
   BYTE system_appdomain_type_ref_compressed_token[4];
   ULONG token_length = CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
@@ -949,7 +949,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       ELEMENT_TYPE_U1
   };
   start_length = sizeof(appdomain_load_signature_start);
-  auto end_length = sizeof(appdomain_load_signature_end);
+  ULONG end_length = sizeof(appdomain_load_signature_end);
 
   BYTE system_reflection_assembly_type_ref_compressed_token[4];
   token_length = CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
