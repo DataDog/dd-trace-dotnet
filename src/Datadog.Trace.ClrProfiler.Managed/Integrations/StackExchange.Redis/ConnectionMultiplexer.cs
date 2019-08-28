@@ -69,13 +69,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
             var genericType = typeof(T);
             var multiplexerType = multiplexer.GetInstrumentedType(ConnectionMultiplexerTypeName);
-            var redisAssembly = multiplexerType.Assembly;
-            var messageType = message?.GetInstrumentedType(StackExchangeRedisMessage) ?? redisAssembly.GetType(StackExchangeRedisMessage);
-            var processorType =
-                processor?.GetInstrumentedType(StackExchangeRedisResultProcessor) ?? redisAssembly.GetType(StackExchangeRedisResultProcessor).MakeGenericType(genericType);
-            var stateType = typeof(object);
-            var serverType = server?.GetInstrumentedType(StackExchangeRedisServerEndPoint) ?? redisAssembly.GetType(StackExchangeRedisServerEndPoint);
-
             Func<object, object, object, object, T> instrumentedMethod;
 
             try
@@ -160,13 +153,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
             var genericType = typeof(T);
             var multiplexerType = multiplexer.GetInstrumentedType(ConnectionMultiplexerTypeName);
-            var redisAssembly = multiplexerType.Assembly;
-            var messageType = message?.GetInstrumentedType(StackExchangeRedisMessage) ?? redisAssembly.GetType(StackExchangeRedisMessage);
-            var processorType =
-                processor?.GetInstrumentedType(StackExchangeRedisResultProcessor) ?? redisAssembly.GetType(StackExchangeRedisResultProcessor).MakeGenericType(genericType);
-            var stateType = typeof(object);
-            var serverType = server?.GetInstrumentedType(StackExchangeRedisServerEndPoint) ?? redisAssembly.GetType(StackExchangeRedisServerEndPoint);
-
             Func<object, object, object, object, object, Task<T>> instrumentedMethod;
 
             try
