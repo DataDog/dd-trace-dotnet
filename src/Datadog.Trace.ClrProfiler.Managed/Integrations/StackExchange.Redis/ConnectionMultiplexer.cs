@@ -79,9 +79,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                     MethodBuilder<Func<object, object, object, object, T>>
                         .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteSyncImpl))
                         .WithConcreteType(multiplexerType)
-                        .WithParameters(messageType, processorType, serverType)
+                        .WithParameters(message, processor, server)
                         .WithMethodGenerics(genericType)
-                        // .ForceMethodDefinitionResolution()
                         .WithNamespaceAndNameFilters(
                             ClrNames.Ignore,
                             StackExchangeRedisMessage,
