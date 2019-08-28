@@ -30,12 +30,12 @@ namespace Datadog.Trace.Tests
         public SpanStatisticalTests(ITestOutputHelper output)
         {
             _output = output;
+            BlastOff();
         }
 
         [Fact]
         public void GeneratedIds_Contain_High_Numbers()
         {
-            BlastOff();
             var rangeBound = _maxId - _bucketSize;
             var keysWithinRange = _generatedIds.Keys.Where(i => i >= rangeBound).ToList();
             _output.WriteLine($"Found {keysWithinRange.Count()} above {rangeBound}, the top {_bucketSizePercentage}% of values.");
@@ -45,7 +45,6 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GeneratedIds_Contain_Low_Numbers()
         {
-            BlastOff();
             var rangeBound = _bucketSize;
             var keysWithinRange = _generatedIds.Keys.Where(i => i <= rangeBound).ToList();
             _output.WriteLine($"Found {keysWithinRange.Count()} below {rangeBound}, the bottom {_bucketSizePercentage}% of values.");
@@ -55,7 +54,6 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GeneratedIds_Contain_Nothing_Above_Expected_Max()
         {
-            BlastOff();
             var keysOutOfRange = _generatedIds.Keys.Any(i => i > _maxId);
             Assert.False(keysOutOfRange, $"We should never generate keys above {_maxId}.");
         }
@@ -63,7 +61,6 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GeneratedIds_Contain_Reasonably_Few_Duplicates()
         {
-            BlastOff();
             var duplicateKeys = _generatedIds.Where(kvp => kvp.Value > 1).ToList();
             var acceptablePercentageOfDuplicates = 0.001m;
 
@@ -81,8 +78,6 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GeneratedIds_Are_Evenly_Distributed()
         {
-            BlastOff();
-
             var expectedApproximateBucketSize = _numberOfIdsToGenerate / (ulong)_numberOfBuckets;
             var actualApproximateBucketSize = (ulong)_generatedIds.Keys.Count() / (ulong)_numberOfBuckets;
             var buckets = new List<ulong>();
