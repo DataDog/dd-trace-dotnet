@@ -122,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static Scope CreateScope(dynamic controllerContext)
+        private static Scope CreateScope(object controllerContext)
         {
             Scope scope = null;
 
@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 var tracer = Tracer.Instance;
-                var request = controllerContext?.Request as HttpRequestMessage;
+                var request = controllerContext.GetProperty<HttpRequestMessage>("Request").GetValueOrDefault();
                 SpanContext propagatedContext = null;
 
                 if (request != null && tracer.ActiveScope == null)
