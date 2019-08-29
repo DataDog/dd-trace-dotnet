@@ -39,16 +39,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="controllerContext">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
         /// <returns>A new scope used to instrument an MVC action.</returns>
-        public static Scope CreateScope(dynamic controllerContext)
+        public static Scope CreateScope(object controllerContext)
         {
-            if (ControllerContextType == null ||
-                controllerContext == null ||
-                ((object)controllerContext)?.GetType() != ControllerContextType)
-            {
-                // bail out early
-                return null;
-            }
-
             Scope scope = null;
 
             try
@@ -59,7 +51,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return null;
                 }
 
-                var httpContext = controllerContext?.HttpContext as HttpContextBase;
+                if (controllerContext == null || controllerContext.GetType().FullName != ControllerContextTypeName)
+                {
+                    return null;
+                }
+
+                var httpContext = controllerContext.GetProperty<HttpContextBase>("HttpContext").GetValueOrDefault();
 
                 if (httpContext == null)
                 {
@@ -71,11 +68,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 string url = httpContext.Request.RawUrl.ToLowerInvariant();
                 string resourceName = null;
 
-                RouteData routeData = controllerContext.RouteData as RouteData;
+                RouteData routeData = controllerContext.GetProperty<RouteData>("RouteData").GetValueOrDefault();
                 Route route = routeData?.Route as Route;
                 RouteValueDictionary routeValues = routeData?.Values;
 
-                if (route == null && routeData?.Route.GetType() == RouteCollectionRouteType)
+                if (route == null && routeData?.Route.GetType().FullName == RouteCollectionRouteTypeName)
                 {
                     var routeMatches = routeValues?.GetValueOrDefault("MS_DirectRouteMatches") as List<RouteData>;
 
