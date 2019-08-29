@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         /// <summary>
         /// Method to execute a smoke test.
         /// </summary>
-        /// <param name="shouldSerializeTraces">Optimization parameter, pass false when the resulting traces aren't being verified</param>
+        /// <param name="shouldDeserializeTraces">Optimization parameter, pass false when the resulting traces aren't being verified</param>
         protected void CheckForSmoke(bool shouldDeserializeTraces = true)
         {
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
@@ -55,6 +55,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int aspNetCorePort = TcpPortProvider.GetOpenPort(); // unused for now
+            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Output.WriteLine($"Assigning port {aspNetCorePort} for the aspNetCorePort.");
 
             if (EnvironmentHelper.IsCoreClr())
             {
