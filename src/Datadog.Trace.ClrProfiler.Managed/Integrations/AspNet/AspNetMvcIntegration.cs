@@ -28,10 +28,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string ControllerContextTypeName = "System.Web.Mvc.ControllerContext";
         private const string RouteCollectionRouteTypeName = "System.Web.Mvc.Routing.RouteCollectionRoute";
 
-        private static readonly Type ControllerContextType = Type.GetType($"System.Web.Mvc.ControllerContext, {AssemblyName}", throwOnError: false);
-        private static readonly Type RouteCollectionRouteType = Type.GetType($"System.Web.Mvc.Routing.RouteCollectionRoute, {AssemblyName}", throwOnError: false);
-        private static readonly Type AsyncActionInvokerType = Type.GetType($"{AsyncActionInvokerTypeName}, {AssemblyName}", throwOnError: false);
-
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetMvcIntegration));
 
         /// <summary>
