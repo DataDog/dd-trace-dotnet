@@ -23,11 +23,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string Major5Minor1 = "5.1";
         private const string Major5 = "5";
         private const string AssemblyName = "System.Web.Mvc";
+
         private const string AsyncActionInvokerTypeName = "System.Web.Mvc.Async.IAsyncActionInvoker";
+        private const string ControllerContextTypeName = "System.Web.Mvc.ControllerContext";
+        private const string RouteCollectionRouteTypeName = "System.Web.Mvc.Routing.RouteCollectionRoute";
 
         private static readonly Type ControllerContextType = Type.GetType($"System.Web.Mvc.ControllerContext, {AssemblyName}", throwOnError: false);
         private static readonly Type RouteCollectionRouteType = Type.GetType($"System.Web.Mvc.Routing.RouteCollectionRoute, {AssemblyName}", throwOnError: false);
         private static readonly Type AsyncActionInvokerType = Type.GetType($"{AsyncActionInvokerTypeName}, {AssemblyName}", throwOnError: false);
+
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetMvcIntegration));
 
         /// <summary>
@@ -173,7 +177,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = AssemblyName,
             TargetAssembly = AssemblyName,
             TargetType = AsyncActionInvokerTypeName,
-            TargetSignatureTypes = new[] { ClrNames.IAsyncResult, "System.Web.Mvc.ControllerContext", ClrNames.String, ClrNames.AsyncCallback, ClrNames.Object },
+            TargetSignatureTypes = new[] { ClrNames.IAsyncResult, ControllerContextTypeName, ClrNames.String, ClrNames.AsyncCallback, ClrNames.Object },
             TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
         public static object BeginInvokeAction(
