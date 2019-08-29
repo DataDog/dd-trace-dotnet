@@ -24,8 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
         private const string HttpControllerTypeName = "System.Web.Http.Controllers.IHttpController";
-
-        private static readonly Type HttpControllerType = Type.GetType($"{HttpControllerTypeName}, {SystemWebHttpAssemblyName}");
+        private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebApi2Integration));
 
@@ -42,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = SystemWebHttpAssemblyName,
             TargetType = HttpControllerTypeName,
-            TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, "System.Web.Http.Controllers.HttpControllerContext", ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, HttpControllerContextTypeName, ClrNames.CancellationToken },
             TargetMinimumVersion = Major5Minor2,
             TargetMaximumVersion = Major5)]
         public static object ExecuteAsync(
@@ -90,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                                     .WithParameters(controllerContext, cancellationToken)
                                     .WithNamespaceAndNameFilters(
                                          ClrNames.HttpResponseMessageTask,
-                                         "System.Web.Http.Controllers.HttpControllerContext",
+                                         HttpControllerContextTypeName,
                                          ClrNames.CancellationToken)
                                     .Build();
             }
