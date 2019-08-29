@@ -16,8 +16,8 @@ Windows and Linux Installers|[See releases](https://github.com/DataDog/dd-trace-
 
 Pipeline          | Build Status
 ------------------|-------------
-Unit tests        | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/unit-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=28&branchName=develop)
-Integration tests | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/integration-tests?branchName=develop)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=27&branchName=develop)
+Unit tests        | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/unit-tests?branchName=master)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=28&branchName=master)
+Integration tests | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_apis/build/status/integration-tests?branchName=master)](https://dev.azure.com/datadog-apm/dd-trace-dotnet/_build/latest?definitionId=27&branchName=master)
 
 # Development
 
