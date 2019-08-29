@@ -15,18 +15,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
-            if (!EnvironmentHelper.IsCoreClr())
-            {
-                Output.WriteLine("Ignored for .NET Framework");
-                return;
-            }
-
-            if (!EnvironmentHelper.IsWindows())
-            {
-                Output.WriteLine("Ignored for non-Windows OS for now.");
-                return;
-            }
-
             CheckForSmoke();
         }
     }

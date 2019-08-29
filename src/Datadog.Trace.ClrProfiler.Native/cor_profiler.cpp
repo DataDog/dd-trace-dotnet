@@ -438,13 +438,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (!first_jit_compilation_completed) {
     first_jit_compilation_completed = true;
 
-#ifdef _WIN32
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                             function_token);
     RETURN_OK_IF_FAILED(hr);
-#else
-    Debug("JITCompilationStarted: RunILStartupHook skipped because it is not yet implemented on non-Windows platforms.");
-#endif
   }
 
   auto method_replacements =
@@ -629,7 +625,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-#ifdef _WIN32
       if (!managed_profiler_module_loaded) {
         Info(
             "JITCompilationStarted skipping method: Method replacement "
@@ -639,7 +634,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
             ".", target.name, "()");
         continue;
       }
-#endif
 
       const auto original_argument = pInstr->m_Arg32;
       const void* module_version_id_ptr = &module_metadata->module_version_id;
@@ -811,8 +805,31 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
     return hr;
   }
 
+#ifdef _WIN32
+  WSTRING native_profiler_file = "DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W;
+#else // _WIN32
+
+#ifdef BIT64
+  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH_64"_W);
+  Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+  if (native_profiler_file == ""_W) {
+    native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
+    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+  }
+#else // BIT64
+  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH_32"_W);
+  Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+  if (native_profiler_file == ""_W) {
+    native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
+    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+  }
+#endif // BIT64
+Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler library path to ", native_profiler_file);
+
+#endif // _WIN32
+
   mdModuleRef profiler_ref;
-  hr = metadata_emit->DefineModuleRef("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W.c_str(),
+  hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(),
                                       &profiler_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineModuleRef failed");
@@ -1263,9 +1280,18 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   return S_OK;
 }
 
+#ifndef _WIN32
+extern uint8_t dll_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_start");
+extern uint8_t dll_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_end");
+
+extern uint8_t pdb_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_start");
+extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
+#endif
+
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
-  HINSTANCE hInstance = DllHandle;
 #ifdef _WIN32
+  HINSTANCE hInstance = DllHandle;
+
   HRSRC hResAssemblyInfo =
       FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT_DLL), L"ASSEMBLY");
   HGLOBAL hResAssembly = LoadResource(hInstance, hResAssemblyInfo);
@@ -1277,6 +1303,12 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
   HGLOBAL hResSymbols = LoadResource(hInstance, hResSymbolsInfo);
   *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
   *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
+#else
+  *assemblySize = dll_end - dll_start;
+  *pAssemblyArray = (BYTE*)dll_start;
+
+  *symbolsSize = pdb_end - pdb_start;
+  *pSymbolsArray = (BYTE*)pdb_start;
 #endif
   return;
 }

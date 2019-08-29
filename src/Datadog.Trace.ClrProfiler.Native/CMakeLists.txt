@@ -7,6 +7,31 @@ add_compile_options(-std=c++11 -fPIC -fms-extensions)
 add_compile_options(-DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
+SET(MANAGED_LOADER_DIRECTORY
+    ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netstandard1.1
+)
+
+add_custom_command(
+    OUTPUT Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
+    COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll" Datadog.Trace.ClrProfiler.Managed.Loader.dll && ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o Datadog.Trace.ClrProfiler.Managed.Loader.dll
+    DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll
+)
+add_custom_command(
+    OUTPUT Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o
+    COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb" Datadog.Trace.ClrProfiler.Managed.Loader.pdb && ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o Datadog.Trace.ClrProfiler.Managed.Loader.pdb
+    DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb
+)
+SET(GENERATED_OBJ_FILES
+    ${CMAKE_BINARY_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
+    ${CMAKE_BINARY_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o
+)
+SET_SOURCE_FILES_PROPERTIES(
+  ${GENERATED_OBJ_FILES}
+  PROPERTIES
+  EXTERNAL_OBJECT false
+  GENERATED true
+)
+
 add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
     class_factory.cpp
     clr_helpers.cpp
@@ -21,6 +46,7 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
     miniutf.cpp
     string.cpp
     util.cpp
+    ${GENERATED_OBJ_FILES}
 )
 set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
 target_include_directories("Datadog.Trace.ClrProfiler.Native.static"
