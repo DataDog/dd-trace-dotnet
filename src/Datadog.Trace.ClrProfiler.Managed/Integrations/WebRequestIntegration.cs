@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponseAsync"/>.
         /// </summary>
-        /// <param name="request">The <see cref="WebRequest"/> instance to instrument.</param>
+        /// <param name="webRequest">The <see cref="WebRequest"/> instance to instrument.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 var instrumentedType = webRequest.GetInstrumentedType("System.Net.WebRequest");
-                callGetResponse =
+                callGetResponseAsync =
                     MethodBuilder<Func<object, Task<WebResponse>>>
                         .Start(moduleVersionPtr, mdToken, opCode, methodName)
                         .WithConcreteType(instrumentedType)
@@ -134,21 +134,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return GetResponseAsyncInternal((WebRequest)webRequest, callGetResponseAsync);
         }
 
-        private static async Task<WebResponse> GetResponseAsyncInternal(WebRequest request, Func<> originalMethod)
+        private static async Task<WebResponse> GetResponseAsyncInternal(WebRequest webRequest, Func<object, Task<WebResponse>> originalMethod)
         {
-            if (!(request is HttpWebRequest) || !IsTracingEnabled(request))
+            if (!(webRequest is HttpWebRequest) || !IsTracingEnabled(webRequest))
             {
                 return await originalMethod(webRequest).ConfigureAwait(false);
             }
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationName))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, webRequest.Method, webRequest.RequestUri, IntegrationName))
             {
                 try
                 {
                     if (scope != null)
                     {
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, webRequest.Headers.Wrap());
                     }
 
                     WebResponse response = await originalMethod(webRequest).ConfigureAwait(false);
