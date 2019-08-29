@@ -1,7 +1,9 @@
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -12,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string IntegrationName = "WebRequest";
         private const string Major4 = "4";
+
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(WebRequestIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.
@@ -35,11 +39,32 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetMaximumVersion = Major4)]
         public static object GetResponse(object webRequest, int opCode, int mdToken, long moduleVersionPtr)
         {
+            const string methodName = nameof(GetResponse);
+            var webRequestType = webRequest.GetType();
+            Func<object, WebResponse> callGetResponse;
+
+            try
+            {
+                var instrumentedType = webRequest.GetInstrumentedType("System.Net.WebRequest");
+                callGetResponse =
+                    MethodBuilder<Func<object, WebResponse>>
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                        .WithConcreteType(instrumentedType)
+                        .WithNamespaceAndNameFilters("System.Net.WebResponse")
+                        .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error retrieving {webRequestType.Name}.{methodName}()", ex);
+                throw;
+            }
+
             var request = (WebRequest)webRequest;
 
             if (!(request is HttpWebRequest) || !IsTracingEnabled(request))
             {
-                return request.GetResponse();
+                return callGetResponse(webRequest);
             }
 
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationName))
@@ -52,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
 
-                    WebResponse response = request.GetResponse();
+                    WebResponse response = callGetResponse(webRequest);
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {
@@ -61,9 +86,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     return response;
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
@@ -83,16 +108,37 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.WebResponse>" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object GetResponseAsync(object request, int opCode, int mdToken, long moduleVersionPtr)
+        public static object GetResponseAsync(object webRequest, int opCode, int mdToken, long moduleVersionPtr)
         {
-            return GetResponseAsyncInternal((WebRequest)request);
+            const string methodName = nameof(GetResponseAsync);
+            var webRequestType = webRequest.GetType();
+            Func<object, Task<WebResponse>> callGetResponseAsync;
+
+            try
+            {
+                var instrumentedType = webRequest.GetInstrumentedType("System.Net.WebRequest");
+                callGetResponse =
+                    MethodBuilder<Func<object, Task<WebResponse>>>
+                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                        .WithConcreteType(instrumentedType)
+                        .WithNamespaceAndNameFilters(ClrNames.GenericTask)
+                        .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error retrieving {webRequestType.Name}.{methodName}()", ex);
+                throw;
+            }
+
+            return GetResponseAsyncInternal((WebRequest)webRequest, callGetResponseAsync);
         }
 
-        private static async Task<WebResponse> GetResponseAsyncInternal(WebRequest request)
+        private static async Task<WebResponse> GetResponseAsyncInternal(WebRequest request, Func<> originalMethod)
         {
             if (!(request is HttpWebRequest) || !IsTracingEnabled(request))
             {
-                return await request.GetResponseAsync().ConfigureAwait(false);
+                return await originalMethod(webRequest).ConfigureAwait(false);
             }
 
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationName))
@@ -105,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
 
-                    WebResponse response = await request.GetResponseAsync().ConfigureAwait(false);
+                    WebResponse response = await originalMethod(webRequest).ConfigureAwait(false);
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {
@@ -114,9 +160,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     return response;
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
