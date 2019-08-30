@@ -30,56 +30,6 @@ namespace Datadog.Trace.Containers
         }
 
         /// <summary>
-        /// Extract the container id from the specified cgroup file contents.
-        /// </summary>
-        /// <remarks>
-        /// This method is used when passing the entire cgroup text for testing purposes.
-        /// When reading from file system, we only read one line at a time until we find a match,
-        /// which is usually the first line.
-        /// </remarks>
-        /// <param name="contents">The contents of a cgroup file.</param>
-        /// <returns>The container id if a match is found; otherwise, <c>null</c>.</returns>
-        public static string ParseCgroupText(string contents)
-        {
-            if (contents == null)
-            {
-                return null;
-            }
-
-            IEnumerable<string> lines = SplitLines(contents);
-            return ParseCgroupLines(lines);
-        }
-
-        /// <summary>
-        /// Used by <see cref="ParseCgroupText"/> to split the entire file contents
-        /// into individual lines to mock <see cref="File.ReadLines(string)"/>.
-        /// </summary>
-        /// <param name="contents">The multi-line string.</param>
-        /// <returns>An enumerable that returns each line from <paramref name="contents"/> when iterated.</returns>
-        public static IEnumerable<string> SplitLines(string contents)
-        {
-            if (contents == null)
-            {
-                yield break;
-            }
-
-            using (var reader = new StringReader(contents))
-            {
-                while (true)
-                {
-                    string line = reader.ReadLine();
-
-                    if (line == null)
-                    {
-                        yield break;
-                    }
-
-                    yield return line;
-                }
-            }
-        }
-
-        /// <summary>
         /// Uses regular expression to try to extract a container id from the specified string.
         /// </summary>
         /// <param name="lines">Lines of text from a cgroup file.</param>

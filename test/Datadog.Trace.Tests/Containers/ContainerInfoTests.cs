@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using Datadog.Trace.Containers;
 using Xunit;
 
@@ -69,11 +70,45 @@ namespace Datadog.Trace.Tests.Containers
             yield return new object[] { Fargate, "432624d2150b349fe35ba397284dea788c2bf66b885d14dfc1569b01890ca7da" };
         }
 
+        /// <summary>
+        /// Splits multi-line string into individual strings, one string per line.
+        /// </summary>
+        /// <param name="contents">The multi-line string.</param>
+        /// <returns>An enumerable that returns each line from <paramref name="contents"/> when iterated.</returns>
+        public static IEnumerable<string> SplitLines(string contents)
+        {
+            if (contents == null)
+            {
+                yield break;
+            }
+
+            using (var reader = new StringReader(contents))
+            {
+                while (true)
+                {
+                    string line = reader.ReadLine();
+
+                    if (line == null)
+                    {
+                        yield break;
+                    }
+
+                    yield return line;
+                }
+            }
+        }
+
         [Theory]
         [MemberData(nameof(GetCgroupFiles))]
         public void ParseFile(string file, string expected)
         {
-            string actual = ContainerInfo.ParseCgroupText(file);
+            // arrange
+            var lines = SplitLines(file);
+
+            // act
+            string actual = ContainerInfo.ParseCgroupLines(lines);
+
+            // assert
             Assert.Equal(expected, actual);
         }
     }
