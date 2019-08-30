@@ -154,15 +154,16 @@ namespace Datadog.Trace.TestHelpers
             {
                 var span = new Span
                 {
-                    TraceId = dict.Get<ulong>("trace_id"),
-                    SpanId = dict.Get<ulong>("span_id"),
-                    Name = dict.Get<string>("name"),
-                    Resource = dict.Get<string>("resource"),
-                    Service = dict.Get<string>("service"),
-                    Type = dict.Get<string>("type"),
-                    Start = dict.Get<long>("start"),
-                    Duration = dict.Get<ulong>("duration"),
-                    Tags = dict.Get<Dictionary<string, string>>("meta"),
+                    TraceId = dict.GetValueOrDefault<ulong>("trace_id"),
+                    SpanId = dict.GetValueOrDefault<ulong>("span_id"),
+                    Name = dict.GetValueOrDefault<string>("name"),
+                    Resource = dict.GetValueOrDefault<string>("resource"),
+                    Service = dict.GetValueOrDefault<string>("service"),
+                    Type = dict.GetValueOrDefault<string>("type"),
+                    Start = dict.GetValueOrDefault<long>("start"),
+                    Duration = dict.GetValueOrDefault<ulong>("duration"),
+                    Tags = dict.GetValueOrDefault<Dictionary<object, object>>("meta")
+                               .ToDictionary(p => (string)p.Key, p => (string)p.Value),
                 };
 
                 return new List<Span> { span };

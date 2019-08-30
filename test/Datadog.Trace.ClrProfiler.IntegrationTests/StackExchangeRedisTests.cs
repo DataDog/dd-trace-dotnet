@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -258,14 +259,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("redis.command", span.Name);
                     Assert.Equal("Samples.StackExchange.Redis-redis", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
-                    Assert.Equal(host, span.Tags.Get<string>("out.host"));
-                    Assert.Equal(port, span.Tags.Get<string>("out.port"));
+                    Assert.Equal(host, span.Tags.GetValueOrDefault<string>("out.host"));
+                    Assert.Equal(port, span.Tags.GetValueOrDefault<string>("out.port"));
                 }
 
                 var spanLookup = new Dictionary<Tuple<string, string>, int>();
                 foreach (var span in spans)
                 {
-                    var key = new Tuple<string, string>(span.Resource, span.Tags.Get<string>("redis.raw_command"));
+                    var key = new Tuple<string, string>(span.Resource, span.Tags.GetValueOrDefault<string>("redis.raw_command"));
                     if (spanLookup.ContainsKey(key))
                     {
                         spanLookup[key]++;
