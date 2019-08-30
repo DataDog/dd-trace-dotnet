@@ -100,7 +100,7 @@ namespace Datadog.Trace.Tests.Containers
 
         [Theory]
         [MemberData(nameof(GetCgroupFiles))]
-        public void ParseFile(string file, string expected)
+        public void Parse_ContainerId_From_Cgroup_File(string file, string expected)
         {
             // arrange
             var lines = SplitLines(file);
