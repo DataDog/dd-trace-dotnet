@@ -18,37 +18,38 @@ namespace Datadog.Trace.ExtensionMethods
                        : default;
         }
 
-        public static bool TryGetValueOrDefaultAs<TAs>(this IDictionary dictionary, object key, out TAs valueAs)
+        public static bool TryGetValue<TValue>(this IDictionary dictionary, object key, out TValue value)
         {
             if (dictionary == null)
             {
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
-            valueAs = default(TAs);
-
-            if (!dictionary.Contains(key))
-            {
-                return false;
-            }
+            object valueObj;
 
             try
             {
-                // Try catch wrap to protect against small-chance race condition is all...
-                if (dictionary[key] is TAs localObjValueAs)
-                {
-                    valueAs = localObjValueAs;
-
-                    return true;
-                }
+                // per its contract, IDictionary.Item[] should return null instead of throwing an exception
+                // if a key is not found, but let's use try/catch to be defensive against misbehaving implementations
+                valueObj = dictionary[key];
             }
-            catch (NotSupportedException)
+            catch
             {
-                // Non-generic uses NonSupportedException in most cases it seems
+                valueObj = null;
             }
-            catch (KeyNotFoundException) { }
 
-            return false;
+            switch (valueObj)
+            {
+                case TValue valueTyped:
+                    value = valueTyped;
+                    return true;
+                case IConvertible convertible:
+                    value = (TValue)convertible.ToType(typeof(TValue), provider: null);
+                    return true;
+                default:
+                    value = default;
+                    return false;
+            }
         }
     }
 }

@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 if (!TryGetContext(sender, out var httpContext) ||
-                    !httpContext.Items.TryGetValueOrDefaultAs<ISpanIntegrationDelegate>(_httpContextDelegateKey, out var integrationDelegate))
+                    !httpContext.Items.TryGetValue<ISpanIntegrationDelegate>(_httpContextDelegateKey, out var integrationDelegate))
                 {
                     return;
                 }
@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 if (!TryGetContext(sender, out var httpContext) || httpContext.Error == null ||
-                    !httpContext.Items.TryGetValueOrDefaultAs<ISpanIntegrationDelegate>(_httpContextDelegateKey, out var integrationDelegate))
+                    !httpContext.Items.TryGetValue<ISpanIntegrationDelegate>(_httpContextDelegateKey, out var integrationDelegate))
                 {
                     return;
                 }
