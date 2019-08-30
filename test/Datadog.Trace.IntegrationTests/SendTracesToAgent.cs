@@ -26,7 +26,7 @@ namespace Datadog.Trace.IntegrationTests
             _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null);
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public async void MinimalSpan()
         {
             var scope = _tracer.StartActive("Operation");
@@ -42,7 +42,7 @@ namespace Datadog.Trace.IntegrationTests
             MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public async void CustomServiceName()
         {
             const string ServiceName = "MyService";
@@ -61,7 +61,7 @@ namespace Datadog.Trace.IntegrationTests
             MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public async void Utf8Everywhere()
         {
             var scope = _tracer.StartActive("Aᛗᚪᚾᚾᚪ", serviceName: "На берегу пустынных волн");
@@ -79,7 +79,7 @@ namespace Datadog.Trace.IntegrationTests
             MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public async void SubmitsOutOfOrderSpans()
         {
             var scope1 = _tracer.StartActive("op1");
@@ -97,7 +97,7 @@ namespace Datadog.Trace.IntegrationTests
             MsgPackHelpers.AssertSpanEqual(scope2.Span, trace[0].AsList()[1]);
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public void WithDefaultFactory()
         {
             // This test does not check anything it validates that this codepath runs without exceptions
@@ -106,7 +106,7 @@ namespace Datadog.Trace.IntegrationTests
                   .Dispose();
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public void WithGlobalTracer()
         {
             // This test does not check anything it validates that this codepath runs without exceptions
