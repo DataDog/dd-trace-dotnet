@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error retrieving {webRequestType.Name}.{methodName}()", ex);
+                Log.ErrorException($"Error retrieving {instrumentedType.Name}.{methodName}()", ex);
                 throw;
             }
 
@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error retrieving {webRequestType.Name}.{methodName}()", ex);
+                Log.ErrorException($"Error retrieving {instrumentedType.Name}.{methodName}()", ex);
                 throw;
             }
 
