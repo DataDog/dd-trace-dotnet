@@ -34,48 +34,7 @@ jobs:
     inputs:
       preferBundledVersion: false
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
-    inputs:
-      command: build
-      configuration: $(buildConfiguration)
-      projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-
-  - task: NuGetCommand@2
-    displayName: nuget restore native
-    inputs:
-      restoreSolution: Datadog.Trace.Native.sln
-      vstsFeed: $(packageFeed)
-      verbosityRestore: Normal
-
-  - task: MSBuild@1
-    displayName: msbuild native
-    inputs:
-      solution: Datadog.Trace.proj
-      platform: $(buildPlatform)
-      configuration: $(buildConfiguration)
-      msbuildArguments: /t:BuildCpp
-      maximumCpuCount: true
-
-  - task: DotNetCoreInstaller@0
-    displayName: install dotnet core sdk
-    inputs:
-      version: $(dotnetCoreSdkVersion)
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet restore
-    inputs:
-      command: restore
-      projects: src/**/*.csproj
-      vstsFeed: $(packageFeed)
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build
-    inputs:
-      command: build
-      projects: src/**/*.csproj
-      arguments: --configuration $(buildConfiguration)
+  - template: templates/all-build-managed.yml
 
   - task: DotNetCoreCLI@2
     displayName: dotnet pack
@@ -122,6 +81,8 @@ jobs:
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
+  - template: templates/windows-build-native.yml
 
   - task: MSBuild@1
     displayName: msbuild msi

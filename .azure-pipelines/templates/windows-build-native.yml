@@ -1,0 +1,16 @@
+steps:
+  - task: NuGetCommand@2
+    displayName: nuget restore native
+    inputs:
+      restoreSolution: Datadog.Trace.Native.sln
+      vstsFeed: $(packageFeed)
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: msbuild
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:BuildCpp
+      maximumCpuCount: true

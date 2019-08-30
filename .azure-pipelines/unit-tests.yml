@@ -27,17 +27,13 @@ jobs:
     vmImage: $(imageName)
 
   steps:
-  - task: DotNetCoreInstaller@0
-    displayName: install dotnet core sdk
-    inputs:
-      version: $(dotnetCoreSdkVersion)
+  - template: templates/all-build-managed.yml
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
     inputs:
       command: restore
       projects: |
-        src/**/*.csproj
         test/**/*.Tests.csproj
       vstsFeed: $(packageFeed)
 
@@ -47,7 +43,6 @@ jobs:
       command: build
       configuration: $(buildConfiguration)
       projects: |
-        src/**/*.csproj
         test/**/*.Tests.csproj
 
   - task: DotNetCoreCLI@2
@@ -82,12 +77,7 @@ jobs:
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
 
-  - task: NuGetCommand@2
-    displayName: nuget restore
-    inputs:
-      restoreSolution: Datadog.Trace.Native.sln
-      vstsFeed: $(packageFeed)
-      verbosityRestore: Normal
+  - template: templates/windows-build-native.yml
 
   - task: MSBuild@1
     displayName: msbuild
@@ -95,7 +85,7 @@ jobs:
       solution: Datadog.Trace.proj
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
-      msbuildArguments: /t:BuildCpp;BuildCppTests
+      msbuildArguments: /t:BuildCppTests
       maximumCpuCount: true
 
   - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml
