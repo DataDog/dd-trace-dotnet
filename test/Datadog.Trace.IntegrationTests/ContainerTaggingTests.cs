@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Containers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,20 +20,15 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public async Task Http_Headers_Contain_ContainerId()
         {
-            if (EnvironmentHelper.IsWindows())
-            {
-                _output.WriteLine("Ignored for Windows OS for now.");
-                return;
-            }
-
-            string containerId = null;
+            string expectedContainedId = ContainerInfo.GetContainerId();
+            string actualContainerId = null;
             var agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
             {
                 agent.RequestReceived += (sender, args) =>
                 {
-                    containerId = args.Value.Request.Headers[AgentHttpHeaderNames.ContainerId];
+                    actualContainerId = args.Value.Request.Headers[AgentHttpHeaderNames.ContainerId];
                 };
 
                 var settings = new TracerSettings { AgentUri = new Uri($"http://localhost:{agentPort}") };
@@ -47,8 +43,13 @@ namespace Datadog.Trace.IntegrationTests
 
                 var spans = agent.WaitForSpans(1);
                 Assert.Equal(1, spans.Count);
-                Assert.NotNull(containerId);
-                Assert.NotEqual(string.Empty, containerId);
+                Assert.Equal(expectedContainedId, actualContainerId);
+
+                if (EnvironmentHelper.IsWindows())
+                {
+                    // we don't extract the containerId on Windows (yet?)
+                    Assert.Null(actualContainerId);
+                }
             }
         }
     }
