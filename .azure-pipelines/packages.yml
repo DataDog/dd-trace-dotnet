@@ -6,7 +6,7 @@ pr: none
 
 variables:
   buildConfiguration: release
-  - template: variables/build.yml
+  - template: templates/variables/build.yml
 
 jobs:
 
@@ -32,7 +32,7 @@ jobs:
     inputs:
       preferBundledVersion: false
 
-  - template: templates/all-build-managed.yml
+  - template: templates/steps/all-build-managed.yml
 
   - task: DotNetCoreCLI@2
     displayName: dotnet pack
@@ -80,7 +80,7 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
-  - template: templates/windows-build-native.yml
+  - template: templates/steps/windows-build-native.yml
 
   - task: MSBuild@1
     displayName: msbuild msi

@@ -11,7 +11,7 @@ trigger:
 
 variables:
   buildConfiguration: Debug
-  - template: variables/build.yml
+  - template: templates/variables/build.yml
 
 jobs:
 

@@ -10,7 +10,7 @@ trigger:
 
 variables:
   buildConfiguration: Debug
-  - template: variables/build.yml
+  - template: templates/variables/build.yml
 
 jobs:
 
@@ -26,7 +26,7 @@ jobs:
     vmImage: $(imageName)
 
   steps:
-  - template: templates/all-build-managed.yml
+  - template: templates/steps/all-build-managed.yml
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
@@ -76,7 +76,7 @@ jobs:
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
 
-  - template: templates/windows-build-native.yml
+  - template: templates/steps/windows-build-native.yml
 
   - task: MSBuild@1
     displayName: msbuild
