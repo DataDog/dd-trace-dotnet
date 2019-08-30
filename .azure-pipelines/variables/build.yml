@@ -1,0 +1,7 @@
+variables:
+- name: dotnetCoreSdkVersion
+  value: 2.2.401
+- name: packageFeed
+  value: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+- name: publishOutput
+  value: $(Build.SourcesDirectory)/src/bin/managed-publish
