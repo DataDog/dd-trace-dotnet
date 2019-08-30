@@ -8,6 +8,11 @@ namespace Datadog.Trace.ExtensionMethods
     {
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
         {
+            if (dictionary == null)
+            {
+                throw new ArgumentNullException(nameof(dictionary));
+            }
+
             if (dictionary.TryGetValue(key, out TValue value))
             {
                 return value;
@@ -18,6 +23,11 @@ namespace Datadog.Trace.ExtensionMethods
 
         public static bool TryGetValueOrDefaultAs<TAs>(this IDictionary dictionary, object key, out TAs valueAs)
         {
+            if (dictionary == null)
+            {
+                throw new ArgumentNullException(nameof(dictionary));
+            }
+
             valueAs = default(TAs);
 
             if (!dictionary.Contains(key))
