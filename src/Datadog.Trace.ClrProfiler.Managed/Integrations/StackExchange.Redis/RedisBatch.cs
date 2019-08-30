@@ -58,6 +58,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             int mdToken,
             long moduleVersionPtr)
         {
+            if (redisBase == null)
+            {
+                throw new ArgumentNullException(nameof(redisBase));
+            }
+
             return ExecuteAsyncInternal<T>(redisBase, message, processor, server, opCode, mdToken, moduleVersionPtr);
         }
 
@@ -82,6 +87,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             int mdToken,
             long moduleVersionPtr)
         {
+            if (redisBase == null)
+            {
+                throw new ArgumentNullException(nameof(redisBase));
+            }
+
             var thisType = redisBase.GetType();
 
             if (_redisAssembly == null)

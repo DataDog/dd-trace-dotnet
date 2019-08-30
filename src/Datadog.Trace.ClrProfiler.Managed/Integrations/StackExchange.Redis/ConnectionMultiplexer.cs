@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
@@ -15,6 +16,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private const string ConnectionMultiplexerTypeName = "StackExchange.Redis.ConnectionMultiplexer";
         private const string Major1 = "1";
         private const string Major2 = "2";
+
+        // Parameter types
+        private const string StackExchangeRedisServerEndPoint = "StackExchange.Redis.ServerEndPoint";
+        private const string StackExchangeRedisMessage = "StackExchange.Redis.Message";
+        private const string StackExchangeRedisResultProcessorGeneric = "StackExchange.Redis.ResultProcessor`1<T>";
+        private const string StackExchangeRedisResultProcessor = "StackExchange.Redis.ResultProcessor`1";
+
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(ConnectionMultiplexer));
 
         /// <summary>
         /// Execute a synchronous redis operation.
@@ -33,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = RedisAssembly,
             TargetAssembly = RedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
-            TargetSignatureTypes = new[] { "T", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
+            TargetSignatureTypes = new[] { "T", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         [InterceptMethod(
@@ -41,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = StrongNameRedisAssembly,
             TargetAssembly = StrongNameRedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
-            TargetSignatureTypes = new[] { "T", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
+            TargetSignatureTypes = new[] { "T", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static T ExecuteSyncImpl<T>(
@@ -53,30 +62,46 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             int mdToken,
             long moduleVersionPtr)
         {
-            var resultType = typeof(T);
-            var multiplexerType = multiplexer.GetType();
-            var asm = multiplexerType.Assembly;
-            var messageType = asm.GetType("StackExchange.Redis.Message");
-            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(resultType);
-            var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
+            if (multiplexer == null)
+            {
+                throw new ArgumentNullException(nameof(multiplexer));
+            }
 
-            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, T>>
-                                     .CreateMethodCallDelegate(
-                                          multiplexerType,
-                                          methodName: "ExecuteSyncImpl",
-                                          (OpCodeValue)opCode,
-                                          methodParameterTypes: new[] { messageType, processorType, serverType },
-                                          methodGenericArguments: new[] { resultType });
+            var genericType = typeof(T);
+            var multiplexerType = multiplexer.GetInstrumentedType(ConnectionMultiplexerTypeName);
+            Func<object, object, object, object, T> instrumentedMethod;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<object, object, object, object, T>>
+                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteSyncImpl))
+                        .WithConcreteType(multiplexerType)
+                        .WithParameters(message, processor, server)
+                        .WithMethodGenerics(genericType)
+                        .WithNamespaceAndNameFilters(
+                            ClrNames.Ignore,
+                            StackExchangeRedisMessage,
+                            StackExchangeRedisResultProcessor,
+                            StackExchangeRedisServerEndPoint)
+                        .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error resolving {ConnectionMultiplexerTypeName}.{nameof(ExecuteSyncImpl)}(...)", ex);
+                throw;
+            }
 
             using (var scope = CreateScope(multiplexer, message))
             {
                 try
                 {
-                    return originalMethod(multiplexer, message, processor, server);
+                    return instrumentedMethod(multiplexer, message, processor, server);
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
@@ -100,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = RedisAssembly,
             TargetAssembly = RedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "System.Object", "StackExchange.Redis.ServerEndPoint" },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, ClrNames.Object, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         [InterceptMethod(
@@ -108,7 +133,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = StrongNameRedisAssembly,
             TargetAssembly = StrongNameRedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "System.Object", "StackExchange.Redis.ServerEndPoint" },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, ClrNames.Object, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
         public static object ExecuteAsyncImpl<T>(
@@ -121,8 +146,39 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             int mdToken,
             long moduleVersionPtr)
         {
-            var callOpCode = (OpCodeValue)opCode;
-            return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server, callOpCode);
+            if (multiplexer == null)
+            {
+                throw new ArgumentNullException(nameof(multiplexer));
+            }
+
+            var genericType = typeof(T);
+            var multiplexerType = multiplexer.GetInstrumentedType(ConnectionMultiplexerTypeName);
+            Func<object, object, object, object, object, Task<T>> instrumentedMethod;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<object, object, object, object, object, Task<T>>>
+                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteAsyncImpl))
+                        .WithConcreteType(multiplexerType)
+                        .WithParameters(message, processor, state, server)
+                        .WithMethodGenerics(genericType)
+                        .WithNamespaceAndNameFilters(
+                            ClrNames.GenericTask,
+                            StackExchangeRedisMessage,
+                            StackExchangeRedisResultProcessor,
+                            ClrNames.Object,
+                            StackExchangeRedisServerEndPoint)
+                        .Build();
+            }
+            catch (Exception ex)
+            {
+                // profiled app will not continue working as expected without this method
+                Log.ErrorException($"Error resolving {ConnectionMultiplexerTypeName}.{nameof(ExecuteAsyncImpl)}(...)", ex);
+                throw;
+            }
+
+            return ExecuteAsyncImplInternal<T>(multiplexer, message, processor, state, server, instrumentedMethod);
         }
 
         /// <summary>
@@ -134,35 +190,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <param name="processor">The processor to handle the result.</param>
         /// <param name="state">The state to use for the task.</param>
         /// <param name="server">The server to call.</param>
-        /// <param name="callOpCode">The <see cref="OpCodeValue"/> used in the original method call.</param>
+        /// <param name="originalMethod">The original method.</param>
         /// <returns>An asynchronous task.</returns>
-        private static async Task<T> ExecuteAsyncImplInternal<T>(object multiplexer, object message, object processor, object state, object server, OpCodeValue callOpCode)
+        private static async Task<T> ExecuteAsyncImplInternal<T>(
+            object multiplexer,
+            object message,
+            object processor,
+            object state,
+            object server,
+            Func<object, object, object, object, object, Task<T>> originalMethod)
         {
-            var genericType = typeof(T);
-            var multiplexerType = multiplexer.GetType();
-            var asm = multiplexerType.Assembly;
-            var messageType = asm.GetType("StackExchange.Redis.Message");
-            var processorType = asm.GetType("StackExchange.Redis.ResultProcessor`1").MakeGenericType(genericType);
-            var stateType = typeof(object);
-            var serverType = asm.GetType("StackExchange.Redis.ServerEndPoint");
-
-            var originalMethod = Emit.DynamicMethodBuilder<Func<object, object, object, object, object, Task<T>>>
-                                     .CreateMethodCallDelegate(
-                                          multiplexerType,
-                                          methodName: "ExecuteAsyncImpl",
-                                          callOpCode,
-                                          methodParameterTypes: new[] { messageType, processorType, stateType, serverType },
-                                          methodGenericArguments: new[] { genericType });
-
             using (var scope = CreateScope(multiplexer, message))
             {
                 try
                 {
                     return await originalMethod(multiplexer, message, processor, state, server).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
