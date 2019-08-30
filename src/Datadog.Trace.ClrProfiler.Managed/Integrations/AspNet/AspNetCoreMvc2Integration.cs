@@ -22,13 +22,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Type for unobtrusive hooking into Microsoft.AspNetCore.Mvc.Core pipeline.
         /// </summary>
-        private const string DiagnosticSource = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions";
+        private const string DiagnosticSourceTypeName = "Microsoft.AspNetCore.Mvc.Internal.MvcCoreDiagnosticSourceExtensions";
 
         /// <summary>
         /// Base type used for traversing the pipeline in Microsoft.AspNetCore.Mvc.Core.
         /// </summary>
-        private const string ResourceInvoker = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
+        private const string ResourceInvokerTypeName = "Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker";
 
+        private static readonly Type DiagnosticSourceType = Type.GetType($"{DiagnosticSourceTypeName}, {AspnetMvcCore}");
+        private static readonly Type ResourceInvokerType = Type.GetType($"{ResourceInvokerTypeName}, {AspnetMvcCore}");
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
 
         private readonly object _httpContext;
@@ -47,14 +49,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var request = _httpContext.GetProperty("Request").GetValueOrDefault();
 
                 GetTagValues(
-                   actionDescriptor,
-                   request,
-                   out string httpMethod,
-                   out string host,
-                   out string resourceName,
-                   out string url,
-                   out string controllerName,
-                   out string actionName);
+                    actionDescriptor,
+                    request,
+                    out string httpMethod,
+                    out string host,
+                    out string resourceName,
+                    out string url,
+                    out string controllerName,
+                    out string actionName);
 
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
@@ -94,10 +96,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var span = _scope.Span;
 
                 span.DecorateWebServerSpan(
-                   resourceName: resourceName,
-                   method: httpMethod,
-                   host: host,
-                   httpUrl: url);
+                    resourceName: resourceName,
+                    method: httpMethod,
+                    host: host,
+                    httpUrl: url);
 
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
@@ -126,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
-            TargetType = DiagnosticSource,
+            TargetType = DiagnosticSourceTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
@@ -168,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(BeforeAction))
-                       .WithConcreteTypeName(DiagnosticSource)
+                       .WithConcreteType(DiagnosticSourceType)
                        .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
                        .WithNamespaceAndNameFilters(
                             ClrNames.Void,
@@ -181,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will continue working as expected without this method
-                Log.ErrorException($"Error resolving {DiagnosticSource}.{nameof(BeforeAction)}(...)", ex);
+                Log.ErrorException($"Error resolving {DiagnosticSourceTypeName}.{nameof(BeforeAction)}(...)", ex);
             }
 
             try
@@ -209,7 +211,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
-            TargetType = DiagnosticSource,
+            TargetType = DiagnosticSourceTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor", "Microsoft.AspNetCore.Http.HttpContext", "Microsoft.AspNetCore.Routing.RouteData" },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
@@ -244,14 +246,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             Action<object, object, object, object> instrumentedMethod = null;
 
-            string methodDef = $"{DiagnosticSource}.{nameof(AfterAction)}(...)";
+            string methodDef = $"{DiagnosticSourceTypeName}.{nameof(AfterAction)}(...)";
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(AfterAction))
-                       .WithConcreteTypeName(DiagnosticSource)
+                       .WithConcreteType(DiagnosticSourceType)
                        .WithParameters(diagnosticSource, actionDescriptor, httpContext, routeData)
                        .WithNamespaceAndNameFilters(
                             ClrNames.Void,
@@ -294,7 +296,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
-            TargetType = ResourceInvoker,
+            TargetType = ResourceInvokerTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore },
             TargetMinimumVersion = Major2,
             TargetMaximumVersion = Major2)]
@@ -310,14 +312,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             var shouldTrace = Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName);
 
-            Action<object> instrumentedMethod = null;
+            Action<object> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Action<object>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(Rethrow))
-                       .WithConcreteTypeName(ResourceInvoker)
+                       .WithConcreteType(ResourceInvokerType)
                        .WithParameters(context)
                        .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.Ignore)
                        .Build();
@@ -325,8 +327,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                var contextTypeName = (context == null) ? string.Empty : (context.GetType().FullName + " ");
-                var methodDef = $"{ResourceInvoker}.{nameof(Rethrow)}({contextTypeName}context)";
+                var contextTypeName = context.GetType().FullName + " ";
+                var methodDef = $"{ResourceInvokerTypeName}.{nameof(Rethrow)}({contextTypeName} context)";
                 Log.ErrorException($"Error retrieving {methodDef}", ex);
                 throw;
             }
@@ -394,14 +396,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         private static void GetTagValues(
-           object actionDescriptor,
-           object request,
-           out string httpMethod,
-           out string host,
-           out string resourceName,
-           out string url,
-           out string controllerName,
-           out string actionName)
+            object actionDescriptor,
+            object request,
+            out string httpMethod,
+            out string host,
+            out string resourceName,
+            out string url,
+            out string controllerName,
+            out string actionName)
         {
             controllerName = actionDescriptor.GetProperty<string>("ControllerName").GetValueOrDefault()?.ToLowerInvariant();
 
@@ -420,7 +422,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             url = $"{pathBase}{path}{queryString}";
 
             string resourceUrl = actionDescriptor.GetProperty("AttributeRouteInfo").GetProperty<string>("Template").GetValueOrDefault() ??
-                                UriHelpers.GetRelativeUrl(new Uri($"https://{host}{url}"), tryRemoveIds: true).ToLowerInvariant();
+                                 UriHelpers.GetRelativeUrl(new Uri($"https://{host}{url}"), tryRemoveIds: true).ToLowerInvariant();
 
             resourceName = $"{httpMethod} {resourceUrl}";
         }
