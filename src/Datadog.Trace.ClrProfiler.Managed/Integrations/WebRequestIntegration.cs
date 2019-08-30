@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object GetResponse(object webRequest, int opCode, int mdToken, long moduleVersionPtr)
         {
             const string methodName = nameof(GetResponse);
-            var webRequestType = webRequest.GetType();
+
             Func<object, WebResponse> callGetResponse;
 
             try
@@ -111,7 +111,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object GetResponseAsync(object webRequest, int opCode, int mdToken, long moduleVersionPtr)
         {
             const string methodName = nameof(GetResponseAsync);
-            var webRequestType = webRequest.GetType();
             Func<object, Task<WebResponse>> callGetResponseAsync;
 
             try
