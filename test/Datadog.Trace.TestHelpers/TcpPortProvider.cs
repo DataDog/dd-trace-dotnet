@@ -46,6 +46,9 @@ namespace Datadog.Trace.TestHelpers
             var usedPorts = IPGlobalProperties.GetIPGlobalProperties()
                                               .GetActiveTcpListeners()
                                               .Select(ipEndPoint => ipEndPoint.Port);
+            usedPorts.Concat(IPGlobalProperties.GetIPGlobalProperties()
+                                               .GetActiveTcpConnections()
+                                               .Select(information => information.LocalEndPoint.Port));
 
             return new HashSet<int>(usedPorts);
         }
