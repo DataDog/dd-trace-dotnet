@@ -56,18 +56,7 @@ jobs:
     buildPlatform: 'x64'
 
   steps:
-  - task: DotNetCoreInstaller@0
-    displayName: install dotnet core sdk
-    inputs:
-      version: $(dotnetCoreSdkVersion)
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build src/**/*.csproj
-    inputs:
-      command: build
-      projects: |
-        src/**/*.csproj
-      arguments: --configuration $(buildConfiguration)
+  - template: templates/steps/all-build-managed.yml
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net45
@@ -99,24 +88,10 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
-  - task: NuGetCommand@2
-    displayName: nuget restore native
-    inputs:
-      restoreSolution: Datadog.Trace.Native.sln
-      vstsFeed: $(packageFeed)
-      verbosityRestore: Normal
-
-  - task: MSBuild@1
-    displayName: msbuild native
-    inputs:
-      solution: Datadog.Trace.proj
-      platform: $(buildPlatform)
-      configuration: $(buildConfiguration)
-      msbuildArguments: /t:BuildCpp
-      maximumCpuCount: true
+  - template: templates/steps/windows-build-native.yml
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet restore
+    displayName: dotnet restore integration tests
     inputs:
       command: restore
       projects: |
