@@ -33,12 +33,12 @@ namespace Datadog.Trace.Tests
             // TODO:bertrand it is too complicated to setup such a simple test
             var trace = new List<Span> { new Span(_spanContext, start: null) };
             _agentWriter.WriteTrace(trace);
-            await Task.Delay(TimeSpan.FromSeconds(1.5));
+            await Task.Delay(TimeSpan.FromSeconds(2));
             _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
 
             trace = new List<Span> { new Span(_spanContext, start: null) };
             _agentWriter.WriteTrace(trace);
-            await Task.Delay(TimeSpan.FromSeconds(1.5));
+            await Task.Delay(TimeSpan.FromSeconds(2));
             _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
         }
 
