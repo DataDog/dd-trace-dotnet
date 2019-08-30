@@ -13,6 +13,18 @@ namespace Datadog.Trace.ExtensionMethods
                 throw new ArgumentNullException(nameof(dictionary));
             }
 
+            return dictionary.TryGetValue(key, out var value)
+                       ? value
+                       : default;
+        }
+
+        public static TValue GetValueOrDefault<TValue>(this IDictionary dictionary, object key)
+        {
+            if (dictionary == null)
+            {
+                throw new ArgumentNullException(nameof(dictionary));
+            }
+
             return dictionary.TryGetValue(key, out TValue value)
                        ? value
                        : default;
