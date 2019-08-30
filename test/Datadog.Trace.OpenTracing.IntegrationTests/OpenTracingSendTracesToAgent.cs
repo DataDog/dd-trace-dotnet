@@ -27,7 +27,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             _tracer = new OpenTracingTracer(tracer);
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public async void MinimalSpan()
         {
             var span = (OpenTracingSpan)_tracer.BuildSpan("Operation")
@@ -44,7 +44,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public async void CustomServiceName()
         {
             const string ServiceName = "MyService";
@@ -65,7 +65,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public async void Utf8Everywhere()
         {
             var span = (OpenTracingSpan)_tracer.BuildSpan("Aᛗᚪᚾᚾᚪ")
@@ -85,7 +85,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
         }
 
-        [Fact]
+        [Fact(Skip = "Run manually")]
         public void WithDefaultFactory()
         {
             // This test does not check anything it validates that this codepath runs without exceptions

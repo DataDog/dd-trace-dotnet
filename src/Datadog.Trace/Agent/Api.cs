@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Containers;
 using Datadog.Trace.Logging;
 using MsgPack.Serialization;
 using Newtonsoft.Json;
@@ -43,10 +44,21 @@ namespace Datadog.Trace.Agent
             GetFrameworkDescription(out string frameworkName, out string frameworkVersion);
             var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
+            var containerId = ContainerInfo.GetContainerId();
+
+            // report runtime details
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, frameworkName);
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, frameworkVersion);
+
+            // report Tracer version
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, tracerVersion);
+
+            // report container id (only Linux containers supported for now)
+            if (containerId != null)
+            {
+                _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.ContainerId, containerId);
+            }
 
             // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");

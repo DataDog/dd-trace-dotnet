@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
@@ -54,6 +53,8 @@ namespace Datadog.Trace.TestHelpers
                 listener.Close();
             }
         }
+
+        public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
 
         /// <summary>
         /// Gets or sets a value indicating whether to skip serialization of traces.
@@ -130,8 +131,8 @@ namespace Datadog.Trace.TestHelpers
             {
                 relevantSpans =
                     relevantSpans
-                          .Where(s => operationName == null || s.Name == operationName)
-                          .ToImmutableList();
+                       .Where(s => operationName == null || s.Name == operationName)
+                       .ToImmutableList();
             }
 
             return relevantSpans;
@@ -140,6 +141,11 @@ namespace Datadog.Trace.TestHelpers
         public void Dispose()
         {
             _listener?.Stop();
+        }
+
+        protected virtual void OnRequestReceived(HttpListenerContext context)
+        {
+            RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
         }
 
         private static List<Span> ToSpans(dynamic data)
@@ -202,6 +208,7 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var ctx = _listener.GetContext();
+                    OnRequestReceived(ctx);
 
                     if (ShouldDeserializeTraces)
                     {

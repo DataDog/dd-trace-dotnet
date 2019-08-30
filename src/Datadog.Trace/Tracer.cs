@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -238,6 +239,11 @@ namespace Datadog.Trace
         internal static Uri GetAgentUri(TracerSettings settings)
         {
             return settings.AgentUri;
+        }
+
+        internal async Task FlushAsync()
+        {
+            await _agentWriter.FlushAndCloseAsync();
         }
 
         /// <summary>
