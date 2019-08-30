@@ -95,7 +95,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {HttpControllerTypeName}.{nameof(ExecuteAsync)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: HttpControllerTypeName,
+                    methodName: nameof(ExecuteAsync),
+                    instanceType: apiController.GetType().AssemblyQualifiedName);
                 throw;
             }
 

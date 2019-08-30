@@ -1,7 +1,6 @@
 using System;
 using System.Data;
 using System.Data.Common;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -20,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string Major4 = "4";
         private const string FrameworkAssembly = "System.Data";
         private const string CoreAssembly = "System.Data.Common";
-        private const string SystemDataCommonDbCommand = "System.Data.Common.DbCommand";
+        private const string DbCommandTypeName = "System.Data.Common.DbCommand";
         private const string SystemDataCommonDbDataReader = "System.Data.Common.DbDataReader";
         private const string SystemDataCommonCommandBehavior = "System.Data.CommandBehavior";
 
@@ -37,13 +36,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = FrameworkAssembly, // .NET Framework
-            TargetType = SystemDataCommonDbCommand,
+            TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { SystemDataCommonDbDataReader, SystemDataCommonCommandBehavior },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = CoreAssembly, // .NET Core
-            TargetType = SystemDataCommonDbCommand,
+            TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { SystemDataCommonDbDataReader, SystemDataCommonCommandBehavior },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -70,7 +69,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SystemDataCommonDbCommand}.{nameof(ExecuteDbDataReader)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: DbCommandTypeName,
+                    methodName: nameof(ExecuteDbDataReader),
+                    instanceType: @this?.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -100,13 +106,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssembly = FrameworkAssembly, // .NET Framework
-            TargetType = SystemDataCommonDbCommand,
+            TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", SystemDataCommonCommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = CoreAssembly, // .NET Core
-            TargetType = SystemDataCommonDbCommand,
+            TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", SystemDataCommonCommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -137,7 +143,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SystemDataCommonDbCommand}.{nameof(ExecuteDbDataReaderAsync)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: DbCommandTypeName,
+                    methodName: nameof(ExecuteDbDataReaderAsync),
+                    instanceType: @this?.GetType().AssemblyQualifiedName);
                 throw;
             }
 

@@ -44,6 +44,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            if (pipeline == null)
+            {
+                throw new ArgumentNullException(nameof(pipeline));
+            }
+
             const string methodName = nameof(CallElasticsearch);
             Func<object, object, object> callElasticSearch;
             var pipelineType = pipeline.GetType();
@@ -62,8 +67,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error retrieving {pipelineType.Name}.{methodName}(RequestData requestData)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RequestPipelineInterface,
+                    methodName: methodName,
+                    instanceType: pipeline.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -107,6 +118,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            if (pipeline == null)
+            {
+                throw new ArgumentNullException(nameof(pipeline));
+            }
+
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
@@ -129,7 +145,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving Elasticsearch.Net.IRequestPipeline.{nameof(CallElasticsearchAsync)}<T>(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RequestPipelineInterface,
+                    methodName: nameof(CallElasticsearchAsync),
+                    instanceType: pipeline.GetType().AssemblyQualifiedName);
                 throw;
             }
 

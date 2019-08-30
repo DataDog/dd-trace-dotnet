@@ -61,7 +61,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {ChannelHandlerTypeName}.{nameof(HandleRequest)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: ChannelHandlerTypeName,
+                    methodName: nameof(HandleRequest),
+                    instanceType: channelHandler?.GetType().AssemblyQualifiedName);
                 throw;
             }
 

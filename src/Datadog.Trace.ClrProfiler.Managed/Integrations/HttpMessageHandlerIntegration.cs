@@ -70,7 +70,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {HttpMessageHandler}.{SendAsync}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: HttpMessageHandler,
+                    methodName: SendAsync,
+                    instanceType: handler?.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -128,7 +135,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {HttpClientHandler}.{SendAsync}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: HttpClientHandler,
+                    methodName: SendAsync,
+                    instanceType: handler?.GetType().AssemblyQualifiedName);
                 throw;
             }
 

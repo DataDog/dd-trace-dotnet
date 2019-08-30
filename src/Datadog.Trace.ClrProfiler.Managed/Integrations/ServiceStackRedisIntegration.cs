@@ -64,7 +64,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {RedisNativeClient}.{nameof(SendReceive)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RedisNativeClient,
+                    methodName: nameof(SendReceive),
+                    instanceType: redisNativeClient?.GetType().AssemblyQualifiedName);
                 throw;
             }
 

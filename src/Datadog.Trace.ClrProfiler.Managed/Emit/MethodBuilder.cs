@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.InteropServices;
+using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -74,17 +74,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public static MethodBuilder<TDelegate> Start(long moduleVersionPtr, int mdToken, int opCode, string methodName)
         {
-            var ptr = new IntPtr(moduleVersionPtr);
-
-#if NET45
-            // deprecated
-            var moduleVersionId = (Guid)Marshal.PtrToStructure(ptr, typeof(Guid));
-#else
-            // added in net451
-            var moduleVersionId = Marshal.PtrToStructure<Guid>(ptr);
-#endif
-
-            return new MethodBuilder<TDelegate>(moduleVersionId, mdToken, opCode, methodName);
+            return new MethodBuilder<TDelegate>(moduleVersionPtr.GetGuidFromNativePointer(), mdToken, opCode, methodName);
         }
 
         public MethodBuilder<TDelegate> WithConcreteType(Type type)

@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         // NOTE: keep this name without the 6 to avoid breaking changes
         private const string IntegrationName = "ElasticsearchNet";
         private const string Version6 = "6";
+        private const string ElasticsearchAssemblyName = "Elasticsearch.Net";
+        private const string RequestPipelineInterfaceName = "Elasticsearch.Net.IRequestPipeline";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNet6Integration));
 
@@ -28,9 +30,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
-            CallerAssembly = "Elasticsearch.Net",
-            TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            CallerAssembly = ElasticsearchAssemblyName,
+            TargetAssembly = ElasticsearchAssemblyName,
+            TargetType = RequestPipelineInterfaceName,
             TargetSignatureTypes = new[] { "T", "Elasticsearch.Net.RequestData" },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
@@ -41,6 +43,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            if (pipeline == null)
+            {
+                throw new ArgumentNullException(nameof(pipeline));
+            }
+
             const string methodName = nameof(CallElasticsearch);
             Func<object, object, TResponse> callElasticSearch;
             var pipelineType = pipeline.GetType();
@@ -60,7 +67,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error retrieving {pipelineType.Name}.{methodName}(RequestData requestData)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RequestPipelineInterfaceName,
+                    methodName: methodName,
+                    instanceType: pipeline.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -90,9 +104,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original result</returns>
         [InterceptMethod(
-            CallerAssembly = "Elasticsearch.Net",
-            TargetAssembly = "Elasticsearch.Net",
-            TargetType = "Elasticsearch.Net.IRequestPipeline",
+            CallerAssembly = ElasticsearchAssemblyName,
+            TargetAssembly = ElasticsearchAssemblyName,
+            TargetType = RequestPipelineInterfaceName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
@@ -146,8 +160,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error retrieving {pipelineType.Name}.{methodName}(RequestData requestData, CancellationToken cancellationToken)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: RequestPipelineInterfaceName,
+                    methodName: methodName,
+                    instanceType: pipelineType.AssemblyQualifiedName);
                 throw;
             }
 

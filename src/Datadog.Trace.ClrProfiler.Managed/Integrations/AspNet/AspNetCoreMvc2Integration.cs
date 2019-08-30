@@ -183,7 +183,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will continue working as expected without this method
-                Log.ErrorException($"Error resolving {DiagnosticSourceTypeName}.{nameof(BeforeAction)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: DiagnosticSourceTypeName,
+                    methodName: nameof(BeforeAction),
+                    instanceType: diagnosticSource?.GetType().AssemblyQualifiedName);
             }
 
             try
@@ -266,7 +273,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will continue working as expected without this method
-                Log.ErrorException($"Error resolving {methodDef}", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: DiagnosticSourceTypeName,
+                    methodName: nameof(AfterAction),
+                    instanceType: diagnosticSource?.GetType().AssemblyQualifiedName);
             }
 
             try
@@ -326,10 +340,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                var contextTypeName = context.GetType().FullName + " ";
-                var methodDef = $"{ResourceInvokerTypeName}.{nameof(Rethrow)}({contextTypeName} context)";
-                Log.ErrorException($"Error retrieving {methodDef}", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: ResourceInvokerTypeName,
+                    methodName: nameof(Rethrow),
+                    instanceType: context?.GetType().AssemblyQualifiedName);
                 throw;
             }
 
