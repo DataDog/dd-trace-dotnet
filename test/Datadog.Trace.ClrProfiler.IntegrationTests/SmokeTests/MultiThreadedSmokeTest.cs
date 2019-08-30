@@ -1,3 +1,4 @@
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,16 +12,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact]
+        [TargetFrameworkVersionsFact("netcoreapp2.1")]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
-            if (!EnvironmentHelper.IsCoreClr())
-            {
-                Output.WriteLine("Ignored for .NET Framework");
-                return;
-            }
-
             CheckForSmoke();
         }
     }

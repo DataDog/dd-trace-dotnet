@@ -1,3 +1,4 @@
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact]
+        [TargetFrameworkVersionsFact("net452;net461;netcoreapp2.1")]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {

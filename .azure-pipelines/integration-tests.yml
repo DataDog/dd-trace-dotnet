@@ -95,6 +95,7 @@ jobs:
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         reproductions/**/*.csproj
         !reproductions/**/ExpenseItDemo*.csproj
+        !reproductions/**/EntityFramework6x*.csproj
       vstsFeed: $(packageFeed)
 
   - task: DotNetCoreCLI@2
@@ -106,9 +107,25 @@ jobs:
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         reproductions/**/*.csproj
         !reproductions/**/ExpenseItDemo*.csproj
+        !reproductions/**/EntityFramework6x*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform)
 
+  - task: NuGetCommand@2
+    displayName: 'nuget restore reproductions/**/packages.config'
+    inputs:
+      restoreSolution: reproductions/**/packages.config
+      restoreDirectory: $(Build.SourcesDirectory)/packages
+      vstsFeed: $(packageFeed)
+      verbosityRestore: Normal
 
+  - task: MSBuild@1
+    displayName: 'Build .NET Framework projects (not SDK-based projects)'
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
+      msbuildArguments: '/t:BuildFrameworkReproductions'
+      maximumCpuCount: true
 
 #  - task: MSBuild@1
 #    displayName: 'Build sample apps (x64 or x86)'

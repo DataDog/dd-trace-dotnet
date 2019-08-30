@@ -104,5 +104,21 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             public const string AnalyticsSampleRate = "DD_{0}_ANALYTICS_SAMPLE_RATE";
         }
+
+        /// <summary>
+        /// String constants for debug configuration keys.
+        /// </summary>
+        internal static class Debug
+        {
+            /// <summary>
+            /// Configuration key for forcing the automatic instrumentation to only use the mdToken method lookup mechanism.
+            /// </summary>
+            public const string ForceMdTokenLookup = "DD_TRACE_DEBUG_LOOKUP_MDTOKEN";
+
+            /// <summary>
+            /// Configuration key for forcing the automatic instrumentation to only use the fallback method lookup mechanism.
+            /// </summary>
+            public const string ForceFallbackLookup = "DD_TRACE_DEBUG_LOOKUP_FALLBACK";
+        }
     }
 }
