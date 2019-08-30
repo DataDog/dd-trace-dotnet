@@ -18,7 +18,7 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
-        public async Task Foo()
+        public async Task Http_Headers_Contain_ContainerId()
         {
             if (EnvironmentHelper.IsWindows())
             {
