@@ -1,5 +1,5 @@
 steps:
-    - template: templates/steps/all-build-managed.yml
+  - template: all-build-managed.yml
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net45
@@ -31,7 +31,7 @@ steps:
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
-  - template: templates/steps/windows-build-native.yml
+  - template: windows-build-native.yml
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore integration tests
