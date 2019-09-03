@@ -56,6 +56,8 @@ namespace Datadog.Trace.TestHelpers
 
         public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
 
+        public event EventHandler<EventArgs<IList<IList<Span>>>> RequestDeserialized;
+
         /// <summary>
         /// Gets or sets a value indicating whether to skip serialization of traces.
         /// </summary>
@@ -152,6 +154,11 @@ namespace Datadog.Trace.TestHelpers
             RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
         }
 
+        protected virtual void OnRequestDeserialized(IList<IList<Span>> traces)
+        {
+            RequestDeserialized?.Invoke(this, new EventArgs<IList<IList<Span>>>(traces));
+        }
+
         private void AssertHeader(
             NameValueCollection headers,
             string headerKey,
@@ -182,6 +189,7 @@ namespace Datadog.Trace.TestHelpers
                     if (ShouldDeserializeTraces)
                     {
                         var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(ctx.Request.InputStream);
+                        OnRequestDeserialized(spans);
 
                         lock (this)
                         {
