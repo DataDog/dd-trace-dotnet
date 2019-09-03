@@ -1,0 +1,13 @@
+  steps:
+  - task: DockerCompose@0
+    displayName: docker-compose run build
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true build
+
+  - task: DockerCompose@0
+    displayName: docker-compose run Profiler
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeFileArgs: TestAllPackageVersions=true
+      dockerComposeCommand: run Profiler

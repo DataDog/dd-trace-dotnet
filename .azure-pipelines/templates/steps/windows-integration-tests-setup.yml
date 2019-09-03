@@ -1,0 +1,102 @@
+steps:
+    - template: templates/steps/all-build-managed.yml
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net45
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework net45 --output $(publishOutput)/net45
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net461
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework net461 --output $(publishOutput)/net461
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework netstandard2.0
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
+  - template: templates/steps/windows-build-native.yml
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore integration tests
+    inputs:
+      command: restore
+      projects: |
+        reproductions/**/*.csproj
+        samples/**/*.csproj
+        test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        !reproductions/**/ExpenseItDemo*.csproj
+        !reproductions/**/EntityFramework6x*.csproj
+      vstsFeed: $(packageFeed)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build integration tests
+    inputs:
+      command: build
+      projects: |
+        reproductions/**/*.csproj
+        samples/**/*.csproj
+        test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        !reproductions/**/ExpenseItDemo*.csproj
+        !reproductions/**/EntityFramework6x*.csproj
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
+
+  - task: NuGetCommand@2
+    displayName: 'nuget restore reproductions/**/packages.config'
+    inputs:
+      restoreSolution: reproductions/**/packages.config
+      restoreDirectory: $(Build.SourcesDirectory)/packages
+      vstsFeed: $(packageFeed)
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: 'Build .NET Framework projects (not SDK-based projects)'
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
+      msbuildArguments: '/t:BuildFrameworkReproductions'
+      maximumCpuCount: true
+
+#  - task: MSBuild@1
+#    displayName: 'Build sample apps (x64 or x86)'
+#    inputs:
+#      solution: Datadog.Trace.proj
+#      platform: '$(buildPlatform)'
+#      configuration: '$(buildConfiguration)'
+#      msbuildArguments: '/t:BuildSamples'
+#      maximumCpuCount: true
+
+#  - script: |
+#    choco install redis-64
+#    redis-server --service-install
+#    redis-server --service-start
+#    displayName: 'Install Redis'
+
+#  - script: |
+#    choco install elasticsearch
+#    net start elasticsearch-service-x64
+#    displayName: 'Install Elasticsearch'
+
+#  - task: PowerShell@2
+#    displayName: 'PowerShell Script'
+#    inputs:
+#      targetType: filePath
+#      filePath: './ci/install-sqlserver.ps1'
+#    enabled: false
