@@ -233,9 +233,17 @@ namespace Datadog.Trace.TestHelpers
             [Key("duration")]
             public long Duration { get; set; }
 
+            [Key("parent_id")]
+            public ulong? ParentId { get; set; }
+
+            [Key("error")]
+            public byte Error { get; set; }
 
             [Key("meta")]
             public Dictionary<string, string> Tags { get; set; }
+
+            [Key("metrics")]
+            public Dictionary<string, double> Metrics { get; set; }
         }
     }
 }
