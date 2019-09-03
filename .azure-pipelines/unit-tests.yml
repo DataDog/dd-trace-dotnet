@@ -9,7 +9,8 @@ trigger:
       - .github/*
 
 variables:
-  buildConfiguration: Debug
+  - name: buildConfiguration
+    value: Debug
   - template: templates/variables/build.yml
 
 jobs:
