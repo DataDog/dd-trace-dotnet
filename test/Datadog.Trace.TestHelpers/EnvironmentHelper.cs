@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Datadog.Trace.Configuration;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -185,6 +186,8 @@ namespace Datadog.Trace.TestHelpers
                 "DD_DISABLED_INTEGRATIONS",
                 "DATADOG_PROFILER_PROCESSES",
                 "DATADOG_INTEGRATIONS",
+                "DD_TRACE_DEBUG_LOOKUP_MDTOKEN",
+                "DD_TRACE_DEBUG_LOOKUP_FALLBACK",
             };
 
             foreach (string variable in environmentVariables)
@@ -246,6 +249,21 @@ namespace Datadog.Trace.TestHelpers
             if (_disabledIntegrations != null)
             {
                 environmentVariables["DD_DISABLED_INTEGRATIONS"] = _disabledIntegrations;
+            }
+        }
+
+        public void SetDebugMethodResolutionMode(StringDictionary environmentVariables)
+        {
+            var forceMdTokenLookup = Environment.GetEnvironmentVariable(ConfigurationKeys.Debug.ForceMdTokenLookup);
+            if (forceMdTokenLookup != null)
+            {
+                environmentVariables[ConfigurationKeys.Debug.ForceMdTokenLookup] = forceMdTokenLookup;
+            }
+
+            var forceFallbackLookup = Environment.GetEnvironmentVariable(ConfigurationKeys.Debug.ForceFallbackLookup);
+            if (forceFallbackLookup != null)
+            {
+                environmentVariables[ConfigurationKeys.Debug.ForceFallbackLookup] = forceFallbackLookup;
             }
         }
 

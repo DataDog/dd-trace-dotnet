@@ -1,0 +1,75 @@
+trigger:
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - docs/*
+      - .github/*
+
+# Will enable pr: none before merging into master
+# pr: none
+
+variables:
+  buildConfiguration: Debug
+  - template: templates/variables/build.yml
+
+jobs:
+
+- job: Linux
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  steps:
+  - template: templates/steps/linux-integration-tests-setup.yml
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests -forceMdToken
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true IntegrationTests
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests -forceFallback
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true IntegrationTests
+
+  - task: PublishTestResults@2
+    displayName: publish test results
+    inputs:
+      testResultsFormat: VSTest
+      testResultsFiles: test/**/*.trx
+    condition: succeededOrFailed()
+
+- job: Windows
+
+  pool:
+    vmImage: windows-2019
+
+  variables:
+    buildPlatform: 'x64'
+
+  steps:
+  - template: templates/steps/windows-integration-tests-setup.yml
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test -forceMdToken
+    env:
+      DD_TRACE_DEBUG_LOOKUP_MDTOKEN: true
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+      arguments: '--filter "FullyQualifiedName~Datadog.Trace.ClrProfiler.IntegrationTests.HttpClientTests|Category=Smoke" -p:Platform=$(buildPlatform)'
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test -forceFallback
+    env:
+      DD_TRACE_DEBUG_LOOKUP_FALLBACK: true
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+      arguments: '--filter "FullyQualifiedName~Datadog.Trace.ClrProfiler.IntegrationTests.HttpClientTests|Category=Smoke" -p:Platform=$(buildPlatform)'
