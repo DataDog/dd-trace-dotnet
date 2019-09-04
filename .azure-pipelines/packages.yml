@@ -106,6 +106,25 @@ jobs:
     vmImage: ubuntu-16.04
 
   steps:
+  - task: DotNetCoreInstaller@0
+    displayName: install dotnet core sdk
+    inputs:
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore
+    inputs:
+      command: restore
+      projects: src/**/*.csproj
+      vstsFeed: $(packageFeed)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      projects: src/**/.csproj
+      arguments: --configuration $(buildConfiguration)
+
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
     inputs:
