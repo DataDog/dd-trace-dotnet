@@ -1291,15 +1291,23 @@ extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_p
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
 #ifdef _WIN32
   HINSTANCE hInstance = DllHandle;
+  LPCWSTR dllLpName;
+  LPCWSTR symbolsLpName;
 
-  HRSRC hResAssemblyInfo =
-      FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT_DLL), L"ASSEMBLY");
+  if (runtime_information_.is_desktop()) {
+    dllLpName = MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_DLL);
+    symbolsLpName = MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_SYMBOLS);
+  } else {
+    dllLpName = MAKEINTRESOURCE(NETSTANDARD20_MANAGED_ENTRYPOINT_DLL);
+    symbolsLpName = MAKEINTRESOURCE(NETSTANDARD20_MANAGED_ENTRYPOINT_SYMBOLS);
+  }
+
+  HRSRC hResAssemblyInfo = FindResource(hInstance, dllLpName, L"ASSEMBLY");
   HGLOBAL hResAssembly = LoadResource(hInstance, hResAssemblyInfo);
   *assemblySize = SizeofResource(hInstance, hResAssemblyInfo);
   *pAssemblyArray = (LPBYTE)LockResource(hResAssembly);
 
-  HRSRC hResSymbolsInfo =
-      FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT_SYMBOLS), L"SYMBOLS");
+  HRSRC hResSymbolsInfo = FindResource(hInstance, symbolsLpName, L"SYMBOLS");
   HGLOBAL hResSymbols = LoadResource(hInstance, hResSymbolsInfo);
   *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
   *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);
