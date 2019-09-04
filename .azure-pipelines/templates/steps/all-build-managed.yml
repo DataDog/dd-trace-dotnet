@@ -1,7 +1,8 @@
 steps:
-  - task: DotNetCoreInstaller@0
+  - task: UseDotNet@2
     displayName: install dotnet core sdk
     inputs:
+      packageType: sdk
       version: $(dotnetCoreSdkVersion)
 
   - task: DotNetCoreCLI@2
