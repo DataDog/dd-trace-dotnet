@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var instrumentedType = typeof(DbCommand);
             var dataReaderType = typeof(DbDataReader);
             var commandBehavior = (CommandBehavior)behavior;
-            Func<object, CommandBehavior, object, object> instrumentedMethod = null;
+            Func<object, CommandBehavior, object, object> instrumentedMethod;
 
             try
             {
@@ -157,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 taskResultType: dataReaderType,
                 nameOfIntegrationMethod: nameof(ExecuteDbDataReaderAsyncInternal),
                 integrationType: typeof(AdoNetIntegration),
-                parametersToPass: new object[] { @this, behavior, cancellationToken, instrumentedMethod });
+                parametersToPass: new[] { @this, behavior, cancellationToken, instrumentedMethod });
         }
 
         private static async Task<T> ExecuteDbDataReaderAsyncInternal<T>(
