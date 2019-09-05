@@ -206,13 +206,19 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["CORECLR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
-                environmentVariables["CORECLR_PROFILER_PATH"] = GetProfilerPath();
+
+                var profilerPath = GetProfilerPath();
+                environmentVariables["CORECLR_PROFILER_PATH"] = profilerPath;
+                environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(profilerPath);
             }
             else
             {
                 environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["COR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
-                environmentVariables["COR_PROFILER_PATH"] = GetProfilerPath();
+
+                var profilerPath = GetProfilerPath();
+                environmentVariables["COR_PROFILER_PATH"] = profilerPath;
+                environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(profilerPath);
 
                 processName = Path.GetFileName(processPath);
             }
