@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
+
+    <!-- NuGet -->
+    <Version>1.0</Version>
+    <Title>Datadog APM - Web Tracing</Title>
+    <Description>Provides tracing for ASP.NET web application. </Description>
+    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
   </PropertyGroup>
 
   <ItemGroup>
