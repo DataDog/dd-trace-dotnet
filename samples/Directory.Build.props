@@ -1,4 +1,3 @@
-<!-- Changed -->
 <Project>
   <PropertyGroup>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1</TargetFrameworks>

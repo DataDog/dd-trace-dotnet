@@ -4,8 +4,9 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-    <Platforms>x64;x86</Platforms>	
+    <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
 
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
