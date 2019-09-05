@@ -1,5 +1,3 @@
-#if !NETSTANDARD2_0
-
 using System.Web;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -29,5 +27,3 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
     }
 }
-
-#endif
