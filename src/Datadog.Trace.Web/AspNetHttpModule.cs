@@ -57,19 +57,20 @@ namespace Datadog.Trace.Web
 
             try
             {
-            var tracer = Tracer.Instance;
+                var tracer = Tracer.Instance;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
-            {
-                // integration disabled
-                return;
-            }
+                if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+                {
+                    // integration disabled
+                    return;
+                }
 
                 if (!TryGetContext(sender, out var httpContext))
                 {
                     return;
                 }
 
+                HttpRequest httpRequest = httpContext.Request;
                 SpanContext propagatedContext = null;
 
                 if (tracer.ActiveScope == null)
@@ -77,7 +78,7 @@ namespace Datadog.Trace.Web
                     try
                     {
                         // extract propagated http headers
-                        var headers = httpContext.Request.Headers.Wrap();
+                        var headers = httpRequest.Headers.Wrap();
                         propagatedContext = SpanContextPropagator.Instance.Extract(headers);
                     }
                     catch (Exception ex)
@@ -86,13 +87,20 @@ namespace Datadog.Trace.Web
                     }
                 }
 
+                string host = httpContext.Request.Headers.Get("Host");
+                string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
+                string url = httpContext.Request.RawUrl.ToLowerInvariant();
+                string path = UriHelpers.GetRelativeUrl(httpRequest.Url, tryRemoveIds: true);
+                string resourceName = $"{httpMethod} {path.ToLowerInvariant()}";
+
                 scope = tracer.StartActive(_operationName, propagatedContext);
+                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
                 scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
-                httpContext.Items[_httpContextDelegateKey] = HttpContextSpanIntegrationDelegate.CreateAndBegin(httpContext, scope);
+                httpContext.Items[_httpContextDelegateKey] = scope;
             }
             catch (Exception ex)
             {
@@ -112,13 +120,11 @@ namespace Datadog.Trace.Web
 
             try
             {
-                if (!TryGetContext(sender, out var httpContext) ||
-                    !httpContext.Items.TryGetValue<ISpanIntegrationDelegate>(_httpContextDelegateKey, out var integrationDelegate))
+                if (TryGetContext(sender, out var httpContext) &&
+                    httpContext.Items[_httpContextDelegateKey] is Scope scope)
                 {
-                    return;
+                    scope.Dispose();
                 }
-
-                integrationDelegate.OnEnd();
             }
             catch (Exception ex)
             {
@@ -130,13 +136,12 @@ namespace Datadog.Trace.Web
         {
             try
             {
-                if (!TryGetContext(sender, out var httpContext) || httpContext.Error == null ||
-                    !httpContext.Items.TryGetValue<ISpanIntegrationDelegate>(_httpContextDelegateKey, out var integrationDelegate))
+                if (TryGetContext(sender, out var httpContext) &&
+                    httpContext.Error != null &&
+                    httpContext.Items[_httpContextDelegateKey] is Scope scope)
                 {
-                    return;
+                    scope.Span.SetException(httpContext.Error);
                 }
-
-                integrationDelegate.OnError();
             }
             catch (Exception ex)
             {
@@ -146,16 +151,14 @@ namespace Datadog.Trace.Web
 
         private bool TryGetContext(object sender, out HttpContext httpContext)
         {
-            if (sender == null || !(sender is HttpApplication httpApp) || httpApp?.Context?.Items == null)
+            if (sender is HttpApplication httpApp)
             {
-                httpContext = null;
-
-                return false;
+                httpContext = httpApp.Context;
+                return true;
             }
 
-            httpContext = httpApp.Context;
-
-            return true;
+            httpContext = null;
+            return false;
         }
     }
 }
