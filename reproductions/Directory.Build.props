@@ -1,30 +1,4 @@
+<!-- Changed -->
 <Project>
-  <PropertyGroup>
-    <Platforms>x64;x86</Platforms>
-    <PlatformTarget>$(Platform)</PlatformTarget>
-
-    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
-    <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
-
-    <IsPackable>false</IsPackable>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <ProfilerOutputDirectory>..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
-
-    <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(ExcludeManagedProfiler)' != 'true'">
-    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="$(ProfilerOutputDirectory)\*.dll;$(ProfilerOutputDirectory)\*.so;$(ProfilerOutputDirectory)\*.pdb"
-          CopyToOutputDirectory="Always"
-          CopyToPublishDirectory="Always"
-          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
-    <Content Include="..\..\integrations.json"
-             CopyToOutputDirectory="Always"
-             CopyToPublishDirectory="Always"
-             Link="profiler-lib\integrations.json" />
-  </ItemGroup>
+  <Import Project="..\Test.Common.props" />
 </Project>
