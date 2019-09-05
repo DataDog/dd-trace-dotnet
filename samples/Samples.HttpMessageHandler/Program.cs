@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace;
 
 namespace Samples.HttpMessageHandler
 {
@@ -82,7 +81,7 @@ namespace Samples.HttpMessageHandler
             {
                 if (tracingDisabled)
                 {
-                    client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                    client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
                 }
 
                 using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
@@ -111,7 +110,7 @@ namespace Samples.HttpMessageHandler
 
                 if (tracingDisabled)
                 {
-                    webClient.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                    webClient.Headers.Add("x-datadog-tracing-enabled", "false");
                 }
 
                 var responseContent = webClient.DownloadString(Url);

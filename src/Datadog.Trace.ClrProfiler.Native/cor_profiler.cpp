@@ -173,8 +173,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   if (debug_logging_enabled) {
     Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
-            " AppDomain ", module_info.assembly.app_domain_id, " ",
-            module_info.assembly.app_domain_name);
+          " AppDomain ", module_info.assembly.app_domain_id, " ",
+          module_info.assembly.app_domain_name);
   }
 
   AppDomainID app_domain_id = module_info.assembly.app_domain_id;
@@ -182,7 +182,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // Identify the AppDomain ID of mscorlib which will be the Shared Domain
   // because mscorlib is always a domain-neutral assembly
   if (!corlib_module_loaded && (module_info.assembly.name == "mscorlib"_W ||
-                                module_info.assembly.name == "System.Private.CoreLib"_W)) {
+       module_info.assembly.name == "System.Private.CoreLib"_W)) {
     corlib_module_loaded = true;
     corlib_app_domain_id = app_domain_id;
     corlib_module_id = module_id;
@@ -321,37 +321,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       metadata_import, metadata_emit, module_info.assembly.name,
       module_version_id, filtered_integrations);
 
-  const MetadataBuilder metadata_builder(*module_metadata, module,
-                                         metadata_import, metadata_emit,
-                                         assembly_import, assembly_emit);
+  // DELETED: for each wrapper assembly, emit an assembly reference
 
-  for (const auto& integration : filtered_integrations) {
-    // for each wrapper assembly, emit an assembly reference
-    hr = metadata_builder.EmitAssemblyRef(
-        integration.replacement.wrapper_method.assembly);
-    if (FAILED(hr)) {
-      Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
-           module_id, " ", module_info.assembly.name);
-      return S_OK;
-    }
-
-    // for each method replacement in each enabled integration,
-    // emit a reference to the instrumentation wrapper methods
-    hr = metadata_builder.StoreWrapperMethodRef(integration.replacement);
-    if (FAILED(hr)) {
-      Warn("ModuleLoadFinished failed to emit or store wrapper method ref for ",
-           module_id, " ", module_info.assembly.name);
-      return S_OK;
-    }
-  }
+  // DELETED: for each method replacement in each enabled integration,
+  // emit a reference to the instrumentation wrapper methods
 
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
 
   Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
-       module_info.assembly.name, " AppDomain ",
-       module_info.assembly.app_domain_id, " ",
-       module_info.assembly.app_domain_name);
+        module_info.assembly.name, " AppDomain ",
+        module_info.assembly.app_domain_id, " ",
+        module_info.assembly.app_domain_name);
   return S_OK;
 }
 
@@ -439,7 +420,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     first_jit_compilation_completed = true;
 
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
-                            function_token);
+                          function_token);
     RETURN_OK_IF_FAILED(hr);
   }
 
@@ -462,11 +443,64 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
     if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
                                                  wrapper_method_ref)) {
-      // no method ref token found for wrapper method, we can't do the
-      // replacement, this should never happen because we always try to
-      // add the method ref in ModuleLoadFinished()
-      // TODO: log this
-      return S_OK;
+      const auto module_info = GetModuleInfo(this->info_, module_id);
+      if (!module_info.IsValid()) {
+        continue;
+      }
+
+      ComPtr<IUnknown> metadata_interfaces;
+      auto hr = this->info_->GetModuleMetaData(
+          module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+          metadata_interfaces.GetAddressOf());
+      if (FAILED(hr)) {
+        Warn(
+            "GenerateVoidILStartupMethod: failed to get metadata interface "
+            "for ",
+            module_id);
+        continue;
+      }
+
+      const auto metadata_import =
+          metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+      const auto metadata_emit =
+          metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+      const auto assembly_import =
+          metadata_interfaces.As<IMetaDataAssemblyImport>(
+              IID_IMetaDataAssemblyImport);
+      const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(
+          IID_IMetaDataAssemblyEmit);
+
+      mdModule module;
+      hr = metadata_import->GetModuleFromScope(&module);
+      if (FAILED(hr)) {
+        Warn("ModuleLoadFinished failed to get module metadata token for ",
+             module_id, " ", module_info.assembly.name);
+        continue;
+      }
+
+      const MetadataBuilder metadata_builder(*module_metadata, module,
+                                             metadata_import, metadata_emit,
+                                             assembly_import, assembly_emit);
+
+      // for each wrapper assembly, emit an assembly reference
+      hr = metadata_builder.EmitAssemblyRef(
+          method_replacement.wrapper_method.assembly);
+      if (FAILED(hr)) {
+        Warn("JITCompilationStarted failed to emit wrapper assembly ref for ",
+             module_id, " ", module_info.assembly.name);
+        continue;
+      }
+
+      // for each method replacement in each enabled integration,
+      // emit a reference to the instrumentation wrapper methods
+      hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
+      if (FAILED(hr)) {
+        Warn(
+            "JITCompilationStarted failed to emit or store wrapper method ref "
+            "for ",
+            module_id, " ", module_info.assembly.name);
+        continue;
+      }
     }
 
     // for each IL instruction
