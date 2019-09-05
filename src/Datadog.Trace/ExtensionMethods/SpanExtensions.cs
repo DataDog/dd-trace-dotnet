@@ -32,6 +32,21 @@ namespace Datadog.Trace.ExtensionMethods
             span.SetTag(Tags.OutHost, server);
         }
 
+        internal static void DecorateWebServerSpan(
+            this Span span,
+            string resourceName,
+            string method,
+            string host,
+            string httpUrl)
+        {
+            span.Type = SpanTypes.Web;
+            span.ResourceName = resourceName?.Trim();
+            span.SetTag(Tags.SpanKind, SpanKinds.Server);
+            span.SetTag(Tags.HttpMethod, method);
+            span.SetTag(Tags.HttpRequestHeadersHost, host);
+            span.SetTag(Tags.HttpUrl, httpUrl);
+        }
+
         private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)
         {
             foreach (string name in names)
