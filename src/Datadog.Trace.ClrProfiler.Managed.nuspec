@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Datadog.Trace.ClrProfiler.Managed</id>
+    <version>1.7.0</version>
+    <title></title>
+    <authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</authors>
+    <owners>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectUrl>https://docs.datadoghq.com/tracing/setup/dotnet/</projectUrl>
+    <iconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</iconUrl>
+    <description>OBSOLETE. This package exists only for backwards compatibility. New projects should reference either Datadog.Trace.ClrProfiler or Datadog.Trace.Web, or both, as needed.</description>
+    <copyright>Datadog, Inc. 2017-2019</copyright>
+    <dependencies>
+      <group targetFramework=".NETFramework4.5">
+        <dependency id="Datadog.Trace.ClrProfiler" version="1.7.0" />
+        <dependency id="Datadog.Trace.Web" version="1.0.0" />
+      </group>
+      <group targetFramework=".NETFramework4.6.1">
+        <dependency id="Datadog.Trace.ClrProfiler" version="1.7.0" />
+        <dependency id="Datadog.Trace.Web" version="1.0.0" />
+      </group>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="Datadog.Trace.ClrProfiler" version="1.7.0" />
+        <dependency id="Datadog.Trace.Web" version="1.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>
