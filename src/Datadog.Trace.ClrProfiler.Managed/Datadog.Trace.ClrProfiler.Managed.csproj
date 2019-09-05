@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler</RootNamespace>
@@ -8,6 +8,12 @@
     <Title>Datadog APM - ClrProfiler</Title>
     <Description>Automatic instrumentation library used by .NET Tracer for Datadog APM. Requires separate native library that implements the CLR Profiling API.</Description>
     <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
+  </PropertyGroup>
+
+  <!-- For testing purposes, copy all implementation assemblies to the output directory -->
+  <!-- Note, this does not change the results of the dotnet pack command -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
