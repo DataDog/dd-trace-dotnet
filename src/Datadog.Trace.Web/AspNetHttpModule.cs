@@ -53,6 +53,10 @@ namespace Datadog.Trace.Web
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
+            Scope scope = null;
+
+            try
+            {
             var tracer = Tracer.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
@@ -61,10 +65,6 @@ namespace Datadog.Trace.Web
                 return;
             }
 
-            Scope scope = null;
-
-            try
-            {
                 if (!TryGetContext(sender, out var httpContext))
                 {
                     return;
