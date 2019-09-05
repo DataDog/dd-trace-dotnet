@@ -12,11 +12,12 @@
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <ProfilerOutputDirectory>..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
+    <ManagedProfilerOutputDirectory>..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
 
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition=" '$(LoadManagedProfilerFromProfilerDirectory)' != 'true' ">
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj"
                       ReferenceOutputAssembly="false"
@@ -33,4 +34,13 @@
              CopyToPublishDirectory="Always"
              Link="profiler-lib\integrations.json" />
   </ItemGroup>
+
+  <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild" Condition=" '$(LoadManagedProfilerFromProfilerDirectory)' == 'true'">
+    <ItemGroup>
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" />
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
+  </Target>
 </Project>
