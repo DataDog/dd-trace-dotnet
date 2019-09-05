@@ -277,6 +277,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc.Netco
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NugetProfilerVersionMismatch.TypeLoadException", "reproductions\NugetProfilerVersionMismatch.TypeLoadException\NugetProfilerVersionMismatch.TypeLoadException.csproj", "{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Web", "src\Datadog.Trace.Web\Datadog.Trace.Web.csproj", "{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -925,6 +927,18 @@ Global
 		{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}.Release|x64.Build.0 = Release|x64
 		{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}.Release|x86.ActiveCfg = Release|x86
 		{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}.Release|x86.Build.0 = Release|x86
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Debug|x64.Build.0 = Debug|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Debug|x86.Build.0 = Debug|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Release|x64.ActiveCfg = Release|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Release|x64.Build.0 = Release|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Release|x86.ActiveCfg = Release|Any CPU
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -991,6 +1005,7 @@ Global
 		{3BEACB10-89FE-4F74-8022-1A52F223CE82} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{64235C59-8EAB-401A-86B0-C41E513F0AE8} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{B02F6DDA-D69A-424E-AD9A-6AFE98CFE223} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
