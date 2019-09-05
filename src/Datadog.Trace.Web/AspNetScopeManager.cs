@@ -2,7 +2,7 @@ using System;
 using System.Web;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.Web
 {
     internal class AspNetScopeManager : IScopeManager
     {

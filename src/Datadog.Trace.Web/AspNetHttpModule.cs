@@ -1,11 +1,10 @@
 using System;
 using System.Web;
-using Datadog.Trace.ClrProfiler.Interfaces;
-using Datadog.Trace.ClrProfiler.Models;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.Web
 {
     /// <summary>
     ///     IHttpModule used to trace within an ASP.NET HttpApplication request
