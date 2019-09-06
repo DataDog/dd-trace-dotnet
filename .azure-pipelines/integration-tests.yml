@@ -92,6 +92,7 @@ jobs:
       command: restore
       projects: |
         samples/Samples.HttpMessageHandler/Samples.HttpMessageHandler.csproj
+        samples/Samples.GraphQL/Samples.GraphQL.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         reproductions/**/*.csproj
         !reproductions/**/ExpenseItDemo*.csproj
@@ -104,6 +105,7 @@ jobs:
       command: build
       projects: |
         samples/Samples.HttpMessageHandler/Samples.HttpMessageHandler.csproj
+        samples/Samples.GraphQL/Samples.GraphQL.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         reproductions/**/*.csproj
         !reproductions/**/ExpenseItDemo*.csproj
