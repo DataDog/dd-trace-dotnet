@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -37,9 +38,19 @@ namespace Datadog.Trace.ClrProfiler
 
         /// <summary>
         /// Gets or sets the name of the assembly that contains the target method to be intercepted.
-        /// Required.
+        /// Required if <see cref="TargetAssemblies"/> is not set.
         /// </summary>
-        public string TargetAssembly { get; set; }
+        public string TargetAssembly
+        {
+            get => throw new NotSupportedException("Use property TargetAssemblies instead of TargetAssembly.");
+            set => TargetAssemblies = new[] { value };
+        }
+
+        /// <summary>
+        /// Gets or sets the name of the assemblies that contain the target method to be intercepted.
+        /// Required if <see cref="TargetAssembly"/> is not set.
+        /// </summary>
+        public string[] TargetAssemblies { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the type that contains the target method to be intercepted.

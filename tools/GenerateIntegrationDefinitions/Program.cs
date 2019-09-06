@@ -35,6 +35,7 @@ namespace GenerateIntegrationDefinitions
                                {
                                    name = g.Key,
                                    method_replacements = from item in g
+                                                         from targetAssembly in item.attribute.TargetAssemblies
                                                          select new
                                                          {
                                                              caller = new
@@ -45,7 +46,7 @@ namespace GenerateIntegrationDefinitions
                                                              },
                                                              target = new
                                                              {
-                                                                 assembly = item.attribute.TargetAssembly,
+                                                                 assembly = targetAssembly,
                                                                  type = item.attribute.TargetType,
                                                                  method = item.attribute.TargetMethod ?? item.wrapperMethod.Name,
                                                                  signature = item.attribute.TargetSignature,
@@ -110,7 +111,7 @@ namespace GenerateIntegrationDefinitions
 
             if (!lastParameterTypes.SequenceEqual(requiredParameterTypes))
             {
-                  throw new Exception(
+                throw new Exception(
                     $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
                     "Wrapper methods must have at least 3 parameters and the last 3 must be of types Int32 (opCode), Int32 (mdToken), and Int64 (moduleVersionPtr).");
             }
