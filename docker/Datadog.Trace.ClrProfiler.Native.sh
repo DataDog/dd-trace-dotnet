@@ -11,3 +11,4 @@ mkdir -p obj/Debug/x64
 
 mkdir -p bin/Debug/x64
 cp -f obj/Debug/x64/Datadog.Trace.ClrProfiler.Native.so bin/Debug/x64/Datadog.Trace.ClrProfiler.Native.so
+cp -f -r ../Datadog.Trace.ClrProfiler.Managed/bin/Debug/* bin/Debug/x64/

@@ -10,8 +10,7 @@
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <ProfilerOutputDirectory>$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
-    <ManagedProfilerOutputDirectory Condition="'$(BuildingInsideVisualStudio)' == 'true'">$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
-    <ManagedProfilerOutputDirectory Condition="'$(BuildingInsideVisualStudio)' != 'true'">$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Platform)\$(Configuration)</ManagedProfilerOutputDirectory>
+    <ManagedProfilerOutputDirectory>$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
 
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
   </PropertyGroup>

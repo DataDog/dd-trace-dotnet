@@ -68,7 +68,7 @@ jobs:
       command: build
       projects: |
         src/**/*.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform)
+      arguments: --configuration $(buildConfiguration)
 
   - task: NuGetCommand@2
     displayName: nuget restore native
