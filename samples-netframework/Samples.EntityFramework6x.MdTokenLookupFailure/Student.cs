@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace EntityFramework6x.MdTokenLookupFailure
+namespace Samples.EntityFramework6x.MdTokenLookupFailure
 {
     using System;
     using System.Collections.Generic;

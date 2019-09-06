@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EntityFramework6x.MdTokenLookupFailure
+namespace Samples.EntityFramework6x.MdTokenLookupFailure
 {
     class Program
     {
