@@ -9,15 +9,15 @@
 
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <ProfilerOutputDirectory>..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
-    <ManagedProfilerOutputDirectory>..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
+    <ProfilerOutputDirectory>$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
+    <ManagedProfilerOutputDirectory>$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
 
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(ExcludeManagedProfiler)' != 'true' and
                         '$(LoadManagedProfilerFromProfilerDirectory)' != 'true' ">
-    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(ExcludeNativeProfiler)' != 'true'">
@@ -25,7 +25,7 @@
           CopyToOutputDirectory="Always"
           CopyToPublishDirectory="Always"
           Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
-    <Content Include="..\..\integrations.json"
+    <Content Include="$(MSBuildThisFileDirectory)\integrations.json"
              CopyToOutputDirectory="Always"
              CopyToPublishDirectory="Always"
              Link="profiler-lib\integrations.json" />
