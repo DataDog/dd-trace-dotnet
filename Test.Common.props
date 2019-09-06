@@ -11,6 +11,7 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <ProfilerOutputDirectory>$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
     <ManagedProfilerOutputDirectory>$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
+    <ManagedProfilerOutputDirectory Condition="'$(BuildingInsideVisualStudio)' != 'true'">$(ManagedProfilerOutputDirectory)\$(Platform)</ManagedProfilerOutputDirectory>
 
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
   </PropertyGroup>
