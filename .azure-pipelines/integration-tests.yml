@@ -126,7 +126,6 @@ jobs:
         samples/**/*.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
-        !reproductions/**/EntityFramework6x*.csproj
       vstsFeed: $(packageFeed)
 
   - task: DotNetCoreCLI@2
@@ -138,7 +137,6 @@ jobs:
         samples/**/*.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
-        !reproductions/**/EntityFramework6x*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
 
   - task: NuGetCommand@2
@@ -155,7 +153,7 @@ jobs:
       solution: Datadog.Trace.proj
       platform: '$(buildPlatform)'
       configuration: '$(buildConfiguration)'
-      msbuildArguments: '/t:BuildFrameworkReproductions'
+      msbuildArguments: '/t:BuildNetFrameworkProjects'
       maximumCpuCount: true
 
 #  - task: MSBuild@1

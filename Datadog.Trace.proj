@@ -9,11 +9,8 @@
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <SampleProject Include="samples*\**\*.csproj"/>
+    <NetFrameworkProject Include="samples-netframework\**\*.csproj" />
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
-  </ItemGroup>
-
-  <ItemGroup>
-    <FrameworkReproduction Include="reproductions\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
   </ItemGroup>
 
   <Import Project="PackageVersions.g.props" />
@@ -33,8 +30,8 @@
     </MSBuild>
   </Target>
 
-  <Target Name="BuildFrameworkReproductions">
-    <MSBuild Targets="Build" Projects="@(FrameworkReproduction)">
+  <Target Name="BuildNetFrameworkProjects">
+    <MSBuild Targets="Build" Projects="@(NetFrameworkProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>

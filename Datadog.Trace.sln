@@ -245,7 +245,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySql", "samples\Sa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TraceContext.InvalidOperationException", "reproductions\TraceContext.InvalidOperationException\TraceContext.InvalidOperationException.csproj", "{DF923186-5397-4E15-A95B-F15C8327ED53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityFramework6x.MdTokenLookupFailure", "reproductions\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj", "{E1706893-D3A5-43B9-9036-AEF49DB9600B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples-netframework", "samples-netframework", "{77DF9445-9B32-4CE0-99A3-2C0F16D07915}"
+	ProjectSection(SolutionItems) = preProject
+		samples-netframework\Directory.Build.props = samples-netframework\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityFramework6x.MdTokenLookupFailure", "samples-netframework\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj", "{E1706893-D3A5-43B9-9036-AEF49DB9600B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -842,7 +847,7 @@ Global
 		{7F0BD409-FA74-4FB1-853F-D10D888E1542} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{42FA33DD-AEA3-4FF3-8319-F30244A666A4} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{DF923186-5397-4E15-A95B-F15C8327ED53} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{E1706893-D3A5-43B9-9036-AEF49DB9600B} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{E1706893-D3A5-43B9-9036-AEF49DB9600B} = {77DF9445-9B32-4CE0-99A3-2C0F16D07915}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
