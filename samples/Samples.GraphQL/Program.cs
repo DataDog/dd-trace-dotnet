@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using Datadog.Trace.ClrProfiler;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -25,7 +24,6 @@ namespace Samples.GraphQL
                 .Build();
 
             var logger = host.Services.GetRequiredService<ILogger<Program>>();
-            logger.LogInformation($"Instrumentation.ProfilerAttached = {Instrumentation.ProfilerAttached}");
 
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
             var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()

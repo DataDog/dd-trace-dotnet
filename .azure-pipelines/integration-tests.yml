@@ -160,4 +160,4 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: '--filter "FullyQualifiedName~Datadog.Trace.ClrProfiler.IntegrationTests.HttpClientTests|Category=Smoke" -p:Platform=$(buildPlatform)'
+      arguments: '--filter "FullyQualifiedName~Datadog.Trace.ClrProfiler.IntegrationTests.HttpClientTests|FullyQualifiedName~Datadog.Trace.ClrProfiler.IntegrationTests.GraphQLTests|Category=Smoke" -p:Platform=$(buildPlatform)'

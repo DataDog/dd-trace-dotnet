@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <!-- override to remove net452 -->
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
+    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,5 +13,4 @@
     <PackageReference Include="Microsoft.AspNetCore" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
   </ItemGroup>
-
 </Project>
