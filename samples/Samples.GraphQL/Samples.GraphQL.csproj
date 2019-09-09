@@ -2,6 +2,7 @@
   <PropertyGroup>
     <!-- override to remove net452 -->
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
+    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
   <ItemGroup>
