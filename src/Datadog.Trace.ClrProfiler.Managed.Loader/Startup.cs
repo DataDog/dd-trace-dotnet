@@ -47,7 +47,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var path = Path.Combine(ManagedProfilerDirectory, $"{new AssemblyName(args.Name).Name}.dll");
             if (File.Exists(path))
             {
+                Console.WriteLine("-----------START ASSEMBLY RESOLVE EVENT-----------");
                 Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} from {path}"); // TODO REMOVE LOGGING
+                Console.WriteLine(new System.Diagnostics.StackTrace());
+                Console.WriteLine("----------- END ASSEMBLY RESOLVE EVENT -----------");
                 return Assembly.LoadFrom(path);
             }
 
