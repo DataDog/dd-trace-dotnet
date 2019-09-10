@@ -16,7 +16,24 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         /// </summary>
         static Startup()
         {
-#if NETFRAMEWORK
+            ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+            AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
+            LoadManagedAssembly();
+        }
+
+        internal static bool ManagedAssemblyFound { get; set; }
+
+        internal static string ManagedProfilerDirectory { get; }
+
+#if NETCOREAPP
+        internal static System.Runtime.Loader.AssemblyLoadContext DependencyLoadContext { get; } = new ManagedProfilerContext();
+#endif
+
+        private static string ResolveManagedProfilerDirectory()
+        {
+#if NETCOREAPP
+            string tracerFrameworkDirectory = "netstandard2.0";
+#else
             // We currently build two assemblies targeting .NET Framework.
             // If we're running on the .NET Framework, load the highest-compatible assembly
             string corlibFileVersionString = ((AssemblyFileVersionAttribute)typeof(object).Assembly.GetCustomAttribute(typeof(AssemblyFileVersionAttribute))).Version;
@@ -28,34 +45,66 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var corlib461Version = new Version(corlib461FileVersionString);
             var tracerFrameworkDirectory = corlibVersion < corlib461Version ? "net45" : "net461";
             Console.WriteLine($"tracerFrameworkDirectory = {tracerFrameworkDirectory}"); // TODO REMOVE LOGGING
-#else
-            string tracerFrameworkDirectory = "netstandard2.0";
 #endif
 
             var tracerHomeDirectory = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-            ManagedProfilerDirectory = Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
-            AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
-            LoadManagedAssembly();
+            return Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
         }
 
-        internal static bool ManagedAssemblyFound { get; set; }
+#if NETCOREAPP
+        private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
+        {
+            string assemblyName = new AssemblyName(args.Name).Name;
+            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
 
-        internal static string ManagedProfilerDirectory { get; }
+            Console.WriteLine("-----------START ASSEMBLY RESOLVE EVENT-----------");
+            Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} from {path}"); // TODO REMOVE LOGGING
+            Console.WriteLine(new System.Diagnostics.StackTrace());
+            Console.WriteLine("----------- END ASSEMBLY RESOLVE EVENT -----------");
 
+            if (assemblyName.ToLower().Contains("datadog.trace") && File.Exists(path))
+            {
+                try
+                {
+                    Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} into the Default Load Context"); // TODO REMOVE LOGGING
+                    return Assembly.LoadFrom(path); // Load the main profiler and tracer into the default Assembly Load Context
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"ResolveManagedProfiler: Error trying to load {args.Name} into the Default Load Context"); // TODO REMOVE LOGGING
+                    Console.WriteLine(ex);
+                    return null;
+                }
+            }
+            else if (File.Exists(path))
+            {
+                try
+                {
+                    Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} into the Profiler Load Context"); // TODO REMOVE LOGGING
+                    return DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"ResolveManagedProfiler: Error trying to load {args.Name} into the Profiler Load Context"); // TODO REMOVE LOGGING
+                    Console.WriteLine(ex);
+                    return null;
+                }
+            }
+
+            return null;
+        }
+#else
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             var path = Path.Combine(ManagedProfilerDirectory, $"{new AssemblyName(args.Name).Name}.dll");
             if (File.Exists(path))
             {
-                Console.WriteLine("-----------START ASSEMBLY RESOLVE EVENT-----------");
-                Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} from {path}"); // TODO REMOVE LOGGING
-                Console.WriteLine(new System.Diagnostics.StackTrace());
-                Console.WriteLine("----------- END ASSEMBLY RESOLVE EVENT -----------");
                 return Assembly.LoadFrom(path);
             }
 
             return null;
         }
+#endif
 
         private static void LoadManagedAssembly()
         {
