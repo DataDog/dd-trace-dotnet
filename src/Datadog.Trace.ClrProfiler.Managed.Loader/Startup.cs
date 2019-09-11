@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     // Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} into the Default Load Context"); // TODO REMOVE LOGGING
                     return Assembly.LoadFrom(path); // Load the main profiler and tracer into the default Assembly Load Context
                 }
-                catch (Exception ex)
+                catch
                 {
                     // Console.WriteLine($"ResolveManagedProfiler: Error trying to load {args.Name} into the Default Load Context"); // TODO REMOVE LOGGING
                     // Console.WriteLine(ex);
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     // Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} into the Profiler Load Context"); // TODO REMOVE LOGGING
                     return DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
                 }
-                catch (Exception ex)
+                catch
                 {
                     // Console.WriteLine($"ResolveManagedProfiler: Error trying to load {args.Name} into the Profiler Load Context"); // TODO REMOVE LOGGING
                     // Console.WriteLine(ex);
