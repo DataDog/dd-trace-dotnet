@@ -46,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         [Theory]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         [MemberData(nameof(PackageVersions.AspNetCoreMvc2), MemberType = typeof(PackageVersions))]
         public void SubmitsTracesSelfHosted(string packageVersion)
         {
