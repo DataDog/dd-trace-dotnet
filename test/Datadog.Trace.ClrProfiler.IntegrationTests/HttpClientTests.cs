@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Fact]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void HttpClient()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -51,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Fact]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void HttpClient_TracingDisabled()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -76,6 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Fact]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void WebClient()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -107,6 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Fact]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void WebClient_TracingDisabled()
         {
             int agentPort = TcpPortProvider.GetOpenPort();

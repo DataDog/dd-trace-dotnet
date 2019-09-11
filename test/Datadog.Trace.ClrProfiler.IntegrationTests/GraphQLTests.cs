@@ -60,6 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Fact]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
