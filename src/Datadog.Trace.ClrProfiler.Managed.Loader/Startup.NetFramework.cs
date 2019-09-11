@@ -6,7 +6,6 @@ using System.Reflection;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
-
     /// <summary>
     /// A class that attempts to load the Datadog.Trace.ClrProfiler.Managed .NET assembly.
     /// </summary>
