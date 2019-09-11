@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class MultiThreadedSmokeTest : SmokeTestBase
     {
         public MultiThreadedSmokeTest(ITestOutputHelper output)
-            : base(output, "DataDogThreadTest")
+            : base(output, "DataDogThreadTest", maxTestRunSeconds: 60)
         {
         }
 

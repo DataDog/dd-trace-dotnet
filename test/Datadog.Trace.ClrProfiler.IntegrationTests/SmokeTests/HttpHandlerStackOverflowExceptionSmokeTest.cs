@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class HttpHandlerStackOverflowExceptionSmokeTest : SmokeTestBase
     {
         public HttpHandlerStackOverflowExceptionSmokeTest(ITestOutputHelper output)
-            : base(output, "HttpMessageHandler.StackOverflowException", maxTestRunSeconds: 15)
+            : base(output, "HttpMessageHandler.StackOverflowException", maxTestRunSeconds: 30)
         {
         }
 
