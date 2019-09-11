@@ -1,60 +1,210 @@
 using System;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace Samples.SqlServer
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY CLUSTERED, Name nvarchar(100));";
+        private const string InsertCommandText = "INSERT INTO Employees (Id, Name) VALUES (@Id, @Name);";
+        private const string SelectOneCommandText = "SELECT Name FROM Employees WHERE Id=@Id;";
+        private const string UpdateCommandText = "UPDATE Employees SET Name=@Name WHERE Id=@Id;";
+        private const string SelectManyCommandText = "SELECT * FROM Employees WHERE Id=@Id;";
+        private const string DeleteCommandText = "DELETE FROM Employees WHERE Id=@Id;";
+
+        private static async Task Main()
         {
-            using (var db = new BloggingContext())
+            var connectionString = GetConnectionString();
+
+            using (var connection = new SqlConnection(connectionString))
             {
-                // create database if missing
-                db.Database.EnsureCreated();
+                Console.WriteLine("Calling synchronous methods:");
+                ExecuteQueries(connection);
 
-                var name = "test";
+                Console.WriteLine();
+                Console.WriteLine("Calling asynchronous methods:");
+                await ExecuteQueriesAsync(connection);
+            }
+        }
 
-                var blog = (from b in db.Blogs where b.Name == name select b).FirstOrDefault();
-                if (blog == null)
+        private static string GetConnectionString()
+        {
+            return Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+                   @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;";
+        }
+
+        private static void ExecuteQueries(SqlConnection connection)
+        {
+            connection.Open();
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = DropCommandText;
+                int records = command.ExecuteNonQuery();
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Id", 1);
+                command.Parameters.AddWithValue("Name", "Name1");
+                command.CommandText = InsertCommandText;
+                int records = command.ExecuteNonQuery();
+
+                Console.WriteLine($"Inserted {records} record(s).");
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Id", 1);
+                command.CommandText = SelectOneCommandText;
+
+                var name = command.ExecuteScalar() as string ?? "(null)";
+                Console.WriteLine($"Selected scalar `{name}`.");
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Name", "Name2");
+                command.Parameters.AddWithValue("Id", 1);
+                command.CommandText = UpdateCommandText;
+                int records = command.ExecuteNonQuery();
+
+                Console.WriteLine($"Updated {records} record(s).");
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Id", 1);
+                command.CommandText = SelectManyCommandText;
+
+                using (var reader = command.ExecuteReader())
                 {
-                    blog = new Blog { Name = name };
-                    db.Blogs.Add(blog);
-                    db.SaveChanges();
+                    var employees = reader.AsDataRecords()
+                                          .Select(
+                                               r => new
+                                               {
+                                                   Id = (int)r["Id"],
+                                                   Name = (string)r["Name"]
+                                               })
+                                          .ToList();
+
+                    Console.WriteLine($"Selected {employees.Count} record(s).");
                 }
 
-                // Display all Blogs from the database synchronously
-                var query = from b in db.Blogs
-                            orderby b.Name
-                            select b;
-
-                Console.WriteLine("All blogs in the database from the synchronous call:");
-                foreach (var item in query)
+                using (var reader = command.ExecuteReader(CommandBehavior.Default))
                 {
-                    Console.WriteLine(item.Name);
-                }
+                    var employees = reader.AsDataRecords()
+                                          .Select(
+                                               r => new
+                                               {
+                                                   Id = (int)r["Id"],
+                                                   Name = (string)r["Name"]
+                                               })
+                                          .ToList();
 
-                var asyncName = "test-async";
-
-                var asyncBlog = (from b in db.Blogs where b.Name == asyncName select b).FirstOrDefaultAsync();
-                if (asyncBlog.Result == null)
-                {
-                    blog = new Blog { Name = asyncName };
-                    db.Blogs.Add(blog);
-                    db.SaveChangesAsync().Wait();
-                }
-
-                // Display all Blogs from the database asynchronously
-                var asyncQueryTask = db.Blogs.Where(b => b.Name == asyncName).ToListAsync();
-
-                asyncQueryTask.Wait();
-
-                Console.WriteLine("All blogs in the database from the async call:");
-                foreach (var item in asyncQueryTask.Result)
-                {
-                    Console.WriteLine(item.Name);
+                    Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
                 }
             }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Id", 1);
+                command.CommandText = DeleteCommandText;
+                int records = command.ExecuteNonQuery();
+
+                Console.WriteLine($"Deleted {records} record(s).");
+            }
+
+            connection.Close();
+        }
+
+        private static async Task ExecuteQueriesAsync(SqlConnection connection)
+        {
+            await connection.OpenAsync();
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = DropCommandText;
+                int records = await command.ExecuteNonQueryAsync();
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Id", 1);
+                command.Parameters.AddWithValue("Name", "Name1");
+                command.CommandText = InsertCommandText;
+                int records = await command.ExecuteNonQueryAsync();
+
+                Console.WriteLine($"Inserted {records} record(s).");
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Id", 1);
+                command.CommandText = SelectOneCommandText;
+                object nameObj = await command.ExecuteScalarAsync();
+
+                var name = nameObj as string ?? "(null)";
+                Console.WriteLine($"Selected scalar `{name}`.");
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Name", "Name2");
+                command.Parameters.AddWithValue("Id", 1);
+                command.CommandText = UpdateCommandText;
+                int records = await command.ExecuteNonQueryAsync();
+
+                Console.WriteLine($"Updated {records} record(s).");
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Id", 1);
+                command.CommandText = SelectManyCommandText;
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    var employees = reader.AsDataRecords()
+                                          .Select(
+                                               r => new
+                                               {
+                                                   Id = (int)r["Id"],
+                                                   Name = (string)r["Name"]
+                                               })
+                                          .ToList();
+
+                    Console.WriteLine($"Selected {employees.Count} record(s).");
+                }
+
+                using (var reader = await command.ExecuteReaderAsync(CommandBehavior.Default))
+                {
+                    var employees = reader.AsDataRecords()
+                                          .Select(
+                                               r => new
+                                               {
+                                                   Id = (int)r["Id"],
+                                                   Name = (string)r["Name"]
+                                               })
+                                          .ToList();
+
+                    Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
+                }
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.Parameters.AddWithValue("Id", 1);
+                command.CommandText = DeleteCommandText;
+                int records = await command.ExecuteNonQueryAsync();
+
+                Console.WriteLine($"Deleted {records} record(s).");
+            }
+
+            connection.Close();
         }
     }
 }
