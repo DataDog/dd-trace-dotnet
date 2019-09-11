@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var corlibVersion = new Version(corlibFileVersionString);
             var corlib461Version = new Version(corlib461FileVersionString);
             var tracerFrameworkDirectory = corlibVersion < corlib461Version ? "net45" : "net461";
-            Console.WriteLine($"tracerFrameworkDirectory = {tracerFrameworkDirectory}"); // TODO REMOVE LOGGING
+            // Console.WriteLine($"tracerFrameworkDirectory = {tracerFrameworkDirectory}"); // TODO REMOVE LOGGING
 #endif
 
             var tracerHomeDirectory = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
@@ -57,22 +57,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             string assemblyName = new AssemblyName(args.Name).Name;
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
 
-            Console.WriteLine("-----------START ASSEMBLY RESOLVE EVENT-----------");
-            Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} from {path}"); // TODO REMOVE LOGGING
-            Console.WriteLine(new System.Diagnostics.StackTrace());
-            Console.WriteLine("----------- END ASSEMBLY RESOLVE EVENT -----------");
+            // Console.WriteLine("-----------START ASSEMBLY RESOLVE EVENT-----------");
+            // Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} from {path}"); // TODO REMOVE LOGGING
+            // Console.WriteLine(new System.Diagnostics.StackTrace());
+            // Console.WriteLine("----------- END ASSEMBLY RESOLVE EVENT -----------");
 
             if (assemblyName.ToLower().Contains("datadog.trace") && File.Exists(path))
             {
                 try
                 {
-                    Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} into the Default Load Context"); // TODO REMOVE LOGGING
+                    // Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} into the Default Load Context"); // TODO REMOVE LOGGING
                     return Assembly.LoadFrom(path); // Load the main profiler and tracer into the default Assembly Load Context
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"ResolveManagedProfiler: Error trying to load {args.Name} into the Default Load Context"); // TODO REMOVE LOGGING
-                    Console.WriteLine(ex);
+                    // Console.WriteLine($"ResolveManagedProfiler: Error trying to load {args.Name} into the Default Load Context"); // TODO REMOVE LOGGING
+                    // Console.WriteLine(ex);
                     return null;
                 }
             }
@@ -80,13 +80,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             {
                 try
                 {
-                    Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} into the Profiler Load Context"); // TODO REMOVE LOGGING
+                    // Console.WriteLine($"ResolveManagedProfiler: Attempting to load {args.Name} into the Profiler Load Context"); // TODO REMOVE LOGGING
                     return DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"ResolveManagedProfiler: Error trying to load {args.Name} into the Profiler Load Context"); // TODO REMOVE LOGGING
-                    Console.WriteLine(ex);
+                    // Console.WriteLine($"ResolveManagedProfiler: Error trying to load {args.Name} into the Profiler Load Context"); // TODO REMOVE LOGGING
+                    // Console.WriteLine(ex);
                     return null;
                 }
             }
@@ -111,12 +111,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             try
             {
                 Assembly.Load(new AssemblyName("Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"));
-                Console.WriteLine($"ResolveManagedProfiler: SUCCESS, \"Datadog.Trace.ClrProfiler.Managed, Version = 1.7.0.0, Culture = neutral, PublicKeyToken = def86d061d0d2eeb\" was loaded."); // TODO REMOVE LOGGING
+                // Console.WriteLine($"ResolveManagedProfiler: SUCCESS, \"Datadog.Trace.ClrProfiler.Managed, Version = 1.7.0.0, Culture = neutral, PublicKeyToken = def86d061d0d2eeb\" was loaded."); // TODO REMOVE LOGGING
                 ManagedAssemblyFound = true;
             }
             catch
             {
-                Console.WriteLine($"ResolveManagedProfiler: FAILURE, \"Datadog.Trace.ClrProfiler.Managed, Version = 1.7.0.0, Culture = neutral, PublicKeyToken = def86d061d0d2eeb\" was not loaded."); // TODO REMOVE LOGGING
+                // Console.WriteLine($"ResolveManagedProfiler: FAILURE, \"Datadog.Trace.ClrProfiler.Managed, Version = 1.7.0.0, Culture = neutral, PublicKeyToken = def86d061d0d2eeb\" was not loaded."); // TODO REMOVE LOGGING
                 ManagedAssemblyFound = false;
             }
         }
