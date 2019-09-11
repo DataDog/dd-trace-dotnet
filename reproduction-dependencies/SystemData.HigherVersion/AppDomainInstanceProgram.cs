@@ -5,19 +5,14 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 
-namespace AppDomain.Instance
+namespace HigherVersion.WithNoRef
 {
-    public class LowerVersionProgram : MarshalByRefObject
+    public class AppDomainInstanceProgram : MarshalByRefObject
     {
         public NestedProgram WorkerProgram { get; set; }
 
         public int Main(string[] args)
         {
-            var traceLibraryLoad = typeof(Datadog.Trace.Tracer);
-            var integrationsLibraryLoad = typeof(Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration);
-
-            Console.WriteLine($"Loaded: {traceLibraryLoad.Assembly.FullName}");
-            Console.WriteLine($"Loaded: {integrationsLibraryLoad.Assembly.FullName}");
             Console.WriteLine("Starting AppDomain Instance Test");
 
             string appDomainName = "crash-dummy";

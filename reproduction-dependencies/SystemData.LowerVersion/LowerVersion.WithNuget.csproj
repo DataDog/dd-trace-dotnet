@@ -9,8 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="1.4.0" />
-    <PackageReference Include="Datadog.Trace.ClrProfiler.Managed" Version="1.4.0" />
+    <!--<PackageReference Include="Datadog.Trace" Version="1.4.0" />
+    <PackageReference Include="Datadog.Trace.ClrProfiler.Managed" Version="1.4.0" />-->
+    <PackageReference Include="System.Net.Http" Version="4.1.1" />
   </ItemGroup>
 
 </Project>
