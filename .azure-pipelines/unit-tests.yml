@@ -69,6 +69,19 @@ jobs:
     vmImage: windows-2019
 
   steps:
+  - task: DotNetCoreInstaller@0
+    displayName: install dotnet core sdk
+    inputs:
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      projects: |
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+
   - task: NuGetCommand@2
     displayName: nuget restore
     inputs:
@@ -82,7 +95,7 @@ jobs:
       solution: Datadog.Trace.proj
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
-      msbuildArguments: /restore /t:BuildCpp;BuildCppTests
+      msbuildArguments: /t:BuildCpp;BuildCppTests
       maximumCpuCount: true
 
   - script: Datadog.Trace.ClrProfiler.Native.Tests.exe --gtest_output=xml

@@ -83,7 +83,7 @@ jobs:
       solution: Datadog.Trace.proj
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
-      msbuildArguments: /restore /t:BuildCpp
+      msbuildArguments: /t:BuildCpp
       maximumCpuCount: true
 
   - task: DotNetCoreCLI@2
