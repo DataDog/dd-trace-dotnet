@@ -138,6 +138,9 @@ jobs:
         !reproductions/**/EntityFramework6x*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
 
+  - script: dir /s /b $(publishOutput)
+    displayName: 'List files in the managed profiler directory'
+
   - task: NuGetCommand@2
     displayName: 'nuget restore reproductions/**/packages.config'
     inputs:
