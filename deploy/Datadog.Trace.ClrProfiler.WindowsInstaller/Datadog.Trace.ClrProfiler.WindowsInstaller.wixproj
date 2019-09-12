@@ -35,6 +35,9 @@
     <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Files.Managed.Net45.wxs" />
+    <Compile Include="Files.Managed.Net461.wxs" />
+    <Compile Include="Files.Managed.NetStandard20.wxs" />
     <Compile Include="Product.wxs" />
     <Compile Include="WixUI_InstallDir_Custom.wxs" />
   </ItemGroup>

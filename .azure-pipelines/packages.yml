@@ -34,6 +34,14 @@ jobs:
     inputs:
       preferBundledVersion: false
 
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+    inputs:
+      command: build
+      configuration: $(buildConfiguration)
+      projects: |
+        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+
   - task: NuGetCommand@2
     displayName: nuget restore native
     inputs:

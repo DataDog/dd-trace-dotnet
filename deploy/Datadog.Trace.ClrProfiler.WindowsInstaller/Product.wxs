@@ -36,6 +36,8 @@
       <ComponentGroupRef Id="Files"/>
       <ComponentGroupRef Id="Files.Native"/>
       <ComponentGroupRef Id="Files.Managed.Net45"/>
+      <ComponentGroupRef Id="Files.Managed.Net461"/>
+      <ComponentGroupRef Id="Files.Managed.NetStandard20"/>
       <ComponentGroupRef Id="EmptyFolders"/>
       <ComponentGroupRef Id="Registry"/>
       <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
@@ -51,6 +53,15 @@
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
             <!-- ".\.NET Tracer" -->
+              <Directory Id="net45" Name="net45">
+                <!-- ".\net45" -->
+              </Directory>
+              <Directory Id="net461" Name="net461">
+                <!-- ".\net461" -->
+              </Directory>
+              <Directory Id="netstandard2.0" Name="netstandard2.0">
+                <!-- ".\netstandard2.0" -->
+              </Directory>
           </Directory>
         </Directory>
       </Directory>
@@ -71,39 +82,6 @@
     <ComponentGroup Id="Files" Directory="INSTALLFOLDER">
       <Component Win64="$(var.Win64)">
         <File Id="integrations.json" Source="..\..\integrations.json" />
-      </Component>
-    </ComponentGroup>
-
-    <ComponentGroup Id="Files.Managed.Net45" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.Win64)">
-        <File Id="net45_Datadog.Trace.ClrProfiler.Managed.dll"
-              Source="$(var.ManagedDllPath)\Datadog.Trace.ClrProfiler.Managed.dll"
-              KeyPath="yes" Checksum="yes" Assembly=".net"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net45_Datadog.Trace.dll"
-              Source="$(var.ManagedDllPath)\Datadog.Trace.dll"
-              KeyPath="yes" Checksum="yes" Assembly=".net"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net45_MsgPack.dll"
-              Source="$(var.ManagedDllPath)\MsgPack.dll"
-              KeyPath="yes" Checksum="yes" Assembly=".net"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net45_Newtonsoft.Json.dll"
-              Source="$(var.ManagedDllPath)\Newtonsoft.Json.dll"
-              KeyPath="yes" Checksum="yes" Assembly=".net"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net45_Sigil.dll"
-              Source="$(var.ManagedDllPath)\Sigil.dll"
-              KeyPath="yes" Checksum="yes" Assembly=".net"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net45_System.Runtime.InteropServices.RuntimeInformation.dll"
-              Source="$(var.ManagedDllPath)\System.Runtime.InteropServices.RuntimeInformation.dll"
-              KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
     </ComponentGroup>
 
