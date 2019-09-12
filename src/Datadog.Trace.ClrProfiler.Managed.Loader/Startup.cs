@@ -14,11 +14,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         /// </summary>
         static Startup()
         {
-            if (TryLoadManagedAssembly())
-            {
-                ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
-                AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
-            }
+            ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+            AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
+            TryLoadManagedAssembly();
         }
 
         internal static string ManagedProfilerDirectory { get; }
