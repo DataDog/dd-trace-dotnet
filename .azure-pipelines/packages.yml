@@ -91,6 +91,7 @@ jobs:
       command: publish
       publishWebProjects: false
       modifyOutputPath: false
+      zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework net45 --output $(publishOutput)/net45
 
@@ -100,6 +101,7 @@ jobs:
       command: publish
       publishWebProjects: false
       modifyOutputPath: false
+      zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework net461 --output $(publishOutput)/net461
 
@@ -109,6 +111,7 @@ jobs:
       command: publish
       publishWebProjects: false
       modifyOutputPath: false
+      zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
@@ -152,6 +155,19 @@ jobs:
       command: build
       projects: src/**/*.csproj
       arguments: --configuration $(buildConfiguration)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework netstandard2.0
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
+  - bash: rm -r $(publishOutput)/netstandard2.0/runtimes
+    displayName: Remove netstandard2.0/runtimes directory
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
