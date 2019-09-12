@@ -38,6 +38,8 @@
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
     </ItemGroup>
 
+    <Message Text="ManagedProfilerOutputDirectory = $(ManagedProfilerOutputDirectory)" Importance="High" />
+    <Message Text="ManagedProfilerFiles = @(ManagedProfilerFiles)" Importance="High" />
     <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
   </Target>
 </Project>
