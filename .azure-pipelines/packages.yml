@@ -90,6 +90,7 @@ jobs:
     inputs:
       command: publish
       publishWebProjects: false
+      modifyOutputPath: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework net45 --output $(publishOutput)/net45
 
@@ -98,6 +99,7 @@ jobs:
     inputs:
       command: publish
       publishWebProjects: false
+      modifyOutputPath: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework net461 --output $(publishOutput)/net461
 
@@ -106,6 +108,7 @@ jobs:
     inputs:
       command: publish
       publishWebProjects: false
+      modifyOutputPath: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
