@@ -34,8 +34,8 @@
   <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild" Condition=" '$(LoadManagedProfilerFromProfilerDirectory)' == 'true'">
     <ItemGroup>
       <!-- Subfolders of the output directory should each be a target framework -->
-      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\*\*.dll" />
-      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\*\*.pdb" />
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
     </ItemGroup>
 
     <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />

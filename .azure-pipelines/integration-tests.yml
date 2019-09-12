@@ -119,10 +119,9 @@ jobs:
     inputs:
       command: restore
       projects: |
-        samples/Samples.HttpMessageHandler/Samples.HttpMessageHandler.csproj
-        samples/Samples.GraphQL/Samples.GraphQL.csproj
-        test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         reproductions/**/*.csproj
+        samples/**/*.csproj
+        test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
         !reproductions/**/EntityFramework6x*.csproj
       vstsFeed: $(packageFeed)
