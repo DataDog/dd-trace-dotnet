@@ -34,12 +34,18 @@
   <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild" Condition=" '$(LoadManagedProfilerFromProfilerDirectory)' == 'true'">
     <ItemGroup>
       <!-- Subfolders of the output directory should each be a target framework -->
-      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" />
-      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" />
+      <ManagedProfilerFiles_net45 Include="$(ManagedProfilerOutputDirectory)\net45\*.dll;$(ManagedProfilerOutputDirectory)\net45\*.pdb" />
+      <ManagedProfilerFiles_net461 Include="$(ManagedProfilerOutputDirectory)\net461\*.dll;$(ManagedProfilerOutputDirectory)\net461\*.pdb" />
+      <ManagedProfilerFiles_netstandard20 Include="$(ManagedProfilerOutputDirectory)\netstandard2.0\*.dll;$(ManagedProfilerOutputDirectory)\netstandard2.0\*.pdb" />
+      <ManagedProfilerFiles Include="@(ManagedProfilerFiles_net45);@(ManagedProfilerFiles_net461);@(ManagedProfilerFiles_netstandard20)" />
     </ItemGroup>
 
+    <!-- Remove the following debugging statements when it works in CI-->
     <Message Text="ManagedProfilerOutputDirectory = $(ManagedProfilerOutputDirectory)" Importance="High" />
     <Message Text="ManagedProfilerFiles = @(ManagedProfilerFiles)" Importance="High" />
-    <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
+
+    <Copy SourceFiles="@(ManagedProfilerFiles_net45)" DestinationFolder="$(OutputPath)profiler-lib\net45" />
+    <Copy SourceFiles="@(ManagedProfilerFiles_net461)" DestinationFolder="$(OutputPath)profiler-lib\net461" />
+    <Copy SourceFiles="@(ManagedProfilerFiles_netstandard20)" DestinationFolder="$(OutputPath)profiler-lib\netstandard2.0" />
   </Target>
 </Project>
