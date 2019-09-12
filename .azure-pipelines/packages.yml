@@ -8,6 +8,7 @@ variables:
   buildConfiguration: release
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
   dotnetCoreSdkVersion: 2.2.401
+  publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
 jobs:
 
@@ -83,6 +84,27 @@ jobs:
     inputs:
       artifactName: nuget-packages
       targetPath: nuget-output
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net45
+    inputs:
+      command: publish
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework net45 --output $(publishOutput)/net45
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net461
+    inputs:
+      command: publish
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework net461 --output $(publishOutput)/net461
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework netstandard2.0
+    inputs:
+      command: publish
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
   - task: MSBuild@1
     displayName: msbuild msi

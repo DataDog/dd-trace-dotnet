@@ -13,6 +13,7 @@ variables:
   buildConfiguration: Debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
   dotnetCoreSdkVersion: 2.2.401
+  publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
 jobs:
 
@@ -70,6 +71,27 @@ jobs:
         src/**/*.csproj
       arguments: --configuration $(buildConfiguration)
 
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net45
+    inputs:
+      command: publish
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework net45 --output $(publishOutput)/net45
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net461
+    inputs:
+      command: publish
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework net461 --output $(publishOutput)/net461
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework netstandard2.0
+    inputs:
+      command: publish
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
   - task: NuGetCommand@2
     displayName: nuget restore native
     inputs:
@@ -109,7 +131,7 @@ jobs:
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
         !reproductions/**/EntityFramework6x*.csproj
-      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform)
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
 
   - task: NuGetCommand@2
     displayName: 'nuget restore reproductions/**/packages.config'
