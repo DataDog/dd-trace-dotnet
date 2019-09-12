@@ -74,23 +74,23 @@ jobs:
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net45
     inputs:
-      command: publish
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework net45 --output $(publishOutput)/net45
+      command: custom
+      custom: publish
+      arguments: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj --configuration $(buildConfiguration) --framework net45 --output $(publishOutput)/net45
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net461
     inputs:
-      command: publish
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework net461 --output $(publishOutput)/net461
+      command: custom
+      custom: publish
+      arguments: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj --configuration $(buildConfiguration) --framework net461 --output $(publishOutput)/net461
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework netstandard2.0
     inputs:
-      command: publish
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+      command: custom
+      custom: publish
+      arguments: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
   - task: NuGetCommand@2
     displayName: nuget restore native
