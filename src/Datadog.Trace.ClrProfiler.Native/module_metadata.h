@@ -19,16 +19,23 @@ class ModuleMetadata {
  public:
   const ComPtr<IMetaDataImport2> metadata_import{};
   const ComPtr<IMetaDataEmit2> metadata_emit{};
+  const ComPtr<IMetaDataAssemblyImport> assembly_import{};
+  const ComPtr<IMetaDataAssemblyEmit> assembly_emit{};
   WSTRING assemblyName = ""_W;
   GUID module_version_id;
   std::vector<IntegrationMethod> integrations = {};
 
   ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import,
-                 ComPtr<IMetaDataEmit2> metadata_emit, WSTRING assembly_name,
+                 ComPtr<IMetaDataEmit2> metadata_emit,
+                 ComPtr<IMetaDataAssemblyImport> assembly_import,
+                 ComPtr<IMetaDataAssemblyEmit> assembly_emit,
+                 WSTRING assembly_name,
                  GUID module_version_id,
                  std::vector<IntegrationMethod> integrations)
       : metadata_import(metadata_import),
         metadata_emit(metadata_emit),
+        assembly_import(assembly_import),
+        assembly_emit(assembly_emit),
         assemblyName(assembly_name),
         module_version_id(module_version_id),
         integrations(integrations) {}

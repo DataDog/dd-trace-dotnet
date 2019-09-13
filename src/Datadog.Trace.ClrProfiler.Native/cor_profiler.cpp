@@ -318,8 +318,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   ModuleMetadata* module_metadata = new ModuleMetadata(
-      metadata_import, metadata_emit, module_info.assembly.name,
-      module_version_id, filtered_integrations);
+      metadata_import, metadata_emit, assembly_import, assembly_emit,
+      module_info.assembly.name, module_version_id, filtered_integrations);
 
   // DELETED: for each wrapper assembly, emit an assembly reference
 
@@ -448,46 +448,28 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      ComPtr<IUnknown> metadata_interfaces;
-      auto hr = this->info_->GetModuleMetaData(
-          module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-          metadata_interfaces.GetAddressOf());
-      if (FAILED(hr)) {
-        Warn(
-            "GenerateVoidILStartupMethod: failed to get metadata interface "
-            "for ",
-            module_id);
-        continue;
-      }
-
-      const auto metadata_import =
-          metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-      const auto metadata_emit =
-          metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-      const auto assembly_import =
-          metadata_interfaces.As<IMetaDataAssemblyImport>(
-              IID_IMetaDataAssemblyImport);
-      const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(
-          IID_IMetaDataAssemblyEmit);
-
       mdModule module;
-      hr = metadata_import->GetModuleFromScope(&module);
+      hr = module_metadata->metadata_import->GetModuleFromScope(&module);
       if (FAILED(hr)) {
-        Warn("ModuleLoadFinished failed to get module metadata token for ",
-             module_id, " ", module_info.assembly.name);
+        Warn("JITCompilationStarted failed to get module metadata token for module_id=",
+             module_id, " module_name=", module_info.assembly.name, " function_id=", function_id,
+             " token=", function_token, " name=", caller.type.name, ".",
+             caller.name, "()");
         continue;
       }
 
       const MetadataBuilder metadata_builder(*module_metadata, module,
-                                             metadata_import, metadata_emit,
-                                             assembly_import, assembly_emit);
+                                             module_metadata->metadata_import, module_metadata->metadata_emit,
+                                             module_metadata->assembly_import, module_metadata->assembly_emit);
 
       // for each wrapper assembly, emit an assembly reference
       hr = metadata_builder.EmitAssemblyRef(
           method_replacement.wrapper_method.assembly);
       if (FAILED(hr)) {
-        Warn("JITCompilationStarted failed to emit wrapper assembly ref for ",
-             module_id, " ", module_info.assembly.name);
+        Warn("JITCompilationStarted failed to emit wrapper assembly ref for module_id=",
+             module_id, " module_name=", module_info.assembly.name, " function_id=", function_id,
+             " token=", function_token, " name=", caller.type.name, ".",
+             caller.name, "()");
         continue;
       }
 
@@ -496,9 +478,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
       if (FAILED(hr)) {
         Warn(
-            "JITCompilationStarted failed to emit or store wrapper method ref "
-            "for ",
-            module_id, " ", module_info.assembly.name);
+            "JITCompilationStarted failed to emit or store wrapper method ref for module_id=",
+            module_id, " module_name=", module_info.assembly.name, " function_id=", function_id,
+            " token=", function_token, " name=", caller.type.name, ".",
+            caller.name, "()");
         continue;
       }
     }
