@@ -114,7 +114,11 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
 
   mdTypeRef type_ref = mdTypeRefNil;
   HRESULT hr = FindWrapperTypeRef(method_replacement, type_ref);
-  RETURN_IF_FAILED(hr);
+  if (FAILED(hr)) {
+    // Record that this cache_key failed
+    metadata_.SetFailedWrapperMemberKey(cache_key);
+    return hr;
+  }
 
   member_ref = mdMemberRefNil;
 
@@ -133,7 +137,11 @@ HRESULT MetadataBuilder::StoreWrapperMethodRef(
         &member_ref);
   }
 
-  RETURN_IF_FAILED(hr);
+  if (FAILED(hr)) {
+    // Record that this cache_key failed
+    metadata_.SetFailedWrapperMemberKey(cache_key);
+    return hr;
+  }
 
   metadata_.SetWrapperMemberRef(cache_key, member_ref);
   return S_OK;

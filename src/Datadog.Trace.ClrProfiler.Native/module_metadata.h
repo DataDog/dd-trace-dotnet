@@ -3,6 +3,7 @@
 
 #include <corhlpr.h>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "clr_helpers.h"
 #include "com_ptr.h"
@@ -15,6 +16,7 @@ class ModuleMetadata {
  private:
   std::unordered_map<WSTRING, mdMemberRef> wrapper_refs{};
   std::unordered_map<WSTRING, mdTypeRef> wrapper_parent_type{};
+  std::unordered_set<WSTRING> failed_wrapper_keys{};
 
  public:
   const ComPtr<IMetaDataImport2> metadata_import{};
@@ -64,6 +66,16 @@ class ModuleMetadata {
     return false;
   }
 
+  bool IsFailedWrapperMemberKey(const WSTRING& key) const {
+    const auto search = failed_wrapper_keys.find(key);
+
+    if (search != failed_wrapper_keys.end()) {
+      return true;
+    }
+
+    return false;
+  }
+
   void SetWrapperMemberRef(const WSTRING& keyIn, const mdMemberRef valueIn) {
     wrapper_refs[keyIn] = valueIn;
   }
@@ -72,16 +84,20 @@ class ModuleMetadata {
     wrapper_parent_type[keyIn] = valueIn;
   }
 
+  void SetFailedWrapperMemberKey(const WSTRING& key) {
+    failed_wrapper_keys.insert(key);
+  }
+
   inline std::vector<MethodReplacement> GetMethodReplacementsForCaller(
       const trace::FunctionInfo& caller) {
     std::vector<MethodReplacement> enabled;
     for (auto& i : integrations) {
-        if ((i.replacement.caller_method.type_name.empty() ||
-             i.replacement.caller_method.type_name == caller.type.name) &&
-            (i.replacement.caller_method.method_name.empty() ||
-             i.replacement.caller_method.method_name == caller.name)) {
-          enabled.push_back(i.replacement);
-        }
+      if ((i.replacement.caller_method.type_name.empty() ||
+           i.replacement.caller_method.type_name == caller.type.name) &&
+          (i.replacement.caller_method.method_name.empty() ||
+           i.replacement.caller_method.method_name == caller.name)) {
+        enabled.push_back(i.replacement);
+      }
     }
     return enabled;
   }
