@@ -25,10 +25,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
-            string assemblyName = new AssemblyName(args.Name).Name;
-            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
+            var assemblyName = new AssemblyName(args.Name);
+            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
 
-            if (assemblyName.ToLower().Contains("datadog.trace") && File.Exists(path))
+            if (assemblyName.Name.Contains("Datadog.Trace")
+                && assemblyName.FullName.Contains("PublicKeyToken=def86d061d0d2eeb")
+                && File.Exists(path))
             {
                 return Assembly.LoadFrom(path); // Load the main profiler and tracer into the default Assembly Load Context
             }
