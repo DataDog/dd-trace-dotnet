@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using Datadog.Trace.ClrProfiler.Managed;
+using Datadog.Trace.ClrProfiler;
 using System;
 using System.Linq;
 using System.Collections.Generic;
