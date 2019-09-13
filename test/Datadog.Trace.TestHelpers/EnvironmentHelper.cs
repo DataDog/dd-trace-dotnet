@@ -224,11 +224,6 @@ namespace Datadog.Trace.TestHelpers
                 processName = Path.GetFileName(processPath);
             }
 
-            foreach (string path in Directory.EnumerateFiles(Path.GetDirectoryName(profilerPath), "*", SearchOption.AllDirectories))
-            {
-                _output?.WriteLine($"File in profilerPath: {path}");
-            }
-
             environmentVariables["DD_PROFILER_PROCESSES"] = processName;
 
             string integrations = string.Join(";", GetIntegrationsFilePaths());

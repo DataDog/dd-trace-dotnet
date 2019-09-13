@@ -4,7 +4,7 @@ using System.Runtime.Loader;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
-    internal class ManagedProfilerContext : AssemblyLoadContext
+    internal class ManagedProfilerAssemblyLoadContext : AssemblyLoadContext
     {
         protected override Assembly Load(AssemblyName assemblyName)
         {

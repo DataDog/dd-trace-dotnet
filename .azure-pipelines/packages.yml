@@ -174,9 +174,6 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
-  - bash: rm -r $(publishOutput)/netstandard2.0/runtimes
-    displayName: Remove netstandard2.0/runtimes directory
-
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
     inputs:

@@ -10,9 +10,9 @@
     <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
   </PropertyGroup>
 
-  <!-- For testing purposes, copy all implementation assemblies to the output directory -->
-  <!-- Note, this does not change the results of the dotnet pack command -->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+  <!-- For VS testing purposes only, copy all implementation assemblies to the
+       to test the loading of managed profiler assemblies from disk -->
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' and '$(TargetFramework)' == 'netstandard2.0'">
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
