@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
 
             if (assemblyName.Name.StartsWith("Datadog.Trace", StringComparison.OrdinalIgnoreCase)
-                && assemblyName.FullName.Contains("PublicKeyToken=def86d061d0d2eeb")
+                && assemblyName.FullName.IndexOf("PublicKeyToken=def86d061d0d2eeb", StringComparison.OrdinalIgnoreCase) >= 0
                 && File.Exists(path))
             {
                 return Assembly.LoadFrom(path); // Load the main profiler and tracer into the default Assembly Load Context
