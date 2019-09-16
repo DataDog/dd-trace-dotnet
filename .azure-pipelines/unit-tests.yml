@@ -30,6 +30,12 @@ jobs:
 
   steps:
   - task: UseDotNet@2
+    displayName: install dotnet core 2.1 sdk
+    inputs:
+      packageType: sdk
+      version: $(dotnetCore21SdkVersion)
+
+  - task: UseDotNet@2
     displayName: install dotnet core 3.0 sdk
     inputs:
       packageType: sdk
