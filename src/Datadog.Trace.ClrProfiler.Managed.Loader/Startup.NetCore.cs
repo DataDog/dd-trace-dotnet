@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var assemblyName = new AssemblyName(args.Name);
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
 
-            if (assemblyName.Name.Contains("Datadog.Trace")
+            if (assemblyName.Name.StartsWith("Datadog.Trace", StringComparison.OrdinalIgnoreCase)
                 && assemblyName.FullName.Contains("PublicKeyToken=def86d061d0d2eeb")
                 && File.Exists(path))
             {
