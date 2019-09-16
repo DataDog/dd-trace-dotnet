@@ -11,7 +11,7 @@ trigger:
 variables:
   buildConfiguration: Debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
-  dotnetCoreSdkVersion: 2.2.401
+  dotnetCoreSdkVersion: 3.0.x
 
 jobs:
 
@@ -27,10 +27,11 @@ jobs:
     vmImage: $(imageName)
 
   steps:
-  - task: DotNetCoreInstaller@0
+  - task: UseDotNet@2
     displayName: install dotnet core sdk
     inputs:
       version: $(dotnetCoreSdkVersion)
+      includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
