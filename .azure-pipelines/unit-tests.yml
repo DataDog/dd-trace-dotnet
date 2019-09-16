@@ -78,18 +78,21 @@ jobs:
     vmImage: windows-2019
 
   steps:
-  - task: DotNetCoreInstaller@0
-    displayName: install dotnet core sdk
+  - task: UseDotNet@2
+    displayName: install dotnet core 3.0 sdk
     inputs:
+      packageType: sdk
       version: $(dotnetCoreSdkVersion)
+      includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+    displayName: dotnet build
     inputs:
       command: build
       configuration: $(buildConfiguration)
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        sample-libs/**/Samples.ExampleLibrary*.csproj
 
   - task: NuGetCommand@2
     displayName: nuget restore
