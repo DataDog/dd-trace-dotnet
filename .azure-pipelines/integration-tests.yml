@@ -13,6 +13,7 @@ variables:
   buildConfiguration: Debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
   dotnetCoreSdkVersion: 3.0.x
+  dotnetCore21RuntimeVersion: 2.1.x
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
 jobs:
@@ -59,9 +60,17 @@ jobs:
 
   steps:
   - task: UseDotNet@2
-    displayName: install dotnet core sdk
+    displayName: install dotnet core 3.0 sdk
     inputs:
+      packageType: sdk
       version: $(dotnetCoreSdkVersion)
+      includePreviewVersions: true
+
+  - task: UseDotNet@2
+    displayName: install dotnet core 2.1 runtime
+    inputs:
+      packageType: runtime
+      version: $(dotnetCore21RuntimeVersion)
       includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
