@@ -18,7 +18,7 @@ namespace MultiHostOptimization.Crash
         private static System.AppDomain appDomain1;
         private static System.AppDomain appDomain2;
 
-        [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
+        // [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
         static void Main(string[] args)
         {
             List<Thread> threads = new List<Thread>();
@@ -44,8 +44,8 @@ namespace MultiHostOptimization.Crash
 
             var domainTasks = new List<Task>
             {
+                Task.Run(runHigherVersionDomain),
                 Task.Run(runLowerVersionDomain),
-              // Task.Run(runHigherVersionDomain),
             };
 
             _gate.Set();

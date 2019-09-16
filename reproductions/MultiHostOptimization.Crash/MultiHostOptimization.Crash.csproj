@@ -3,9 +3,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461</TargetFrameworks>
-    <Platforms>x64;x86</Platforms>
+    <Platforms>x64</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
     <IsPackable>false</IsPackable>
+    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
+    <ExcludeNativeFiles>true</ExcludeNativeFiles>
   </PropertyGroup>
 
   <ItemGroup>
