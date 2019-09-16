@@ -117,6 +117,7 @@
       <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
         <CreateFolder/>
         <Environment Id="DD_INTEGRATIONS" Name="DD_INTEGRATIONS" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]integrations.json" Part="all" />
+        <Environment Id="DD_DOTNET_TRACER_HOME" Name="DD_DOTNET_TRACER_HOME" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]" Part="all" />
       </Component>
     </ComponentGroup>
 
