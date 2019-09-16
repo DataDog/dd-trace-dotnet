@@ -3,8 +3,6 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace AppDomain.Instance
@@ -16,6 +14,8 @@ namespace AppDomain.Instance
         public int Main(string[] args)
         {
             Console.WriteLine("Starting AppDomain Instance Test");
+            Console.WriteLine($"Full entry type name: {this.GetType().FullName}");
+            Console.WriteLine($"Assembly qualified entry type name: {this.GetType().AssemblyQualifiedName}");
 
             string appDomainName = "crash-dummy";
             int index = 1;

@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "SystemData.LowerVersion": {
+    "HigherVersions.AppDomain": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "0",

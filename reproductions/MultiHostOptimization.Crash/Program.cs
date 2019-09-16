@@ -1,21 +1,19 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Security;
 using System.Security.Permissions;
-using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
-using AppDomain.Instance;
 using Datadog.Trace.TestHelpers;
 
 namespace MultiHostOptimization.Crash
 {
     public class Program
     {
+        private static ConcurrentQueue<string> _consoleMessages = new ConcurrentQueue<string>();
         private static ManualResetEventSlim _gate = new ManualResetEventSlim(initialState: false);
         private static System.AppDomain appDomain1;
         private static System.AppDomain appDomain2;
@@ -26,38 +24,53 @@ namespace MultiHostOptimization.Crash
             List<Thread> threads = new List<Thread>();
             int index = 0;
 
+            _gate.Reset();
+
             PermissionSet ps = new PermissionSet(PermissionState.Unrestricted);
-            Func<Task> runFirst = () =>
+            Func<Task> runHigherVersionDomain = () =>
             {
-                _gate.Wait();
-                appDomain1 = CreateAndRunAppDomain(index++, ps, "HigherVersion.WithNoRef");
+                _consoleMessages.Enqueue($"{DateTime.Now.Ticks} - Waiting to start higher version AppDomain");
+                // _gate.Wait();
+                appDomain1 = CreateAndRunAppDomain(index++, ps, "HigherVersions.AppDomain");
                 return Task.FromResult(0);
             };
-            Func<Task> runSecond = () =>
+            Func<Task> runLowerVersionDomain = () =>
             {
-                _gate.Wait();
-                appDomain2 = CreateAndRunAppDomain(index++, ps, "LowerVersion.WithNuget");
+                _consoleMessages.Enqueue($"{DateTime.Now.Ticks} - Waiting to start lower version AppDomain");
+                // _gate.Wait();
+                appDomain2 = CreateAndRunAppDomain(index++, ps, "LowerVersions.AppDomain");
                 return Task.FromResult(0);
             };
 
-            var firstTask = runFirst();
-            var secondTask = runSecond();
-
-            Task.WaitAll(firstTask, secondTask);
-
-            if (firstTask.IsFaulted)
+            var domainTasks = new List<Task>
             {
-                throw firstTask.Exception;
+                Task.Run(runLowerVersionDomain),
+              // Task.Run(runHigherVersionDomain),
+            };
+
+            _gate.Set();
+
+            Task.WaitAll(domainTasks.ToArray());
+
+            while (_consoleMessages.TryDequeue(out var message))
+            {
+                Console.WriteLine(message);
             }
 
-            if (secondTask.IsFaulted)
+            var faultedTasks = domainTasks.Where(t => t.IsFaulted).ToList();
+            if (faultedTasks.Any())
             {
-                throw secondTask.Exception;
+                foreach (var faultedTask in faultedTasks)
+                {
+                    Console.WriteLine(faultedTask.Exception.ToString());
+                }
             }
         }
 
         private static System.AppDomain CreateAndRunAppDomain(int index, PermissionSet grantSet, string appName)
         {
+            Console.WriteLine($"{DateTime.Now.Ticks} - Starting AppDomain {appName}");
+
             var applicationBase =
                 Path.Combine(
                     EnvironmentHelper.GetSolutionDirectory(),
@@ -68,6 +81,13 @@ namespace MultiHostOptimization.Crash
                     "Debug",
                     "net461",
                     "win-x64");
+
+            var applicationPath = Path.Combine(applicationBase, $"{appName}.dll");
+
+            if (!File.Exists(applicationPath))
+            {
+                throw new Exception("Application not found at: " + applicationPath);
+            }
 
             // Construct and initialize settings for a second AppDomain.
             AppDomainSetup ads = new AppDomainSetup
@@ -85,23 +105,19 @@ namespace MultiHostOptimization.Crash
                 ads,
                 grantSet);
 
-            var programInstance = appDomain.CreateInstanceAndUnwrap(
-                appName,
+            var actualAssemblyName =
+                typeof(DogServer.Shared.DogServer)
+                   .Assembly
+                   .FullName
+                   .Replace("DogServer.Shared", appName);
+
+            var dogServer = (DogServer.Shared.DogServer)appDomain.CreateInstanceAndUnwrap(
+                actualAssemblyName,
                 $"{appName}.AppDomainInstanceProgram");
 
-            var argsToPass = new object[] { name, index.ToString() };
-
-            var programType = programInstance.GetType();
-            var mainMethod = 
-                programType
-                   .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-                   .Single(m => m.Name == "Main");
-
-            mainMethod.Invoke(programInstance, argsToPass);
-
-            Console.WriteLine("**********************************************");
-            Console.WriteLine($"Finished executing in AppDomain {name}");
-            Console.WriteLine("**********************************************");
+            var argsToPass = new string[] { name, index.ToString() };
+            dogServer.StartServer(argsToPass);
+            Console.WriteLine($"{DateTime.Now.Ticks} - Finished AppDomain {appName}: {dogServer.ServerInstanceId}");
             return appDomain;
         }
     }

@@ -5,14 +5,24 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 
-namespace HigherVersion.WithNoRef
+namespace LowerVersions.AppDomain
 {
-    public class AppDomainInstanceProgram : MarshalByRefObject
+    public class AppDomainInstanceProgram : DogServer.Shared.DogServer
     {
         public NestedProgram WorkerProgram { get; set; }
 
-        public int Main(string[] args)
+        public override int StartServer(string[] args)
         {
+            Console.WriteLine("Starting AppDomain Instance Test");
+            Console.WriteLine($"Full entry type name: {this.GetType().FullName}");
+            Console.WriteLine($"Assembly qualified entry type name: {this.GetType().AssemblyQualifiedName}");
+
+            // var traceLibraryLoad = typeof(Datadog.Trace.Tracer);
+            // var integrationsLibraryLoad = typeof(Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration);
+
+            // Console.WriteLine($"Loaded: {traceLibraryLoad.Assembly.FullName}");
+            // Console.WriteLine($"Loaded: {integrationsLibraryLoad.Assembly.FullName}");
+
             Console.WriteLine("Starting AppDomain Instance Test");
 
             string appDomainName = "crash-dummy";

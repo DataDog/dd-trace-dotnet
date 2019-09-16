@@ -14,4 +14,8 @@
     <PackageReference Include="System.Net.Http" Version="4.1.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DogServer.Shared\DogServer.Shared.csproj" />
+  </ItemGroup>
+
 </Project>
