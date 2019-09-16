@@ -13,7 +13,7 @@ variables:
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
   dotnetCoreSdkVersion: 3.0.x
   dotnetCore22SdkVersion: 2.2.x
-  dotnetCore21RuntimeVersion: 2.1.x
+  dotnetCore21SdkVersion: 2.1.x
 
 jobs:
 
@@ -30,17 +30,17 @@ jobs:
 
   steps:
   - task: UseDotNet@2
+    displayName: install dotnet core 2.1 sdk
+    inputs:
+      packageType: sdk
+      version: $(dotnetCore21SdkVersion)
+
+  - task: UseDotNet@2
     displayName: install dotnet core 3.0 sdk
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
       includePreviewVersions: true
-
-  - task: UseDotNet@2
-    displayName: install dotnet core 2.1 runtime
-    inputs:
-      packageType: runtime
-      version: $(dotnetCore21RuntimeVersion)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
