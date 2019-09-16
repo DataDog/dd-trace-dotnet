@@ -28,19 +28,18 @@ jobs:
     vmImage: $(imageName)
 
   steps:
-  - task: UseDotNet@2
+  - task: DotNetCoreInstaller@0
     displayName: install dotnet core 3.0 sdk
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
       includePreviewVersions: true
 
-  - task: UseDotNet@2
+  - task: DotNetCoreInstaller@0
     displayName: install dotnet core 2.1 runtime
     inputs:
       packageType: runtime
       version: $(dotnetCore21RuntimeVersion)
-      includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
