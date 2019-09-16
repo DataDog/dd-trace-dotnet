@@ -59,14 +59,14 @@ jobs:
     buildPlatform: 'x64'
 
   steps:
-  - task: DotNetCoreInstaller@0
+  - task: UseDotNet@2
     displayName: install dotnet core 3.0 sdk
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
       includePreviewVersions: true
 
-  - task: DotNetCoreInstaller@0
+  - task: UseDotNet@2
     displayName: install dotnet core 2.1 runtime
     inputs:
       packageType: runtime
