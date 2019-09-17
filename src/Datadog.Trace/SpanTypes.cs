@@ -36,5 +36,10 @@ namespace Datadog.Trace
         /// The span type for a GraphQL integration.
         /// </summary>
         public const string GraphQL = "graphql";
+
+        /// <summary>
+        /// The span type for a custom integration.
+        /// </summary>
+        public const string Custom = "custom";
     }
 }
