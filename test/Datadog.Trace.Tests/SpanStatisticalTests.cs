@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests
         /// </summary>
         private static ulong _maxId = ulong.MaxValue / 2;
         private static int _numberOfBuckets = 20;
-        private static ulong _numberOfIdsToGenerate = 3_000_000;
+        private static ulong _numberOfIdsToGenerate = 1_500_000;
 
         // Helper numbers for logging and calculating
         private static decimal _bucketSizePercentage = 100 / _numberOfBuckets;
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Tests
             var biggestDiff = new[] { maxDiff, minDiff }.Max();
             var variance = biggestDiff / actualApproximateBucketSize;
 
-            var maximumVariance = 0.01m;
+            var maximumVariance = 0.05m;
             _output.WriteLine($"The maximum variance in all buckets is {variance}.");
             Assert.True(maximumVariance >= variance, $"The variance between buckets should be less than {maximumVariance}, but it is {variance}.");
         }
