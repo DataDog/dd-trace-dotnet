@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "ElasticsearchNet";
         private const string Version6 = "6";
         private const string ElasticsearchAssemblyName = "Elasticsearch.Net";
-        private const string RequestPipelineInterfaceName = "Elasticsearch.Net.IRequestPipeline";
+        private const string RequestPipelineInterfaceTypeName = "Elasticsearch.Net.IRequestPipeline";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNet6Integration));
 
@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = ElasticsearchAssemblyName,
             TargetAssembly = ElasticsearchAssemblyName,
-            TargetType = RequestPipelineInterfaceName,
+            TargetType = RequestPipelineInterfaceTypeName,
             TargetSignatureTypes = new[] { "T", "Elasticsearch.Net.RequestData" },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: RequestPipelineInterfaceName,
+                    instrumentedType: RequestPipelineInterfaceTypeName,
                     methodName: methodName,
                     instanceType: pipeline.GetType().AssemblyQualifiedName);
                 throw;
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = ElasticsearchAssemblyName,
             TargetAssembly = ElasticsearchAssemblyName,
-            TargetType = RequestPipelineInterfaceName,
+            TargetType = RequestPipelineInterfaceTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
@@ -165,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: RequestPipelineInterfaceName,
+                    instrumentedType: RequestPipelineInterfaceTypeName,
                     methodName: methodName,
                     instanceType: pipelineType.AssemblyQualifiedName);
                 throw;

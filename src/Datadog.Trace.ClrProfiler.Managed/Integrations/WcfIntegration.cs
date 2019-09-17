@@ -44,6 +44,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            if (channelHandler == null)
+            {
+                throw new ArgumentNullException(nameof(channelHandler));
+            }
+
             Func<object, object, object, bool> instrumentedMethod;
             var declaringType = channelHandler.GetInstrumentedType(ChannelHandlerTypeName);
 
@@ -68,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: ChannelHandlerTypeName,
                     methodName: nameof(HandleRequest),
-                    instanceType: channelHandler?.GetType().AssemblyQualifiedName);
+                    instanceType: channelHandler.GetType().AssemblyQualifiedName);
                 throw;
             }
 

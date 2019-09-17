@@ -53,6 +53,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            if (@this == null)
+            {
+                throw new ArgumentNullException(nameof(@this));
+            }
+
             Func<object, CommandBehavior, object> instrumentedMethod = null;
             var commandBehavior = (CommandBehavior)behavior;
 
@@ -76,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
                     methodName: nameof(ExecuteDbDataReader),
-                    instanceType: @this?.GetType().AssemblyQualifiedName);
+                    instanceType: @this.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -124,6 +129,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            if (@this == null)
+            {
+                throw new ArgumentNullException(nameof(@this));
+            }
+
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             var instrumentedType = typeof(DbCommand);
@@ -150,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
                     methodName: nameof(ExecuteDbDataReaderAsync),
-                    instanceType: @this?.GetType().AssemblyQualifiedName);
+                    instanceType: @this.GetType().AssemblyQualifiedName);
                 throw;
             }
 

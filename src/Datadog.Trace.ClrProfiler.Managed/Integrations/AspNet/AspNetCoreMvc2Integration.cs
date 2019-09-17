@@ -347,7 +347,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: ResourceInvokerTypeName,
                     methodName: nameof(Rethrow),
-                    instanceType: context?.GetType().AssemblyQualifiedName);
+                    instanceType: context.GetType().AssemblyQualifiedName);
                 throw;
             }
 

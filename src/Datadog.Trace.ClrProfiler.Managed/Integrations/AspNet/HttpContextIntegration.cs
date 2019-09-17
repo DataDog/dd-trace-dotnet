@@ -30,6 +30,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         // ***************************************************************
         public static void Initialize(object httpContext, object features, int opCode, int mdToken, long moduleVersionPtr)
         {
+            if (httpContext == null)
+            {
+                throw new ArgumentNullException(nameof(httpContext));
+            }
+
             var httpContextType = httpContext.GetInstrumentedType(DefaultHttpContextTypeName);
 
             Action<object, object> instrumentedMethod;
@@ -52,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: DefaultHttpContextTypeName,
                     methodName: nameof(Initialize),
-                    instanceType: httpContext?.GetType().AssemblyQualifiedName);
+                    instanceType: httpContext.GetType().AssemblyQualifiedName);
                 throw;
             }
 

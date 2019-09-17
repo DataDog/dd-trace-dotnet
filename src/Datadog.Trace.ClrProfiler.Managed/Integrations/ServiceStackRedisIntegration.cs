@@ -48,6 +48,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            if (redisNativeClient == null)
+            {
+                throw new ArgumentNullException(nameof(redisNativeClient));
+            }
+
             Func<object, byte[][], object, object, bool, T> instrumentedMethod;
 
             try
@@ -71,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: RedisNativeClient,
                     methodName: nameof(SendReceive),
-                    instanceType: redisNativeClient?.GetType().AssemblyQualifiedName);
+                    instanceType: redisNativeClient.GetType().AssemblyQualifiedName);
                 throw;
             }
 
