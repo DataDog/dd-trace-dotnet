@@ -21,21 +21,6 @@ namespace Datadog.Trace.ClrProfiler.Services
                                                                             TagsSpanDecorationService.Instance,
                                                                             TypeSpanDecorationService.Instance,
                                                                             ResourceNameDecorationService.Instance));
-
-            // WCF - multiple transports, currently only decorating if HTTP, but likely to extend
-            SpanDecorationServiceMap.Add(
-                                         typeof(WcfRequestMessageSpanIntegrationDelegate),
-                                         new CompositeSpanDecorationService(
-                                                                            TypeSpanDecorationService.Instance,
-                                                                            ResourceNameDecorationService.Instance));
-
-            SpanDecorationServiceMap.Add(
-                                         typeof(WcfHttpRequestMessageSpanIntegrationDelegate),
-                                         new CompositeSpanDecorationService(
-                                                                            TagsSpanDecorationService.Instance,
-                                                                            TypeSpanDecorationService.Instance,
-                                                                            ResourceNameDecorationService.Instance));
-
 #endif
         }
 
