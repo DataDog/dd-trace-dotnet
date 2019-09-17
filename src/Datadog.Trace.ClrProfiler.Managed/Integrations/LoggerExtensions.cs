@@ -15,12 +15,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int opCode,
             string instrumentedType,
             string methodName,
-            string instanceType = null)
-        {
+            string instanceType = null,
+            string[] relevantParameters = null)
+            {
             var instrumentedMethod = $"{instrumentedType}.{methodName}(...)";
+
             if (instanceType != null)
             {
                 instrumentedMethod = $"{instrumentedMethod} on {instanceType}";
+            }
+
+            if (relevantParameters != null)
+            {
+                instrumentedMethod = $"{instrumentedMethod} with {string.Join(", ", relevantParameters)}";
             }
 
             var moduleVersionId = PointerHelpers.GetGuidFromNativePointer(moduleVersionPointer);

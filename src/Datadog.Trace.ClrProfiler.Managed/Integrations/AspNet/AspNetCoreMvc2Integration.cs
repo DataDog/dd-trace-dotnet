@@ -190,7 +190,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: DiagnosticSourceTypeName,
                     methodName: nameof(BeforeAction),
-                    instanceType: diagnosticSource?.GetType().AssemblyQualifiedName);
+                    instanceType: null,
+                    relevantParameters: new[] { diagnosticSource?.GetType().AssemblyQualifiedName });
             }
 
             try
@@ -280,7 +281,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: DiagnosticSourceTypeName,
                     methodName: nameof(AfterAction),
-                    instanceType: diagnosticSource?.GetType().AssemblyQualifiedName);
+                    instanceType: null,
+                    relevantParameters: new[] { diagnosticSource?.GetType().AssemblyQualifiedName });
             }
 
             try
@@ -347,7 +349,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: ResourceInvokerTypeName,
                     methodName: nameof(Rethrow),
-                    instanceType: context.GetType().AssemblyQualifiedName);
+                    instanceType: null,
+                    relevantParameters: new[] { context.GetType().AssemblyQualifiedName });
                 throw;
             }
 
