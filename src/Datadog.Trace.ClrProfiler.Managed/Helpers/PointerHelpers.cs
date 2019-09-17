@@ -1,11 +1,11 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Trace.ClrProfiler.ExtensionMethods
+namespace Datadog.Trace.ClrProfiler.Helpers
 {
-    internal static class LongExtensions
+    internal static class PointerHelpers
     {
-        public static Guid GetGuidFromNativePointer(this long nativePointer)
+        public static Guid GetGuidFromNativePointer(long nativePointer)
         {
             var ptr = new IntPtr(nativePointer);
 #if NET45

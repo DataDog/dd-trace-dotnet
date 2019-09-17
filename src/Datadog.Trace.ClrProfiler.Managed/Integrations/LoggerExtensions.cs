@@ -1,5 +1,6 @@
 using System;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -22,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod = $"{instrumentedMethod} on {instanceType}";
             }
 
-            var moduleVersionId = moduleVersionPointer.GetGuidFromNativePointer();
+            var moduleVersionId = PointerHelpers.GetGuidFromNativePointer(moduleVersionPointer);
             logger.ErrorException(
                 message: $"Error (MVID: {moduleVersionId}, mdToken: {mdToken}, opCode: {opCode}) could not retrieve: {instrumentedMethod}",
                 exception: exception);

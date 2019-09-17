@@ -74,7 +74,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public static MethodBuilder<TDelegate> Start(long moduleVersionPtr, int mdToken, int opCode, string methodName)
         {
-            return new MethodBuilder<TDelegate>(moduleVersionPtr.GetGuidFromNativePointer(), mdToken, opCode, methodName);
+            return new MethodBuilder<TDelegate>(
+                PointerHelpers.GetGuidFromNativePointer(moduleVersionPtr),
+                mdToken,
+                opCode,
+                methodName);
         }
 
         public MethodBuilder<TDelegate> WithConcreteType(Type type)

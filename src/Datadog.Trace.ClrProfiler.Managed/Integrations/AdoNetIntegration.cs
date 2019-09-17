@@ -20,8 +20,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string FrameworkAssembly = "System.Data";
         private const string CoreAssembly = "System.Data.Common";
         private const string DbCommandTypeName = "System.Data.Common.DbCommand";
-        private const string SystemDataCommonDbDataReader = "System.Data.Common.DbDataReader";
-        private const string SystemDataCommonCommandBehavior = "System.Data.CommandBehavior";
+        private const string DbDataReaderTypeName = "System.Data.Common.DbDataReader";
+        private const string CommandBehaviorTypeName = "System.Data.CommandBehavior";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(AdoNetIntegration));
 
@@ -37,13 +37,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = FrameworkAssembly, // .NET Framework
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { SystemDataCommonDbDataReader, SystemDataCommonCommandBehavior },
+            TargetSignatureTypes = new[] { DbDataReaderTypeName, CommandBehaviorTypeName },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = CoreAssembly, // .NET Core
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { SystemDataCommonDbDataReader, SystemDataCommonCommandBehavior },
+            TargetSignatureTypes = new[] { DbDataReaderTypeName, CommandBehaviorTypeName },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReader(
@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteDbDataReader))
                        .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior)
-                       .WithNamespaceAndNameFilters(SystemDataCommonDbDataReader, SystemDataCommonCommandBehavior)
+                       .WithNamespaceAndNameFilters(DbDataReaderTypeName, CommandBehaviorTypeName)
                        .Build();
             }
             catch (Exception ex)
@@ -112,13 +112,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = FrameworkAssembly, // .NET Framework
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", SystemDataCommonCommandBehavior, ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", CommandBehaviorTypeName, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = CoreAssembly, // .NET Core
             TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", SystemDataCommonCommandBehavior, ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", CommandBehaviorTypeName, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteDbDataReaderAsync(
@@ -148,7 +148,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteDbDataReaderAsync))
                        .WithConcreteType(instrumentedType)
                        .WithParameters(commandBehavior, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, SystemDataCommonCommandBehavior, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, CommandBehaviorTypeName, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
