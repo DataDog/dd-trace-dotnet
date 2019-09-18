@@ -1,9 +1,11 @@
 #if !NETSTANDARD2_0
+
 using System;
+using System.Net;
 using System.ServiceModel.Channels;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
-using Datadog.Trace.ClrProfiler.Models;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -18,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private const string ChannelHandlerTypeName = "System.ServiceModel.Dispatcher.ChannelHandler";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(WcfIntegration));
+        private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
 
         /// <summary>
         /// Instrumentation wrapper for System.ServiceModel.Dispatcher.ChannelHandler
@@ -65,13 +67,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName) ||
-                !(requestContext is RequestContext castRequestContext))
-            {
-                return instrumentedMethod(channelHandler, requestContext, currentOperationContext);
-            }
-
-            using (var wcfDelegate = WcfRequestMessageSpanIntegrationDelegate.CreateAndBegin(castRequestContext))
+            using (var scope = CreateScope(requestContext as RequestContext))
             {
                 try
                 {
@@ -79,10 +75,79 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
                 catch (Exception ex)
                 {
-                    wcfDelegate?.SetExceptionForFilter(ex);
+                    scope.Span.SetException(ex);
                     throw;
                 }
             }
+        }
+
+        private static Scope CreateScope(RequestContext requestContext)
+        {
+            var requestMessage = requestContext?.RequestMessage;
+
+            if (requestMessage == null)
+            {
+                return null;
+            }
+
+            var tracer = Tracer.Instance;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope scope = null;
+
+            try
+            {
+                SpanContext propagatedContext = null;
+                string host = null;
+                string httpMethod = null;
+
+                if (requestMessage.Properties.TryGetValue("httpRequest", out var httpRequestProperty) &&
+                    httpRequestProperty is HttpRequestMessageProperty httpRequestMessageProperty)
+                {
+                    // we're using an http transport
+                    host = httpRequestMessageProperty.Headers[HttpRequestHeader.Host];
+                    httpMethod = httpRequestMessageProperty.Method?.ToUpperInvariant();
+
+                    // try to extract propagated context values from http headers
+                    if (tracer.ActiveScope == null)
+                    {
+                        try
+                        {
+                            var headers = httpRequestMessageProperty.Headers.Wrap();
+                            propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                        }
+                    }
+                }
+
+                scope = tracer.StartActive("wcf.request", propagatedContext);
+                Span span = scope.Span;
+
+                span.DecorateWebServerSpan(
+                    resourceName: requestMessage.Headers.Action,
+                    httpMethod,
+                    host,
+                    httpUrl: requestMessage.Headers.To?.AbsoluteUri);
+
+                // set analytics sample rate if enabled
+                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException("Error creating or populating scope.", ex);
+            }
+
+            // always returns the scope, even if it's null
+            return scope;
         }
     }
 }
