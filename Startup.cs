@@ -6,7 +6,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// <summary>
     /// A class that attempts to load the Datadog.Trace.ClrProfiler.Managed .NET assembly.
     /// </summary>
-    public class Startup
+    public partial class Startup
     {
         /// <summary>
         /// Initializes static members of the <see cref="Startup"/> class.
@@ -14,21 +14,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         /// </summary>
         static Startup()
         {
-            LoadManagedAssembly();
+            ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+            AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
+            TryLoadManagedAssembly();
         }
 
-        internal static bool ManagedAssemblyFound { get; set; }
+        internal static string ManagedProfilerDirectory { get; }
 
-        private static void LoadManagedAssembly()
+        private static bool TryLoadManagedAssembly()
         {
             try
             {
                 Assembly.Load(new AssemblyName("Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"));
-                ManagedAssemblyFound = true;
+                return true;
             }
             catch
             {
-                ManagedAssemblyFound = false;
+                return false;
             }
         }
     }
