@@ -1,6 +1,6 @@
 {
     "profiles": {
-      "SecurityGrant.FileNotFoundException": {
+      "Samples.SqlServer.MultipleAppDomains": {
         "commandName": "Project",
         "environmentVariables": {
           "COR_ENABLE_PROFILING": "1",

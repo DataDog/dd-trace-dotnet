@@ -8,7 +8,7 @@ using System.Threading;
 using System.Web;
 using AppDomain.Instance;
 
-namespace SecurityGrant.FileNotFoundException
+namespace Samples.SqlServer.MultipleAppDomains
 {
     public class Program
     {
