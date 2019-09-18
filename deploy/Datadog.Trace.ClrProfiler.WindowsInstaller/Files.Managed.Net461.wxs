@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Fragment>
+    <ComponentGroup Id="Files.Managed.Net461" Directory="net461">
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.ClrProfiler.Managed.dll"
+              Source="$(var.ManagedDllPath)\net461\Datadog.Trace.ClrProfiler.Managed.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.dll"
+              Source="$(var.ManagedDllPath)\net461\Datadog.Trace.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_MsgPack.dll"
+              Source="$(var.ManagedDllPath)\net461\MsgPack.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Newtonsoft.Json.dll"
+              Source="$(var.ManagedDllPath)\net461\Newtonsoft.Json.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Sigil.dll"
+              Source="$(var.ManagedDllPath)\net461\Sigil.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.Http.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.Http.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.InteropServices.RuntimeInformation.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.InteropServices.RuntimeInformation.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Cryptography.Algorithms.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Algorithms.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Cryptography.Encoding.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Encoding.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Cryptography.Primitives.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Primitives.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Cryptography.X509Certificates.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.X509Certificates.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

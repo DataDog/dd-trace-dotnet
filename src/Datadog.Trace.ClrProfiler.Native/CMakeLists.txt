@@ -8,7 +8,7 @@ add_compile_options(-DBIT64 -DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
 SET(MANAGED_LOADER_DIRECTORY
-    ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netstandard1.1
+    ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0
 )
 
 add_custom_command(

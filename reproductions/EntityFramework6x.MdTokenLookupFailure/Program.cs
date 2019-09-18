@@ -8,7 +8,6 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler;
 
 namespace EntityFramework6x.MdTokenLookupFailure
 {
@@ -18,8 +17,6 @@ namespace EntityFramework6x.MdTokenLookupFailure
         {
             try
             {
-                Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
-
                 using (var ctx = new SchoolDbContextEntities())
                 {
                     // create database if missing

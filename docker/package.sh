@@ -17,6 +17,7 @@ for pkgtype in deb rpm tar ; do
         -v $VERSION \
         $(if [ $pkgtype != 'tar' ] ; then echo --prefix /opt/datadog ; fi) \
         --chdir $DIR/../src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64 \
+        netstandard2.0/ \
         Datadog.Trace.ClrProfiler.Native.so \
         integrations.json
 done

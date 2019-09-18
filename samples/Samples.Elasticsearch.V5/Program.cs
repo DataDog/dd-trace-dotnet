@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler;
 using Nest;
 
 namespace Samples.Elasticsearch.V5
@@ -11,8 +10,6 @@ namespace Samples.Elasticsearch.V5
     {
         static void Main(string[] args)
         {
-            Console.WriteLine($"ProfilerAttached: {Instrumentation.ProfilerAttached}");
-
             var host = new Uri("http://" + Host());
 
             var settings = new ConnectionSettings(host)

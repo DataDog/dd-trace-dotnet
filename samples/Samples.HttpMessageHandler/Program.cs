@@ -75,6 +75,9 @@ namespace Samples.HttpMessageHandler
 
         private static async Task SendHttpClientRequestAsync(bool tracingDisabled)
         {
+            // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
+            var ins = Tracer.Instance;
+
             Console.WriteLine($"[HttpClient] sending request to {Url}");
             var clientRequestContent = new StringContent(RequestContent, Utf8);
 

@@ -1,0 +1,47 @@
+<Project>
+  <PropertyGroup>
+    <OutputType Condition="'$(OutputType)' == ''">Exe</OutputType>
+    <Platforms>x64;x86</Platforms>
+    <PlatformTarget>$(Platform)</PlatformTarget>
+
+    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
+    <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
+
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ProfilerOutputDirectory>$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
+    <ManagedProfilerOutputDirectory Condition="'$(ManagedProfilerOutputDirectory)' == ''">$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
+
+    <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(ExcludeManagedProfiler)' != 'true' and
+                        '$(LoadManagedProfilerFromProfilerDirectory)' != 'true' ">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ExcludeNativeProfiler)' != 'true'">
+    <None Include="$(ProfilerOutputDirectory)\*.dll;$(ProfilerOutputDirectory)\*.so;$(ProfilerOutputDirectory)\*.pdb"
+          CopyToOutputDirectory="Always"
+          CopyToPublishDirectory="Always"
+          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <Content Include="$(MSBuildThisFileDirectory)\integrations.json"
+             CopyToOutputDirectory="Always"
+             CopyToPublishDirectory="Always"
+             Link="profiler-lib\integrations.json" />
+  </ItemGroup>
+
+  <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild" Condition=" '$(LoadManagedProfilerFromProfilerDirectory)' == 'true'">
+    <ItemGroup>
+      <!-- Subfolders of the output directory should each be a target framework -->
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
+    </ItemGroup>
+
+    <!-- Remove the following debugging statements when it works in CI-->
+    <Message Text="ManagedProfilerOutputDirectory = $(ManagedProfilerOutputDirectory)" Importance="High" />
+    <Message Text="ManagedProfilerFiles = @(ManagedProfilerFiles)" Importance="High" />
+
+    <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
+  </Target>
+</Project>

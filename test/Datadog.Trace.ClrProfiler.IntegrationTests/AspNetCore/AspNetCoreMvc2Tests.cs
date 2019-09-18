@@ -9,6 +9,8 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
+#if !NET452
+
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public class AspNetCoreMvc2Tests : TestHelper
@@ -46,6 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         [Theory]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         [MemberData(nameof(PackageVersions.AspNetCoreMvc2), MemberType = typeof(PackageVersions))]
         public void SubmitsTracesSelfHosted(string packageVersion)
         {
@@ -159,3 +162,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 }
+
+#endif

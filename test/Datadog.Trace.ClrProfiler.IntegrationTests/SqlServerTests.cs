@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [MemberData(nameof(PackageVersions.SqlServer), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void SubmitsTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();

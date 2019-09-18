@@ -173,8 +173,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   if (debug_logging_enabled) {
     Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name,
-            " AppDomain ", module_info.assembly.app_domain_id, " ",
-            module_info.assembly.app_domain_name);
+          " AppDomain ", module_info.assembly.app_domain_id, " ",
+          module_info.assembly.app_domain_name);
   }
 
   AppDomainID app_domain_id = module_info.assembly.app_domain_id;
@@ -182,7 +182,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   // Identify the AppDomain ID of mscorlib which will be the Shared Domain
   // because mscorlib is always a domain-neutral assembly
   if (!corlib_module_loaded && (module_info.assembly.name == "mscorlib"_W ||
-                                module_info.assembly.name == "System.Private.CoreLib"_W)) {
+       module_info.assembly.name == "System.Private.CoreLib"_W)) {
     corlib_module_loaded = true;
     corlib_app_domain_id = app_domain_id;
     corlib_module_id = module_id;
@@ -318,40 +318,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   }
 
   ModuleMetadata* module_metadata = new ModuleMetadata(
-      metadata_import, metadata_emit, module_info.assembly.name,
-      module_version_id, filtered_integrations);
+      metadata_import, metadata_emit, assembly_import, assembly_emit,
+      module_info.assembly.name, module_version_id, filtered_integrations);
 
-  const MetadataBuilder metadata_builder(*module_metadata, module,
-                                         metadata_import, metadata_emit,
-                                         assembly_import, assembly_emit);
+  // DELETED: for each wrapper assembly, emit an assembly reference
 
-  for (const auto& integration : filtered_integrations) {
-    // for each wrapper assembly, emit an assembly reference
-    hr = metadata_builder.EmitAssemblyRef(
-        integration.replacement.wrapper_method.assembly);
-    if (FAILED(hr)) {
-      Warn("ModuleLoadFinished failed to emit wrapper assembly ref for ",
-           module_id, " ", module_info.assembly.name);
-      return S_OK;
-    }
-
-    // for each method replacement in each enabled integration,
-    // emit a reference to the instrumentation wrapper methods
-    hr = metadata_builder.StoreWrapperMethodRef(integration.replacement);
-    if (FAILED(hr)) {
-      Warn("ModuleLoadFinished failed to emit or store wrapper method ref for ",
-           module_id, " ", module_info.assembly.name);
-      return S_OK;
-    }
-  }
+  // DELETED: for each method replacement in each enabled integration,
+  // emit a reference to the instrumentation wrapper methods
 
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
 
   Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
-       module_info.assembly.name, " AppDomain ",
-       module_info.assembly.app_domain_id, " ",
-       module_info.assembly.app_domain_name);
+        module_info.assembly.name, " AppDomain ",
+        module_info.assembly.app_domain_id, " ",
+        module_info.assembly.app_domain_name);
   return S_OK;
 }
 
@@ -439,7 +420,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     first_jit_compilation_completed = true;
 
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
-                            function_token);
+                          function_token);
     RETURN_OK_IF_FAILED(hr);
   }
 
@@ -460,13 +441,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         method_replacement.wrapper_method.get_method_cache_key();
     mdMemberRef wrapper_method_ref = mdMemberRefNil;
 
-    if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                 wrapper_method_ref)) {
-      // no method ref token found for wrapper method, we can't do the
-      // replacement, this should never happen because we always try to
-      // add the method ref in ModuleLoadFinished()
-      // TODO: log this
-      return S_OK;
+    // Exit early if we previously failed to store the method ref for this wrapper_method
+    if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
+      continue;
     }
 
     // for each IL instruction
@@ -540,6 +517,62 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         }
 
         continue;
+      }
+
+      // Resolve the MethodRef now. If the method is generic, we'll need to use it
+      // to define a MethodSpec
+      if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
+                                                   wrapper_method_ref)) {
+        const auto module_info = GetModuleInfo(this->info_, module_id);
+        if (!module_info.IsValid()) {
+          continue;
+        }
+
+        mdModule module;
+        hr = module_metadata->metadata_import->GetModuleFromScope(&module);
+        if (FAILED(hr)) {
+          Warn(
+              "JITCompilationStarted failed to get module metadata token for "
+              "module_id=",
+              module_id, " module_name=", module_info.assembly.name,
+              " function_id=", function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()");
+          continue;
+        }
+
+        const MetadataBuilder metadata_builder(
+            *module_metadata, module, module_metadata->metadata_import,
+            module_metadata->metadata_emit, module_metadata->assembly_import,
+            module_metadata->assembly_emit);
+
+        // for each wrapper assembly, emit an assembly reference
+        hr = metadata_builder.EmitAssemblyRef(
+            method_replacement.wrapper_method.assembly);
+        if (FAILED(hr)) {
+          Warn(
+              "JITCompilationStarted failed to emit wrapper assembly ref for "
+              "module_id=",
+              module_id, " module_name=", module_info.assembly.name,
+              " function_id=", function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()");
+          continue;
+        }
+
+        // for each method replacement in each enabled integration,
+        // emit a reference to the instrumentation wrapper methods
+        hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
+        if (FAILED(hr)) {
+          Warn(
+              "JITCompilationStarted failed to emit or store wrapper method "
+              "ref for module_id=",
+              module_id, " module_name=", module_info.assembly.name,
+              " function_id=", function_id, " token=", function_token,
+              " name=", caller.type.name, ".", caller.name, "()");
+          continue;
+        } else {
+          module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
+                                                  wrapper_method_ref);
+        }
       }
 
       auto method_def_md_token = target.id;
@@ -1291,15 +1324,23 @@ extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_p
 void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
 #ifdef _WIN32
   HINSTANCE hInstance = DllHandle;
+  LPCWSTR dllLpName;
+  LPCWSTR symbolsLpName;
 
-  HRSRC hResAssemblyInfo =
-      FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT_DLL), L"ASSEMBLY");
+  if (runtime_information_.is_desktop()) {
+    dllLpName = MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_DLL);
+    symbolsLpName = MAKEINTRESOURCE(NET45_MANAGED_ENTRYPOINT_SYMBOLS);
+  } else {
+    dllLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_DLL);
+    symbolsLpName = MAKEINTRESOURCE(NETCOREAPP20_MANAGED_ENTRYPOINT_SYMBOLS);
+  }
+
+  HRSRC hResAssemblyInfo = FindResource(hInstance, dllLpName, L"ASSEMBLY");
   HGLOBAL hResAssembly = LoadResource(hInstance, hResAssemblyInfo);
   *assemblySize = SizeofResource(hInstance, hResAssemblyInfo);
   *pAssemblyArray = (LPBYTE)LockResource(hResAssembly);
 
-  HRSRC hResSymbolsInfo =
-      FindResource(hInstance, MAKEINTRESOURCE(MANAGED_ENTRYPOINT_SYMBOLS), L"SYMBOLS");
+  HRSRC hResSymbolsInfo = FindResource(hInstance, symbolsLpName, L"SYMBOLS");
   HGLOBAL hResSymbols = LoadResource(hInstance, hResSymbolsInfo);
   *symbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
   *pSymbolsArray = (LPBYTE)LockResource(hResSymbols);

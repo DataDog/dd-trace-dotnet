@@ -4,7 +4,7 @@
   <?define BaseProductName = ".NET Tracer" ?>
   <?define ArpManufacturer = "Datadog, Inc." ?>
   <?define Company = "Datadog" ?>
-  <?define ManagedDllPath = "$(sys.CURRENTDIR)..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\$(var.Configuration)\net45" ?>
+  <?define ManagedDllPath = "$(sys.CURRENTDIR)..\..\src\bin\managed-publish" ?>
   <?define NativeDllPath = "$(sys.CURRENTDIR)..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(var.Configuration)\$(var.Platform)" ?>
   <?define ProfilerCLSID = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" ?>
 
