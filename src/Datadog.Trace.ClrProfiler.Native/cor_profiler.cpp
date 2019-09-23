@@ -409,7 +409,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
-  if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
+  if (!ProfilerIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
+      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
       first_jit_compilation_app_domains.end()) {
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
