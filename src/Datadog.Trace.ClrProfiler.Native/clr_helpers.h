@@ -272,37 +272,42 @@ private:
     return (value + alignment - 1) & ~(alignment - 1);
   }
 
+  // See https://github.com/dotnet/coreclr/blob/release/3.0/src/utilcode/pedecoder.cpp
+  IMAGE_SECTION_HEADER* RvaToSection(DWORD rva, LPCBYTE pntHeaders) const {
+    const auto ntHeaders = (IMAGE_NT_HEADERS*)pntHeaders;
+    const auto pSection = pntHeaders +
+                          FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) +
+                          VAL16(ntHeaders->FileHeader.SizeOfOptionalHeader);
+    auto section = (IMAGE_SECTION_HEADER*)pSection;
+    IMAGE_SECTION_HEADER* sectionEnd = (IMAGE_SECTION_HEADER*)(pSection + VAL16(ntHeaders->FileHeader.NumberOfSections));
+
+    while (section < sectionEnd) {
+      if (rva < VAL32(section->VirtualAddress)
+              + AlignUp((UINT)VAL32(section->Misc.VirtualSize), (UINT)VAL32(ntHeaders->OptionalHeader.SectionAlignment))) {
+        if (rva < VAL32(section->VirtualAddress))
+          return nullptr;
+        else {
+          return section;
+        }
+      }
+
+      section++;
+    }
+
+    return nullptr;
+  }
+
+  // See https://github.com/dotnet/coreclr/blob/release/3.0/src/utilcode/pedecoder.cpp
   LPCBYTE GetRvaData(DWORD rva, LPCBYTE pntHeaders) const {
     if (COR_PRF_MODULE_FLAT_LAYOUT & flags) {
-      const auto ntHeaders = (IMAGE_NT_HEADERS*)pntHeaders;
-      IMAGE_SECTION_HEADER* sectionRet = NULL;
-      const auto pSection = pntHeaders +
-                            FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) +
-                            VAL16(ntHeaders->FileHeader.SizeOfOptionalHeader);
-      auto section = (IMAGE_SECTION_HEADER*)pSection;
-      const auto sectionEnd =
-          (IMAGE_SECTION_HEADER*)(pSection +
-                                  VAL16(
-                                      ntHeaders->FileHeader.NumberOfSections));
-      while (section < sectionEnd) {
-        if (rva <
-            VAL32(section->VirtualAddress) +
-                AlignUp(
-                    (UINT)VAL32(section->Misc.VirtualSize),
-                    (UINT)VAL32(ntHeaders->OptionalHeader.SectionAlignment))) {
-          if (rva < VAL32(section->VirtualAddress))
-            sectionRet = NULL;
-          else {
-            sectionRet = section;
-          }
-        }
-        section++;
-      }
-      if (sectionRet == NULL) {
+      const IMAGE_SECTION_HEADER *section = RvaToSection(rva, pntHeaders);
+      if (section == nullptr) {
         return baseLoadAddress + rva;
       }
-      return baseLoadAddress + rva - VAL32(sectionRet->VirtualAddress) +
-             VAL32(sectionRet->PointerToRawData);
+      else
+      {
+        return baseLoadAddress + rva - VAL32(section->VirtualAddress) + VAL32(section->PointerToRawData);
+      }
     }
     return baseLoadAddress + rva;
   }
