@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security;
 using System.Security.Permissions;
-using System.Security.Policy;
 using System.Threading;
-using System.Web;
+using System.Threading.Tasks;
 using AppDomain.Instance;
+using Nest;
 
-namespace Samples.SqlServer.MultipleAppDomains
+
+namespace Samples.Elasticsearch.MultipleAppDomains
 {
     public class Program
     {
@@ -43,7 +44,7 @@ namespace Samples.SqlServer.MultipleAppDomains
             AppDomainInstanceProgram programInstance1 = (AppDomainInstanceProgram)appDomain1.CreateInstanceAndUnwrap(
                 typeof(AppDomainInstanceProgram).Assembly.FullName,
                 typeof(AppDomainInstanceProgram).FullName);
-            var argsToPass = new string[] { name, index.ToString(), "SqlServer" };
+            var argsToPass = new string[] { name, index.ToString(), "Elasticsearch" };
             programInstance1.Main(argsToPass);
 
             Console.WriteLine("**********************************************");

@@ -248,6 +248,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WcfClient", "sample
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer.MultipleAppDomains", "samples\Samples.SqlServer.MultipleAppDomains\Samples.SqlServer.MultipleAppDomains.csproj", "{D187EFE5-6DA9-4AB2-8340-509EE254B178}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.MultipleAppDomains", "samples\Samples.Elasticsearch.MultipleAppDomains\Samples.Elasticsearch.MultipleAppDomains.csproj", "{48283691-0D4B-4ABD-B75B-EDFC682E1547}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -798,6 +800,16 @@ Global
 		{D187EFE5-6DA9-4AB2-8340-509EE254B178}.Release|x64.Build.0 = Release|x64
 		{D187EFE5-6DA9-4AB2-8340-509EE254B178}.Release|x86.ActiveCfg = Release|x86
 		{D187EFE5-6DA9-4AB2-8340-509EE254B178}.Release|x86.Build.0 = Release|x86
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Debug|x64.ActiveCfg = Debug|x64
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Debug|x64.Build.0 = Debug|x64
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Debug|x86.ActiveCfg = Debug|x86
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Debug|x86.Build.0 = Debug|x86
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Release|Any CPU.ActiveCfg = Release|x86
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Release|x64.ActiveCfg = Release|x64
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Release|x64.Build.0 = Release|x64
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Release|x86.ActiveCfg = Release|x86
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -855,6 +867,7 @@ Global
 		{E1706893-D3A5-43B9-9036-AEF49DB9600B} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{21D420EB-06D0-489D-A71C-C748BB46B8EF} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{D187EFE5-6DA9-4AB2-8340-509EE254B178} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{48283691-0D4B-4ABD-B75B-EDFC682E1547} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
