@@ -70,7 +70,6 @@ jobs:
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
-      includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build src/**/*.csproj

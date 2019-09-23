@@ -39,7 +39,6 @@ jobs:
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
-      includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
@@ -79,10 +78,10 @@ jobs:
 
   steps:
   - task: UseDotNet@2
-    displayName: install dotnet core 3.0 sdk
+    displayName: install dotnet core 2.1 sdk
     inputs:
       packageType: sdk
-      version: $(dotnetCoreSdkVersion)
+      version: $(dotnetCore21RuntimeVersion)
       includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
