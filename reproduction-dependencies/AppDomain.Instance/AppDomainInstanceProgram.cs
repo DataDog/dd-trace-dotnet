@@ -11,7 +11,12 @@ namespace AppDomain.Instance
 {
     public class AppDomainInstanceProgram : MarshalByRefObject
     {
-        public int Main(string[] args)
+        public static void Main(string[] args)
+        {
+            new AppDomainInstanceProgram().Run(args);
+        }
+
+        public int Run(string[] args)
         {
             Console.WriteLine("Starting AppDomain Instance Test");
 

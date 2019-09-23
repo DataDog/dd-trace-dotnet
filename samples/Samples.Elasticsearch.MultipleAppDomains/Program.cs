@@ -41,11 +41,11 @@ namespace Samples.Elasticsearch.MultipleAppDomains
                 System.AppDomain.CurrentDomain.Evidence,
                 ads,
                 grantSet);
-            AppDomainInstanceProgram programInstance1 = (AppDomainInstanceProgram)appDomain1.CreateInstanceAndUnwrap(
-                typeof(AppDomainInstanceProgram).Assembly.FullName,
-                typeof(AppDomainInstanceProgram).FullName);
+
             var argsToPass = new string[] { name, index.ToString(), "Elasticsearch" };
-            programInstance1.Main(argsToPass);
+            appDomain1.ExecuteAssemblyByName(
+                typeof(AppDomainInstanceProgram).Assembly.FullName,
+                argsToPass);
 
             Console.WriteLine("**********************************************");
             Console.WriteLine($"Finished executing in AppDomain {name}");

@@ -195,7 +195,7 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo3* info, const ModuleID& module_id) {
     return {};
   }
   return {module_id, WSTRING(module_path), GetAssemblyInfo(info, assembly_id),
-          module_flags};
+          module_flags, base_load_address};
 }
 
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import,

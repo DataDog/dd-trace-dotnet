@@ -27,11 +27,8 @@ class CorProfiler : public CorProfilerBase {
 
   bool corlib_module_loaded = false;
   AppDomainID corlib_app_domain_id;
-  ModuleID corlib_module_id;
-
-  bool managed_profiler_module_loaded = false;
-  AppDomainID managed_profiler_app_domain_id;
-  ModuleID managed_profiler_module_id;
+  bool managed_profiler_loaded_domain_neutral = false;
+  std::unordered_set<AppDomainID> managed_profiler_loaded_app_domains;
 
   //
   // Module helper variables
@@ -42,12 +39,12 @@ class CorProfiler : public CorProfilerBase {
   //
   // Startup methods
   //
-  HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
-                           mdMethodDef* ret_method_token);
-
+  bool ProfilerIsLoadedIntoAppDomain(AppDomainID app_domain_id);
   HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&,
                              const ModuleID module_id,
                              const mdToken function_token);
+  HRESULT GenerateVoidILStartupMethod(const ModuleID module_id,
+                           mdMethodDef* ret_method_token);
 
  public:
   CorProfiler() = default;

@@ -238,15 +238,73 @@ struct ModuleInfo {
   const WSTRING path;
   const AssemblyInfo assembly;
   const DWORD flags;
+  const LPCBYTE baseLoadAddress;
 
-  ModuleInfo() : id(0), path(""_W), assembly({}), flags(0) {}
-  ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags)
-      : id(id), path(path), assembly(assembly), flags(flags) {}
+  ModuleInfo() : id(0), path(""_W), assembly({}), flags(0), baseLoadAddress(nullptr) {}
+  ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags, LPCBYTE baseLoadAddress)
+      : id(id), path(path), assembly(assembly), flags(flags), baseLoadAddress(baseLoadAddress) {}
 
   bool IsValid() const { return id != 0; }
 
   bool IsWindowsRuntime() const {
     return ((flags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0);
+  }
+
+  mdToken GetEntryPointToken() const {
+    if (baseLoadAddress == nullptr) {
+      return mdTokenNil;
+    }
+
+    const auto pntHeaders =
+        baseLoadAddress + VAL32(((IMAGE_DOS_HEADER*)baseLoadAddress)->e_lfanew);
+    const auto ntHeader = (IMAGE_NT_HEADERS*)pntHeaders;
+
+    IMAGE_DATA_DIRECTORY directoryEntry =
+        ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_COMHEADER];
+    const auto corHeader = (IMAGE_COR20_HEADER*)GetRvaData(
+        VAL32(directoryEntry.VirtualAddress), pntHeaders);
+
+    return corHeader->EntryPointToken;
+  }
+
+private:
+  static ULONG AlignUp(ULONG value, UINT alignment) {
+    return (value + alignment - 1) & ~(alignment - 1);
+  }
+
+  LPCBYTE GetRvaData(DWORD rva, LPCBYTE pntHeaders) const {
+    if (COR_PRF_MODULE_FLAT_LAYOUT & flags) {
+      const auto ntHeaders = (IMAGE_NT_HEADERS*)pntHeaders;
+      IMAGE_SECTION_HEADER* sectionRet = NULL;
+      const auto pSection = pntHeaders +
+                            FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) +
+                            VAL16(ntHeaders->FileHeader.SizeOfOptionalHeader);
+      auto section = (IMAGE_SECTION_HEADER*)pSection;
+      const auto sectionEnd =
+          (IMAGE_SECTION_HEADER*)(pSection +
+                                  VAL16(
+                                      ntHeaders->FileHeader.NumberOfSections));
+      while (section < sectionEnd) {
+        if (rva <
+            VAL32(section->VirtualAddress) +
+                AlignUp(
+                    (UINT)VAL32(section->Misc.VirtualSize),
+                    (UINT)VAL32(ntHeaders->OptionalHeader.SectionAlignment))) {
+          if (rva < VAL32(section->VirtualAddress))
+            sectionRet = NULL;
+          else {
+            sectionRet = section;
+          }
+        }
+        section++;
+      }
+      if (sectionRet == NULL) {
+        return baseLoadAddress + rva;
+      }
+      return baseLoadAddress + rva - VAL32(sectionRet->VirtualAddress) +
+             VAL32(sectionRet->PointerToRawData);
+    }
+    return baseLoadAddress + rva;
   }
 };
 
