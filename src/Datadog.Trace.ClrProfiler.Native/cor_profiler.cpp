@@ -418,9 +418,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     RETURN_OK_IF_FAILED(hr);
   }
 
-  // Do not modify perform any modification if the owning module has been
-  // loaded domain-neutral and the profiler
-  // 1) Has not also been loaded domain-neutral
+  // Do not perform any modification if the owning module has been
+  // loaded domain-neutral and the profiler either
+  // 1) Has not also been loaded domain-neutral, or
   // 2) Has not been loaded in general
   if (runtime_information_.is_desktop() && corlib_module_loaded &&
       module_metadata->app_domain_id == corlib_app_domain_id &&
