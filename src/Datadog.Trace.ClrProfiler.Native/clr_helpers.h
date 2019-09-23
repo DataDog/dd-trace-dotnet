@@ -240,7 +240,7 @@ struct ModuleInfo {
   const DWORD flags;
 
   ModuleInfo() : id(0), path(""_W), assembly({}), flags(0) {}
-  ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags, LPCBYTE baseLoadAddress)
+  ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags)
       : id(id), path(path), assembly(assembly), flags(flags) {}
 
   bool IsValid() const { return id != 0; }
