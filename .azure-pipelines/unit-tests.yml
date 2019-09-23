@@ -12,8 +12,7 @@ variables:
   buildConfiguration: Debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
   dotnetCoreSdkVersion: 3.0.x
-  dotnetCore22SdkVersion: 2.2.x
-  dotnetCore21SdkVersion: 2.1.x
+  dotnetCore21RuntimeVersion: 2.1.x
 
 jobs:
 
@@ -30,9 +29,9 @@ jobs:
 
   steps:
   - task: UseDotNet@2
-    displayName: install dotnet core 2.1 sdk
+    displayName: install dotnet core 2.1 runtime
     inputs:
-      packageType: sdk
+      packageType: runtime
       version: $(dotnetCore21SdkVersion)
 
   - task: UseDotNet@2
@@ -79,13 +78,11 @@ jobs:
     vmImage: windows-2019
 
   steps:
-  # MSBuild currently cannot find the .NET Core 3.0 SDK so we'll build the
-  # unit test dependencies with the 2.2 SDK until the issue is resolved
   - task: UseDotNet@2
-    displayName: install dotnet core 2.2 sdk
+    displayName: install dotnet core 3.0 sdk
     inputs:
       packageType: sdk
-      version: $(dotnetCore22SdkVersion)
+      version: $(dotnetCoreSdkVersion)
       includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
