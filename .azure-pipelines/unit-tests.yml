@@ -32,7 +32,7 @@ jobs:
     displayName: install dotnet core 2.1 runtime
     inputs:
       packageType: runtime
-      version: $(dotnetCore21SdkVersion)
+      version: $(dotnetCore21RuntimeVersion)
 
   - task: UseDotNet@2
     displayName: install dotnet core 3.0 sdk
