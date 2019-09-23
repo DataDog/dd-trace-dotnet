@@ -6,7 +6,6 @@ namespace Samples.SqlServer
 {
     class Program
     {
-        [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
         static void Main(string[] args)
         {
             using (var db = new BloggingContext())

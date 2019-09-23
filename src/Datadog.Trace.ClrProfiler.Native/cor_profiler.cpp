@@ -307,15 +307,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  const auto entrypoint_token = module_info.GetEntryPointToken();
-  if (entrypoint_token != mdTokenNil) {
-    Debug("ModuleLoadFinished set entrypointToken for module_id", module_id,
-          " ", module_info.assembly.name, ": ", entrypoint_token);
-  }
-
   ModuleMetadata* module_metadata = new ModuleMetadata(
       metadata_import, metadata_emit, assembly_import, assembly_emit,
-      module_info.assembly.name, app_domain_id, entrypoint_token,
+      module_info.assembly.name, app_domain_id,
       module_version_id, filtered_integrations);
 
   // store module info for later lookup
@@ -415,7 +409,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
-  if (function_token == module_metadata->entrypoint_token) {
+  if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
+      first_jit_compilation_app_domains.end()) {
+    first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                           function_token);
     RETURN_OK_IF_FAILED(hr);

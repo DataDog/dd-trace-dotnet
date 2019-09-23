@@ -25,7 +25,6 @@ class ModuleMetadata {
   const ComPtr<IMetaDataAssemblyEmit> assembly_emit{};
   WSTRING assemblyName = ""_W;
   AppDomainID app_domain_id;
-  mdToken entrypoint_token;
   GUID module_version_id;
   std::vector<IntegrationMethod> integrations = {};
 
@@ -35,7 +34,6 @@ class ModuleMetadata {
                  ComPtr<IMetaDataAssemblyEmit> assembly_emit,
                  WSTRING assembly_name,
                  AppDomainID app_domain_id,
-                 mdToken entrypoint_token,
                  GUID module_version_id,
                  std::vector<IntegrationMethod> integrations)
       : metadata_import(metadata_import),
@@ -44,7 +42,6 @@ class ModuleMetadata {
         assembly_emit(assembly_emit),
         assemblyName(assembly_name),
         app_domain_id(app_domain_id),
-        entrypoint_token(entrypoint_token),
         module_version_id(module_version_id),
         integrations(integrations) {}
 

@@ -238,78 +238,15 @@ struct ModuleInfo {
   const WSTRING path;
   const AssemblyInfo assembly;
   const DWORD flags;
-  const LPCBYTE baseLoadAddress;
 
-  ModuleInfo() : id(0), path(""_W), assembly({}), flags(0), baseLoadAddress(nullptr) {}
+  ModuleInfo() : id(0), path(""_W), assembly({}), flags(0) {}
   ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags, LPCBYTE baseLoadAddress)
-      : id(id), path(path), assembly(assembly), flags(flags), baseLoadAddress(baseLoadAddress) {}
+      : id(id), path(path), assembly(assembly), flags(flags) {}
 
   bool IsValid() const { return id != 0; }
 
   bool IsWindowsRuntime() const {
     return ((flags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0);
-  }
-
-  mdToken GetEntryPointToken() const {
-    if (baseLoadAddress == nullptr) {
-      return mdTokenNil;
-    }
-
-    const auto pntHeaders =
-        baseLoadAddress + VAL32(((IMAGE_DOS_HEADER*)baseLoadAddress)->e_lfanew);
-    const auto ntHeader = (IMAGE_NT_HEADERS*)pntHeaders;
-
-    IMAGE_DATA_DIRECTORY directoryEntry =
-        ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_COMHEADER];
-    const auto corHeader = (IMAGE_COR20_HEADER*)GetRvaData(
-        VAL32(directoryEntry.VirtualAddress), pntHeaders);
-
-    return corHeader->EntryPointToken;
-  }
-
-private:
-  static ULONG AlignUp(ULONG value, UINT alignment) {
-    return (value + alignment - 1) & ~(alignment - 1);
-  }
-
-  // See https://github.com/dotnet/coreclr/blob/release/3.0/src/utilcode/pedecoder.cpp
-  IMAGE_SECTION_HEADER* RvaToSection(DWORD rva, LPCBYTE pntHeaders) const {
-    const auto ntHeaders = (IMAGE_NT_HEADERS*)pntHeaders;
-    const auto pSection = pntHeaders +
-                          FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) +
-                          VAL16(ntHeaders->FileHeader.SizeOfOptionalHeader);
-    auto section = (IMAGE_SECTION_HEADER*)pSection;
-    IMAGE_SECTION_HEADER* sectionEnd = (IMAGE_SECTION_HEADER*)(pSection + VAL16(ntHeaders->FileHeader.NumberOfSections));
-
-    while (section < sectionEnd) {
-      if (rva < VAL32(section->VirtualAddress)
-              + AlignUp((UINT)VAL32(section->Misc.VirtualSize), (UINT)VAL32(ntHeaders->OptionalHeader.SectionAlignment))) {
-        if (rva < VAL32(section->VirtualAddress))
-          return nullptr;
-        else {
-          return section;
-        }
-      }
-
-      section++;
-    }
-
-    return nullptr;
-  }
-
-  // See https://github.com/dotnet/coreclr/blob/release/3.0/src/utilcode/pedecoder.cpp
-  LPCBYTE GetRvaData(DWORD rva, LPCBYTE pntHeaders) const {
-    if (COR_PRF_MODULE_FLAT_LAYOUT & flags) {
-      const IMAGE_SECTION_HEADER *section = RvaToSection(rva, pntHeaders);
-      if (section == nullptr) {
-        return baseLoadAddress + rva;
-      }
-      else
-      {
-        return baseLoadAddress + rva - VAL32(section->VirtualAddress) + VAL32(section->PointerToRawData);
-      }
-    }
-    return baseLoadAddress + rva;
   }
 };
 
