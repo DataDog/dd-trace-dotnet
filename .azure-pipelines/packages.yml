@@ -59,7 +59,7 @@ jobs:
       maximumCpuCount: true
 
   - task: UseDotNet@2
-    displayName: install dotnet core 3.0 sdk
+    displayName: install dotnet core sdk
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
