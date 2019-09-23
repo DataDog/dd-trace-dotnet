@@ -36,6 +36,8 @@ namespace Samples.GraphQL
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+            services.AddLogging(builder => builder.AddConsole());
+
             services.AddGraphQL(_ =>
             {
                 _.EnableMetrics = true;
@@ -55,8 +57,6 @@ namespace Samples.GraphQL
             // Set the subscription
             // We do this roundabout mechanism to keep using the GraphQL.StarWars NuGet package
             starWarsSchema.Subscription = starWarsSubscription;
-
-            loggerFactory.AddConsole();
             app.UseDeveloperExceptionPage();
 
             // add http for Schema at default url /graphql
