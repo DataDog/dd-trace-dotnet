@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class HttpContextIntegration
     {
         private const string IntegrationName = "HttpContext";
-        private const string DefaultHttpContextTypeName = "HttpContext";
+        private const string DefaultHttpContextTypeName = "Microsoft.AspNetCore.Http.DefaultHttpContext";
         private static readonly ILog Log = LogProvider.GetLogger(typeof(HttpContextIntegration));
 
         /// <summary>

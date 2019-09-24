@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "ElasticsearchNet5";
         private const string Version5 = "5";
         private const string ElasticsearchAssembly = "Elasticsearch.Net";
-        private const string RequestPipelineInterface = "Elasticsearch.Net.IRequestPipeline";
+        private const string RequestPipelineInterfaceTypeName = "Elasticsearch.Net.IRequestPipeline";
 
         private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNet5Integration));
         private static readonly Type ElasticsearchResponseType = Type.GetType("Elasticsearch.Net.ElasticsearchResponse`1, Elasticsearch.Net", throwOnError: false);
@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = ElasticsearchAssembly,
             TargetAssembly = ElasticsearchAssembly,
-            TargetType = RequestPipelineInterface,
+            TargetType = RequestPipelineInterfaceTypeName,
             TargetSignatureTypes = new[] { "Elasticsearch.Net.ElasticsearchResponse`1<T>", "Elasticsearch.Net.RequestData" },
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: RequestPipelineInterface,
+                    instrumentedType: RequestPipelineInterfaceTypeName,
                     methodName: methodName,
                     instanceType: pipeline.GetType().AssemblyQualifiedName);
                 throw;
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             CallerAssembly = ElasticsearchAssembly,
             TargetAssembly = ElasticsearchAssembly,
-            TargetType = RequestPipelineInterface,
+            TargetType = RequestPipelineInterfaceTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
             TargetMinimumVersion = Version5,
             TargetMaximumVersion = Version5)]
@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: RequestPipelineInterface,
+                    instrumentedType: RequestPipelineInterfaceTypeName,
                     methodName: nameof(CallElasticsearchAsync),
                     instanceType: pipeline.GetType().AssemblyQualifiedName);
                 throw;

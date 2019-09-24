@@ -1,5 +1,4 @@
 using System;
-using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
@@ -16,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             string instrumentedType,
             string methodName,
             string instanceType = null,
-            string[] relevantParameters = null)
+            string[] relevantArguments = null)
             {
             var instrumentedMethod = $"{instrumentedType}.{methodName}(...)";
 
@@ -25,9 +24,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 instrumentedMethod = $"{instrumentedMethod} on {instanceType}";
             }
 
-            if (relevantParameters != null)
+            if (relevantArguments != null)
             {
-                instrumentedMethod = $"{instrumentedMethod} with {string.Join(", ", relevantParameters)}";
+                instrumentedMethod = $"{instrumentedMethod} with {string.Join(", ", relevantArguments)}";
             }
 
             var moduleVersionId = PointerHelpers.GetGuidFromNativePointer(moduleVersionPointer);
