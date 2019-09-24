@@ -30,11 +30,11 @@ for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowExc
 done
 
 # Clean samples/Samples.AspNetCoreMvc2 because it does code generation based on target framework
-# rm -r -f samples/Samples.AspNetCoreMvc2/obj
+rm -r -f samples/Samples.AspNetCoreMvc2/obj
 dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT" -p:TargetFramework=netcoreapp2.1
 
 # Clean samples/Samples.AspNetCoreMvc2 because it does code generation based on target framework
-# rm -r -f samples/Samples.AspNetCoreMvc2/obj
+rm -r -f samples/Samples.AspNetCoreMvc2/obj
 dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT" -p:TargetFramework=netcoreapp3.0
 
 for proj in Datadog.Trace.ClrProfiler.IntegrationTests ; do
