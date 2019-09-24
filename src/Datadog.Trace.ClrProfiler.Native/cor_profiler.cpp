@@ -181,32 +181,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // Identify the AppDomain ID of mscorlib which will be the Shared Domain
   // because mscorlib is always a domain-neutral assembly
-  if (!corlib_module_loaded && (module_info.assembly.name == "mscorlib"_W ||
+  if (!corlib_module_loaded &&
+      (module_info.assembly.name == "mscorlib"_W ||
        module_info.assembly.name == "System.Private.CoreLib"_W)) {
     corlib_module_loaded = true;
     corlib_app_domain_id = app_domain_id;
-    corlib_module_id = module_id;
     return S_OK;
   }
 
   // Identify the AppDomain ID of the managed profiler entrypoint
   if (module_info.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
-    managed_profiler_module_loaded = true;
-    managed_profiler_app_domain_id = app_domain_id;
-    managed_profiler_module_id = module_id;
-  }
+    managed_profiler_loaded_app_domains.insert(app_domain_id);
 
-  // Do not modify the module if it has been loaded into the Shared Domain
-  // and the profiler is not in the Shared Domain
-  if (runtime_information_.is_desktop() &&
-      corlib_module_loaded && managed_profiler_module_loaded &&
-      app_domain_id == corlib_app_domain_id &&
-      corlib_app_domain_id != managed_profiler_app_domain_id) {
-    Info(
-        "ModuleLoadFinished skipping modifying assembly because it is "
-        "domain-neutral but the managed profiler is not: ",
-        module_id, " ", module_info.assembly.name);
-    return S_OK;
+    if (runtime_information_.is_desktop() && corlib_module_loaded &&
+        app_domain_id == corlib_app_domain_id) {
+      managed_profiler_loaded_domain_neutral = true;
+    }
   }
 
   if (module_info.IsWindowsRuntime()) {
@@ -312,24 +302,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   GUID module_version_id;
   hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
   if (FAILED(hr)) {
-    Warn("ModuleLoadFinished failed to get module_version_id for ",
-         module_id, " ", module_info.assembly.name);
+    Warn("ModuleLoadFinished failed to get module_version_id for ", module_id,
+         " ", module_info.assembly.name);
     return S_OK;
   }
 
   ModuleMetadata* module_metadata = new ModuleMetadata(
       metadata_import, metadata_emit, assembly_import, assembly_emit,
-      module_info.assembly.name, module_version_id, filtered_integrations);
-
-  // DELETED: for each wrapper assembly, emit an assembly reference
-
-  // DELETED: for each method replacement in each enabled integration,
-  // emit a reference to the instrumentation wrapper methods
+      module_info.assembly.name, app_domain_id,
+      module_version_id, filtered_integrations);
 
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
 
-  Debug("ModuleLoadFinished emitted new metadata into ", module_id, " ",
+  Debug("ModuleLoadFinished stored metadata for ", module_id, " ",
         module_info.assembly.name, " AppDomain ",
         module_info.assembly.app_domain_id, " ",
         module_info.assembly.app_domain_name);
@@ -356,6 +342,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id) {
   // remove module metadata from map
   if (module_id_to_info_map_.count(module_id) > 0) {
     ModuleMetadata* metadata = module_id_to_info_map_[module_id];
+
+    // remove appdomain id from managed_profiler_loaded_app_domains set
+    if (managed_profiler_loaded_app_domains.find(metadata->app_domain_id) !=
+        managed_profiler_loaded_app_domains.end()) {
+      managed_profiler_loaded_app_domains.erase(metadata->app_domain_id);
+    }
+
     module_id_to_info_map_.erase(module_id);
     delete metadata;
   }
@@ -416,12 +409,31 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
-  if (!first_jit_compilation_completed) {
-    first_jit_compilation_completed = true;
-
+  if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
+      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
+      first_jit_compilation_app_domains.end()) {
+    first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                           function_token);
     RETURN_OK_IF_FAILED(hr);
+  }
+
+  // Do not perform any modification if the owning module has been
+  // loaded domain-neutral and the profiler either
+  // 1) Has not also been loaded domain-neutral, or
+  // 2) Has not been loaded in general
+  if (runtime_information_.is_desktop() && corlib_module_loaded &&
+      module_metadata->app_domain_id == corlib_app_domain_id &&
+      !managed_profiler_loaded_domain_neutral) {
+    if (ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
+      Info(
+          "JITCompilationStarted: skipping modifying assembly because it is "
+          "domain-neutral but the managed profiler is not. function_id=",
+          function_id, " token=", function_token, " name=", caller.type.name,
+          ".", caller.name, "()");
+    }
+
+    return S_OK;
   }
 
   auto method_replacements =
@@ -658,7 +670,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      if (!managed_profiler_module_loaded) {
+      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
         Info(
             "JITCompilationStarted skipping method: Method replacement "
             "found but the managed profiler has not yet been loaded. "
@@ -710,9 +722,15 @@ bool CorProfiler::IsAttached() const { return is_attached_; }
 //
 // Startup methods
 //
-HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emit,
-                                      const ModuleID module_id,
-                                      const mdToken function_token) {
+bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id) {
+  return managed_profiler_loaded_domain_neutral ||
+         managed_profiler_loaded_app_domains.find(app_domain_id) !=
+             managed_profiler_loaded_app_domains.end();
+}
+
+HRESULT CorProfiler::RunILStartupHook(
+    const ComPtr<IMetaDataEmit2>& metadata_emit, const ModuleID module_id,
+    const mdToken function_token) {
   mdMethodDef ret_method_token;
   auto hr = GenerateVoidILStartupMethod(module_id, &ret_method_token);
   if (FAILED(hr)) {

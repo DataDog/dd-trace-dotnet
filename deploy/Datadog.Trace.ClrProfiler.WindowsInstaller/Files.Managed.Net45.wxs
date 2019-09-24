@@ -8,32 +8,32 @@
       <Component Win64="$(var.Win64)">
         <File Id="net45_Datadog.Trace.ClrProfiler.Managed.dll"
               Source="$(var.ManagedDllPath)\net45\Datadog.Trace.ClrProfiler.Managed.dll"
-              KeyPath="yes" Checksum="yes"/>
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net45_Datadog.Trace.dll"
               Source="$(var.ManagedDllPath)\net45\Datadog.Trace.dll"
-              KeyPath="yes" Checksum="yes"/>
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net45_MsgPack.dll"
               Source="$(var.ManagedDllPath)\net45\MsgPack.dll"
-              KeyPath="yes" Checksum="yes"/>
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net45_Newtonsoft.Json.dll"
               Source="$(var.ManagedDllPath)\net45\Newtonsoft.Json.dll"
-              KeyPath="yes" Checksum="yes"/>
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net45_Sigil.dll"
               Source="$(var.ManagedDllPath)\net45\Sigil.dll"
-              KeyPath="yes" Checksum="yes"/>
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net45_System.Runtime.InteropServices.RuntimeInformation.dll"
               Source="$(var.ManagedDllPath)\net45\System.Runtime.InteropServices.RuntimeInformation.dll"
-              KeyPath="yes" Checksum="yes"/>
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
     </ComponentGroup>
   </Fragment>

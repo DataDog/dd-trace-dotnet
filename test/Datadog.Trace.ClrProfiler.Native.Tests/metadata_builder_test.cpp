@@ -57,13 +57,15 @@ class MetadataBuilderTest : public ::testing::Test {
 
     const std::wstring assemblyName = L"Samples.ExampleLibrary";
 
+    const AppDomainID app_domain_id{};
+
     GUID module_version_id;
     metadataImport->GetScopeProps(NULL, 1024, nullptr, &module_version_id);
 
     const std::vector<IntegrationMethod> integrations;
     module_metadata_ =
         new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                           assemblyName, module_version_id, integrations);
+                           assemblyName, app_domain_id, module_version_id, integrations);
 
     mdModule module;
     hr = metadataImport->GetModuleFromScope(&module);

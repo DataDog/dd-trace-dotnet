@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security;
 using System.Security.Permissions;
-using System.Security.Policy;
 using System.Threading;
-using System.Web;
+using System.Threading.Tasks;
 using AppDomain.Instance;
+using Nest;
 
-namespace SecurityGrant.FileNotFoundException
+
+namespace Samples.Elasticsearch.MultipleAppDomains
 {
     public class Program
     {
@@ -41,7 +42,7 @@ namespace SecurityGrant.FileNotFoundException
                 ads,
                 grantSet);
 
-            var argsToPass = new string[] { name, index.ToString(), "SqlServer" };
+            var argsToPass = new string[] { name, index.ToString(), "Elasticsearch" };
             appDomain1.ExecuteAssemblyByName(
                 typeof(AppDomainInstanceProgram).Assembly.FullName,
                 argsToPass);

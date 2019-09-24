@@ -1,13 +1,8 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity.Core;
 using System.Data.Entity.Core.EntityClient;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EntityFramework6x.MdTokenLookupFailure
 {
