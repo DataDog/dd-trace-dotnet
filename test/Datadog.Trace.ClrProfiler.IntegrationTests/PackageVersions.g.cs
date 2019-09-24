@@ -119,6 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.7" },
                 new object[] { "4.0.8" },
                 new object[] { "4.0.9" },
+                new object[] { "4.0.10" },
 #endif
             };
         public static IEnumerable<object[]> SqlServer =>

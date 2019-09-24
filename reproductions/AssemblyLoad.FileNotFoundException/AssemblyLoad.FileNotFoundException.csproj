@@ -8,7 +8,7 @@
     <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
   </PropertyGroup>
 
-  <ItemGroup Condition="!$(TargetFramework.StartsWith('netcoreapp'))">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">   
     <!-- HttpClient for full .NET Framework -->
     <Reference Include="System.Net.Http" />
   </ItemGroup>

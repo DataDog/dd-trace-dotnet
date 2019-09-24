@@ -9,6 +9,7 @@
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <SampleProject Include="samples*\**\*.csproj"/>
+    <SampleLibProject Include="sample-libs\**\*.csproj"/>
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
   </ItemGroup>
 
@@ -67,10 +68,18 @@
 
     <!-- Build the core C# projects first, so that the sample project builds do not need to build them and can be run
          concurrently -->
-    <MSBuild Targets="Restore" Projects="@(CsharpProject)" BuildInParallel="false">
+    <MSBuild Targets="Restore" Projects="@(CsharpProject)" BuildInParallel="false" RemoveProperties="TargetFramework">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
-    <MSBuild Targets="Build" Projects="@(CsharpProject)" BuildInParallel="false">
+    <MSBuild Targets="Build" Projects="@(CsharpProject)" BuildInParallel="false" RemoveProperties="TargetFramework">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
+    <!-- Build the sample-libs projects next in case any sample projects rely on them -->
+    <MSBuild Targets="Restore" Projects="@(SampleLibProject)" BuildInParallel="false" RemoveProperties="TargetFramework">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+    <MSBuild Targets="Build" Projects="@(SampleLibProject)" BuildInParallel="false" RemoveProperties="TargetFramework">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
 
