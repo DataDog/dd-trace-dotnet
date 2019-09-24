@@ -40,7 +40,7 @@ class CorProfiler : public CorProfilerBase {
   //
   // Startup methods
   //
-  bool ProfilerIsLoadedIntoAppDomain(AppDomainID app_domain_id);
+  bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
   HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&,
                              const ModuleID module_id,
                              const mdToken function_token);

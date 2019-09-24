@@ -409,7 +409,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
-  if (!ProfilerIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
+  if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
       first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
       first_jit_compilation_app_domains.end()) {
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
@@ -425,7 +425,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (runtime_information_.is_desktop() && corlib_module_loaded &&
       module_metadata->app_domain_id == corlib_app_domain_id &&
       !managed_profiler_loaded_domain_neutral) {
-    if (ProfilerIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
+    if (ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
       Info(
           "JITCompilationStarted: skipping modifying assembly because it is "
           "domain-neutral but the managed profiler is not. function_id=",
@@ -670,7 +670,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      if (!ProfilerIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
+      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
         Info(
             "JITCompilationStarted skipping method: Method replacement "
             "found but the managed profiler has not yet been loaded. "
@@ -722,7 +722,7 @@ bool CorProfiler::IsAttached() const { return is_attached_; }
 //
 // Startup methods
 //
-bool CorProfiler::ProfilerIsLoadedIntoAppDomain(AppDomainID app_domain_id) {
+bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id) {
   return managed_profiler_loaded_domain_neutral ||
          managed_profiler_loaded_app_domains.find(app_domain_id) !=
              managed_profiler_loaded_app_domains.end();
