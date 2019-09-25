@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 {
@@ -16,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private const string RedisBaseTypeName = "StackExchange.Redis.RedisBase";
         private const string Major1 = "1";
         private const string Major2 = "2";
+
+        private static readonly ILog Log = LogProvider.GetLogger(typeof(RedisBatch));
 
         private static Assembly _redisAssembly;
         private static Type _redisBaseType;
@@ -103,17 +106,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
                 _batchType = _redisAssembly.GetType("StackExchange.Redis.RedisBatch");
             }
 
-            var instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
-                                    .Start(moduleVersionPtr, mdToken, callOpCode, nameof(ExecuteAsync))
-                                    .WithConcreteType(_redisBaseType)
-                                    .WithMethodGenerics(typeof(T))
-                                    .WithParameters(message, processor, server)
-                                    .WithNamespaceAndNameFilters(
-                                        ClrNames.GenericTask,
-                                        "StackExchange.Redis.Message",
-                                        "StackExchange.Redis.ResultProcessor`1",
-                                        "StackExchange.Redis.ServerEndPoint")
-                                    .Build();
+            Func<object, object, object, object, Task<T>> instrumentedMethod;
+
+            try
+            {
+                instrumentedMethod = MethodBuilder<Func<object, object, object, object, Task<T>>>
+                                        .Start(moduleVersionPtr, mdToken, callOpCode, nameof(ExecuteAsync))
+                                        .WithConcreteType(_redisBaseType)
+                                        .WithMethodGenerics(typeof(T))
+                                        .WithParameters(message, processor, server)
+                                        .WithNamespaceAndNameFilters(
+                                             ClrNames.GenericTask,
+                                             "StackExchange.Redis.Message",
+                                             "StackExchange.Redis.ResultProcessor`1",
+                                             "StackExchange.Redis.ServerEndPoint")
+                                        .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: callOpCode,
+                    instrumentedType: RedisBaseTypeName,
+                    methodName: nameof(ExecuteAsync),
+                    instanceType: thisType.AssemblyQualifiedName);
+                throw;
+            }
 
             // we only trace RedisBatch methods here
             if (thisType == _batchType)

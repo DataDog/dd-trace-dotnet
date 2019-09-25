@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     public static class HttpContextIntegration
     {
         private const string IntegrationName = "HttpContext";
+        private const string DefaultHttpContextTypeName = "Microsoft.AspNetCore.Http.DefaultHttpContext";
         private static readonly ILog Log = LogProvider.GetLogger(typeof(HttpContextIntegration));
 
         /// <summary>
@@ -22,15 +23,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         // [InterceptMethod(
         //     TargetAssembly = "Microsoft.AspNetCore.Http.Abstractions",
-        //     TargetType = "Microsoft.AspNetCore.Http.DefaultHttpContext",
+        //     TargetType = DefaultHttpContextTypeName,
         //     TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore })]
         // ***************************************************************
         //  DISABLED UNTIL WE FIX SCOPING ISSUES AT HTTP CONTEXT LEVEL
         // ***************************************************************
         public static void Initialize(object httpContext, object features, int opCode, int mdToken, long moduleVersionPtr)
         {
-            var httpContextType = httpContext.GetType();
-            string methodDef = $"{httpContextType.FullName}.Initialize(IFeatureCollection features)";
+            if (httpContext == null)
+            {
+                throw new ArgumentNullException(nameof(httpContext));
+            }
+
+            var httpContextType = httpContext.GetInstrumentedType(DefaultHttpContextTypeName);
 
             Action<object, object> instrumentedMethod;
 
@@ -45,7 +50,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error retrieving {methodDef}", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: DefaultHttpContextTypeName,
+                    methodName: nameof(Initialize),
+                    instanceType: httpContext.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -55,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error calling {methodDef}", ex);
+                Log.ErrorException($"Error calling {DefaultHttpContextTypeName}.{nameof(Initialize)}(...)", ex);
                 throw;
             }
 

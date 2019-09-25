@@ -71,8 +71,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error retrieving {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: IWireProtocol,
+                    methodName: methodName,
+                    instanceType: wireProtocol.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -136,8 +142,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error retrieving {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: IWireProtocolGeneric,
+                    methodName: methodName,
+                    instanceType: wireProtocol.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -204,8 +216,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error calling {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: IWireProtocolGeneric,
+                    methodName: methodName,
+                    instanceType: wireProtocol.GetType().AssemblyQualifiedName);
                 throw;
             }
 

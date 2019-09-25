@@ -73,16 +73,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             // At runtime, get a Type object for GraphQL.ExecutionResult
             var documentValidatorInstanceType = documentValidator.GetType();
-            Type graphQLExecutionResultType;
-            Type documentValidatorInterfaceType;
 
             try
             {
-                var graphQLAssembly = AppDomain.CurrentDomain.GetAssemblies()
-                                        .Where(a => a.GetName().Name.Equals(GraphQLAssemblyName))
-                                        .Single();
-                graphQLExecutionResultType = graphQLAssembly.GetType(GraphQLExecutionResultName, throwOnError: true);
-                documentValidatorInterfaceType = graphQLAssembly.GetType(GraphQLDocumentValidatorInterfaceName, throwOnError: true);
+                var graphQLAssembly = AppDomain.CurrentDomain
+                                        .GetAssemblies()
+                                        .Single(a => a.GetName().Name.Equals(GraphQLAssemblyName));
             }
             catch (Exception ex)
             {
@@ -113,8 +109,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error resolving {documentValidatorInterfaceType.Name}.{methodName}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: GraphQLDocumentValidatorInterfaceName,
+                    methodName: methodName,
+                    instanceType: documentValidator.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -189,8 +191,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error resolving {executionStrategyInterfaceType.Name}.{methodName}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: GraphQLExecutionStrategyInterfaceName,
+                    methodName: methodName,
+                    instanceType: executionStrategy.GetType().AssemblyQualifiedName);
                 throw;
             }
 

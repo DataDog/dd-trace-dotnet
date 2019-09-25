@@ -183,6 +183,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            if (asyncControllerActionInvoker == null)
+            {
+                throw new ArgumentNullException(nameof(asyncControllerActionInvoker));
+            }
+
             Scope scope = null;
 
             try
@@ -218,7 +223,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {AsyncActionInvokerTypeName}.{nameof(BeginInvokeAction)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: AsyncActionInvokerTypeName,
+                    methodName: nameof(BeginInvokeAction),
+                    instanceType: asyncControllerActionInvoker.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -257,6 +269,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            if (asyncControllerActionInvoker == null)
+            {
+                throw new ArgumentNullException(nameof(asyncControllerActionInvoker));
+            }
+
             Scope scope = null;
             var httpContext = HttpContext.Current;
 
@@ -284,7 +301,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {AsyncActionInvokerTypeName}.{nameof(EndInvokeAction)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: AsyncActionInvokerTypeName,
+                    methodName: nameof(EndInvokeAction),
+                    instanceType: asyncControllerActionInvoker.GetType().AssemblyQualifiedName);
                 throw;
             }
 

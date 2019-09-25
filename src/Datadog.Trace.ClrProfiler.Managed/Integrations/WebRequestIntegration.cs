@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// </summary>
     public static class WebRequestIntegration
     {
+        private const string WebRequestTypeName = "System.Net.WebRequest";
         private const string IntegrationName = "WebRequest";
         private const string Major4 = "4";
 
@@ -27,18 +28,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System", // .NET Framework
-            TargetType = "System.Net.WebRequest",
+            TargetType = WebRequestTypeName,
             TargetSignatureTypes = new[] { "System.Net.WebResponse" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         [InterceptMethod(
             TargetAssembly = "System.Net.Requests", // .NET Core
-            TargetType = "System.Net.WebRequest",
+            TargetType = WebRequestTypeName,
             TargetSignatureTypes = new[] { "System.Net.WebResponse" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object GetResponse(object webRequest, int opCode, int mdToken, long moduleVersionPtr)
         {
+            if (webRequest == null)
+            {
+                throw new ArgumentNullException(nameof(webRequest));
+            }
+
             const string methodName = nameof(GetResponse);
 
             Func<object, WebResponse> callGetResponse;
@@ -55,8 +61,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error retrieving System.Net.WebRequest.{methodName}()", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: WebRequestTypeName,
+                    methodName: methodName,
+                    instanceType: webRequest.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -104,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
             TargetAssembly = "System.Net",
-            TargetType = "System.Net.WebRequest",
+            TargetType = WebRequestTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.WebResponse>" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -125,8 +137,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error retrieving System.Net.WebRequest.{methodName}()", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: WebRequestTypeName,
+                    methodName: methodName,
+                    instanceType: webRequest.GetType().AssemblyQualifiedName);
                 throw;
             }
 

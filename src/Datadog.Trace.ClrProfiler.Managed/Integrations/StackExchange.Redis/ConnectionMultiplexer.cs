@@ -88,8 +88,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error resolving {ConnectionMultiplexerTypeName}.{nameof(ExecuteSyncImpl)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: ConnectionMultiplexerTypeName,
+                    methodName: nameof(ExecuteSyncImpl),
+                    instanceType: multiplexer.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -173,8 +179,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             }
             catch (Exception ex)
             {
-                // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error resolving {ConnectionMultiplexerTypeName}.{nameof(ExecuteAsyncImpl)}(...)", ex);
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: ConnectionMultiplexerTypeName,
+                    methodName: nameof(ExecuteAsyncImpl),
+                    instanceType: multiplexer.GetType().AssemblyQualifiedName);
                 throw;
             }
 
