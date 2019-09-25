@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\vendors\Datadog.Trace.Vendoring\Datadog.Trace.Vendoring.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
