@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- override to remove net452 -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.0.4</ApiVersion>
     <MvcRazorCompileOnPublish>true</MvcRazorCompileOnPublish>
 
