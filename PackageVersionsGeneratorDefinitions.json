@@ -51,6 +51,7 @@
     {
         "IntegrationName": "AspNetCoreMvc2",
         "SampleProjectName": "Samples.AspNetCoreMvc2",
+        "SampleTargetFramework": "netcoreapp2.1",
         "NugetPackageSearchName": "Microsoft.AspNetCore.Mvc",
         "MinVersion": "2.0.0",
         "MaxVersionExclusive": "3.0.0"

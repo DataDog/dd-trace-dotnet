@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersions
     {
+#if TRUE
         public static IEnumerable<object[]> MongoDB =>
 
             new List<object[]>
@@ -56,6 +57,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.9.1" },
 #endif
             };
+#endif
+
+#if TRUE
         public static IEnumerable<object[]> ElasticSearch6 =>
 
             new List<object[]>
@@ -82,6 +86,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.8.2" },
 #endif
             };
+#endif
+
+#if TRUE
         public static IEnumerable<object[]> ElasticSearch5 =>
 
             new List<object[]>
@@ -102,6 +109,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.6.6" },
 #endif
             };
+#endif
+
+#if TRUE
         public static IEnumerable<object[]> Npgsql =>
 
             new List<object[]>
@@ -122,6 +132,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.10" },
 #endif
             };
+#endif
+
+#if TRUE
         public static IEnumerable<object[]> SqlServer =>
 
             new List<object[]>
@@ -148,6 +161,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.2.6" },
 #endif
             };
+#endif
+
+#if TRUE
         public static IEnumerable<object[]> StackExchangeRedis =>
 
             new List<object[]>
@@ -217,6 +233,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.2.6" },
 #endif
             };
+#endif
+
+#if TRUE
         public static IEnumerable<object[]> ServiceStackRedis =>
 
             new List<object[]>
@@ -249,6 +268,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.6.0" },
 #endif
             };
+#endif
+
+#if NETCOREAPP2_1
         public static IEnumerable<object[]> AspNetCoreMvc2 =>
 
             new List<object[]>
@@ -268,5 +290,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.2.0" },
 #endif
             };
+#endif
+
     }
 }

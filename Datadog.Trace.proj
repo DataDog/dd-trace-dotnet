@@ -83,11 +83,16 @@
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
 
+    <!-- Filter the sample projects by TargetFramework -->
+    <ItemGroup>
+      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
+    </ItemGroup>
+
     <!-- Build the sample projects concurrently -->
-    <MSBuild Targets="Restore" Projects="@(PackageVersionSample)" BuildInParallel="$(BuildInParallel)">
+    <MSBuild Targets="Restore" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
-    <MSBuild Targets="Publish" Projects="@(PackageVersionSample)" BuildInParallel="$(BuildInParallel)">
+    <MSBuild Targets="Publish" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
