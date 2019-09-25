@@ -21,6 +21,16 @@ namespace Datadog.Trace.OpenTracing
             return CreateTracer(agentEndpoint, defaultServiceName, null, isDebugEnabled);
         }
 
+        /// <summary>
+        /// Create a new Datadog compatible ITracer implementation using an existing Datadog Tracer instance
+        /// </summary>
+        /// <param name="tracer">Existing Datadog Tracer instance</param>
+        /// <returns>A Datadog compatible ITracer implementation</returns>
+        public static ITracer RegisterTracer(Tracer tracer)
+        {
+            return new OpenTracingTracer(tracer);
+        }
+
         internal static OpenTracingTracer CreateTracer(Uri agentEndpoint, string defaultServiceName, DelegatingHandler delegatingHandler, bool isDebugEnabled)
         {
             var tracer = Tracer.Create(agentEndpoint, defaultServiceName, isDebugEnabled);
