@@ -19,7 +19,7 @@ dotnet publish -f netstandard2.0 -c $buildConfiguration src/Datadog.Trace.ClrPro
 # Only build Samples.AspNetCoreMvc2 for netcoreapp2.1
 dotnet publish -f netcoreapp2.1 -c $buildConfiguration samples/Samples.AspNetCoreMvc2/Samples.AspNetCoreMvc2.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 
-for sample in Samples.AspNetCoreMvc2 Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStack.Redis Samples.StackExchange.Redis Samples.SqlServer Samples.MongoDB Samples.HttpMessageHandler Samples.Npgsql Samples.GraphQL ; do
+for sample in Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStack.Redis Samples.StackExchange.Redis Samples.SqlServer Samples.MongoDB Samples.HttpMessageHandler Samples.Npgsql Samples.GraphQL ; do
     dotnet publish -f netcoreapp2.1 -c $buildConfiguration samples/$sample/$sample.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 
     dotnet publish -f netcoreapp3.0 -c $buildConfiguration samples/$sample/$sample.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
