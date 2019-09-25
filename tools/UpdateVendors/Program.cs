@@ -40,6 +40,26 @@ namespace UpdateVendors
                             });
                     }
                 });
+
+            UpdateVendor(
+                libraryName: "Serilog.Sinks.File",
+                masterBranchDownload: "https://github.com/serilog/serilog-sinks-file/archive/master.zip",
+                pathToSrc: new[] { "serilog-sinks-file-master", "src", "Serilog.Sinks.File" },
+                (filePath) =>
+                {
+                    var extension = Path.GetExtension(filePath);
+
+                    if (extension == "cs")
+                    {
+                        RewriteFileWithTransform(
+                            filePath,
+                            content =>
+                            {
+                                // replace things if you want to
+                                return content;
+                            });
+                    }
+                });
         }
 
         private static void UpdateVendor(
