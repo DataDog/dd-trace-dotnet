@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.Vendoring</RootNamespace>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;net46;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <LangVersion>7.3</LangVersion>
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
@@ -10,6 +14,7 @@
     <DelaySign>false</DelaySign>
   </PropertyGroup>
 
+  <!--Serilog-->
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
     <DefineConstants>$(DefineConstants);REMOTING;HASHTABLE</DefineConstants>
@@ -38,6 +43,25 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
+  </ItemGroup>
+
+  <!--Serilog.Sinks.File-->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <DefineConstants>$(DefineConstants);ATOMIC_APPEND;HRESULTS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>$(DefineConstants);OS_MUTEX</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.IO" Version="4.1.0" />
+    <PackageReference Include="System.IO.FileSystem" Version="4.0.1" />
+    <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.0.1" />
+    <PackageReference Include="System.Text.Encoding.Extensions" Version="4.0.11" />
+    <PackageReference Include="System.Threading.Timer" Version="4.0.1" />
+    <PackageReference Include="System.Threading" Version="4.0.11" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.1.0" />
   </ItemGroup>
 
 </Project>
