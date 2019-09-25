@@ -1,5 +1,3 @@
-#if !NETCOREAPP3_0
-
 using System;
 using System.Linq;
 using System.Reflection;
@@ -47,5 +45,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         }
     }
 }
-
-#endif
