@@ -26,7 +26,7 @@ namespace Datadog.Trace.OpenTracing
         /// </summary>
         /// <param name="tracer">Existing Datadog Tracer instance</param>
         /// <returns>A Datadog compatible ITracer implementation</returns>
-        public static ITracer RegisterTracer(Tracer tracer)
+        public static ITracer WrapTracer(Tracer tracer)
         {
             return new OpenTracingTracer(tracer);
         }
