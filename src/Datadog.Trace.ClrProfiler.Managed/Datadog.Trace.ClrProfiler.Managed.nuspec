@@ -22,7 +22,6 @@
       </group>
       <group targetFramework=".NETStandard2.0">
         <dependency id="Datadog.Trace.ClrProfiler" version="1.7.0" />
-        <dependency id="Datadog.Trace.Web" version="1.0.0" />
       </group>
     </dependencies>
   </metadata>
