@@ -65,7 +65,9 @@ namespace Datadog.Trace.Web
                     return;
                 }
 
-                if (!TryGetContext(sender, out var httpContext))
+                var httpContext = GetHttpContext(sender);
+
+                if (httpContext == null)
                 {
                     return;
                 }
@@ -87,9 +89,9 @@ namespace Datadog.Trace.Web
                     }
                 }
 
-                string host = httpContext.Request.Headers.Get("Host");
-                string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                string url = httpContext.Request.RawUrl.ToLowerInvariant();
+                string host = httpRequest.Headers.Get("Host");
+                string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
+                string url = httpRequest.RawUrl.ToLowerInvariant();
                 string path = UriHelpers.GetRelativeUrl(httpRequest.Url, tryRemoveIds: true);
                 string resourceName = $"{httpMethod} {path.ToLowerInvariant()}";
 
@@ -120,8 +122,9 @@ namespace Datadog.Trace.Web
 
             try
             {
-                if (TryGetContext(sender, out var httpContext) &&
-                    httpContext.Items[_httpContextDelegateKey] is Scope scope)
+                var httpContext = GetHttpContext(sender);
+
+                if (httpContext?.Items[_httpContextDelegateKey] is Scope scope)
                 {
                     scope.Dispose();
                 }
@@ -136,8 +139,9 @@ namespace Datadog.Trace.Web
         {
             try
             {
-                if (TryGetContext(sender, out var httpContext) &&
-                    httpContext.Error != null &&
+                var httpContext = GetHttpContext(sender);
+
+                if (httpContext?.Error != null &&
                     httpContext.Items[_httpContextDelegateKey] is Scope scope)
                 {
                     scope.Span.SetException(httpContext.Error);
@@ -149,16 +153,14 @@ namespace Datadog.Trace.Web
             }
         }
 
-        private bool TryGetContext(object sender, out HttpContext httpContext)
+        private HttpContext GetHttpContext(object sender)
         {
             if (sender is HttpApplication httpApp)
             {
-                httpContext = httpApp.Context;
-                return true;
+                return httpApp.Context;
             }
 
-            httpContext = null;
-            return false;
+            return null;
         }
     }
 }
