@@ -9,7 +9,7 @@ namespace Datadog.Trace.Web
     /// <summary>
     ///     IHttpModule used to trace within an ASP.NET HttpApplication request
     /// </summary>
-    public class AspNetHttpModule : IHttpModule
+    public class TracingHttpModule : IHttpModule
     {
         internal const string IntegrationName = "AspNet";
 
@@ -19,22 +19,22 @@ namespace Datadog.Trace.Web
         private readonly string _operationName;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AspNetHttpModule" /> class.
+        ///     Initializes a new instance of the <see cref="TracingHttpModule" /> class.
         /// </summary>
-        public AspNetHttpModule()
+        public TracingHttpModule()
             : this("aspnet.request")
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AspNetHttpModule" /> class.
+        ///     Initializes a new instance of the <see cref="TracingHttpModule" /> class.
         /// </summary>
         /// <param name="operationName">The operation name to be used for the trace/span data generated</param>
-        public AspNetHttpModule(string operationName)
+        public TracingHttpModule(string operationName)
         {
             _operationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
-            _httpContextDelegateKey = string.Concat("__Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule-", _operationName);
+            _httpContextDelegateKey = string.Concat("__Datadog.Trace.ClrProfiler.Integrations.TracingHttpModule-", _operationName);
         }
 
         /// <inheritdoc />
