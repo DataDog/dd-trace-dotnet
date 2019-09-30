@@ -36,8 +36,8 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeFileArgs: |
         TestAllPackageVersions=true
-        buildConfiguration=$buildConfiguration
-        publishTargetFramework=$publishTargetFramework
+        buildConfiguration=$(buildConfiguration)
+        publishTargetFramework=$(publishTargetFramework)
       dockerComposeCommand: run build
 
   - task: DockerCompose@0
@@ -52,8 +52,8 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeFileArgs: |
         TestAllPackageVersions=true
-        buildConfiguration=$buildConfiguration
-        publishTargetFramework=$publishTargetFramework
+        buildConfiguration=$(buildConfiguration)
+        publishTargetFramework=$(publishTargetFramework)
       dockerComposeCommand: run IntegrationTests
 
   - task: PublishTestResults@2
