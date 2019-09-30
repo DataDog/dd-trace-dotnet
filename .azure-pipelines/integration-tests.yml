@@ -19,6 +19,12 @@ variables:
 jobs:
 
 - job: Linux
+  strategy:
+    matrix:
+      netcoreapp2_1:
+        targetFramework: netcoreapp2.1
+      netcoreapp3_0:
+        targetFramework: netcoreapp3.0
 
   pool:
     vmImage: ubuntu-16.04
