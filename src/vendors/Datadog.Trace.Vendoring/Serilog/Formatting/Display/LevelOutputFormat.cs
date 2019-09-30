@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Serilog.Events;
-using Serilog.Rendering;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Rendering;
 
-namespace Serilog.Formatting.Display
+namespace Datadog.Trace.Vendoring.Serilog.Formatting.Display
 {
     /// <summary>
     /// Implements the {Level} element.

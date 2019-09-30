@@ -1,7 +1,7 @@
-﻿using System;
-using Serilog.Events;
+using System;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog
+namespace Datadog.Trace.Vendoring.Serilog
 {
     /// <summary>
     /// Extends <see cref="ILogger" /> with additional methods.

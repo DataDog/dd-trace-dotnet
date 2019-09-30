@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Serilog.Configuration;
+using Datadog.Trace.Vendoring.Serilog.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace Serilog.Settings.KeyValuePairs
+namespace Datadog.Trace.Vendoring.Serilog.Settings.KeyValuePairs
 {
     static class CallableConfigurationMethodFinder
     {

@@ -12,33 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if OS_MUTEX
-
 using System;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Vendoring.Serilog.Core;
 using Datadog.Trace.Vendoring.Serilog.Events;
 using Datadog.Trace.Vendoring.Serilog.Formatting;
-using System.Threading;
-using Datadog.Trace.Vendoring.Serilog.Debugging;
 
 namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
 {
     /// <summary>
     /// Write log events to a disk file.
     /// </summary>
-    public sealed class SharedFileSink : IFileSink, IDisposable
+    [Obsolete("This type will be removed from the public API in a future version; use `WriteTo.File()` instead.")]
+    public sealed class FileSink : IFileSink, IDisposable
     {
         readonly TextWriter _output;
         readonly FileStream _underlyingStream;
         readonly ITextFormatter _textFormatter;
         readonly long? _fileSizeLimitBytes;
+        readonly bool _buffered;
         readonly object _syncRoot = new object();
-
-        const string MutexNameSuffix = ".serilog";
-        const int MutexWaitTimeout = 10000;
-        readonly Mutex _mutex;
+        readonly WriteCountingStream _countingStreamWrapper;
 
         /// <summary>Construct a <see cref="FileSink"/>.</summary>
         /// <param name="path">Path to the file.</param>
@@ -47,18 +41,20 @@ namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
         /// For unrestricted growth, pass null. The default is 1 GB. To avoid writing partial events, the last event within the limit
         /// will be written in full even if it exceeds the limit.</param>
         /// <param name="encoding">Character encoding used to write the text file. The default is UTF-8 without BOM.</param>
+        /// <param name="buffered">Indicates if flushing to the output file can be buffered or not. The default
+        /// is false.</param>
         /// <returns>Configuration object allowing method chaining.</returns>
         /// <remarks>The file will be written using the UTF-8 character set.</remarks>
         /// <exception cref="IOException"></exception>
-        public SharedFileSink(string path, ITextFormatter textFormatter, long? fileSizeLimitBytes, Encoding encoding = null)
+        public FileSink(string path, ITextFormatter textFormatter, long? fileSizeLimitBytes, Encoding encoding = null, bool buffered = false)
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
             if (textFormatter == null) throw new ArgumentNullException(nameof(textFormatter));
-            if (fileSizeLimitBytes.HasValue && fileSizeLimitBytes < 0)
-                throw new ArgumentException("Negative value provided; file size limit must be non-negative");
+            if (fileSizeLimitBytes.HasValue && fileSizeLimitBytes < 0) throw new ArgumentException("Negative value provided; file size limit must be non-negative.");
 
             _textFormatter = textFormatter;
             _fileSizeLimitBytes = fileSizeLimitBytes;
+            _buffered = buffered;
 
             var directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
@@ -66,39 +62,31 @@ namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
                 Directory.CreateDirectory(directory);
             }
 
-            var mutexName = Path.GetFullPath(path).Replace(Path.DirectorySeparatorChar, ':') + MutexNameSuffix;
-            _mutex = new Mutex(false, mutexName);
-            _underlyingStream = System.IO.File.Open(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-            _output = new StreamWriter(_underlyingStream, encoding ?? new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            Stream outputStream = _underlyingStream = System.IO.File.Open(path, FileMode.Append, FileAccess.Write, FileShare.Read);
+            if (_fileSizeLimitBytes != null)
+            {
+                outputStream = _countingStreamWrapper = new WriteCountingStream(_underlyingStream);
+            }
+
+            _output = new StreamWriter(outputStream, encoding ?? new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
 
         bool IFileSink.EmitOrOverflow(LogEvent logEvent)
         {
             if (logEvent == null) throw new ArgumentNullException(nameof(logEvent));
-
             lock (_syncRoot)
             {
-                if (!TryAcquireMutex())
-                    return true; // We didn't overflow, but, roll-on-size should not be attempted
-
-                try
+                if (_fileSizeLimitBytes != null)
                 {
-                    _underlyingStream.Seek(0, SeekOrigin.End);
-                    if (_fileSizeLimitBytes != null)
-                    {
-                        if (_underlyingStream.Length >= _fileSizeLimitBytes.Value)
-                            return false;
-                    }
+                    if (_countingStreamWrapper.CountedLength >= _fileSizeLimitBytes.Value)
+                        return false;
+                }
 
-                    _textFormatter.Format(logEvent, _output);
+                _textFormatter.Format(logEvent, _output);
+                if (!_buffered)
                     _output.Flush();
-                    _underlyingStream.Flush();
-                    return true;
-                }
-                finally
-                {
-                    ReleaseMutex();
-                }
+
+                return true;
             }
         }
 
@@ -108,7 +96,7 @@ namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
         /// <param name="logEvent">The log event to write.</param>
         public void Emit(LogEvent logEvent)
         {
-            ((IFileSink)this).EmitOrOverflow(logEvent);
+            ((IFileSink) this).EmitOrOverflow(logEvent);
         }
 
         /// <inheritdoc />
@@ -117,7 +105,6 @@ namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
             lock (_syncRoot)
             {
                 _output.Dispose();
-                _mutex.Dispose();
             }
         }
 
@@ -126,43 +113,9 @@ namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
         {
             lock (_syncRoot)
             {
-                if (!TryAcquireMutex())
-                    return;
-
-                try
-                {
-                    _underlyingStream.Flush(true);
-                }
-                finally
-                {
-                    ReleaseMutex();
-                }
+                _output.Flush();
+                _underlyingStream.Flush(true);
             }
-        }
-
-        bool TryAcquireMutex()
-        {
-            try
-            {
-                if (!_mutex.WaitOne(MutexWaitTimeout))
-                {
-                    SelfLog.WriteLine("Shared file mutex could not be acquired within {0} ms", MutexWaitTimeout);
-                    return false;
-                }
-            }
-            catch (AbandonedMutexException)
-            {
-                SelfLog.WriteLine("Inherited shared file mutex after abandonment by another process");
-            }
-
-            return true;
-        }
-
-        void ReleaseMutex()
-        {
-            _mutex.ReleaseMutex();
         }
     }
 }
-
-#endif

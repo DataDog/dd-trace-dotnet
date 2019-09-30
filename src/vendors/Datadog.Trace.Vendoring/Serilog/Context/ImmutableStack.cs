@@ -19,7 +19,7 @@ using System.Collections.Generic;
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable MemberCanBeProtected.Global
 
-namespace Serilog.Context
+namespace Datadog.Trace.Vendoring.Serilog.Context
 {
     class ImmutableStack<T> : IEnumerable<T>
     {

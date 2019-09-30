@@ -13,9 +13,9 @@
 // limitations under the License.
 
 using System;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Core.Enrichers
+namespace Datadog.Trace.Vendoring.Serilog.Core.Enrichers
 {
     /// <summary>
     /// Adds a new property encricher to the log event.

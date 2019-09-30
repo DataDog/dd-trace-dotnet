@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Serilog.Core;
-using Serilog.Core.Pipeline;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Core.Pipeline;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog
+namespace Datadog.Trace.Vendoring.Serilog
 {
     /// <summary>
     /// An optional static entry point for logging that can be easily referenced

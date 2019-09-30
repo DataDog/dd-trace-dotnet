@@ -14,7 +14,7 @@
  
 using System;
 
-namespace Serilog.Sinks.File
+namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
 {
     class RollingLogFile
     {

@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using Serilog.Events;
-using Serilog.Parsing;
-using Serilog.Rendering;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Parsing;
+using Datadog.Trace.Vendoring.Serilog.Rendering;
 
-namespace Serilog.Formatting.Json
+namespace Datadog.Trace.Vendoring.Serilog.Formatting.Json
 {
     /// <summary>
     /// Formats log events in a simple JSON structure. Instances of this class

@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
 
 using System;
 using System.IO;
-using Serilog.Events;
-using Serilog.Rendering;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Rendering;
 
-namespace Serilog.Formatting.Display.Obsolete
+namespace Datadog.Trace.Vendoring.Serilog.Formatting.Display.Obsolete
 {
     // A special case (non-null) string value for use in output
     // templates. Does not apply "quoted" formatting by default.

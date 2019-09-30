@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using Serilog.Core;
-using Serilog.Core.Pipeline;
-using Serilog.Events;
-using Serilog.Parsing;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Core.Pipeline;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Parsing;
 
-namespace Serilog.Capturing
+namespace Datadog.Trace.Vendoring.Serilog.Capturing
 {
     class MessageTemplateProcessor : ILogEventPropertyFactory
     {

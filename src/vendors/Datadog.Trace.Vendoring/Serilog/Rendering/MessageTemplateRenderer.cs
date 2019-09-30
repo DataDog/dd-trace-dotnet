@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2017 Serilog Contributors
+// Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using Serilog.Events;
-using Serilog.Formatting.Json;
-using Serilog.Parsing;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Formatting.Json;
+using Datadog.Trace.Vendoring.Serilog.Parsing;
 
-namespace Serilog.Rendering
+namespace Datadog.Trace.Vendoring.Serilog.Rendering
 {
     static class MessageTemplateRenderer
     {

@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Threading;
-using Serilog.Core;
-using Serilog.Debugging;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Debugging;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Sinks.File
+namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
 {
     /// <summary>
     /// A sink wrapper that periodically flushes the wrapped sink to disk.

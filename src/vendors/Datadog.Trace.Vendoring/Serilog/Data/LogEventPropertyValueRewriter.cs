@@ -1,4 +1,4 @@
-﻿// Copyright 2016 Serilog Contributors
+// Copyright 2016 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
 
 using System;
 using System.Collections.Generic;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Data
+namespace Datadog.Trace.Vendoring.Serilog.Data
 {
     /// <summary>
     /// A base class for visitors that rewrite the value with modifications. For example, implementations

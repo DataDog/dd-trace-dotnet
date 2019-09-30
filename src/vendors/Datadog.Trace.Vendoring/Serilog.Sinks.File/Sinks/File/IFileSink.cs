@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Serilog Contributors
+// Copyright 2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Datadog.Trace.Vendoring.Serilog.Core;
 using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Datadog.Trace.Vendoring.Serilog.Core
+namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
 {
     /// <summary>
-    /// A destination for log events.
+    /// Exists only for the convenience of <see cref="RollingFileSink"/>, which
+    /// switches implementations based on sharing. Would refactor, but preserving
+    /// backwards compatibility.
     /// </summary>
-    public interface ILogEventSink
+    interface IFileSink : ILogEventSink, IFlushableFileSink
     {
-        /// <summary>
-        /// Emit the provided log event to the sink.
-        /// </summary>
-        /// <param name="logEvent">The log event to write.</param>
-        void Emit(LogEvent logEvent);
+        bool EmitOrOverflow(LogEvent logEvent);
     }
 }

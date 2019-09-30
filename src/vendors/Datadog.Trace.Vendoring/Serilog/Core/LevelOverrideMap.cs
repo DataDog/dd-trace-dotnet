@@ -15,9 +15,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Core
+namespace Datadog.Trace.Vendoring.Serilog.Core
 {
     class LevelOverrideMap
     {

@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2017 Serilog Contributors
+// Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Serilog.Core;
-using Serilog.Debugging;
-using Serilog.Events;
-using Serilog.Parsing;
-using Serilog.Policies;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Debugging;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Parsing;
+using Datadog.Trace.Vendoring.Serilog.Policies;
 using System.Runtime.CompilerServices;
 
-namespace Serilog.Capturing
+namespace Datadog.Trace.Vendoring.Serilog.Capturing
 {
     // Values in Serilog are simplified down into a lowest-common-denominator internal
     // type system so that there is a better chance of code written with one sink in

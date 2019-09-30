@@ -1,4 +1,4 @@
-﻿// Copyright 2015 Serilog Contributors
+// Copyright 2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
 
 using System;
 using System.Collections.Generic;
-using Serilog.Settings.KeyValuePairs;
+using Datadog.Trace.Vendoring.Serilog.Settings.KeyValuePairs;
 
-namespace Serilog.Configuration
+namespace Datadog.Trace.Vendoring.Serilog.Configuration
 {
     /// <summary>
     /// Allows additional setting sources to drive the logger configuration.

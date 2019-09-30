@@ -13,9 +13,9 @@
 // limitations under the License.
 
 using System;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Core.Enrichers
+namespace Datadog.Trace.Vendoring.Serilog.Core.Enrichers
 {
     class FixedPropertyEnricher : ILogEventEnricher
     {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Serilog.Configuration
+namespace Datadog.Trace.Vendoring.Serilog.Configuration
 {
     /// <summary>
     /// Implemented on types that apply settings to a logger configuration.

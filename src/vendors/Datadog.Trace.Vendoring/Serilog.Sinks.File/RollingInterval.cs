@@ -1,4 +1,4 @@
-﻿// Copyright 2017 Serilog Contributors
+// Copyright 2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Serilog
+namespace Datadog.Trace.Vendoring.Serilog
 {
     /// <summary>
     /// Specifies the frequency at which the log file should roll.

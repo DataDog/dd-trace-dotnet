@@ -16,11 +16,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Serilog.Debugging;
-using Serilog.Parsing;
-using Serilog.Rendering;
+using Datadog.Trace.Vendoring.Serilog.Debugging;
+using Datadog.Trace.Vendoring.Serilog.Parsing;
+using Datadog.Trace.Vendoring.Serilog.Rendering;
 
-namespace Serilog.Events
+namespace Datadog.Trace.Vendoring.Serilog.Events
 {
     /// <summary>
     /// Represents a message template passed to a log method. The template

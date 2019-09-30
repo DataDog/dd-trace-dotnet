@@ -29,13 +29,7 @@
     <DefineConstants>$(DefineConstants);ASYNCLOCAL;HASHTABLE</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
@@ -46,7 +40,7 @@
   </ItemGroup>
 
   <!--Serilog.Sinks.File-->
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <DefineConstants>$(DefineConstants);ATOMIC_APPEND;HRESULTS</DefineConstants>
   </PropertyGroup>
 
@@ -55,13 +49,13 @@
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <PackageReference Include="System.IO" Version="4.1.0" />
-    <PackageReference Include="System.IO.FileSystem" Version="4.0.1" />
-    <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.0.1" />
-    <PackageReference Include="System.Text.Encoding.Extensions" Version="4.0.11" />
-    <PackageReference Include="System.Threading.Timer" Version="4.0.1" />
-    <PackageReference Include="System.Threading" Version="4.0.11" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.1.0" />
+    <PackageReference Include="System.IO" Version="4.3.0" />
+    <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
+    <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
+    <PackageReference Include="System.Text.Encoding.Extensions" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Timer" Version="4.3.0" />
+    <PackageReference Include="System.Threading" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿// Copyright 2016 Serilog Contributors
+// Copyright 2016 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
 // limitations under the License.
 
 using System;
-using Serilog.Core;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Configuration
+namespace Datadog.Trace.Vendoring.Serilog.Configuration
 {
     /// <summary>
     /// Controls audit sink configuration.

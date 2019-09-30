@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2016 Serilog Contributors
+// Copyright 2013-2016 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
 
 using System;
 using System.Collections.Generic;
-using Serilog.Capturing;
-using Serilog.Core.Enrichers;
-using Serilog.Core.Pipeline;
-using Serilog.Debugging;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Capturing;
+using Datadog.Trace.Vendoring.Serilog.Core.Enrichers;
+using Datadog.Trace.Vendoring.Serilog.Core.Pipeline;
+using Datadog.Trace.Vendoring.Serilog.Debugging;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
 #pragma warning disable Serilog004 // Constant MessageTemplate verifier
 
-namespace Serilog.Core
+namespace Datadog.Trace.Vendoring.Serilog.Core
 {
     /// <summary>
     /// The core Serilog logging pipeline. A <see cref="Logger"/> must

@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2017 Serilog Contributors
+// Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Serilog.Events;
-using Serilog.Formatting.Display.Obsolete;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Formatting.Display.Obsolete;
 
 #pragma warning disable 618
 
-namespace Serilog.Formatting.Display
+namespace Datadog.Trace.Vendoring.Serilog.Formatting.Display
 {
     /// <summary>
     /// Describes the properties available in standard message template-based

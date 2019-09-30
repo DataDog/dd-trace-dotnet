@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2016 Serilog Contributors
+// Copyright 2013-2016 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Serilog.Core;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Sinks.File
+namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
 {
     /// <summary>
     /// An instance of this sink may be substituted when an instance of the

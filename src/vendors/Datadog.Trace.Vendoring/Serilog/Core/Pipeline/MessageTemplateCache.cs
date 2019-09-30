@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using System;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
 #if HASHTABLE
 using System.Collections;
@@ -21,7 +21,7 @@ using System.Collections;
 using System.Collections.Generic;
 #endif
 
-namespace Serilog.Core.Pipeline
+namespace Datadog.Trace.Vendoring.Serilog.Core.Pipeline
 {
     class MessageTemplateCache : IMessageTemplateParser
     {

@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Serilog.Configuration;
-using Serilog.Core;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Configuration;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Settings.KeyValuePairs
+namespace Datadog.Trace.Vendoring.Serilog.Settings.KeyValuePairs
 {
     class KeyValuePairSettings : ILoggerSettings
     {

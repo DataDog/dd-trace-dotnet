@@ -15,9 +15,9 @@
 
 using System;
 using System.ComponentModel;
-using Serilog.Core;
-using Serilog.Core.Enrichers;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Core.Enrichers;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
 #if ASYNCLOCAL
 using System.Threading;
@@ -27,7 +27,7 @@ using System.Runtime.Remoting.Lifetime;
 using System.Runtime.Remoting.Messaging;
 #endif
 
-namespace Serilog.Context
+namespace Datadog.Trace.Vendoring.Serilog.Context
 {
     /// <summary>
     /// Holds ambient properties that can be attached to log events. To

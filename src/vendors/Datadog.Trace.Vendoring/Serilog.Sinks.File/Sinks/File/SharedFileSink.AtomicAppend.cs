@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2016 Serilog Contributors
+// Copyright 2013-2016 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ using System;
 using System.IO;
 using System.Security.AccessControl;
 using System.Text;
-using Serilog.Core;
-using Serilog.Events;
-using Serilog.Formatting;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Formatting;
 
-namespace Serilog.Sinks.File
+namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
 {
     /// <summary>
     /// Write log events to a disk file.

@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
 // limitations under the License.
 
 using System;
-using Serilog.Core;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Filters
+namespace Datadog.Trace.Vendoring.Serilog.Filters
 {
     /// <summary>
     /// Predicates applied to log events that can be used

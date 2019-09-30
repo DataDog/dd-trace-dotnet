@@ -1,6 +1,6 @@
 using System;
 
-namespace Serilog.Core
+namespace Datadog.Trace.Vendoring.Serilog.Core
 {
     /// <summary>
     /// Indicates that the marked method logs data using a message template and (optional) arguments.

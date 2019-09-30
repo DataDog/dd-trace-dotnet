@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2017 Serilog Contributors
+// Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,18 +15,18 @@
 using System;
 using System.ComponentModel;
 using System.Text;
-using Serilog.Configuration;
-using Serilog.Core;
-using Serilog.Debugging;
-using Serilog.Events;
-using Serilog.Formatting;
-using Serilog.Formatting.Display;
-using Serilog.Formatting.Json;
-using Serilog.Sinks.File;
+using Datadog.Trace.Vendoring.Serilog.Configuration;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Debugging;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Formatting;
+using Datadog.Trace.Vendoring.Serilog.Formatting.Display;
+using Datadog.Trace.Vendoring.Serilog.Formatting.Json;
+using Datadog.Trace.Vendoring.Serilog.Sinks.File;
 
 // ReSharper disable MethodOverloadWithOptionalParameter
 
-namespace Serilog
+namespace Datadog.Trace.Vendoring.Serilog
 {
     /// <summary>Extends <see cref="LoggerConfiguration"/> with methods to add file sinks.</summary>
     public static class FileLoggerConfigurationExtensions

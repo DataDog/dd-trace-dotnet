@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2017 Serilog Contributors
+// Copyright 2013-2017 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
 
 using System;
 using System.Collections.Generic;
-using Serilog.Core;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Policies
+namespace Datadog.Trace.Vendoring.Serilog.Policies
 {
     class SimpleScalarConversionPolicy : IScalarConversionPolicy
     {

@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
 
 using System;
 using System.Collections;
-using Serilog.Core;
-using Serilog.Policies;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Policies;
 
-namespace Serilog.Configuration
+namespace Datadog.Trace.Vendoring.Serilog.Configuration
 {
     /// <summary>
     /// Controls template parameter destructuring configuration.

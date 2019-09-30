@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Core
+namespace Datadog.Trace.Vendoring.Serilog.Core
 {
     interface IMessageTemplateParser
     {

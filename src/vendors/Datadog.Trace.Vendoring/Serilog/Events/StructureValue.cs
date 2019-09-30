@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 // Copyright 2013-2015 Serilog Contributors
 //
@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Serilog.Events
+namespace Datadog.Trace.Vendoring.Serilog.Events
 {
     /// <summary>
     /// A value represented as a collection of name-value properties.

@@ -25,26 +25,30 @@ namespace UpdateVendors
                 libraryName: "Serilog",
                 masterBranchDownload: "https://github.com/serilog/serilog/archive/master.zip",
                 pathToSrc: new[] { "serilog-master", "src", "Serilog" },
-                (filePath) =>
-                {
-                    var extension = Path.GetExtension(filePath);
-
-                    if (extension == "cs")
-                    {
-                        RewriteFileWithTransform(
-                            filePath,
-                            content =>
-                            {
-                                // replace things if you want to
-                                return content;
-                            });
-                    }
-                });
+                transform: TransformSerilog);
 
             UpdateVendor(
                 libraryName: "Serilog.Sinks.File",
                 masterBranchDownload: "https://github.com/serilog/serilog-sinks-file/archive/master.zip",
-                pathToSrc: new[] { "serilog-sinks-file-master", "src", "Serilog.Sinks.File" });
+                pathToSrc: new[] { "serilog-sinks-file-master", "src", "Serilog.Sinks.File" },
+                transform: TransformSerilog);
+        }
+
+        private static void TransformSerilog(string filePath)
+        {
+            var extension = Path.GetExtension(filePath);
+
+            if (extension == ".cs")
+            {
+                RewriteFileWithTransform(
+                    filePath,
+                    content =>
+                    {
+                        content = content.Replace("using Serilog", "using Datadog.Trace.Vendoring.Serilog");
+                        content = content.Replace("namespace Serilog", "namespace Datadog.Trace.Vendoring.Serilog");
+                        return content;
+                    });
+            }
         }
 
         private static void UpdateVendor(
@@ -91,17 +95,14 @@ namespace UpdateVendors
             {
                 Console.WriteLine($"Running transforms on files for {libraryName}.");
 
-                foreach (var file in Directory.EnumerateFiles(sourceLocation))
+                var files = Directory.GetFiles(
+                    sourceLocation,
+                    "*.*",
+                    SearchOption.AllDirectories);
+
+                foreach (var file in files)
                 {
                     transform(file);
-                }
-
-                foreach (var directory in Directory.EnumerateDirectories(sourceLocation))
-                {
-                    foreach (var file in Directory.EnumerateFiles(directory))
-                    {
-                        transform(file);
-                    }
                 }
 
                 Console.WriteLine($"Finished transforms on files for {libraryName}.");

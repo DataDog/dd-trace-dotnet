@@ -1,4 +1,4 @@
-﻿// Copyright 2016 Serilog Contributors
+// Copyright 2016 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,11 +13,11 @@
 // limitations under the License.
 
 using System;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
 // ReSharper disable VirtualMemberNeverOverridden.Global
 
-namespace Serilog.Data
+namespace Datadog.Trace.Vendoring.Serilog.Data
 {
     /// <summary>
     /// An abstract base class for visitors that walk data in the

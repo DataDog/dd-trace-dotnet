@@ -1,6 +1,6 @@
-﻿using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Core
+namespace Datadog.Trace.Vendoring.Serilog.Core
 {
     /// <summary>
     /// Supports the policy-driven construction of <see cref="LogEventPropertyValue"/>s given

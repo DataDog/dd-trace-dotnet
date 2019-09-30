@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2015 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog.Parsing
+namespace Datadog.Trace.Vendoring.Serilog.Parsing
 {
     /// <summary>
     /// An element parsed from a message template string.

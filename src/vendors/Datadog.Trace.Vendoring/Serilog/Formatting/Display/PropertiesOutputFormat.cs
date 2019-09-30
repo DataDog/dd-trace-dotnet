@@ -16,10 +16,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Serilog.Events;
-using Serilog.Formatting.Json;
+using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Formatting.Json;
 
-namespace Serilog.Formatting.Display
+namespace Datadog.Trace.Vendoring.Serilog.Formatting.Display
 {
     static class PropertiesOutputFormat
     {

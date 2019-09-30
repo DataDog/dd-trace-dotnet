@@ -1,4 +1,4 @@
-﻿// Copyright 2013-2016 Serilog Contributors
+// Copyright 2013-2016 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,14 +15,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Serilog.Capturing;
-using Serilog.Configuration;
-using Serilog.Core;
-using Serilog.Core.Enrichers;
-using Serilog.Core.Sinks;
-using Serilog.Events;
+using Datadog.Trace.Vendoring.Serilog.Capturing;
+using Datadog.Trace.Vendoring.Serilog.Configuration;
+using Datadog.Trace.Vendoring.Serilog.Core;
+using Datadog.Trace.Vendoring.Serilog.Core.Enrichers;
+using Datadog.Trace.Vendoring.Serilog.Core.Sinks;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
-namespace Serilog
+namespace Datadog.Trace.Vendoring.Serilog
 {
     /// <summary>
     /// Configuration object for creating <see cref="ILogger"/> instances.

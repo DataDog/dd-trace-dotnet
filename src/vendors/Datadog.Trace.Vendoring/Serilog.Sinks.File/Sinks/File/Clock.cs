@@ -12,20 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.IO;
+using System;
 
 namespace Datadog.Trace.Vendoring.Serilog.Sinks.File
 {
-    static class IOErrors
+    static class Clock
     {
-        public static bool IsLockedFile(IOException ex)
+        static Func<DateTime> _dateTimeNow = () => DateTime.Now;
+
+        [ThreadStatic]
+        static DateTime _testDateTimeNow;
+
+        public static DateTime DateTimeNow => _dateTimeNow();
+
+        // Time is set per thread to support parallel
+        // If any thread uses the clock in test mode, all threads
+        // must use it in test mode; once set to test mode only
+        // terminating the application returns it to normal use.
+        public static void SetTestDateTimeNow(DateTime now)
         {
-#if HRESULTS
-            var errorCode = System.Runtime.InteropServices.Marshal.GetHRForException(ex) & ((1 << 16) - 1);
-            return errorCode == 32 || errorCode == 33;
-#else
-            return true;
-#endif
+            _testDateTimeNow = now;
+            _dateTimeNow = () => _testDateTimeNow;
         }
     }
 }
