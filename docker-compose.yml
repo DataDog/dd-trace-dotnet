@@ -73,7 +73,7 @@ services:
     image: datadog-dotnet
     environment:
     - buildConfiguration=Debug
-    - targetFramework=netcoreapp2.1
+    - publishTargetFramework=netcoreapp2.1
     command: /project/docker/build.sh
     volumes:
     - ./:/project

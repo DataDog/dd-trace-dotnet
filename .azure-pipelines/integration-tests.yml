@@ -22,9 +22,9 @@ jobs:
   strategy:
     matrix:
       netcoreapp2_1:
-        targetFramework: netcoreapp2.1
+        publishTargetFramework: netcoreapp2.1
       netcoreapp3_0:
-        targetFramework: netcoreapp3.0
+        publishTargetFramework: netcoreapp3.0
 
   pool:
     vmImage: ubuntu-16.04
