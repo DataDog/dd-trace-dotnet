@@ -34,20 +34,27 @@ jobs:
     displayName: docker-compose run build
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true build
+      dockerComposeFileArgs: |
+        TestAllPackageVersions=true
+        buildConfiguration=$buildConfiguration
+        publishTargetFramework=$publishTargetFramework
+      dockerComposeCommand: run build
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeFileArgs: TestAllPackageVersions=true
       dockerComposeCommand: run Profiler
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e TestAllPackageVersions=true IntegrationTests
+      dockerComposeFileArgs: |
+        TestAllPackageVersions=true
+        buildConfiguration=$buildConfiguration
+        publishTargetFramework=$publishTargetFramework
+      dockerComposeCommand: run IntegrationTests
 
   - task: PublishTestResults@2
     displayName: publish test results
