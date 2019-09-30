@@ -35,13 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssembly = FrameworkAssembly, // .NET Framework
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { DbDataReaderTypeName, CommandBehaviorTypeName },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
-        [InterceptMethod(
-            TargetAssembly = CoreAssembly, // .NET Core
+            TargetAssemblies = new[] { FrameworkAssembly, CoreAssembly },
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { DbDataReaderTypeName, CommandBehaviorTypeName },
             TargetMinimumVersion = Major4,
@@ -110,13 +104,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetAssembly = FrameworkAssembly, // .NET Framework
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", CommandBehaviorTypeName, ClrNames.CancellationToken },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
-        [InterceptMethod(
-            TargetAssembly = CoreAssembly, // .NET Core
+            TargetAssemblies = new[] { FrameworkAssembly, CoreAssembly },
             TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", CommandBehaviorTypeName, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
