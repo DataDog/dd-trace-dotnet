@@ -11,6 +11,7 @@ trigger:
 
 variables:
   buildConfiguration: Debug
+  TestAllPackageVersions: true
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
   dotnetCoreSdkVersion: 3.0.x
   dotnetCore21SdkVersion: 2.1.x
@@ -34,11 +35,7 @@ jobs:
     displayName: docker-compose run build
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeFileArgs: |
-        TestAllPackageVersions=true
-        buildConfiguration=$(buildConfiguration)
-        publishTargetFramework=$(publishTargetFramework)
-      dockerComposeCommand: run build
+      dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
@@ -50,11 +47,7 @@ jobs:
     displayName: docker-compose run IntegrationTests
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeFileArgs: |
-        TestAllPackageVersions=true
-        buildConfiguration=$(buildConfiguration)
-        publishTargetFramework=$(publishTargetFramework)
-      dockerComposeCommand: run IntegrationTests
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
 
   - task: PublishTestResults@2
     displayName: publish test results
