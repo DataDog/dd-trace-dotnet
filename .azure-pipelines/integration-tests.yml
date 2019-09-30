@@ -47,7 +47,7 @@ jobs:
     displayName: docker-compose run IntegrationTests
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) IntegrationTests
 
   - task: PublishTestResults@2
     displayName: publish test results
