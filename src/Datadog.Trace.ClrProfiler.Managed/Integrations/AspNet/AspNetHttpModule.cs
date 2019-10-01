@@ -5,7 +5,6 @@ using System.Web;
 using Datadog.Trace.ClrProfiler.Interfaces;
 using Datadog.Trace.ClrProfiler.Models;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {

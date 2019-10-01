@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Containers;
-using Datadog.Trace.Logging;
 using MsgPack.Serialization;
 using Newtonsoft.Json;
 

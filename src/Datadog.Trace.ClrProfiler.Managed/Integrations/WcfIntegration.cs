@@ -6,7 +6,6 @@ using System.ServiceModel.Channels;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {

@@ -2,13 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent
 {
     internal class AgentWriter : IAgentWriter
     {
-        private static readonly ILog _log = LogProvider.For<AgentWriter>();
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.For<AgentWriter>();
 
         private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(1000);
         private readonly IApi _api;
@@ -26,7 +25,7 @@ namespace Datadog.Trace.Agent
             var success = _tracesBuffer.Push(trace);
             if (!success)
             {
-                _log.Debug("Trace buffer is full, dropping it.");
+                Log.Debug("Trace buffer is full, dropping it.");
             }
         }
 
@@ -42,7 +41,7 @@ namespace Datadog.Trace.Agent
 
             if (!_flushTask.IsCompleted)
             {
-                _log.Warn("Could not flush all traces before process exit");
+                Log.Warning("Could not flush all traces before process exit");
             }
         }
 
@@ -76,7 +75,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    _log.ErrorException("An unhandled error occurred during the flushing task", ex);
+                    Log.Error(ex, "An unhandled error occurred during the flushing task");
                 }
             }
         }

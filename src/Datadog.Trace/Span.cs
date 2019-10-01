@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Text;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {

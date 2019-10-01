@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {

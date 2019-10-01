@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
@@ -10,7 +9,7 @@ namespace Datadog.Trace
     /// </summary>
     public class SpanContext : ISpanContext
     {
-        private static ILog _log = LogProvider.For<SpanContext>();
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.For<SpanContext>();
         private static ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
 
         /// <summary>

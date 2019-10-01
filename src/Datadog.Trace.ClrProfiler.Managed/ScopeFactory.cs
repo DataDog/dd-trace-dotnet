@@ -1,5 +1,4 @@
 using System;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
 {

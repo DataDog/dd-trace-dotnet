@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {

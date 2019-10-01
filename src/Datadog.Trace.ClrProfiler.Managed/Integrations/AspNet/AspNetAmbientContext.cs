@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {

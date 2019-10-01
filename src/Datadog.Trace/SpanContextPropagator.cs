@@ -2,7 +2,6 @@ using System;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {

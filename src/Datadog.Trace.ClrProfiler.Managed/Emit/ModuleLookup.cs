@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
