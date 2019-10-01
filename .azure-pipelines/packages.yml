@@ -63,7 +63,6 @@ jobs:
     inputs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
-      includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
@@ -151,7 +150,6 @@ jobs:
     displayName: install dotnet core sdk
     inputs:
       version: $(dotnetCoreSdkVersion)
-      includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore

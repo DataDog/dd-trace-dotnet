@@ -82,7 +82,6 @@ jobs:
     inputs:
       packageType: sdk
       version: $(dotnetCore21SdkVersion)
-      includePreviewVersions: true
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
