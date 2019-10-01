@@ -11,7 +11,8 @@ trigger:
 variables:
   buildConfiguration: Debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
-  dotnetCoreSdkVersion: 2.2.401
+  dotnetCoreSdkVersion: 3.0.x
+  dotnetCore21SdkVersion: 2.1.x
 
 jobs:
 
@@ -27,9 +28,16 @@ jobs:
     vmImage: $(imageName)
 
   steps:
-  - task: DotNetCoreInstaller@0
-    displayName: install dotnet core sdk
+  - task: UseDotNet@2
+    displayName: install dotnet core 2.1 sdk
     inputs:
+      packageType: sdk
+      version: $(dotnetCore21SdkVersion)
+
+  - task: UseDotNet@2
+    displayName: install dotnet core 3.0 sdk
+    inputs:
+      packageType: sdk
       version: $(dotnetCoreSdkVersion)
 
   - task: DotNetCoreCLI@2
@@ -69,18 +77,20 @@ jobs:
     vmImage: windows-2019
 
   steps:
-  - task: DotNetCoreInstaller@0
-    displayName: install dotnet core sdk
+  - task: UseDotNet@2
+    displayName: install dotnet core 2.1 sdk
     inputs:
-      version: $(dotnetCoreSdkVersion)
+      packageType: sdk
+      version: $(dotnetCore21SdkVersion)
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+    displayName: dotnet build
     inputs:
       command: build
       configuration: $(buildConfiguration)
       projects: |
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        sample-libs/**/Samples.ExampleLibrary*.csproj
 
   - task: NuGetCommand@2
     displayName: nuget restore

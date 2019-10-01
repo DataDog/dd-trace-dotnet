@@ -4,11 +4,11 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' != 'netcoreapp2.1' ">
+  <ItemGroup Condition="!$(TargetFramework.StartsWith('netcoreapp'))">
     <Reference Include="System.ServiceModel" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('netcoreapp'))">
     <PackageReference Include="System.ServiceModel.Http" Version="4.5.3" />
     <PackageReference Include="System.ServiceModel.NetTcp" Version="4.5.3" />
   </ItemGroup>

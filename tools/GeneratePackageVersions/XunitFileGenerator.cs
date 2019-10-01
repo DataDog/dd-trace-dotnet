@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 @"                new object[] {{ ""{0}"" }},";
 
         private const string BodyFormat =
-@"        public static IEnumerable<object[]> {0} =>
+@"{2}        public static IEnumerable<object[]> {0} =>
 
             new List<object[]>
             {{
@@ -49,7 +49,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] {{ string.Empty }},
 #else{1}
 #endif
-            }};";
+            }};{3}
+";
+
+        private const string EndIfDirectiveConst =
+@"
+#endif";
 
         public XUnitFileGenerator(string filename)
             : base(filename)
@@ -72,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public override void Write(string integrationName, string sampleProjectName, IEnumerable<string> packageVersions)
+        public override void Write(PackageVersionEntry packageVersionEntry, IEnumerable<string> packageVersions)
         {
             Debug.Assert(Started, "Cannot call Write() before calling Start()");
             Debug.Assert(!Finished, "Cannot call Write() after calling Finish()");
@@ -84,7 +89,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 bodyStringBuilder.Append(string.Format(EntryFormat, packageVersion));
             }
 
-            FileStringBuilder.AppendLine(string.Format(BodyFormat, integrationName, bodyStringBuilder.ToString()));
+            string ifDirective = string.IsNullOrEmpty(packageVersionEntry.SampleTargetFramework) ? string.Empty : $"#if {packageVersionEntry.SampleTargetFramework.ToUpper().Replace('.', '_')}{Environment.NewLine}";
+            string endifDirective = string.IsNullOrEmpty(packageVersionEntry.SampleTargetFramework) ? string.Empty : EndIfDirectiveConst;
+            FileStringBuilder.AppendLine(string.Format(BodyFormat, packageVersionEntry.IntegrationName, bodyStringBuilder.ToString(), ifDirective, endifDirective));
         }
     }
 }

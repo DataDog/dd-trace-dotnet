@@ -72,7 +72,8 @@ services:
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
     environment:
-    - buildConfiguration=Debug
+    - buildConfiguration=${buildConfiguration:-Debug}
+    - publishTargetFramework=${publishTargetFramework:-netcoreapp2.1}
     command: /project/docker/build.sh
     volumes:
     - ./:/project
@@ -215,6 +216,8 @@ services:
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
+    - buildConfiguration=${buildConfiguration:-Debug}
+    - publishTargetFramework=${publishTargetFramework:-netcoreapp2.1}
     depends_on:
     - servicestackredis
     - stackexchangeredis

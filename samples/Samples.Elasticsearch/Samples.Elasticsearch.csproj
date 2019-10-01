@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- override to remove net452 -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
 
     <ApiVersion Condition="'$(ApiVersion)' == ''">6.1.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'>='6.1.0'">$(DefineConstants);ELASTICSEARCH_6_1</DefineConstants>
@@ -15,6 +15,10 @@
   <ItemGroup>
     <PackageReference Include="Elasticsearch.Net" Version="$(ApiVersion)" />
     <PackageReference Include="NEST" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
+    <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

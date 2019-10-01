@@ -1,15 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">$(TargetFrameworks);net452;net461</TargetFrameworks>
-    <Platforms>x64;x86</Platforms>
-    <PlatformTarget>$(Platform)</PlatformTarget>
     <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' != 'netcoreapp2.1' ">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">   
     <!-- HttpClient for full .NET Framework -->
     <Reference Include="System.Net.Http" />
   </ItemGroup>

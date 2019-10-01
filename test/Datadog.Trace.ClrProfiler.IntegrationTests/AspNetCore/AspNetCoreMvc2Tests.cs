@@ -1,3 +1,5 @@
+#if NETCOREAPP2_1
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,8 +10,6 @@ using System.Threading;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
-
-#if !NET452
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {

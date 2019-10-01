@@ -18,7 +18,11 @@ namespace Samples.GraphQL
             var directory = Directory.GetCurrentDirectory();
 
             var host = new WebHostBuilder()
-                .UseKestrel()
+                .UseKestrel(serverOptions =>
+                    // Explicitly set AllowSynchronousIO to true since the default changes
+                    // between AspNetCore 2.0 and 3.0
+                    serverOptions.AllowSynchronousIO = true
+                )
                 .UseContentRoot(directory)
                 .UseIISIntegration()
                 .UseStartup<Startup>()

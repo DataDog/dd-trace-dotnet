@@ -54,8 +54,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.8.1" },
                 new object[] { "2.9.0" },
                 new object[] { "2.9.1" },
+                new object[] { "2.9.2" },
 #endif
             };
+
         public static IEnumerable<object[]> ElasticSearch6 =>
 
             new List<object[]>
@@ -82,6 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.8.2" },
 #endif
             };
+
         public static IEnumerable<object[]> ElasticSearch5 =>
 
             new List<object[]>
@@ -102,6 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.6.6" },
 #endif
             };
+
         public static IEnumerable<object[]> Npgsql =>
 
             new List<object[]>
@@ -119,8 +123,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.7" },
                 new object[] { "4.0.8" },
                 new object[] { "4.0.9" },
+                new object[] { "4.0.10" },
+                new object[] { "4.1.0" },
 #endif
             };
+
         public static IEnumerable<object[]> SqlServer =>
 
             new List<object[]>
@@ -147,6 +154,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.2.6" },
 #endif
             };
+
         public static IEnumerable<object[]> StackExchangeRedis =>
 
             new List<object[]>
@@ -216,6 +224,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.2.6" },
 #endif
             };
+
         public static IEnumerable<object[]> ServiceStackRedis =>
 
             new List<object[]>
@@ -246,8 +255,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.4.0" },
                 new object[] { "5.5.0" },
                 new object[] { "5.6.0" },
+                new object[] { "5.7.0" },
 #endif
             };
+
+#if NETCOREAPP2_1
         public static IEnumerable<object[]> AspNetCoreMvc2 =>
 
             new List<object[]>
@@ -267,5 +279,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.2.0" },
 #endif
             };
+#endif
+
     }
 }

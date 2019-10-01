@@ -2,12 +2,7 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
-  </PropertyGroup>
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-    <Platforms>x64;x86</Platforms>
-    <PlatformTarget>$(Platform)</PlatformTarget>
+    <TargetFrameworks>net461;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
 
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

@@ -11,5 +11,7 @@ namespace GeneratePackageVersions
         public string MinVersion { get; set; }
 
         public string MaxVersionExclusive { get; set; }
+
+        public string SampleTargetFramework { get; set; }
     }
 }

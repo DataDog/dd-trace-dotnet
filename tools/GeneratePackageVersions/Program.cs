@@ -55,7 +55,7 @@ namespace GeneratePackageVersions
             foreach (PackageVersionEntry entry in entries)
             {
                 var packageVersions = await NuGetPackageHelper.GetNugetPackageVersions(entry);
-                fileGenerator.Write(integrationName: entry.IntegrationName, sampleProjectName: entry.SampleProjectName, packageVersions: packageVersions);
+                fileGenerator.Write(packageVersionEntry: entry, packageVersions: packageVersions);
             }
 
             fileGenerator.Finish();

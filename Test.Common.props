@@ -1,6 +1,8 @@
 <Project>
   <PropertyGroup>
     <OutputType Condition="'$(OutputType)' == ''">Exe</OutputType>
+    <TargetFrameworks Condition="'$(TargetFrameworks)' == '' and '$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TargetFrameworks)' == ''">netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
     <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
 
@@ -37,10 +39,6 @@
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
     </ItemGroup>
-
-    <!-- Remove the following debugging statements when it works in CI-->
-    <Message Text="ManagedProfilerOutputDirectory = $(ManagedProfilerOutputDirectory)" Importance="High" />
-    <Message Text="ManagedProfilerFiles = @(ManagedProfilerFiles)" Importance="High" />
 
     <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
   </Target>
