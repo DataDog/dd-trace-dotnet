@@ -1,4 +1,4 @@
-#if NETCOREAPP2_1 || NET461
+#if NETCOREAPP2_1
 
 using System;
 using System.Collections.Generic;

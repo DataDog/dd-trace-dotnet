@@ -1,3 +1,4 @@
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
