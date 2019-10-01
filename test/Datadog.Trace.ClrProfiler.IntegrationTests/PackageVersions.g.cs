@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersions
     {
-public static IEnumerable<object[]> MongoDB =>
+        public static IEnumerable<object[]> MongoDB =>
 
             new List<object[]>
             {
@@ -58,7 +58,7 @@ public static IEnumerable<object[]> MongoDB =>
 #endif
             };
 
-public static IEnumerable<object[]> ElasticSearch6 =>
+        public static IEnumerable<object[]> ElasticSearch6 =>
 
             new List<object[]>
             {
@@ -85,7 +85,7 @@ public static IEnumerable<object[]> ElasticSearch6 =>
 #endif
             };
 
-public static IEnumerable<object[]> ElasticSearch5 =>
+        public static IEnumerable<object[]> ElasticSearch5 =>
 
             new List<object[]>
             {
@@ -106,7 +106,7 @@ public static IEnumerable<object[]> ElasticSearch5 =>
 #endif
             };
 
-public static IEnumerable<object[]> Npgsql =>
+        public static IEnumerable<object[]> Npgsql =>
 
             new List<object[]>
             {
@@ -128,7 +128,7 @@ public static IEnumerable<object[]> Npgsql =>
 #endif
             };
 
-public static IEnumerable<object[]> SqlServer =>
+        public static IEnumerable<object[]> SqlServer =>
 
             new List<object[]>
             {
@@ -155,7 +155,7 @@ public static IEnumerable<object[]> SqlServer =>
 #endif
             };
 
-public static IEnumerable<object[]> StackExchangeRedis =>
+        public static IEnumerable<object[]> StackExchangeRedis =>
 
             new List<object[]>
             {
@@ -225,7 +225,7 @@ public static IEnumerable<object[]> StackExchangeRedis =>
 #endif
             };
 
-public static IEnumerable<object[]> ServiceStackRedis =>
+        public static IEnumerable<object[]> ServiceStackRedis =>
 
             new List<object[]>
             {
@@ -260,7 +260,7 @@ public static IEnumerable<object[]> ServiceStackRedis =>
             };
 
 #if NETCOREAPP2_1
-public static IEnumerable<object[]> AspNetCoreMvc2 =>
+        public static IEnumerable<object[]> AspNetCoreMvc2 =>
 
             new List<object[]>
             {

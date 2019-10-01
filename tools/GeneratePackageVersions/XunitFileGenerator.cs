@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 @"                new object[] {{ ""{0}"" }},";
 
         private const string BodyFormat =
-@"{2}public static IEnumerable<object[]> {0} =>
+@"{2}        public static IEnumerable<object[]> {0} =>
 
             new List<object[]>
             {{
