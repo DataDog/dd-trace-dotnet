@@ -14,7 +14,11 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.6.0" />
+    <!--
+    This reference allows us to build the code without precompiler directives,
+    but the logic at runtime will never try to use the Registry if it's not available
+    -->
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.6.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
