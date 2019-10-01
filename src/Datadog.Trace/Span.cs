@@ -16,7 +16,7 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable, ISpan
     {
-        private static readonly ILog Log = LogProvider.For<Span>();
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.For<Span>();
 
         private readonly object _lock = new object();
 
@@ -206,7 +206,7 @@ namespace Datadog.Trace
                     }
                     else
                     {
-                        Log.Warn("Value {0} has incorrect format for tag {1}", value, Trace.Tags.Analytics);
+                        Log.Warning("Value {0} has incorrect format for tag {1}", value, Trace.Tags.Analytics);
                     }
 
                     break;

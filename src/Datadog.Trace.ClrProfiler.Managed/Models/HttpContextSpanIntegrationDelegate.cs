@@ -7,13 +7,12 @@ using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ClrProfiler.Interfaces;
 using Datadog.Trace.ClrProfiler.Services;
 using Datadog.Trace.Interfaces;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Models
 {
     internal class HttpContextSpanIntegrationDelegate : BaseSpanDecorationSource, ISpanIntegrationDelegate, IHttpSpanTagsSource
     {
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(HttpContextSpanIntegrationDelegate));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(HttpContextSpanIntegrationDelegate));
 
         private readonly HttpContext _httpContext;
 
@@ -112,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.Models
             }
             catch (Exception x)
             {
-                Log.WarnException("Disposal exception", x);
+                Log.Warning("Disposal exception", x);
             }
         }
     }

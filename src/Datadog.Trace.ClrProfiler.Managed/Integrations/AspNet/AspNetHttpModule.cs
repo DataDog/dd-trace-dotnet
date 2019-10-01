@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         internal const string IntegrationName = "AspNet";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetHttpModule));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(AspNetHttpModule));
 
         private readonly string _httpContextDelegateKey;
         private readonly string _operationName;
@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                     catch (Exception ex)
                     {
-                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                        Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
                 }
 
@@ -101,8 +101,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
                 scope?.Dispose();
-
-                Log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
+                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
 
@@ -126,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
+                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
 
@@ -144,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Datadog ASP.NET HttpModule instrumentation error", ex);
+                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
 

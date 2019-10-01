@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -22,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpClientHandler = "System.Net.Http.HttpClientHandler";
         private const string SendAsync = "SendAsync";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(HttpMessageHandlerIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(HttpMessageHandlerIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="HttpMessageHandler.SendAsync"/>.

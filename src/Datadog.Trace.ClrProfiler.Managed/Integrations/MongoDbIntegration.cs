@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IWireProtocol = "MongoDB.Driver.Core.WireProtocol.IWireProtocol";
         private const string IWireProtocolGeneric = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(MongoDbIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(MongoDbIntegration));
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.
@@ -281,7 +281,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error resolving {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)", ex);
+                Log.Error(ex, $"Error resolving {wireProtocolType.Name}.{methodName}(IConnection connection, CancellationToken cancellationToken)");
                 throw;
             }
 
@@ -396,7 +396,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.WarnException("Unable to access DatabaseName property.", ex);
+                Log.Warning(ex, "Unable to access DatabaseName property.");
             }
 
             try
@@ -417,7 +417,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.WarnException("Unable to access EndPoint properties.", ex);
+                Log.Warning(ex, "Unable to access EndPoint properties.");
             }
 
             string operationName = null;
@@ -458,7 +458,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.WarnException("Unable to access IWireProtocol.Command properties.", ex);
+                Log.Warning(ex, "Unable to access IWireProtocol.Command properties.");
             }
 
             Tracer tracer = Tracer.Instance;
@@ -484,7 +484,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             return scope;

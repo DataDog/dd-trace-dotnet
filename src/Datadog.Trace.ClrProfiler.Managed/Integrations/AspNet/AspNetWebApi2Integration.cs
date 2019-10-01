@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpControllerTypeName = "System.Web.Http.Controllers.IHttpController";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetWebApi2Integration));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(AspNetWebApi2Integration));
 
         /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.
@@ -155,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                     catch (Exception ex)
                     {
-                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                        Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
                 }
 
@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating scope.", ex);
+                Log.Error(ex, "Error creating scope.");
             }
 
             return scope;
@@ -236,7 +236,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error populating scope data.", ex);
+                Log.Error(ex, "Error populating scope data.");
             }
         }
     }

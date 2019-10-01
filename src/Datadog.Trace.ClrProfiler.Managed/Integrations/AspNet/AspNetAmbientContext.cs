@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly string HttpContextKey = "__Datadog_web_request_ambient_context__";
         private static readonly string TopLevelOperationName = "web.request";
         private static readonly string StartupDiagnosticMethod = "DEBUG";
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetAmbientContext));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(AspNetAmbientContext));
 
         private readonly ConcurrentStack<IDisposable> _disposables = new ConcurrentStack<IDisposable>();
         private readonly ConcurrentDictionary<string, Scope> _scopeStorage = new ConcurrentDictionary<string, Scope>();
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                     catch (Exception ex)
                     {
-                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                        Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
                 }
 
@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // Don't crash client apps
-                Log.Error($"Exception when initializing {nameof(AspNetAmbientContext)}.", ex);
+                Log.Error(ex, $"Exception when initializing {nameof(AspNetAmbientContext)}.");
             }
         }
 
@@ -140,7 +140,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 // No exceptions in dispose
-                Log.Error("Exception when trying to populate data at the end of the request pipeline.", ex);
+                Log.Error(ex, "Exception when trying to populate data at the end of the request pipeline.");
             }
 
             while (_disposables.TryPop(out IDisposable registeredDisposable))
@@ -152,7 +152,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 catch (Exception ex)
                 {
                     // No exceptions in dispose
-                    Log.Error($"Exception when disposing {registeredDisposable?.GetType().FullName ?? "NULL"}.", ex);
+                    Log.Error(ex, $"Exception when disposing {registeredDisposable?.GetType().FullName ?? "NULL"}.");
                 }
             }
         }
@@ -192,7 +192,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetAmbientContext)}.", ex);
+                Log.Error(ex, $"Error accessing {nameof(AspNetAmbientContext)}.");
             }
 
             return context;
@@ -292,7 +292,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.Error($"Unable to register {disposable.GetType().FullName}", ex);
+                Log.Error(ex, $"Unable to register {disposable.GetType().FullName}");
             }
         }
     }

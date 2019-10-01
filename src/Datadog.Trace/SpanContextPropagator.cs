@@ -11,7 +11,7 @@ namespace Datadog.Trace
         private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
-        private static readonly ILog Log = LogProvider.For<SpanContextPropagator>();
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.For<SpanContextPropagator>();
 
         private SpanContextPropagator()
         {
@@ -84,7 +84,7 @@ namespace Datadog.Trace
                     }
                 }
 
-                Log.InfoFormat("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
+                Log.Information("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
             }
 
             return 0;
@@ -106,7 +106,7 @@ namespace Datadog.Trace
                     }
                 }
 
-                Log.InfoFormat(
+                Log.Information(
                     "Could not parse {0} headers: {1}",
                     headerName,
                     string.Join(",", headerValues));

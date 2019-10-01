@@ -1,13 +1,12 @@
 using System;
 using Datadog.Trace.ClrProfiler.Helpers;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     internal static class LoggerExtensions
     {
         public static void ErrorRetrievingMethod(
-            this ILog logger,
+            this Vendoring.Serilog.ILogger logger,
             Exception exception,
             long moduleVersionPointer,
             int mdToken,
@@ -30,9 +29,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             var moduleVersionId = PointerHelpers.GetGuidFromNativePointer(moduleVersionPointer);
-            logger.ErrorException(
-                message: $"Error (MVID: {moduleVersionId}, mdToken: {mdToken}, opCode: {opCode}) could not retrieve: {instrumentedMethod}",
-                exception: exception);
-        }
+            logger.Error(
+                exception,
+                $"Error (MVID: {moduleVersionId}, mdToken: {mdToken}, opCode: {opCode}) could not retrieve: {instrumentedMethod}");
+            }
     }
 }

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private const string StackExchangeRedisResultProcessorGeneric = "StackExchange.Redis.ResultProcessor`1<T>";
         private const string StackExchangeRedisResultProcessor = "StackExchange.Redis.ResultProcessor`1";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(ConnectionMultiplexer));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(ConnectionMultiplexer));
 
         /// <summary>
         /// Execute a synchronous redis operation.

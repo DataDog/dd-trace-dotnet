@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "WebRequest";
         private const string Major4 = "4";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(WebRequestIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(WebRequestIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.

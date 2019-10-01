@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string ControllerContextTypeName = "System.Web.Mvc.ControllerContext";
         private const string RouteCollectionRouteTypeName = "System.Web.Mvc.Routing.RouteCollectionRoute";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetMvcIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(AspNetMvcIntegration));
 
         /// <summary>
         /// Creates a scope used to instrument an MVC action and populates some common details.
@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                     catch (Exception ex)
                     {
-                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                        Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
                 }
 
@@ -148,7 +148,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             return scope;
@@ -200,7 +200,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error instrumenting method {0}", ex, "System.Web.Mvc.Async.IAsyncActionInvoker.BeginInvokeAction()");
+                Log.Error(ex, "Error instrumenting method {0}", "System.Web.Mvc.Async.IAsyncActionInvoker.BeginInvokeAction()");
             }
 
             Func<object, object, object, object, object, object> instrumentedMethod;
@@ -283,7 +283,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error instrumenting method {0}", ex, $"{AsyncActionInvokerTypeName}.EndInvokeAction()");
+                Log.Error(ex, "Error instrumenting method {0}", $"{AsyncActionInvokerTypeName}.EndInvokeAction()");
             }
 
             Func<object, object, bool> instrumentedMethod;

@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// </summary>
         private const int MaxFailures = 50;
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(ModuleLookup));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(ModuleLookup));
 
         private static ManualResetEventSlim _populationResetEvent = new ManualResetEventSlim(initialState: true);
         private static ConcurrentDictionary<Guid, Module> _modules = new ConcurrentDictionary<Guid, Module>();
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 // For some unforeseeable reason we have failed on a lot of AppDomain lookups
                 if (!_shortCircuitLogicHasLogged)
                 {
-                    Log.Warn("Datadog is unable to continue attempting module lookups for this AppDomain. Falling back to legacy method lookups.");
+                    Log.Warning("Datadog is unable to continue attempting module lookups for this AppDomain. Falling back to legacy method lookups.");
                 }
 
                 return null;
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             catch (Exception ex)
             {
                 _failures++;
-                Log.Error("Error when populating modules.", ex);
+                Log.Error(ex, "Error when populating modules.");
             }
             finally
             {

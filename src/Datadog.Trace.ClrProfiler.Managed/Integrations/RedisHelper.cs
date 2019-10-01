@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string OperationName = "redis.command";
         private const string ServiceName = "redis";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(RedisHelper));
+        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(RedisHelper));
 
         internal static Scope CreateScope(Tracer tracer, string integrationName, string host, string port, string rawCommand)
         {
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             return scope;
