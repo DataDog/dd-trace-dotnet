@@ -17,12 +17,18 @@ namespace Datadog.Trace.Vendoring
         {
             var nativeLogFile = Environment.GetEnvironmentVariable("DD_TRACE_LOG_PATH");
 
-            if (string.IsNullOrEmpty(nativeLogFile))
+            string logDirectory = null;
+
+            if (!string.IsNullOrEmpty(nativeLogFile))
             {
-                return;
+                logDirectory = Path.GetDirectoryName(nativeLogFile);
+            }
+            
+            if (logDirectory == null)
+            {
+                logDirectory = Environment.CurrentDirectory;
             }
 
-            var logDirectory = Path.GetDirectoryName(nativeLogFile) ?? Environment.CurrentDirectory;
             ManagedLogPath = Path.Combine(logDirectory, "dotnet-tracer.log");
 
             // No-op for if we fail to construct the file logger
