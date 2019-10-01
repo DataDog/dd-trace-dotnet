@@ -12,6 +12,8 @@ namespace Datadog.Trace
     {
         private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
 
+        private static readonly Assembly RootAssembly = typeof(object).GetTypeInfo().Assembly;
+
         private static readonly Tuple<int, string>[] DotNetFrameworkVersionMapping =
         {
             // highest known value is 528049
@@ -56,8 +58,7 @@ namespace Datadog.Trace
 
         public static FrameworkDescription Create()
         {
-            var assembly = typeof(object).GetTypeInfo().Assembly;
-            var assemblyName = assembly.GetName();
+            var assemblyName = RootAssembly.GetName();
 
             if (string.Equals(assemblyName.Name, "mscorlib", StringComparison.OrdinalIgnoreCase))
             {
@@ -167,9 +168,7 @@ namespace Datadog.Trace
                     // if we couldn't access the Windows Registry, fall back to the [AssemblyInformationalVersion]
                     // (this shouldn't happen, but if users get into a place where they are loading
                     // the assembly that targets .NET Standard 2.0 into .NET Framework, this may happen)
-                    var assembly = typeof(object).GetTypeInfo().Assembly;
-                    var informationalVersionAttribute = (AssemblyInformationalVersionAttribute)assembly.GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute));
-                    return informationalVersionAttribute.InformationalVersion;
+                    productVersion = GetVersionFromAssemblyAttributes();
                 }
             }
             catch (Exception e)
@@ -191,15 +190,13 @@ namespace Datadog.Trace
                 productVersion = Environment.Version.ToString();
             }
 
-            var assembly = typeof(object).GetTypeInfo().Assembly;
-
             try
             {
                 if (productVersion == null)
                 {
                     // try to get product version from assembly path
                     Match match = Regex.Match(
-                        assembly.CodeBase,
+                        RootAssembly.CodeBase,
                         @"/[^/]*microsoft\.netcore\.app/(\d+\.\d+\.\d+[^/]*)/",
                         RegexOptions.IgnoreCase);
 
@@ -216,18 +213,35 @@ namespace Datadog.Trace
 
             if (productVersion == null)
             {
-                try
-                {
-                    // if we fail to extract version from assembly path, fall back to the [AssemblyInformationalVersion],
-                    var informationalVersionAttribute = (AssemblyInformationalVersionAttribute)assembly.GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute));
+                // if we fail to extract version from assembly path,
+                // fall back to the [AssemblyInformationalVersion] or [AssemblyFileVersion]
+                productVersion = GetVersionFromAssemblyAttributes();
+            }
 
-                    // split remove the commit hash from pre-release versions
-                    productVersion = informationalVersionAttribute?.InformationalVersion?.Split('+')[0];
-                }
-                catch (Exception e)
-                {
-                    Log.ErrorException("Error getting .NET Core version from [AssemblyInformationalVersion]", e);
-                }
+            if (productVersion == null)
+            {
+                // at this point, everything else has failed (this is probably the same as [AssemblyFileVersion] above)
+                productVersion = Environment.Version.ToString();
+            }
+
+            return productVersion;
+        }
+
+        private static string GetVersionFromAssemblyAttributes()
+        {
+            string productVersion = null;
+
+            try
+            {
+                // if we fail to extract version from assembly path, fall back to the [AssemblyInformationalVersion],
+                var informationalVersionAttribute = (AssemblyInformationalVersionAttribute)RootAssembly.GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute));
+
+                // split remove the commit hash from pre-release versions
+                productVersion = informationalVersionAttribute?.InformationalVersion?.Split('+')[0];
+            }
+            catch (Exception e)
+            {
+                Log.ErrorException("Error getting .NET Core version from [AssemblyInformationalVersion]", e);
             }
 
             if (productVersion == null)
@@ -235,19 +249,13 @@ namespace Datadog.Trace
                 try
                 {
                     // and if that fails, try [AssemblyFileVersion]
-                    var fileVersionAttribute = (AssemblyFileVersionAttribute)assembly.GetCustomAttribute(typeof(AssemblyFileVersionAttribute));
+                    var fileVersionAttribute = (AssemblyFileVersionAttribute)RootAssembly.GetCustomAttribute(typeof(AssemblyFileVersionAttribute));
                     productVersion = fileVersionAttribute?.Version;
                 }
                 catch (Exception e)
                 {
                     Log.ErrorException("Error getting .NET Core version from [AssemblyFileVersion]", e);
                 }
-            }
-
-            if (productVersion == null)
-            {
-                // at this point, everything else has failed (this is probably the same as [AssemblyFileVersion] above)
-                productVersion = Environment.Version.ToString();
             }
 
             return productVersion;
