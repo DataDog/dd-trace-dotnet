@@ -1,5 +1,3 @@
-#if (NET452 || NET461)
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact]
+        [TargetFrameworkVersionsFact("net452;net461")]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
@@ -26,4 +24,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         }
     }
 }
-#endif

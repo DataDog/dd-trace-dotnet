@@ -12,7 +12,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [TargetFrameworkVersionsFact("netcoreapp2.1;netcoreapp3.0")]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
