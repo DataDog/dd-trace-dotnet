@@ -59,21 +59,12 @@ namespace Datadog.Trace.Containers
 
         private static string GetContainerIdInternal()
         {
-            bool isLinux;
-
             try
             {
-                isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-            }
-            catch (Exception ex)
-            {
-                Log.WarnException("Unable to determine OS. Will not report container id.", ex);
-                return null;
-            }
+                var isLinux = string.Equals(FrameworkDescription.Create().OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
 
-            try
-            {
-                if (isLinux && File.Exists(ControlGroupsFilePath))
+                if (isLinux &&
+                    File.Exists(ControlGroupsFilePath))
                 {
                     var lines = File.ReadLines(ControlGroupsFilePath);
                     return ParseCgroupLines(lines);
@@ -82,7 +73,6 @@ namespace Datadog.Trace.Containers
             catch (Exception ex)
             {
                 Log.WarnException("Error reading cgroup file. Will not report container id.", ex);
-                return null;
             }
 
             return null;
