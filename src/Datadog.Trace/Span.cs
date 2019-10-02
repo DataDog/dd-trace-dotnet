@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
+using Datadog.Trace.Vendoring.Serilog.Events;
 
 namespace Datadog.Trace
 {
@@ -24,6 +25,12 @@ namespace Datadog.Trace
             Context = context;
             ServiceName = context.ServiceName;
             StartTime = start ?? Context.TraceContext.UtcNow;
+
+            Log.Debug(
+                "Span started: [s_id: {0}, p_id: {1}, {t_id}: {2}]",
+                SpanId,
+                Context.ParentId,
+                TraceId);
         }
 
         /// <summary>
@@ -263,6 +270,17 @@ namespace Datadog.Trace
             if (shouldCloseSpan)
             {
                 Context.TraceContext.CloseSpan(this);
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    var metadata =
+                        $"Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{string.Join(",", Tags.Keys)}]";
+                    Log.Debug(
+                        "Span closed: [s_id: {0}, p_id: {1}, {t_id}: {2}] for {3}",
+                        SpanId,
+                        Context.ParentId,
+                        TraceId,
+                        metadata);
+                }
             }
         }
 
