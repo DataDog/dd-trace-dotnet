@@ -35,9 +35,18 @@ namespace Datadog.Trace.Vendoring
             
             if (logDirectory == null)
             {
-                logDirectory = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                                   ? WindowsDefaultDirectory
-                                   : NixDefaultDirectory;
+                if (Directory.Exists(WindowsDefaultDirectory))
+                {
+                    logDirectory = WindowsDefaultDirectory;
+                }
+                else if (Directory.Exists(NixDefaultDirectory))
+                {
+                    logDirectory = NixDefaultDirectory;
+                }
+                else
+                {
+                    logDirectory = Environment.CurrentDirectory;
+                }
             }
 
             ManagedLogPath = Path.Combine(logDirectory, FileName);
