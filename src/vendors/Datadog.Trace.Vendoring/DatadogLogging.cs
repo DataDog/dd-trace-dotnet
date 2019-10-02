@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Vendoring.Serilog;
 using Datadog.Trace.Vendoring.Serilog.Sinks.File;
 
@@ -10,6 +11,14 @@ namespace Datadog.Trace.Vendoring
     /// </summary>
     public static class DatadogLogging
     {
+        private const string WindowsDefaultDirectory = "C:\\ProgramData\\Datadog .NET Tracer\\logs\\";
+        private const string NixDefaultDirectory = "/var/log/datadog/";
+
+        /// <summary>
+        /// Ends in a dash because of the date postfix
+        /// </summary>
+        private const string FileName = "dotnet-tracer-.log";
+
         private static readonly string ManagedLogPath;
         private static readonly ILogger NoOpLogger;
 
@@ -26,10 +35,12 @@ namespace Datadog.Trace.Vendoring
             
             if (logDirectory == null)
             {
-                logDirectory = Environment.CurrentDirectory;
+                logDirectory = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                                   ? WindowsDefaultDirectory
+                                   : NixDefaultDirectory;
             }
 
-            ManagedLogPath = Path.Combine(logDirectory, "dotnet-tracer.log");
+            ManagedLogPath = Path.Combine(logDirectory, FileName);
 
             // No-op for if we fail to construct the file logger
             NoOpLogger =
