@@ -27,7 +27,7 @@ namespace Datadog.Trace
             StartTime = start ?? Context.TraceContext.UtcNow;
 
             Log.Debug(
-                "Span started: [s_id: {0}, p_id: {1}, {t_id}: {2}]",
+                "Span started: [s_id: {0}, p_id: {1}, t_id: {2}]",
                 SpanId,
                 Context.ParentId,
                 TraceId);
@@ -275,7 +275,7 @@ namespace Datadog.Trace
                     var metadata =
                         $"Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{string.Join(",", Tags.Keys)}]";
                     Log.Debug(
-                        "Span closed: [s_id: {0}, p_id: {1}, {t_id}: {2}] for {3}",
+                        "Span closed: [s_id: {0}, p_id: {1}, t_id: {2}] for {3}",
                         SpanId,
                         Context.ParentId,
                         TraceId,
