@@ -679,6 +679,17 @@ namespace Datadog.Trace.Vendoring.Serilog
         /// Write a log event with the <see cref="LogEventLevel.Error"/> level.
         /// </summary>
         /// <param name="messageTemplate">Message template describing the event.</param>
+        /// <param name="propertyValue">Object positionally formatted into the message template.</param>
+        /// <example>
+        /// Log.Error("Failed {ErrorCount} records.", brokenRecords.Length);
+        /// </example>
+        [MessageTemplateFormatMethod("messageTemplate")]
+        void Error<T>(string messageTemplate, T propertyValue);
+
+        /// <summary>
+        /// Write a log event with the <see cref="LogEventLevel.Error"/> level.
+        /// </summary>
+        /// <param name="messageTemplate">Message template describing the event.</param>
         /// <param name="propertyValue0">Object positionally formatted into the message template.</param>
         /// <param name="propertyValue1">Object positionally formatted into the message template.</param>
         /// <example>
@@ -703,6 +714,17 @@ namespace Datadog.Trace.Vendoring.Serilog
         /// <summary>
         /// Write a log event with the <see cref="LogEventLevel.Error"/> level and associated exception.
         /// </summary>
+        /// <param name="messageTemplate">Message template describing the event.</param>
+        /// <param name="propertyValues">Objects positionally formatted into the message template.</param>
+        /// <example>
+        /// Log.Error("Failed {ErrorCount} records.", brokenRecords.Length);
+        /// </example>
+        [MessageTemplateFormatMethod("messageTemplate")]
+        void Error(string messageTemplate, params object[] propertyValues);
+
+        /// <summary>
+        /// Write a log event with the <see cref="LogEventLevel.Error"/> level and associated exception.
+        /// </summary>
         /// <param name="exception">Exception related to the event.</param>
         /// <param name="messageTemplate">Message template describing the event.</param>
         /// <example>
@@ -710,6 +732,7 @@ namespace Datadog.Trace.Vendoring.Serilog
         /// </example>
         [MessageTemplateFormatMethod("messageTemplate")]
         void Error(Exception exception, string messageTemplate);
+
 
         /// <summary>
         /// Write a log event with the <see cref="LogEventLevel.Error"/> level and associated exception.
