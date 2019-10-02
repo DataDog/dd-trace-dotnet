@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Logging.LogProviders;
 
@@ -91,6 +90,7 @@ namespace Datadog.Trace.Logging
 
         private void RemoveLastCorrelationIdentifierContext()
         {
+            // TODO: Debug logs
             for (int i = 0; i < 2; i++)
             {
                 if (_contextDisposalStack.TryPop(out IDisposable ctxDisposable))
@@ -109,6 +109,7 @@ namespace Datadog.Trace.Logging
 
         private void RemoveAllCorrelationIdentifierContexts()
         {
+            // TODO: Debug logs
             while (_contextDisposalStack.TryPop(out IDisposable ctxDisposable))
             {
                 ctxDisposable.Dispose();
@@ -117,6 +118,7 @@ namespace Datadog.Trace.Logging
 
         private void SetCorrelationIdentifierContext(ulong traceId, ulong spanId)
         {
+            // TODO: Debug logs
             _contextDisposalStack.Push(
                 LogProvider.OpenMappedContext(
                     CorrelationIdentifier.TraceIdKey, traceId, destructure: false));
