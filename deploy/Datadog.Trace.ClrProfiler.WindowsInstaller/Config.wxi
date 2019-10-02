@@ -4,8 +4,10 @@
   <?define BaseProductName = ".NET Tracer" ?>
   <?define ArpManufacturer = "Datadog, Inc." ?>
   <?define Company = "Datadog" ?>
+  <?define ProductNamePlatformAgnostic = "Datadog $(var.BaseProductName)" ?>
   <?define ManagedDllPath = "$(sys.CURRENTDIR)..\..\src\bin\managed-publish" ?>
   <?define NativeDllPath = "$(sys.CURRENTDIR)..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(var.Configuration)\$(var.Platform)" ?>
+  <?define NativeDll32Path = "$(sys.CURRENTDIR)..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(var.Configuration)\x86" ?>
   <?define ProfilerCLSID = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" ?>
 
   <?if $(var.Platform) = x64 ?>

@@ -58,6 +58,16 @@ jobs:
       msbuildArguments: /t:BuildCpp
       maximumCpuCount: true
 
+  - task: MSBuild@1
+    displayName: msbuild native -- x86
+    condition: eq(variables.buildPlatform, 'x64')
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: x86
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:BuildCpp
+      maximumCpuCount: true
+
   - task: UseDotNet@2
     displayName: install dotnet core sdk
     inputs:

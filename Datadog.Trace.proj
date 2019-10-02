@@ -56,6 +56,10 @@
     <MSBuild Targets="Build" Projects="@(CppProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
+
+    <MSBuild Targets="Build" Projects="@(CppProject)" Condition="'$(BuildAdditionalx86Profiler)' == 'true'" Properties="Platform=x86">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
   </Target>
 
   <Target Name="BuildCppTests">
@@ -103,7 +107,13 @@
     </MSBuild>
   </Target>
 
-  <Target Name="Msi" DependsOnTargets="BuildCsharp;BuildCpp">
+  <Target Name="SetMsiProperties">
+    <PropertyGroup>
+      <BuildAdditionalx86Profiler Condition="'$(Platform)' == 'x64'">true</BuildAdditionalx86Profiler>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="Msi" DependsOnTargets="SetMsiProperties;BuildCsharp;BuildCpp">
     <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
