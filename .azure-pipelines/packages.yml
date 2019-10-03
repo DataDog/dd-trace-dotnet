@@ -34,13 +34,11 @@ jobs:
     inputs:
       preferBundledVersion: false
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk
     inputs:
-      command: build
-      configuration: $(buildConfiguration)
-      projects: |
-        src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+      packageType: sdk
+      version: $(dotnetCoreSdkVersion)
 
   - task: NuGetCommand@2
     displayName: nuget restore native
@@ -48,31 +46,6 @@ jobs:
       restoreSolution: Datadog.Trace.Native.sln
       vstsFeed: $(packageFeed)
       verbosityRestore: Normal
-
-  - task: MSBuild@1
-    displayName: msbuild native
-    inputs:
-      solution: Datadog.Trace.proj
-      platform: $(buildPlatform)
-      configuration: $(buildConfiguration)
-      msbuildArguments: /t:BuildCpp
-      maximumCpuCount: true
-
-  - task: MSBuild@1
-    displayName: msbuild native -- x86
-    condition: eq(variables.buildPlatform, 'x64')
-    inputs:
-      solution: Datadog.Trace.proj
-      platform: x86
-      configuration: $(buildConfiguration)
-      msbuildArguments: /t:BuildCpp
-      maximumCpuCount: true
-
-  - task: UseDotNet@2
-    displayName: install dotnet core sdk
-    inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
@@ -104,36 +77,6 @@ jobs:
       artifactName: nuget-packages
       targetPath: nuget-output
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net45
-    inputs:
-      command: publish
-      publishWebProjects: false
-      modifyOutputPath: false
-      zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework net45 --output $(publishOutput)/net45
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net461
-    inputs:
-      command: publish
-      publishWebProjects: false
-      modifyOutputPath: false
-      zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework net461 --output $(publishOutput)/net461
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework netstandard2.0
-    inputs:
-      command: publish
-      publishWebProjects: false
-      modifyOutputPath: false
-      zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
-
   - task: MSBuild@1
     displayName: msbuild msi
     inputs:
@@ -141,6 +84,7 @@ jobs:
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
       msbuildArguments: /t:msi /p:InstallerVersion=%GitVersion_MajorMinorPatch%;OutputName=datadog-dotnet-apm-%GitVersion_MajorMinorPatch%-$(buildPlatform);RunWixToolsOutOfProc=true
+      maximumCpuCount: true
 
   - task: PublishPipelineArtifact@0
     displayName: publish msi artifact

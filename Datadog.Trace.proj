@@ -113,7 +113,27 @@
     </PropertyGroup>
   </Target>
 
-  <Target Name="Msi" DependsOnTargets="SetMsiProperties;BuildCsharp;BuildCpp">
+  <Target Name="PublishManagedProfilerOnDisk">
+    <ItemGroup>
+      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+        <Properties>TargetFramework=net45;PublishDir=$(MSBuildThisFileDirectory)\src\bin\managed-publish\net45</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+        <Properties>TargetFramework=net461;PublishDir=$(MSBuildThisFileDirectory)\src\bin\managed-publish\net461</Properties>
+      </ManagedProfilerPublishProject>
+
+      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
+        <Properties>TargetFramework=netstandard2.0;PublishDir=$(MSBuildThisFileDirectory)\src\bin\managed-publish\netstandard2.0</Properties>
+      </ManagedProfilerPublishProject>
+    </ItemGroup>
+
+    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="$(BuildInParallel)" RemoveProperties="Platform">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="Msi" DependsOnTargets="SetMsiProperties;BuildCsharp;BuildCpp;PublishManagedProfilerOnDisk">
     <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
