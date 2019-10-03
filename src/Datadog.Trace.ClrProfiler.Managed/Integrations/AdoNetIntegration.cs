@@ -9,7 +9,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     /// <summary>
-    /// AdoNetIntegration provides methods that add tracing to ADO.NET calls.
+    /// Instrumentation wrappers for <see cref="DbCommand"/>.
     /// </summary>
     public static class AdoNetIntegration
     {
@@ -25,10 +25,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AdoNetIntegration));
 
         /// <summary>
-        /// Wrapper method that instruments <see cref="System.Data.Common.DbCommand.ExecuteDbDataReader"/>.
+        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteDbDataReader"/>.
         /// </summary>
-        /// <param name="command">The <see cref="DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
-        /// <param name="behavior">A value from <see cref="CommandBehavior"/>.</param>
+        /// <param name="command">The object referenced "this" in the instrumented method.</param>
+        /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -89,11 +89,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Wrapper method that instruments <see cref="System.Data.Common.DbCommand.ExecuteDbDataReader"/>.
+        /// Instrumentation wrapper for DbCommand.ExecuteDbDataReaderAsync().
         /// </summary>
-        /// <param name="command">The <see cref="DbCommand"/> that is references by the "this" pointer in the instrumented method.</param>
-        /// <param name="behavior">A value from <see cref="CommandBehavior"/>.</param>
-        /// <param name="cancellationTokenSource">A cancellation token source that can be used to cancel the async operation.</param>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
+        /// <param name="cancellationTokenSource">The <see cref="CancellationToken"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -176,6 +176,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        /// <summary>
+        /// Instrumentation wrapper for DbCommand.ExecuteNonQuery().
+        /// </summary>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetType = DbCommandTypeName,
@@ -221,6 +229,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        /// <summary>
+        /// Instrumentation wrapper for DbCommand.ExecuteNonQueryAsync().
+        /// </summary>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="cancellationTokenSource">The <see cref="CancellationToken"/> value used in the original method call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetType = DbCommandTypeName,
@@ -245,7 +262,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 moduleVersionPtr);
         }
 
-        public static async Task<int> ExecuteNonQueryAsyncInternal(
+        private static async Task<int> ExecuteNonQueryAsyncInternal(
             DbCommand command,
             CancellationToken cancellationToken,
             int opCode,
@@ -284,6 +301,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        /// <summary>
+        /// Instrumentation wrapper for DbCommand.ExecuteScalar().
+        /// </summary>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetType = DbCommandTypeName,
@@ -329,6 +354,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        /// <summary>
+        /// Instrumentation wrapper for DbCommand.ExecuteScalarAsync().
+        /// </summary>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="cancellationTokenSource">The <see cref="CancellationToken"/> value used in the original method call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetType = DbCommandTypeName,
@@ -353,7 +387,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 moduleVersionPtr);
         }
 
-        public static async Task<object> ExecuteScalarAsyncInternal(
+        private static async Task<object> ExecuteScalarAsyncInternal(
             DbCommand command,
             CancellationToken cancellationToken,
             int opCode,
