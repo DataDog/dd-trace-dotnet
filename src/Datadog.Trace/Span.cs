@@ -272,14 +272,15 @@ namespace Datadog.Trace
                 Context.TraceContext.CloseSpan(this);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    var metadata =
-                        $"Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{string.Join(",", Tags.Keys)}]";
                     Log.Debug(
-                        "Span closed: [s_id: {0}, p_id: {1}, t_id: {2}] for {3}",
+                        "Span closed: [s_id: {0}, p_id: {1}, t_id: {2}] for (Service: {3}, Resource: {4}, Operation: {5}, Tags: [{6}])",
                         SpanId,
                         Context.ParentId,
                         TraceId,
-                        metadata);
+                        ServiceName,
+                        ResourceName,
+                        OperationName,
+                        string.Join(",", Tags.Keys));
                 }
             }
         }
