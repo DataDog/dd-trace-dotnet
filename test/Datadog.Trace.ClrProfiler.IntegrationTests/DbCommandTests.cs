@@ -4,17 +4,16 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class SqlServerTests : TestHelper
+    public class DbCommandTests : TestHelper
     {
-        public SqlServerTests(ITestOutputHelper output)
-            : base("SqlServer", output)
+        public DbCommandTests(ITestOutputHelper output)
+            : base("DbCommand", output)
         {
         }
 
         [Theory]
         [MemberData(nameof(PackageVersions.SqlServer), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
         public void SubmitsTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();
