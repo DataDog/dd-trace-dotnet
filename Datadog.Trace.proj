@@ -41,7 +41,7 @@
   </Target>
 
   <Target Name="BuildCsharp">
-    <MSBuild Targets="Build" Projects="@(CsharpProject)">
+    <MSBuild Targets="Build" Projects="@(CsharpProject)" RemoveProperties="Platform">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -72,10 +72,10 @@
 
     <!-- Build the core C# projects first, so that the sample project builds do not need to build them and can be run
          concurrently -->
-    <MSBuild Targets="Restore" Projects="@(CsharpProject)" BuildInParallel="false" RemoveProperties="TargetFramework">
+    <MSBuild Targets="Restore" Projects="@(CsharpProject)" BuildInParallel="false" RemoveProperties="TargetFramework;Platform">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
-    <MSBuild Targets="Build" Projects="@(CsharpProject)" BuildInParallel="false" RemoveProperties="TargetFramework">
+    <MSBuild Targets="Build" Projects="@(CsharpProject)" BuildInParallel="false" RemoveProperties="TargetFramework;Platform">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
 
