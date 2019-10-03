@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [MemberData(nameof(PackageVersions.SqlServer), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public void SubmitsTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -29,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 foreach (var span in spans)
                 {
                     Assert.Equal("sql-server.query", span.Name);
-                    Assert.Equal($"Samples.SqlServer-sql-server", span.Service);
+                    Assert.Equal($"Samples.DbCommand-sql-server", span.Service);
                     Assert.Equal(SpanTypes.Sql, span.Type);
                 }
             }
