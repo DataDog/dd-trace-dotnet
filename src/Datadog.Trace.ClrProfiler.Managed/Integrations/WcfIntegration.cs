@@ -1,5 +1,7 @@
-#if !NETSTANDARD2_0
 
+
+using Datadog.Trace.Logging;
+#if !NETSTANDARD2_0
 using System;
 using System.Net;
 using System.ServiceModel.Channels;
@@ -19,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private const string ChannelHandlerTypeName = "System.ServiceModel.Dispatcher.ChannelHandler";
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(WcfIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(WcfIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for System.ServiceModel.Dispatcher.ChannelHandler

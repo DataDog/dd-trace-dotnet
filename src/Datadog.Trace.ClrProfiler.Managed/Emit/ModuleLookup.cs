@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
@@ -12,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// </summary>
         private const int MaxFailures = 50;
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(ModuleLookup));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ModuleLookup));
 
         private static ManualResetEventSlim _populationResetEvent = new ManualResetEventSlim(initialState: true);
         private static ConcurrentDictionary<Guid, Module> _modules = new ConcurrentDictionary<Guid, Module>();

@@ -1,10 +1,11 @@
 using System;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
     internal class AsyncLocalScopeManager : IScopeManager
     {
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(AsyncLocalScopeManager));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AsyncLocalScopeManager));
 
         private readonly AsyncLocalCompat<Scope> _activeScope = new AsyncLocalCompat<Scope>();
 

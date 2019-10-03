@@ -1,5 +1,6 @@
 using System;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -10,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string IntegrationName = "HttpContext";
         private const string DefaultHttpContextTypeName = "Microsoft.AspNetCore.Http.DefaultHttpContext";
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(HttpContextIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpContextIntegration));
 
         /// <summary>
         /// Entry method for invoking the beginning of every web server request pipeline

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -22,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string DbDataReaderTypeName = "System.Data.Common.DbDataReader";
         private const string CommandBehaviorTypeName = "System.Data.CommandBehavior";
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(AdoNetIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AdoNetIntegration));
 
         /// <summary>
         /// Wrapper method that instruments <see cref="System.Data.Common.DbCommand.ExecuteDbDataReader"/>.

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -18,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static readonly Type RequestPipelineType = Type.GetType("Elasticsearch.Net.IRequestPipeline, Elasticsearch.Net");
         public static readonly Type RequestDataType = Type.GetType("Elasticsearch.Net.RequestData, Elasticsearch.Net");
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(ElasticsearchNetCommon));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ElasticsearchNetCommon));
 
         public static Scope CreateScope(Tracer tracer, string integrationName, object pipeline, object requestData)
         {

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -30,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Type DiagnosticSourceType = Type.GetType($"{DiagnosticSourceTypeName}, {AspnetMvcCore}");
         private static readonly Type ResourceInvokerType = Type.GetType($"{ResourceInvokerTypeName}, {AspnetMvcCore}");
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(AspNetCoreMvc2Integration));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetCoreMvc2Integration));
 
         private readonly object _httpContext;
         private readonly Scope _scope;

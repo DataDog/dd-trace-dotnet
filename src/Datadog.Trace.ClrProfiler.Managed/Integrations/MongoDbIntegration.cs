@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -23,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IWireProtocol = "MongoDB.Driver.Core.WireProtocol.IWireProtocol";
         private const string IWireProtocolGeneric = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1";
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(MongoDbIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MongoDbIntegration));
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.

@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -15,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "WebRequest";
         private const string Major4 = "4";
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(WebRequestIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(WebRequestIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="WebRequest.GetResponse"/>.

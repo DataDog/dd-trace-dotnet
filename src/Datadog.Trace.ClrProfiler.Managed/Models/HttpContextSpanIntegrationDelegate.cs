@@ -1,5 +1,7 @@
-#if !NETSTANDARD2_0
 
+
+using Datadog.Trace.Logging;
+#if !NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
 using System.Web;
@@ -12,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Models
 {
     internal class HttpContextSpanIntegrationDelegate : BaseSpanDecorationSource, ISpanIntegrationDelegate, IHttpSpanTagsSource
     {
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(HttpContextSpanIntegrationDelegate));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpContextSpanIntegrationDelegate));
 
         private readonly HttpContext _httpContext;
 

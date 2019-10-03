@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Containers
 {
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Containers
 
         private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(ContainerInfo));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ContainerInfo));
 
         /// <summary>
         /// Gets the id of the container executing the code.

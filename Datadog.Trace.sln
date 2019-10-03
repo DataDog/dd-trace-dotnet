@@ -250,6 +250,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WcfClient", "samples\Samples.WcfClient\Samples.WcfClient.csproj", "{21D420EB-06D0-489D-A71C-C748BB46B8EF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.MultipleAppDomains", "samples\Samples.Elasticsearch.MultipleAppDomains\Samples.Elasticsearch.MultipleAppDomains.csproj", "{48283691-0D4B-4ABD-B75B-EDFC682E1547}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Vendoring", "src\vendors\Datadog.Trace.Vendoring\Datadog.Trace.Vendoring.csproj", "{FAE7F98B-7D44-4EC6-9959-7CE5CF529211}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "vendors", "vendors", "{8E57F132-EB09-45B9-A73E-82FD0DFF6364}"

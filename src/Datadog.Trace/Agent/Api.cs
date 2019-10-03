@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Containers;
+using Datadog.Trace.Logging;
 using MsgPack.Serialization;
 using Newtonsoft.Json;
 
@@ -13,7 +14,7 @@ namespace Datadog.Trace.Agent
     {
         private const string TracesPath = "/v0.4/traces";
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.For<Api>();
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<Api>();
         private static readonly SerializationContext SerializationContext = new SerializationContext();
         private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(SerializationContext);
 

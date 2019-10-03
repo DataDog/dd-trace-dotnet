@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.Vendoring</RootNamespace>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;net46;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;net461;netstandard2.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <LangVersion>7.3</LangVersion>
@@ -20,7 +20,7 @@
     <DefineConstants>$(DefineConstants);REMOTING;HASHTABLE</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net46' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net461' ">
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
     <DefineConstants>$(DefineConstants);ASYNCLOCAL;HASHTABLE</DefineConstants>
   </PropertyGroup>

@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -16,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string ElasticsearchAssemblyName = "Elasticsearch.Net";
         private const string RequestPipelineInterfaceTypeName = "Elasticsearch.Net.IRequestPipeline";
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(ElasticsearchNet6Integration));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ElasticsearchNet6Integration));
 
         /// <summary>
         /// Traces a synchronous call to Elasticsearch.

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -13,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly string HttpContextKey = "__Datadog_web_request_ambient_context__";
         private static readonly string TopLevelOperationName = "web.request";
         private static readonly string StartupDiagnosticMethod = "DEBUG";
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(AspNetAmbientContext));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetAmbientContext));
 
         private readonly ConcurrentStack<IDisposable> _disposables = new ConcurrentStack<IDisposable>();
         private readonly ConcurrentDictionary<string, Scope> _scopeStorage = new ConcurrentDictionary<string, Scope>();

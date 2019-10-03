@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Datadog.Trace.Logging;
 using OpenTracing;
 using OpenTracing.Tag;
 
@@ -8,7 +9,7 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpanBuilder : ISpanBuilder
     {
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.For<OpenTracingSpanBuilder>();
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<OpenTracingSpanBuilder>();
 
         private readonly OpenTracingTracer _tracer;
         private readonly object _lock = new object();

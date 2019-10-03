@@ -17,7 +17,7 @@ namespace Datadog.Trace
     {
         private const string UnknownServiceName = "UnknownService";
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.For<Tracer>();
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
 
         private readonly IScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;

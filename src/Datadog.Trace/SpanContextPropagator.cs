@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
@@ -10,7 +11,7 @@ namespace Datadog.Trace
         private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.For<SpanContextPropagator>();
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<SpanContextPropagator>();
 
         private SpanContextPropagator()
         {

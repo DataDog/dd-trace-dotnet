@@ -5,15 +5,13 @@ using Datadog.Trace.Vendoring.Serilog;
 using Datadog.Trace.Vendoring.Serilog.Events;
 using Datadog.Trace.Vendoring.Serilog.Sinks.File;
 
-namespace Datadog.Trace.Vendoring
+namespace Datadog.Trace.Logging
 {
-    /// <summary>
-    /// Class for Datadog managed file logging.
-    /// </summary>
-    public static class DatadogLogging
+    internal static class DatadogLogging
     {
-        private const string WindowsDefaultDirectory = "C:\\ProgramData\\Datadog .NET Tracer\\logs\\";
         private const string NixDefaultDirectory = "/var/log/datadog/";
+        private static readonly string WindowsDefaultDirectory =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
 
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
         private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Verbose; // Lowest level
@@ -104,10 +102,6 @@ namespace Datadog.Trace.Vendoring
             }
         }
 
-        /// <summary>
-        /// Get Datadog logger to write to files from managed code.
-        /// </summary>
-        /// <param name="classType"> The class which owns this instance of the logger. </param>
         public static ILogger GetLogger(Type classType)
         {
             // Tells us which types are loaded, when, and how often.
@@ -115,9 +109,6 @@ namespace Datadog.Trace.Vendoring
             return SharedLogger;
         }
 
-        /// <summary>
-        /// Get Datadog logger to write to files from managed code.
-        /// </summary>
         public static ILogger For<T>()
         {
             return GetLogger(typeof(T));

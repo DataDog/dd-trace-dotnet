@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -15,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string Major5 = "5";
         private const string RedisNativeClient = "ServiceStack.Redis.RedisNativeClient";
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(ServiceStackRedisIntegration));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ServiceStackRedisIntegration));
 
         /// <summary>
         /// Traces SendReceive.

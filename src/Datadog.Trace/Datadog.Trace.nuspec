@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package  xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>    
+    <id>Datadog.Trace</id>
+    <version>1.7.0</version>
+    <title>Datadog APM</title>
+    <authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</authors>
+    <owners>Datadog</owners>
+    <licenseUrl>https://github.com/DataDog/dd-trace-dotnet/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://docs.datadoghq.com/tracing/setup/dotnet/</projectUrl>
+    <iconUrl>https://imgix.datadoghq.com/img/favicons/favicon-32x32.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Manual instrumentation library for Datadog APM</description>
+    <releaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases</releaseNotes>
+    <copyright>Datadog, Inc. 2017-2019</copyright>
+    <tags>Datadog;APM;tracing;profiling;instrumentation</tags>
+    <repository type="git" url="https://github.com/DataDog/dd-trace-dotnet.git" branch="master" />
+    <dependencies>
+      <dependency id="Microsoft.CSharp" version="4.5.0" />
+      <dependency id="MsgPack.Cli" version="1.0.1" />
+      <dependency id="Newtonsoft.Json" version="12.0.1" />
+      <dependency id="System.Net.Http" version="4.3.4" />
+      <dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" />
+    </dependencies>
+    <summary>The core library for Datadog APM. This library is used for automatic tracing, manual tracing, and open tracing.</summary>
+  </metadata>
+  <files>
+    <file src="bin\Release\net45\Datadog.Trace.dll" target="lib\net45" />
+    <file src="bin\Release\net45\Datadog.Trace.Vendoring.dll" target="lib\net45" />
+    <file src="bin\Release\net461\Datadog.Trace.dll" target="lib\net461" />
+    <file src="bin\Release\net461\Datadog.Trace.Vendoring.dll" target="lib\net461" />
+    <file src="bin\Release\netstandard2.0\Datadog.Trace.dll" target="lib\netstandard2.0" />
+    <file src="bin\Release\netstandard2.0\Datadog.Trace.Vendoring.dll" target="lib\netstandard2.0" />
+  </files>
+</package>

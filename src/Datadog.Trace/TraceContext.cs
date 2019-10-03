@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
     internal class TraceContext : ITraceContext
     {
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.For<TraceContext>();
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<TraceContext>();
 
         private readonly object _lock = new object();
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;

@@ -1,4 +1,5 @@
 using System;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -10,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string OperationName = "http.request";
         public const string ServiceName = "http-client";
 
-        private static readonly Vendoring.Serilog.ILogger Log = Vendoring.DatadogLogging.GetLogger(typeof(ScopeFactory));
+        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ScopeFactory));
 
         /// <summary>
         /// Creates a scope for outbound http requests and populates some common details.
