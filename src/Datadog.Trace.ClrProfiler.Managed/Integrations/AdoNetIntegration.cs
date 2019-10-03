@@ -16,11 +16,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         // TODO: rename to DbCommandIntegration
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
-        private const string FrameworkAssembly = "System.Data";
-        private const string CoreAssembly = "System.Data.Common";
+
         private const string DbCommandTypeName = "System.Data.Common.DbCommand";
         private const string DbDataReaderTypeName = "System.Data.Common.DbDataReader";
-        private const string CommandBehaviorTypeName = "System.Data.CommandBehavior";
+
+        private const string ExecuteDbDataReaderMethodName = "ExecuteDbDataReader";
+        private const string ExecuteDbDataReaderAsyncMethodName = "ExecuteDbDataReaderAsync";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AdoNetIntegration));
 
@@ -68,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
                     methodName: nameof(ExecuteDbDataReader),
-                    instanceType: @this.GetType().AssemblyQualifiedName);
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -112,11 +113,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
-            if (@this == null)
-            {
-                throw new ArgumentNullException(nameof(@this));
-            }
-
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
@@ -158,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
                     methodName: nameof(ExecuteDbDataReaderAsync),
-                    instanceType: @this.GetType().AssemblyQualifiedName);
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
