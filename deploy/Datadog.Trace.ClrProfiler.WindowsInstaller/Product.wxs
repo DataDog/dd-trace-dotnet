@@ -43,6 +43,11 @@
       <ComponentGroupRef Id="Registry"/>
       <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
+
+      <!-- For the 64-bit installer, also install the 32-bit profiler -->
+      <?if $(var.Win64) = yes ?>
+      <ComponentGroupRef Id="Files.Native.32"/>
+      <?endif ?>
     </Feature>
   </Product>
 
@@ -70,6 +75,19 @@
         </Directory>
       </Directory>
 
+      <!-- For the 64-bit installer, also install the 32-bit profiler -->
+      <?if $(var.Win64) = yes ?>
+      <Directory Id="ProgramFilesFolder">
+        <!-- "C:\Program Files (x86)" -->
+        <Directory Id="ProgramFilesFolder.Datadog.32" Name="$(var.Company)">
+          <!-- ".\Datadog" -->
+          <Directory Id="INSTALLFOLDER.32" Name="$(var.BaseProductName)">
+            <!-- ".\.NET Tracer" -->
+          </Directory>
+        </Directory>
+      </Directory>
+      <?endif ?>
+
       <Directory Id="CommonAppDataFolder">
         <!-- "C:\ProgramData" -->
         <Directory Id="CommonAppDataFolder.DatadogDotNetTracer" Name="Datadog .NET Tracer">
@@ -94,10 +112,23 @@
         <File Id="Datadog.Trace.ClrProfiler.Native"
               Source="$(var.NativeDllPath)\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductName)"/>
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
       </Component>
     </ComponentGroup>
+
+    <!-- For the 64-bit installer, also install the 32-bit profiler -->
+    <?if $(var.Win64) = yes ?>
+    <ComponentGroup Id="Files.Native.32" Directory="INSTALLFOLDER.32">
+      <Component Win64="no" Id="Datadog.Trace.ClrProfiler.Native.32">
+        <File Id="Datadog.Trace.ClrProfiler.Native.32"
+              Source="$(var.NativeDll32Path)\Datadog.Trace.ClrProfiler.Native.dll"
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+      </Component>
+    </ComponentGroup>
+    <?endif ?>
 
     <ComponentGroup Id="EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
       <Component Id="EmptyFolders.Logs" Guid="0A9B510D-44F6-41A9-9EFE-E2CEB7314CF3">

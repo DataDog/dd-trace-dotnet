@@ -60,7 +60,7 @@ rem (see https://github.com/NuGet/Home/issues/7386)
 nuget restore Datadog.Trace.sln
 
 rem Build C# projects (Platform: always AnyCPU)
-msbuild Datadog.Trace.proj /t:BuildCsharp /p:Configuration=Release;Platform=AnyCPU
+msbuild Datadog.Trace.proj /t:BuildCsharp /p:Configuration=Release
 
 rem Build NuGet packages
 dotnet pack src\Datadog.Trace\Datadog.Trace.csproj
@@ -68,6 +68,7 @@ dotnet pack src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj
 dotnet pack src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj
 
 rem Build C++ projects (Platform: x64 or x86)
+rem The native profiler depends on the Datadog.Trace.ClrProfiler.Managed.Loader C# project so be sure that is built first
 msbuild Datadog.Trace.proj /t:BuildCpp /p:Configuration=Release;Platform=x64
 
 rem Build MSI installer (Platform: x64 or x86)
