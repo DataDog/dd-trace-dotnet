@@ -44,6 +44,7 @@
       <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
 
+      <!-- For the 64-bit installer, also install the 32-bit profiler -->
       <?if $(var.Win64) = yes ?>
       <ComponentGroupRef Id="Files.Native.32"/>
       <?endif ?>
@@ -74,6 +75,7 @@
         </Directory>
       </Directory>
 
+      <!-- For the 64-bit installer, also install the 32-bit profiler -->
       <?if $(var.Win64) = yes ?>
       <Directory Id="ProgramFilesFolder">
         <!-- "C:\Program Files (x86)" -->
