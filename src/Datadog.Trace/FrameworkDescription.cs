@@ -230,7 +230,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.ErrorException("Error getting .NET Core version from [AssemblyInformationalVersion]", e);
+                Log.ErrorException("Error getting framework version from [AssemblyInformationalVersion]", e);
             }
 
             if (productVersion == null)
@@ -243,7 +243,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception e)
                 {
-                    Log.ErrorException("Error getting .NET Core version from [AssemblyFileVersion]", e);
+                    Log.ErrorException("Error getting framework version from [AssemblyFileVersion]", e);
                 }
             }
 
