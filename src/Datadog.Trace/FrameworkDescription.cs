@@ -12,7 +12,7 @@ namespace Datadog.Trace
     {
         private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
 
-        private static readonly Assembly RootAssembly = typeof(object).GetTypeInfo().Assembly;
+        private static readonly Assembly RootAssembly = typeof(object).Assembly;
 
         private static readonly Tuple<int, string>[] DotNetFrameworkVersionMapping =
         {
