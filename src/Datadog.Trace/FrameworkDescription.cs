@@ -148,6 +148,8 @@ namespace Datadog.Trace
 
                 if (registryValue is int release)
                 {
+                    // find the known version on the list with the largest release number
+                    // that is lower than or equal to the release number in the Windows Registry
                     productVersion = DotNetFrameworkVersionMapping.FirstOrDefault(t => release >= t.Item1)?.Item2;
                 }
             }
@@ -160,9 +162,8 @@ namespace Datadog.Trace
             {
                 if (productVersion == null)
                 {
-                    // if we couldn't access the Windows Registry, fall back to the [AssemblyInformationalVersion]
-                    // (this shouldn't happen, but if users get into a place where they are loading
-                    // the assembly that targets .NET Standard 2.0 into .NET Framework, this may happen)
+                    // if we couldn't get the version from the Windows Registry,
+                    // fall back to the [AssemblyInformationalVersion]
                     productVersion = GetVersionFromAssemblyAttributes();
                 }
             }
