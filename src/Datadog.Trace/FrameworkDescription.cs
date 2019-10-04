@@ -158,18 +158,11 @@ namespace Datadog.Trace
                 Log.ErrorException("Error getting .NET Framework version from Windows Registry", e);
             }
 
-            try
+            if (productVersion == null)
             {
-                if (productVersion == null)
-                {
-                    // if we couldn't get the version from the Windows Registry,
-                    // fall back to the [AssemblyInformationalVersion]
-                    productVersion = GetVersionFromAssemblyAttributes();
-                }
-            }
-            catch (Exception e)
-            {
-                Log.ErrorException("Error getting .NET Framework version from assembly attributes.", e);
+                // if we fail to extract version from assembly path,
+                // fall back to the [AssemblyInformationalVersion] or [AssemblyFileVersion]
+                productVersion = GetVersionFromAssemblyAttributes();
             }
 
             return productVersion;
