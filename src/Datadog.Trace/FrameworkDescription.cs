@@ -77,20 +77,10 @@ namespace Datadog.Trace
 
         public override string ToString()
         {
-            string architecture;
-
-            if (OSPlatform == "Windows" && ProcessArchitecture == "x86" && OSArchitecture == "x64")
-            {
-                // special case for x86 process on Windows x64
-                // WoW64 = Windows (32-bit) on Windows 64-bit
-                architecture = "WoW64";
-            }
-            else
-            {
-                architecture = $"{OSArchitecture}";
-            }
-
-            return $"{Name} {ProductVersion} {OSPlatform}/{architecture}";
+            // examples:
+            // .NET Framework 4.8 x86 on Windows x64
+            // .NET Core 3.0.0 x64 on Linux x64
+            return $"{Name} {ProductVersion} {ProcessArchitecture} on {OSPlatform} {OSArchitecture}";
         }
 
         private static FrameworkDescription CreateFromRuntimeInformation()
@@ -103,7 +93,7 @@ namespace Datadog.Trace
                 // RuntimeInformation.FrameworkDescription returns a string like ".NET Framework 4.7.2" or ".NET Core 2.1",
                 // we want to return everything before the last space
                 string frameworkDescription = RuntimeInformation.FrameworkDescription;
-                int index = RuntimeInformation.FrameworkDescription.LastIndexOf(' ');
+                int index = frameworkDescription.LastIndexOf(' ');
                 frameworkName = frameworkDescription.Substring(0, index).Trim();
             }
             catch (Exception e)
