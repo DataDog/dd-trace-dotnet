@@ -95,8 +95,8 @@ namespace Datadog.Trace
 
         private static FrameworkDescription CreateFromRuntimeInformation()
         {
-            string frameworkName;
-            string osPlatform;
+            string frameworkName = null;
+            string osPlatform = null;
 
             try
             {
@@ -109,7 +109,6 @@ namespace Datadog.Trace
             catch (Exception e)
             {
                 Log.ErrorException("Error getting framework name from RuntimeInformation", e);
-                frameworkName = "unknown";
             }
 
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
@@ -124,15 +123,11 @@ namespace Datadog.Trace
             {
                 osPlatform = "MacOS";
             }
-            else
-            {
-                osPlatform = null;
-            }
 
             return new FrameworkDescription(
-                frameworkName,
+                frameworkName ?? "unknown",
                 GetNetCoreVersion() ?? "unknown",
-                osPlatform,
+                osPlatform ?? "unknown",
                 RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(),
                 RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant());
         }
