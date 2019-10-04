@@ -113,7 +113,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.I
 		{DA0A44FB-D562-4776-AAFB-8266E78AA1A6} = {DA0A44FB-D562-4776-AAFB-8266E78AA1A6}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer", "samples\Samples.SqlServer\Samples.SqlServer.csproj", "{086FF8A0-9CEE-470A-9751-78B0F1340649}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlCommand", "samples\Samples.SqlCommand\Samples.SqlCommand.csproj", "{086FF8A0-9CEE-470A-9751-78B0F1340649}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch", "samples\Samples.Elasticsearch\Samples.Elasticsearch.csproj", "{C98950B1-DC4B-43DA-974F-EF2CF325EC2B}"
 	ProjectSection(ProjectDependencies) = postProject

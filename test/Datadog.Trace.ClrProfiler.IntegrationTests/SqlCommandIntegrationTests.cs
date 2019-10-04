@@ -4,10 +4,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class SqlServerTests : TestHelper
+    public class SqlCommandIntegrationTests : TestHelper
     {
-        public SqlServerTests(ITestOutputHelper output)
-            : base("SqlServer", output)
+        public SqlCommandIntegrationTests(ITestOutputHelper output)
+            : base("SqlCommand", output)
         {
         }
 
@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 foreach (var span in spans)
                 {
                     Assert.Equal("sql-server.query", span.Name);
-                    Assert.Equal($"Samples.SqlServer-sql-server", span.Service);
+                    Assert.Equal($"Samples.SqlCommand-sql-server", span.Service);
                     Assert.Equal(SpanTypes.Sql, span.Type);
                 }
             }

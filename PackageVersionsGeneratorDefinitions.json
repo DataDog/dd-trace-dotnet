@@ -29,7 +29,7 @@
     },
     {
         "IntegrationName": "SqlServer",
-        "SampleProjectName": "Samples.SqlServer",
+        "SampleProjectName": "Samples.SqlCommand",
         "NugetPackageSearchName": "Microsoft.EntityFrameworkCore.SqlServer",
         "MinVersion": "2.0.0",
         "MaxVersionExclusive": "3.0.0"

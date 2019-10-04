@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Samples.SqlServer
+namespace Samples.SqlCommand
 {
     internal class Program
     {
