@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
@@ -5,9 +6,11 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static class NativeMethods
     {
+        private static readonly bool IsWindows = string.Equals(FrameworkDescription.Create().OSPlatform, "Windows", StringComparison.OrdinalIgnoreCase);
+
         public static bool IsProfilerAttached()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (IsWindows)
             {
                 return Windows.IsProfilerAttached();
             }

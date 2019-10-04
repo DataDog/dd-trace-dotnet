@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Containers;
 using Datadog.Trace.Logging;
@@ -15,7 +14,7 @@ namespace Datadog.Trace.Agent
     {
         private const string TracesPath = "/v0.4/traces";
 
-        private static readonly ILog Log = LogProvider.For<Api>();
+        private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
         private static readonly SerializationContext SerializationContext = new SerializationContext();
         private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(SerializationContext);
 
@@ -41,20 +40,31 @@ namespace Datadog.Trace.Agent
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
-            GetFrameworkDescription(out string frameworkName, out string frameworkVersion);
-            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
-            var containerId = ContainerInfo.GetContainerId();
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
 
             // report runtime details
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, frameworkName);
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, frameworkVersion);
+            try
+            {
+                var frameworkDescription = FrameworkDescription.Create();
+
+                if (frameworkDescription != null)
+                {
+                    _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, frameworkDescription.Name);
+                    _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, frameworkDescription.ProductVersion);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.ErrorException("Error getting framework description", e);
+            }
 
             // report Tracer version
+            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, tracerVersion);
 
             // report container id (only Linux containers supported for now)
+            var containerId = ContainerInfo.GetContainerId();
+
             if (containerId != null)
             {
                 _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.ContainerId, containerId);
@@ -143,20 +153,6 @@ namespace Datadog.Trace.Agent
             }
 
             return uniqueTraceIds;
-        }
-
-        private static void GetFrameworkDescription(out string name, out string version)
-        {
-            // RuntimeInformation.FrameworkDescription returns string like ".NET Framework 4.7.2" or ".NET Core 2.1",
-            // we want to split the runtime from the version so we can report them as separate values
-            string frameworkDescription = RuntimeInformation.FrameworkDescription;
-            int index = RuntimeInformation.FrameworkDescription.LastIndexOf(' ');
-
-            // everything before the last space
-            name = frameworkDescription.Substring(0, index).Trim();
-
-            // everything after the last space
-            version = frameworkDescription.Substring(index).Trim();
         }
 
         internal class ApiResponse
