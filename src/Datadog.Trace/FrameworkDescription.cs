@@ -169,7 +169,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.ErrorException("Error getting .NET Framework version from [AssemblyInformationalVersion]", e);
+                Log.ErrorException("Error getting .NET Framework version from assembly attributes.", e);
             }
 
             return productVersion;
@@ -186,9 +186,9 @@ namespace Datadog.Trace
                 productVersion = Environment.Version.ToString();
             }
 
-            try
+            if (productVersion == null)
             {
-                if (productVersion == null)
+                try
                 {
                     // try to get product version from assembly path
                     Match match = Regex.Match(
@@ -201,10 +201,10 @@ namespace Datadog.Trace
                         productVersion = match.Groups[1].Value;
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                Log.ErrorException("Error getting .NET Core version from assembly path", e);
+                catch (Exception e)
+                {
+                    Log.ErrorException("Error getting .NET Core version from assembly path", e);
+                }
             }
 
             if (productVersion == null)
