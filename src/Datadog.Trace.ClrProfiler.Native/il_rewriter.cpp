@@ -409,7 +409,7 @@ again:
       m_pOutputBuffer[offset++] = (opcode & 0xFF);
     }
 
-    assert(pInstr->m_opcode < _countof(s_OpCodeFlags));
+    assert(pInstr->m_opcode < (sizeof(s_OpCodeFlags)/sizeof(BYTE)));
     BYTE flags = s_OpCodeFlags[pInstr->m_opcode];
     switch (flags) {
       case 0:

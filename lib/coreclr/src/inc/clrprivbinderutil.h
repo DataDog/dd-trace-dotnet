@@ -117,26 +117,6 @@ namespace CLRPrivBinderUtil
         
         //-----------------------------------------------------------------------------------------------------------------
         // Forwards to wrapped binder.
-        STDMETHOD(VerifyBind)(
-            IAssemblyName *pAssemblyName,
-            ICLRPrivAssembly *pAssembly,
-            ICLRPrivAssemblyInfo *pAssemblyInfo)
-        {
-            WRAPPER_NO_CONTRACT;
-            return _pWrapped->VerifyBind(pAssemblyName, pAssembly, pAssemblyInfo);
-        }
-        
-        //---------------------------------------------------------------------------------------------
-        // Forwards to wrapped binder.
-        STDMETHOD(GetBinderFlags)(
-            DWORD *pBinderFlags)
-        {
-            WRAPPER_NO_CONTRACT;
-            return _pWrapped->GetBinderFlags(pBinderFlags);
-        }
-
-        //-----------------------------------------------------------------------------------------------------------------
-        // Forwards to wrapped binder.
         STDMETHOD(GetBinderID)(
             UINT_PTR *pBinderId)
         {
@@ -146,12 +126,12 @@ namespace CLRPrivBinderUtil
 
         //-----------------------------------------------------------------------------------------------------------------
         // Forwards to wrapped binder.
-        STDMETHOD(FindAssemblyBySpec)(
-        LPVOID pvAppDomain,
-            LPVOID pvAssemblySpec,
-            HRESULT * pResult,
-            ICLRPrivAssembly ** ppAssembly)
-        { STATIC_CONTRACT_WRAPPER; return _pWrapped->FindAssemblyBySpec(pvAppDomain, pvAssemblySpec, pResult, ppAssembly); }
+        STDMETHOD(GetLoaderAllocator)(
+            LPVOID * pLoaderAllocator)
+        {
+            WRAPPER_NO_CONTRACT;
+            return _pWrapped->GetLoaderAllocator(pLoaderAllocator);
+        }
 
         //-----------------------------------------------------------------------------------------------------------------
         // ICLRPrivAssembly method is unsupported.
@@ -441,16 +421,6 @@ namespace CLRPrivBinderUtil
         // Assembly public key token; defaults to none.
         CLRPrivBinderUtil::PublicKeyToken       KeyToken;
     };
-
-    //=================================================================================================================
-    HRESULT VerifyBind(
-        IAssemblyName *pRefAssemblyName,
-        ICLRPrivAssemblyInfo *pDefAssemblyInfo);
-
-    //=================================================================================================================
-    HRESULT VerifyBind(
-        CLRPrivBinderUtil::AssemblyIdentity const & refIdentity,
-        CLRPrivBinderUtil::AssemblyIdentity const & defIdentity);
 
     //=================================================================================================
     template <typename ItfT>
