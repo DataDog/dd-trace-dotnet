@@ -7,7 +7,7 @@
         "target": {
           "assembly": "System.Data",
           "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteDbDataReader",
+          "method": "ExecuteReader",
           "signature_types": [
             "System.Data.Common.DbDataReader",
             "System.Data.CommandBehavior"
@@ -22,7 +22,55 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
-          "method": "ExecuteDbDataReader",
+          "method": "ExecuteReader",
+          "signature": "00 04 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "System.Data.Common.DbDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteReader",
+          "signature": "00 04 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteReaderWithBehavior",
+          "signature_types": [
+            "System.Data.Common.DbDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
+          "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A"
         }
       },
@@ -31,7 +79,7 @@
         "target": {
           "assembly": "System.Data.Common",
           "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteDbDataReader",
+          "method": "ExecuteReaderWithBehavior",
           "signature_types": [
             "System.Data.Common.DbDataReader",
             "System.Data.CommandBehavior"
@@ -46,7 +94,7 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
-          "method": "ExecuteDbDataReader",
+          "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A"
         }
       },
@@ -55,7 +103,7 @@
         "target": {
           "assembly": "System.Data",
           "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteDbDataReaderAsync",
+          "method": "ExecuteReaderAsync",
           "signature_types": [
             "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
             "System.Data.CommandBehavior",
@@ -71,7 +119,7 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
-          "method": "ExecuteDbDataReaderAsync",
+          "method": "ExecuteReaderAsync",
           "signature": "00 06 1C 1C 08 1C 08 08 0A"
         }
       },
@@ -80,7 +128,7 @@
         "target": {
           "assembly": "System.Data.Common",
           "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteDbDataReaderAsync",
+          "method": "ExecuteReaderAsync",
           "signature_types": [
             "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
             "System.Data.CommandBehavior",
@@ -96,7 +144,7 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNetIntegration",
-          "method": "ExecuteDbDataReaderAsync",
+          "method": "ExecuteReaderAsync",
           "signature": "00 06 1C 1C 08 1C 08 08 0A"
         }
       },
@@ -847,8 +895,7 @@
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteReader",
           "signature_types": [
-            "System.Data.SqlClient.SqlDataReader",
-            "System.Data.CommandBehavior"
+            "System.Data.SqlClient.SqlDataReader"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -861,7 +908,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.SqlCommandIntegration",
           "method": "ExecuteReader",
-          "signature": "00 05 1C 1C 08 08 08 0A"
+          "signature": "00 04 1C 1C 08 08 0A"
         }
       },
       {
@@ -871,8 +918,7 @@
           "type": "System.Data.SqlClient.SqlCommand",
           "method": "ExecuteReader",
           "signature_types": [
-            "System.Data.SqlClient.SqlDataReader",
-            "System.Data.CommandBehavior"
+            "System.Data.SqlClient.SqlDataReader"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -885,7 +931,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.SqlCommandIntegration",
           "method": "ExecuteReader",
-          "signature": "00 05 1C 1C 08 08 08 0A"
+          "signature": "00 04 1C 1C 08 08 0A"
         }
       },
       {
@@ -896,8 +942,7 @@
           "method": "ExecuteReader",
           "signature_types": [
             "System.Data.SqlClient.SqlDataReader",
-            "System.Data.CommandBehavior",
-            "System.String"
+            "System.Data.CommandBehavior"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -909,8 +954,8 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.SqlCommandIntegration",
-          "method": "ExecuteReaderWithMethod",
-          "signature": "00 06 1C 1C 08 0E 08 08 0A"
+          "method": "ExecuteReaderWithBehavior",
+          "signature": "00 05 1C 1C 08 08 08 0A"
         }
       },
       {
@@ -921,8 +966,7 @@
           "method": "ExecuteReader",
           "signature_types": [
             "System.Data.SqlClient.SqlDataReader",
-            "System.Data.CommandBehavior",
-            "System.String"
+            "System.Data.CommandBehavior"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -934,8 +978,8 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.SqlCommandIntegration",
-          "method": "ExecuteReaderWithMethod",
-          "signature": "00 06 1C 1C 08 0E 08 08 0A"
+          "method": "ExecuteReaderWithBehavior",
+          "signature": "00 05 1C 1C 08 08 08 0A"
         }
       },
       {

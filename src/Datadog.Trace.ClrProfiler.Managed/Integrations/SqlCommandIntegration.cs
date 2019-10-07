@@ -25,6 +25,60 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// Instrumentation wrapper for SqlCommand.ExecuteReader().
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The value returned by the instrumented method.</returns>
+        [InterceptMethod(
+            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
+            TargetType = SqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
+            TargetSignatureTypes = new[] { SqlDataReaderTypeName },
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major4)]
+        public static object ExecuteReader(
+            object command,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            Func<object, object> instrumentedMethod;
+
+            try
+            {
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+
+                instrumentedMethod =
+                    MethodBuilder<Func<object, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
+                       .WithConcreteType(targetType)
+                       .WithNamespaceAndNameFilters(SqlDataReaderTypeName)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorException($"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)", ex);
+                throw;
+            }
+
+            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand, IntegrationName))
+            {
+                try
+                {
+                    return instrumentedMethod(command);
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Instrumentation wrapper for SqlCommand.ExecuteReader().
+        /// </summary>
+        /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
@@ -37,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetSignatureTypes = new[] { SqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object ExecuteReader(
+        public static object ExecuteReaderWithBehavior(
             object command,
             int behavior,
             int opCode,
@@ -70,66 +124,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     return instrumentedMethod(command, commandBehavior);
-                }
-                catch (Exception ex)
-                {
-                    scope?.Span.SetException(ex);
-                    throw;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Instrumentation wrapper for SqlCommand.ExecuteReader().
-        /// </summary>
-        /// <param name="command">The object referenced by this in the instrumented method.</param>
-        /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
-        /// <param name="method">The "method" string used in the original method call.</param>
-        /// <param name="opCode">The OpCode used in the original method call.</param>
-        /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
-        /// <returns>The value returned by the instrumented method.</returns>
-        [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = SqlCommandTypeName,
-            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
-            TargetSignatureTypes = new[] { SqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.String },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
-        public static object ExecuteReaderWithMethod(
-            object command,
-            int behavior,
-            string method,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
-            Func<object, CommandBehavior, string, object> instrumentedMethod;
-            var commandBehavior = (CommandBehavior)behavior;
-
-            try
-            {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
-
-                instrumentedMethod =
-                    MethodBuilder<Func<object, CommandBehavior, string, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
-                       .WithConcreteType(targetType)
-                       .WithParameters(commandBehavior, method)
-                       .WithNamespaceAndNameFilters(SqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.String)
-                       .Build();
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorException($"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)", ex);
-                throw;
-            }
-
-            using (var scope = ScopeFactory.CreateDbCommandScope(Tracer.Instance, command as DbCommand, IntegrationName))
-            {
-                try
-                {
-                    return instrumentedMethod(command, commandBehavior, method);
                 }
                 catch (Exception ex)
                 {

@@ -93,9 +93,8 @@ namespace Datadog.Trace.ClrProfiler
                     parent.ResourceName == command.CommandText)
                 {
                     // we are already instrumenting this,
-                    // don't instrument nested methods that belong to the same stacktrace, e.g.
-                    // ExecuteReader() -> ExecuteDbDataReader()
-                    // ExecuteReader() -> ExecuteReader(commandBehavior)
+                    // don't instrument nested methods that belong to the same stacktrace
+                    // e.g. ExecuteReader() -> ExecuteReader(commandBehavior)
                     return null;
                 }
 
