@@ -235,10 +235,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
@@ -308,10 +310,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQueryAsync)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
@@ -360,10 +364,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
@@ -433,10 +439,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
-                       .WithConcreteType(typeof(DbCommand))
+                       .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask)
                        .Build();
