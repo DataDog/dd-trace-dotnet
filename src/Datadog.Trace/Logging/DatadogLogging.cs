@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
@@ -14,7 +15,7 @@ namespace Datadog.Trace.Logging
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
 
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
-        private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Verbose; // Lowest level
+        private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Information;
 
         private static readonly ILogger SharedLogger = null;
 
@@ -30,11 +31,9 @@ namespace Datadog.Trace.Logging
                 var currentAppDomain = AppDomain.CurrentDomain;
                 var currentProcess = Process.GetCurrentProcess();
 
-                var debugEnabledVariable = Environment.GetEnvironmentVariable("DD_TRACE_DEBUG")?.ToLower();
-                if (debugEnabledVariable != "1" && debugEnabledVariable != "true")
+                if (Tracer.Instance?.Settings.DebugEnabled == true)
                 {
-                    // No verbose or debug logs
-                    MinimumLogEventLevel = LogEventLevel.Information;
+                    MinimumLogEventLevel = LogEventLevel.Verbose;
                 }
 
                 var maxLogSizeVar = Environment.GetEnvironmentVariable("DD_MAX_LOGFILE_SIZE");
@@ -64,8 +63,14 @@ namespace Datadog.Trace.Logging
                     }
                     else
                     {
-                        logDirectory = Environment.CurrentDirectory;
+                        // Last effort at writing logs
+                        logDirectory = Path.GetTempPath();
                     }
+                }
+
+                if (logDirectory == null)
+                {
+                    return;
                 }
 
                 // Ends in a dash because of the date postfix
