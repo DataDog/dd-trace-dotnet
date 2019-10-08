@@ -446,7 +446,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
