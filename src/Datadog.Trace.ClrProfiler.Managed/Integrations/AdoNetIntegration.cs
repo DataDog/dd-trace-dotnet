@@ -173,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
 
-            return ExecuteDbDataReaderAsyncInternal(
+            return ExecuteReaderAsyncInternal(
                 command as DbCommand,
                 (CommandBehavior)behavior,
                 cancellationToken,
@@ -182,7 +182,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 moduleVersionPtr);
         }
 
-        private static async Task<DbDataReader> ExecuteDbDataReaderAsyncInternal(
+        private static async Task<DbDataReader> ExecuteReaderAsyncInternal(
             DbCommand command,
             CommandBehavior commandBehavior,
             CancellationToken cancellationToken,
@@ -456,7 +456,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
                        .WithConcreteType(typeof(DbCommand))
                        .WithParameters(cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
