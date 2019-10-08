@@ -44,13 +44,11 @@
     </frameworkAssemblies>
   </metadata>
   <files>
-    <file src="bin\Release\net45\Datadog.Trace.dll" target="lib\net45" />
-    <file src="bin\Release\net45\Datadog.Trace.xml" target="lib\net45" />
-
-    <file src="bin\Release\net461\Datadog.Trace.dll" target="lib\net461" />
-    <file src="bin\Release\net461\Datadog.Trace.xml" target="lib\net461" />
-
-    <file src="bin\Release\netstandard2.0\Datadog.Trace.dll" target="lib\netstandard2.0" />
-    <file src="bin\Release\netstandard2.0\Datadog.Trace.xml" target="lib\netstandard2.0" />
+    <file src="bin\$(Configuration)\net45\Datadog.Trace.dll" target="lib\net45" />
+    <file src="bin\$(Configuration)\net45\Datadog.Trace.xml" target="lib\net45" />
+    <file src="bin\$(Configuration)\net461\Datadog.Trace.dll" target="lib\net461" />
+    <file src="bin\$(Configuration)\net461\Datadog.Trace.xml" target="lib\net461" />
+    <file src="bin\$(Configuration)\netstandard2.0\Datadog.Trace.dll" target="lib\netstandard2.0" />
+    <file src="bin\$(Configuration)\netstandard2.0\Datadog.Trace.xml" target="lib\netstandard2.0" />
   </files>
 </package>
