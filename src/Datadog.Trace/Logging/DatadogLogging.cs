@@ -38,7 +38,7 @@ namespace Datadog.Trace.Logging
                 }
 
                 var maxLogSizeVar = Environment.GetEnvironmentVariable("DD_MAX_LOGFILE_SIZE");
-                if (!string.IsNullOrEmpty(maxLogSizeVar) && long.TryParse(maxLogSizeVar, out var maxLogSize))
+                if (long.TryParse(maxLogSizeVar, out var maxLogSize))
                 {
                     // No verbose or debug logs
                     MaxLogFileSize = maxLogSize;
