@@ -37,47 +37,20 @@
         <dependency id="System.Net.Http" version="4.3.4" exclude="Build,Analyzers" />
         <dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" exclude="Build,Analyzers" />
       </group>
-      <group targetFramework="net45">
-        <dependency id="Microsoft.CSharp" version="4.5.0" exclude="Build,Analyzers" />
-        <dependency id="MsgPack.Cli" version="1.0.1" exclude="Build,Analyzers" />
-        <dependency id="Newtonsoft.Json" version="12.0.1" exclude="Build,Analyzers" />
-        <dependency id="System.Net.Http" version="4.3.4" exclude="Build,Analyzers" />
-        <dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" exclude="Build,Analyzers" />
-      </group>
-      <group targetFramework="net461">
-        <dependency id="Microsoft.CSharp" version="4.5.0" exclude="Build,Analyzers" />
-        <dependency id="MsgPack.Cli" version="1.0.1" exclude="Build,Analyzers" />
-        <dependency id="Newtonsoft.Json" version="12.0.1" exclude="Build,Analyzers" />
-        <dependency id="System.Net.Http" version="4.3.4" exclude="Build,Analyzers" />
-        <dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" exclude="Build,Analyzers" />
-      </group>
-      <group targetFramework="netstandard2.0">
-        <dependency id="Microsoft.CSharp" version="4.5.0" exclude="Build,Analyzers" />
-        <dependency id="MsgPack.Cli" version="1.0.1" exclude="Build,Analyzers" />
-        <dependency id="Newtonsoft.Json" version="12.0.1" exclude="Build,Analyzers" />
-        <dependency id="System.Net.Http" version="4.3.4" exclude="Build,Analyzers" />
-        <dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" exclude="Build,Analyzers" />
-      </group>
     </dependencies>
     <frameworkAssemblies>
       <frameworkAssembly assemblyName="System.Configuration" targetFramework=".NETFramework4.50.0" />
       <frameworkAssembly assemblyName="System.Web" targetFramework=".NETFramework4.50.0" />
     </frameworkAssemblies>
-    <files>
-      <file src="bin\Release\net45\Datadog.Trace.dll" target="lib\net45" />
-      <file src="bin\Release\net45\Datadog.Trace.xml" target="lib\net45" />
-      <file src="..\Datadog.Trace.Vendors\bin\Release\net45\Datadog.Trace.Vendoring.dll" target="lib\net45" />
-      <file src="..\Datadog.Trace.Vendors\bin\Release\net45\Datadog.Trace.Vendoring.xml" target="lib\net45" />
-
-      <file src="bin\Release\net461\Datadog.Trace.dll" target="lib\net461" />
-      <file src="bin\Release\net461\Datadog.Trace.xml" target="lib\net461" />
-      <file src="..\Datadog.Trace.Vendors\bin\Release\net461\Datadog.Trace.Vendoring.dll" target="lib\net461" />
-      <file src="..\Datadog.Trace.Vendors\bin\Release\net461\Datadog.Trace.Vendoring.xml" target="lib\net461" />
-
-      <file src="bin\Release\netstandard2.0\Datadog.Trace.dll" target="lib\netstandard2.0" />
-      <file src="bin\Release\netstandard2.0\Datadog.Trace.xml" target="lib\netstandard2.0" />
-      <file src="..\Datadog.Trace.Vendors\bin\Release\netstandard2.0\Datadog.Trace.Vendoring.dll" target="lib\netstandard2.0" />
-      <file src="..\Datadog.Trace.Vendors\bin\Release\netstandard2.0\Datadog.Trace.Vendoring.xml" target="lib\netstandard2.0" />
-    </files>
   </metadata>
+  <files>
+    <file src="bin\Release\net45\Datadog.Trace.dll" target="lib\net45" />
+    <file src="bin\Release\net45\Datadog.Trace.xml" target="lib\net45" />
+
+    <file src="bin\Release\net461\Datadog.Trace.dll" target="lib\net461" />
+    <file src="bin\Release\net461\Datadog.Trace.xml" target="lib\net461" />
+
+    <file src="bin\Release\netstandard2.0\Datadog.Trace.dll" target="lib\netstandard2.0" />
+    <file src="bin\Release\netstandard2.0\Datadog.Trace.xml" target="lib\netstandard2.0" />
+  </files>
 </package>
