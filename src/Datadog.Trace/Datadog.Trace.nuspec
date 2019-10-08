@@ -17,21 +17,18 @@
     <repository type="git" url="https://github.com/DataDog/dd-trace-dotnet.git" />
     <dependencies>
       <group targetFramework=".NETFramework4.5">
-        <dependency id="Microsoft.CSharp" version="4.5.0" exclude="Build,Analyzers" />
         <dependency id="MsgPack.Cli" version="1.0.1" exclude="Build,Analyzers" />
         <dependency id="Newtonsoft.Json" version="12.0.1" exclude="Build,Analyzers" />
         <dependency id="System.Net.Http" version="4.3.4" exclude="Build,Analyzers" />
         <dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" exclude="Build,Analyzers" />
       </group>
       <group targetFramework=".NETFramework4.6.1">
-        <dependency id="Microsoft.CSharp" version="4.5.0" exclude="Build,Analyzers" />
         <dependency id="MsgPack.Cli" version="1.0.1" exclude="Build,Analyzers" />
         <dependency id="Newtonsoft.Json" version="12.0.1" exclude="Build,Analyzers" />
         <dependency id="System.Net.Http" version="4.3.4" exclude="Build,Analyzers" />
         <dependency id="System.Runtime.InteropServices.RuntimeInformation" version="4.3.0" exclude="Build,Analyzers" />
       </group>
       <group targetFramework=".NETStandard2.0">
-        <dependency id="Microsoft.CSharp" version="4.5.0" exclude="Build,Analyzers" />
         <dependency id="MsgPack.Cli" version="1.0.1" exclude="Build,Analyzers" />
         <dependency id="Newtonsoft.Json" version="12.0.1" exclude="Build,Analyzers" />
         <dependency id="System.Net.Http" version="4.3.4" exclude="Build,Analyzers" />
