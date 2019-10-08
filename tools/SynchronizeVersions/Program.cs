@@ -62,11 +62,7 @@ namespace SynchronizeVersions
                 NugetVersionReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace/Datadog.Trace.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
-                "/deploy/Nuget/Datadog.Trace.nuspec",
+                "src/Datadog.Trace/Datadog.Trace.nuspec",
                 NugetVersionReplace);
 
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
