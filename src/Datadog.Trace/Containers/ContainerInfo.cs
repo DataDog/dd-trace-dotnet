@@ -20,7 +20,7 @@ namespace Datadog.Trace.Containers
 
         private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ContainerInfo));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ContainerInfo));
 
         /// <summary>
         /// Gets the id of the container executing the code.

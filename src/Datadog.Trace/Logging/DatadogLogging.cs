@@ -1,9 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using Datadog.Trace.Vendoring.Serilog;
-using Datadog.Trace.Vendoring.Serilog.Events;
-using Datadog.Trace.Vendoring.Serilog.Sinks.File;
+using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
 namespace Datadog.Trace.Logging
 {

@@ -11,7 +11,7 @@ namespace Datadog.Trace
         private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<SpanContextPropagator>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<SpanContextPropagator>();
 
         private SpanContextPropagator()
         {

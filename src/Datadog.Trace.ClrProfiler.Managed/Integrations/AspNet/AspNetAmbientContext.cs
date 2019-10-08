@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly string HttpContextKey = "__Datadog_web_request_ambient_context__";
         private static readonly string TopLevelOperationName = "web.request";
         private static readonly string StartupDiagnosticMethod = "DEBUG";
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetAmbientContext));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetAmbientContext));
 
         private readonly ConcurrentStack<IDisposable> _disposables = new ConcurrentStack<IDisposable>();
         private readonly ConcurrentDictionary<string, Scope> _scopeStorage = new ConcurrentDictionary<string, Scope>();

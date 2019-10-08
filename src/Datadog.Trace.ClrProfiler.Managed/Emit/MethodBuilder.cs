@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// Global dictionary for caching reflected delegates
         /// </summary>
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MethodBuilder<TDelegate>));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MethodBuilder<TDelegate>));
         private static readonly bool ForceMdTokenLookup;
         private static readonly bool ForceFallbackLookup;
 

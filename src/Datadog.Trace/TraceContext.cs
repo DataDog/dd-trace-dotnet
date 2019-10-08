@@ -7,7 +7,7 @@ namespace Datadog.Trace
 {
     internal class TraceContext : ITraceContext
     {
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<TraceContext>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<TraceContext>();
 
         private readonly object _lock = new object();
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;

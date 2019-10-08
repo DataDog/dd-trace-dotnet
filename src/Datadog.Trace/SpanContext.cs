@@ -10,7 +10,7 @@ namespace Datadog.Trace
     /// </summary>
     public class SpanContext : ISpanContext
     {
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<SpanContext>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<SpanContext>();
         private static ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
 
         /// <summary>

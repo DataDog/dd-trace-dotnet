@@ -1,15 +1,13 @@
-
-
-using Datadog.Trace.Logging;
 #if !NETSTANDARD2_0
 using System;
 using System.Web;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
     internal class AspNetScopeManager : IScopeManager
     {
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<AspNetScopeManager>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AspNetScopeManager>();
 
         private readonly string _name = "__Datadog_Scope_Current__" + Guid.NewGuid();
         private readonly AsyncLocalCompat<Scope> _activeScopeFallback = new AsyncLocalCompat<Scope>();

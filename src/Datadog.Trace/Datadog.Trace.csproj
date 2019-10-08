@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\vendors\Datadog.Trace.Vendoring\Datadog.Trace.Vendoring.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.Vendors\Datadog.Trace.Vendors.csproj" />
   </ItemGroup>
 
 </Project>

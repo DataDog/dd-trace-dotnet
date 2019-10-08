@@ -1,6 +1,3 @@
-
-
-using Datadog.Trace.Logging;
 #if !NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
@@ -10,6 +7,7 @@ using System.Web.Routing;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -29,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string ControllerContextTypeName = "System.Web.Mvc.ControllerContext";
         private const string RouteCollectionRouteTypeName = "System.Web.Mvc.Routing.RouteCollectionRoute";
 
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetMvcIntegration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetMvcIntegration));
 
         /// <summary>
         /// Creates a scope used to instrument an MVC action and populates some common details.

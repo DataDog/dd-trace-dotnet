@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Type DiagnosticSourceType = Type.GetType($"{DiagnosticSourceTypeName}, {AspnetMvcCore}");
         private static readonly Type ResourceInvokerType = Type.GetType($"{ResourceInvokerTypeName}, {AspnetMvcCore}");
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetCoreMvc2Integration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetCoreMvc2Integration));
 
         private readonly object _httpContext;
         private readonly Scope _scope;

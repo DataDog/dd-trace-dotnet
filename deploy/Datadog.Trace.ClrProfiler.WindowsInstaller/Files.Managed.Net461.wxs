@@ -16,6 +16,11 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.Vendors.dll"
+              Source="$(var.ManagedDllPath)\net461\Datadog.Trace.Vendors.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_MsgPack.dll"
               Source="$(var.ManagedDllPath)\net461\MsgPack.dll"
               KeyPath="yes" Checksum="yes"/>

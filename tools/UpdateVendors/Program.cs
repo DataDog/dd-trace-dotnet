@@ -13,13 +13,13 @@ namespace UpdateVendors
     {
         private static readonly string CurrentDirectory = Environment.CurrentDirectory;
         private static readonly string DownloadDirectory = Path.Combine(CurrentDirectory, "downloads");
-        private static string _vendorProjectDirectory = Path.Combine(CurrentDirectory, "downloads");
+        private static string _vendorProjectDirectory;
 
         public static void Main(string[] args)
         {
             InitializeCleanDirectory(DownloadDirectory);
             var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
-            _vendorProjectDirectory = Path.Combine(solutionDirectory, "src", "vendors", "Datadog.Trace.Vendoring");
+            _vendorProjectDirectory = Path.Combine(solutionDirectory, "src", "Datadog.Trace.Vendors");
 
             UpdateVendor(
                 libraryName: "Serilog",
@@ -44,8 +44,8 @@ namespace UpdateVendors
                     filePath,
                     content =>
                     {
-                        content = content.Replace("using Serilog", "using Datadog.Trace.Vendoring.Serilog");
-                        content = content.Replace("namespace Serilog", "namespace Datadog.Trace.Vendoring.Serilog");
+                        content = content.Replace("using Serilog", "using Datadog.Trace.Vendors.Serilog");
+                        content = content.Replace("namespace Serilog", "namespace Datadog.Trace.Vendors.Serilog");
                         return content;
                     });
             }

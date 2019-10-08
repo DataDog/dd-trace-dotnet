@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpClientHandler = "System.Net.Http.HttpClientHandler";
         private const string SendAsync = "SendAsync";
 
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpMessageHandlerIntegration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpMessageHandlerIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="HttpMessageHandler.SendAsync"/>.

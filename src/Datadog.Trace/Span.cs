@@ -5,7 +5,7 @@ using System.Text;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendoring.Serilog.Events;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace
 {
@@ -17,7 +17,7 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable, ISpan
     {
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<Span>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
 
         private readonly object _lock = new object();
 

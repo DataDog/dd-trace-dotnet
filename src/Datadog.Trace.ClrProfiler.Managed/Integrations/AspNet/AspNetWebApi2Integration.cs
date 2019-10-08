@@ -1,6 +1,3 @@
-
-
-using Datadog.Trace.Logging;
 #if !NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
@@ -10,6 +7,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.ExtensionMethods;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -27,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string HttpControllerTypeName = "System.Web.Http.Controllers.IHttpController";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
 
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetWebApi2Integration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetWebApi2Integration));
 
         /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.

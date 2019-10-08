@@ -1,12 +1,10 @@
-
-
-using Datadog.Trace.Logging;
 #if !NETSTANDARD2_0
 using System;
 using System.Web;
 using Datadog.Trace.ClrProfiler.Interfaces;
 using Datadog.Trace.ClrProfiler.Models;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
@@ -17,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         internal const string IntegrationName = "AspNet";
 
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetHttpModule));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetHttpModule));
 
         private readonly string _httpContextDelegateKey;
         private readonly string _operationName;

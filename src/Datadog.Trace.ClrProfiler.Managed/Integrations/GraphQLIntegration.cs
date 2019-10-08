@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private const string TaskOfGraphQLExecutionResult = "System.Threading.Tasks.Task`1<" + GraphQLExecutionResultName + ">";
 
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(GraphQLIntegration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(GraphQLIntegration));
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.

@@ -14,7 +14,7 @@ namespace Datadog.Trace.Agent
     {
         private const string TracesPath = "/v0.4/traces";
 
-        private static readonly Vendoring.Serilog.ILogger Log = DatadogLogging.For<Api>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Api>();
         private static readonly SerializationContext SerializationContext = new SerializationContext();
         private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(SerializationContext);
 
