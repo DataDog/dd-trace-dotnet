@@ -2,7 +2,6 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace;
 
@@ -71,6 +70,9 @@ namespace Samples.DatabaseHelper
                     DeleteRecord(_connection);
                     _connection.Close();
                 }
+
+                // leave a small space between spans, for better visibility in the UI
+                await Task.Delay(TimeSpan.FromSeconds(0.1));
 
                 using (var scopeAsync = Tracer.Instance.StartActive("run.async"))
                 {
