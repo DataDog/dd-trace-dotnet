@@ -104,6 +104,7 @@ namespace Datadog.Trace.ClrProfiler
                 scope = tracer.StartActive(operationName, serviceName: serviceName);
                 var span = scope.Span;
                 span.SetTag(Tags.DbType, dbType);
+                span.SetTag(Tags.InstrumentationName, integrationName);
                 span.AddTagsFromDbCommand(command);
 
                 // set analytics sample rate if enabled
