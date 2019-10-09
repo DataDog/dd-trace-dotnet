@@ -53,7 +53,7 @@ Microsoft provides [evaluation developer VMs](https://developer.microsoft.com/en
 
 ### Building from a command line
 
-From a _Developer Command Prompt for VS 2017_:
+From a _Developer Command Prompt for VS 2019_:
 
 ```cmd
 rem Restore NuGet packages
