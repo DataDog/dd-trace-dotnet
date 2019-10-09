@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using Datadog.Trace.TestHelpers;
@@ -62,18 +63,14 @@ namespace SynchronizeInstaller
             filePrefix = filePrefix ?? $"{frameworkMoniker.Replace(".", string.Empty)}_";
 
             var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
-#if DEBUG
-            var buildConfig = "Debug";
-#else
-            var buildConfig = "Release";
-#endif
+            var requiredBuildConfig = "Release";
             var managedProjectBin =
                 Path.Combine(
                     solutionDirectory,
                     "src",
                     "Datadog.Trace.ClrProfiler.Managed",
                     "bin",
-                    buildConfig);
+                    requiredBuildConfig);
 
             var wixProjectRoot =
                 Path.Combine(
@@ -81,12 +78,17 @@ namespace SynchronizeInstaller
                     "deploy",
                     "Datadog.Trace.ClrProfiler.WindowsInstaller");
 
-            var net45Output = Path.Combine(managedProjectBin, frameworkMoniker);
+            var outputFolder = Path.Combine(managedProjectBin, frameworkMoniker);
 
             var filePaths = Directory.GetFiles(
-                net45Output,
+                outputFolder,
                 "*.dll",
                 SearchOption.AllDirectories);
+
+            if (filePaths.Length == 0)
+            {
+                throw new Exception("Be sure to build in release mode before running this tool.");
+            }
 
             var components = string.Empty;
 
