@@ -1,5 +1,10 @@
 version: '3'
 services:
+  AWSSDKSQS:
+    image: softwaremill/elasticmq
+    ports:
+    - "127.0.0.1:9324:9324"
+
   servicestackredis:
     image: redis:4-alpine
     command: redis-server --bind 0.0.0.0
@@ -95,6 +100,19 @@ services:
     command: /project/docker/Datadog.Trace.ClrProfiler.Native.sh
     volumes:
     - ./:/project
+
+  Samples.AWSSDK.SQS:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.dockerfile
+    image: datadog-dotnet
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it host.docker.internal:9324 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.AWSSDK.SQS/bin/Release/netcoreapp2.1/publish/Samples.AWSSDK.SQS.dll"
+    environment:
+    - AWSSDK_SQS_HOST=host.docker.internal:9324
+    volumes:
+    - ./:/project
+    depends_on:
+    - AWSSDKSQS
 
   Samples.ServiceStack.Redis:
     build:

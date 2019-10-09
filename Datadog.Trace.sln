@@ -267,6 +267,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UpdateVendors", "tools\Upda
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SynchronizeInstaller", "tools\SynchronizeInstaller\SynchronizeInstaller.csproj", "{EBDDF6D7-59B8-4831-80C6-458C1ABBFC63}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWSSDK.SQS", "samples\Samples.AWSSDK.SQS\Samples.AWSSDK.SQS.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Log4Net.SerializationException", "reproductions\Log4Net.SerializationException\Log4Net.SerializationException.csproj", "{35F581E9-3D7C-4E80-8DFF-D437B0D86710}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApplicationWithLog4Net", "reproduction-dependencies\ApplicationWithLog4Net\ApplicationWithLog4Net.csproj", "{1C34D970-6081-4EFA-8F2F-5AD2B146AC58}"
@@ -901,6 +903,16 @@ Global
 		{3BEACB10-89FE-4F74-8022-1A52F223CE82}.Release|x64.Build.0 = Release|Any CPU
 		{3BEACB10-89FE-4F74-8022-1A52F223CE82}.Release|x86.ActiveCfg = Release|Any CPU
 		{3BEACB10-89FE-4F74-8022-1A52F223CE82}.Release|x86.Build.0 = Release|Any CPU
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Debug|x64.ActiveCfg = Debug|x64
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Debug|x64.Build.0 = Debug|x64
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Debug|x86.ActiveCfg = Debug|x86
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Debug|x86.Build.0 = Debug|x86
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Release|Any CPU.ActiveCfg = Release|x86
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Release|x64.ActiveCfg = Release|x64
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Release|x64.Build.0 = Release|x64
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Release|x86.ActiveCfg = Release|x86
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -965,6 +977,7 @@ Global
 		{35F581E9-3D7C-4E80-8DFF-D437B0D86710} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{1C34D970-6081-4EFA-8F2F-5AD2B146AC58} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
 		{3BEACB10-89FE-4F74-8022-1A52F223CE82} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
+		{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
