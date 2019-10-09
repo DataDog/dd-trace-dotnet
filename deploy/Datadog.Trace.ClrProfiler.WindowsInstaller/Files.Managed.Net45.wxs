@@ -18,7 +18,7 @@
       <Component Win64="$(var.Win64)">
         <File Id="net45_Datadog.Trace.Vendors.dll"
               Source="$(var.ManagedDllPath)\net45\Datadog.Trace.Vendors.dll"
-              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+              KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net45_MsgPack.dll"

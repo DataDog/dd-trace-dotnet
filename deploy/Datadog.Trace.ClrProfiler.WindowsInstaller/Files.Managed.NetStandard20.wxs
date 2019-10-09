@@ -56,7 +56,12 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Diagnostics.DiagnosticSource.Immutable.dll"
+        <File Id="netstandard20_System.Collections.NonGeneric.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\System.Collections.NonGeneric.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_System.Diagnostics.DiagnosticSource.dll"
               Source="$(var.ManagedDllPath)\netstandard2.0\System.Diagnostics.DiagnosticSource.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
