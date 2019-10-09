@@ -2,9 +2,11 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
+using Newtonsoft.Json;
 using Directory = System.IO.Directory;
 
 namespace UpdateVendors
@@ -24,12 +26,14 @@ namespace UpdateVendors
             UpdateVendor(
                 libraryName: "Serilog",
                 masterBranchDownload: "https://github.com/serilog/serilog/archive/master.zip",
+                latestCommitUrl: "https://api.github.com/repos/serilog/serilog/commits/master",
                 pathToSrc: new[] { "serilog-master", "src", "Serilog" },
                 transform: TransformSerilog);
 
             UpdateVendor(
                 libraryName: "Serilog.Sinks.File",
                 masterBranchDownload: "https://github.com/serilog/serilog-sinks-file/archive/master.zip",
+                latestCommitUrl: "https://api.github.com/repos/serilog/serilog-sinks-file/commits/master",
                 pathToSrc: new[] { "serilog-sinks-file-master", "src", "Serilog.Sinks.File" },
                 transform: TransformSerilog);
         }
@@ -46,6 +50,7 @@ namespace UpdateVendors
                     {
                         content = content.Replace("using Serilog", "using Datadog.Trace.Vendors.Serilog");
                         content = content.Replace("namespace Serilog", "namespace Datadog.Trace.Vendors.Serilog");
+                        content = content.Replace("class NullSink ", "public class NullSink ");
                         return content;
                     });
             }
@@ -54,6 +59,7 @@ namespace UpdateVendors
         private static void UpdateVendor(
             string libraryName,
             string masterBranchDownload,
+            string latestCommitUrl,
             string[] pathToSrc,
             Action<string> transform = null)
         {
@@ -61,9 +67,10 @@ namespace UpdateVendors
 
             var zipLocation = Path.Combine(DownloadDirectory, $"{libraryName}.zip");
             var extractLocation = Path.Combine(DownloadDirectory, $"{libraryName}");
-            using (var client = new WebClient())
+
+            using (var repoDownloadClient = new WebClient())
             {
-                client.DownloadFile(masterBranchDownload, zipLocation);
+                repoDownloadClient.DownloadFile(masterBranchDownload, zipLocation);
             }
 
             Console.WriteLine($"Downloaded {libraryName} upgrade.");
@@ -108,7 +115,28 @@ namespace UpdateVendors
                 Console.WriteLine($"Finished transforms on files for {libraryName}.");
             }
 
-            // Move it to the vendors directory
+            // Add information about the commit we are downloading
+            var githubToken = Environment.GetEnvironmentVariable("DD_VENDOR_TOOL_TOKEN");
+            if (githubToken == null)
+            {
+                throw new ArgumentException("You must specify a valid OAuth token for the github API.");
+            }
+
+            string commitInformation;
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("AppName", "1.0"));
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", githubToken);
+                var responseTask = client.GetStringAsync(latestCommitUrl);
+                responseTask.Wait();
+                commitInformation = FormatJson(responseTask.Result);
+            }
+
+            var commitJsonPath = Path.Combine(sourceLocation, "commit-info.json");
+            File.WriteAllText(commitJsonPath, commitInformation);
+
+            // Move it all to the vendors directory
             var vendorFinalPath = Path.Combine(_vendorProjectDirectory, libraryName);
             SafeDeleteDirectory(vendorFinalPath);
             Directory.Move(sourceLocation, vendorFinalPath);
@@ -141,9 +169,10 @@ namespace UpdateVendors
             }
         }
 
-        private static string FullVersionReplace(string text, string split)
+        private static string FormatJson(string json)
         {
-            return Regex.Replace(text, "thing", "other thing");
+            dynamic parsedJson = JsonConvert.DeserializeObject(json);
+            return JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
         }
     }
 }
