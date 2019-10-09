@@ -39,7 +39,9 @@ Integration tests | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-
     - Optional: ASP.NET and web development (to build samples)
   - Individual components
     - .NET Framework 4.7 targeting pack
-- [.NET Core 2.1 SDK](https://dotnet.microsoft.com/download/dotnet-core/2.1)
+- [.NET Core 3.0 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.0)
+- Optional: [.NET Core 2.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/2.1) to test in .NET Core 2.1 locally.
+- Optional: [.NET Core 2.2 Runtime](https://dotnet.microsoft.com/download/dotnet-core/2.2) to test in .NET Core 2.2 locally.
 - Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v3.4.4 or newer
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
@@ -51,7 +53,7 @@ Microsoft provides [evaluation developer VMs](https://developer.microsoft.com/en
 
 ### Building from a command line
 
-From a _Developer Command Prompt for VS 2017_:
+From a _Developer Command Prompt for VS 2019_:
 
 ```cmd
 rem Restore NuGet packages
