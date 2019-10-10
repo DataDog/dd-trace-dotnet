@@ -66,9 +66,7 @@ jobs:
     condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
       command: pack
-      packagesToPack: | 
-        src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
-        src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      packagesToPack: src/Datadog.Trace.OpenTracing/*.csproj;src/Datadog.Trace.ClrProfiler.Managed/*.csproj
       packDirectory: nuget-output
       configuration: $(buildConfiguration)
 
