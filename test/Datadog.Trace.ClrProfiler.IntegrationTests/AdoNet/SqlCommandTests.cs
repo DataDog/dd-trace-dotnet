@@ -2,11 +2,11 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class SqlCommandIntegrationTests : TestHelper
+    public class SqlCommandTests : TestHelper
     {
-        public SqlCommandIntegrationTests(ITestOutputHelper output)
+        public SqlCommandTests(ITestOutputHelper output)
             : base("SqlCommand", output)
         {
         }

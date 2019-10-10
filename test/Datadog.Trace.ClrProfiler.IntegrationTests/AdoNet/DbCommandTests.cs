@@ -2,7 +2,7 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     public class DbCommandTests : TestHelper
     {
