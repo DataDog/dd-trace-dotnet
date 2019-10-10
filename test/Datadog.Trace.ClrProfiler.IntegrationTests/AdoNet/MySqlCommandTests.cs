@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     Assert.Equal("sql-server.query", span.Name);
                     Assert.Equal("Samples.MySql-sql-server", span.Service);
                     Assert.Equal(SpanTypes.Sql, span.Type);
+                    Assert.Equal("mysql", span.Tags[Tags.DbType]);
                 }
             }
         }
