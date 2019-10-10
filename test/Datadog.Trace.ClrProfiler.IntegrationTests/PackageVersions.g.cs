@@ -82,6 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.8.0" },
                 new object[] { "6.8.1" },
                 new object[] { "6.8.2" },
+                new object[] { "6.8.3" },
 #endif
             };
 
@@ -125,6 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.9" },
                 new object[] { "4.0.10" },
                 new object[] { "4.1.0" },
+                new object[] { "4.1.1" },
 #endif
             };
 
