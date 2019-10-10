@@ -75,10 +75,8 @@ jobs:
     condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
       command: pack
-      packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj
-      packDirectory: nuget-output
       configuration: $(buildConfiguration)
-      arguments: -p:NuspecFile=src/Datadog.Trace/Datadog.Trace.nuspec
+      arguments: src/Datadog.Trace/Datadog.Trace.csproj -p:NuspecFile=src/Datadog.Trace/Datadog.Trace.nuspec -p:PackageOutputPath:nuget-output
 
   - task: PublishPipelineArtifact@0
     displayName: publish nuget artifacts
