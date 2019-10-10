@@ -74,7 +74,7 @@ jobs:
     displayName: dotnet pack trace
     condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
-      script: pack src/Datadog.Trace/Datadog.Trace.csproj -p:NuspecFile=Datadog.Trace.nuspec -p:PackageOutputPath=$(Build.SourcesDirectory)/nuget-output -p:Configuration=$(buildConfiguration)
+      script: pack $(Build.SourcesDirectory)/src/Datadog.Trace/Datadog.Trace.csproj -p:NuspecFile=Datadog.Trace.nuspec -p:PackageOutputPath=$(Build.SourcesDirectory)/nuget-output -p:Configuration=$(buildConfiguration)
 
   - task: PublishPipelineArtifact@0
     displayName: publish nuget artifacts
