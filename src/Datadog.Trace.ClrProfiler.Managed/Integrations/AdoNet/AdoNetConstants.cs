@@ -1,4 +1,4 @@
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 {
     internal static class AdoNetConstants
     {

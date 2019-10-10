@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 {
     /// <summary>
     /// Instrumentation wrappers for SqlCommand.
