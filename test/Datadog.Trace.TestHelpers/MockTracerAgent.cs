@@ -85,13 +85,11 @@ namespace Datadog.Trace.TestHelpers
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
-            DateTime? minDateTime = null,
+            DateTimeOffset? minDateTime = null,
             bool returnAllOperations = false)
         {
             var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
-
-            var minimumOffset =
-                new DateTimeOffset(minDateTime ?? DateTime.MinValue).ToUnixTimeNanoseconds();
+            var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
 
             IImmutableList<Span> relevantSpans = null;
 
