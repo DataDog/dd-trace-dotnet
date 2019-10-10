@@ -15,7 +15,7 @@ namespace Samples.DbCommand
 
             using (var connection = new SqlConnection(connectionString))
             {
-                var testQueries = new DatabaseTestHarness<DbConnection, System.Data.Common.DbCommand, DbDataReader>(
+                var testQueries = new RelationalDatabaseTestHarness<DbConnection, System.Data.Common.DbCommand, DbDataReader>(
                     connection,
                     command => command.ExecuteNonQuery(),
                     command => command.ExecuteScalar(),

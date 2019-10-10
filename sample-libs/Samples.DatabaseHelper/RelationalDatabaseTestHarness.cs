@@ -7,7 +7,7 @@ using Datadog.Trace;
 
 namespace Samples.DatabaseHelper
 {
-    public class DatabaseTestHarness<TConnection, TCommand, TDataReader>
+    public class RelationalDatabaseTestHarness<TConnection, TCommand, TDataReader>
         where TConnection : DbConnection
         where TCommand : DbCommand
         where TDataReader : DbDataReader
@@ -31,7 +31,7 @@ namespace Samples.DatabaseHelper
         private readonly Func<TCommand, Task<TDataReader>> _executeReaderAsync;
         private readonly Func<TCommand, CommandBehavior, Task<TDataReader>> _executeReaderWithBehaviorAsync;
 
-        public DatabaseTestHarness(
+        public RelationalDatabaseTestHarness(
             TConnection connection,
             Func<TCommand, int> executeNonQuery,
             Func<TCommand, object> executeScalar,
