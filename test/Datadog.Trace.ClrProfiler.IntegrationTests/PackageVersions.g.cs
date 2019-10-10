@@ -130,30 +130,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
-        public static IEnumerable<object[]> SqlServer =>
+        public static IEnumerable<object[]> SqlClient =>
 
             new List<object[]>
             {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-                new object[] { "2.0.0" },
-                new object[] { "2.0.1" },
-                new object[] { "2.0.2" },
-                new object[] { "2.0.3" },
-                new object[] { "2.1.0" },
-                new object[] { "2.1.1" },
-                new object[] { "2.1.2" },
-                new object[] { "2.1.3" },
-                new object[] { "2.1.4" },
-                new object[] { "2.1.8" },
-                new object[] { "2.1.11" },
-                new object[] { "2.2.0" },
-                new object[] { "2.2.1" },
-                new object[] { "2.2.2" },
-                new object[] { "2.2.3" },
-                new object[] { "2.2.4" },
-                new object[] { "2.2.6" },
+                new object[] { "4.1.0" },
+                new object[] { "4.3.0" },
+                new object[] { "4.3.1" },
+                new object[] { "4.4.0" },
+                new object[] { "4.4.1" },
+                new object[] { "4.4.2" },
+                new object[] { "4.4.3" },
+                new object[] { "4.5.0" },
+                new object[] { "4.5.1" },
+                new object[] { "4.6.0" },
+                new object[] { "4.6.1" },
+                new object[] { "4.7.0" },
 #endif
             };
 

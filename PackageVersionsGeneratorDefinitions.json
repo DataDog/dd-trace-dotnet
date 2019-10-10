@@ -28,11 +28,11 @@
         "MaxVersionExclusive": "5.0.0"
     },
     {
-        "IntegrationName": "SqlServer",
-        "SampleProjectName": "Samples.SqlCommand",
-        "NugetPackageSearchName": "Microsoft.EntityFrameworkCore.SqlServer",
-        "MinVersion": "2.0.0",
-        "MaxVersionExclusive": "3.0.0"
+        "IntegrationName": "SqlClient",
+        "SampleProjectName": "Samples.SqlServer",
+        "NugetPackageSearchName": "System.Data.SqlClient",
+        "MinVersion": "4.1.0",
+        "MaxVersionExclusive": "5.0.0"
     },
     {
         "IntegrationName": "StackExchangeRedis",
