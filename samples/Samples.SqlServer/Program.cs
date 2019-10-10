@@ -6,14 +6,11 @@ using Samples.DatabaseHelper;
 
 namespace Samples.SqlServer
 {
-    internal class Program
+    internal static class Program
     {
         private static async Task Main()
         {
-            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-                                   @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;";
-
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = CreateConnection())
             {
                 var testQueries = new RelationalDatabaseTestHarness<SqlConnection, SqlCommand, SqlDataReader>(
                     connection,
@@ -31,7 +28,7 @@ namespace Samples.SqlServer
                 await testQueries.RunAsync();
             }
 
-            using (var connection = new SqlConnection(connectionString))
+            using (var connection = CreateConnection())
             {
                 var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
                     connection,
@@ -47,6 +44,14 @@ namespace Samples.SqlServer
 
                 await testQueries.RunAsync();
             }
+        }
+
+        private static SqlConnection CreateConnection()
+        {
+            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+                                   @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;";
+
+            return new SqlConnection(connectionString);
         }
     }
 }
