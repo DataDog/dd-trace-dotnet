@@ -162,19 +162,6 @@ services:
     depends_on:
     - sqlserver
 
-  Samples.DbCommand:
-    build:
-      context: ./
-      dockerfile: ./docker/dotnet.dockerfile
-    image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.DbCommand/bin/Release/netcoreapp2.1/publish/Samples.DbCommand.dll"
-    volumes:
-    - ./:/project
-    environment:
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
-    depends_on:
-    - sqlserver
-
   Samples.Npgsql:
     build:
       context: ./
