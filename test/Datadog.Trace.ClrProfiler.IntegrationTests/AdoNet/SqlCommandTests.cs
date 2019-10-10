@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     public class SqlCommandTests : TestHelper
     {
         public SqlCommandTests(ITestOutputHelper output)
-            : base("SqlCommand", output)
+            : base("SqlServer", output)
         {
         }
 
@@ -24,13 +24,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(count: 12, operationName: "sql-server.query");
+                var spans = agent.WaitForSpans(count: 24, operationName: "sql-server.query");
                 Assert.True(spans.Count > 0, "expected at least one span");
 
                 foreach (var span in spans)
                 {
                     Assert.Equal("sql-server.query", span.Name);
-                    Assert.Equal("Samples.SqlCommand-sql-server", span.Service);
+                    Assert.Equal("Samples.SqlServer-sql-server", span.Service);
                     Assert.Equal(SpanTypes.Sql, span.Type);
                 }
             }

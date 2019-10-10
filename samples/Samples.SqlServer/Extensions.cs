@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 
-namespace Samples.SqlCommand
+namespace Samples.SqlServer
 {
     public static class Extensions
     {
