@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     /// <summary>
     /// Instrumentation wrappers for <see cref="DbCommand"/>.
     /// </summary>
-    public static class AdoNetIntegration
+    public static class DbCommandIntegration
     {
         // TODO: rename to DbCommandIntegration
         private const string IntegrationName = "AdoNet";

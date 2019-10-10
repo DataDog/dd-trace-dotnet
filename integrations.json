@@ -1,342 +1,5 @@
 [
   {
-    "name": "AdoNet",
-    "method_replacements": [
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteReader",
-          "signature_types": [
-            "System.Data.Common.DbDataReader"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteReader",
-          "signature": "00 04 1C 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data.Common",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteReader",
-          "signature_types": [
-            "System.Data.Common.DbDataReader"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteReader",
-          "signature": "00 04 1C 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteReader",
-          "signature_types": [
-            "System.Data.Common.DbDataReader",
-            "System.Data.CommandBehavior"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteReaderWithBehavior",
-          "signature": "00 05 1C 1C 08 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data.Common",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteReader",
-          "signature_types": [
-            "System.Data.Common.DbDataReader",
-            "System.Data.CommandBehavior"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteReaderWithBehavior",
-          "signature": "00 05 1C 1C 08 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteReaderAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
-            "System.Data.CommandBehavior",
-            "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteReaderAsync",
-          "signature": "00 06 1C 1C 08 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data.Common",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteReaderAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
-            "System.Data.CommandBehavior",
-            "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteReaderAsync",
-          "signature": "00 06 1C 1C 08 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteNonQuery",
-          "signature_types": [
-            "System.Int32"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteNonQuery",
-          "signature": "00 04 08 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data.Common",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteNonQuery",
-          "signature_types": [
-            "System.Int32"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteNonQuery",
-          "signature": "00 04 08 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteNonQueryAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<System.Int32>",
-            "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteNonQueryAsync",
-          "signature": "00 05 1C 1C 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data.Common",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteNonQueryAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<System.Int32>",
-            "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteNonQueryAsync",
-          "signature": "00 05 1C 1C 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteScalar",
-          "signature_types": [
-            "System.Object"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteScalar",
-          "signature": "00 04 1C 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data.Common",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteScalar",
-          "signature_types": [
-            "System.Object"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteScalar",
-          "signature": "00 04 1C 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteScalarAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<System.Object>",
-            "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteScalarAsync",
-          "signature": "00 05 1C 1C 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "System.Data.Common",
-          "type": "System.Data.Common.DbCommand",
-          "method": "ExecuteScalarAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<System.Object>",
-            "System.Threading.CancellationToken"
-          ],
-          "minimum_major": 4,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 4,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.AdoNetIntegration",
-          "method": "ExecuteScalarAsync",
-          "signature": "00 05 1C 1C 1C 08 08 0A"
-        }
-      }
-    ]
-  },
-  {
     "name": "AspNetCoreMvc2",
     "method_replacements": [
       {
@@ -511,6 +174,343 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration",
           "method": "ExecuteAsync",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A"
+        }
+      }
+    ]
+  },
+  {
+    "name": "DbCommand",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "System.Data.Common.DbDataReader"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteReader",
+          "signature": "00 04 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "System.Data.Common.DbDataReader"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteReader",
+          "signature": "00 04 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "System.Data.Common.DbDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteReaderWithBehavior",
+          "signature": "00 05 1C 1C 08 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "System.Data.Common.DbDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteReaderWithBehavior",
+          "signature": "00 05 1C 1C 08 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteReaderAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
+            "System.Data.CommandBehavior",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteReaderAsync",
+          "signature": "00 06 1C 1C 08 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteReaderAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
+            "System.Data.CommandBehavior",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteReaderAsync",
+          "signature": "00 06 1C 1C 08 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQuery",
+          "signature_types": [
+            "System.Int32"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteNonQuery",
+          "signature": "00 04 08 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQuery",
+          "signature_types": [
+            "System.Int32"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteNonQuery",
+          "signature": "00 04 08 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQueryAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Int32>",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteNonQueryAsync",
+          "signature": "00 05 1C 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteNonQueryAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Int32>",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteNonQueryAsync",
+          "signature": "00 05 1C 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteScalar",
+          "signature_types": [
+            "System.Object"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteScalar",
+          "signature": "00 04 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteScalar",
+          "signature_types": [
+            "System.Object"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteScalar",
+          "signature": "00 04 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteScalarAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Object>",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteScalarAsync",
+          "signature": "00 05 1C 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.Common",
+          "type": "System.Data.Common.DbCommand",
+          "method": "ExecuteScalarAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Object>",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
+          "method": "ExecuteScalarAsync",
+          "signature": "00 05 1C 1C 1C 08 08 0A"
         }
       }
     ]
