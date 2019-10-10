@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Samples.SqlCommand": {
+    "Samples.SqlServer": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",

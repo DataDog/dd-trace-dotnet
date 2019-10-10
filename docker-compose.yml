@@ -149,12 +149,12 @@ services:
     depends_on:
     - elasticsearch5
 
-  Samples.SqlCommand:
+  Samples.SqlServer:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.SqlCommand/bin/Release/netcoreapp2.1/publish/Samples.SqlCommand.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/Release/netcoreapp2.1/publish/Samples.SqlServer.dll"
     volumes:
     - ./:/project
     environment:
