@@ -10,4 +10,8 @@
     <PackageReference Include="MySql.Data" Version="$(ApiVersion)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\sample-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj" />
+  </ItemGroup>
+
 </Project>
