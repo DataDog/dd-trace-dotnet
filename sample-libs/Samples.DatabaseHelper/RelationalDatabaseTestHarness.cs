@@ -51,8 +51,10 @@ namespace Samples.DatabaseHelper
 
             _executeNonQueryAsync = executeNonQueryAsync ?? throw new ArgumentNullException(nameof(executeNonQueryAsync));
             _executeScalarAsync = executeScalarAsync ?? throw new ArgumentNullException(nameof(executeScalarAsync));
-            _executeReaderAsync = executeReaderAsync ?? throw new ArgumentNullException(nameof(executeReaderAsync));
-            _executeReaderWithBehaviorAsync = executeReaderWithBehaviorAsync ?? throw new ArgumentNullException(nameof(executeReaderWithBehaviorAsync));
+
+            // these two are not implemented by all ADO.NET providers
+            _executeReaderAsync = executeReaderAsync;
+            _executeReaderWithBehaviorAsync = executeReaderWithBehaviorAsync;
         }
 
         public async Task RunAsync()
@@ -197,24 +199,30 @@ namespace Samples.DatabaseHelper
                 command.CommandText = SelectManyCommandText;
                 command.AddParameterWithValue("Id", 1);
 
-                using (var reader = await _executeReaderAsync(command))
+                if (_executeReaderAsync != null)
                 {
-                    var employees = reader.AsDataRecords()
-                                          .Select(
-                                               r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
-                                          .ToList();
+                    using (var reader = await _executeReaderAsync(command))
+                    {
+                        var employees = reader.AsDataRecords()
+                                              .Select(
+                                                   r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
+                                              .ToList();
 
-                    Console.WriteLine($"Selected {employees.Count} record(s).");
+                        Console.WriteLine($"Selected {employees.Count} record(s).");
+                    }
                 }
 
-                using (var reader = await _executeReaderWithBehaviorAsync(command, CommandBehavior.Default))
+                if (_executeReaderWithBehaviorAsync != null)
                 {
-                    var employees = reader.AsDataRecords()
-                                          .Select(
-                                               r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
-                                          .ToList();
+                    using (var reader = await _executeReaderWithBehaviorAsync(command, CommandBehavior.Default))
+                    {
+                        var employees = reader.AsDataRecords()
+                                              .Select(
+                                                   r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
+                                              .ToList();
 
-                    Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
+                        Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
+                    }
                 }
             }
         }
