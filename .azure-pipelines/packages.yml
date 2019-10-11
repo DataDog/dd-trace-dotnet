@@ -62,13 +62,20 @@ jobs:
       arguments: --configuration $(buildConfiguration)
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet pack
+    displayName: create open and managed nugets
     condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
       command: pack
-      packagesToPack: src/*.Trace/*.nuspec;src/*.OpenTracing/*.csproj;src/*.Managed/*.csproj
+      packagesToPack: src/*.OpenTracing/*.csproj;src/*.Managed/*.csproj
       packDirectory: nuget-output
       configuration: $(buildConfiguration)
+
+  - task: DotNetCoreCLI@2
+    displayName: create trace nuget
+    condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
+    inputs:
+      command: custom
+      arguments: pack $(Build.SourcesDirectory)/src/Datadog.Trace/Datadog.Trace.csproj -p:NuspecFile=Datadog.Trace.nuspec -p:PackageOutputPath=$(Build.SourcesDirectory)/nuget-output -p:Configuration=$(buildConfiguration)
 
   - task: PublishPipelineArtifact@0
     displayName: publish nuget artifacts
