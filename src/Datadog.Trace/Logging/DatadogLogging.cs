@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -100,6 +101,14 @@ namespace Datadog.Trace.Logging
                 }
 
                 SharedLogger = loggerConfiguration.CreateLogger();
+
+                // Log some information to correspond with the app domain
+                SharedLogger.Debug(
+                    "OSArchitecture: {0}, OSDescription: {1}, ProcessArchitecture: {2}, FrameworkDescription: {3}",
+                    RuntimeInformation.OSArchitecture,
+                    RuntimeInformation.OSDescription,
+                    RuntimeInformation.ProcessArchitecture,
+                    RuntimeInformation.FrameworkDescription);
             }
             catch
             {
@@ -110,7 +119,7 @@ namespace Datadog.Trace.Logging
         public static ILogger GetLogger(Type classType)
         {
             // Tells us which types are loaded, when, and how often.
-            SharedLogger.Information($"Logger retrieved for: {classType.AssemblyQualifiedName}");
+            SharedLogger.Debug($"Logger retrieved for: {classType.AssemblyQualifiedName}");
             return SharedLogger;
         }
 
