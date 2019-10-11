@@ -1,6 +1,6 @@
 version: '3'
 services:
-  AWSSDKSQS:
+  elasticmq:
     image: softwaremill/elasticmq
     ports:
     - "127.0.0.1:9324:9324"
@@ -101,18 +101,18 @@ services:
     volumes:
     - ./:/project
 
-  Samples.AWSSDK.SQS:
+  Samples.Amazon.SQS:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it host.docker.internal:9324 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.AWSSDK.SQS/bin/Release/netcoreapp2.1/publish/Samples.AWSSDK.SQS.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticmq:9324 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Amazon.SQS/bin/Release/netcoreapp2.1/publish/Samples.Amazon.SQS.dll"
     environment:
-    - AWSSDK_SQS_HOST=host.docker.internal:9324
+    - Amazon_SQS_HOST=elasticmq:9324
     volumes:
     - ./:/project
     depends_on:
-    - AWSSDKSQS
+    - elasticmq
 
   Samples.ServiceStack.Redis:
     build:
@@ -247,3 +247,4 @@ services:
     - mongo
     - postgres
     - mysql
+    - elasticmq

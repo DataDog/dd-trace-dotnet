@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Tracing integration for AWSSDK.SQS.
     /// </summary>
-    public static class AWSSDKSQSIntegration
+    public static class AmazonSqsIntegration
     {
         private const string IntegrationName = "AWS";
         private const string OperationName = "aws.command";
@@ -17,13 +17,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string Major3 = "3";
         private const string Major3Minor3 = "3.3";
 
+        private const string InvokeSyncMethod = "InvokeSync";
+        private const string InvokeAsyncMethod = "InvokeAsync";
+
         private const string ServiceName = "aws";
         private const string AWSCoreAssemblyName = "AWSSDK.Core";
         private const string RuntimePipelineTypeName = "Amazon.Runtime.Internal.RuntimePipeline";
         private const string IExecutionContextTypeName = "Amazon.Runtime.IExecutionContext";
         private const string IResponseContextTypeName = "Amazon.Runtime.IResponseContext";
 
-        private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AmazonSqsIntegration));
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.
@@ -37,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = AWSCoreAssemblyName,
             TargetType = RuntimePipelineTypeName,
-            TargetMethod = "InvokeSync",
+            TargetMethod = InvokeSyncMethod,
             TargetSignatureTypes = new[] { IResponseContextTypeName, IExecutionContextTypeName },
             TargetMinimumVersion = Major3Minor3,
             TargetMaximumVersion = Major3)]
@@ -55,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, object>>
-                    .Start(moduleVersionPtr, mdToken, opCode, "InvokeSync")
+                    .Start(moduleVersionPtr, mdToken, opCode, InvokeSyncMethod)
                     .WithConcreteType(runtimePipelineType)
                     .WithParameters(executionContext)
                     .WithNamespaceAndNameFilters(IResponseContextTypeName, IExecutionContextTypeName)
@@ -69,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: RuntimePipelineTypeName,
-                    methodName: "InvokeSync",
+                    methodName: InvokeSyncMethod,
                     instanceType: runtimePipelineType.AssemblyQualifiedName);
                 throw;
             }
@@ -78,15 +81,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    var responseContext = instrumentedMethod(runtimePipeline, executionContext);
-                    AfterMethod(scope.Span, executionContext);
-
-                    return responseContext;
+                    return instrumentedMethod(runtimePipeline, executionContext);
                 }
                 catch (Exception ex)
                 {
                     scope?.Span.SetException(ex);
                     throw;
+                }
+                finally
+                {
+                    // Because we need to wait for the return to decorate some values, we need to check here to ensure exceptions don't miss decorations
+                    if (scope?.Span != null)
+                    {
+                        AfterMethod(scope.Span, executionContext);
+                    }
                 }
             }
         }
@@ -104,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = AWSCoreAssemblyName,
             TargetType = RuntimePipelineTypeName,
-            TargetMethod = "InvokeAsync",
+            TargetMethod = InvokeAsyncMethod,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", IExecutionContextTypeName },
             TargetMinimumVersion = Major3Minor3,
             TargetMaximumVersion = Major3)]
@@ -133,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<object, object, Task<T>>>
-                    .Start(moduleVersionPtr, mdToken, opCode, "InvokeAsync")
+                    .Start(moduleVersionPtr, mdToken, opCode, InvokeAsyncMethod)
                     .WithConcreteType(runtimePipelineType)
                     .WithMethodGenerics(genericArgument)
                     .WithParameters(executionContext)
@@ -148,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: RuntimePipelineTypeName,
-                    methodName: "InvokeAsync",
+                    methodName: InvokeAsyncMethod,
                     instanceType: runtimePipelineType.AssemblyQualifiedName);
                 throw;
             }
@@ -157,15 +165,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    var response = await instrumentedMethod(runtimePipeline, executionContext).ConfigureAwait(false);
-                    AfterMethod(scope.Span, executionContext);
-
-                    return response;
+                    return await instrumentedMethod(runtimePipeline, executionContext).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     scope?.Span.SetException(ex);
                     throw;
+                }
+                finally
+                {
+                    // Because we need to wait for the return to decorate some values, we need to check here to ensure exceptions don't miss decorations
+                    if (scope?.Span != null)
+                    {
+                        AfterMethod(scope.Span, executionContext);
+                    }
                 }
             }
         }
@@ -178,24 +191,26 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return null;
             }
 
-            Tracer tracer = Tracer.Instance;
+            var tracer = Tracer.Instance;
             Scope scope = null;
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
 
             try
             {
+                var serviceName = $"{tracer.DefaultServiceName}-{ServiceName}";
                 scope = Tracer.Instance.StartActive(OperationName, serviceName: serviceName);
                 var span = scope.Span;
+                span.Type = SpanTypes.Http; // TODO, is this right?
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
 
                 // AWS tags
                 var sdkRequest = executionContext.GetProperty("RequestContext");
-                var awsQueueName = sdkRequest?.GetProperty("OriginalRequest").GetProperty<string>("QueueName").GetValueOrDefault();
-                var awsQueueUrl = sdkRequest?.GetProperty("OriginalRequest").GetProperty<string>("QueueUrl").GetValueOrDefault();
+                var originalRequest = sdkRequest?.GetProperty("OriginalRequest");
+                var awsQueueName = originalRequest?.GetProperty<string>("QueueName").GetValueOrDefault();
+                var awsQueueUrl = originalRequest?.GetProperty<string>("QueueUrl").GetValueOrDefault();
 
-                span.SetTag("aws.agent", AgentName);
-                span.SetTag("aws.queue.name", awsQueueName);
-                span.SetTag("aws.queue.url", awsQueueUrl);
+                span.SetTag(AwsSdkTags.AgentName, AgentName);
+                span.SetTag(AwsSdkTags.SqsQueueName, awsQueueName);
+                span.SetTag(AwsSdkTags.SqsQueueUrl, awsQueueUrl);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
@@ -203,50 +218,37 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             return scope;
         }
 
+        /// <summary>
+        /// Some tags are not available until returning from the request for our chosen callsite.
+        /// This is used as a callback to finish decorating tags.
+        /// </summary>
+        /// <param name="span">The span to be decorated.</param>
+        /// <param name="executionContext">An instance of Amazon.Runtime.IExecutionContext</param>
         private static void AfterMethod(Span span, object executionContext)
         {
-            var sdkRequest = executionContext.GetProperty("RequestContext");
+            if (executionContext != null)
+            {
+                var sdkRequest = executionContext.GetProperty("RequestContext");
+                var request = sdkRequest?.GetProperty("Request");
 
-            // Additional AWS tags not available until returning from the request (at least at the current callsite)
-            var awsOperation = sdkRequest.GetProperty("Request").GetProperty<string>("RequestName").GetValueOrDefault();
-            var awsService = sdkRequest.GetProperty("Request").GetProperty<string>("ServiceName").GetValueOrDefault();
+                if (request != null)
+                {
+                    var awsOperation = request?.GetProperty<string>("RequestName").GetValueOrDefault();
+                    var awsService = request?.GetProperty<string>("ServiceName").GetValueOrDefault();
 
-            span.SetTag("aws.operation", awsOperation);
-            span.SetTag("aws.service", awsService);
+                    span.SetTag(AwsSdkTags.OperationName, awsOperation);
+                    span.SetTag(AwsSdkTags.ServiceName, awsService);
+                }
 
-            // HTTP tags
-            // Callout: Should we keep these? Java Tracer seems to add these but this span
-            // is the parent of System.Net.WebRequest call that is properly traced
-            // Java source: https://github.com/DataDog/dd-trace-java/blob/master/dd-java-agent/instrumentation/aws-java-sdk-2.2/src/main/java8/datadog/trace/instrumentation/aws/v2/AwsSdkClientDecorator.java
-            // It uses the following HttpClientDecorator: https://github.com/DataDog/dd-trace-java/blob/master/dd-java-agent/agent-tooling/src/main/java/datadog/trace/agent/decorator/HttpClientDecorator.java
-            var endpointUri = sdkRequest.GetProperty("Request").GetProperty<System.Uri>("Endpoint").GetValueOrDefault();
-            var httpMethod = sdkRequest.GetProperty("Request").GetProperty<string>("HttpMethod").GetValueOrDefault();
-            var httpUrl = endpointUri?.AbsoluteUri;
-            var host = endpointUri?.Host;
-            var port = endpointUri?.Port.ToString();
-
-            // span.SetTag(Tags.HttpUrl, httpUrl);
-            // span.SetTag(Tags.HttpMethod, httpMethod);
-            // span.SetTag(Tags.OutHost, host);
-            // span.SetTag(Tags.OutPort, port);
-
-            // var sdkRequest = responseContext.GetProperty("Response").GetProperty("Context")
-            // var queueName = sdkRequest?.GetProperty("OriginalRequest").GetProperty<string>("QueueName").GetValueOrDefault();
-            // var queueUrl = sdkRequest?.GetProperty("OriginalRequest").GetProperty<string>("QueueUrl").GetValueOrDefault();
-
-            // span.SetTag("aws.requestId", queueName);
-            // span.SetTag("aws.queue.url", queueUrl);
-            // span.SetTag("aws.service", AgentName); // TODO: Implement
-            // span.SetTag("aws.operation", AgentName); // TODO: Implement
-
-            var requestId = executionContext.GetProperty("ResponseContext").GetProperty("Response").GetProperty("ResponseMetadata").GetProperty<string>("RequestId").GetValueOrDefault();
-            span.SetTag("aws.requestId", requestId);
+                var requestId = executionContext.GetProperty("ResponseContext").GetProperty("Response").GetProperty("ResponseMetadata").GetProperty<string>("RequestId").GetValueOrDefault();
+                span.SetTag(AwsSdkTags.RequestId, requestId);
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.3.3</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'>='3.0.0'">$(DefineConstants);SQS_3_0</DefineConstants>
+	
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -8,4 +10,5 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.SQS" Version="$(ApiVersion)" />
   </ItemGroup>
+
 </Project>

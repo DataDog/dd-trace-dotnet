@@ -42,5 +42,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP2_1
         public static IEnumerable<object[]> AspNetCoreMvc2 => IsComprehensive ? PackageVersionsComprehensive.AspNetCoreMvc2 : PackageVersionsLatestMinors.AspNetCoreMvc2;
 #endif
+            };
+#endif
+
+#if NETCOREAPP2_1
+        public static IEnumerable<object[]> AmazonSqs =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+                new object[] { "3.1.0" },
+                new object[] { "3.1.0.1" },
+                new object[] { "3.1.0.2" },
+                new object[] { "3.1.0.3" },
+                new object[] { "3.1.0.4" },
+                new object[] { "3.1.0.5" },
+                new object[] { "3.1.0.6" },
+                new object[] { "3.1.0.7" },
+                new object[] { "3.1.0.8" },
+                new object[] { "3.1.0.9" },
+                new object[] { "3.1.0.10" },
+                new object[] { "3.1.0.11" },
+                new object[] { "3.1.0.12" },
+                new object[] { "3.1.0.13" },
+                new object[] { "3.3.0" },
+                new object[] { "3.3.0.1" },
+                new object[] { "3.3.0.2" },
+                new object[] { "3.3.0.3" },
+#endif
+            };
+#endif
+
     }
 }

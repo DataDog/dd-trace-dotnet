@@ -146,42 +146,6 @@ namespace Datadog.Trace.TestHelpers
             RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
         }
 
-        private static List<Span> ToSpans(dynamic data)
-        {
-            if (data is IDictionary dict)
-            {
-                var span = new Span
-                {
-                    TraceId = dict.GetValueOrDefault<ulong>("trace_id"),
-                    SpanId = dict.GetValueOrDefault<ulong>("span_id"),
-                    Name = dict.GetValueOrDefault<string>("name"),
-                    Resource = dict.GetValueOrDefault<string>("resource"),
-                    Service = dict.GetValueOrDefault<string>("service"),
-                    Type = dict.GetValueOrDefault<string>("type"),
-                    Start = dict.GetValueOrDefault<long>("start"),
-                    Duration = dict.GetValueOrDefault<ulong>("duration"),
-                    Tags = dict.GetValueOrDefault<Dictionary<object, object>>("meta")
-                               .ToDictionary(p => (string)p.Key, p => (string)p.Value),
-                };
-
-                return new List<Span> { span };
-            }
-
-            if (data is IEnumerable rawSpans)
-            {
-                var allSpans = new List<Span>();
-
-                foreach (var rawSpan in rawSpans)
-                {
-                    allSpans.AddRange(ToSpans(rawSpan));
-                }
-
-                return allSpans;
-            }
-
-            return new List<Span>();
-        }
-
         private void AssertHeader(
             NameValueCollection headers,
             string headerKey,
@@ -211,14 +175,13 @@ namespace Datadog.Trace.TestHelpers
 
                     if (ShouldDeserializeTraces)
                     {
-                        var rawSpans = MessagePackSerializer.Deserialize<dynamic>(ctx.Request.InputStream);
-                        var spans = ToSpans(rawSpans);
+                        var traces = MessagePackSerializer.Deserialize<IList<IList<Span>>>(ctx.Request.InputStream);
 
                         lock (this)
                         {
                             // we only need to lock when replacing the span collection,
                             // not when reading it because it is immutable
-                            Spans = Spans.AddRange(spans);
+                            Spans = Spans.AddRange(traces.SelectMany(span => span));
                             RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
                         }
                     }
@@ -236,26 +199,52 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        [MessagePackObject]
         [DebuggerDisplay("TraceId={TraceId}, SpanId={SpanId}, Service={Service}, Name={Name}, Resource={Resource}")]
         public struct Span
         {
+            [Key("trace_id")]
             public ulong TraceId { get; set; }
 
+            [Key("span_id")]
             public ulong SpanId { get; set; }
 
+            [Key("name")]
             public string Name { get; set; }
 
+            [Key("resource")]
             public string Resource { get; set; }
 
+            [Key("service")]
             public string Service { get; set; }
 
+            [Key("type")]
             public string Type { get; set; }
 
+            [Key("start")]
             public long Start { get; set; }
 
-            public ulong Duration { get; set; }
+            [Key("duration")]
+            public long Duration { get; set; }
 
+            [Key("parent_id")]
+            public ulong? ParentId { get; set; }
+
+            [Key("error")]
+            public byte Error { get; set; }
+
+            [Key("meta")]
             public Dictionary<string, string> Tags { get; set; }
+
+            [Key("metrics")]
+            public Dictionary<string, double> Metrics { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether we have asserted against this span yet.
+            /// For when we are asserting in larger collections of spans where there may be duplicates.
+            /// </summary>
+            [IgnoreMember]
+            public bool Inspected { get; set; }
         }
     }
 }

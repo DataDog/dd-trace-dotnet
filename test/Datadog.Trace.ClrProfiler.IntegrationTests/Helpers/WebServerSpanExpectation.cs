@@ -3,7 +3,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class WebServerSpanExpectation : SpanExpectation
     {
         public WebServerSpanExpectation(string serviceName, string operationName)
-            : this(serviceName, operationName, SpanTypes.Web)
+            : base(serviceName, operationName, SpanTypes.Web)
         {
         }
 
@@ -11,8 +11,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         : base(serviceName, operationName, type)
         {
             // Expectations for all spans of a web server variety should go here
-            RegisterTagExpectation(nameof(Tags.HttpStatusCode), expected: StatusCode);
-            RegisterTagExpectation(nameof(Tags.HttpMethod), expected: HttpMethod);
+            RegisterTagExpectation(nameof(Tags.HttpStatusCode), expected: StatusCode, when: Always);
+            RegisterTagExpectation(nameof(Tags.HttpMethod), expected: HttpMethod, when: Always);
         }
 
         public string OriginalUri { get; set; }

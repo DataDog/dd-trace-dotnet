@@ -17,15 +17,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Type = type;
 
             // Expectations for all spans regardless of type should go here
-            RegisterDelegateExpectation(ExpectBasicSpanDataExists);
-
-            RegisterCustomExpectation(nameof(OperationName), actual: s => s.Name, expected: OperationName);
-            RegisterCustomExpectation(nameof(ServiceName), actual: s => s.Service, expected: ServiceName);
-            RegisterCustomExpectation(nameof(Type), actual: s => s.Type, expected: Type);
-            RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource.TrimEnd(), expected: ResourceName);
+            RegisterCustomExpectation(nameof(OperationName), actual: s => s.Name, expected => OperationName);
+            RegisterCustomExpectation(nameof(ServiceName), actual: s => s.Service, expected => ServiceName);
+            RegisterCustomExpectation(nameof(Type), actual: s => s.Type, expected => Type);
+            RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource.TrimEnd(), expected => ResourceName);
 
             RegisterTagExpectation(
-                key: Tags.Language,
+                key: nameof(Tags.Language),
                 expected: TracerConstants.Language,
                 when: s => GetTag(s, Tags.SpanKind) != SpanKinds.Client);
         }
@@ -54,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// </summary>
         /// <param name="span">The span on which to filter.</param>
         /// <returns>Whether the span qualifies for this expectation.</returns>
-        public virtual bool Matches(MockTracerAgent.Span span)
+        public virtual bool ShouldInspect(MockTracerAgent.Span span)
         {
             return span.Service == ServiceName
                 && span.Name == OperationName
@@ -106,16 +104,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public void RegisterDelegateExpectation(Func<MockTracerAgent.Span, IEnumerable<string>> expectation)
         {
-            if (expectation == null)
-            {
-                return;
-            }
-
             Assertions.Add(span =>
             {
                 var failures = expectation(span);
 
-                if (failures != null && failures.Any())
+                if (failures.Any())
                 {
                     return string.Join(",", failures);
                 }
@@ -124,31 +117,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
         }
 
-        public void RegisterCustomExpectation(
-            string keyForMessage,
-            Func<MockTracerAgent.Span, string> actual,
-            string expected)
+        public void RegisterCustomExpectation(string keyForMessage, Func<MockTracerAgent.Span, string> actual, Func<MockTracerAgent.Span, string> expected)
         {
             Assertions.Add(span =>
             {
                 var actualValue = actual(span);
+                var expectedValue = expected(span);
 
-                if (expected != null && actualValue != expected)
+                if (expectedValue != null && actualValue != expectedValue)
                 {
-                    return FailureMessage(name: keyForMessage, actual: actualValue, expected: expected);
+                    return FailureMessage(name: keyForMessage, actual: actualValue, expected: expectedValue);
                 }
 
                 return null;
             });
         }
 
-        public void RegisterTagExpectation(
-            string key,
-            string expected,
-            Func<MockTracerAgent.Span, bool> when = null)
+        public void RegisterTagExpectation(string key, string expected, Func<MockTracerAgent.Span, bool> when, Func<string, string> customMessage = null)
         {
-            when = when ?? Always;
-
             Assertions.Add(span =>
             {
                 if (!when(span))
@@ -160,6 +146,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (expected != null && actualValue != expected)
                 {
+                    if (customMessage != null)
+                    {
+                        return customMessage(actualValue);
+                    }
+
                     return FailureMessage(name: key, actual: actualValue, expected: expected);
                 }
 
@@ -174,41 +165,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected string GetTag(MockTracerAgent.Span span, string tag)
         {
-            span.Tags.TryGetValue(tag, out var value);
-            return value;
-        }
-
-        private IEnumerable<string> ExpectBasicSpanDataExists(MockTracerAgent.Span span)
-        {
-            if (string.IsNullOrWhiteSpace(span.Resource))
+            if (span.Tags.ContainsKey(tag))
             {
-                yield return "Resource must be set.";
+                return span.Tags[tag];
             }
 
-            if (string.IsNullOrWhiteSpace(span.Type))
-            {
-                yield return "Type must be set.";
-            }
-
-            if (string.IsNullOrWhiteSpace(span.Name))
-            {
-                yield return "Name must be set.";
-            }
-
-            if (string.IsNullOrWhiteSpace(span.Service))
-            {
-                yield return "Service must be set.";
-            }
-
-            if (span.TraceId == default)
-            {
-                yield return "TraceId must be set.";
-            }
-
-            if (span.SpanId == default)
-            {
-                yield return "SpanId must be set.";
-            }
+            return null;
         }
     }
 }

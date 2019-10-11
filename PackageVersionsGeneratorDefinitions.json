@@ -55,5 +55,13 @@
     "NugetPackageSearchName": "Microsoft.AspNetCore.Mvc",
     "MinVersion": "2.0.0",
     "MaxVersionExclusive": "3.0.0"
+  },
+  {
+    "IntegrationName": "AmazonSqs",
+    "SampleProjectName": "Samples.Amazon.SQS",
+    "SampleTargetFramework": "netcoreapp2.1",
+    "NugetPackageSearchName": "AWSSDK.SQS",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "3.3.1"
   }
 ]

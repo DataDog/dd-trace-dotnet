@@ -275,6 +275,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApplicationWithLog4Net", "r
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Core.Tools", "tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj", "{3BEACB10-89FE-4F74-8022-1A52F223CE82}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Amazon.SQS", "samples\Samples.Amazon.SQS\Samples.Amazon.SQS.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
