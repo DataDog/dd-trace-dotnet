@@ -69,6 +69,7 @@ jobs:
       packagesToPack: src/**/*.csproj
       packDirectory: nuget-output
       configuration: $(buildConfiguration)
+      arguments: -p:Configuration=$(buildConfiguration)
 
   - task: PublishPipelineArtifact@0
     displayName: publish nuget artifacts
