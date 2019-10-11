@@ -3,6 +3,7 @@
   <PropertyGroup>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NuspecFile>Datadog.Trace.nuspec</NuspecFile>
+    <NuspecProperties>configuration=$(Configuration)</NuspecProperties>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
