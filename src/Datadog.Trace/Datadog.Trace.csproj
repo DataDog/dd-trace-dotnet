@@ -1,9 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <NuspecFile>Datadog.Trace.nuspec</NuspecFile>
-    <NuspecProperties>configuration=$(Configuration)</NuspecProperties>
+    <!-- NuGet -->
+    <Version>1.7.0</Version>
+    <Title>Datadog APM</Title>
+    <Description>Manual instrumentation library for Datadog APM</Description>
+    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
@@ -28,8 +30,31 @@
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Datadog.Trace.Vendors\Datadog.Trace.Vendors.csproj" />
+  <!-- Below this point is reserved for vendor items -->
+  <!--Serilog-->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <DefineConstants>REMOTING;HASHTABLE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <DefineConstants>ASYNCLOCAL;HASHTABLE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>ASYNCLOCAL;HASHTABLE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
   </ItemGroup>
+
+  <!--Serilog.Sinks.File-->
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <DefineConstants>ATOMIC_APPEND;HRESULTS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>OS_MUTEX</DefineConstants>
+  </PropertyGroup>
 
 </Project>
