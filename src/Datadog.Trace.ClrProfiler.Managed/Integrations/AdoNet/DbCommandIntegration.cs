@@ -13,7 +13,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     /// </summary>
     public static class DbCommandIntegration
     {
-        // TODO: rename to DbCommandIntegration
+        // TODO: support both "DbCommand" (new name) and
+        // "AdoNet" (backwards compatibility) when reading configuration settings
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
 
