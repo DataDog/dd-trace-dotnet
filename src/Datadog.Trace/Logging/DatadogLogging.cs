@@ -15,7 +15,7 @@ namespace Datadog.Trace.Logging
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
 
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
-        private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Information;
+        private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Warning;
 
         private static readonly ILogger SharedLogger = null;
 
