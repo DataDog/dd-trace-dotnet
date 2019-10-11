@@ -19,146 +19,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private const string ServiceName = "aws";
         private const string AWSCoreAssemblyName = "AWSSDK.Core";
-        private const string AmazonSQSAssemblyName = "AWSSDK.SQS";
         private const string RuntimePipelineTypeName = "Amazon.Runtime.Internal.RuntimePipeline";
         private const string IExecutionContextTypeName = "Amazon.Runtime.IExecutionContext";
         private const string IResponseContextTypeName = "Amazon.Runtime.IResponseContext";
 
-        private const string IAmazonSqsTypeName = "Amazon.SQS.IAmazonSQS";
-        private const string SendMessageRequestTypeName = "Amazon.SQS.Model.SendMessageRequest";
-        private const string SendMessageResponseTypeName = "Amazon.SQS.Model.SendMessageResponse";
-        private const string SendMessageBatchRequestTypeName = "Amazon.SQS.Model.SendMessageBatchRequest";
-        private const string SendMessageBatchResponseTypeName = "Amazon.SQS.Model.SendMessageBatchResponse";
-
         private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
-
-        /// <summary>
-        /// Wrap the original method by adding instrumentation code around it.
-        /// </summary>
-        /// <param name="sqs">The instance of AmazonSQS.IAmazonSQS.</param>
-        /// <param name="sendMessageRequest">The message request object.</param>
-        /// <param name="opCode">The OpCode used in the original method call.</param>
-        /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
-        /// <returns>The original method's return value.</returns>
-        [InterceptMethod(
-            TargetAssembly = AmazonSQSAssemblyName,
-            TargetType = IAmazonSqsTypeName,
-            TargetMethod = "SendMessage",
-            TargetSignatureTypes = new[] { SendMessageResponseTypeName, SendMessageRequestTypeName },
-            TargetMinimumVersion = Major3Minor3,
-            TargetMaximumVersion = Major3)]
-        public static object SendMessage(
-            object sqs,
-            object sendMessageRequest,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
-            Func<object, object, object> instrumentedMethod;
-            var sqsType = sqs.GetType();
-
-            try
-            {
-                instrumentedMethod =
-                    MethodBuilder<Func<object, object, object>>
-                    .Start(moduleVersionPtr, mdToken, opCode, nameof(SendMessage))
-                    .WithConcreteType(sqsType)
-                    .WithParameters(sendMessageRequest)
-                    .WithNamespaceAndNameFilters(SendMessageResponseTypeName, SendMessageRequestTypeName)
-                    .Build();
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorRetrievingMethod(
-                    exception: ex,
-                    moduleVersionPointer: moduleVersionPtr,
-                    mdToken: mdToken,
-                    opCode: opCode,
-                    instrumentedType: IAmazonSqsTypeName,
-                    methodName: "SendMessage",
-                    instanceType: sqs.GetType().AssemblyQualifiedName);
-                throw;
-            }
-
-            using (var scope = CreateScopeFromSendMessage(sendMessageRequest.GetProperty<string>("QueueUrl").GetValueOrDefault()))
-            {
-                try
-                {
-                    return instrumentedMethod(sqs, sendMessageRequest);
-                }
-                catch (Exception ex)
-                {
-                    scope?.Span.SetException(ex);
-                    throw;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Wrap the original method by adding instrumentation code around it.
-        /// </summary>
-        /// <param name="sqs">The instance of AmazonSQS.IAmazonSQS.</param>
-        /// <param name="queueUrl">The URL for the queue.</param>
-        /// <param name="messageBody">The body of the message.</param>
-        /// <param name="opCode">The OpCode used in the original method call.</param>
-        /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
-        /// <returns>The original method's return value.</returns>
-        [InterceptMethod(
-            TargetAssembly = AmazonSQSAssemblyName,
-            TargetType = IAmazonSqsTypeName,
-            TargetMethod = "SendMessage",
-            TargetSignatureTypes = new[] { SendMessageResponseTypeName, ClrNames.String, ClrNames.String },
-            TargetMinimumVersion = Major3Minor3,
-            TargetMaximumVersion = Major3)]
-        public static object SendMessageOnlyStrings(
-            object sqs,
-            string queueUrl,
-            string messageBody,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
-            Func<object, object, object, object> instrumentedMethod;
-            var sqsType = sqs.GetType();
-
-            try
-            {
-                instrumentedMethod =
-                    MethodBuilder<Func<object, object, object, object>>
-                    .Start(moduleVersionPtr, mdToken, opCode, nameof(SendMessage))
-                    .WithConcreteType(sqsType)
-                    .WithParameters(queueUrl, messageBody)
-                    .WithNamespaceAndNameFilters(SendMessageResponseTypeName, ClrNames.String, ClrNames.String)
-                    .Build();
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorRetrievingMethod(
-                    exception: ex,
-                    moduleVersionPointer: moduleVersionPtr,
-                    mdToken: mdToken,
-                    opCode: opCode,
-                    instrumentedType: IAmazonSqsTypeName,
-                    methodName: "SendMessage",
-                    instanceType: sqs.GetType().AssemblyQualifiedName);
-                throw;
-            }
-
-            using (var scope = CreateScopeFromSendMessage(queueUrl))
-            {
-                try
-                {
-                    return instrumentedMethod(sqs, queueUrl, messageBody);
-                }
-                catch (Exception ex)
-                {
-                    scope?.Span.SetException(ex);
-                    throw;
-                }
-            }
-        }
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.
@@ -214,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     var responseContext = instrumentedMethod(runtimePipeline, executionContext);
-                    AfterMethod(executionContext.GetProperty("ResponseContext"));
+                    AfterMethod(scope.Span, executionContext);
 
                     return responseContext;
                 }
@@ -293,7 +158,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     var response = await instrumentedMethod(runtimePipeline, executionContext).ConfigureAwait(false);
-                    AfterMethod(executionContext.GetProperty("ResponseContext"));
+                    AfterMethod(scope.Span, executionContext);
 
                     return response;
                 }
@@ -321,22 +186,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 scope = Tracer.Instance.StartActive(OperationName, serviceName: serviceName);
                 var span = scope.Span;
+                span.SetTag(Tags.SpanKind, SpanKinds.Client);
+
+                // AWS tags
+                var sdkRequest = executionContext.GetProperty("RequestContext");
+                var awsQueueName = sdkRequest?.GetProperty("OriginalRequest").GetProperty<string>("QueueName").GetValueOrDefault();
+                var awsQueueUrl = sdkRequest?.GetProperty("OriginalRequest").GetProperty<string>("QueueUrl").GetValueOrDefault();
+
                 span.SetTag("aws.agent", AgentName);
-                // span.SetTag("aws.operation", TODO: ask Tyler what should be here);
-                // attributes.getattribute
-
-                // executionContext.GetProperty("RequestContext").OriginalRequest.QueueName
-                object sdkRequest = executionContext.GetProperty("RequestContext");
-
-                /*
-                if (sdkRequest.GetProperty<string>("RequestName").Contains("CreateQueueRequest"))
-                {
-                    sdkRequest.GetProperty("Request").GetProperty<string>("ServiceName");
-                    // SetTag("aws.queue.name", sdkRequest.Request.OriginalRequest.QueueName)
-                }
-                */
-
-                // span.SetTag("aws.queue.url", queueUrl);
+                span.SetTag("aws.queue.name", awsQueueName);
+                span.SetTag("aws.queue.url", awsQueueUrl);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
@@ -350,44 +209,44 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return scope;
         }
 
-        private static void AfterMethod(object responseContext)
+        private static void AfterMethod(Span span, object executionContext)
         {
-            // do stuff
-            // responseContext.Response.QueueUrl
-            // if (responseContext.response.Context.Response.ResponseMetadata.RequestId != null)
-            // {
-            //   setTag("aws.requestId", responseContext.response.Context.Response.ResponseMetadata.RequestId);
-            // }
-        }
+            var sdkRequest = executionContext.GetProperty("RequestContext");
 
-        private static Scope CreateScopeFromSendMessage(string queueUrl)
-        {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
-            {
-                // integration disabled, don't create a scope, skip this trace
-                return null;
-            }
+            // Additional AWS tags not available until returning from the request (at least at the current callsite)
+            var awsOperation = sdkRequest.GetProperty("Request").GetProperty<string>("RequestName").GetValueOrDefault();
+            var awsService = sdkRequest.GetProperty("Request").GetProperty<string>("ServiceName").GetValueOrDefault();
 
-            Tracer tracer = Tracer.Instance;
-            Scope scope = null;
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            span.SetTag("aws.operation", awsOperation);
+            span.SetTag("aws.service", awsService);
 
-            try
-            {
-                scope = Tracer.Instance.StartActive(OperationName, serviceName: serviceName);
-                var span = scope.Span;
-                span.SetTag("aws.queue.url", queueUrl);
+            // HTTP tags
+            // Callout: Should we keep these? Java Tracer seems to add these but this span
+            // is the parent of System.Net.WebRequest call that is properly traced
+            // Java source: https://github.com/DataDog/dd-trace-java/blob/master/dd-java-agent/instrumentation/aws-java-sdk-2.2/src/main/java8/datadog/trace/instrumentation/aws/v2/AwsSdkClientDecorator.java
+            // It uses the following HttpClientDecorator: https://github.com/DataDog/dd-trace-java/blob/master/dd-java-agent/agent-tooling/src/main/java/datadog/trace/agent/decorator/HttpClientDecorator.java
+            var endpointUri = sdkRequest.GetProperty("Request").GetProperty<System.Uri>("Endpoint").GetValueOrDefault();
+            var httpMethod = sdkRequest.GetProperty("Request").GetProperty<string>("HttpMethod").GetValueOrDefault();
+            var httpUrl = endpointUri?.AbsoluteUri;
+            var host = endpointUri?.Host;
+            var port = endpointUri?.Port.ToString();
 
-                // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorException("Error creating or populating scope.", ex);
-            }
+            // span.SetTag(Tags.HttpUrl, httpUrl);
+            // span.SetTag(Tags.HttpMethod, httpMethod);
+            // span.SetTag(Tags.OutHost, host);
+            // span.SetTag(Tags.OutPort, port);
 
-            return scope;
+            // var sdkRequest = responseContext.GetProperty("Response").GetProperty("Context")
+            // var queueName = sdkRequest?.GetProperty("OriginalRequest").GetProperty<string>("QueueName").GetValueOrDefault();
+            // var queueUrl = sdkRequest?.GetProperty("OriginalRequest").GetProperty<string>("QueueUrl").GetValueOrDefault();
+
+            // span.SetTag("aws.requestId", queueName);
+            // span.SetTag("aws.queue.url", queueUrl);
+            // span.SetTag("aws.service", AgentName); // TODO: Implement
+            // span.SetTag("aws.operation", AgentName); // TODO: Implement
+
+            var requestId = executionContext.GetProperty("ResponseContext").GetProperty("Response").GetProperty("ResponseMetadata").GetProperty<string>("RequestId").GetValueOrDefault();
+            span.SetTag("aws.requestId", requestId);
         }
     }
 }

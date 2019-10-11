@@ -521,55 +521,6 @@
       {
         "caller": {},
         "target": {
-          "assembly": "AWSSDK.SQS",
-          "type": "Amazon.SQS.IAmazonSQS",
-          "method": "SendMessage",
-          "signature_types": [
-            "Amazon.SQS.Model.SendMessageResponse",
-            "Amazon.SQS.Model.SendMessageRequest"
-          ],
-          "minimum_major": 3,
-          "minimum_minor": 3,
-          "minimum_patch": 0,
-          "maximum_major": 3,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AWSSDKSQSIntegration",
-          "method": "SendMessage",
-          "signature": "00 05 1C 1C 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "AWSSDK.SQS",
-          "type": "Amazon.SQS.IAmazonSQS",
-          "method": "SendMessage",
-          "signature_types": [
-            "Amazon.SQS.Model.SendMessageResponse",
-            "System.String",
-            "System.String"
-          ],
-          "minimum_major": 3,
-          "minimum_minor": 3,
-          "minimum_patch": 0,
-          "maximum_major": 3,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AWSSDKSQSIntegration",
-          "method": "SendMessageOnlyStrings",
-          "signature": "00 06 1C 1C 0E 0E 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
           "assembly": "AWSSDK.Core",
           "type": "Amazon.Runtime.Internal.RuntimePipeline",
           "method": "InvokeSync",
@@ -1579,7 +1530,30 @@
       {
         "caller": {},
         "target": {
-          "assembly": "System.Net",
+          "assembly": "System",
+          "type": "System.Net.WebRequest",
+          "method": "GetResponseAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Net.WebResponse>"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
+          "method": "GetResponseAsync",
+          "signature": "00 04 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Requests",
           "type": "System.Net.WebRequest",
           "method": "GetResponseAsync",
           "signature_types": [
