@@ -16,11 +16,6 @@
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net45_GAC_Datadog.Trace.Vendors.dll"
-              Source="$(var.ManagedDllPath)\net45\Datadog.Trace.Vendors.dll"
-              KeyPath="yes" Checksum="yes" Assembly=".net"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="net45_GAC_MsgPack.dll"
               Source="$(var.ManagedDllPath)\net45\MsgPack.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
