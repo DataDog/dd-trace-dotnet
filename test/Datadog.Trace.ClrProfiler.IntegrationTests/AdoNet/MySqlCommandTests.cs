@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     public class MySqlCommandTests : TestHelper
     {
         public MySqlCommandTests(ITestOutputHelper output)
-            : base("MySqlServer", output)
+            : base("MySql", output)
         {
         }
 
