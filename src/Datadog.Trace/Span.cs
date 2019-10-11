@@ -5,6 +5,7 @@ using System.Text;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace
 {
@@ -16,7 +17,7 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable, ISpan
     {
-        private static readonly ILog Log = LogProvider.For<Span>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
 
         private readonly object _lock = new object();
 
@@ -25,6 +26,12 @@ namespace Datadog.Trace
             Context = context;
             ServiceName = context.ServiceName;
             StartTime = start ?? Context.TraceContext.UtcNow;
+
+            Log.Debug(
+                "Span started: [s_id: {0}, p_id: {1}, t_id: {2}]",
+                SpanId,
+                Context.ParentId,
+                TraceId);
         }
 
         /// <summary>
@@ -206,7 +213,7 @@ namespace Datadog.Trace
                     }
                     else
                     {
-                        Log.Warn("Value {0} has incorrect format for tag {1}", value, Trace.Tags.Analytics);
+                        Log.Warning("Value {0} has incorrect format for tag {1}", value, Trace.Tags.Analytics);
                     }
 
                     break;
@@ -264,6 +271,18 @@ namespace Datadog.Trace
             if (shouldCloseSpan)
             {
                 Context.TraceContext.CloseSpan(this);
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Span closed: [s_id: {0}, p_id: {1}, t_id: {2}] for (Service: {3}, Resource: {4}, Operation: {5}, Tags: [{6}])",
+                        SpanId,
+                        Context.ParentId,
+                        TraceId,
+                        ServiceName,
+                        ResourceName,
+                        OperationName,
+                        string.Join(",", Tags.Keys));
+                }
             }
         }
 

@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         private const string Major1 = "1";
         private const string Major2 = "2";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(RedisBatch));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(RedisBatch));
 
         private static Assembly _redisAssembly;
         private static Type _redisBaseType;

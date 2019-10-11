@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static readonly Type RequestPipelineType = Type.GetType("Elasticsearch.Net.IRequestPipeline, Elasticsearch.Net");
         public static readonly Type RequestDataType = Type.GetType("Elasticsearch.Net.RequestData, Elasticsearch.Net");
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(ElasticsearchNetCommon));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ElasticsearchNetCommon));
 
         public static Scope CreateScope(Tracer tracer, string integrationName, object pipeline, object requestData)
         {
@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             return scope;

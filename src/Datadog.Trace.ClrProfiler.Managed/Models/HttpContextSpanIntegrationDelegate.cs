@@ -1,5 +1,4 @@
 #if !NETSTANDARD2_0
-
 using System;
 using System.Collections.Generic;
 using System.Web;
@@ -13,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Models
 {
     internal class HttpContextSpanIntegrationDelegate : BaseSpanDecorationSource, ISpanIntegrationDelegate, IHttpSpanTagsSource
     {
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(HttpContextSpanIntegrationDelegate));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpContextSpanIntegrationDelegate));
 
         private readonly HttpContext _httpContext;
 
@@ -112,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.Models
             }
             catch (Exception x)
             {
-                Log.WarnException("Disposal exception", x);
+                Log.Warning("Disposal exception", x);
             }
         }
     }

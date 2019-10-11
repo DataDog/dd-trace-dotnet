@@ -7,7 +7,7 @@ namespace Datadog.Trace
 {
     internal class TraceContext : ITraceContext
     {
-        private static readonly ILog Log = LogProvider.For<TraceContext>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<TraceContext>();
 
         private readonly object _lock = new object();
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
@@ -90,7 +90,7 @@ namespace Datadog.Trace
 
                 if (_samplingPriority == null)
                 {
-                    Log.Warn("Cannot set span metric for sampling priority before it has been set.");
+                    Log.Warning("Cannot set span metric for sampling priority before it has been set.");
                 }
                 else
                 {
@@ -121,7 +121,7 @@ namespace Datadog.Trace
         {
             if (_samplingPriority == null)
             {
-                Log.Warn("Cannot lock sampling priority before it has been set.");
+                Log.Warning("Cannot lock sampling priority before it has been set.");
             }
             else
             {

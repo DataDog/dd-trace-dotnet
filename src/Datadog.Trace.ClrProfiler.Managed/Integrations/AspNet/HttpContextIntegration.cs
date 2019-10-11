@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string IntegrationName = "HttpContext";
         private const string DefaultHttpContextTypeName = "Microsoft.AspNetCore.Http.DefaultHttpContext";
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(HttpContextIntegration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpContextIntegration));
 
         /// <summary>
         /// Entry method for invoking the beginning of every web server request pipeline
@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error calling {DefaultHttpContextTypeName}.{nameof(Initialize)}(...)", ex);
+                Log.Error(ex, $"Error calling {DefaultHttpContextTypeName}.{nameof(Initialize)}(...)");
                 throw;
             }
 

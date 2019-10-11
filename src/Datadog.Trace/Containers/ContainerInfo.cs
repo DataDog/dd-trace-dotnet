@@ -20,7 +20,7 @@ namespace Datadog.Trace.Containers
 
         private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
-        private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ContainerInfo));
 
         /// <summary>
         /// Gets the id of the container executing the code.
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Containers
             }
             catch (Exception ex)
             {
-                Log.WarnException("Error reading cgroup file. Will not report container id.", ex);
+                Log.Warning("Error reading cgroup file. Will not report container id.", ex);
             }
 
             return null;

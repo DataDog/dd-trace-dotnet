@@ -9,7 +9,7 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpanBuilder : ISpanBuilder
     {
-        private static ILog _log = LogProvider.For<OpenTracingSpanBuilder>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<OpenTracingSpanBuilder>();
 
         private readonly OpenTracingTracer _tracer;
         private readonly object _lock = new object();
@@ -37,7 +37,7 @@ namespace Datadog.Trace.OpenTracing
                 }
             }
 
-            _log.Debug("ISpanBuilder.AddReference is not implemented for other references than ChildOf by Datadog.Trace");
+            Log.Debug("ISpanBuilder.AddReference is not implemented for other references than ChildOf by Datadog.Trace");
             return this;
         }
 

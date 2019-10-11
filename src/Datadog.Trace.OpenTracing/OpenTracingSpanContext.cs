@@ -7,7 +7,7 @@ namespace Datadog.Trace.OpenTracing
 {
     internal class OpenTracingSpanContext : global::OpenTracing.ISpanContext
     {
-        private static ILog _log = LogProvider.For<OpenTracingSpanContext>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<OpenTracingSpanContext>();
 
         public OpenTracingSpanContext(ISpanContext context)
         {

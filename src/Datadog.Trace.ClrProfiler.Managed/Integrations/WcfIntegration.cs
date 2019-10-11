@@ -1,5 +1,4 @@
 #if !NETSTANDARD2_0
-
 using System;
 using System.Net;
 using System.ServiceModel.Channels;
@@ -20,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private const string ChannelHandlerTypeName = "System.ServiceModel.Dispatcher.ChannelHandler";
 
-        private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(WcfIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for System.ServiceModel.Dispatcher.ChannelHandler
@@ -135,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         }
                         catch (Exception ex)
                         {
-                            Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                            Log.Error(ex, "Error extracting propagated HTTP headers.");
                         }
                     }
                 }
@@ -155,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             // always returns the scope, even if it's null

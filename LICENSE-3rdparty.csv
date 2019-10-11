@@ -8,3 +8,5 @@ clrprofiler,https://github.com/MicrosoftArchive/clrprofiler,MIT,Copyright (c) Mi
 JSON for Modern C++,https://github.com/nlohmann/json,MIT,Copyright (c) 2013-2018 Niels Lohmann
 Sigil,https://github.com/kevin-montrose/Sigil,MS-PL,2013-2016 Kevin Montrose
 miniutf,https://github.com/dropbox/miniutf,MIT,"Copyright (c) 2013 Dropbox, Inc."
+Serilog,https://github.com/serilog/serilog,Apache-2.0,"Copyright (c) 2013-2018 Serilog Contributors"
+Serilog.Sinks.File,https://github.com/serilog/serilog-sinks-file,Apache-2.0,"Copyright (c) 2016 Serilog Contributors"

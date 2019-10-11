@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// Global dictionary for caching reflected delegates
         /// </summary>
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(MethodBuilder<TDelegate>));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MethodBuilder<TDelegate>));
         private static readonly bool ForceMdTokenLookup;
         private static readonly bool ForceFallbackLookup;
 
@@ -187,14 +187,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 }
                 catch (Exception ex)
                 {
-                    string message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
-                    Log.Error(message, ex);
+                    var message = $"Unable to resolve method {_concreteTypeName}.{_methodName} by metadata token: {_mdToken}";
+                    Log.Error(ex, message);
                     requiresBestEffortMatching = true;
                 }
             }
             else
             {
-                Log.Warn($"Unable to resolve module version id {_moduleVersionId}. Using method builder fallback.");
+                Log.Warning($"Unable to resolve module version id {_moduleVersionId}. Using method builder fallback.");
             }
 
             MethodInfo methodInfo = null;
@@ -332,19 +332,19 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (!string.Equals(_methodName, methodInfo.Name))
             {
-                Log.Warn($"Method name mismatch: {detailMessage}");
+                Log.Warning($"Method name mismatch: {detailMessage}");
                 return null;
             }
 
             if (!GenericsAreViable(methodInfo))
             {
-                Log.Warn($"Generics not viable: {detailMessage}");
+                Log.Warning($"Generics not viable: {detailMessage}");
                 return null;
             }
 
             if (!ParametersAreViable(methodInfo))
             {
-                Log.Warn($"Parameters not viable: {detailMessage}");
+                Log.Warning($"Parameters not viable: {detailMessage}");
                 return null;
             }
 
@@ -397,7 +397,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private MethodInfo TryFindMethod()
         {
             var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionModule?.FullyQualifiedName ?? "NULL"}, {_resolutionModule?.ModuleVersionId ?? _moduleVersionId}";
-            Log.Warn($"Using fallback method matching ({logDetail})");
+            Log.Warning($"Using fallback method matching ({logDetail})");
 
             var methods =
                 _concreteType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
@@ -442,7 +442,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (methods.Length == 1)
             {
-                Log.Info($"Resolved by name and namespaceName filters ({logDetail})");
+                Log.Information($"Resolved by name and namespaceName filters ({logDetail})");
                 return methods[0];
             }
 
@@ -453,7 +453,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (methods.Length == 1)
             {
-                Log.Info($"Resolved by viable parameters ({logDetail})");
+                Log.Information($"Resolved by viable parameters ({logDetail})");
                 return methods[0];
             }
 
@@ -464,7 +464,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (methods.Length == 1)
             {
-                Log.Info($"Resolved by viable generics ({logDetail})");
+                Log.Information($"Resolved by viable generics ({logDetail})");
                 return methods[0];
             }
 

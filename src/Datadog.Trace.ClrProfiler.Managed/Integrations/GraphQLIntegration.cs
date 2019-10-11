@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private const string TaskOfGraphQLExecutionResult = "System.Threading.Tasks.Task`1<" + GraphQLExecutionResultName + ">";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(GraphQLIntegration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(GraphQLIntegration));
 
         /// <summary>
         /// Wrap the original method by adding instrumentation code around it.
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // This shouldn't happen because the GraphQL assembly should have been loaded to construct various other types
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException($"Error finding types in the GraphQL assembly.", ex);
+                Log.Error(ex, $"Error finding types in the GraphQL assembly.");
                 throw;
             }
 
@@ -173,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // This shouldn't happen because the GraphQL assembly should have been loaded to construct various other types
                 // profiled app will not continue working as expected without this method
-                Log.ErrorException("Error finding types in the GraphQL assembly.", ex);
+                Log.Error(ex, "Error finding types in the GraphQL assembly.");
                 throw;
             }
 
@@ -263,7 +263,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             return scope;
@@ -309,7 +309,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             return scope;
@@ -394,7 +394,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
                 catch (Exception ex)
                 {
-                    Log.ErrorException("Error creating GraphQL error message.", ex);
+                    Log.Error(ex, "Error creating GraphQL error message.");
                     return "errors: []";
                 }
             }

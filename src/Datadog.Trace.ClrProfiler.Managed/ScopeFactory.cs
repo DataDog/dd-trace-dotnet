@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string OperationName = "http.request";
         public const string ServiceName = "http-client";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(ScopeFactory));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ScopeFactory));
 
         /// <summary>
         /// Creates a scope for outbound http requests and populates some common details.
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             // always returns the scope, even if it's null because we couldn't create it,

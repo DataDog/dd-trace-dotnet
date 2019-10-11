@@ -17,7 +17,7 @@ namespace Datadog.Trace
     {
         private const string UnknownServiceName = "UnknownService";
 
-        private static readonly ILog Log = LogProvider.For<Tracer>();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
 
         private readonly IScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
@@ -270,7 +270,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating default service name.", ex);
+                Log.Error(ex, "Error creating default service name.");
                 return null;
             }
         }

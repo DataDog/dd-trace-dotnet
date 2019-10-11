@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Type DiagnosticSourceType = Type.GetType($"{DiagnosticSourceTypeName}, {AspnetMvcCore}");
         private static readonly Type ResourceInvokerType = Type.GetType($"{ResourceInvokerTypeName}, {AspnetMvcCore}");
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AspNetCoreMvc2Integration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetCoreMvc2Integration));
 
         private readonly object _httpContext;
         private readonly Scope _scope;
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                     catch (Exception ex)
                     {
-                        Log.ErrorException("Error extracting propagated HTTP headers.", ex);
+                        Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
                 }
 
@@ -160,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorExceptionForFilter($"Error creating {nameof(AspNetCoreMvc2Integration)}.", ex);
+                Log.Error(ex, $"Error creating {nameof(AspNetCoreMvc2Integration)}.");
             }
 
             Action<object, object, object, object> instrumentedMethod = null;
@@ -249,7 +249,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
+                Log.Error(ex, $"Error accessing {nameof(AspNetCoreMvc2Integration)}.");
             }
 
             Action<object, object, object, object> instrumentedMethod = null;
@@ -293,7 +293,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 integration?.SetException(ex);
-
                 throw;
             }
             finally
@@ -369,7 +368,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
                 catch (Exception ex)
                 {
-                    Log.ErrorExceptionForFilter($"Error accessing {nameof(AspNetCoreMvc2Integration)}.", ex);
+                    Log.Error(ex, $"Error accessing {nameof(AspNetCoreMvc2Integration)}.");
                 }
             }
 

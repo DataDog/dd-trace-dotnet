@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string DbDataReaderTypeName = "System.Data.Common.DbDataReader";
         private const string CommandBehaviorTypeName = "System.Data.CommandBehavior";
 
-        private static readonly ILog Log = LogProvider.GetLogger(typeof(AdoNetIntegration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AdoNetIntegration));
 
         /// <summary>
         /// Wrapper method that instruments <see cref="System.Data.Common.DbCommand.ExecuteDbDataReader"/>.
@@ -217,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.ErrorException("Error creating or populating scope.", ex);
+                Log.Error(ex, "Error creating or populating scope.");
             }
 
             return scope;
