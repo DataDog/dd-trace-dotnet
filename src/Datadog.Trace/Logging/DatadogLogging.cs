@@ -7,7 +7,7 @@ using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
 namespace Datadog.Trace.Logging
 {
-    internal static class DatadogLoggerProvider
+    internal static class DatadogLogging
     {
         private const string NixDefaultDirectory = "/var/log/datadog/";
         private static readonly string WindowsDefaultDirectory =
@@ -18,7 +18,7 @@ namespace Datadog.Trace.Logging
 
         private static readonly ILogger SharedLogger = null;
 
-        static DatadogLoggerProvider()
+        static DatadogLogging()
         {
             // No-op for if we fail to construct the file logger
             SharedLogger =
