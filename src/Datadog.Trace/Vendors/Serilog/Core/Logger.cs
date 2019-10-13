@@ -33,7 +33,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core
     /// be disposed to flush any events buffered within it. Most application
     /// code should depend on <see cref="ILogger"/>, not this class.
     /// </summary>
-    internal sealed class Logger : ILogger, ILogEventSink, IDisposable
+    internal class Logger : ILogger, ILogEventSink, IDisposable
     {
         static readonly object[] NoPropertyValues = new object[0];
 
@@ -365,7 +365,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core
         /// <param name="messageTemplate">Message template describing the event.</param>
         /// <param name="propertyValues">Objects positionally formatted into the message template.</param>
         [MessageTemplateFormatMethod("messageTemplate")]
-        public void Write(LogEventLevel level, Exception exception, string messageTemplate, params object[] propertyValues)
+        public virtual void Write(LogEventLevel level, Exception exception, string messageTemplate, params object[] propertyValues)
         {
             if (!IsEnabled(level)) return;
             if (messageTemplate == null) return;

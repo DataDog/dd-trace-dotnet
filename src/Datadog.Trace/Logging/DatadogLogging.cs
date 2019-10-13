@@ -1,14 +1,13 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
 namespace Datadog.Trace.Logging
 {
-    internal static class DatadogLogging
+    internal static class DatadogLoggerProvider
     {
         private const string NixDefaultDirectory = "/var/log/datadog/";
         private static readonly string WindowsDefaultDirectory =
@@ -19,13 +18,14 @@ namespace Datadog.Trace.Logging
 
         private static readonly ILogger SharedLogger = null;
 
-        static DatadogLogging()
+        static DatadogLoggerProvider()
         {
             // No-op for if we fail to construct the file logger
             SharedLogger =
                 new LoggerConfiguration()
                    .WriteTo.Sink<NullSink>()
                    .CreateLogger();
+
             try
             {
                 var currentAppDomain = AppDomain.CurrentDomain;

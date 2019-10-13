@@ -68,6 +68,28 @@ namespace UpdateVendors
                         content = content.Replace("public sealed class", "internal sealed class");
                         content = content.Replace("public interface", "internal interface");
 
+                        if (filePath.Contains("Logger.cs"))
+                        {
+                            // Allows overriding the Write implementation to introduce rate limiting
+                            content = content.Replace(
+                                "internal sealed class Logger : ILogger, ILogEventSink, IDisposable",
+                                "internal class Logger : ILogger, ILogEventSink, IDisposable");
+                            content = content.Replace(
+                                "public void Write(LogEventLevel level, Exception exception, string messageTemplate, params object[] propertyValues)",
+                                "public virtual void Write(LogEventLevel level, Exception exception, string messageTemplate, params object[] propertyValues)");
+                        }
+
+                        if (filePath.Contains("LoggerConfiguration.cs"))
+                        {
+                            // Allows overriding the Write implementation to introduce rate limiting
+                            content = content.Replace(
+                                "new Logger(processor, _minimumLevel, sink, enricher, Dispose, overrideMap) :",
+                                "new Datadog.Trace.Logging.RateLimitedLogger(processor, _minimumLevel, sink, enricher, Dispose, overrideMap) :");
+                            content = content.Replace(
+                                "new Logger(processor, _levelSwitch, sink, enricher, Dispose, overrideMap);",
+                                "new Datadog.Trace.Logging.RateLimitedLogger(processor, _levelSwitch, sink, enricher, Dispose, overrideMap);");
+                        }
+
                         return content;
                     });
             }

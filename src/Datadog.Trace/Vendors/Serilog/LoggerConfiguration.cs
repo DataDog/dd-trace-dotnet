@@ -201,8 +201,8 @@ namespace Datadog.Trace.Vendors.Serilog
             }
 
             return _levelSwitch == null ?
-                new Logger(processor, _minimumLevel, sink, enricher, Dispose, overrideMap) :
-                new Logger(processor, _levelSwitch, sink, enricher, Dispose, overrideMap);
+                new Datadog.Trace.Logging.RateLimitedLogger(processor, _minimumLevel, sink, enricher, Dispose, overrideMap) :
+                new Datadog.Trace.Logging.RateLimitedLogger(processor, _levelSwitch, sink, enricher, Dispose, overrideMap);
         }
     }
 }

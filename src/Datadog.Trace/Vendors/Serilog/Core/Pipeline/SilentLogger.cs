@@ -95,7 +95,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core.Pipeline
         {
         }
 
-        public void Write(LogEventLevel level, Exception exception, string messageTemplate, params object[] propertyValues)
+        public virtual void Write(LogEventLevel level, Exception exception, string messageTemplate, params object[] propertyValues)
         {
         }
 
