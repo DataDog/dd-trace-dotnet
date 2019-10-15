@@ -18,6 +18,9 @@ namespace Datadog.Trace.Tests.Logging
         internal static readonly int CustomPropertyValue = 1;
         internal static readonly string LogPrefix = "[Datadog.Trace.Tests.Logging]";
 
+        private const string Log4NetExpectedStringFormat = "\"{0}\":\"{1}\"";
+        private const string SerilogExpectedStringFormat = "{0}: \"{1}\"";
+
         internal static Tracer InitializeTracer(bool enableLogsInjection)
         {
             var settings = new TracerSettings();
@@ -65,10 +68,10 @@ namespace Datadog.Trace.Tests.Logging
 
             // Second, verify that the message formatting correctly encloses the
             // values in quotes, since they are string values
-            Log4NetLogProviderTests.Log4NetJsonLayout layout = new Log4NetLogProviderTests.Log4NetJsonLayout();
+            var layout = new Log4NetLogProviderTests.Log4NetJsonLayout();
             string formattedMessage = layout.Format(logEvent);
-            Assert.Contains($"\"{CorrelationIdentifier.TraceIdKey}\":\"{traceId}\"", formattedMessage);
-            Assert.Contains($"\"{CorrelationIdentifier.SpanIdKey}\":\"{spanId}\"", formattedMessage);
+            Assert.Contains(string.Format(Log4NetExpectedStringFormat, CorrelationIdentifier.TraceIdKey, traceId), formattedMessage);
+            Assert.Contains(string.Format(Log4NetExpectedStringFormat, CorrelationIdentifier.SpanIdKey, spanId), formattedMessage);
         }
 
         internal static void Contains(this Serilog.Events.LogEvent logEvent, Scope scope)
@@ -92,12 +95,12 @@ namespace Datadog.Trace.Tests.Logging
             // the message to our in-memory list
             const string OutputTemplate = "{Message}|{Properties}";
             var textFormatter = new MessageTemplateTextFormatter(OutputTemplate, CultureInfo.InvariantCulture);
-
             var sw = new StringWriter(new StringBuilder());
             textFormatter.Format(logEvent, sw);
-            var finalString = sw.ToString();
-            Assert.Contains($"{CorrelationIdentifier.TraceIdKey}: \"{traceId}\"", finalString);
-            Assert.Contains($"{CorrelationIdentifier.SpanIdKey}: \"{spanId}\"", finalString);
+            var formattedMessage = sw.ToString();
+
+            Assert.Contains(string.Format(SerilogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, traceId), formattedMessage);
+            Assert.Contains(string.Format(SerilogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, spanId), formattedMessage);
         }
     }
 }
