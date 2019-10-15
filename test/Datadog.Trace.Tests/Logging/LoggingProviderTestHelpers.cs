@@ -57,10 +57,18 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void Contains(this log4net.Core.LoggingEvent logEvent, ulong traceId, ulong spanId)
         {
+            // First, verify that the properties are attached to the LogEvent
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.Equal<ulong>(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
             Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.Equal<ulong>(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+
+            // Second, verify that the message formatting correctly encloses the
+            // values in quotes, since they are string values
+            Log4NetLogProviderTests.Log4NetJsonLayout layout = new Log4NetLogProviderTests.Log4NetJsonLayout();
+            string formattedMessage = layout.Format(logEvent);
+            Assert.Contains($"\"{CorrelationIdentifier.TraceIdKey}\":\"{traceId}\"", formattedMessage);
+            Assert.Contains($"\"{CorrelationIdentifier.SpanIdKey}\":\"{spanId}\"", formattedMessage);
         }
 
         internal static void Contains(this Serilog.Events.LogEvent logEvent, Scope scope)
