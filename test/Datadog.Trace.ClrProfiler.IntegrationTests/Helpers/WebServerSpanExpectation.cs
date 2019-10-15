@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
@@ -58,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var actualStatusCode = GetTag(span, Tags.HttpStatusCode);
             var actualHttpMethod = GetTag(span, Tags.HttpMethod);
+            var language = GetTag(span, Tags.Language);
 
             if (StatusCode != null && actualStatusCode != StatusCode)
             {
@@ -67,6 +69,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (actualHttpMethod != HttpMethod)
             {
                 mismatches.Add(FailureMessage(nameof(HttpMethod), actual: actualHttpMethod, expected: HttpMethod));
+            }
+
+            if (language != TracerConstants.Language)
+            {
+                mismatches.Add(FailureMessage(Tags.Language, actual: language, expected: TracerConstants.Language));
             }
 
             if (CustomAssertion != null)
