@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string DbCommandTypeName = "System.Data.Common.DbCommand";
         private const string DbDataReaderTypeName = "System.Data.Common.DbDataReader";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AdoNetIntegration));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(DbCommandIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for <see cref="DbCommand.ExecuteDbDataReader"/>.
@@ -264,7 +264,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)", ex);
+                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
                 throw;
             }
 
@@ -338,7 +338,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)", ex);
+                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)");
                 throw;
             }
 
@@ -389,7 +389,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)", ex);
+                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
                 throw;
             }
 
@@ -463,7 +463,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)", ex);
+                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)");
                 throw;
             }
 
