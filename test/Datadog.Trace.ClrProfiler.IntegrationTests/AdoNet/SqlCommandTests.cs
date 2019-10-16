@@ -24,8 +24,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(count: 24, operationName: "sql-server.query");
-                Assert.True(spans.Count > 0, "expected at least one span");
+                const int expectedSpanCount = 28;
+                var spans = agent.WaitForSpans(expectedSpanCount, operationName: "sql-server.query");
+
+                Assert.Equal(expectedSpanCount, spans.Count);
 
                 foreach (var span in spans)
                 {
