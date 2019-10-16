@@ -12,7 +12,7 @@ namespace Samples.DatabaseHelper
         where TCommand : DbCommand
         where TDataReader : DbDataReader
     {
-        private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY CLUSTERED, Name nvarchar(100));";
+        private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY, Name varchar(100));";
         private const string InsertCommandText = "INSERT INTO Employees (Id, Name) VALUES (@Id, @Name);";
         private const string SelectOneCommandText = "SELECT Name FROM Employees WHERE Id=@Id;";
         private const string UpdateCommandText = "UPDATE Employees SET Name=@Name WHERE Id=@Id;";
