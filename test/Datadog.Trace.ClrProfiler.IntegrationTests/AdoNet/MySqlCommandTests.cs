@@ -15,6 +15,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
+            const int expectedSpanCount = 14;
+            const string dbType = "mysql";
+            const string expectedOperationName = dbType + ".query";
+            const string expectedServiceName = "Samples.MySql-" + dbType;
+
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
@@ -22,16 +27,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                const int expectedSpanCount = 14;
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: "sql-server.query");
-                Assert.True(spans.Count > 0, "expected at least one span");
+                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                Assert.Equal(expectedSpanCount, spans.Count);
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("mysql.query", span.Name);
-                    Assert.Equal("Samples.MySql-sql-server", span.Service);
+                    Assert.Equal(expectedOperationName, span.Name);
+                    Assert.Equal(expectedServiceName, span.Service);
                     Assert.Equal(SpanTypes.Sql, span.Type);
-                    Assert.Equal("mysql", span.Tags[Tags.DbType]);
+                    Assert.Equal(dbType, span.Tags[Tags.DbType]);
                 }
             }
         }
