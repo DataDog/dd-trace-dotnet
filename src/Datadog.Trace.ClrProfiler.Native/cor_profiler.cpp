@@ -80,6 +80,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   WSTRING env_vars[]{environment::tracing_enabled,
                      environment::debug_enabled,
+                     environment::profiler_home_path,
                      environment::integrations_path,
                      environment::include_process_names,
                      environment::exclude_process_names,

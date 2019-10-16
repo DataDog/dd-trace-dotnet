@@ -50,8 +50,9 @@ SET CORECLR_PROFILER_PATH=%~dp0\src\Datadog.Trace.ClrProfiler.Native\bin\%profil
 rem Don't attach the profiler to these processes
 SET DD_PROFILER_EXCLUDE_PROCESSES=devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe
 
-rem Set location of integration definitions
-SET DD_INTEGRATIONS=%~dp0\integrations.json;%~dp0\test-integrations.json
+rem Set dotnet tracer home path
+SET DD_DOTNET_TRACER_HOME=%~dp0
+SET DD_INTEGRATIONS=%DD_DOTNET_TRACER_HOME%\integrations.json
 
 if "%start_visual_studio%" == "true" (
     echo Starting Visual Studio...

@@ -18,6 +18,10 @@ const WSTRING debug_enabled = "DD_TRACE_DEBUG"_W;
 // "C:\Program Files\Datadog .NET Tracer\integrations.json;D:\temp\test_integrations.json"
 const WSTRING integrations_path = "DD_INTEGRATIONS"_W;
 
+// Sets the path to the profiler's home directory, for example:
+// "C:\Program Files\Datadog .NET Tracer\" or "/opt/datadog/"
+const WSTRING profiler_home_path = "DD_DOTNET_TRACER_HOME"_W;
+
 // Sets the filename of executables the profiler can attach to.
 // If not defined (default), the profiler will attach to any process.
 // Supports multiple values separated with semi-colons, for example:
