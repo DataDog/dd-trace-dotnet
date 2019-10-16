@@ -158,7 +158,7 @@ services:
     volumes:
     - ./:/project
     environment:
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
     depends_on:
     - sqlserver
 
@@ -213,7 +213,7 @@ services:
     - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
     - ELASTICSEARCH6_HOST=elasticsearch6:9200
     - ELASTICSEARCH5_HOST=elasticsearch5:9200
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
     - buildConfiguration=${buildConfiguration:-Debug}
