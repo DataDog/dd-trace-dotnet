@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         /// <summary>
-        /// Lighweight JSON-formatter for Log4Net inspired by https://github.com/Litee/log4net.Layout.Json
+        /// Lightweight JSON-formatter for Log4Net inspired by https://github.com/Litee/log4net.Layout.Json
         /// </summary>
         internal class Log4NetJsonLayout : LayoutSkeleton
         {
