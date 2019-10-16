@@ -11,15 +11,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
+        [Fact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion)
+        public void SubmitsTraces()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
