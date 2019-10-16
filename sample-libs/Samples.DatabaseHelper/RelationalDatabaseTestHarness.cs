@@ -61,8 +61,12 @@ namespace Samples.DatabaseHelper
         {
             using (var scopeAll = Tracer.Instance.StartActive("run.all"))
             {
+                scopeAll.Span.SetTag("command-type", typeof(TCommand).FullName);
+
                 using (var scopeSync = Tracer.Instance.StartActive("run.sync"))
                 {
+                    scopeSync.Span.SetTag("command-type", typeof(TCommand).FullName);
+
                     _connection.Open();
                     CreateNewTable(_connection);
                     InsertRow(_connection);
@@ -78,6 +82,8 @@ namespace Samples.DatabaseHelper
 
                 using (var scopeAsync = Tracer.Instance.StartActive("run.async"))
                 {
+                    scopeAsync.Span.SetTag("command-type", typeof(TCommand).FullName);
+
                     await _connection.OpenAsync();
                     await CreateNewTableAsync(_connection);
                     await InsertRowAsync(_connection);
