@@ -54,7 +54,7 @@ services:
     - "127.0.0.1:3306:3306"
 
   sqlserver:
-    image: microsoft/mssql-server-linux:latest
+    image: mcr.microsoft.com/mssql/server:latest
     ports:
     - "127.0.0.1:1433:1433"
     environment:
