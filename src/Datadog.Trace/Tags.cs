@@ -175,5 +175,10 @@ namespace Datadog.Trace
         /// Configures Trace Analytics.
         /// </summary>
         public const string Analytics = "_dd1.sr.eausr";
+
+        /// <summary>
+        /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
+        /// </summary>
+        public const string Language = "language";
     }
 }

@@ -1,3 +1,4 @@
+using Datadog.Trace;
 using Datadog.Trace.Interfaces;
 
 namespace Datadog.Trace.ClrProfiler.ExtensionMethods
@@ -26,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.ExtensionMethods
             span.SetTag(Tags.HttpMethod, method);
             span.SetTag(Tags.HttpRequestHeadersHost, host);
             span.SetTag(Tags.HttpUrl, httpUrl);
+            span.SetTag(Tags.Language, TracerConstants.Language);
         }
     }
 }
