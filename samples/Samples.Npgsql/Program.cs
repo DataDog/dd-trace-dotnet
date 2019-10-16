@@ -55,7 +55,7 @@ namespace Samples.Npgsql
             if (connectionString == null)
             {
                 var host = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
-                connectionString = $"Host={host};Username=postgres;Password=postgres;Database=dotnet_test";
+                connectionString = $"Host={host};Username=postgres;Password=postgres;Database=postgres";
             }
 
             return new NpgsqlConnection(connectionString);
