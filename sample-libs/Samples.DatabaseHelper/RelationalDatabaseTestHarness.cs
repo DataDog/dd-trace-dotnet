@@ -52,7 +52,7 @@ namespace Samples.DatabaseHelper
             _executeNonQueryAsync = executeNonQueryAsync ?? throw new ArgumentNullException(nameof(executeNonQueryAsync));
             _executeScalarAsync = executeScalarAsync ?? throw new ArgumentNullException(nameof(executeScalarAsync));
 
-            // these two are not implemented by all ADO.NET providers
+            // these two are not implemented by all ADO.NET providers, so they can be null
             _executeReaderAsync = executeReaderAsync;
             _executeReaderWithBehaviorAsync = executeReaderWithBehaviorAsync;
         }
