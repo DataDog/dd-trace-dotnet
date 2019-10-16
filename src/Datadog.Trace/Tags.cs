@@ -177,8 +177,7 @@ namespace Datadog.Trace
         public const string Analytics = "_dd1.sr.eausr";
 
         /// <summary>
-        /// Language tag
-        /// RFC: https://github.com/DataDog/architecture/blob/master/rfcs/apm/integrations/runtime-metrics-collection/rfc.md#traces
+        /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
         /// </summary>
         public const string Language = "language";
     }
