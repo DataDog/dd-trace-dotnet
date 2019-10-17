@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
         }
 
-        [Fact]
+        [Fact(Skip = "Need to figure out running MySQL in docker containers.")]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
