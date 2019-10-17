@@ -1,10 +1,13 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.LogProviders;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Core;
+using log4net.Layout;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
@@ -146,6 +149,37 @@ namespace Datadog.Trace.Tests.Logging
             Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
+        }
+
+        /// <summary>
+        /// Lightweight JSON-formatter for Log4Net inspired by https://github.com/Litee/log4net.Layout.Json
+        /// </summary>
+        internal class Log4NetJsonLayout : LayoutSkeleton
+        {
+            public override void ActivateOptions()
+            {
+            }
+
+            public override void Format(TextWriter writer, LoggingEvent e)
+            {
+                var dic = new Dictionary<string, object>
+                {
+                    ["level"] = e.Level.DisplayName,
+                    ["messageObject"] = e.MessageObject,
+                    ["renderedMessage"] = e.RenderedMessage,
+                    ["timestampUtc"] = e.TimeStamp.ToUniversalTime().ToString("O"),
+                    ["logger"] = e.LoggerName,
+                    ["thread"] = e.ThreadName,
+                    ["exceptionObject"] = e.ExceptionObject,
+                    ["exceptionObjectString"] = e.ExceptionObject == null ? null : e.GetExceptionString(),
+                    ["userName"] = e.UserName,
+                    ["domain"] = e.Domain,
+                    ["identity"] = e.Identity,
+                    ["location"] = e.LocationInformation.FullInfo,
+                    ["properties"] = e.GetProperties()
+                };
+                writer.Write(JsonConvert.SerializeObject(dic));
+            }
         }
     }
 }

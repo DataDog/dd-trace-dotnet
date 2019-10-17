@@ -121,10 +121,10 @@ namespace Datadog.Trace.Logging
             // TODO: Debug logs
             _contextDisposalStack.Push(
                 LogProvider.OpenMappedContext(
-                    CorrelationIdentifier.TraceIdKey, traceId, destructure: false));
+                    CorrelationIdentifier.TraceIdKey, traceId.ToString(), destructure: false));
             _contextDisposalStack.Push(
                 LogProvider.OpenMappedContext(
-                    CorrelationIdentifier.SpanIdKey, spanId, destructure: false));
+                    CorrelationIdentifier.SpanIdKey, spanId.ToString(), destructure: false));
         }
     }
 }
