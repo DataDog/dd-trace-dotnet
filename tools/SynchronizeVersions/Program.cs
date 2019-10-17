@@ -9,7 +9,7 @@ namespace SynchronizeVersions
     public class Program
     {
         private static int major = 1;
-        private static int minor = 7;
+        private static int minor = 8;
         private static int patch = 0;
 
         public static void Main(string[] args)
@@ -62,7 +62,7 @@ namespace SynchronizeVersions
                 NugetVersionReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace/Datadog.Trace.nuspec",
+                "src/Datadog.Trace/Datadog.Trace.csproj",
                 NugetVersionReplace);
 
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
@@ -80,11 +80,7 @@ namespace SynchronizeVersions
 
         private static string NugetVersionReplace(string text)
         {
-            text =
-                Regex.Replace(text, $"<Version>{VersionPattern()}</Version>", $"<Version>{VersionString()}</Version>");
-            text =
-                Regex.Replace(text, $"<version>{VersionPattern()}</version>", $"<version>{VersionString()}</version>");
-            return text;
+            return Regex.Replace(text, $"<Version>{VersionPattern()}</Version>", $"<Version>{VersionString()}</Version>");
         }
 
         private static void SynchronizeVersion(string path, Func<string, string> transform)
