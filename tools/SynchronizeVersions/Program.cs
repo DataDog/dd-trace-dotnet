@@ -9,7 +9,7 @@ namespace SynchronizeVersions
     public class Program
     {
         private static int major = 1;
-        private static int minor = 7;
+        private static int minor = 8;
         private static int patch = 0;
 
         public static void Main(string[] args)
