@@ -1,103 +1,64 @@
 using System;
-using System.Linq;
-using Datadog.Trace.ClrProfiler;
+using System.Data.Common;
+using System.Threading.Tasks;
 using Npgsql;
+using Samples.DatabaseHelper;
 
 namespace Samples.Npgsql
 {
-    public static class Program
+    internal static class Program
     {
-        private static string Host()
+        private static async Task Main()
         {
-            return Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
-        }
-
-        private static string ConnectionString(string database)
-        {
-            return $"Host={Host()};Username=postgres;Password=postgres;Database={database}";
-        }
-
-        public static void Main(string[] args)
-        {
-            Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
-            Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
-            Console.WriteLine();
-
-            using (var conn = new NpgsqlConnection(ConnectionString("postgres")))
+            /* TODO: enable this after adding a Npgsql-specific integration
+            using (var connection = CreateConnection())
             {
-                conn.Open();
+                var testQueries = new RelationalDatabaseTestHarness<NpgsqlConnection, NpgsqlCommand, NpgsqlDataReader>(
+                    connection,
+                    command => command.ExecuteNonQuery(),
+                    command => command.ExecuteScalar(),
+                    command => command.ExecuteReader(),
+                    (command, behavior) => command.ExecuteReader(behavior),
+                    command => command.ExecuteNonQueryAsync(),
+                    command => command.ExecuteScalarAsync(),
+                    executeReaderAsync: null,
+                    executeReaderWithBehaviorAsync: null
+                );
 
-                using (var createTable = conn.CreateCommand())
-                {
-                    createTable.CommandText = @"
-    DROP TABLE IF EXISTS employee;
-    CREATE TABLE employee (
-        employee_id SERIAL,  
-        name varchar(45) NOT NULL,  
-        birth_date varchar(450) NOT NULL,  
-      PRIMARY KEY (employee_id)  
-    )";
 
-                    createTable.ExecuteNonQuery();
-                }
-
-                // Insert some data
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "INSERT INTO employee (name, birth_date) VALUES (@name, @birth_date);";
-                    cmd.Parameters.AddWithValue("name", "Jane Smith");
-                    cmd.Parameters.AddWithValue("@birth_date", new DateTime(1980, 2, 3));
-
-                    int count = cmd.ExecuteNonQuery();
-                    Console.WriteLine($"{count} rows inserted.");
-                }
-
-                // Retrieve all rows
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "SELECT * FROM employee sync;";
-                    int rows = 0;
-
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var values = new object[10];
-                            int count = reader.GetValues(values);
-                            Console.WriteLine(string.Join(", ", values.Take(count)));
-                            rows++;
-                        }
-                    }
-
-                    Console.WriteLine($"{rows:N0} rows returned from sync query.");
-                    Console.WriteLine();
-
-                    cmd.CommandText = "SELECT * FROM employee async;";
-                    rows = 0;
-
-                    using (var reader = cmd.ExecuteReaderAsync().GetAwaiter().GetResult())
-                    {
-                        while (reader.Read())
-                        {
-                            var values = new object[10];
-                            int count = reader.GetValues(values);
-                            Console.WriteLine(string.Join(", ", values.Take(count)));
-                            rows++;
-                        }
-                    }
-
-                    Console.WriteLine($"{rows:N0} rows returned from async query.");
-                }
-
-                // Delete all data
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "DELETE FROM employee;";
-
-                    int count = cmd.ExecuteNonQuery();
-                    Console.WriteLine($"{count} rows deleted.");
-                }
+                await testQueries.RunAsync();
             }
+            */
+
+            using (var connection = CreateConnection())
+            {
+                var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
+                    connection,
+                    command => command.ExecuteNonQuery(),
+                    command => command.ExecuteScalar(),
+                    command => command.ExecuteReader(),
+                    (command, behavior) => command.ExecuteReader(behavior),
+                    command => command.ExecuteNonQueryAsync(),
+                    command => command.ExecuteScalarAsync(),
+                    command => command.ExecuteReaderAsync(),
+                    (command, behavior) => command.ExecuteReaderAsync(behavior)
+                );
+
+                await testQueries.RunAsync();
+            }
+        }
+
+        private static NpgsqlConnection CreateConnection()
+        {
+            var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
+
+            if (connectionString == null)
+            {
+                var host = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
+                connectionString = $"Host={host};Username=postgres;Password=postgres;Database=postgres";
+            }
+
+            return new NpgsqlConnection(connectionString);
         }
     }
 }

@@ -54,13 +54,13 @@ services:
     - "127.0.0.1:3306:3306"
 
   sqlserver:
-    image: microsoft/mssql-server-linux:latest
+    image: mcr.microsoft.com/mssql/server:latest
     ports:
     - "127.0.0.1:1433:1433"
     environment:
     - ACCEPT_EULA=Y
     - SA_PASSWORD=Strong!Passw0rd
-    
+
   wcfservice:
     image: mcr.microsoft.com/dotnet/framework/wcf:4.8
     ports:
@@ -158,7 +158,7 @@ services:
     volumes:
     - ./:/project
     environment:
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
     depends_on:
     - sqlserver
 
@@ -174,7 +174,7 @@ services:
     - POSTGRES_HOST=postgres
     depends_on:
     - postgres
-    
+
   Samples.MySql:
     build:
       context: ./
@@ -213,7 +213,7 @@ services:
     - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
     - ELASTICSEARCH6_HOST=elasticsearch6:9200
     - ELASTICSEARCH5_HOST=elasticsearch5:9200
-    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;Database=BlogDatabase;User=sa;Password=Strong!Passw0rd
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
     - buildConfiguration=${buildConfiguration:-Debug}

@@ -1,60 +1,64 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Data.SqlClient;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+using Datadog.Trace;
+using Samples.DatabaseHelper;
 
 namespace Samples.SqlServer
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static async Task Main()
         {
-            using (var db = new BloggingContext())
+            using (var root = Tracer.Instance.StartActive("root"))
             {
-                // create database if missing
-                db.Database.EnsureCreated();
-
-                var name = "test";
-
-                var blog = (from b in db.Blogs where b.Name == name select b).FirstOrDefault();
-                if (blog == null)
+                using (var connection = CreateConnection())
                 {
-                    blog = new Blog { Name = name };
-                    db.Blogs.Add(blog);
-                    db.SaveChanges();
+                    var testQueries = new RelationalDatabaseTestHarness<SqlConnection, SqlCommand, SqlDataReader>(
+                        connection,
+                        command => command.ExecuteNonQuery(),
+                        command => command.ExecuteScalar(),
+                        command => command.ExecuteReader(),
+                        (command, behavior) => command.ExecuteReader(behavior),
+                        command => command.ExecuteNonQueryAsync(),
+                        command => command.ExecuteScalarAsync(),
+                        command => command.ExecuteReaderAsync(),
+                        (command, behavior) => command.ExecuteReaderAsync(behavior)
+                    );
+
+
+                    await testQueries.RunAsync();
                 }
 
-                // Display all Blogs from the database synchronously
-                var query = from b in db.Blogs
-                            orderby b.Name
-                            select b;
-
-                Console.WriteLine("All blogs in the database from the synchronous call:");
-                foreach (var item in query)
+                using (var connection = CreateConnection())
                 {
-                    Console.WriteLine(item.Name);
-                }
+                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
+                        connection,
+                        command => command.ExecuteNonQuery(),
+                        command => command.ExecuteScalar(),
+                        command => command.ExecuteReader(),
+                        (command, behavior) => command.ExecuteReader(behavior),
+                        command => command.ExecuteNonQueryAsync(),
+                        command => command.ExecuteScalarAsync(),
+                        command => command.ExecuteReaderAsync(),
+                        (command, behavior) => command.ExecuteReaderAsync(behavior)
+                    );
 
-                var asyncName = "test-async";
-
-                var asyncBlog = (from b in db.Blogs where b.Name == asyncName select b).FirstOrDefaultAsync();
-                if (asyncBlog.Result == null)
-                {
-                    blog = new Blog { Name = asyncName };
-                    db.Blogs.Add(blog);
-                    db.SaveChangesAsync().Wait();
-                }
-
-                // Display all Blogs from the database asynchronously
-                var asyncQueryTask = db.Blogs.Where(b => b.Name == asyncName).ToListAsync();
-
-                asyncQueryTask.Wait();
-
-                Console.WriteLine("All blogs in the database from the async call:");
-                foreach (var item in asyncQueryTask.Result)
-                {
-                    Console.WriteLine(item.Name);
+                    await testQueries.RunAsync();
                 }
             }
+        }
+
+        private static SqlConnection CreateConnection()
+        {
+            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+                                   @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;";
+
+            return new SqlConnection(connectionString);
         }
     }
 }

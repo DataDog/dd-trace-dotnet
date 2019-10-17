@@ -1,19 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.1.2</ApiVersion>
-
-    <!-- override to remove net452 -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">4.7.0</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
+  <ItemGroup Condition="!$(TargetFramework.StartsWith('netcoreapp'))">
+    <Reference Include="System.Data" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('netcoreapp'))">
+    <PackageReference Include="System.Data.SqlClient" Version="$(ApiVersion)" />
+  </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(ApiVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(ApiVersion)" />
+    <ProjectReference Include="..\..\sample-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj" />
   </ItemGroup>
 
 </Project>

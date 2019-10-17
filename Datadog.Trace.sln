@@ -40,6 +40,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		integrations.json = integrations.json
 		LICENSE = LICENSE
 		LICENSE-3rdparty.csv = LICENSE-3rdparty.csv
+		PackageVersionsGeneratorDefinitions.json = PackageVersionsGeneratorDefinitions.json
 		docs\README.md = docs\README.md
 		stylecop.json = stylecop.json
 	EndProjectSection
@@ -114,6 +115,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.I
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer", "samples\Samples.SqlServer\Samples.SqlServer.csproj", "{086FF8A0-9CEE-470A-9751-78B0F1340649}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+		{85F35AAF-D102-4960-8B41-3BD9CBD0E77F} = {85F35AAF-D102-4960-8B41-3BD9CBD0E77F}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch", "samples\Samples.Elasticsearch\Samples.Elasticsearch.csproj", "{C98950B1-DC4B-43DA-974F-EF2CF325EC2B}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -250,6 +255,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.WcfClient", "samples\Samples.WcfClient\Samples.WcfClient.csproj", "{21D420EB-06D0-489D-A71C-C748BB46B8EF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.MultipleAppDomains", "samples\Samples.Elasticsearch.MultipleAppDomains\Samples.Elasticsearch.MultipleAppDomains.csproj", "{48283691-0D4B-4ABD-B75B-EDFC682E1547}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper", "sample-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj", "{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UpdateVendors", "tools\UpdateVendors\UpdateVendors.csproj", "{72FB583A-A1B0-4B5F-8658-617B100DCD8E}"
 EndProject
@@ -815,6 +822,18 @@ Global
 		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Release|x64.Build.0 = Release|x64
 		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Release|x86.ActiveCfg = Release|x86
 		{48283691-0D4B-4ABD-B75B-EDFC682E1547}.Release|x86.Build.0 = Release|x86
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Debug|x64.Build.0 = Debug|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Debug|x86.Build.0 = Debug|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Release|x64.ActiveCfg = Release|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Release|x64.Build.0 = Release|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Release|x86.ActiveCfg = Release|Any CPU
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D}.Release|x86.Build.0 = Release|Any CPU
 		{72FB583A-A1B0-4B5F-8658-617B100DCD8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{72FB583A-A1B0-4B5F-8658-617B100DCD8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72FB583A-A1B0-4B5F-8658-617B100DCD8E}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -897,6 +916,7 @@ Global
 		{E1706893-D3A5-43B9-9036-AEF49DB9600B} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{21D420EB-06D0-489D-A71C-C748BB46B8EF} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{48283691-0D4B-4ABD-B75B-EDFC682E1547} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
+		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
 		{72FB583A-A1B0-4B5F-8658-617B100DCD8E} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{EBDDF6D7-59B8-4831-80C6-458C1ABBFC63} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 	EndGlobalSection
