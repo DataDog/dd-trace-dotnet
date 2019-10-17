@@ -72,8 +72,8 @@ services:
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
     environment:
-    - buildConfiguration=${buildConfiguration:-Debug}
-    - publishTargetFramework=${publishTargetFramework:-netcoreapp2.1}
+    - buildConfiguration=${buildConfiguration}
+    - publishTargetFramework=${publishTargetFramework}
     command: /project/docker/build.sh
     volumes:
     - ./:/project
@@ -101,7 +101,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it servicestackredis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.ServiceStack.Redis/bin/Release/netcoreapp2.1/publish/Samples.ServiceStack.Redis.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it servicestackredis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.ServiceStack.Redis/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.ServiceStack.Redis.dll"
     volumes:
     - ./:/project
     environment:
@@ -114,7 +114,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it stackexchangeredis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.StackExchange.Redis/bin/Release/netcoreapp2.1/publish/Samples.StackExchange.Redis.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it stackexchangeredis:6379 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.StackExchange.Redis/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.StackExchange.Redis.dll"
     volumes:
     - ./:/project
     environment:
@@ -127,7 +127,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch6:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/Release/netcoreapp2.1/publish/Samples.Elasticsearch.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch6:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Elasticsearch.dll"
     volumes:
     - ./:/project
     environment:
@@ -141,7 +141,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch5:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch.V5/bin/Release/netcoreapp2.1/publish/Samples.Elasticsearch.V5.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticsearch5:9200 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Elasticsearch.V5/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Elasticsearch.V5.dll"
     volumes:
     - ./:/project
     environment:
@@ -154,7 +154,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/Release/netcoreapp2.1/publish/Samples.SqlServer.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it sqlserver:1433 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.SqlServer/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.SqlServer.dll"
     volumes:
     - ./:/project
     environment:
@@ -167,7 +167,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it postgres:5432 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.NpgSql/bin/Release/netcoreapp2.1/publish/Samples.NpgSql.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it postgres:5432 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.NpgSql/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.NpgSql.dll"
     volumes:
     - ./:/project
     environment:
@@ -180,7 +180,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mysql:3306 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MySql/bin/Release/netcoreapp2.1/publish/Samples.MySql.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mysql:3306 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MySql/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.MySql.dll"
     volumes:
     - ./:/project
     environment:
@@ -193,7 +193,7 @@ services:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mongo:27017 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/Release/netcoreapp2.1/publish/Samples.MongoDB.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mongo:27017 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.MongoDB.dll"
     volumes:
     - ./:/project
     depends_on:
@@ -216,8 +216,8 @@ services:
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
-    - buildConfiguration=${buildConfiguration:-Debug}
-    - publishTargetFramework=${publishTargetFramework:-netcoreapp2.1}
+    - buildConfiguration=${buildConfiguration}
+    - publishTargetFramework=${publishTargetFramework}
     depends_on:
     - servicestackredis
     - stackexchangeredis
