@@ -76,6 +76,24 @@ namespace Datadog.Trace.Configuration
                                false;
 
             Integrations = new IntegrationSettingsCollection(source);
+
+            if (source == null)
+            {
+                GlobalTags = new Dictionary<string, string>();
+            }
+            else
+            {
+                var gTags = source.GetString(ConfigurationKeys.GlobalTags);
+                if (gTags != null)
+                {
+                    var gTagsConfig = new JsonConfigurationSource(gTags);
+                    GlobalTags = gTagsConfig.GetAllEntries();
+                }
+                else
+                {
+                    GlobalTags = new Dictionary<string, string>();
+                }
+            }
         }
 
         /// <summary>
@@ -140,6 +158,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
         /// </summary>
         public IntegrationSettingsCollection Integrations { get; }
+
+        /// <summary>
+        /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
+        /// </summary>
+        public Dictionary<string, string> GlobalTags { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

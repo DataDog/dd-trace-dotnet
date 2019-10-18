@@ -18,6 +18,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.ServiceName), null };
             yield return new object[] { CreateFunc(s => s.DisabledIntegrationNames.Count), 0 };
             yield return new object[] { CreateFunc(s => s.LogsInjectionEnabled), false };
+            yield return new object[] { CreateFunc(s => s.GlobalTags.Count), 0 };
         }
 
         public static IEnumerable<object[]> GetTestData()
@@ -36,6 +37,8 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.ServiceName, "web-service", CreateFunc(s => s.ServiceName), "web-service" };
 
             yield return new object[] { ConfigurationKeys.DisabledIntegrations, "integration1;integration2", CreateFunc(s => s.DisabledIntegrationNames.Count), 2 };
+
+            yield return new object[] { ConfigurationKeys.GlobalTags, string.Empty, CreateFunc(s => s.GlobalTags.Count), 0 };
         }
 
         public static Func<TracerSettings, object> CreateFunc(Func<TracerSettings, object> settingGetter)

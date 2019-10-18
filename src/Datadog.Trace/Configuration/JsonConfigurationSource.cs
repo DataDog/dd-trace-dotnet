@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -96,6 +97,23 @@ namespace Datadog.Trace.Configuration
             return token == null
                        ? default
                        : token.Value<T>();
+        }
+
+        /// <summary>
+        /// Gets a Dictionary containing all of the configuration values where keys and values are strings.
+        /// </summary>
+        /// <returns>Dictionary of key value strings</returns>
+        public Dictionary<string, string> GetAllEntries()
+        {
+            var allEntries = new Dictionary<string, string>();
+            var enumerator = _configuration.GetEnumerator();
+
+            while (!enumerator.MoveNext())
+            {
+                allEntries.Add(enumerator.Current.Key, enumerator.Current.Value.ToString());
+            }
+
+            return allEntries;
         }
     }
 }

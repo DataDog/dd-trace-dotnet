@@ -337,5 +337,18 @@ namespace Datadog.Trace.Tests
             // reset the environment variable to its original values (if any) when done
             Environment.SetEnvironmentVariable(name, originalEnv);
         }
+
+        [Theory]
+        [InlineData(null, null)]
+        [InlineData(null, "")]
+        [InlineData("", null)]
+        [InlineData("", "avalue")]
+        public void AddGlobalTag(string key, string value)
+        {
+            _tracer.AddGlobalTag(key, value);
+
+            Assert.Single(_tracer.Settings.GlobalTags);
+            Assert.Equal(value, _tracer.Settings.GlobalTags[key]);
+        }
     }
 }
