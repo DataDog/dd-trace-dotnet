@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -339,16 +340,66 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData(null, null)]
-        [InlineData(null, "")]
-        [InlineData("", null)]
-        [InlineData("", "avalue")]
-        public void AddGlobalTag(string key, string value)
+        [InlineData(null, null, 0)]
+        [InlineData(null, "", 0)]
+        [InlineData("", null, 0)]
+        [InlineData("", "avalue", 0)]
+        [InlineData(" ", "123", 0)]
+        [InlineData("key1", "value1", 1)]
+        [InlineData("key1", null, 1)]
+        [InlineData("key1", "", 1)]
+        public void AddGlobalTag(string key, string value, int expectedCount)
         {
             _tracer.AddGlobalTag(key, value);
 
-            Assert.Single(_tracer.Settings.GlobalTags);
-            Assert.Equal(value, _tracer.Settings.GlobalTags[key]);
+            Assert.Equal(expectedCount, _tracer.Settings.GlobalTags.Count);
+        }
+
+        [Fact]
+        public void AddGlobalTag_OverwriteExpected()
+        {
+            string key = "k1";
+            string firstvalue = "v1";
+            string lastValue = "asdf";
+
+            _tracer.AddGlobalTag(key, firstvalue);
+            _tracer.AddGlobalTag(key, lastValue);
+
+            Assert.True(_tracer.Settings.GlobalTags.Count == 1);
+            Assert.True(_tracer.Settings.GlobalTags[key] == lastValue);
+        }
+
+        [Fact]
+        public void AddGlobalTags_AllValid()
+        {
+            var tags = new Dictionary<string, string>()
+            {
+                { "k1", "v1" },
+                { "k2", string.Empty },
+                { "k3", null }
+            };
+
+            _tracer.AddGlobalTags(tags);
+
+            Assert.Equal(tags.Count, _tracer.Settings.GlobalTags.Count);
+        }
+
+        [Fact]
+        public void AddGlobalTags_IncludesTwoInValidKeys()
+        {
+            var tags = new Dictionary<string, string>()
+            {
+                { "k1", "v1" },
+                { "k2", string.Empty },
+                { "k3", null },
+                { string.Empty, "yo" },
+                { "abc", "def" },
+                { "    ", "xyz" }
+            };
+
+            _tracer.AddGlobalTags(tags);
+
+            Assert.Equal(tags.Count - 2, _tracer.Settings.GlobalTags.Count);
         }
     }
 }

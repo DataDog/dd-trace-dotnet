@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Configuration
 {
@@ -86,8 +87,7 @@ namespace Datadog.Trace.Configuration
                 var gTags = source.GetString(ConfigurationKeys.GlobalTags);
                 if (gTags != null)
                 {
-                    var gTagsConfig = new JsonConfigurationSource(gTags);
-                    GlobalTags = gTagsConfig.GetAllEntries();
+                    GlobalTags = JsonConvert.DeserializeObject<Dictionary<string, string>>(gTags);
                 }
                 else
                 {

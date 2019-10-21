@@ -224,6 +224,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Adds the <paramref name="key"/>, <paramref name="value"/> pair as a global tag to be applied to all <see cref="Span"/>s.
         /// </summary>
+        /// <remarks><paramref name="key"/> is whitespace-trimmed before being added.</remarks>
         /// <param name="key">The global tag key</param>
         /// <param name="value">The global tag value</param>
         public void AddGlobalTag(string key, string value)
@@ -234,7 +235,7 @@ namespace Datadog.Trace
                 return;
             }
 
-            Tracer.Instance.Settings.GlobalTags.Add(key, value);
+            Settings.GlobalTags[key.Trim()] = value;
         }
 
         /// <summary>
@@ -245,7 +246,7 @@ namespace Datadog.Trace
         {
             foreach (var entry in tags)
             {
-                Tracer.Instance.Settings.GlobalTags.Add(entry.Key, entry.Value);
+                AddGlobalTag(entry.Key, entry.Value);
             }
         }
 
