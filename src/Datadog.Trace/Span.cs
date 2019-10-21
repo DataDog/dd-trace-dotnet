@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Interfaces;
@@ -27,15 +26,6 @@ namespace Datadog.Trace
             Context = context;
             ServiceName = context.ServiceName;
             StartTime = start ?? Context.TraceContext.UtcNow;
-
-            // Apply any global tags
-            if (Tracer.Instance.Settings.GlobalTags.Count > 0)
-                {
-                    foreach (var entry in Tracer.Instance.Settings.GlobalTags)
-                    {
-                        SetTag(entry.Key, entry.Value);
-                    }
-                }
 
             Log.Debug(
                 "Span started: [s_id: {0}, p_id: {1}, t_id: {2}]",

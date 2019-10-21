@@ -217,6 +217,15 @@ namespace Datadog.Trace
                 span.SetTag(Tags.Env, env);
             }
 
+            // Apply any global tags
+            if (((TraceContext)traceContext).Tracer.Settings.GlobalTags.Count > 0)
+            {
+                foreach (var entry in ((TraceContext)traceContext).Tracer.Settings.GlobalTags)
+                {
+                    span.SetTag(entry.Key, entry.Value);
+                }
+            }
+
             traceContext.AddSpan(span);
             return span;
         }

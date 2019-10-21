@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace
@@ -13,6 +14,8 @@ namespace Datadog.Trace
         IScopeManager ScopeManager { get; }
 
         ISampler Sampler { get; }
+
+        TracerSettings Settings { get; }
 
         Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
 

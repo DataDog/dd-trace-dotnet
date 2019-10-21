@@ -168,6 +168,32 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void StartActive_GlobalTag_IsSet()
+        {
+            var key = "myTag";
+            var value = "myValue";
+
+            _tracer.AddGlobalTag(key, value);
+
+            var scope = _tracer.StartActive("Operation");
+
+            Assert.Equal(value, scope.Span.GetTag(key));
+        }
+
+        [Fact]
+        public void StartManual_GlobalTag_IsSet()
+        {
+            var key = "myTag";
+            var value = "myValue";
+
+            _tracer.AddGlobalTag(key, value);
+
+            var span = _tracer.StartSpan("Operation", null);
+
+            Assert.Equal(value, span.GetTag(key));
+        }
+
+        [Fact]
         public void StartManual_SetOperationName_OperationNameIsSet()
         {
             var span = _tracer.StartSpan("Operation", null);
@@ -236,6 +262,31 @@ namespace Datadog.Trace.Tests
             Assert.Equal(root.Span.Context.SpanId, child1.Span.Context.ParentId);
             Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child2.Span.Context.TraceContext);
             Assert.Equal(child1.Span.Context.SpanId, child2.Span.Context.ParentId);
+        }
+
+        [Fact]
+        public void StartActive_2ChildrenOfRoot_GlobalTagsProperlySet()
+        {
+            var key1 = "t1";
+            var value1 = "terminator";
+            var key2 = "t2";
+            var value2 = "terminatrix";
+
+            _tracer.AddGlobalTag(key1, value1);
+            _tracer.AddGlobalTag(key2, value2);
+
+            var root = _tracer.StartActive("Root");
+            var child1 = _tracer.StartActive("Child1");
+            child1.Dispose();
+            var child2 = _tracer.StartActive("Child2");
+
+            Assert.Equal(value1, root.Span.GetTag(key1));
+            Assert.Equal(value1, child1.Span.GetTag(key1));
+            Assert.Equal(value1, child2.Span.GetTag(key1));
+
+            Assert.Equal(value2, root.Span.GetTag(key2));
+            Assert.Equal(value2, child1.Span.GetTag(key2));
+            Assert.Equal(value2, child2.Span.GetTag(key2));
         }
 
         [Fact]
