@@ -78,21 +78,15 @@ namespace Datadog.Trace.Configuration
 
             Integrations = new IntegrationSettingsCollection(source);
 
-            if (source == null)
+            var gTags = source?.GetString(ConfigurationKeys.GlobalTags);
+
+            if (gTags == null)
             {
                 GlobalTags = new Dictionary<string, string>();
             }
             else
             {
-                var gTags = source.GetString(ConfigurationKeys.GlobalTags);
-                if (gTags != null)
-                {
-                    GlobalTags = JsonConvert.DeserializeObject<Dictionary<string, string>>(gTags);
-                }
-                else
-                {
-                    GlobalTags = new Dictionary<string, string>();
-                }
+                GlobalTags = JsonConvert.DeserializeObject<Dictionary<string, string>>(gTags);
             }
         }
 

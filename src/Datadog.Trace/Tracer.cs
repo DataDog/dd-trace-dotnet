@@ -218,9 +218,9 @@ namespace Datadog.Trace
             }
 
             // Apply any global tags
-            if (((TraceContext)traceContext).Tracer.Settings.GlobalTags.Count > 0)
+            if (Settings.GlobalTags.Count > 0)
             {
-                foreach (var entry in ((TraceContext)traceContext).Tracer.Settings.GlobalTags)
+                foreach (var entry in Settings.GlobalTags)
                 {
                     span.SetTag(entry.Key, entry.Value);
                 }
@@ -228,35 +228,6 @@ namespace Datadog.Trace
 
             traceContext.AddSpan(span);
             return span;
-        }
-
-        /// <summary>
-        /// Adds the <paramref name="key"/>, <paramref name="value"/> pair as a global tag to be applied to all <see cref="Span"/>s.
-        /// </summary>
-        /// <remarks><paramref name="key"/> is whitespace-trimmed before being added.</remarks>
-        /// <param name="key">The global tag key</param>
-        /// <param name="value">The global tag value</param>
-        public void AddGlobalTag(string key, string value)
-        {
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                Log.Warning("Cannot create a global tag with an empty key.");
-                return;
-            }
-
-            Settings.GlobalTags[key.Trim()] = value;
-        }
-
-        /// <summary>
-        /// Adds each <see cref="KeyValuePair{TKey, TValue}"/> in <paramref name="tags"/> as global tags.
-        /// </summary>
-        /// <param name="tags"><see cref="KeyValuePair{TKey, TValue}"/>s to be added as global tags.</param>
-        public void AddGlobalTags(IEnumerable<KeyValuePair<string, string>> tags)
-        {
-            foreach (var entry in tags)
-            {
-                AddGlobalTag(entry.Key, entry.Value);
-            }
         }
 
         /// <summary>

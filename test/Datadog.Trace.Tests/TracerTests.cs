@@ -168,32 +168,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void StartActive_GlobalTag_IsSet()
-        {
-            var key = "myTag";
-            var value = "myValue";
-
-            _tracer.AddGlobalTag(key, value);
-
-            var scope = _tracer.StartActive("Operation");
-
-            Assert.Equal(value, scope.Span.GetTag(key));
-        }
-
-        [Fact]
-        public void StartManual_GlobalTag_IsSet()
-        {
-            var key = "myTag";
-            var value = "myValue";
-
-            _tracer.AddGlobalTag(key, value);
-
-            var span = _tracer.StartSpan("Operation", null);
-
-            Assert.Equal(value, span.GetTag(key));
-        }
-
-        [Fact]
         public void StartManual_SetOperationName_OperationNameIsSet()
         {
             var span = _tracer.StartSpan("Operation", null);
@@ -262,31 +236,6 @@ namespace Datadog.Trace.Tests
             Assert.Equal(root.Span.Context.SpanId, child1.Span.Context.ParentId);
             Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child2.Span.Context.TraceContext);
             Assert.Equal(child1.Span.Context.SpanId, child2.Span.Context.ParentId);
-        }
-
-        [Fact]
-        public void StartActive_2ChildrenOfRoot_GlobalTagsProperlySet()
-        {
-            var key1 = "t1";
-            var value1 = "terminator";
-            var key2 = "t2";
-            var value2 = "terminatrix";
-
-            _tracer.AddGlobalTag(key1, value1);
-            _tracer.AddGlobalTag(key2, value2);
-
-            var root = _tracer.StartActive("Root");
-            var child1 = _tracer.StartActive("Child1");
-            child1.Dispose();
-            var child2 = _tracer.StartActive("Child2");
-
-            Assert.Equal(value1, root.Span.GetTag(key1));
-            Assert.Equal(value1, child1.Span.GetTag(key1));
-            Assert.Equal(value1, child2.Span.GetTag(key1));
-
-            Assert.Equal(value2, root.Span.GetTag(key2));
-            Assert.Equal(value2, child1.Span.GetTag(key2));
-            Assert.Equal(value2, child2.Span.GetTag(key2));
         }
 
         [Fact]
@@ -388,69 +337,6 @@ namespace Datadog.Trace.Tests
 
             // reset the environment variable to its original values (if any) when done
             Environment.SetEnvironmentVariable(name, originalEnv);
-        }
-
-        [Theory]
-        [InlineData(null, null, 0)]
-        [InlineData(null, "", 0)]
-        [InlineData("", null, 0)]
-        [InlineData("", "avalue", 0)]
-        [InlineData(" ", "123", 0)]
-        [InlineData("key1", "value1", 1)]
-        [InlineData("key1", null, 1)]
-        [InlineData("key1", "", 1)]
-        public void AddGlobalTag(string key, string value, int expectedCount)
-        {
-            _tracer.AddGlobalTag(key, value);
-
-            Assert.Equal(expectedCount, _tracer.Settings.GlobalTags.Count);
-        }
-
-        [Fact]
-        public void AddGlobalTag_OverwriteExpected()
-        {
-            string key = "k1";
-            string firstvalue = "v1";
-            string lastValue = "asdf";
-
-            _tracer.AddGlobalTag(key, firstvalue);
-            _tracer.AddGlobalTag(key, lastValue);
-
-            Assert.True(_tracer.Settings.GlobalTags.Count == 1);
-            Assert.True(_tracer.Settings.GlobalTags[key] == lastValue);
-        }
-
-        [Fact]
-        public void AddGlobalTags_AllValid()
-        {
-            var tags = new Dictionary<string, string>()
-            {
-                { "k1", "v1" },
-                { "k2", string.Empty },
-                { "k3", null }
-            };
-
-            _tracer.AddGlobalTags(tags);
-
-            Assert.Equal(tags.Count, _tracer.Settings.GlobalTags.Count);
-        }
-
-        [Fact]
-        public void AddGlobalTags_IncludesTwoInValidKeys()
-        {
-            var tags = new Dictionary<string, string>()
-            {
-                { "k1", "v1" },
-                { "k2", string.Empty },
-                { "k3", null },
-                { string.Empty, "yo" },
-                { "abc", "def" },
-                { "    ", "xyz" }
-            };
-
-            _tracer.AddGlobalTags(tags);
-
-            Assert.Equal(tags.Count - 2, _tracer.Settings.GlobalTags.Count);
         }
     }
 }
