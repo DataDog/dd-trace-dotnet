@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Newtonsoft.Json;
 using Directory = System.IO.Directory;
@@ -23,21 +24,21 @@ namespace UpdateVendors
         private static readonly string DownloadDirectory = Path.Combine(CurrentDirectory, "downloads");
         private static string _vendorProjectDirectory;
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             InitializeCleanDirectory(DownloadDirectory);
             var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
             _vendorProjectDirectory = Path.Combine(solutionDirectory, "src", "Datadog.Trace", "Vendors");
             InitializeCleanDirectory(_vendorProjectDirectory);
 
-            UpdateVendor(
+            await UpdateVendorAsync(
                 libraryName: "Serilog",
                 masterBranchDownload: "https://github.com/serilog/serilog/archive/master.zip",
                 latestCommitUrl: "https://api.github.com/repos/serilog/serilog/commits/master",
                 pathToSrc: new[] { "serilog-master", "src", "Serilog" },
                 transform: TransformSerilog);
 
-            UpdateVendor(
+            await UpdateVendorAsync(
                 libraryName: "Serilog.Sinks.File",
                 masterBranchDownload: "https://github.com/serilog/serilog-sinks-file/archive/master.zip",
                 latestCommitUrl: "https://api.github.com/repos/serilog/serilog-sinks-file/commits/master",
@@ -74,7 +75,7 @@ namespace UpdateVendors
             }
         }
 
-        private static void UpdateVendor(
+        private static async Task UpdateVendorAsync(
             string libraryName,
             string masterBranchDownload,
             string latestCommitUrl,
@@ -140,9 +141,9 @@ namespace UpdateVendors
                 client.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("AppName", "1.0"));
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", githubToken);
-                var responseTask = client.GetStringAsync(latestCommitUrl);
-                responseTask.Wait();
-                commitInformation = FormatJson(responseTask.Result);
+
+                var response = await client.GetStringAsync(latestCommitUrl);
+                commitInformation = FormatJson(response);
             }
 
             var commitJsonPath = Path.Combine(sourceLocation, "commit-info.json");
