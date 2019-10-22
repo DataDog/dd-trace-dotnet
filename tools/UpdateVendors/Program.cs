@@ -45,6 +45,13 @@ namespace UpdateVendors
                 latestCommitUrl: "https://api.github.com/repos/serilog/serilog-sinks-file/commits/master",
                 pathToSrc: new[] { "serilog-sinks-file-master", "src", "Serilog.Sinks.File" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
+
+            await UpdateVendorAsync(
+                libraryName: "StatsdClient",
+                masterBranchDownload: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
+                latestCommitUrl: "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/commits/3.3.0",
+                pathToSrc: new[] { "dogstatsd-csharp-client-3.3.0", "src", "StatsdClient" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
         }
 
         private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace)
