@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -96,13 +97,7 @@ namespace UpdateVendors
 
             Console.WriteLine($"Unzipped {libraryName} upgrade.");
 
-            var sourceLocation = extractLocation;
-
-            foreach (var pathPart in pathToSrc)
-            {
-                sourceLocation = Path.Combine(sourceLocation, pathPart);
-            }
-
+            var sourceLocation = Path.Combine(pathToSrc.Prepend(extractLocation).ToArray());
             var projFile = Path.Combine(sourceLocation, $"{libraryName}.csproj");
 
             // Rename the proj file to a txt for reference
