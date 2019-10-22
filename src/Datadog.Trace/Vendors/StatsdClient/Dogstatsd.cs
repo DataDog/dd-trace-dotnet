@@ -6,7 +6,7 @@ using System;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public enum Status
+    internal enum Status
     {
         OK = 0,
         WARNING = 1,

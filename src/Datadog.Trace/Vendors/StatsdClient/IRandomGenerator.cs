@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public interface IRandomGenerator
+    internal interface IRandomGenerator
     {
         bool ShouldSend(double sampleRate);
 

@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public interface IStatsdUDP
+    internal interface IStatsdUDP
     {
         void Send(string command);
     }

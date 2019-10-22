@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public class StatsdConfig
+    internal class StatsdConfig
     {
         public string StatsdServerName { get; set; }
         public int StatsdPort { get; set; }

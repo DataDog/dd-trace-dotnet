@@ -6,7 +6,7 @@ using System;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public class DogStatsdService : IDogStatsd, IDisposable
+    internal class DogStatsdService : IDogStatsd, IDisposable
     {
         private IDisposable _disposable;
         private Statsd _statsD;

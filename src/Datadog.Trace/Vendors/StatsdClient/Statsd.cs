@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public class Statsd : IStatsd
+    internal class Statsd : IStatsd
     {
         private const string ENTITY_ID_INTERNAL_TAG_KEY = "dd.internal.entity_id";
         private static readonly string[] EmptyStringArray = new string[0];
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
             }
         }
 
-        public class Event : ICommandType
+        internal class Event : ICommandType
         {
             private const int MaxSize = 8 * 1024;
 
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
             }
         }
 
-        public class ServiceCheck : ICommandType
+        internal class ServiceCheck : ICommandType
         {
             private const int MaxSize = 8 * 1024;
 
@@ -220,13 +220,13 @@ namespace Datadog.Trace.Vendors.StatsdClient
             return str.Substring(0, str.Length - overage);
         }
 
-        public class Counting : Metric { }
-        public class Timing : Metric { }
-        public class Gauge : Metric { }
-        public class Histogram : Metric { }
-        public class Distribution : Metric { }
-        public class Meter : Metric { }
-        public class Set : Metric { }
+        internal class Counting : Metric { }
+        internal class Timing : Metric { }
+        internal class Gauge : Metric { }
+        internal class Histogram : Metric { }
+        internal class Distribution : Metric { }
+        internal class Meter : Metric { }
+        internal class Set : Metric { }
 
         public Statsd(IStatsdUDP udp, IRandomGenerator randomGenerator, IStopWatchFactory stopwatchFactory, string prefix, string[] constantTags)
         {

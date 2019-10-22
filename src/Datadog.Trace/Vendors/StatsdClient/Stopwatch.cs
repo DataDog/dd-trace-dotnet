@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public class Stopwatch : IStopwatch
+    internal class Stopwatch : IStopwatch
     {
         private readonly System.Diagnostics.Stopwatch _stopwatch = new System.Diagnostics.Stopwatch();
 

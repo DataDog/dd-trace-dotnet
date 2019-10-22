@@ -6,7 +6,7 @@ using System;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public class ThreadSafeRandom
+    internal class ThreadSafeRandom
     {
         private static readonly Random _global = new Random();
 

@@ -6,7 +6,7 @@ using System;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public class RandomGenerator : IRandomGenerator
+    internal class RandomGenerator : IRandomGenerator
     {
         readonly ThreadSafeRandom _random;
         public RandomGenerator()

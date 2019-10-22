@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public interface ICommandType
+    internal interface ICommandType
     {
     }
 }

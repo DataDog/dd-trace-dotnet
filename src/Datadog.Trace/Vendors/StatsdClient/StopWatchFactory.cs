@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public class StopWatchFactory : IStopWatchFactory
+    internal class StopWatchFactory : IStopWatchFactory
     {
         public IStopwatch Get()
         {

@@ -6,7 +6,7 @@ using System;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public interface IDogStatsd
+    internal interface IDogStatsd
     {
         void Configure(StatsdConfig config);
         void Counter<T>(string statName, T value, double sampleRate = 1, string[] tags = null);

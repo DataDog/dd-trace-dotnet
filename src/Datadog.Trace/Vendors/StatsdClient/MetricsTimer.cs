@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public class MetricsTimer : IDisposable
+    internal class MetricsTimer : IDisposable
     {
         private readonly string _name;
         private readonly DogStatsdService _dogStatsd;

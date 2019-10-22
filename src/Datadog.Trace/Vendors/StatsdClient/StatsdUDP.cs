@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public class StatsdUDP : IDisposable, IStatsdUDP
+    internal class StatsdUDP : IDisposable, IStatsdUDP
     {
         private int MaxUDPPacketSize { get; set; } // In bytes; default is MetricsConfig.DefaultStatsdMaxUDPPacketSize.
         // Set to zero for no limit.

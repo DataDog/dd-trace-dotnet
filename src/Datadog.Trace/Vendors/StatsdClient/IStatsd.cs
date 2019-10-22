@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    public interface IStatsd
+    internal interface IStatsd
     {
         List<string> Commands { get; }
         void Send<TCommandType, T>(string name, T value, double sampleRate, params string[] tags) where TCommandType : StatsdClient.Statsd.Metric;
