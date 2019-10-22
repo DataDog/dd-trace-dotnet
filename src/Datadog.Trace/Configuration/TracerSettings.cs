@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -82,11 +83,12 @@ namespace Datadog.Trace.Configuration
 
             if (gTags == null)
             {
-                GlobalTags = new Dictionary<string, string>();
+                GlobalTags = new ConcurrentDictionary<string, string>();
             }
             else
             {
-                GlobalTags = JsonConvert.DeserializeObject<Dictionary<string, string>>(gTags);
+                var csvMapConfig = new CsvMapConfigurationSource(gTags);
+                GlobalTags = csvMapConfig.Data;
             }
         }
 
@@ -156,7 +158,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
-        public Dictionary<string, string> GlobalTags { get; set; }
+        public ConcurrentDictionary<string, string> GlobalTags { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
