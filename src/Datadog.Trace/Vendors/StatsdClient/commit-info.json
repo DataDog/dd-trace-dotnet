@@ -1,0 +1,115 @@
+{
+  "sha": "3568636c684510a005ca2ecf28311c667efd6bae",
+  "node_id": "MDY6Q29tbWl0MTA4NDk2MDM6MzU2ODYzNmM2ODQ1MTBhMDA1Y2EyZWNmMjgzMTFjNjY3ZWZkNmJhZQ==",
+  "commit": {
+    "author": {
+      "name": "Yann",
+      "email": "yann@datadoghq.com",
+      "date": "2019-04-05T14:44:31Z"
+    },
+    "committer": {
+      "name": "GitHub",
+      "email": "noreply@github.com",
+      "date": "2019-04-05T14:44:31Z"
+    },
+    "message": "Merge pull request #79 from DataDog/yann/3.3.0\n\nupdate to 3.3.0",
+    "tree": {
+      "sha": "bdb4f136324b0cf05cc4a4552fa2ed0e6b0487fd",
+      "url": "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/git/trees/bdb4f136324b0cf05cc4a4552fa2ed0e6b0487fd"
+    },
+    "url": "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/git/commits/3568636c684510a005ca2ecf28311c667efd6bae",
+    "comment_count": 0,
+    "verification": {
+      "verified": true,
+      "reason": "valid",
+      "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJcp2nPCRBK7hj4Ov3rIwAAdHIIAKZASjtQl9mphtLfuikkGcZo\n9RNHsI9sRPuSDSF5RcJkq4mRbsIszDoPfArgwZzXK+aVVOigouCFC6sGT/CidmCt\nVZasqXykpy3/A6sQ8DaqS2mUBBz8HPrUC3wREZaTsyNDO/l9BRurGBGUeMsMxeaF\nJTKKXIFbhCuVHG/i1f6x0Z0IlJSx0mFJAVll+97pFX5035in/9DNcSBMthWFgbQ9\nrv8E3wH2esfBZ0WJ47UdkMYYn/j4E7WDEv7S4ju86rJnOxcuwyCE+SV/GJ9hl/Oz\nBdw9j81KAPLL5GKdt5ylXyxQlI7CFsME07QcC4RFe/Mo8pUi4vekhC3wlZtkvQA=\n=oSa9\n-----END PGP SIGNATURE-----\n",
+      "payload": "tree bdb4f136324b0cf05cc4a4552fa2ed0e6b0487fd\nparent 32530699c113fe60b8bebe0011e84c461666c1b9\nparent 2b8c9f8448438b93240cf367a6eb247f4ae236dd\nauthor Yann <yann@datadoghq.com> 1554475471 -0400\ncommitter GitHub <noreply@github.com> 1554475471 -0400\n\nMerge pull request #79 from DataDog/yann/3.3.0\n\nupdate to 3.3.0"
+    }
+  },
+  "url": "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/commits/3568636c684510a005ca2ecf28311c667efd6bae",
+  "html_url": "https://github.com/DataDog/dogstatsd-csharp-client/commit/3568636c684510a005ca2ecf28311c667efd6bae",
+  "comments_url": "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/commits/3568636c684510a005ca2ecf28311c667efd6bae/comments",
+  "author": {
+    "login": "yannmh",
+    "id": 5708089,
+    "node_id": "MDQ6VXNlcjU3MDgwODk=",
+    "avatar_url": "https://avatars1.githubusercontent.com/u/5708089?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/yannmh",
+    "html_url": "https://github.com/yannmh",
+    "followers_url": "https://api.github.com/users/yannmh/followers",
+    "following_url": "https://api.github.com/users/yannmh/following{/other_user}",
+    "gists_url": "https://api.github.com/users/yannmh/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/yannmh/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/yannmh/subscriptions",
+    "organizations_url": "https://api.github.com/users/yannmh/orgs",
+    "repos_url": "https://api.github.com/users/yannmh/repos",
+    "events_url": "https://api.github.com/users/yannmh/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/yannmh/received_events",
+    "type": "User",
+    "site_admin": false
+  },
+  "committer": {
+    "login": "web-flow",
+    "id": 19864447,
+    "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+    "avatar_url": "https://avatars3.githubusercontent.com/u/19864447?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/web-flow",
+    "html_url": "https://github.com/web-flow",
+    "followers_url": "https://api.github.com/users/web-flow/followers",
+    "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+    "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+    "organizations_url": "https://api.github.com/users/web-flow/orgs",
+    "repos_url": "https://api.github.com/users/web-flow/repos",
+    "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/web-flow/received_events",
+    "type": "User",
+    "site_admin": false
+  },
+  "parents": [
+    {
+      "sha": "32530699c113fe60b8bebe0011e84c461666c1b9",
+      "url": "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/commits/32530699c113fe60b8bebe0011e84c461666c1b9",
+      "html_url": "https://github.com/DataDog/dogstatsd-csharp-client/commit/32530699c113fe60b8bebe0011e84c461666c1b9"
+    },
+    {
+      "sha": "2b8c9f8448438b93240cf367a6eb247f4ae236dd",
+      "url": "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/commits/2b8c9f8448438b93240cf367a6eb247f4ae236dd",
+      "html_url": "https://github.com/DataDog/dogstatsd-csharp-client/commit/2b8c9f8448438b93240cf367a6eb247f4ae236dd"
+    }
+  ],
+  "stats": {
+    "total": 11,
+    "additions": 10,
+    "deletions": 1
+  },
+  "files": [
+    {
+      "sha": "6fca79dfb62cef65149799a43e1d2eff60588f1b",
+      "filename": "CHANGELOG.md",
+      "status": "modified",
+      "additions": 9,
+      "deletions": 0,
+      "changes": 9,
+      "blob_url": "https://github.com/DataDog/dogstatsd-csharp-client/blob/3568636c684510a005ca2ecf28311c667efd6bae/CHANGELOG.md",
+      "raw_url": "https://github.com/DataDog/dogstatsd-csharp-client/raw/3568636c684510a005ca2ecf28311c667efd6bae/CHANGELOG.md",
+      "contents_url": "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/contents/CHANGELOG.md?ref=3568636c684510a005ca2ecf28311c667efd6bae",
+      "patch": "@@ -1,6 +1,12 @@\n CHANGELOG\n =========\n \n+# 3.3.0 / Unreleased\n+\n+* [FEATURE] Option to set global tags that are added to every statsd call. See [#3][], [#78][] (Thanks [@chriskinsman][])\n+* [IMPROVEMENT] Configure the client with environment variables. See [#78][]\n+\n+\n # 3.2.0 / 10-18-2018\n \n * [BUGFIX] Fix an issue causing the `StartTimer` method to ignore non static `DogStatsdService` instance configurations. See [#62][], [#63][] (Thanks [@jpasichnyk][])\n@@ -75,6 +81,7 @@ DogStatsD-CSharp-Client `2.2.1` is the last version to support .NET Framework 3.\n * Initial release\n \n <!--- The following link definition list is generated by PimpMyChangelog --->\n+[#3]: https://github.com/DataDog/dogstatsd-csharp-client/issues/3\n [#8]: https://github.com/DataDog/dogstatsd-csharp-client/issues/8\n [#11]: https://github.com/DataDog/dogstatsd-csharp-client/issues/11\n [#15]: https://github.com/DataDog/dogstatsd-csharp-client/issues/15\n@@ -101,10 +108,12 @@ DogStatsD-CSharp-Client `2.2.1` is the last version to support .NET Framework 3.\n [#63]: https://github.com/DataDog/dogstatsd-csharp-client/issues/63\n [#65]: https://github.com/DataDog/dogstatsd-csharp-client/issues/65\n [#66]: https://github.com/DataDog/dogstatsd-csharp-client/issues/66\n+[#78]: https://github.com/DataDog/dogstatsd-csharp-client/issues/78\n [@DanielVukelich]: https://github.com/DanielVukelich\n [@albertofem]: https://github.com/albertofem\n [@anthonychu]: https://github.com/anthonychu\n [@bcuff]: https://github.com/bcuff\n+[@chriskinsman]: https://github.com/chriskinsman\n [@daniel-chambers]: https://github.com/daniel-chambers\n [@jpasichnyk]: https://github.com/jpasichnyk\n [@michaellockwood]: https://github.com/michaellockwood"
+    },
+    {
+      "sha": "7f9e043449c4e068a33dcf3dc13d6602467e741a",
+      "filename": "src/StatsdClient/StatsdClient.csproj",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/DataDog/dogstatsd-csharp-client/blob/3568636c684510a005ca2ecf28311c667efd6bae/src/StatsdClient/StatsdClient.csproj",
+      "raw_url": "https://github.com/DataDog/dogstatsd-csharp-client/raw/3568636c684510a005ca2ecf28311c667efd6bae/src/StatsdClient/StatsdClient.csproj",
+      "contents_url": "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/contents/src/StatsdClient/StatsdClient.csproj?ref=3568636c684510a005ca2ecf28311c667efd6bae",
+      "patch": "@@ -5,7 +5,7 @@\n     <Description>A DogStatsD client for C#. DogStatsD is an extension of the StatsD metric server for use with Datadog. For more information visit http://datadoghq.com.</Description>\n     <Authors>Datadog</Authors>\n     <TargetFrameworks>netstandard1.3;netstandard1.6;netcoreapp1.1;netcoreapp2.0;net451;net461</TargetFrameworks>\n-    <Version>3.2.0</Version>\n+    <Version>3.3.0</Version>\n     <PackageLicenseUrl>https://github.com/DataDog/dogstatsd-csharp-client/blob/master/MIT-LICENCE.md</PackageLicenseUrl>\n     <PackageProjectUrl>https://github.com/DataDog/dogstatsd-csharp-client</PackageProjectUrl>\n   </PropertyGroup>"
+    }
+  ]
+}
