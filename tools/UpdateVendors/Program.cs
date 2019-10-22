@@ -20,8 +20,7 @@ namespace UpdateVendors
 //------------------------------------------------------------------------------
 ";
 
-        private static readonly string CurrentDirectory = Environment.CurrentDirectory;
-        private static readonly string DownloadDirectory = Path.Combine(CurrentDirectory, "downloads");
+        private static readonly string DownloadDirectory = Path.Combine(Environment.CurrentDirectory, "downloads");
         private static string _vendorProjectDirectory;
 
         public static async Task Main(string[] args)
