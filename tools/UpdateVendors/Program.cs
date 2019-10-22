@@ -8,7 +8,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Datadog.Trace.TestHelpers;
 using Newtonsoft.Json;
 
 namespace UpdateVendors
@@ -28,7 +27,7 @@ namespace UpdateVendors
         public static async Task Main(string[] args)
         {
             InitializeCleanDirectory(DownloadDirectory);
-            var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
+            var solutionDirectory = GetSolutionDirectory();
             _vendorProjectDirectory = Path.Combine(solutionDirectory, "src", "Datadog.Trace", "Vendors");
             InitializeCleanDirectory(_vendorProjectDirectory);
 
@@ -191,6 +190,32 @@ namespace UpdateVendors
         {
             dynamic parsedJson = JsonConvert.DeserializeObject(json);
             return JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
+        }
+
+        private static string GetSolutionDirectory()
+        {
+            var startDirectory = Environment.CurrentDirectory;
+            var currentDirectory = Directory.GetParent(startDirectory);
+            const string searchItem = @"Datadog.Trace.sln";
+
+            while (true)
+            {
+                var slnFile = currentDirectory.GetFiles(searchItem).SingleOrDefault();
+
+                if (slnFile != null)
+                {
+                    break;
+                }
+
+                currentDirectory = currentDirectory.Parent;
+
+                if (currentDirectory == null || !currentDirectory.Exists)
+                {
+                    throw new Exception($"Unable to find solution directory from: {startDirectory}");
+                }
+            }
+
+            return currentDirectory.FullName;
         }
     }
 }
