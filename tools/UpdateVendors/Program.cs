@@ -75,7 +75,7 @@ namespace UpdateVendors
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
                             builder.ToString(),
-                            @"public(\s+(new|public|protected|internal|private|abstract|sealed|static)*\s+(partial\s+)?(class|struct|interface|enum|delegate))",
+                            @"public(\s+((abstract|sealed|static)\s+)?(partial\s+)?(class|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
             }
