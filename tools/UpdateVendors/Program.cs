@@ -4,11 +4,11 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Newtonsoft.Json;
-using Directory = System.IO.Directory;
 
 namespace UpdateVendors
 {
@@ -138,9 +138,9 @@ namespace UpdateVendors
             string commitInformation;
             using (var client = new HttpClient())
             {
-                client.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("AppName", "1.0"));
-                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", githubToken);
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Datadog.Trace.UpdateVendors", "1.0"));
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", githubToken);
 
                 var response = await client.GetStringAsync(latestCommitUrl);
                 commitInformation = FormatJson(response);
@@ -150,11 +150,10 @@ namespace UpdateVendors
             File.WriteAllText(commitJsonPath, commitInformation);
 
             // Move it all to the vendors directory
+            Console.WriteLine($"Copying source of {libraryName} to vendor project.");
             var vendorFinalPath = Path.Combine(_vendorProjectDirectory, libraryName);
             SafeDeleteDirectory(vendorFinalPath);
             Directory.Move(sourceLocation, vendorFinalPath);
-            Console.WriteLine($"Copying source of {libraryName} to vendor project.");
-
             Console.WriteLine($"Finished {libraryName} upgrade.");
         }
 
