@@ -1,0 +1,27 @@
+steps:
+  - task: UseDotNet@2
+    condition: eq(variables['installDotnetCore21Sdk'], 'true')
+    displayName: install dotnet core 2.1 sdk
+    inputs:
+      packageType: sdk
+      version: $(dotnetCore21SdkVersion)
+
+  - task: UseDotNet@2
+    displayName: install dotnet core 3.0 sdk
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore
+    inputs:
+      command: restore
+      projects: src/**/*.csproj
+      vstsFeed: $(packageFeed)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      projects: src/**/*.csproj
+      arguments: --configuration $(buildConfiguration)
