@@ -2,6 +2,7 @@
   "profiles": {
     "Samples.CorrelationIdentifierInjection.Log4Net": {
       "commandName": "Project",
+      "commandLineArgs": "log4net.conversionpattern.config",
       "environmentVariables": {
         "DD_LOGS_INJECTION": ""
       },
