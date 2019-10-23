@@ -6,9 +6,9 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace UpdateVendors
 {
@@ -146,12 +146,18 @@ namespace UpdateVendors
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", githubToken);
 
-                var response = await client.GetStringAsync(latestCommitUrl);
-                commitInformation = FormatJson(response);
+                commitInformation = await client.GetStringAsync(latestCommitUrl);
             }
 
+            // save commit information to a formatted json file
             var commitJsonPath = Path.Combine(sourceLocation, "commit-info.json");
-            File.WriteAllText(commitJsonPath, commitInformation);
+            var options = new JsonWriterOptions { Indented = true };
+            using (var jsonDocument = JsonDocument.Parse(commitInformation))
+            using (var fileStream = File.OpenWrite(commitJsonPath))
+            using (var utf8JsonWriter = new Utf8JsonWriter(fileStream, options))
+            {
+                jsonDocument.WriteTo(utf8JsonWriter);
+            }
 
             // Move it all to the vendors directory
             Console.WriteLine($"Copying source of {libraryName} to vendor project.");
@@ -183,12 +189,6 @@ namespace UpdateVendors
             {
                 Directory.Delete(directoryPath, recursive: true);
             }
-        }
-
-        private static string FormatJson(string json)
-        {
-            dynamic parsedJson = JsonConvert.DeserializeObject(json);
-            return JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
         }
 
         private static string GetSolutionDirectory()
