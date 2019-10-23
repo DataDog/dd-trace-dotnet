@@ -151,13 +151,7 @@ namespace UpdateVendors
 
             // save commit information to a formatted json file
             var commitJsonPath = Path.Combine(sourceLocation, "commit-info.json");
-            var options = new JsonWriterOptions { Indented = true };
-            using (var jsonDocument = JsonDocument.Parse(commitInformation))
-            using (var fileStream = File.OpenWrite(commitJsonPath))
-            using (var utf8JsonWriter = new Utf8JsonWriter(fileStream, options))
-            {
-                jsonDocument.WriteTo(utf8JsonWriter);
-            }
+            SaveFormattedJson(commitInformation, commitJsonPath);
 
             // Move it all to the vendors directory
             Console.WriteLine($"Copying source of {libraryName} to vendor project.");
@@ -181,6 +175,18 @@ namespace UpdateVendors
         {
             SafeDeleteDirectory(directoryPath);
             Directory.CreateDirectory(directoryPath);
+        }
+
+        private static void SaveFormattedJson(string json, string path)
+        {
+            var options = new JsonWriterOptions { Indented = true };
+
+            using (var jsonDocument = JsonDocument.Parse(json))
+            using (var fileStream = File.OpenWrite(path))
+            using (var utf8JsonWriter = new Utf8JsonWriter(fileStream, options))
+            {
+                jsonDocument.WriteTo(utf8JsonWriter);
+            }
         }
 
         private static void SafeDeleteDirectory(string directoryPath)
