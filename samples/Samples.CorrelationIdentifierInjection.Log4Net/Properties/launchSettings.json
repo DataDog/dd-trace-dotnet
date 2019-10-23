@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Samples.CorrelationIdentifierInjection.Log4Net": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_LOGS_INJECTION": ""
+      },
+      "nativeDebugging": true
+    }
+  }
+}

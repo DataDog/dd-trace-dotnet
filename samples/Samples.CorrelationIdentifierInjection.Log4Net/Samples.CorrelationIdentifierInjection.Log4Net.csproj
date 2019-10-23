@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Unlike other sample projects in this repo, do not reference Datadog.Trace.ClrProfiler.Managed -->
+    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
+  </PropertyGroup>
+
+  <!-- Resolve NU1605 System.Net.NameResolution 4.0.0 NuGet package downgrade -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
+    <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="log4net.Ext.Json" Version="2.0.8.3" />
+  </ItemGroup>
+
+  <!-- Reference the live build of Datadog.Trace (instead of a NuGet package) -->
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
