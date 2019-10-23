@@ -177,6 +177,14 @@ namespace UpdateVendors
             Directory.CreateDirectory(directoryPath);
         }
 
+        private static void SafeDeleteDirectory(string directoryPath)
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                Directory.Delete(directoryPath, recursive: true);
+            }
+        }
+
         private static void SaveFormattedJson(string json, string path)
         {
             var options = new JsonWriterOptions { Indented = true };
@@ -186,14 +194,6 @@ namespace UpdateVendors
             using (var utf8JsonWriter = new Utf8JsonWriter(fileStream, options))
             {
                 jsonDocument.WriteTo(utf8JsonWriter);
-            }
-        }
-
-        private static void SafeDeleteDirectory(string directoryPath)
-        {
-            if (Directory.Exists(directoryPath))
-            {
-                Directory.Delete(directoryPath, recursive: true);
             }
         }
 
