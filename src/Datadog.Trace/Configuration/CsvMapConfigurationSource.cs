@@ -38,7 +38,7 @@ namespace Datadog.Trace.Configuration
 
         private ConcurrentDictionary<string, string> ParseConfig(string config)
         {
-            ConcurrentDictionary<string, string> data = new ConcurrentDictionary<string, string>();
+            var data = new ConcurrentDictionary<string, string>();
 
             var entries = config.Split(',');
             foreach (var e in entries)
