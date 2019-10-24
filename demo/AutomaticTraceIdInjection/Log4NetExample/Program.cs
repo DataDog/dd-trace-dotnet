@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using Datadog.Trace;
 using log4net;
@@ -12,19 +11,16 @@ namespace Log4NetExample
 
         static void Main(string[] args)
         {
-            if (args.Length < 1)
+            var logRepository = LogManager.GetRepository(typeof(Program).Assembly);
+            XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
+
+            LogicalThreadContext.Properties["order-number"] = 1024;
+            using (var scope = Tracer.Instance.StartActive($"Log4NetExample - Main()"))
             {
-                throw new ArgumentException("Pass the config file name as the first argument");
+                log.Info("Message inside a trace.");
             }
 
-            var logRepository = LogManager.GetRepository(typeof(Program).Assembly);
-            XmlConfigurator.Configure(logRepository, new FileInfo(args[0]));
-            
-            using (var scope = Tracer.Instance.StartActive($"Log4NetExample - Main() - config={args[0]}"))
-            {
-                LogicalThreadContext.Properties["order-number"] = 1024;
-                log.Info("Here's a message");
-            }
+            log.Info("Message outside a trace.");
         }
     }
 }

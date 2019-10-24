@@ -2,9 +2,6 @@
   "profiles": {
     "Log4NetExample": {
       "commandName": "Project",
-      // Set the commandLineArgs property to consume the config with the desired log4net layout
-      "commandLineArgs": "log4net.jsonserializedlayout.config",
-      //"commandLineArgs": "log4net.patternlayout.config",
       "environmentVariables": {
         "DD_LOGS_INJECTION": "true"
       },
