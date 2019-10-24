@@ -15,7 +15,7 @@ namespace Log4NetExample
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
 
             LogicalThreadContext.Properties["order-number"] = 1024;
-            using (var scope = Tracer.Instance.StartActive($"Log4NetExample - Main()"))
+            using (var scope = Tracer.Instance.StartActive("Log4NetExample - Main()"))
             {
                 log.Info("Message inside a trace.");
             }

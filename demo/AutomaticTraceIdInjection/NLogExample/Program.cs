@@ -11,7 +11,7 @@ namespace NLogExample
         {
             using (MappedDiagnosticsLogicalContext.SetScoped("order-number", 1024))
             {
-                using (var scope = Tracer.Instance.StartActive($"NLogExample - Main()"))
+                using (var scope = Tracer.Instance.StartActive("NLogExample - Main()"))
                 {
                     Logger.Info("Message inside a trace.");
                 }
