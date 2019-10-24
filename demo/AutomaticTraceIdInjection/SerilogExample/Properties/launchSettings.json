@@ -2,9 +2,6 @@
   "profiles": {
     "SerilogExample": {
       "commandName": "Project",
-      // Set the commandLineArgs property to specify the output format
-      // Options are: 'text', 'json', or 'json-compact'
-      "commandLineArgs": "json-compact",
       "environmentVariables": {
         "DD_LOGS_INJECTION": "true"
       },

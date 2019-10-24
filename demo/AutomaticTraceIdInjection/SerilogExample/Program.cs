@@ -1,8 +1,7 @@
-using System;
+using System.IO;
 using Datadog.Trace;
 using Serilog;
 using Serilog.Context;
-using Serilog.Formatting;
 using Serilog.Formatting.Compact;
 using Serilog.Formatting.Json;
 
@@ -10,49 +9,49 @@ namespace SerilogExample
 {
     class Program
     {
-        private static ILogger log;
-
         static void Main(string[] args)
         {
-            if (args.Length < 1)
-            {
-                throw new ArgumentException("Pass the desired output format as the first argument: 'text', 'json', or 'json-compact'");
-            }
+            // Delete all log files from the last run
+            File.Delete("log-Serilog-textFile-allProperties.log");
+            File.Delete("log-Serilog-jsonFile-allProperties.log");
+            File.Delete("log-Serilog-compactJsonFile-allProperties.log");
 
             var loggerConfiguration = new LoggerConfiguration()
                                           .Enrich.FromLogContext()
                                           .MinimumLevel.Is(Serilog.Events.LogEventLevel.Information);
 
-            // Use the input argument to determine the formatter to use for the Console sink
-            // Default configuration is explained here: https://github.com/serilog/serilog/wiki/Configuration-Basics
-            var format = args[0].ToLower();
-            if (format.Equals("text", StringComparison.OrdinalIgnoreCase))
-            {
-                loggerConfiguration = loggerConfiguration
-                                      .WriteTo.Console(outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}Exception={Exception}{NewLine}Properties={Properties}{NewLine}");
-            }
-            else if (format.Equals("json", StringComparison.OrdinalIgnoreCase))
-            {
-                loggerConfiguration = loggerConfiguration
-                                      .WriteTo.Console(new JsonFormatter());
-            }
-            else if (format.Equals("json-compact", StringComparison.OrdinalIgnoreCase))
-            {
-                loggerConfiguration = loggerConfiguration
-                                      .WriteTo.Console(new CompactJsonFormatter());
-            }
-            else
-            {
-                throw new ArgumentException("Pass the desired output format as the first argument: 'text', 'json', or 'json-compact'");
-            }
+            // When using a message template, you must emit all properties in order to emit `dd.trace_id` and `dd.span_id`
+            // This is because Serilog cannot look up these individual keys by name due to the '.' in the key name (see https://github.com/serilog/serilog/wiki/Writing-Log-Events#message-template-syntax)
+            loggerConfiguration = loggerConfiguration
+                                      .WriteTo.File(
+                                          "log-Serilog-textFile-allProperties.log",
+                                          // Use {Properties} to print out all property values
+                                          outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} | Exception={Exception} | Properties={Properties}{NewLine}");
 
-            log = loggerConfiguration.CreateLogger();
-            using (var scope = Tracer.Instance.StartActive($"SerilogExample - Main() - {format}"))
+            // The built-in JsonFormatter will display all properties by default,
+            // so no extra work is needed to emit `dd.trace_id` and `dd.span_id`
+            loggerConfiguration = loggerConfiguration
+                                      .WriteTo.File(
+                                          new JsonFormatter(),
+                                          "log-Serilog-jsonFile-allProperties.log");
+
+            // The CompactJsonFormatter from the Serilog.Formatting.Compact NuGet package will display all properties by default,
+            // so no extra work is needed to emit `dd.trace_id` and `dd.span_id`
+            loggerConfiguration = loggerConfiguration
+                                      .WriteTo.File(
+                                          new CompactJsonFormatter(),
+                                          "log-Serilog-compactJsonFile-allProperties.log");
+
+            // Main procedure
+            var log = loggerConfiguration.CreateLogger();
+            using (LogContext.PushProperty("order-number", 1024))
             {
-                using (LogContext.PushProperty("order-number", 1024))
+                using (var scope = Tracer.Instance.StartActive("SerilogExample - Main()"))
                 {
-                    log.Information("Here's a message");
+                    log.Information("Message inside a trace.");
                 }
+
+                log.Information("Message outside a trace.");
             }
         }
     }
