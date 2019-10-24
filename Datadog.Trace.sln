@@ -266,7 +266,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{34015B45-4
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AutomaticTraceIdInjection", "AutomaticTraceIdInjection", "{5DE795C0-3DB6-4DD6-9EAF-F6A6698AD712}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.CorrelationIdentifierInjection.Log4Net", "demo\AutomaticTraceIdInjection\Log4NetExample\Samples.CorrelationIdentifierInjection.Log4Net.csproj", "{6567C45C-E318-4A48-A747-A563894AC516}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Log4NetExample", "demo\AutomaticTraceIdInjection\Log4NetExample\Log4NetExample.csproj", "{6567C45C-E318-4A48-A747-A563894AC516}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

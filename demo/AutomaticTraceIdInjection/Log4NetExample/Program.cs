@@ -4,7 +4,7 @@ using Datadog.Trace;
 using log4net;
 using log4net.Config;
 
-namespace Samples.CorrelationIdentifierInjection.Log4Net
+namespace Log4NetExample
 {
     class Program
     {
