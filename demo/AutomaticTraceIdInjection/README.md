@@ -9,16 +9,16 @@ If there is a logging layout that you would like to see documented here, please 
 ## Supported Logging Frameworks
 ### Log4Net
 Layouts configured in the sample:
-- `PatternLayout` (built-in text-based layout that requires a conversion formatter)
+- `PatternLayout` (built-in, text-based layout that requires a conversion formatter)
 - JSON `SerializedLayout` (from the `log4net.Ext.Json` NuGet package)
 
 ### NLog
 Layouts configured in the sample:
-- `SimpleLayout` (built-in text-based layout that requires a conversion formatter)
-- `JsonLayout`
+- `SimpleLayout` (built-in, text-based layout that requires a conversion formatter)
+- `JsonLayout` (built-in)
 
 ### Serilog
 Layouts configured in the sample:
-- output template (text-based layout that requires a conversion formatter)
+- output template (built-in, text-based layout that requires a conversion formatter)
 - `JsonFormatter` (built-in)
 - `CompactJsonFormatter` (from the `Serilog.Formatting.Compact` NuGet package)
