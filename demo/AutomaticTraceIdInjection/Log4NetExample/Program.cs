@@ -20,8 +20,9 @@ namespace Log4NetExample
             var logRepository = LogManager.GetRepository(typeof(Program).Assembly);
             XmlConfigurator.Configure(logRepository, new FileInfo(args[0]));
             
-            using (var scope = Tracer.Instance.StartActive("Main()"))
+            using (var scope = Tracer.Instance.StartActive($"Log4NetExample - Main() - config={args[0]}"))
             {
+                LogicalThreadContext.Properties["order-number"] = 1024;
                 log.Info("Here's a message");
             }
         }
