@@ -270,6 +270,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Log4NetExample", "demo\Auto
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SerilogExample", "demo\AutomaticTraceIdInjection\SerilogExample\SerilogExample.csproj", "{DD458F30-BB0C-488B-A64D-02D8134F9A5D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NLogExample", "demo\AutomaticTraceIdInjection\NLogExample\NLogExample.csproj", "{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -890,6 +892,18 @@ Global
 		{DD458F30-BB0C-488B-A64D-02D8134F9A5D}.Release|x64.Build.0 = Release|Any CPU
 		{DD458F30-BB0C-488B-A64D-02D8134F9A5D}.Release|x86.ActiveCfg = Release|Any CPU
 		{DD458F30-BB0C-488B-A64D-02D8134F9A5D}.Release|x86.Build.0 = Release|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Debug|x64.Build.0 = Debug|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Debug|x86.Build.0 = Debug|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Release|x64.ActiveCfg = Release|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Release|x64.Build.0 = Release|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Release|x86.ActiveCfg = Release|Any CPU
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -954,6 +968,7 @@ Global
 		{5DE795C0-3DB6-4DD6-9EAF-F6A6698AD712} = {34015B45-43F6-4E29-BDC6-4E16CFAD79BE}
 		{6567C45C-E318-4A48-A747-A563894AC516} = {5DE795C0-3DB6-4DD6-9EAF-F6A6698AD712}
 		{DD458F30-BB0C-488B-A64D-02D8134F9A5D} = {5DE795C0-3DB6-4DD6-9EAF-F6A6698AD712}
+		{C2C4ED97-CB62-44CA-B3CA-D1272A74046F} = {5DE795C0-3DB6-4DD6-9EAF-F6A6698AD712}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
