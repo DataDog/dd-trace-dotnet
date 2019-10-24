@@ -1,8 +1,11 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+<<<<<<< HEAD
 using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
+=======
+>>>>>>> Rule based sampling and rate limiting
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;

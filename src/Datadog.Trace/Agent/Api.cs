@@ -128,7 +128,7 @@ namespace Datadog.Trace.Agent
                         var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
                         var response = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
 
-                        Tracer.Instance.Sampler.SetSampleRates(response?.RateByService);
+                        Tracer.Instance.Sampler.SetDefaultSampleRates(response?.RateByService);
                     }
                 }
                 catch (Exception ex)

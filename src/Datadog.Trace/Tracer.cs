@@ -55,7 +55,7 @@ namespace Datadog.Trace
             Settings = settings ?? TracerSettings.FromDefaultSources();
             _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri));
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
-            Sampler = sampler ?? new RateByServiceSampler();
+            Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
 
             // if not configured, try to determine an appropriate service name
             DefaultServiceName = Settings.ServiceName ??

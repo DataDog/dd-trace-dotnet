@@ -85,6 +85,13 @@ namespace Datadog.Trace.Configuration
         public const string LogsInjectionEnabled = "DD_LOGS_INJECTION";
 
         /// <summary>
+        /// Configuration key for setting the number of traces allowed
+        /// to be submitted per second.
+        /// </summary>
+        /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
+        public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations
