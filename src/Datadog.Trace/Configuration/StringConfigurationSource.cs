@@ -19,7 +19,7 @@ namespace Datadog.Trace.Configuration
         {
             var dictionary = new ConcurrentDictionary<string, string>();
 
-            if (data == null)
+            if (string.IsNullOrWhiteSpace(data))
             {
                 return dictionary;
             }

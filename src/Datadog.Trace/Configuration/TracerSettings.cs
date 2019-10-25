@@ -79,7 +79,7 @@ namespace Datadog.Trace.Configuration
 
             Integrations = new IntegrationSettingsCollection(source);
 
-            GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) as ConcurrentDictionary<string, string> ??
+            GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) as IDictionary<string, string> ??
                 new ConcurrentDictionary<string, string>();
         }
 
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
-        public ConcurrentDictionary<string, string> GlobalTags { get; set; }
+        public IDictionary<string, string> GlobalTags { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

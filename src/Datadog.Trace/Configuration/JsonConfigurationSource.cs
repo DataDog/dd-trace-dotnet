@@ -125,7 +125,7 @@ namespace Datadog.Trace.Configuration
 
             // Presence of a curly brace indicates that this is likely a JSON string. An exception will be thrown
             // if it fails to parse or convert to a dictionary.
-            if (token.ToString().Contains("{"))
+            if (token.Type == JTokenType.Object)
             {
                 var dictionary = JToken.Parse(token.ToString())
                     ?.ToObject(typeof(ConcurrentDictionary<string, string>)) as ConcurrentDictionary<string, string>;
