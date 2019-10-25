@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -97,6 +98,13 @@ namespace Datadog.Trace.Configuration
         IEnumerator IEnumerable.GetEnumerator()
         {
             return _sources.GetEnumerator();
+        }
+
+        /// <inheritdoc />
+        public IDictionary<string, string> GetDictionary(string key)
+        {
+            return _sources.Select(source => source.GetDictionary(key))
+                        .FirstOrDefault(value => value != null);
         }
     }
 }

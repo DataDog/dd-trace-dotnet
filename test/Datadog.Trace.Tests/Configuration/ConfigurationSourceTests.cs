@@ -38,7 +38,19 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return new object[] { ConfigurationKeys.DisabledIntegrations, "integration1;integration2", CreateFunc(s => s.DisabledIntegrationNames.Count), 2 };
 
-            yield return new object[] { ConfigurationKeys.GlobalTags, "'k1':'v1', 'k2':'v2'", CreateFunc(s => s.GlobalTags.Count), 2 };
+            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags.Count), 2 };
+        }
+
+        // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
+        public static IEnumerable<object[]> GetJsonTestData()
+        {
+            yield return new object[] { ConfigurationKeys.GlobalTags, @"{ ""name1"":""value1"", ""name2"": ""value2""}", CreateFunc(s => s.GlobalTags.Count), 2 };
+        }
+
+        public static IEnumerable<object[]> GetBadJsonTestData()
+        {
+            // Extra opening brace
+            yield return new object[] { ConfigurationKeys.GlobalTags, @"{ {""name1"":""value1"", ""name2"": ""value2""}" };
         }
 
         public static Func<TracerSettings, object> CreateFunc(Func<TracerSettings, object> settingGetter)
@@ -93,7 +105,8 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [MemberData(nameof(GetTestData))]
-        public void NameValueConfigurationSource1(
+        [MemberData(nameof(GetJsonTestData))]
+        public void JsonConfigurationSource(
             string key,
             string value,
             Func<TracerSettings, object> settingGetter,
@@ -106,6 +119,19 @@ namespace Datadog.Trace.Tests.Configuration
 
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetBadJsonTestData))]
+        public void JsonConfigurationSource_BadData(
+            string key,
+            string value)
+        {
+            var config = new Dictionary<string, string> { [key] = value };
+            string json = JsonConvert.SerializeObject(config);
+            IConfigurationSource source = new JsonConfigurationSource(json);
+
+            Assert.Throws<JsonReaderException>(() => { new TracerSettings(source); });
         }
     }
 }

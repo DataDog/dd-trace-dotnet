@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
@@ -36,5 +38,13 @@ namespace Datadog.Trace.Configuration
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         bool? GetBool(string key);
-    }
+
+        /// <summary>
+        /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
+        /// the setting with the specified key.
+        /// </summary>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        IDictionary<string, string> GetDictionary(string key);
+   }
 }

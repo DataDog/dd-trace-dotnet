@@ -79,17 +79,8 @@ namespace Datadog.Trace.Configuration
 
             Integrations = new IntegrationSettingsCollection(source);
 
-            var gTags = source?.GetString(ConfigurationKeys.GlobalTags);
-
-            if (gTags == null)
-            {
-                GlobalTags = new ConcurrentDictionary<string, string>();
-            }
-            else
-            {
-                var csvMapConfig = new CsvMapConfigurationSource(gTags);
-                GlobalTags = csvMapConfig.Data;
-            }
+            GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) as ConcurrentDictionary<string, string> ??
+                new ConcurrentDictionary<string, string>();
         }
 
         /// <summary>
