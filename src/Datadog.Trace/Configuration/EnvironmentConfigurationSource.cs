@@ -13,5 +13,5 @@ namespace Datadog.Trace.Configuration
         {
             return Environment.GetEnvironmentVariable(key);
         }
-   }
+    }
 }
