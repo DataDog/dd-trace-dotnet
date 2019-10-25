@@ -79,7 +79,7 @@ namespace Datadog.Trace.Configuration
 
             Integrations = new IntegrationSettingsCollection(source);
 
-            GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) as IDictionary<string, string> ??
+            GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
                 new ConcurrentDictionary<string, string>();
         }
 

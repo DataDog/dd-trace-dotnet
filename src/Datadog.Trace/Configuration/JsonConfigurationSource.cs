@@ -127,7 +127,7 @@ namespace Datadog.Trace.Configuration
             // if it fails to parse or convert to a dictionary.
             if (token.Type == JTokenType.Object)
             {
-                var dictionary = JToken.Parse(token.ToString())
+                var dictionary = token
                     ?.ToObject<ConcurrentDictionary<string, string>>() as ConcurrentDictionary<string, string>;
                 return dictionary;
             }

@@ -19,6 +19,14 @@ namespace Datadog.Trace.Configuration
         {
             var dictionary = new ConcurrentDictionary<string, string>();
 
+            // A null return value means the key was not present,
+            // and CompositeConfigurationSource depends on this behavior
+            // (it returns the first non-null value it finds).
+            if (data == null)
+            {
+                return null;
+            }
+
             if (string.IsNullOrWhiteSpace(data))
             {
                 return dictionary;
