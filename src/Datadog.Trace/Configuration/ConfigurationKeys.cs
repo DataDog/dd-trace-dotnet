@@ -102,7 +102,7 @@ namespace Datadog.Trace.Configuration
         ///   The item 'operation' is optional in regular expression format, to match on operation name.
         ///
         /// Example:
-        ///   'rate:0.5, service:cart.* ; rate:0.2, operation:web ; rate:1.0, service:background, operation:insert ; rate:0.1'
+        ///   'rate=0.5, service=cart.* ; rate=0.2, operation=web ; rate=1.0, service=background, operation=insert ; rate=0.1'
         ///
         /// The example above will match every trace in services that start with the name cart and give them a 50% sample rate.
         /// If a trace does not come from a service starting with the name cart, but it has an operation name of web, it will have a 20% sample rate applied.

@@ -61,8 +61,8 @@ namespace Datadog.Trace.Sampling
                             continue;
                         }
 
-                        var key = kvp[0];
-                        var value = kvp[1];
+                        var key = kvp[0].Trim();
+                        var value = kvp[1].Trim();
 
                         if (key.ToLower() == "rate" && float.TryParse(value, out rate))
                         {
