@@ -92,6 +92,29 @@ namespace Datadog.Trace.Configuration
         public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
 
         /// <summary>
+        /// Configuration key for setting custom sampling rules based on regular expressions.
+        /// Semi-colon separated list of sampling rules.
+        /// The rule is matched in order of specification. The first match in a list is used.
+        ///
+        /// Per entry:
+        ///   The item 'rate' is required in decimal format.
+        ///   The item 'service' is optional in regular expression format, to match on service name.
+        ///   The item 'operation' is optional in regular expression format, to match on operation name.
+        ///
+        /// Example:
+        ///   'rate:0.5, service:cart.* ; rate:0.2, operation:web ; rate:1.0, service:background, operation:insert ; rate:0.1'
+        ///
+        /// The example above will match every trace in services that start with the name cart and give them a 50% sample rate.
+        /// If a trace does not come from a service starting with the name cart, but it has an operation name of web, it will have a 20% sample rate applied.
+        /// If a trace matches neither of those, and has a service name of background and an operation name of insert, 100% will be applied.
+        /// Finally, if there are no matches, the last rule of 10% will be applied.
+        ///
+        /// If no rules are specified, or none match, default internal sampling logic will be used.
+        /// </summary>
+        /// <seealso cref="TracerSettings.CustomSamplingRules"/>
+        public const string CustomSamplingRules = "DD_CUSTOM_SAMPLING_RULES";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations

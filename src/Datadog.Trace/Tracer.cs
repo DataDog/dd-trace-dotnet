@@ -57,6 +57,14 @@ namespace Datadog.Trace
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
 
+            if (!string.IsNullOrEmpty(Settings.CustomSamplingRules))
+            {
+                foreach (var rule in RegexSamplingRule.BuildFromConfigurationString(Settings.CustomSamplingRules))
+                {
+                    Sampler.RegisterRule(rule);
+                }
+            }
+
             // if not configured, try to determine an appropriate service name
             DefaultServiceName = Settings.ServiceName ??
                                  GetApplicationName() ??

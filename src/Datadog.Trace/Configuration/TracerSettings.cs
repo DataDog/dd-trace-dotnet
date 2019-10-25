@@ -148,6 +148,12 @@ namespace Datadog.Trace.Configuration
         public int MaxTracesSubmittedPerSecond { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating custom sampling rules.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
+        public string CustomSamplingRules { get; set; }
+
+        /// <summary>
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
         /// </summary>
         public IntegrationSettingsCollection Integrations { get; }
