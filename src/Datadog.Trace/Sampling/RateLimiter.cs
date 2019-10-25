@@ -111,8 +111,8 @@ namespace Datadog.Trace.Sampling
 
                 _lastRefresh = now;
 
-                var timeSinceRefreshAsRatio = (now - previousRefresh).Milliseconds / (float)_intervalMilliseconds;
-                var timeSinceWindowStart = (now - _windowBegin).Milliseconds;
+                var timeSinceRefreshAsRatio = (now - previousRefresh).TotalMilliseconds / (float)_intervalMilliseconds;
+                var timeSinceWindowStart = (now - _windowBegin).TotalMilliseconds;
 
                 if (timeSinceWindowStart >= _intervalMilliseconds)
                 {
