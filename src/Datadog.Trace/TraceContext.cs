@@ -66,6 +66,7 @@ namespace Datadog.Trace
                         }
                         else
                         {
+                            // this is a local root span (i.e. not propagated).
                             // determine an initial sampling priority for this trace, but don't lock it yet
                             _samplingPriority =
                                 Tracer.Sampler?.GetSamplingPriority(RootSpan);
