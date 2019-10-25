@@ -6,8 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
-    <Content Include="..\..\integrations.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\integrations.json" />
+    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**"
+             CopyToOutputDirectory="Always"
+             CopyToPublishDirectory="Always"
+             Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <Content Include="..\..\integrations.json"
+             CopyToOutputDirectory="Always"
+             CopyToPublishDirectory="Always"
+             Link="profiler-lib\integrations.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,6 +24,4 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
-
-  <ProjectExtensions><VisualStudio><UserProperties _1_1_4_1_1_4integrations_1json__JsonSchema="http://json.schemastore.org/ansible-stable-2.7" /></VisualStudio></ProjectExtensions>
 </Project>
