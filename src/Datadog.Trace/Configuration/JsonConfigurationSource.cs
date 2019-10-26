@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -96,6 +98,41 @@ namespace Datadog.Trace.Configuration
             return token == null
                        ? default
                        : token.Value<T>();
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the values.
+        /// </summary>
+        /// <remarks>
+        /// Example JSON where `globalTags` is the configuration key.
+        /// {
+        ///  "globalTags": {
+        ///     "name1": "value1",
+        ///     "name2": "value2"
+        ///     }
+        /// }
+        /// </remarks>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
+        /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>"
+        public IDictionary<string, string> GetDictionary(string key)
+        {
+            var token = _configuration.SelectToken(key, errorWhenNoMatch: false);
+            if (token == null)
+            {
+                return null;
+            }
+
+            // Presence of a curly brace indicates that this is likely a JSON string. An exception will be thrown
+            // if it fails to parse or convert to a dictionary.
+            if (token.Type == JTokenType.Object)
+            {
+                var dictionary = token
+                    ?.ToObject<ConcurrentDictionary<string, string>>() as ConcurrentDictionary<string, string>;
+                return dictionary;
+            }
+
+            return StringConfigurationSource.ParseCustomKeyValues(token.ToString());
         }
     }
 }

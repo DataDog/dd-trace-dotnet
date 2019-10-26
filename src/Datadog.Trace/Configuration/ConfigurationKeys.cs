@@ -78,6 +78,11 @@ namespace Datadog.Trace.Configuration
         public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
 
         /// <summary>
+        /// Configuration key for a list of tags to be applied globally to spans.
+        /// </summary>
+        public const string GlobalTags = "DD_TRACE_GLOBAL_TAGS";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the automatic injection
         /// of correlation identifiers into the logging context.
         /// </summary>

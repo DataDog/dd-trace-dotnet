@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace.Configuration
 {
@@ -76,6 +78,9 @@ namespace Datadog.Trace.Configuration
                                false;
 
             Integrations = new IntegrationSettingsCollection(source);
+
+            GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
+                new ConcurrentDictionary<string, string>();
         }
 
         /// <summary>
@@ -140,6 +145,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
         /// </summary>
         public IntegrationSettingsCollection Integrations { get; }
+
+        /// <summary>
+        /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
+        /// </summary>
+        public IDictionary<string, string> GlobalTags { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

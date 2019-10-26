@@ -18,6 +18,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.ServiceName), null };
             yield return new object[] { CreateFunc(s => s.DisabledIntegrationNames.Count), 0 };
             yield return new object[] { CreateFunc(s => s.LogsInjectionEnabled), false };
+            yield return new object[] { CreateFunc(s => s.GlobalTags.Count), 0 };
         }
 
         public static IEnumerable<object[]> GetTestData()
@@ -36,6 +37,26 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.ServiceName, "web-service", CreateFunc(s => s.ServiceName), "web-service" };
 
             yield return new object[] { ConfigurationKeys.DisabledIntegrations, "integration1;integration2", CreateFunc(s => s.DisabledIntegrationNames.Count), 2 };
+
+            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags.Count), 2 };
+        }
+
+        // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
+        public static IEnumerable<object[]> GetJsonTestData()
+        {
+            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"":""value1"", ""name2"": ""value2""} }", CreateFunc(s => s.GlobalTags.Count), 2 };
+        }
+
+        public static IEnumerable<object[]> GetBadJsonTestData1()
+        {
+            // Extra opening brace
+            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { { ""name1"":""value1"", ""name2"": ""value2""} }" };
+        }
+
+        public static IEnumerable<object[]> GetBadJsonTestData2()
+        {
+            // Missing closing brace
+            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"":""value1"", ""name2"": ""value2"" }" };
         }
 
         public static Func<TracerSettings, object> CreateFunc(Func<TracerSettings, object> settingGetter)
@@ -89,20 +110,33 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(GetTestData))]
-        public void NameValueConfigurationSource1(
-            string key,
+        [MemberData(nameof(GetJsonTestData))]
+        public void JsonConfigurationSource(
             string value,
             Func<TracerSettings, object> settingGetter,
             object expectedValue)
         {
-            var config = new Dictionary<string, string> { [key] = value };
-            string json = JsonConvert.SerializeObject(config);
-            IConfigurationSource source = new JsonConfigurationSource(json);
+            IConfigurationSource source = new JsonConfigurationSource(value);
             var settings = new TracerSettings(source);
 
-            object actualValue = settingGetter(settings);
+            var actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetBadJsonTestData1))]
+        public void JsonConfigurationSource_BadData1(
+            string value)
+        {
+            Assert.Throws<JsonReaderException>(() => { new JsonConfigurationSource(value); });
+        }
+
+        [Theory]
+        [MemberData(nameof(GetBadJsonTestData2))]
+        public void JsonConfigurationSource_BadData2(
+            string value)
+        {
+            Assert.Throws<JsonSerializationException>(() => { new JsonConfigurationSource(value); });
         }
     }
 }
