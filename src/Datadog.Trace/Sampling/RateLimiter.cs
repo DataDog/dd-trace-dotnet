@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using Datadog.Trace.Logging;
 
@@ -9,14 +8,15 @@ namespace Datadog.Trace.Sampling
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RateLimiter>();
 
-        private readonly ManualResetEventSlim _refreshEvent = new ManualResetEventSlim(initialState: false);
+        private readonly ManualResetEventSlim _refreshEvent = new ManualResetEventSlim(initialState: true);
 
         private readonly int _maxTracesPerInterval;
         private readonly int _intervalMilliseconds;
 
-        private DateTime _windowBegin = DateTime.Now;
-        private DateTime _lastRefresh = DateTime.Now;
-        private ConcurrentQueue<ulong> _allowedTracesForInterval = new ConcurrentQueue<ulong>();
+        private DateTime _windowBegin;
+        private DateTime _lastRefresh;
+
+        private int _intervalAllowed = 0;
 
         private int _windowChecks = 0;
         private int _windowAllowed = 0;
@@ -28,6 +28,7 @@ namespace Datadog.Trace.Sampling
         {
             _maxTracesPerInterval = maxTracesPerInterval ?? 100;
             _intervalMilliseconds = 1_000;
+            _windowBegin = _lastRefresh = DateTime.Now;
             Log.Debug("Allowing {0} p1 traces per {1} milliseconds.", _maxTracesPerInterval, _intervalMilliseconds);
         }
 
@@ -50,14 +51,13 @@ namespace Datadog.Trace.Sampling
             // This must happen after the wait, because we check for window statistics, modifying this number
             Interlocked.Increment(ref _windowChecks);
 
-            if (_allowedTracesForInterval.Count >= _maxTracesPerInterval)
+            if (_intervalAllowed >= _maxTracesPerInterval)
             {
-                Log.Debug("Dropping trace id {0} with count of {1} for current window.", traceId, _allowedTracesForInterval.Count);
+                Log.Debug("Dropping trace id {0} with count of {1} for last {2}ms.", traceId, _intervalAllowed, _intervalMilliseconds);
                 return false;
             }
 
-            _allowedTracesForInterval.Enqueue(traceId);
-
+            Interlocked.Increment(ref _intervalAllowed);
             Interlocked.Increment(ref _windowAllowed);
 
             return true;
@@ -91,7 +91,6 @@ namespace Datadog.Trace.Sampling
 
         private void WaitForRefresh()
         {
-            var now = DateTime.Now;
             var previousRefresh = _lastRefresh;
 
             // Block if a refresh event is happening
@@ -109,9 +108,9 @@ namespace Datadog.Trace.Sampling
                 // Block threads
                 _refreshEvent.Reset();
 
+                var now = DateTime.Now;
                 _lastRefresh = now;
 
-                var timeSinceRefreshAsRatio = (now - previousRefresh).TotalMilliseconds / (float)_intervalMilliseconds;
                 var timeSinceWindowStart = (now - _windowBegin).TotalMilliseconds;
 
                 if (timeSinceWindowStart >= _intervalMilliseconds)
@@ -124,25 +123,21 @@ namespace Datadog.Trace.Sampling
                     _windowBegin = now;
                 }
 
+                var timeSinceRefreshAsRatio = (now - previousRefresh).TotalMilliseconds / (float)_intervalMilliseconds;
+
                 if (timeSinceRefreshAsRatio >= 1)
                 {
-                    if (!_allowedTracesForInterval.IsEmpty)
+                    _intervalAllowed = 0;
+                }
+                else
+                {
+                    var howManyToClear = (timeSinceRefreshAsRatio * _maxTracesPerInterval);
+                    if (howManyToClear > _intervalAllowed)
                     {
-                        // Clear all slots
-                        _allowedTracesForInterval = new ConcurrentQueue<ulong>();
+                        _intervalAllowed = 0;
                     }
 
-                    // The queue is empty, short-circuit
-                    return;
-                }
-
-                // Clear ratio for the time passed
-                var maxItemsToClear = (int)(timeSinceRefreshAsRatio * _maxTracesPerInterval);
-                var cleared = 0;
-
-                while (cleared < maxItemsToClear && _allowedTracesForInterval.TryDequeue(out _))
-                {
-                    cleared++;
+                    _intervalAllowed -= (int)howManyToClear;
                 }
             }
             finally
