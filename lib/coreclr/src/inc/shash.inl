@@ -227,6 +227,14 @@ void SHash<TRAITS>::RemoveAll()
     }
     CONTRACT_END;
 
+    if (TRAITS::s_DestructPerEntryCleanupAction)
+    {
+        for (Iterator i = Begin(); i != End(); i++)
+        {
+            TRAITS::OnDestructPerEntryCleanupAction(*i);
+        }
+    }
+
     delete [] m_table;
 
     m_table = NULL;
@@ -403,7 +411,7 @@ SHash<TRAITS>::AllocateNewTable(count_t requestedSize, count_t * pcNewTableSize)
         GC_NOTRIGGER;
         INSTANCE_CHECK;
         PRECONDITION(requestedSize >= 
-                     (count_t) (GetCount() * s_density_factor_denominator / s_density_factor_numerator));
+                     (count_t) (GetCount() * TRAITS::s_density_factor_denominator / TRAITS::s_density_factor_numerator));
     }
     CONTRACT_END;
 
@@ -434,7 +442,7 @@ SHash<TRAITS>::ReplaceTable(element_t * newTable, count_t newTableSize)
         GC_NOTRIGGER;
         INSTANCE_CHECK;
         PRECONDITION(newTableSize >= 
-                     (count_t) (GetCount() * s_density_factor_denominator / s_density_factor_numerator));
+                     (count_t) (GetCount() * TRAITS::s_density_factor_denominator / TRAITS::s_density_factor_numerator));
     }
     CONTRACT_END;
     

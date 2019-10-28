@@ -96,17 +96,20 @@ extern "C" {
 #else
 #define PALIMPORT   __declspec(dllimport)
 #endif
+#define DLLEXPORT __declspec(dllexport)
 #define PAL_NORETURN __declspec(noreturn)
 
 #else
 
 #define PALIMPORT
+#define DLLEXPORT __attribute__((visibility("default")))
 #define PAL_NORETURN    __attribute__((noreturn))
 
 #endif
 
-#define PALAPI      __cdecl
-#define PALAPIV     __cdecl
+#define PALAPI             DLLEXPORT __cdecl
+#define PALAPI_NOEXPORT    __cdecl
+#define PALAPIV            __cdecl
 
 ////////////////////////////////////////////////////////////////////////
 // Type attribute stuff
@@ -585,12 +588,6 @@ typedef LONG_PTR LPARAM;
 #endif
 
 #ifdef PAL_STDCPP_COMPAT
-
-#ifdef BIT64
-typedef unsigned long int uintptr_t;
-#else // !BIT64
-typedef unsigned int uintptr_t;
-#endif // !BIT64
 
 typedef char16_t WCHAR;
 

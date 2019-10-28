@@ -79,7 +79,7 @@ namespace Ro { namespace detail {
     //  to see HRESULT propagation.
     // 
     #ifdef DEBUG
-    inline HRESULT __declspec(noinline) _FailedHR(HRESULT hr) { static HRESULT _hr = hr; return hr; }
+    inline HRESULT NOINLINE _FailedHR(HRESULT hr) { static HRESULT _hr = hr; return hr; }
     #else
     inline HRESULT _FailedHR(HRESULT hr) { return hr; }
     #endif
@@ -419,7 +419,7 @@ namespace Ro { namespace detail {
         __in_ecount(size) const T* src, 
         size_t               size)
     {
-        for (size_t i = 0; i != _size; ++i) 
+        for (size_t i = 0; i != size; ++i) 
         {
             dst[i] = src[i];
         }

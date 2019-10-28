@@ -137,14 +137,14 @@ C_FUNC(\Name\()_End):
 // ArgumentRegisters::x2
 // ArgumentRegisters::x1
 // ArgumentRegisters::x0
-// FloatRegisters::d7
-// FloatRegisters::d6
-// FloatRegisters::d5
-// FloatRegisters::d4
-// FloatRegisters::d3
-// FloatRegisters::d2
-// FloatRegisters::d1
-// FloatRegisters::d0
+// FloatRegisters::q7
+// FloatRegisters::q6
+// FloatRegisters::q5
+// FloatRegisters::q4
+// FloatRegisters::q3
+// FloatRegisters::q2
+// FloatRegisters::q1
+// FloatRegisters::q0
 .macro PROLOG_WITH_TRANSITION_BLOCK extraLocals = 0, SaveFPArgs = 1
 
         __PWTB_FloatArgumentRegisters = \extraLocals
@@ -161,7 +161,8 @@ C_FUNC(\Name\()_End):
         .endif
 
         __PWTB_StackAlloc = __PWTB_TransitionBlock
-        __PWTB_ArgumentRegisters = __PWTB_StackAlloc + 96
+        __PWTB_ArgumentRegisters = __PWTB_StackAlloc + 104
+        __PWTB_ArgumentRegister_FirstArg = __PWTB_ArgumentRegisters + 8
 
         PROLOG_SAVE_REG_PAIR_INDEXED   fp, lr, -176
         // Spill callee saved registers
@@ -191,40 +192,40 @@ C_FUNC(\Name\()_End):
 // Reserve 64 bytes of memory before calling  SAVE_ARGUMENT_REGISTERS
 .macro SAVE_ARGUMENT_REGISTERS reg, ofs
 
-        stp                    x0, x1, [\reg, #(\ofs)]
-        stp                    x2, x3, [\reg, #(\ofs + 16)]
-        stp                    x4, x5, [\reg, #(\ofs + 32)]
-        stp                    x6, x7, [\reg, #(\ofs + 48)]
-        str                    x8, [\reg, #(\ofs + 64)]
+        str                    x8, [\reg, #(\ofs)]
+        stp                    x0, x1, [\reg, #(\ofs + 8)]
+        stp                    x2, x3, [\reg, #(\ofs + 24)]
+        stp                    x4, x5, [\reg, #(\ofs + 40)]
+        stp                    x6, x7, [\reg, #(\ofs + 56)]
 
 .endm
 
-// Reserve 64 bytes of memory before calling  SAVE_FLOAT_ARGUMENT_REGISTERS
+// Reserve 128 bytes of memory before calling  SAVE_FLOAT_ARGUMENT_REGISTERS
 .macro SAVE_FLOAT_ARGUMENT_REGISTERS reg, ofs
 
-        stp                    d0, d1, [\reg, #(\ofs)]
-        stp                    d2, d3, [\reg, #(\ofs + 16)]
-        stp                    d4, d5, [\reg, #(\ofs + 32)]
-        stp                    d6, d7, [\reg, #(\ofs + 48)]
+        stp                    q0, q1, [\reg, #(\ofs)]
+        stp                    q2, q3, [\reg, #(\ofs + 32)]
+        stp                    q4, q5, [\reg, #(\ofs + 64)]
+        stp                    q6, q7, [\reg, #(\ofs + 96)]
 
 .endm
 
 .macro RESTORE_ARGUMENT_REGISTERS reg, ofs
 
-        ldp                    x0, x1, [\reg, #(\ofs)]
-        ldp                    x2, x3, [\reg, #(\ofs + 16)]
-        ldp                    x4, x5, [\reg, #(\ofs + 32)]
-        ldp                    x6, x7, [\reg, #(\ofs + 48)]
-        ldr                    x8, [\reg, #(\ofs + 64)]
+        ldr                    x8, [\reg, #(\ofs)]
+        ldp                    x0, x1, [\reg, #(\ofs + 8)]
+        ldp                    x2, x3, [\reg, #(\ofs + 24)]
+        ldp                    x4, x5, [\reg, #(\ofs + 40)]
+        ldp                    x6, x7, [\reg, #(\ofs + 56)]
 
 .endm
 
 .macro RESTORE_FLOAT_ARGUMENT_REGISTERS reg, ofs
 
-        ldp                    d0, d1, [\reg, #(\ofs)]
-        ldp                    d2, d3, [\reg, #(\ofs + 16)]
-        ldp                    d4, d5, [\reg, #(\ofs + 32)]
-        ldp                    d6, d7, [\reg, #(\ofs + 48)]
+        ldp                    q0, q1, [\reg, #(\ofs)]
+        ldp                    q2, q3, [\reg, #(\ofs + 32)]
+        ldp                    q4, q5, [\reg, #(\ofs + 64)]
+        ldp                    q6, q7, [\reg, #(\ofs + 96)]
 
 .endm
 

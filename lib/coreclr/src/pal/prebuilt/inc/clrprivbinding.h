@@ -155,23 +155,11 @@ EXTERN_C const IID IID_ICLRPrivBinder;
             /* [in] */ IAssemblyName *pAssemblyName,
             /* [retval][out] */ ICLRPrivAssembly **ppAssembly) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE VerifyBind( 
-            /* [in] */ IAssemblyName *AssemblyName,
-            /* [in] */ ICLRPrivAssembly *pAssembly,
-            /* [in] */ ICLRPrivAssemblyInfo *pAssemblyInfo) = 0;
-        
-        virtual HRESULT STDMETHODCALLTYPE GetBinderFlags( 
-            /* [retval][out] */ DWORD *pBinderFlags) = 0;
-        
         virtual HRESULT STDMETHODCALLTYPE GetBinderID( 
             /* [retval][out] */ UINT_PTR *pBinderId) = 0;
         
-        virtual HRESULT STDMETHODCALLTYPE FindAssemblyBySpec( 
-            /* [in] */ LPVOID pvAppDomain,
-            /* [in] */ LPVOID pvAssemblySpec,
-            /* [out] */ HRESULT *pResult,
-            /* [out] */ ICLRPrivAssembly **ppAssembly) = 0;
-        
+        virtual HRESULT STDMETHODCALLTYPE GetLoaderAllocator(
+            /* [retval][out] */ LPVOID* pLoaderAllocator) = 0;
     };
     
     
@@ -198,27 +186,14 @@ EXTERN_C const IID IID_ICLRPrivBinder;
             /* [in] */ IAssemblyName *pAssemblyName,
             /* [retval][out] */ ICLRPrivAssembly **ppAssembly);
         
-        HRESULT ( STDMETHODCALLTYPE *VerifyBind )( 
-            ICLRPrivBinder * This,
-            /* [in] */ IAssemblyName *AssemblyName,
-            /* [in] */ ICLRPrivAssembly *pAssembly,
-            /* [in] */ ICLRPrivAssemblyInfo *pAssemblyInfo);
-        
-        HRESULT ( STDMETHODCALLTYPE *GetBinderFlags )( 
-            ICLRPrivBinder * This,
-            /* [retval][out] */ DWORD *pBinderFlags);
-        
         HRESULT ( STDMETHODCALLTYPE *GetBinderID )( 
             ICLRPrivBinder * This,
             /* [retval][out] */ UINT_PTR *pBinderId);
         
-        HRESULT ( STDMETHODCALLTYPE *FindAssemblyBySpec )( 
+        HRESULT(STDMETHODCALLTYPE *GetLoaderAllocator)(
             ICLRPrivBinder * This,
-            /* [in] */ LPVOID pvAppDomain,
-            /* [in] */ LPVOID pvAssemblySpec,
-            /* [out] */ HRESULT *pResult,
-            /* [out] */ ICLRPrivAssembly **ppAssembly);
-        
+            /* [retval][out] */ LPVOID *pLoaderAllocator) = 0;
+
         END_INTERFACE
     } ICLRPrivBinderVtbl;
 
@@ -245,17 +220,8 @@ EXTERN_C const IID IID_ICLRPrivBinder;
 #define ICLRPrivBinder_BindAssemblyByName(This,pAssemblyName,ppAssembly)	\
     ( (This)->lpVtbl -> BindAssemblyByName(This,pAssemblyName,ppAssembly) ) 
 
-#define ICLRPrivBinder_VerifyBind(This,AssemblyName,pAssembly,pAssemblyInfo)	\
-    ( (This)->lpVtbl -> VerifyBind(This,AssemblyName,pAssembly,pAssemblyInfo) ) 
-
-#define ICLRPrivBinder_GetBinderFlags(This,pBinderFlags)	\
-    ( (This)->lpVtbl -> GetBinderFlags(This,pBinderFlags) ) 
-
 #define ICLRPrivBinder_GetBinderID(This,pBinderId)	\
     ( (This)->lpVtbl -> GetBinderID(This,pBinderId) ) 
-
-#define ICLRPrivBinder_FindAssemblyBySpec(This,pvAppDomain,pvAssemblySpec,pResult,ppAssembly)	\
-    ( (This)->lpVtbl -> FindAssemblyBySpec(This,pvAppDomain,pvAssemblySpec,pResult,ppAssembly) ) 
 
 #endif /* COBJMACROS */
 
@@ -271,13 +237,6 @@ EXTERN_C const IID IID_ICLRPrivBinder;
 /* interface __MIDL_itf_CLRPrivBinding_0000_0001 */
 /* [local] */ 
 
-
-enum CLR_PRIV_BINDER_FLAGS
-    {
-        BINDER_NONE	= 0,
-        BINDER_DESIGNER_BINDING_CONTEXT	= 0x1,
-        BINDER_FINDASSEMBLYBYSPEC_REQUIRES_EXACT_MATCH	= 0x2
-    } ;
 
 enum ASSEMBLY_IMAGE_TYPES
     {
@@ -343,26 +302,9 @@ EXTERN_C const IID IID_ICLRPrivAssembly;
             /* [in] */ IAssemblyName *pAssemblyName,
             /* [retval][out] */ ICLRPrivAssembly **ppAssembly);
         
-        HRESULT ( STDMETHODCALLTYPE *VerifyBind )( 
-            ICLRPrivAssembly * This,
-            /* [in] */ IAssemblyName *AssemblyName,
-            /* [in] */ ICLRPrivAssembly *pAssembly,
-            /* [in] */ ICLRPrivAssemblyInfo *pAssemblyInfo);
-        
-        HRESULT ( STDMETHODCALLTYPE *GetBinderFlags )( 
-            ICLRPrivAssembly * This,
-            /* [retval][out] */ DWORD *pBinderFlags);
-        
         HRESULT ( STDMETHODCALLTYPE *GetBinderID )( 
             ICLRPrivAssembly * This,
             /* [retval][out] */ UINT_PTR *pBinderId);
-        
-        HRESULT ( STDMETHODCALLTYPE *FindAssemblyBySpec )( 
-            ICLRPrivAssembly * This,
-            /* [in] */ LPVOID pvAppDomain,
-            /* [in] */ LPVOID pvAssemblySpec,
-            /* [out] */ HRESULT *pResult,
-            /* [out] */ ICLRPrivAssembly **ppAssembly);
         
         HRESULT ( STDMETHODCALLTYPE *IsShareable )( 
             ICLRPrivAssembly * This,
@@ -404,17 +346,8 @@ EXTERN_C const IID IID_ICLRPrivAssembly;
 #define ICLRPrivAssembly_BindAssemblyByName(This,pAssemblyName,ppAssembly)	\
     ( (This)->lpVtbl -> BindAssemblyByName(This,pAssemblyName,ppAssembly) ) 
 
-#define ICLRPrivAssembly_VerifyBind(This,AssemblyName,pAssembly,pAssemblyInfo)	\
-    ( (This)->lpVtbl -> VerifyBind(This,AssemblyName,pAssembly,pAssemblyInfo) ) 
-
-#define ICLRPrivAssembly_GetBinderFlags(This,pBinderFlags)	\
-    ( (This)->lpVtbl -> GetBinderFlags(This,pBinderFlags) ) 
-
 #define ICLRPrivAssembly_GetBinderID(This,pBinderId)	\
     ( (This)->lpVtbl -> GetBinderID(This,pBinderId) ) 
-
-#define ICLRPrivAssembly_FindAssemblyBySpec(This,pvAppDomain,pvAssemblySpec,pResult,ppAssembly)	\
-    ( (This)->lpVtbl -> FindAssemblyBySpec(This,pvAppDomain,pvAssemblySpec,pResult,ppAssembly) ) 
 
 
 #define ICLRPrivAssembly_IsShareable(This,pbIsShareable)	\

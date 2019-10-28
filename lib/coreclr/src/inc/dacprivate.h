@@ -177,6 +177,25 @@ struct MSLAYOUT DacpMethodTableFieldData : ZeroInit<DacpMethodTableFieldData>
     }
 };
 
+struct MSLAYOUT DacpMethodTableCollectibleData : ZeroInit<DacpMethodTableCollectibleData>
+{
+    CLRDATA_ADDRESS LoaderAllocatorObjectHandle;
+    BOOL bCollectible;
+
+    HRESULT Request(ISOSDacInterface *sos, CLRDATA_ADDRESS addr)
+    {
+        HRESULT hr;
+        ISOSDacInterface6 *pSOS6 = NULL;
+        if (SUCCEEDED(hr = sos->QueryInterface(__uuidof(ISOSDacInterface6), (void**)&pSOS6)))
+        {
+            hr = pSOS6->GetMethodTableCollectibleData(addr, this);
+            pSOS6->Release();
+        }
+
+        return hr;
+    }
+};
+
 struct MSLAYOUT DacpMethodTableTransparencyData : ZeroInit<DacpMethodTableTransparencyData>
 {
     BOOL bHasCriticalTransparentInfo;
@@ -280,7 +299,7 @@ struct MSLAYOUT DacpMethodTableData : ZeroInit<DacpMethodTableData>
     DWORD ComponentSize;
     mdTypeDef cl; // Metadata token    
     DWORD dwAttrClass; // cached metadata
-    BOOL bIsShared; // flags & enum_flag_DomainNeutral
+    BOOL bIsShared;  // Always false, preserved for backward compatibility
     BOOL bIsDynamic;
     BOOL bContainsPointers;
 
@@ -453,7 +472,7 @@ struct MSLAYOUT DacpAssemblyData : ZeroInit<DacpAssemblyData>
     BOOL isDynamic;
     UINT ModuleCount;
     UINT LoadContext;
-    BOOL isDomainNeutral;
+    BOOL isDomainNeutral; // Always false, preserved for backward compatibility
     DWORD dwLocationFlags;
 
     HRESULT Request(ISOSDacInterface *sos, CLRDATA_ADDRESS addr, CLRDATA_ADDRESS baseDomainPtr)
@@ -568,16 +587,18 @@ struct MSLAYOUT DacpMethodDescTransparencyData : ZeroInit<DacpMethodDescTranspar
 
 struct MSLAYOUT DacpTieredVersionData
 {
-    enum TieredState 
+    enum OptimizationTier
     {
-        NON_TIERED,
-        TIERED_0,
-        TIERED_1,
-        TIERED_UNKNOWN
+        OptimizationTier_Unknown,
+        OptimizationTier_MinOptJitted,
+        OptimizationTier_Optimized,
+        OptimizationTier_QuickJitted,
+        OptimizationTier_OptimizedTier1,
+        OptimizationTier_ReadyToRun,
     };
     
     CLRDATA_ADDRESS NativeCodeAddr;
-    TieredState     TieredInfo;
+    OptimizationTier OptimizationTier;
     CLRDATA_ADDRESS NativeCodeVersionNodePtr;
 };
 
@@ -1043,5 +1064,6 @@ static_assert(sizeof(DacpGetModuleAddress) == 0x8, "Dacp structs cannot be modif
 static_assert(sizeof(DacpFrameData) == 0x8, "Dacp structs cannot be modified due to backwards compatibility.");
 static_assert(sizeof(DacpJitCodeHeapInfo) == 0x18, "Dacp structs cannot be modified due to backwards compatibility.");
 static_assert(sizeof(DacpExceptionObjectData) == 0x38, "Dacp structs cannot be modified due to backwards compatibility.");
+static_assert(sizeof(DacpMethodTableCollectibleData) == 0x10, "Dacp structs cannot be modified due to backwards compatibility.");
 
 #endif  // _DACPRIVATE_H_

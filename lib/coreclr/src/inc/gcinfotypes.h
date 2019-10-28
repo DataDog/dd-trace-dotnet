@@ -10,6 +10,11 @@
 #include "gcinfo.h"
 #endif
 
+// *****************************************************************************
+// WARNING!!!: These values and code are also used by SOS in the diagnostics
+// repo. Should updated in a backwards and forwards compatible way.
+// See: https://github.com/dotnet/diagnostics/blob/master/src/inc/gcinfotypes.h
+// *****************************************************************************
 
 #define PARTIALLY_INTERRUPTIBLE_GC_SUPPORTED
 
@@ -246,6 +251,12 @@ inline bool IsValidFieldReturnKind(ReturnKind returnKind)
     return (returnKind == RT_Scalar || returnKind == RT_Object || returnKind == RT_ByRef);
 }
 
+inline bool IsPointerFieldReturnKind(ReturnKind returnKind)
+{
+    _ASSERTE(IsValidFieldReturnKind(returnKind));
+    return (returnKind == RT_Object || returnKind == RT_ByRef);
+}
+
 inline bool IsValidReturnRegister(size_t regNo)
 {
     return (regNo == 0)
@@ -260,6 +271,20 @@ inline bool IsStructReturnKind(ReturnKind returnKind)
     // Two bits encode integer/ref/float return-kinds.
     // Encodings needing more than two bits are (non-scalar) struct-returns.
     return returnKind > 3;
+}
+
+inline bool IsScalarReturnKind(ReturnKind returnKind)
+{
+    return (returnKind == RT_Scalar)
+#ifdef _TARGET_X86_
+        || (returnKind == RT_Float)
+#endif // _TARGET_X86_
+        ;
+}
+
+inline bool IsPointerReturnKind(ReturnKind returnKind)
+{
+    return IsValidReturnKind(returnKind) && !IsScalarReturnKind(returnKind);
 }
 
 // Helpers for combining/extracting individual ReturnKinds from/to Struct ReturnKinds.
@@ -331,9 +356,6 @@ inline const char *ReturnKindToString(ReturnKind returnKind)
 
 // we use offsetof to get the offset of a field
 #include <stddef.h> // offsetof
-#ifndef offsetof
-#define offsetof(s,m)   ((size_t)&(((s *)0)->m))
-#endif
 
 enum infoHdrAdjustConstants {
     // Constants
