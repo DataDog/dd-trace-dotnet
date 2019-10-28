@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -13,6 +14,8 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class JsonConfigurationSource : IConfigurationSource
     {
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(JsonConfigurationSource));
+
         private readonly JObject _configuration;
 
         /// <summary>
@@ -126,9 +129,17 @@ namespace Datadog.Trace.Configuration
 
             if (token.Type == JTokenType.Object)
             {
-                var dictionary = token
-                    ?.ToObject<ConcurrentDictionary<string, string>>();
-                return dictionary;
+                try
+                {
+                    var dictionary = token
+                        ?.ToObject<ConcurrentDictionary<string, string>>();
+                    return dictionary;
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Unable to parse configuration value for {0} as key-value pairs of strings.", key);
+                    return null;
+                }
             }
 
             return StringConfigurationSource.ParseCustomKeyValues(token.ToString());

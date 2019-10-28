@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tests.Configuration
         public static IEnumerable<object[]> GetBadJsonTestData3()
         {
             // Json doesn't represent dictionary of string to string
-            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"": { ""name2"": [ ""vers"" ] } } }" };
+            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"": { ""name2"": [ ""vers"" ] } } }", CreateFunc(s => s.GlobalTags.Count), 0 };
         }
 
         public static Func<TracerSettings, object> CreateFunc(Func<TracerSettings, object> settingGetter)
@@ -148,10 +148,15 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [MemberData(nameof(GetBadJsonTestData3))]
         public void JsonConfigurationSource_BadData3(
-            string value)
+            string value,
+            Func<TracerSettings, object> settingGetter,
+            object expectedValue)
         {
             IConfigurationSource source = new JsonConfigurationSource(value);
-            Assert.Throws<JsonReaderException>(() => { new TracerSettings(source); });
+            var settings = new TracerSettings(source);
+
+            var actualValue = settingGetter(settings);
+            Assert.Equal(expectedValue, actualValue);
         }
     }
 }
