@@ -59,6 +59,12 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"":""value1"", ""name2"": ""value2"" }" };
         }
 
+        public static IEnumerable<object[]> GetBadJsonTestData3()
+        {
+            // Json doesn't represent dictionary of string to string
+            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"": { ""name2"": [ ""vers"" ] } } }" };
+        }
+
         public static Func<TracerSettings, object> CreateFunc(Func<TracerSettings, object> settingGetter)
         {
             return settingGetter;
@@ -137,6 +143,15 @@ namespace Datadog.Trace.Tests.Configuration
             string value)
         {
             Assert.Throws<JsonSerializationException>(() => { new JsonConfigurationSource(value); });
+        }
+
+        [Theory]
+        [MemberData(nameof(GetBadJsonTestData3))]
+        public void JsonConfigurationSource_BadData3(
+            string value)
+        {
+            IConfigurationSource source = new JsonConfigurationSource(value);
+            Assert.Throws<JsonReaderException>(() => { new TracerSettings(source); });
         }
     }
 }

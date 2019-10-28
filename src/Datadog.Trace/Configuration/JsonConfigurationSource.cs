@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -123,12 +124,10 @@ namespace Datadog.Trace.Configuration
                 return null;
             }
 
-            // Presence of a curly brace indicates that this is likely a JSON string. An exception will be thrown
-            // if it fails to parse or convert to a dictionary.
             if (token.Type == JTokenType.Object)
             {
                 var dictionary = token
-                    ?.ToObject<ConcurrentDictionary<string, string>>() as ConcurrentDictionary<string, string>;
+                    ?.ToObject<ConcurrentDictionary<string, string>>();
                 return dictionary;
             }
 
