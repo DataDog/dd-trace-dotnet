@@ -24,36 +24,42 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Fact]
-        public void Only_100_Allowed_In_500_Burst()
+        public void All_Traces_Disabled()
+        {
+            var rateLimiter = new RateLimiter(maxTracesPerInterval: 0);
+            var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
+            Assert.Equal(expected: 0, actual: allowedCount);
+        }
+
+        [Fact]
+        public void All_Traces_Allowed()
+        {
+            var rateLimiter = new RateLimiter(maxTracesPerInterval: -1);
+            var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
+            Assert.Equal(expected: 500, actual: allowedCount);
+        }
+
+        [Fact]
+        public void Only_100_Allowed_In_500_Burst_For_Default()
         {
             var rateLimiter = new RateLimiter(maxTracesPerInterval: null);
-            var remaining = 500;
-            var allowedCount = 0;
-            while (remaining-- > 0)
-            {
-                var allowed = rateLimiter.Allowed(1);
-                if (allowed)
-                {
-                    allowedCount++;
-                }
-            }
-
+            var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
             Assert.Equal(expected: DefaultLimitPerSecond, actual: allowedCount);
         }
 
         [Fact]
         public void Limits_Approximately_To_Defaults()
         {
-            Run_Limit_Test(intervalLimit: null, numberPerBurst: 200, numberOfBursts: 16, millisecondsBetweenBursts: 247);
+            Run_Limit_Test(intervalLimit: null, numberPerBurst: 200, numberOfBursts: 20, millisecondsBetweenBursts: 247);
         }
 
         [Fact]
         public void Limits_To_Custom_Amount_Per_Second()
         {
-            Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 16, millisecondsBetweenBursts: 247);
+            Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 20, millisecondsBetweenBursts: 247);
         }
 
-        private void Run_Limit_Test(int? intervalLimit, int numberPerBurst, int numberOfBursts, int millisecondsBetweenBursts)
+        private static void Run_Limit_Test(int? intervalLimit, int numberPerBurst, int numberOfBursts, int millisecondsBetweenBursts)
         {
             var actualIntervalLimit = intervalLimit ?? DefaultLimitPerSecond;
 
@@ -74,23 +80,43 @@ namespace Datadog.Trace.Tests.Sampling
             var expectedLimit = actualTotalWindowTime * actualIntervalLimit / 1_000;
 
             var upperLimit = expectedLimit * 1.20;
-            var lowerLimit = expectedLimit * 1.00;
+            var lowerLimit = expectedLimit * 0.90;
 
             Assert.True(
                 result.TotalAllowed >= lowerLimit && result.TotalAllowed <= upperLimit,
                 $"Expected between {lowerLimit} and {upperLimit}, received {result.TotalAllowed} out of {result.TotalAttempted} within {totalMilliseconds} milliseconds.");
 
-            var expectedRate = result.TotalAllowed / (float)result.TotalAttempted;
+            // Rate should match for the last two intervals, which is a total of two seconds
+            var numberOfBurstsWithinTwoIntervals = 2_000 / millisecondsBetweenBursts;
+            var totalExpectedSent = numberOfBurstsWithinTwoIntervals * numberPerBurst;
+            var totalExpectedAllowed = 2 * actualIntervalLimit;
+            var expectedRate = totalExpectedAllowed / (float)totalExpectedSent;
 
-            var lowestRate = expectedRate * 0.95;
-            var highestRate = expectedRate * 1.05;
+            var lowestRate = expectedRate * 0.90;
+            var highestRate = expectedRate * 1.10;
 
             Assert.True(
-                result.ReportedRate >= lowestRate && result.TotalAllowed <= highestRate,
+                result.ReportedRate >= lowestRate && result.ReportedRate <= highestRate,
                 $"Expected rate between {lowestRate} and {highestRate}, received {result.ReportedRate}.");
         }
 
-        private RateLimitResult RunTest(int? intervalLimit, RateLimitLoadTest test)
+        private static int AskTheRateLimiterABunchOfTimes(RateLimiter rateLimiter, int howManyTimes)
+        {
+            var remaining = howManyTimes;
+            var allowedCount = 0;
+            while (remaining-- > 0)
+            {
+                var allowed = rateLimiter.Allowed(1);
+                if (allowed)
+                {
+                    allowedCount++;
+                }
+            }
+
+            return allowedCount;
+        }
+
+        private static RateLimitResult RunTest(int? intervalLimit, RateLimitLoadTest test)
         {
             var parallelism = test.NumberPerBurst;
 
