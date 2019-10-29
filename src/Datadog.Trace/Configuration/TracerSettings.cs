@@ -85,6 +85,14 @@ namespace Datadog.Trace.Configuration
 
             GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
                          new ConcurrentDictionary<string, string>();
+
+            DogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort) ??
+                            // default value
+                            8125;
+
+            InternalMetricsEnabled = source?.GetBool(ConfigurationKeys.InternalMetricsEnabled) ??
+                                     // default value
+                                     false;
         }
 
         /// <summary>
@@ -167,6 +175,19 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
         public IDictionary<string, string> GlobalTags { get; set; }
+
+        /// <summary>
+        /// Gets or sets the port where the DogStatsd server is listening for connections.
+        /// Default is <c>8125</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
+        public int DogStatsdPort { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether internal metrics
+        /// are enabled and send to DogStatsd.
+        /// </summary>
+        public bool InternalMetricsEnabled { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
