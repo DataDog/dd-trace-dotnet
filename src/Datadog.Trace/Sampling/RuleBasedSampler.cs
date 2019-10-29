@@ -13,8 +13,6 @@ namespace Datadog.Trace.Sampling
         private readonly IRateLimiter _limiter;
         private readonly List<ISamplingRule> _rules = new List<ISamplingRule>();
 
-        private readonly object _sampleRateGate = new object();
-
         private Dictionary<string, float> _sampleRates = new Dictionary<string, float>();
 
         public RuleBasedSampler(IRateLimiter limiter)
@@ -36,10 +34,7 @@ namespace Datadog.Trace.Sampling
                 }
             }
 
-            lock (_sampleRateGate)
-            {
-                _sampleRates = rates;
-            }
+            _sampleRates = rates;
         }
 
         public SamplingPriority GetSamplingPriority(Span span)
@@ -70,13 +65,7 @@ namespace Datadog.Trace.Sampling
 
             var key = $"service:{service},env:{env}";
 
-            bool retrievedRate;
-            lock (_sampleRateGate)
-            {
-                retrievedRate = _sampleRates.TryGetValue(key, out sampleRate);
-            }
-
-            if (retrievedRate)
+            if (_sampleRates.TryGetValue(key, out sampleRate))
             {
                 Log.Debug("Using the default sampling logic for trace {0}", traceId);
                 return GetSamplingPriority(span, sampleRate, withRateLimiter: false);
