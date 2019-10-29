@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using Datadog.Trace.Logging;
 
@@ -9,14 +10,14 @@ namespace Datadog.Trace.Sampling
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RateLimiter>();
 
         private readonly ManualResetEventSlim _refreshEvent = new ManualResetEventSlim(initialState: true);
+        private readonly ConcurrentQueue<DateTime> _intervalQueue = new ConcurrentQueue<DateTime>();
 
         private readonly int _maxTracesPerInterval;
         private readonly int _intervalMilliseconds;
+        private readonly TimeSpan _interval;
 
         private DateTime _windowBegin;
         private DateTime _lastRefresh;
-
-        private int _intervalAllowed = 0;
 
         private int _windowChecks = 0;
         private int _windowAllowed = 0;
@@ -28,6 +29,7 @@ namespace Datadog.Trace.Sampling
         {
             _maxTracesPerInterval = maxTracesPerInterval ?? 100;
             _intervalMilliseconds = 1_000;
+            _interval = TimeSpan.FromMilliseconds(_intervalMilliseconds);
             _windowBegin = _lastRefresh = DateTime.Now;
             Log.Debug("Allowing {0} p1 traces per {1} milliseconds.", _maxTracesPerInterval, _intervalMilliseconds);
         }
@@ -51,13 +53,15 @@ namespace Datadog.Trace.Sampling
             // This must happen after the wait, because we check for window statistics, modifying this number
             Interlocked.Increment(ref _windowChecks);
 
-            if (_intervalAllowed >= _maxTracesPerInterval)
+            var count = _intervalQueue.Count;
+
+            if (count >= _maxTracesPerInterval)
             {
-                Log.Debug("Dropping trace id {0} with count of {1} for last {2}ms.", traceId, _intervalAllowed, _intervalMilliseconds);
+                Log.Debug("Dropping trace id {0} with count of {1} for last {2}ms.", traceId, count, _intervalMilliseconds);
                 return false;
             }
 
-            Interlocked.Increment(ref _intervalAllowed);
+            _intervalQueue.Enqueue(DateTime.Now);
             Interlocked.Increment(ref _windowAllowed);
 
             return true;
@@ -99,7 +103,7 @@ namespace Datadog.Trace.Sampling
             if (previousRefresh != _lastRefresh)
             {
                 // Some other thread already did this very recently
-                // Let's save some cycles
+                // Let's save some cycles and prevent contention
                 return;
             }
 
@@ -123,21 +127,9 @@ namespace Datadog.Trace.Sampling
                     _windowBegin = now;
                 }
 
-                var timeSinceRefreshAsRatio = (now - previousRefresh).TotalMilliseconds / (float)_intervalMilliseconds;
-
-                if (timeSinceRefreshAsRatio >= 1)
+                while (_intervalQueue.TryPeek(out var time) && now.Subtract(time) > _interval)
                 {
-                    _intervalAllowed = 0;
-                }
-                else
-                {
-                    var howManyToClear = (timeSinceRefreshAsRatio * _maxTracesPerInterval);
-                    if (howManyToClear > _intervalAllowed)
-                    {
-                        _intervalAllowed = 0;
-                    }
-
-                    _intervalAllowed -= (int)howManyToClear;
+                    _intervalQueue.TryDequeue(out _);
                 }
             }
             finally

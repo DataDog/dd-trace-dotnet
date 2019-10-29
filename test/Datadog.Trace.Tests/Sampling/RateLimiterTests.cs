@@ -50,13 +50,13 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Limits_Approximately_To_Defaults()
         {
-            Run_Limit_Test(intervalLimit: null, numberPerBurst: 200, numberOfBursts: 20, millisecondsBetweenBursts: 247);
+            Run_Limit_Test(intervalLimit: null, numberPerBurst: 200, numberOfBursts: 16, millisecondsBetweenBursts: 247);
         }
 
         [Fact]
         public void Limits_To_Custom_Amount_Per_Second()
         {
-            Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 20, millisecondsBetweenBursts: 247);
+            Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 16, millisecondsBetweenBursts: 247);
         }
 
         private static void Run_Limit_Test(int? intervalLimit, int numberPerBurst, int numberOfBursts, int millisecondsBetweenBursts)
@@ -74,12 +74,9 @@ namespace Datadog.Trace.Tests.Sampling
 
             var totalMilliseconds = result.TimeElapsed.TotalMilliseconds;
 
-            // Adjust for the second before
-            var actualTotalWindowTime = totalMilliseconds + (10_000 / totalMilliseconds);
+            var expectedLimit = totalMilliseconds * actualIntervalLimit / 1_000;
 
-            var expectedLimit = actualTotalWindowTime * actualIntervalLimit / 1_000;
-
-            var upperLimit = expectedLimit * 1.20;
+            var upperLimit = expectedLimit * 1.10;
             var lowerLimit = expectedLimit * 0.90;
 
             Assert.True(
@@ -92,8 +89,8 @@ namespace Datadog.Trace.Tests.Sampling
             var totalExpectedAllowed = 2 * actualIntervalLimit;
             var expectedRate = totalExpectedAllowed / (float)totalExpectedSent;
 
-            var lowestRate = expectedRate * 0.90;
-            var highestRate = expectedRate * 1.10;
+            var lowestRate = expectedRate * 0.75;
+            var highestRate = expectedRate * 1.25;
 
             Assert.True(
                 result.ReportedRate >= lowestRate && result.ReportedRate <= highestRate,
@@ -133,8 +130,10 @@ namespace Datadog.Trace.Tests.Sampling
 
             var result = new RateLimitResult();
 
-            test.Stopwatch.Start();
+            var start = DateTime.Now;
             var limiter = new RateLimiter(maxTracesPerInterval: intervalLimit);
+            var end = DateTime.Now;
+            var endLock = new object();
 
             for (var i = 0; i < test.NumberOfBursts; i++)
             {
@@ -160,7 +159,10 @@ namespace Datadog.Trace.Tests.Sampling
                                            }
                                        }
 
-                                       registry.TryDequeue(out _);
+                                       lock (endLock)
+                                       {
+                                           end = DateTime.Now;
+                                       }
                                    }));
 
                 foreach (var worker in workers)
@@ -178,7 +180,6 @@ namespace Datadog.Trace.Tests.Sampling
 
             while (!registry.IsEmpty)
             {
-                Thread.Sleep(100);
                 if (registry.TryDequeue(out var item))
                 {
                     if (item.IsAlive)
@@ -188,11 +189,9 @@ namespace Datadog.Trace.Tests.Sampling
                 }
             }
 
-            test.Stopwatch.Stop();
-
             result.RateLimiter = limiter;
             result.ReportedRate = limiter.GetEffectiveRate();
-            result.TimeElapsed = test.Stopwatch.Elapsed;
+            result.TimeElapsed = end.Subtract(start);
 
             return result;
         }
@@ -204,8 +203,6 @@ namespace Datadog.Trace.Tests.Sampling
             public TimeSpan TimeBetweenBursts { get; set; }
 
             public int NumberOfBursts { get; set; }
-
-            public Stopwatch Stopwatch { get; } = new Stopwatch();
         }
 
         private class RateLimitResult
@@ -223,8 +220,6 @@ namespace Datadog.Trace.Tests.Sampling
             public int TotalAttempted => Allowed.Count + Denied.Count;
 
             public int TotalAllowed => Allowed.Count;
-
-            public int TotalDenied => Denied.Count;
         }
     }
 }
