@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
 
 namespace Datadog.Trace.Configuration
 {
@@ -72,10 +71,12 @@ namespace Datadog.Trace.Configuration
             AgentUri = new Uri(agentUri);
 
             AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
+                               // default value
                                false;
 
             LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled) ??
-                               false;
+                                   // default value
+                                   false;
 
             MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
                                100;
@@ -83,7 +84,7 @@ namespace Datadog.Trace.Configuration
             Integrations = new IntegrationSettingsCollection(source);
 
             GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
-                new ConcurrentDictionary<string, string>();
+                         new ConcurrentDictionary<string, string>();
         }
 
         /// <summary>
