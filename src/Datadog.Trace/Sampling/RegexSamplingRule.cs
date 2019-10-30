@@ -77,11 +77,11 @@ namespace Datadog.Trace.Sampling
                         }
                         else if (key == "service")
                         {
-                            serviceNameRegex = value;
+                            serviceNameRegex = WrapWithLineCharacters(value);
                         }
                         else if (key == "operation")
                         {
-                            operationNameRegex = value;
+                            operationNameRegex = WrapWithLineCharacters(value);
                         }
                         else if (key == "name")
                         {
@@ -119,9 +119,24 @@ namespace Datadog.Trace.Sampling
             return true;
         }
 
-        public float GetSamplingRate(Span span)
+        public float GetSamplingRate()
         {
             return _samplingRate;
+        }
+
+        private static string WrapWithLineCharacters(string regex)
+        {
+            if (!regex.StartsWith("^"))
+            {
+                regex = "^" + regex;
+            }
+
+            if (!regex.EndsWith("$"))
+            {
+                regex = regex + "$";
+            }
+
+            return regex;
         }
     }
 }

@@ -33,11 +33,24 @@ namespace Datadog.Trace.Tests.Sampling
                 () => Tracer.Instance.StartActive(operationName: "test"));
         }
 
+        [Fact]
+        public void Keep_Half_Rule()
+        {
+            var sampler = new RuleBasedSampler(new NoLimits());
+            sampler.RegisterRule(new RegexSamplingRule(0.5f, "Allow_nothing", ".*", ".*"));
+            RunSamplerTest(
+                sampler,
+                10_000, // Higher number for lower variance
+                0.5f,
+                0.05f,
+                () => Tracer.Instance.StartActive(operationName: "test"));
+        }
+
         private void RunSamplerTest(
             ISampler sampler,
             int iterations,
             float expectedAutoKeepRate,
-            float acceptableVariance,
+            float acceptableVariancePercent,
             Func<Scope> scopeFactory)
         {
             var sampleSize = iterations;
@@ -56,8 +69,8 @@ namespace Datadog.Trace.Tests.Sampling
 
             var autoKeepRate = autoKeeps / (float)iterations;
 
-            var lowerLimit = expectedAutoKeepRate * (1 - acceptableVariance);
-            var upperLimit = expectedAutoKeepRate * (1 + acceptableVariance);
+            var lowerLimit = expectedAutoKeepRate * (1 - acceptableVariancePercent);
+            var upperLimit = expectedAutoKeepRate * (1 + acceptableVariancePercent);
 
             Assert.True(
                 autoKeepRate >= lowerLimit && autoKeepRate <= upperLimit,

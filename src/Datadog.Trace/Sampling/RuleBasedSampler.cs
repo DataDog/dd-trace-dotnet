@@ -48,7 +48,7 @@ namespace Datadog.Trace.Sampling
                 {
                     if (rule.IsMatch(span))
                     {
-                        sampleRate = rule.GetSamplingRate(span);
+                        sampleRate = rule.GetSamplingRate();
                         Log.Debug(
                             "Matched on rule {0}. Applying rate of {1} to trace id {2}",
                             rule.Name,

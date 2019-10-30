@@ -8,6 +8,6 @@ namespace Datadog.Trace.Sampling
 
         bool IsMatch(Span span);
 
-        float GetSamplingRate(Span span);
+        float GetSamplingRate();
     }
 }
