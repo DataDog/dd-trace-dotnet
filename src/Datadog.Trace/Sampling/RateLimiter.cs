@@ -31,7 +31,6 @@ namespace Datadog.Trace.Sampling
             _intervalMilliseconds = 1_000;
             _interval = TimeSpan.FromMilliseconds(_intervalMilliseconds);
             _windowBegin = _lastRefresh = DateTime.Now;
-            Log.Debug("Allowing {0} p1 traces per {1} milliseconds.", _maxTracesPerInterval, _intervalMilliseconds);
         }
 
         public bool Allowed(ulong traceId)
