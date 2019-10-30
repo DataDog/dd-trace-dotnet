@@ -57,7 +57,7 @@ namespace Datadog.Trace
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
 
-            if (!string.IsNullOrEmpty(Settings.CustomSamplingRules))
+            if (!string.IsNullOrWhiteSpace(Settings.CustomSamplingRules))
             {
                 foreach (var rule in RegexSamplingRule.BuildFromConfigurationString(Settings.CustomSamplingRules))
                 {

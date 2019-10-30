@@ -8,10 +8,13 @@ namespace Datadog.Trace.Sampling
     internal class RegexSamplingRule : ISamplingRule
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RegexSamplingRule>();
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
 
         private readonly float _samplingRate;
         private readonly string _serviceNameRegex;
         private readonly string _operationNameRegex;
+
+        private bool _hasPoisonedRegex = false;
 
         public RegexSamplingRule(
             float rate,
@@ -57,7 +60,7 @@ namespace Datadog.Trace.Sampling
 
                         if (kvp.Length != 2 || string.IsNullOrWhiteSpace(kvp[0]) || string.IsNullOrWhiteSpace(kvp[1]))
                         {
-                            Log.Warning("Rule {0} is malformed, skipping.",  ruleName);
+                            Log.Warning("Rule {0} is malformed, skipping.", ruleName);
                             continue;
                         }
 
@@ -92,7 +95,7 @@ namespace Datadog.Trace.Sampling
                     if (rateSet == false)
                     {
                         // Need a valid rate to be set to use a rule
-                        Log.Warning("Rule {0} is missing the required rate, skipping.",  ruleName);
+                        Log.Warning("Rule {0} is missing the required rate, skipping.", ruleName);
                         continue;
                     }
 
@@ -107,12 +110,17 @@ namespace Datadog.Trace.Sampling
 
         public bool IsMatch(Span span)
         {
-            if (_serviceNameRegex != null && !Regex.IsMatch(input: span.ServiceName, pattern: _serviceNameRegex))
+            if (_hasPoisonedRegex)
             {
                 return false;
             }
 
-            if (_operationNameRegex != null && !Regex.IsMatch(input: span.OperationName, pattern: _operationNameRegex))
+            if (DoesNotMatch(input: span.ServiceName, pattern: _serviceNameRegex))
+            {
+                return false;
+            }
+
+            if (DoesNotMatch(input: span.OperationName, pattern: _operationNameRegex))
             {
                 return false;
             }
@@ -123,6 +131,33 @@ namespace Datadog.Trace.Sampling
         public float GetSamplingRate()
         {
             return _samplingRate;
+        }
+
+        private bool DoesNotMatch(string input, string pattern)
+        {
+            try
+            {
+                if (pattern != null &&
+                    !Regex.IsMatch(
+                        input: input,
+                        pattern: pattern,
+                        options: RegexOptions.None,
+                        matchTimeout: RegexTimeout))
+                {
+                    return true;
+                }
+            }
+            catch (RegexMatchTimeoutException timeoutEx)
+            {
+                _hasPoisonedRegex = true;
+                Log.Error(
+                    timeoutEx,
+                    "Timeout when trying to match against {0} on {1}.",
+                    input,
+                    pattern);
+            }
+
+            return false;
         }
 
         private static string WrapWithLineCharacters(string regex)
