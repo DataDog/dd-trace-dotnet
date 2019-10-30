@@ -76,8 +76,8 @@ namespace Datadog.Trace.Tests.Sampling
 
             var expectedLimit = totalMilliseconds * actualIntervalLimit / 1_000;
 
-            var upperLimit = expectedLimit * 1.10;
-            var lowerLimit = expectedLimit * 0.90;
+            var upperLimit = expectedLimit * 1.20;
+            var lowerLimit = expectedLimit * 0.80;
 
             Assert.True(
                 result.TotalAllowed >= lowerLimit && result.TotalAllowed <= upperLimit,
@@ -89,8 +89,8 @@ namespace Datadog.Trace.Tests.Sampling
             var totalExpectedAllowed = 2 * actualIntervalLimit;
             var expectedRate = totalExpectedAllowed / (float)totalExpectedSent;
 
-            var lowestRate = expectedRate * 0.75;
-            var highestRate = expectedRate * 1.25;
+            var lowestRate = expectedRate * 0.65;
+            var highestRate = expectedRate * 1.35;
 
             Assert.True(
                 result.ReportedRate >= lowestRate && result.ReportedRate <= highestRate,
