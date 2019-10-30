@@ -8,7 +8,7 @@ namespace Datadog.Trace.Sampling
     internal class RegexSamplingRule : ISamplingRule
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RegexSamplingRule>();
-        private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(500);
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
         private readonly float _samplingRate;
         private readonly string _serviceNameRegex;
@@ -133,6 +133,21 @@ namespace Datadog.Trace.Sampling
             return _samplingRate;
         }
 
+        private static string WrapWithLineCharacters(string regex)
+        {
+            if (!regex.StartsWith("^"))
+            {
+                regex = "^" + regex;
+            }
+
+            if (!regex.EndsWith("$"))
+            {
+                regex = regex + "$";
+            }
+
+            return regex;
+        }
+
         private bool DoesNotMatch(string input, string pattern)
         {
             try
@@ -158,21 +173,6 @@ namespace Datadog.Trace.Sampling
             }
 
             return false;
-        }
-
-        private static string WrapWithLineCharacters(string regex)
-        {
-            if (!regex.StartsWith("^"))
-            {
-                regex = "^" + regex;
-            }
-
-            if (!regex.EndsWith("$"))
-            {
-                regex = regex + "$";
-            }
-
-            return regex;
         }
     }
 }
