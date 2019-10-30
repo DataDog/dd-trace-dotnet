@@ -55,7 +55,7 @@ namespace Datadog.Trace.Sampling
                     {
                         var kvp = rulePart.Split(new[] { "=" }, StringSplitOptions.None);
 
-                        if (kvp.Length != 2 || string.IsNullOrWhiteSpace(kvp[1]))
+                        if (kvp.Length != 2 || string.IsNullOrWhiteSpace(kvp[0]) || string.IsNullOrWhiteSpace(kvp[1]))
                         {
                             Log.Warning("Rule {0} is malformed, skipping.",  ruleName);
                             continue;
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Sampling
                         var key = kvp[0].Trim();
                         var value = kvp[1].Trim();
 
-                        if (key.ToLower() == "rate" && float.TryParse(value, out rate))
+                        if (key.Equals("rate", StringComparison.OrdinalIgnoreCase) && float.TryParse(value, out rate))
                         {
                             if (rate < 0 || rate > 1)
                             {
@@ -75,15 +75,15 @@ namespace Datadog.Trace.Sampling
 
                             rateSet = true;
                         }
-                        else if (key == "service")
+                        else if (key.Equals("service", StringComparison.OrdinalIgnoreCase))
                         {
                             serviceNameRegex = WrapWithLineCharacters(value);
                         }
-                        else if (key == "operation")
+                        else if (key.Equals("operation", StringComparison.OrdinalIgnoreCase))
                         {
                             operationNameRegex = WrapWithLineCharacters(value);
                         }
-                        else if (key == "name")
+                        else if (key.Equals("name", StringComparison.OrdinalIgnoreCase))
                         {
                             ruleName = value;
                         }
@@ -92,6 +92,7 @@ namespace Datadog.Trace.Sampling
                     if (rateSet == false)
                     {
                         // Need a valid rate to be set to use a rule
+                        Log.Warning("Rule {0} is missing the required rate, skipping.",  ruleName);
                         continue;
                     }
 
