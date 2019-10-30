@@ -109,14 +109,6 @@ void ILRewriterWrapper::CallMember(const mdMemberRef& member_ref,
   m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
-void ILRewriterWrapper::CallMemberAfter(const mdMemberRef& member_ref,
-                                   const bool is_virtual) const {
-  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
-  pNewInstr->m_opcode = is_virtual ? CEE_CALLVIRT : CEE_CALL;
-  pNewInstr->m_Arg32 = member_ref;
-  m_ILRewriter->InsertAfter(m_ILInstr, pNewInstr);
-}
-
 void ILRewriterWrapper::Duplicate() const {
   ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
   pNewInstr->m_opcode = CEE_DUP;
