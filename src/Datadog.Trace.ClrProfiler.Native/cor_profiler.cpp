@@ -686,16 +686,27 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       // insert the opcode and signature token as
       // additional arguments for the wrapper method
+      //
+      // IMPORTANT: Conditional branches may jump to this call instruction, so
+      // we cannot add the argument-loading instructions BEFORE this instruction,
+      // otherwise this will surface in an InvalidProgramException.
+      // Either begin loading the additional arguments starting with this ILInstr
+      // structure or make the current ILInstr a no-op and do all of the argument
+      // loading after this instruction.
       ILRewriterWrapper rewriter_wrapper(&rewriter);
       rewriter_wrapper.SetILPosition(pInstr);
-      rewriter_wrapper.LoadInt32(pInstr->m_opcode);
+      auto original_methodcall_opcode = pInstr->m_opcode;
+      pInstr->m_opcode = CEE_NOP;
+
+      // replace with a non-virtual call (CALL) to the instrumentation wrapper
+      // always use CALL because the wrappers methods are all static
+      rewriter_wrapper.CallMemberAfter(wrapper_method_ref, false);
+      rewriter_wrapper.SetILPosition(pInstr->m_pNext);
+
+      // add the additional arguments before calling the wrapper method, in order
+      rewriter_wrapper.LoadInt32(original_methodcall_opcode);
       rewriter_wrapper.LoadInt32(method_def_md_token);
       rewriter_wrapper.LoadInt64(reinterpret_cast<INT64>(module_version_id_ptr));
-
-      // always use CALL because the wrappers methods are all static
-      pInstr->m_opcode = CEE_CALL;
-      // replace with a call to the instrumentation wrapper
-      pInstr->m_Arg32 = wrapper_method_ref;
 
       modified = true;
 
