@@ -101,13 +101,20 @@ namespace Datadog.Trace.Configuration
         ///   The item 'service' is optional in regular expression format, to match on service name.
         ///   The item 'operation' is optional in regular expression format, to match on operation name.
         ///
-        /// Example:
-        ///   'rate=0.5, service=cart.* ; rate=0.2, operation=web ; rate=1.0, service=background, operation=insert ; rate=0.1'
+        /// To give a rate of 50% to any traces in a service starting with the text "cart":
+        ///   'rate=0.5, service=cart.*'
         ///
-        /// The example above will match every trace in services that start with the name cart and give them a 50% sample rate.
-        /// If a trace does not come from a service starting with the name cart, but it has an operation name of web, it will have a 20% sample rate applied.
-        /// If a trace matches neither of those, and has a service name of background and an operation name of insert, 100% will be applied.
-        /// Finally, if there are no matches, the last rule of 10% will be applied.
+        /// To give a rate of 20% to any traces which have an operation name of "http.request":
+        ///   'rate=0.2, operation=http.request'
+        ///
+        /// To give a rate of 100% to any traces within a service named "background" and with an operation name of "sql.query":
+        ///   'rate=1.0, service=background, operation=sql.query
+        ///
+        /// To give a rate of 10% to all traces
+        ///   'rate=0.1'
+        ///
+        /// To configure multiple rules, separate by semi-colon and order from most specific to least specific:
+        ///   'rate=0.5, service=cart.*; rate=0.2, operation=http.request; rate=1.0, service=background, operation=sql.query; rate=0.1'
         ///
         /// If no rules are specified, or none match, default internal sampling logic will be used.
         /// </summary>
