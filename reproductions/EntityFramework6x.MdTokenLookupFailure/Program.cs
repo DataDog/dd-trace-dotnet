@@ -2,6 +2,8 @@ using System;
 using System.Data;
 using System.Data.Entity.Core;
 using System.Data.Entity.Core.EntityClient;
+using System.Data.Entity.Core.Objects;
+using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 
 namespace EntityFramework6x.MdTokenLookupFailure
@@ -20,7 +22,23 @@ namespace EntityFramework6x.MdTokenLookupFailure
                     var student = new Student() { StudentName = "Bill", Age = 12 };
 
                     ctx.Students.Add(student);
+
                     ctx.SaveChanges();
+
+                    // Call ObjectContext.ExecuteStoreQuery which invokes the bad behavior
+                    // where a branch jumps directly to the method call instruction, which
+                    // throws an InvalidProgramException if we incorrectly load our custom
+                    // method arguments BEFORE the original method call instruction.
+                    var objContext = (ctx as IObjectContextAdapter).ObjectContext;
+                    if (objContext != null)
+                    {
+                        SqlParameter paramName = new SqlParameter("name", "Bill");
+                        var results = objContext.ExecuteStoreQuery<Student>("SELECT * FROM dbo.Students WHERE StudentName = @name", new ExecutionOptions(MergeOption.AppendOnly), paramName);
+                        foreach (var result in results)
+                        {
+                            Console.WriteLine($"ExecuteStoreQuery<Student> result: StudentName={result.StudentName},Age={result.Age}");
+                        }
+                    }
                 }
 
                 // Specify the provider name, server and database.
