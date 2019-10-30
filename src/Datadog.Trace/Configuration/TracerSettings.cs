@@ -140,8 +140,7 @@ namespace Datadog.Trace.Configuration
         public bool LogsInjectionEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether correlation identifiers are
-        /// automatically injected into the logging context.
+        /// Gets or sets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.MaxTracesSubmittedPerSecond"/>
