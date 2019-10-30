@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Sampling;
 using Xunit;
 
@@ -7,6 +8,26 @@ namespace Datadog.Trace.Tests.Sampling
     [Collection(nameof(Datadog.Trace.Tests.Sampling))]
     public class RuleBasedSamplerTests
     {
+        private static readonly float FallbackRate = 0.25f;
+        private static readonly string ServiceName = "my-service-name";
+        private static readonly string Env = "my-test-env";
+        private static readonly string OperationName = "test";
+        private static readonly IEnumerable<KeyValuePair<string, float>> MockAgentRates = new List<KeyValuePair<string, float>>() { new KeyValuePair<string, float>($"service:{ServiceName},env:{Env}", FallbackRate) };
+
+        private static ulong _id = 1;
+
+        [Fact]
+        public void RateLimiter_Denies_All_Traces()
+        {
+            var sampler = new RuleBasedSampler(new DenyAll());
+            sampler.RegisterRule(new RegexSamplingRule(1, "Allow_all", ".*", ".*"));
+            RunSamplerTest(
+                sampler,
+                500,
+                0,
+                0);
+        }
+
         [Fact]
         public void Keep_Everything_Rule()
         {
@@ -16,8 +37,7 @@ namespace Datadog.Trace.Tests.Sampling
                 sampler,
                 500,
                 1,
-                0,
-                () => Tracer.Instance.StartActive(operationName: "test"));
+                0);
         }
 
         [Fact]
@@ -29,8 +49,7 @@ namespace Datadog.Trace.Tests.Sampling
                 sampler,
                 500,
                 0,
-                0,
-                () => Tracer.Instance.StartActive(operationName: "test"));
+                0);
         }
 
         [Fact]
@@ -42,28 +61,44 @@ namespace Datadog.Trace.Tests.Sampling
                 sampler,
                 10_000, // Higher number for lower variance
                 0.5f,
-                0.05f,
-                () => Tracer.Instance.StartActive(operationName: "test"));
+                0.05f);
+        }
+
+        [Fact]
+        public void No_Registered_Rules_Uses_Legacy_Rates()
+        {
+            var sampler = new RuleBasedSampler(new NoLimits());
+            sampler.SetDefaultSampleRates(MockAgentRates);
+
+            RunSamplerTest(
+                sampler,
+                10_000, // Higher number for lower variance
+                FallbackRate,
+                0.05f);
+        }
+
+        private static Span GetMyServiceSpan()
+        {
+            var span = new Span(new SpanContext(_id++, _id++, null, serviceName: ServiceName), DateTimeOffset.Now) { OperationName = OperationName };
+            span.SetTag(Tags.Env, Env);
+            return span;
         }
 
         private void RunSamplerTest(
             ISampler sampler,
             int iterations,
             float expectedAutoKeepRate,
-            float acceptableVariancePercent,
-            Func<Scope> scopeFactory)
+            float acceptableVariancePercent)
         {
             var sampleSize = iterations;
             var autoKeeps = 0;
             while (sampleSize-- > 0)
             {
-                using (var scope = scopeFactory())
+                var span = GetMyServiceSpan();
+                var priority = sampler.GetSamplingPriority(span);
+                if (priority == SamplingPriority.AutoKeep)
                 {
-                    var priority = sampler.GetSamplingPriority(scope.Span);
-                    if (priority == SamplingPriority.AutoKeep)
-                    {
-                        autoKeeps++;
-                    }
+                    autoKeeps++;
                 }
             }
 
@@ -87,6 +122,19 @@ namespace Datadog.Trace.Tests.Sampling
             public float GetEffectiveRate()
             {
                 return 1;
+            }
+        }
+
+        private class DenyAll : IRateLimiter
+        {
+            public bool Allowed(ulong traceId)
+            {
+                return false;
+            }
+
+            public float GetEffectiveRate()
+            {
+                return 0;
             }
         }
     }

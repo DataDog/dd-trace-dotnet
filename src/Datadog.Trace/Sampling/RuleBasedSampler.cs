@@ -102,14 +102,18 @@ namespace Datadog.Trace.Sampling
 
             if (sample)
             {
-                // Ensure all allowed traces adhere to the global rate limit
-                if (withRateLimiter && _limiter.Allowed(span.TraceId))
+                if (withRateLimiter)
                 {
+                    // Ensure all allowed traces adhere to the global rate limit
+                    if (_limiter.Allowed(span.TraceId))
+                    {
+                        priority = SamplingPriority.AutoKeep;
+                    }
+
                     // Always set the sample rate metric whether it was allowed or not
                     // DEV: Setting this allows us to properly compute metrics and debug the
                     //      various sample rates that are getting applied to this span
                     span.SetMetric(Metrics.SamplingLimitDecision, _limiter.GetEffectiveRate());
-                    priority = SamplingPriority.AutoKeep;
                 }
                 else
                 {
