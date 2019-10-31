@@ -70,7 +70,7 @@ namespace Datadog.Trace
                 }
             }
 
-            IApi apiClient = new Api(Settings.AgentUri, DogStatsdClient, delegatingHandler: null);
+            IApi apiClient = new Api(Settings.AgentUri, delegatingHandler: null, dogStatsdClient: DogStatsdClient);
             _agentWriter = agentWriter ?? new AgentWriter(apiClient, DogStatsdClient);
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));

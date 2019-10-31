@@ -35,7 +35,7 @@ namespace Datadog.Trace.Agent
             };
         }
 
-        public Api(Uri baseEndpoint, IDogStatsd dogStatsdClient, DelegatingHandler delegatingHandler)
+        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IDogStatsd dogStatsdClient)
         {
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _dogStatsdClient = dogStatsdClient;

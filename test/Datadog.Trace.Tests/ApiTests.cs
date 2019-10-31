@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests
                 StatusCode = HttpStatusCode.OK
             };
             var handler = new SetResponseHandler(response);
-            var api = new Api(new Uri("http://localhost:1234"), dogStatsdClient: null, handler);
+            var api = new Api(new Uri("http://localhost:1234"), handler, dogStatsdClient: null);
 
             var span = _tracer.StartSpan("Operation");
             var traces = new List<List<Span>> { new List<Span> { span } };
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests
                 StatusCode = HttpStatusCode.InternalServerError
             };
             var handler = new SetResponseHandler(response);
-            var api = new Api(new Uri("http://localhost:1234"), dogStatsdClient: null, handler);
+            var api = new Api(new Uri("http://localhost:1234"), handler, dogStatsdClient: null);
 
             var sw = new Stopwatch();
             sw.Start();
