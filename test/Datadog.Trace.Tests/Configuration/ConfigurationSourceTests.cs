@@ -19,6 +19,9 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.DisabledIntegrationNames.Count), 0 };
             yield return new object[] { CreateFunc(s => s.LogsInjectionEnabled), false };
             yield return new object[] { CreateFunc(s => s.GlobalTags.Count), 0 };
+            yield return new object[] { CreateFunc(s => s.AnalyticsEnabled), false };
+            yield return new object[] { CreateFunc(s => s.CustomSamplingRules), null };
+            yield return new object[] { CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100 };
         }
 
         public static IEnumerable<object[]> GetTestData()
@@ -39,6 +42,9 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.DisabledIntegrations, "integration1;integration2", CreateFunc(s => s.DisabledIntegrationNames.Count), 2 };
 
             yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags.Count), 2 };
+
+            yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
+            yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false };
         }
 
         // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
