@@ -122,8 +122,26 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(GetJsonTestData))]
+        [MemberData(nameof(GetTestData))]
         public void JsonConfigurationSource(
+            string key,
+            string value,
+            Func<TracerSettings, object> settingGetter,
+            object expectedValue)
+        {
+            var config = new Dictionary<string, string> { [key] = value };
+            string json = JsonConvert.SerializeObject(config);
+            IConfigurationSource source = new JsonConfigurationSource(json);
+            var settings = new TracerSettings(source);
+
+            object actualValue = settingGetter(settings);
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        // Special case for dictionary-typed settings in JSON
+        [Theory]
+        [MemberData(nameof(GetJsonTestData))]
+        public void JsonConfigurationSourceWithJsonTypedSetting(
             string value,
             Func<TracerSettings, object> settingGetter,
             object expectedValue)
