@@ -20,10 +20,10 @@ namespace Datadog.Trace.IntegrationTests
 
             var endpoint = new Uri("http://localhost:8126");
             _httpRecorder = new RecordHttpHandler();
-            var api = new Api(endpoint, _httpRecorder);
-            var agentWriter = new AgentWriter(api);
+            var api = new Api(endpoint, _httpRecorder, dogStatsdClient: null);
+            var agentWriter = new AgentWriter(api, dogStatsdClient: null);
 
-            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null);
+            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, dogStatsdClient: null);
         }
 
         [Fact(Skip = "Run manually")]
