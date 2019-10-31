@@ -22,6 +22,8 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.AnalyticsEnabled), false };
             yield return new object[] { CreateFunc(s => s.CustomSamplingRules), null };
             yield return new object[] { CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100 };
+            yield return new object[] { CreateFunc(s => s.TracerMetricsEnabled), false };
+            yield return new object[] { CreateFunc(s => s.DogStatsdPort), 8125 };
         }
 
         public static IEnumerable<object[]> GetTestData()
