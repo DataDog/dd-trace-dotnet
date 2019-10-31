@@ -109,15 +109,17 @@ namespace Datadog.Trace.Tests.Configuration
             Func<TracerSettings, object> settingGetter,
             object expectedValue)
         {
+            // save original value so we can restore later
             var originalValue = Environment.GetEnvironmentVariable(key);
-            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
 
+            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
             IConfigurationSource source = new EnvironmentConfigurationSource();
             var settings = new TracerSettings(source);
-            object actualValue = settingGetter(settings);
 
+            object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
 
+            // restore original value
             Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
         }
 
