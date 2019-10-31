@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
 
             _api = new Mock<IApi>();
-            _agentWriter = new AgentWriter(_api.Object);
+            _agentWriter = new AgentWriter(_api.Object, dogStatsdClient: null);
 
             var parentSpanContext = new Mock<ISpanContext>();
             var traceContext = new Mock<ITraceContext>();
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task FlushTwice()
         {
-            var w = new AgentWriter(_api.Object);
+            var w = new AgentWriter(_api.Object, dogStatsdClient: null);
             await w.FlushAndCloseAsync();
             await w.FlushAndCloseAsync();
         }

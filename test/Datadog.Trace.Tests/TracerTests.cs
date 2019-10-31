@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -21,7 +20,7 @@ namespace Datadog.Trace.Tests
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ISampler>();
 
-            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, null);
+            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, dogStatsdClient: null);
         }
 
         [Fact]
