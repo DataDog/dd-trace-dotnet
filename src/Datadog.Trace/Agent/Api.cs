@@ -105,7 +105,7 @@ namespace Datadog.Trace.Agent
                         }
                         catch
                         {
-                            // count the exceptions throw by the HttpClient,
+                            // count the exceptions thrown by the HttpClient,
                             // not responses with 5xx status codes
                             // (which cause EnsureSuccessStatusCode() to throw below)
                             _dogStatsdClient?.Increment(TracerMetricNames.Api.Errors);
