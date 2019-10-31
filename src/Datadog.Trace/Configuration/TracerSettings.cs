@@ -77,6 +77,9 @@ namespace Datadog.Trace.Configuration
             LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled) ??
                                false;
 
+            MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
+                               100;
+
             Integrations = new IntegrationSettingsCollection(source);
 
             GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
@@ -140,6 +143,19 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
         public bool LogsInjectionEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
+        /// Default is <c>100</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.MaxTracesSubmittedPerSecond"/>
+        public int MaxTracesSubmittedPerSecond { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating custom sampling rules.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
+        public string CustomSamplingRules { get; set; }
 
         /// <summary>
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.

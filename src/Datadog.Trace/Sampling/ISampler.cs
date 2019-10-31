@@ -4,8 +4,10 @@ namespace Datadog.Trace.Sampling
 {
     internal interface ISampler
     {
-        void SetSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates);
+        void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates);
 
-        SamplingPriority GetSamplingPriority(string service, string env, ulong traceId);
+        SamplingPriority GetSamplingPriority(Span span);
+
+        void RegisterRule(ISamplingRule rule);
     }
 }

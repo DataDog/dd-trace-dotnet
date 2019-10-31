@@ -67,11 +67,9 @@ namespace Datadog.Trace
                         else
                         {
                             // this is a local root span (i.e. not propagated).
-                            string env = RootSpan.GetTag(Tags.Env);
-
                             // determine an initial sampling priority for this trace, but don't lock it yet
                             _samplingPriority =
-                                Tracer.Sampler?.GetSamplingPriority(RootSpan.ServiceName, env, RootSpan.Context.TraceId);
+                                Tracer.Sampler?.GetSamplingPriority(RootSpan);
                         }
                     }
                 }

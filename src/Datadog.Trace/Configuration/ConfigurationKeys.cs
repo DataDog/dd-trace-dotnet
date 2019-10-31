@@ -90,6 +90,43 @@ namespace Datadog.Trace.Configuration
         public const string LogsInjectionEnabled = "DD_LOGS_INJECTION";
 
         /// <summary>
+        /// Configuration key for setting the number of traces allowed
+        /// to be submitted per second.
+        /// </summary>
+        /// <seealso cref="TracerSettings.MaxTracesSubmittedPerSecond"/>
+        public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
+
+        /// <summary>
+        /// Configuration key for setting custom sampling rules based on regular expressions.
+        /// Semi-colon separated list of sampling rules.
+        /// The rule is matched in order of specification. The first match in a list is used.
+        ///
+        /// Per entry:
+        ///   The item 'rate' is required in decimal format.
+        ///   The item 'service' is optional in regular expression format, to match on service name.
+        ///   The item 'operation' is optional in regular expression format, to match on operation name.
+        ///
+        /// To give a rate of 50% to any traces in a service starting with the text "cart":
+        ///   'rate=0.5, service=cart.*'
+        ///
+        /// To give a rate of 20% to any traces which have an operation name of "http.request":
+        ///   'rate=0.2, operation=http.request'
+        ///
+        /// To give a rate of 100% to any traces within a service named "background" and with an operation name of "sql.query":
+        ///   'rate=1.0, service=background, operation=sql.query
+        ///
+        /// To give a rate of 10% to all traces
+        ///   'rate=0.1'
+        ///
+        /// To configure multiple rules, separate by semi-colon and order from most specific to least specific:
+        ///   'rate=0.5, service=cart.*; rate=0.2, operation=http.request; rate=1.0, service=background, operation=sql.query; rate=0.1'
+        ///
+        /// If no rules are specified, or none match, default internal sampling logic will be used.
+        /// </summary>
+        /// <seealso cref="TracerSettings.CustomSamplingRules"/>
+        public const string CustomSamplingRules = "DD_CUSTOM_SAMPLING_RULES";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations
