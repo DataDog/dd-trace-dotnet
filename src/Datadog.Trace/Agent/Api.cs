@@ -91,7 +91,7 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    _dogStatsdClient.Increment(TracerMetricNames.Api.RequestCount);
+                    _dogStatsdClient?.Increment(TracerMetricNames.Api.RequestCount);
                     var traceIds = GetUniqueTraceIds(traces);
 
                     // re-create content on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
@@ -107,20 +107,20 @@ namespace Datadog.Trace.Agent
                         {
                             // count the exceptions caused by the http request itself,
                             // but not caused by 5xx status codes in EnsureSuccessStatusCode() below
-                            _dogStatsdClient.Increment(TracerMetricNames.Api.ErrorCount);
+                            _dogStatsdClient?.Increment(TracerMetricNames.Api.ErrorCount);
                             throw;
                         }
 
                         // count every response's status code, regardless of value
                         string[] tags = { $"status: {(int)responseMessage.StatusCode}" };
-                        _dogStatsdClient.Increment(TracerMetricNames.Api.ResponseCountByStatusCode, tags: tags);
+                        _dogStatsdClient?.Increment(TracerMetricNames.Api.ResponseCountByStatusCode, tags: tags);
 
                         responseMessage.EnsureSuccessStatusCode();
                     }
                 }
                 catch (Exception ex)
                 {
-                    _dogStatsdClient.Increment(TracerMetricNames.Api.ErrorCount);
+                    _dogStatsdClient?.Increment(TracerMetricNames.Api.ErrorCount);
 
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
