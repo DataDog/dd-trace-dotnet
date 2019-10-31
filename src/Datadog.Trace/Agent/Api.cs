@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Containers;
+using Datadog.Trace.DogStatsD;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
 using MsgPack.Serialization;
@@ -90,18 +91,27 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
+                    _dogStatsdClient.Increment(TracerMetricNames.Api.RequestCount);
                     var traceIds = GetUniqueTraceIds(traces);
 
                     // re-create content on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
                     using (var content = new MsgPackContent<IList<List<Span>>>(traces, SerializationContext))
                     {
                         content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
+
                         responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+
+                        // count every response's status code, regardless of value
+                        string[] tags = { $"status: {(int)responseMessage.StatusCode}" };
+                        _dogStatsdClient.Increment(TracerMetricNames.Api.ResponseCountByStatusCode, tags: tags);
+
                         responseMessage.EnsureSuccessStatusCode();
                     }
                 }
                 catch (Exception ex)
                 {
+                    _dogStatsdClient.Increment(TracerMetricNames.Api.ErrorCount);
+
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {

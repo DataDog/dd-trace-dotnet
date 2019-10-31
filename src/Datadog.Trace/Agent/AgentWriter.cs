@@ -10,9 +10,11 @@ namespace Datadog.Trace.Agent
 {
     internal class AgentWriter : IAgentWriter
     {
+        private const int TraceBufferSize = 1000;
+
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
 
-        private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(1000);
+        private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(TraceBufferSize);
         private readonly IApi _api;
         private readonly IDogStatsd _dogStatsdClient;
         private readonly Task _flushTask;
@@ -28,8 +30,13 @@ namespace Datadog.Trace.Agent
         public void WriteTrace(List<Span> trace)
         {
             var success = _tracesBuffer.Push(trace);
+
+            _dogStatsdClient.Increment(TracerMetricNames.Queue.PushedTraces);
+            _dogStatsdClient.Increment(TracerMetricNames.Queue.PushedSpans, trace.Count);
+
             if (!success)
             {
+                _dogStatsdClient.Increment(TracerMetricNames.Queue.DroppedTraces);
                 Log.Debug("Trace buffer is full, dropping it.");
             }
         }
@@ -53,6 +60,12 @@ namespace Datadog.Trace.Agent
         private async Task FlushTracesAsync()
         {
             var traces = _tracesBuffer.Pop();
+            var spanCount = traces.Sum(t => t.Count);
+
+            _dogStatsdClient.Gauge(TracerMetricNames.Queue.PoppedTraces, traces.Count);
+            _dogStatsdClient.Gauge(TracerMetricNames.Queue.PoppedSpans, spanCount);
+            _dogStatsdClient.Gauge(TracerMetricNames.Queue.BufferedTracesLimit, TraceBufferSize);
+
             if (traces.Any())
             {
                 await _api.SendTracesAsync(traces).ConfigureAwait(false);
