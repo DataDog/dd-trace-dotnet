@@ -99,7 +99,17 @@ namespace Datadog.Trace.Agent
                     {
                         content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
 
-                        responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+                        try
+                        {
+                            responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            // count the exceptions caused by the http request itself,
+                            // but not caused by 5xx status codes in EnsureSuccessStatusCode() below
+                            _dogStatsdClient.Increment(TracerMetricNames.Api.ErrorCount);
+                            throw;
+                        }
 
                         // count every response's status code, regardless of value
                         string[] tags = { $"status: {(int)responseMessage.StatusCode}" };
