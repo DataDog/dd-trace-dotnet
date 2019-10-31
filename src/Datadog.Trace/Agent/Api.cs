@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Containers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.StatsdClient;
 using MsgPack.Serialization;
 using Newtonsoft.Json;
 
@@ -20,6 +21,7 @@ namespace Datadog.Trace.Agent
 
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
+        private readonly IDogStatsd _dogStatsdClient;
 
         static Api()
         {
@@ -32,13 +34,14 @@ namespace Datadog.Trace.Agent
             };
         }
 
-        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler = null)
+        public Api(Uri baseEndpoint, IDogStatsd dogStatsdClient, DelegatingHandler delegatingHandler)
         {
+            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
+            _dogStatsdClient = dogStatsdClient;
+
             _client = delegatingHandler == null
                           ? new HttpClient()
                           : new HttpClient(delegatingHandler);
-
-            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
 

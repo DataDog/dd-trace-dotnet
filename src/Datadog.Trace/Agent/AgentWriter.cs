@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.DogStatsD;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
@@ -12,12 +14,14 @@ namespace Datadog.Trace.Agent
 
         private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(1000);
         private readonly IApi _api;
+        private readonly IDogStatsd _dogStatsdClient;
         private readonly Task _flushTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
-        public AgentWriter(IApi api)
+        public AgentWriter(IApi api, IDogStatsd dogStatsdClient)
         {
             _api = api;
+            _dogStatsdClient = dogStatsdClient;
             _flushTask = Task.Run(FlushTracesTaskLoopAsync);
         }
 

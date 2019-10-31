@@ -7,6 +7,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {
@@ -32,7 +33,7 @@ namespace Datadog.Trace
         /// Initializes a new instance of the <see cref="Tracer"/> class with default settings.
         /// </summary>
         public Tracer()
-            : this(settings: null, agentWriter: null, sampler: null, scopeManager: null)
+            : this(settings: null, agentWriter: null, sampler: null, scopeManager: null, dogStatsdClient: null)
         {
         }
 
@@ -45,15 +46,32 @@ namespace Datadog.Trace
         /// or null to use the default configuration sources.
         /// </param>
         public Tracer(TracerSettings settings)
-            : this(settings, agentWriter: null, sampler: null, scopeManager: null)
+            : this(settings, agentWriter: null, sampler: null, scopeManager: null, dogStatsdClient: null)
         {
         }
 
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager)
+        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd dogStatsdClient)
         {
             // fall back to default implementations of each dependency if not provided
             Settings = settings ?? TracerSettings.FromDefaultSources();
-            _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri));
+
+            // only set DogStatsdClient if internal metrics are enabled
+            if (Settings.InternalMetricsEnabled)
+            {
+                if (dogStatsdClient == null)
+                {
+                    var config = new StatsdConfig { StatsdServerName = Settings.AgentUri.Authority, StatsdPort = Settings.DogStatsdPort };
+                    DogStatsdClient = new DogStatsdService();
+                    DogStatsdClient.Configure(config);
+                }
+                else
+                {
+                    DogStatsdClient = dogStatsdClient;
+                }
+            }
+
+            IApi apiClient = new Api(Settings.AgentUri, DogStatsdClient, delegatingHandler: null);
+            _agentWriter = agentWriter ?? new AgentWriter(apiClient, DogStatsdClient);
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
 
@@ -120,6 +138,8 @@ namespace Datadog.Trace
         ISampler IDatadogTracer.Sampler => Sampler;
 
         internal ISampler Sampler { get; }
+
+        internal IDogStatsd DogStatsdClient { get; }
 
         /// <summary>
         /// Create a new Tracer with the given parameters
