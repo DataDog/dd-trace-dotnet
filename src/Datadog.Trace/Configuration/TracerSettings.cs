@@ -58,14 +58,17 @@ namespace Datadog.Trace.Configuration
                             // backwards compatibility for names used in the past
                             source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
                             source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
+                            // default value
                             DefaultAgentHost;
 
             var agentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
                             // backwards compatibility for names used in the past
                             source?.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
+                            // default value
                             DefaultAgentPort;
 
             var agentUri = source?.GetString(ConfigurationKeys.AgentUri) ??
+                           // default value
                            $"http://{agentHost}:{agentPort}";
 
             AgentUri = new Uri(agentUri);
@@ -79,11 +82,13 @@ namespace Datadog.Trace.Configuration
                                    false;
 
             MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
-                               100;
+                                          // default value
+                                          100;
 
             Integrations = new IntegrationSettingsCollection(source);
 
             GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
+                         // default value (empty)
                          new ConcurrentDictionary<string, string>();
 
             DogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort) ??
@@ -91,8 +96,8 @@ namespace Datadog.Trace.Configuration
                             8125;
 
             TracerMetricsEnabled = source?.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
-                                     // default value
-                                     false;
+                                   // default value
+                                   false;
         }
 
         /// <summary>
