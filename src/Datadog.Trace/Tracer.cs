@@ -58,19 +58,10 @@ namespace Datadog.Trace
             // only set DogStatsdClient if tracer metrics are enabled
             if (Settings.TracerMetricsEnabled)
             {
-                if (dogStatsdClient == null)
-                {
-                    var config = new StatsdConfig { StatsdServerName = Settings.AgentUri.DnsSafeHost, StatsdPort = Settings.DogStatsdPort };
-                    DogStatsdClient = new DogStatsdService();
-                    DogStatsdClient.Configure(config);
-                }
-                else
-                {
-                    DogStatsdClient = dogStatsdClient;
-                }
+                DogStatsdClient = dogStatsdClient ?? CreateDogStatsdClient(Settings);
             }
 
-            IApi apiClient = new Api(Settings.AgentUri, delegatingHandler: null, dogStatsdClient: DogStatsdClient);
+            IApi apiClient = new Api(Settings.AgentUri, delegatingHandler: null, DogStatsdClient);
             _agentWriter = agentWriter ?? new AgentWriter(apiClient, DogStatsdClient);
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
@@ -310,6 +301,29 @@ namespace Datadog.Trace
                 Log.Error(ex, "Error creating default service name.");
                 return null;
             }
+        }
+
+        private static DogStatsdService CreateDogStatsdClient(TracerSettings settings)
+        {
+            var frameworkDescription = FrameworkDescription.Create();
+            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+            var config = new StatsdConfig
+                         {
+                             StatsdServerName = settings.AgentUri.DnsSafeHost,
+                             StatsdPort = settings.DogStatsdPort,
+                             ConstantTags = new[]
+                                            {
+                                                "lang:.NET",
+                                                $"lang_interpreter:{frameworkDescription.Name}",
+                                                $"lang_version:{frameworkDescription.ProductVersion}",
+                                                $"tracer_version:{tracerVersion}"
+                                            }
+                         };
+
+            var dogStatsdClient = new DogStatsdService();
+            dogStatsdClient.Configure(config);
+            return dogStatsdClient;
         }
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager)
