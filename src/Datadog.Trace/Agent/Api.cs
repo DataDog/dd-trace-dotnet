@@ -91,7 +91,6 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    _dogStatsdClient?.Increment(TracerMetricNames.Api.RequestCount);
                     var traceIds = GetUniqueTraceIds(traces);
 
                     // re-create content on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
@@ -101,18 +100,20 @@ namespace Datadog.Trace.Agent
 
                         try
                         {
+                            _dogStatsdClient?.Increment(TracerMetricNames.Api.RequestCount);
                             responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
                         }
                         catch
                         {
-                            // count the exceptions caused by the http request itself,
-                            // but not caused by 5xx status codes in EnsureSuccessStatusCode() below
+                            // count the exceptions throw by the HttpClient,
+                            // not responses with 5xx status codes
+                            // (which cause EnsureSuccessStatusCode() to throw below)
                             _dogStatsdClient?.Increment(TracerMetricNames.Api.ErrorCount);
                             throw;
                         }
 
-                        // count every response's status code, regardless of value
-                        string[] tags = { $"status: {(int)responseMessage.StatusCode}" };
+                        // count every response's status code
+                        string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
                         _dogStatsdClient?.Increment(TracerMetricNames.Api.ResponseCountByStatusCode, tags: tags);
 
                         responseMessage.EnsureSuccessStatusCode();
