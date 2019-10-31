@@ -42,33 +42,33 @@ namespace Datadog.Trace.Tests
 
             // for a single trace, these methods are called once with a value of "1"
             dogStatsD.Verify(
-                statsd => statsd.Increment(TracerMetricNames.Queue.PushedTraces, 1, 1D, null),
+                statsd => statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1D, null),
                 Times.Once());
 
             dogStatsD.Verify(
-                statsd => statsd.Increment(TracerMetricNames.Queue.PushedSpans, 1, 1D, null),
+                statsd => statsd.Increment(TracerMetricNames.Queue.EnqueuedSpans, 1, 1D, null),
                 Times.Once());
 
             dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.PoppedTraces, 1, 1D, null),
+                statsd => statsd.Gauge(TracerMetricNames.Queue.DequeuedTraces, 1, 1D, null),
                 Times.Once());
 
             dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.PoppedSpans, 1, 1D, null),
+                statsd => statsd.Gauge(TracerMetricNames.Queue.DequeuedSpans, 1, 1D, null),
                 Times.Once());
 
             // these methods can be called multiple times with a "0" value (no more traces left)
             dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.PoppedTraces, 0, 1D, null),
+                statsd => statsd.Gauge(TracerMetricNames.Queue.DequeuedTraces, 0, 1D, null),
                 Times.AtLeastOnce);
 
             dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.PoppedSpans, 0, 1D, null),
+                statsd => statsd.Gauge(TracerMetricNames.Queue.DequeuedSpans, 0, 1D, null),
                 Times.AtLeastOnce());
 
             // these methods can be called multiple times with a "1000" value (the max buffer size, constant)
             dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.BufferedTracesLimit, 1000, 1D, null),
+                statsd => statsd.Gauge(TracerMetricNames.Queue.TraceQueueMaxCapacity, 1000, 1D, null),
                 Times.AtLeastOnce());
         }
     }

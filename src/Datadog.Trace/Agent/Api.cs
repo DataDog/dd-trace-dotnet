@@ -100,7 +100,7 @@ namespace Datadog.Trace.Agent
 
                         try
                         {
-                            _dogStatsdClient?.Increment(TracerMetricNames.Api.RequestCount);
+                            _dogStatsdClient?.Increment(TracerMetricNames.Api.Requests);
                             responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
                         }
                         catch
@@ -108,20 +108,20 @@ namespace Datadog.Trace.Agent
                             // count the exceptions throw by the HttpClient,
                             // not responses with 5xx status codes
                             // (which cause EnsureSuccessStatusCode() to throw below)
-                            _dogStatsdClient?.Increment(TracerMetricNames.Api.ErrorCount);
+                            _dogStatsdClient?.Increment(TracerMetricNames.Api.Errors);
                             throw;
                         }
 
                         // count every response's status code
                         string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
-                        _dogStatsdClient?.Increment(TracerMetricNames.Api.ResponseCountByStatusCode, tags: tags);
+                        _dogStatsdClient?.Increment(TracerMetricNames.Api.ResponsesByStatusCode, tags: tags);
 
                         responseMessage.EnsureSuccessStatusCode();
                     }
                 }
                 catch (Exception ex)
                 {
-                    _dogStatsdClient?.Increment(TracerMetricNames.Api.ErrorCount);
+                    _dogStatsdClient?.Increment(TracerMetricNames.Api.Errors);
 
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)

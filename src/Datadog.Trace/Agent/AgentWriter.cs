@@ -31,8 +31,8 @@ namespace Datadog.Trace.Agent
         {
             var success = _tracesBuffer.Push(trace);
 
-            _dogStatsdClient?.Increment(TracerMetricNames.Queue.PushedTraces);
-            _dogStatsdClient?.Increment(TracerMetricNames.Queue.PushedSpans, trace.Count);
+            _dogStatsdClient?.Increment(TracerMetricNames.Queue.EnqueuedTraces);
+            _dogStatsdClient?.Increment(TracerMetricNames.Queue.EnqueuedSpans, trace.Count);
 
             if (!success)
             {
@@ -62,9 +62,9 @@ namespace Datadog.Trace.Agent
             var traces = _tracesBuffer.Pop();
             var spanCount = traces.Sum(t => t.Count);
 
-            _dogStatsdClient?.Gauge(TracerMetricNames.Queue.PoppedTraces, traces.Count);
-            _dogStatsdClient?.Gauge(TracerMetricNames.Queue.PoppedSpans, spanCount);
-            _dogStatsdClient?.Gauge(TracerMetricNames.Queue.BufferedTracesLimit, TraceBufferSize);
+            _dogStatsdClient?.Gauge(TracerMetricNames.Queue.DequeuedTraces, traces.Count);
+            _dogStatsdClient?.Gauge(TracerMetricNames.Queue.DequeuedSpans, spanCount);
+            _dogStatsdClient?.Gauge(TracerMetricNames.Queue.TraceQueueMaxCapacity, TraceBufferSize);
 
             if (traces.Any())
             {
