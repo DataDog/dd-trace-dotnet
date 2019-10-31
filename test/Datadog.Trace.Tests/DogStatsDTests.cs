@@ -40,6 +40,7 @@ namespace Datadog.Trace.Tests
                 agent.WaitForSpans(1);
             }
 
+            // for a single trace, these methods are called once with a value of "1"
             dogStatsD.Verify(
                 statsd => statsd.Increment(TracerMetricNames.Queue.PushedTraces, 1, 1D, null),
                 Times.Once());
@@ -56,6 +57,7 @@ namespace Datadog.Trace.Tests
                 statsd => statsd.Gauge(TracerMetricNames.Queue.PoppedSpans, 1, 1D, null),
                 Times.Once());
 
+            // these methods can be called multiple times with a "0" value (no more traces left)
             dogStatsD.Verify(
                 statsd => statsd.Gauge(TracerMetricNames.Queue.PoppedTraces, 0, 1D, null),
                 Times.AtLeastOnce);
@@ -64,6 +66,7 @@ namespace Datadog.Trace.Tests
                 statsd => statsd.Gauge(TracerMetricNames.Queue.PoppedSpans, 0, 1D, null),
                 Times.AtLeastOnce());
 
+            // these methods can be called multiple times with a "1000" value (the max buffer size, constant)
             dogStatsD.Verify(
                 statsd => statsd.Gauge(TracerMetricNames.Queue.BufferedTracesLimit, 1000, 1D, null),
                 Times.AtLeastOnce());
