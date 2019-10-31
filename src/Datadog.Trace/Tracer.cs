@@ -60,7 +60,7 @@ namespace Datadog.Trace
             {
                 if (dogStatsdClient == null)
                 {
-                    var config = new StatsdConfig { StatsdServerName = Settings.AgentUri.Authority, StatsdPort = Settings.DogStatsdPort };
+                    var config = new StatsdConfig { StatsdServerName = Settings.AgentUri.DnsSafeHost, StatsdPort = Settings.DogStatsdPort };
                     DogStatsdClient = new DogStatsdService();
                     DogStatsdClient.Configure(config);
                 }
