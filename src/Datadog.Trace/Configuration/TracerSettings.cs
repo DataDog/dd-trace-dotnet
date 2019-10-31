@@ -90,7 +90,7 @@ namespace Datadog.Trace.Configuration
                             // default value
                             8125;
 
-            InternalMetricsEnabled = source?.GetBool(ConfigurationKeys.InternalMetricsEnabled) ??
+            TracerMetricsEnabled = source?.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
                                      // default value
                                      false;
         }
@@ -187,7 +187,7 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether internal metrics
         /// are enabled and send to DogStatsd.
         /// </summary>
-        public bool InternalMetricsEnabled { get; set; }
+        public bool TracerMetricsEnabled { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

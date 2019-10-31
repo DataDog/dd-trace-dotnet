@@ -136,7 +136,7 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for enabling or disabling internal metrics sent to DogStatsD.
         /// Default value is <c>false</c> (disabled).
         /// </summary>
-        public const string InternalMetricsEnabled = "DD_INTERNAL_METRICS_ENABLED";
+        public const string TracerMetricsEnabled = "DD_TRACER_METRICS_ENABLED";
 
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.

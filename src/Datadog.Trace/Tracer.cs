@@ -55,8 +55,8 @@ namespace Datadog.Trace
             // fall back to default implementations of each dependency if not provided
             Settings = settings ?? TracerSettings.FromDefaultSources();
 
-            // only set DogStatsdClient if internal metrics are enabled
-            if (Settings.InternalMetricsEnabled)
+            // only set DogStatsdClient if tracer metrics are enabled
+            if (Settings.TracerMetricsEnabled)
             {
                 if (dogStatsdClient == null)
                 {
