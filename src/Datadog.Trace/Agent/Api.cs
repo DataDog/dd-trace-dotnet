@@ -21,7 +21,7 @@ namespace Datadog.Trace.Agent
 
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
-        private readonly IDogStatsd _dogStatsdClient;
+        private readonly IStatsd _statsd;
 
         static Api()
         {
@@ -34,10 +34,10 @@ namespace Datadog.Trace.Agent
             };
         }
 
-        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IDogStatsd dogStatsdClient)
+        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd)
         {
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
-            _dogStatsdClient = dogStatsdClient;
+            _statsd = statsd;
 
             _client = delegatingHandler == null
                           ? new HttpClient()
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Agent
 
                         try
                         {
-                            _dogStatsdClient?.Increment(TracerMetricNames.Api.Requests);
+                            _statsd?.AppendIncrementCount(TracerMetricNames.Api.Requests);
                             responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
                         }
                         catch
@@ -106,13 +106,13 @@ namespace Datadog.Trace.Agent
                             // count the exceptions thrown by the HttpClient,
                             // not responses with 5xx status codes
                             // (which cause EnsureSuccessStatusCode() to throw below)
-                            _dogStatsdClient?.Increment(TracerMetricNames.Api.Errors);
+                            _statsd?.AppendIncrementCount(TracerMetricNames.Api.Errors);
                             throw;
                         }
 
                         // count every response's status code
                         string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
-                        _dogStatsdClient?.Increment(TracerMetricNames.Api.ResponsesByStatusCode, tags: tags);
+                        _statsd?.AppendIncrementCount(TracerMetricNames.Api.ResponsesByStatusCode, tags: tags);
 
                         responseMessage.EnsureSuccessStatusCode();
                     }
@@ -156,6 +156,7 @@ namespace Datadog.Trace.Agent
                     Log.Error("Traces sent successfully to the Agent at {Endpoint}, but an error occurred deserializing the response.", ex, _tracesEndpoint);
                 }
 
+                _statsd?.Send();
                 return;
             }
         }

@@ -16,14 +16,14 @@ namespace Datadog.Trace.Agent
 
         private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(TraceBufferSize);
         private readonly IApi _api;
-        private readonly IDogStatsd _dogStatsdClient;
+        private readonly IStatsd _statsd;
         private readonly Task _flushTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
 
-        public AgentWriter(IApi api, IDogStatsd dogStatsdClient)
+        public AgentWriter(IApi api, IStatsd statsd)
         {
             _api = api;
-            _dogStatsdClient = dogStatsdClient;
+            _statsd = statsd;
             _flushTask = Task.Run(FlushTracesTaskLoopAsync);
         }
 
@@ -31,14 +31,16 @@ namespace Datadog.Trace.Agent
         {
             var success = _tracesBuffer.Push(trace);
 
-            _dogStatsdClient?.Increment(TracerMetricNames.Queue.EnqueuedTraces);
-            _dogStatsdClient?.Increment(TracerMetricNames.Queue.EnqueuedSpans, trace.Count);
+            _statsd?.AppendIncrementCount(TracerMetricNames.Queue.EnqueuedTraces);
+            _statsd?.AppendIncrementCount(TracerMetricNames.Queue.EnqueuedSpans, trace.Count);
 
             if (!success)
             {
-                _dogStatsdClient?.Increment(TracerMetricNames.Queue.DroppedTraces);
+                _statsd?.AppendIncrementCount(TracerMetricNames.Queue.DroppedTraces);
                 Log.Debug("Trace buffer is full, dropping it.");
             }
+
+            _statsd?.Send();
         }
 
         public async Task FlushAndCloseAsync()
@@ -62,9 +64,10 @@ namespace Datadog.Trace.Agent
             var traces = _tracesBuffer.Pop();
             var spanCount = traces.Sum(t => t.Count);
 
-            _dogStatsdClient?.Gauge(TracerMetricNames.Queue.DequeuedTraces, traces.Count);
-            _dogStatsdClient?.Gauge(TracerMetricNames.Queue.DequeuedSpans, spanCount);
-            _dogStatsdClient?.Gauge(TracerMetricNames.Queue.TraceQueueMaxCapacity, TraceBufferSize);
+            _statsd?.AppendSetGauge(TracerMetricNames.Queue.DequeuedTraces, traces.Count);
+            _statsd?.AppendSetGauge(TracerMetricNames.Queue.DequeuedSpans, spanCount);
+            _statsd?.AppendSetGauge(TracerMetricNames.Queue.TraceQueueMaxCapacity, TraceBufferSize);
+            _statsd?.Send();
 
             if (traces.Any())
             {

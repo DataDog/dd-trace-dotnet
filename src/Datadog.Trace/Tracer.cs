@@ -33,7 +33,7 @@ namespace Datadog.Trace
         /// Initializes a new instance of the <see cref="Tracer"/> class with default settings.
         /// </summary>
         public Tracer()
-            : this(settings: null, agentWriter: null, sampler: null, scopeManager: null, dogStatsdClient: null)
+            : this(settings: null, agentWriter: null, sampler: null, scopeManager: null, statsd: null)
         {
         }
 
@@ -46,11 +46,11 @@ namespace Datadog.Trace
         /// or null to use the default configuration sources.
         /// </param>
         public Tracer(TracerSettings settings)
-            : this(settings, agentWriter: null, sampler: null, scopeManager: null, dogStatsdClient: null)
+            : this(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null)
         {
         }
 
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd dogStatsdClient)
+        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IStatsd statsd)
         {
             // fall back to default implementations of each dependency if not provided
             Settings = settings ?? TracerSettings.FromDefaultSources();
@@ -58,11 +58,11 @@ namespace Datadog.Trace
             // only set DogStatsdClient if tracer metrics are enabled
             if (Settings.TracerMetricsEnabled)
             {
-                DogStatsdClient = dogStatsdClient ?? CreateDogStatsdClient(Settings);
+                Statsd = statsd ?? CreateDogStatsdClient(Settings);
             }
 
-            IApi apiClient = new Api(Settings.AgentUri, delegatingHandler: null, DogStatsdClient);
-            _agentWriter = agentWriter ?? new AgentWriter(apiClient, DogStatsdClient);
+            IApi apiClient = new Api(Settings.AgentUri, delegatingHandler: null, Statsd);
+            _agentWriter = agentWriter ?? new AgentWriter(apiClient, Statsd);
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
 
@@ -130,7 +130,7 @@ namespace Datadog.Trace
 
         internal ISampler Sampler { get; }
 
-        internal IDogStatsd DogStatsdClient { get; }
+        internal IStatsd Statsd { get; }
 
         /// <summary>
         /// Create a new Tracer with the given parameters
@@ -303,26 +303,20 @@ namespace Datadog.Trace
             }
         }
 
-        private static DogStatsdService CreateDogStatsdClient(TracerSettings settings)
+        private static IStatsd CreateDogStatsdClient(TracerSettings settings)
         {
             var frameworkDescription = FrameworkDescription.Create();
 
-            var config = new StatsdConfig
-                         {
-                             StatsdServerName = settings.AgentUri.DnsSafeHost,
-                             StatsdPort = settings.DogStatsdPort,
-                             ConstantTags = new[]
-                                            {
-                                                "lang:.NET",
-                                                $"lang_interpreter:{frameworkDescription.Name}",
-                                                $"lang_version:{frameworkDescription.ProductVersion}",
-                                                $"tracer_version:{TracerConstants.AssemblyVersion}"
-                                            }
-                         };
+            string[] constantTags =
+            {
+                "lang:.NET",
+                $"lang_interpreter:{frameworkDescription.Name}",
+                $"lang_version:{frameworkDescription.ProductVersion}",
+                $"tracer_version:{TracerConstants.AssemblyVersion}"
+            };
 
-            var dogStatsdClient = new DogStatsdService();
-            dogStatsdClient.Configure(config);
-            return dogStatsdClient;
+            var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, settings.DogStatsdPort, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
+            return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags);
         }
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager)
