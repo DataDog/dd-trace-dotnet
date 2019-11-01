@@ -116,7 +116,7 @@ namespace Datadog.Trace.Agent
                             string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
 
                             // count every response, grouped by status code
-                            _statsd.AppendIncrementCount(TracerMetricNames.Api.ResponsesByStatusCode, tags: tags);
+                            _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
                         }
 
                         responseMessage.EnsureSuccessStatusCode();

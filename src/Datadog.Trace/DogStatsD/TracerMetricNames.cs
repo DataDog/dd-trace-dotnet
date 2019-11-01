@@ -15,7 +15,7 @@ namespace Datadog.Trace.DogStatsD
             /// This is different from <seealso cref="Errors"/> in that this is all HTTP responses
             /// regardless of status code, and <seealso cref="Errors"/> is exceptions raised from making an API call.
             /// </summary>
-            public const string ResponsesByStatusCode = "datadog.tracer.api.responses";
+            public const string Responses = "datadog.tracer.api.responses";
 
             /// <summary>
             /// Count: Total number of exceptions raised by API calls.
