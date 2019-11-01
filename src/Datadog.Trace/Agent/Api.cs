@@ -121,8 +121,6 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    _dogStatsdClient?.Increment(TracerMetricNames.Api.Errors);
-
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
