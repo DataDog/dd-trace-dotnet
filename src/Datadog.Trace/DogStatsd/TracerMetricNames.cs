@@ -1,4 +1,4 @@
-namespace Datadog.Trace.DogStatsD
+namespace Datadog.Trace.DogStatsd
 {
     internal static class TracerMetricNames
     {

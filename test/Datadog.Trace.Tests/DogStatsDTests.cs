@@ -1,7 +1,7 @@
 using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DogStatsD;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;

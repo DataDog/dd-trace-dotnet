@@ -1,6 +1,6 @@
 using Datadog.Trace.Vendors.StatsdClient;
 
-namespace Datadog.Trace.DogStatsD
+namespace Datadog.Trace.DogStatsd
 {
     internal static class StatsdExtensions
     {
