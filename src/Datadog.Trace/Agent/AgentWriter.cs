@@ -75,7 +75,7 @@ namespace Datadog.Trace.Agent
             {
                 _statsd.AppendSetGauge(TracerMetricNames.Queue.DequeuedTraces, traces.Count);
                 _statsd.AppendSetGauge(TracerMetricNames.Queue.DequeuedSpans, spanCount);
-                _statsd.AppendSetGauge(TracerMetricNames.Queue.TraceQueueMaxCapacity, TraceBufferSize);
+                _statsd.AppendSetGauge(TracerMetricNames.Queue.MaxCapacity, TraceBufferSize);
                 _statsd.Send();
             }
 
