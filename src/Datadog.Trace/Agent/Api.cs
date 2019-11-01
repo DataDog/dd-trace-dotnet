@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Containers;
 using Datadog.Trace.DogStatsD;
@@ -63,8 +62,7 @@ namespace Datadog.Trace.Agent
             }
 
             // report Tracer version
-            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, tracerVersion);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion);
 
             // report container id (only Linux containers supported for now)
             var containerId = ContainerInfo.GetContainerId();

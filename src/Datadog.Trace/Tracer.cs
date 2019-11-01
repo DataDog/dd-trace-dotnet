@@ -306,7 +306,6 @@ namespace Datadog.Trace
         private static DogStatsdService CreateDogStatsdClient(TracerSettings settings)
         {
             var frameworkDescription = FrameworkDescription.Create();
-            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
             var config = new StatsdConfig
                          {
@@ -317,7 +316,7 @@ namespace Datadog.Trace
                                                 "lang:.NET",
                                                 $"lang_interpreter:{frameworkDescription.Name}",
                                                 $"lang_version:{frameworkDescription.ProductVersion}",
-                                                $"tracer_version:{tracerVersion}"
+                                                $"tracer_version:{TracerConstants.AssemblyVersion}"
                                             }
                          };
 
