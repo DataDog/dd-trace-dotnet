@@ -110,9 +110,14 @@ namespace Datadog.Trace.Agent
                             throw;
                         }
 
-                        // count every response's status code
-                        string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
-                        _statsd?.AppendIncrementCount(TracerMetricNames.Api.ResponsesByStatusCode, tags: tags);
+                        if (_statsd != null)
+                        {
+                            // don't bother creating the tags array if trace metrics are disabled
+                            string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
+
+                            // count every response, grouped by status code
+                            _statsd.AppendIncrementCount(TracerMetricNames.Api.ResponsesByStatusCode, tags: tags);
+                        }
 
                         responseMessage.EnsureSuccessStatusCode();
                     }
