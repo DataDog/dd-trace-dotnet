@@ -41,35 +41,41 @@ namespace Datadog.Trace.Tests
             }
 
             // for a single trace, these methods are called once with a value of "1"
-            dogStatsD.Verify(
-                statsd => statsd.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1D, null),
+            statsd.Verify(
+                s => s.Add<Statsd.Counting, int>(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null),
                 Times.Once());
 
-            dogStatsD.Verify(
-                statsd => statsd.Increment(TracerMetricNames.Queue.EnqueuedSpans, 1, 1D, null),
+            statsd.Verify(
+                s => s.Add<Statsd.Counting, int>(TracerMetricNames.Queue.EnqueuedSpans, 1, 1D, null),
                 Times.Once());
 
-            dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.DequeuedTraces, 1, 1D, null),
+            statsd.Verify(
+                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedTraces, 1, 1D, null),
                 Times.Once());
 
-            dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.DequeuedSpans, 1, 1D, null),
+            statsd.Verify(
+                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedSpans, 1, 1D, null),
                 Times.Once());
 
             // these methods can be called multiple times with a "0" value (no more traces left)
-            dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.DequeuedTraces, 0, 1D, null),
+            statsd.Verify(
+                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedTraces, 0, 1D, null),
                 Times.AtLeastOnce);
 
-            dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.DequeuedSpans, 0, 1D, null),
+            statsd.Verify(
+                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedSpans, 0, 1D, null),
                 Times.AtLeastOnce());
 
             // these methods can be called multiple times with a "1000" value (the max buffer size, constant)
-            dogStatsD.Verify(
-                statsd => statsd.Gauge(TracerMetricNames.Queue.MaxCapacity, 1000, 1D, null),
+            statsd.Verify(
+                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.MaxCapacity, 1000, 1D, null),
                 Times.AtLeastOnce());
+
+            statsd.Verify(
+                s => s.Send(),
+                Times.AtLeastOnce());
+
+            statsd.VerifyNoOtherCalls();
         }
     }
 }
