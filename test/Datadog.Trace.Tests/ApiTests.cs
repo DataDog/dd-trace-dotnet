@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ISampler>();
 
-            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, null);
+            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Fact]
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests
                 StatusCode = HttpStatusCode.OK
             };
             var handler = new SetResponseHandler(response);
-            var api = new Api(new Uri("http://localhost:1234"), handler);
+            var api = new Api(new Uri("http://localhost:1234"), handler, statsd: null);
 
             var span = _tracer.StartSpan("Operation");
             var traces = new List<List<Span>> { new List<Span> { span } };
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests
                 StatusCode = HttpStatusCode.InternalServerError
             };
             var handler = new SetResponseHandler(response);
-            var api = new Api(new Uri("http://localhost:1234"), handler);
+            var api = new Api(new Uri("http://localhost:1234"), handler, statsd: null);
 
             var sw = new Stopwatch();
             sw.Start();

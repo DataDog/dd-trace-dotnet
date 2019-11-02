@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Containers;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.StatsdClient;
 using MsgPack.Serialization;
 using Newtonsoft.Json;
 
@@ -20,6 +21,7 @@ namespace Datadog.Trace.Agent
 
         private readonly Uri _tracesEndpoint;
         private readonly HttpClient _client;
+        private readonly IStatsd _statsd;
 
         static Api()
         {
@@ -32,13 +34,14 @@ namespace Datadog.Trace.Agent
             };
         }
 
-        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler = null)
+        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd)
         {
+            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
+            _statsd = statsd;
+
             _client = delegatingHandler == null
                           ? new HttpClient()
                           : new HttpClient(delegatingHandler);
-
-            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
 
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
 
@@ -59,8 +62,7 @@ namespace Datadog.Trace.Agent
             }
 
             // report Tracer version
-            var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, tracerVersion);
+            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion);
 
             // report container id (only Linux containers supported for now)
             var containerId = ContainerInfo.GetContainerId();
@@ -93,7 +95,30 @@ namespace Datadog.Trace.Agent
                     using (var content = new MsgPackContent<IList<List<Span>>>(traces, SerializationContext))
                     {
                         content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
-                        responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+
+                        try
+                        {
+                            _statsd?.AppendIncrementCount(TracerMetricNames.Api.Requests);
+                            responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            // count the exceptions thrown by the HttpClient,
+                            // not responses with 5xx status codes
+                            // (which cause EnsureSuccessStatusCode() to throw below)
+                            _statsd?.AppendIncrementCount(TracerMetricNames.Api.Errors);
+                            throw;
+                        }
+
+                        if (_statsd != null)
+                        {
+                            // don't bother creating the tags array if trace metrics are disabled
+                            string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
+
+                            // count every response, grouped by status code
+                            _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
+                        }
+
                         responseMessage.EnsureSuccessStatusCode();
                     }
                 }
@@ -136,6 +161,7 @@ namespace Datadog.Trace.Agent
                     Log.Error("Traces sent successfully to the Agent at {Endpoint}, but an error occurred deserializing the response.", ex, _tracesEndpoint);
                 }
 
+                _statsd?.Send();
                 return;
             }
         }

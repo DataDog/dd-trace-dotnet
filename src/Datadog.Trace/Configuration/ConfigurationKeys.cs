@@ -127,6 +127,18 @@ namespace Datadog.Trace.Configuration
         public const string CustomSamplingRules = "DD_CUSTOM_SAMPLING_RULES";
 
         /// <summary>
+        /// Configuration key for the DogStatsd port where the Tracer can send metrics.
+        /// Default value is 8125/
+        /// </summary>
+        public const string DogStatsdPort = "DD_DOGSTATSD_PORT";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling internal metrics sent to DogStatsD.
+        /// Default value is <c>false</c> (disabled).
+        /// </summary>
+        public const string TracerMetricsEnabled = "DD_TRACER_METRICS_ENABLED";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations

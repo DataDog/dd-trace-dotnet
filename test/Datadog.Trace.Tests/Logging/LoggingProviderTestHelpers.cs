@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Logging
 
             settings.LogsInjectionEnabled = enableLogsInjection;
 
-            return new Tracer(settings, writerMock.Object, samplerMock.Object, null);
+            return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         internal static void PerformParentChildScopeSequence(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)

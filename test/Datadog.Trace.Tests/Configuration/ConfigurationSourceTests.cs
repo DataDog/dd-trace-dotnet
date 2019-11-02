@@ -19,6 +19,11 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.DisabledIntegrationNames.Count), 0 };
             yield return new object[] { CreateFunc(s => s.LogsInjectionEnabled), false };
             yield return new object[] { CreateFunc(s => s.GlobalTags.Count), 0 };
+            yield return new object[] { CreateFunc(s => s.AnalyticsEnabled), false };
+            yield return new object[] { CreateFunc(s => s.CustomSamplingRules), null };
+            yield return new object[] { CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100 };
+            yield return new object[] { CreateFunc(s => s.TracerMetricsEnabled), false };
+            yield return new object[] { CreateFunc(s => s.DogStatsdPort), 8125 };
         }
 
         public static IEnumerable<object[]> GetTestData()
@@ -39,6 +44,9 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.DisabledIntegrations, "integration1;integration2", CreateFunc(s => s.DisabledIntegrationNames.Count), 2 };
 
             yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags.Count), 2 };
+
+            yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
+            yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false };
         }
 
         // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
@@ -103,21 +111,41 @@ namespace Datadog.Trace.Tests.Configuration
             Func<TracerSettings, object> settingGetter,
             object expectedValue)
         {
+            // save original value so we can restore later
             var originalValue = Environment.GetEnvironmentVariable(key);
-            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
 
+            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
             IConfigurationSource source = new EnvironmentConfigurationSource();
             var settings = new TracerSettings(source);
-            object actualValue = settingGetter(settings);
 
+            object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
 
+            // restore original value
             Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
         }
 
         [Theory]
-        [MemberData(nameof(GetJsonTestData))]
+        [MemberData(nameof(GetTestData))]
         public void JsonConfigurationSource(
+            string key,
+            string value,
+            Func<TracerSettings, object> settingGetter,
+            object expectedValue)
+        {
+            var config = new Dictionary<string, string> { [key] = value };
+            string json = JsonConvert.SerializeObject(config);
+            IConfigurationSource source = new JsonConfigurationSource(json);
+            var settings = new TracerSettings(source);
+
+            object actualValue = settingGetter(settings);
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        // Special case for dictionary-typed settings in JSON
+        [Theory]
+        [MemberData(nameof(GetJsonTestData))]
+        public void JsonConfigurationSourceWithJsonTypedSetting(
             string value,
             Func<TracerSettings, object> settingGetter,
             object expectedValue)
