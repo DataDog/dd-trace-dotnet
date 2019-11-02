@@ -22,15 +22,15 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SendMetrics()
         {
-            var dogStatsD = new Mock<IDogStatsd>();
+            var statsd = new Mock<IStatsd>();
             var api = new Mock<IApi>();
             var agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
             {
                 var settings = new TracerSettings();
-                var agentWriter = new AgentWriter(api.Object, dogStatsD.Object);
-                var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, dogStatsdClient: null);
+                var agentWriter = new AgentWriter(api.Object, statsd.Object);
+                var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
                 using (var rootScope = tracer.StartActive("root"))
                 {
