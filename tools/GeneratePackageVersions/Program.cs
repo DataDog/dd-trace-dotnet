@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -43,7 +44,7 @@ namespace GeneratePackageVersions
                 return;
             }
 
-            PackageVersionEntry[] entries = JsonConvert.DeserializeObject<PackageVersionEntry[]>(File.ReadAllText(definitionsFilename));
+            var entries = JsonConvert.DeserializeObject<PackageVersionEntry[]>(File.ReadAllText(definitionsFilename));
             await RunFileGeneratorWithPackageEntries(new MSBuildPropsFileGenerator(outputPackageVersionsPropsFilename), entries);
             await RunFileGeneratorWithPackageEntries(new XUnitFileGenerator(outputPackageVersionsXunitFilename), entries);
         }
@@ -52,10 +53,36 @@ namespace GeneratePackageVersions
         {
             fileGenerator.Start();
 
-            foreach (PackageVersionEntry entry in entries)
+            foreach (var entry in entries)
             {
                 var packageVersions = await NuGetPackageHelper.GetNugetPackageVersions(entry);
-                fileGenerator.Write(packageVersionEntry: entry, packageVersions: packageVersions);
+                var typedVersions =
+                    packageVersions
+                       .Select(versionText => new Version(versionText))
+                       .OrderBy(v => v.Major)
+                       .ThenBy(v => v.Minor)
+                       .ThenBy(v => v.Revision)
+                       .ThenBy(v => v.Build);
+
+                var versionsToInclude = new HashSet<string>();
+
+                // Add the first for every major
+                // Add the last for every minor
+
+                var majorGroups = typedVersions.GroupBy(v => v.Major);
+
+                foreach (var majorGroup in majorGroups)
+                {
+                    versionsToInclude.Add(majorGroup.First().ToString());
+
+                    var minorGroups = majorGroup.GroupBy(v => v.Minor);
+                    foreach (var minorGroup in minorGroups)
+                    {
+                        versionsToInclude.Add(minorGroup.Last().ToString());
+                    }
+                }
+
+                fileGenerator.Write(packageVersionEntry: entry, packageVersions: versionsToInclude);
             }
 
             fileGenerator.Finish();
