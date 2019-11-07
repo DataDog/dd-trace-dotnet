@@ -254,7 +254,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scope = tracer.StartActive(ValidateOperationName, serviceName: serviceName);
                 var span = scope.Span;
                 span.Type = SpanTypes.GraphQL;
-
+                span.SetTag(Tags.SpanKind, SpanKinds.Server);
+                span.SetTag(Tags.Language, TracerConstants.Language);
                 span.SetTag(Tags.GraphQLSource, source);
 
                 // set analytics sample rate if enabled
