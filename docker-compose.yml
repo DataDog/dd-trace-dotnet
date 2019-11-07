@@ -51,7 +51,7 @@ services:
     - MYSQL_USER=mysqldb
     - MYSQL_PASSWORD=mysqldb
     ports:
-    - "127.0.0.1:3306:3306"
+    - "127.0.0.1:3307:3306"
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest
