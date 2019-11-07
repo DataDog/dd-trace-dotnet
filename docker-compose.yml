@@ -226,3 +226,4 @@ services:
     - sqlserver
     - mongo
     - postgres
+    - mysql
