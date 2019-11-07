@@ -185,6 +185,7 @@ services:
     - ./:/project
     environment:
     - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
     depends_on:
     - mysql
 
@@ -216,6 +217,7 @@ services:
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
     depends_on:
