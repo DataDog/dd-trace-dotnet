@@ -51,7 +51,7 @@ services:
     - MYSQL_USER=mysqldb
     - MYSQL_PASSWORD=mysqldb
     ports:
-    - "127.0.0.1:3306:3306"
+    - "127.0.0.1:3307:3306"
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest
@@ -185,6 +185,7 @@ services:
     - ./:/project
     environment:
     - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
     depends_on:
     - mysql
 
@@ -216,6 +217,7 @@ services:
     - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
     - POSTGRES_HOST=postgres
     - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=${publishTargetFramework}
     depends_on:
@@ -226,3 +228,4 @@ services:
     - sqlserver
     - mongo
     - postgres
+    - mysql

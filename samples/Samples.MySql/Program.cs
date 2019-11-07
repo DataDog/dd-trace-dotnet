@@ -55,7 +55,8 @@ namespace Samples.MySql
             if (connectionString == null)
             {
                 var host = Environment.GetEnvironmentVariable("MYSQL_HOST") ?? "localhost";
-                connectionString = $"server={host};user=mysqldb;password=mysqldb;port=3306;database=world";
+                var port = Environment.GetEnvironmentVariable("MYSQL_PORT") ?? "3307";
+                connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world";
             }
 
             return new MySqlConnection(connectionString);
