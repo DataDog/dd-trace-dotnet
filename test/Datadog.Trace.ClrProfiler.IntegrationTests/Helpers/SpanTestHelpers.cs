@@ -16,13 +16,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Assert.True(spans.Count >= expectations.Count, $"Expected at least {expectations.Count} spans, received {spans.Count}");
 
             var failures = new List<string>();
+            var remainingSpans = spans.Select(s => s).ToList();
 
             foreach (var expectation in expectations)
             {
                 var possibleSpans =
-                    spans
-                       .Where(s => !s.Inspected)
-                       .Where(s => expectation.ShouldInspect(s))
+                    remainingSpans
+                       .Where(s => expectation.Matches(s))
                        .ToList();
 
                 var count = possibleSpans.Count;
@@ -37,7 +37,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var resultSpan = possibleSpans.First();
 
-                resultSpan.Inspected = true;
+                if (!remainingSpans.Remove(resultSpan))
+                {
+                    throw new Exception("Failed to remove an inspected span, can't trust this test.'");
+                }
 
                 if (!expectation.MeetsExpectations(resultSpan, out var failureMessage))
                 {
@@ -48,9 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var finalMessage = Environment.NewLine + string.Join(Environment.NewLine, failures.Select(f => " - " + f));
 
             Assert.True(!failures.Any(), finalMessage);
-
-            var uninspectedSpans = spans.Count(s => s.Inspected);
-            Assert.True(uninspectedSpans == 0, $"There were {uninspectedSpans} spans unaccounted for.");
+            Assert.True(remainingSpans.Count == 0, $"There were {remainingSpans.Count} spans unaccounted for.");
         }
     }
 }

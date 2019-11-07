@@ -17,10 +17,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Type = type;
 
             // Expectations for all spans regardless of type should go here
-            RegisterCustomExpectation(nameof(OperationName), actual: s => s.Name, expected => OperationName);
-            RegisterCustomExpectation(nameof(ServiceName), actual: s => s.Service, expected => ServiceName);
-            RegisterCustomExpectation(nameof(Type), actual: s => s.Type, expected => Type);
-            RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource.TrimEnd(), expected => ResourceName);
+            RegisterDelegateExpectation(ExpectBasicSpanDataExists);
+
+            RegisterCustomExpectation(nameof(OperationName), actual: s => s.Name, expected: OperationName);
+            RegisterCustomExpectation(nameof(ServiceName), actual: s => s.Service, expected: ServiceName);
+            RegisterCustomExpectation(nameof(Type), actual: s => s.Type, expected: Type);
+            RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource.TrimEnd(), expected: ResourceName);
 
             RegisterTagExpectation(
                 key: nameof(Tags.Language),
@@ -52,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// </summary>
         /// <param name="span">The span on which to filter.</param>
         /// <returns>Whether the span qualifies for this expectation.</returns>
-        public virtual bool ShouldInspect(MockTracerAgent.Span span)
+        public virtual bool Matches(MockTracerAgent.Span span)
         {
             return span.Service == ServiceName
                 && span.Name == OperationName
@@ -117,24 +119,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
         }
 
-        public void RegisterCustomExpectation(string keyForMessage, Func<MockTracerAgent.Span, string> actual, Func<MockTracerAgent.Span, string> expected)
+        public void RegisterCustomExpectation(
+            string keyForMessage,
+            Func<MockTracerAgent.Span, string> actual,
+            string expected)
         {
             Assertions.Add(span =>
             {
                 var actualValue = actual(span);
-                var expectedValue = expected(span);
 
-                if (expectedValue != null && actualValue != expectedValue)
+                if (expected != null && actualValue != expected)
                 {
-                    return FailureMessage(name: keyForMessage, actual: actualValue, expected: expectedValue);
+                    return FailureMessage(name: keyForMessage, actual: actualValue, expected: expected);
                 }
 
                 return null;
             });
         }
 
-        public void RegisterTagExpectation(string key, string expected, Func<MockTracerAgent.Span, bool> when, Func<string, string> customMessage = null)
+        public void RegisterTagExpectation(
+            string key,
+            string expected,
+            Func<MockTracerAgent.Span, bool> when = null)
         {
+            when = when ?? Always;
+
             Assertions.Add(span =>
             {
                 if (!when(span))
@@ -146,11 +155,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (expected != null && actualValue != expected)
                 {
-                    if (customMessage != null)
-                    {
-                        return customMessage(actualValue);
-                    }
-
                     return FailureMessage(name: key, actual: actualValue, expected: expected);
                 }
 
@@ -165,12 +169,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected string GetTag(MockTracerAgent.Span span, string tag)
         {
-            if (span.Tags.ContainsKey(tag))
+            span.Tags.TryGetValue(tag, out var value);
+            return value;
+        }
+
+        private IEnumerable<string> ExpectBasicSpanDataExists(MockTracerAgent.Span span)
+        {
+            if (string.IsNullOrWhiteSpace(span.Resource))
             {
-                return span.Tags[tag];
+                yield return "Resource must be set.";
             }
 
-            return null;
+            if (string.IsNullOrWhiteSpace(span.Type))
+            {
+                yield return "Type must be set.";
+            }
+
+            if (string.IsNullOrWhiteSpace(span.Name))
+            {
+                yield return "Name must be set.";
+            }
+
+            if (string.IsNullOrWhiteSpace(span.Service))
+            {
+                yield return "Service must be set.";
+            }
+
+            if (span.TraceId == default)
+            {
+                yield return "TraceId must be set.";
+            }
+
+            if (span.SpanId == default)
+            {
+                yield return "SpanId must be set.";
+            }
         }
     }
 }

@@ -277,6 +277,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Core.Tools", "tools
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Amazon.SQS", "samples\Samples.Amazon.SQS\Samples.Amazon.SQS.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Amazon.Sqs", "samples\Samples.Amazon.SQS\Samples.Amazon.Sqs.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Aws.Sqs", "samples\Samples.Amazon.SQS\Samples.Aws.Sqs.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Aws.Sqs", "samples\Samples.Aws.Sqs\Samples.Aws.Sqs.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

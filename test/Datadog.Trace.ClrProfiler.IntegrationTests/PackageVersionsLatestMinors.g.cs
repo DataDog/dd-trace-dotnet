@@ -147,5 +147,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 #endif
 
+        public static IEnumerable<object[]> AmazonSqs =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+                new object[] { "3.1.0.13" },
+                new object[] { "3.3.100.65" },
+#endif
+            };
+
     }
 }

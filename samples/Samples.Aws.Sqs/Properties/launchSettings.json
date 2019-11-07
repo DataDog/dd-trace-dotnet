@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Samples.AwsSqs": {
+    "Samples.Aws.Sqs": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",

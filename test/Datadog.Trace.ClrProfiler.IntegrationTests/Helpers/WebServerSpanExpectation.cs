@@ -11,8 +11,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         : base(serviceName, operationName, type)
         {
             // Expectations for all spans of a web server variety should go here
-            RegisterTagExpectation(nameof(Tags.HttpStatusCode), expected: StatusCode, when: Always);
-            RegisterTagExpectation(nameof(Tags.HttpMethod), expected: HttpMethod, when: Always);
+            RegisterTagExpectation(nameof(Tags.HttpStatusCode), expected: StatusCode);
+            RegisterTagExpectation(nameof(Tags.HttpMethod), expected: HttpMethod);
         }
 
         public string OriginalUri { get; set; }
