@@ -234,6 +234,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
+        private static void DecorateSpan(Span span)
+        {
+            span.Type = SpanTypes.GraphQL;
+            span.SetTag(Tags.SpanKind, SpanKinds.Server);
+            span.SetTag(Tags.Language, TracerConstants.Language);
+        }
+
         private static Scope CreateScopeFromValidate(object document)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
@@ -253,8 +260,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 scope = tracer.StartActive(ValidateOperationName, serviceName: serviceName);
                 var span = scope.Span;
-                span.Type = SpanTypes.GraphQL;
-
+                DecorateSpan(span);
                 span.SetTag(Tags.GraphQLSource, source);
 
                 // set analytics sample rate if enabled
@@ -296,7 +302,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 scope = tracer.StartActive(ExecuteOperationName, serviceName: serviceName);
                 var span = scope.Span;
-                span.Type = SpanTypes.GraphQL;
+                DecorateSpan(span);
                 span.ResourceName = $"{operationType} {operationName ?? "operation"}";
 
                 span.SetTag(Tags.GraphQLSource, source);
