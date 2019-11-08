@@ -2,7 +2,7 @@
   "profiles": {
     "GeneratePackageVersions": {
       "commandName": "Project",
-      "commandLineArgs": "\"$(SolutionDir)PackageVersionsGeneratorDefinitions.json\" \"$(SolutionDir)PackageVersions.g.props\" \"$(SolutionDir)test\\Datadog.Trace.ClrProfiler.IntegrationTests\\PackageVersions.g.cs\""
+      "commandLineArgs": "$(SolutionDir)"
     }
   }
 }

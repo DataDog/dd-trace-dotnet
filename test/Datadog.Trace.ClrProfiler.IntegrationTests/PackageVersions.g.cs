@@ -19,141 +19,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersions
     {
-        public static IEnumerable<object[]> MongoDB =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
+#if EXHAUSTIVE_TESTS
+        public static readonly bool IsExhaustive = true;
 #else
-                new object[] { "2.0.0" },
-                new object[] { "2.0.2" },
-                new object[] { "2.1.1" },
-                new object[] { "2.2.4" },
-                new object[] { "2.3.0" },
-                new object[] { "2.4.4" },
-                new object[] { "2.5.1" },
-                new object[] { "2.6.1" },
-                new object[] { "2.7.3" },
-                new object[] { "2.8.1" },
-                new object[] { "2.9.2" },
+        public static readonly bool IsExhaustive = false;
 #endif
-            };
 
-        public static IEnumerable<object[]> ElasticSearch6 =>
+        public static IEnumerable<object[]> MongoDB => IsExhaustive ? PackageVersionsExhaustive.MongoDB : PackageVersionsTypical.MongoDB;
 
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-                new object[] { "6.0.0" },
-                new object[] { "6.0.2" },
-                new object[] { "6.1.0" },
-                new object[] { "6.2.0" },
-                new object[] { "6.3.1" },
-                new object[] { "6.4.2" },
-                new object[] { "6.5.1" },
-                new object[] { "6.6.0" },
-                new object[] { "6.7.0" },
-                new object[] { "6.8.3" },
-#endif
-            };
+        public static IEnumerable<object[]> ElasticSearch6 => IsExhaustive ? PackageVersionsExhaustive.ElasticSearch6 : PackageVersionsTypical.ElasticSearch6;
 
-        public static IEnumerable<object[]> ElasticSearch5 =>
+        public static IEnumerable<object[]> ElasticSearch5 => IsExhaustive ? PackageVersionsExhaustive.ElasticSearch5 : PackageVersionsTypical.ElasticSearch5;
 
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-                new object[] { "5.3.0" },
-                new object[] { "5.3.1" },
-                new object[] { "5.4.0" },
-                new object[] { "5.5.0" },
-                new object[] { "5.6.6" },
-#endif
-            };
+        public static IEnumerable<object[]> Npgsql => IsExhaustive ? PackageVersionsExhaustive.Npgsql : PackageVersionsTypical.Npgsql;
 
-        public static IEnumerable<object[]> Npgsql =>
+        public static IEnumerable<object[]> SqlClient => IsExhaustive ? PackageVersionsExhaustive.SqlClient : PackageVersionsTypical.SqlClient;
 
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-                new object[] { "4.0.0" },
-                new object[] { "4.0.10" },
-                new object[] { "4.1.1" },
-#endif
-            };
+        public static IEnumerable<object[]> StackExchangeRedis => IsExhaustive ? PackageVersionsExhaustive.StackExchangeRedis : PackageVersionsTypical.StackExchangeRedis;
 
-        public static IEnumerable<object[]> SqlClient =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-                new object[] { "4.1.0" },
-                new object[] { "4.3.1" },
-                new object[] { "4.4.3" },
-                new object[] { "4.5.1" },
-                new object[] { "4.6.1" },
-                new object[] { "4.7.0" },
-#endif
-            };
-
-        public static IEnumerable<object[]> StackExchangeRedis =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-                new object[] { "1.0.187" },
-                new object[] { "1.0.488" },
-                new object[] { "1.1.608" },
-                new object[] { "1.2.6" },
-#endif
-            };
-
-        public static IEnumerable<object[]> ServiceStackRedis =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-                new object[] { "4.0.48" },
-                new object[] { "4.0.62" },
-                new object[] { "4.5.14" },
-                new object[] { "5.0.0" },
-                new object[] { "5.0.2" },
-                new object[] { "5.1.0" },
-                new object[] { "5.2.0" },
-                new object[] { "5.4.0" },
-                new object[] { "5.5.0" },
-                new object[] { "5.6.0" },
-                new object[] { "5.7.0" },
-#endif
-            };
+        public static IEnumerable<object[]> ServiceStackRedis => IsExhaustive ? PackageVersionsExhaustive.ServiceStackRedis : PackageVersionsTypical.ServiceStackRedis;
 
 #if NETCOREAPP2_1
-        public static IEnumerable<object[]> AspNetCoreMvc2 =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-                new object[] { "2.0.0" },
-                new object[] { "2.0.4" },
-                new object[] { "2.1.3" },
-                new object[] { "2.2.0" },
+        public static IEnumerable<object[]> AspNetCoreMvc2 => IsExhaustive ? PackageVersionsExhaustive.AspNetCoreMvc2 : PackageVersionsTypical.AspNetCoreMvc2;
 #endif
-            };
-#endif
-
     }
 }

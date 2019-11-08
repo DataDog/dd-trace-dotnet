@@ -9,34 +9,36 @@ namespace GeneratePackageVersions
 {
     public class Program
     {
+        private static string _solutionDirectory;
+        private static string _baseXunitPath;
+        private static PackageGroup _typical;
+        private static PackageGroup _exhaustive;
+        private static XunitStrategyFileGenerator _strategyGenerator;
+
         public static async Task Main(string[] args)
         {
-            string definitionsFilename = "PackageVersionsGeneratorDefinitions.json";
-            string outputPackageVersionsPropsFilename = "PackageVersions.g.props";
-            string outputPackageVersionsXunitFilename = "PackageVersions.g.cs";
-
-            if (args.Length != 3)
+            if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0]))
             {
-                Console.Error.WriteLine("error: Incorrect number of program arguments");
-                Console.Error.WriteLine($"error: args = {args}");
-                Console.Error.WriteLine($"error: Usage: {nameof(GeneratePackageVersions)} <{definitionsFilename}> <{outputPackageVersionsPropsFilename}> <{outputPackageVersionsXunitFilename}>");
+                Console.Error.WriteLine("error: You must specify the solution directory. Exiting.");
                 return;
             }
 
-            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
-            {
-                definitionsFilename = args[0];
-            }
+            _solutionDirectory = args[0];
 
-            if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
-            {
-                outputPackageVersionsPropsFilename = args[1];
-            }
+            _baseXunitPath = Path.Combine(
+                _solutionDirectory,
+                "test",
+                "Datadog.Trace.ClrProfiler.IntegrationTests");
 
-            if (args.Length > 2 && !string.IsNullOrWhiteSpace(args[2]))
-            {
-                outputPackageVersionsXunitFilename = args[2];
-            }
+            _typical = new PackageGroup("Typical");
+            _exhaustive = new PackageGroup("Exhaustive");
+
+            _strategyGenerator = new XunitStrategyFileGenerator(
+                Path.Combine(
+                    _baseXunitPath,
+                    "PackageVersions.g.cs"));
+
+            var definitionsFilename = Path.Combine(args[0], "PackageVersionsGeneratorDefinitions.json");
 
             if (!File.Exists(definitionsFilename))
             {
@@ -45,13 +47,14 @@ namespace GeneratePackageVersions
             }
 
             var entries = JsonConvert.DeserializeObject<PackageVersionEntry[]>(File.ReadAllText(definitionsFilename));
-            await RunFileGeneratorWithPackageEntries(new MSBuildPropsFileGenerator(outputPackageVersionsPropsFilename), entries);
-            await RunFileGeneratorWithPackageEntries(new XUnitFileGenerator(outputPackageVersionsXunitFilename), entries);
+            await RunFileGeneratorWithPackageEntries(entries);
         }
 
-        private static async Task RunFileGeneratorWithPackageEntries(FileGenerator fileGenerator, IEnumerable<PackageVersionEntry> entries)
+        private static async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries)
         {
-            fileGenerator.Start();
+            _typical.Start();
+            _exhaustive.Start();
+            _strategyGenerator.Start();
 
             foreach (var entry in entries)
             {
@@ -62,9 +65,10 @@ namespace GeneratePackageVersions
                        .OrderBy(v => v.Major)
                        .ThenBy(v => v.Minor)
                        .ThenBy(v => v.Revision)
-                       .ThenBy(v => v.Build);
+                       .ThenBy(v => v.Build)
+                       .ToList();
 
-                var versionsToInclude = new HashSet<string>();
+                var typicalTestVersions = new HashSet<string>();
 
                 // Add the first for every major
                 // Add the last for every minor
@@ -73,19 +77,64 @@ namespace GeneratePackageVersions
 
                 foreach (var majorGroup in majorGroups)
                 {
-                    versionsToInclude.Add(majorGroup.First().ToString());
+                    typicalTestVersions.Add(majorGroup.First().ToString());
 
                     var minorGroups = majorGroup.GroupBy(v => v.Minor);
                     foreach (var minorGroup in minorGroups)
                     {
-                        versionsToInclude.Add(minorGroup.Last().ToString());
+                        typicalTestVersions.Add(minorGroup.Last().ToString());
                     }
                 }
 
-                fileGenerator.Write(packageVersionEntry: entry, packageVersions: versionsToInclude);
+                var allVersions = typedVersions.Select(v => v.ToString()).ToHashSet();
+                _typical.Write(entry, typicalTestVersions);
+                _exhaustive.Write(entry, allVersions);
+                _strategyGenerator.Write(entry, null);
             }
 
-            fileGenerator.Finish();
+            _typical.Finish();
+            _exhaustive.Finish();
+            _strategyGenerator.Finish();
+        }
+
+        private class PackageGroup
+        {
+            private readonly MSBuildPropsFileGenerator _msBuildPropsFileGenerator;
+
+            private readonly XUnitFileGenerator _xUnitFileGenerator;
+
+            public PackageGroup(string postfix)
+            {
+                var className = $"PackageVersions{postfix}";
+
+                var outputPackageVersionsPropsFilename = Path.Combine(_solutionDirectory, $"PackageVersions{postfix}.g.props");
+
+                var outputPackageVersionsXunitFilename = Path.Combine(
+                    _baseXunitPath,
+                    $"PackageVersions{postfix}.g.cs");
+
+                _msBuildPropsFileGenerator = new MSBuildPropsFileGenerator(outputPackageVersionsPropsFilename);
+
+                _xUnitFileGenerator = new XUnitFileGenerator(outputPackageVersionsXunitFilename, className);
+            }
+
+            public void Start()
+            {
+                _msBuildPropsFileGenerator.Start();
+                _xUnitFileGenerator.Start();
+            }
+
+            public void Write(PackageVersionEntry entry, HashSet<string> versions)
+            {
+                _msBuildPropsFileGenerator.Write(entry, versions);
+                _xUnitFileGenerator.Write(entry, versions);
+            }
+
+            public void Finish()
+            {
+                _msBuildPropsFileGenerator.Finish();
+                _xUnitFileGenerator.Finish();
+            }
         }
     }
 }
