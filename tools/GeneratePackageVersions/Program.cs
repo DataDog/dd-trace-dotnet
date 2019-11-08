@@ -11,8 +11,8 @@ namespace GeneratePackageVersions
     {
         private static string _solutionDirectory;
         private static string _baseXunitPath;
-        private static PackageGroup _typical;
-        private static PackageGroup _exhaustive;
+        private static PackageGroup _latestMinors;
+        private static PackageGroup _comprehensive;
         private static XunitStrategyFileGenerator _strategyGenerator;
 
         public static async Task Main(string[] args)
@@ -30,8 +30,8 @@ namespace GeneratePackageVersions
                 "test",
                 "Datadog.Trace.ClrProfiler.IntegrationTests");
 
-            _typical = new PackageGroup("Typical");
-            _exhaustive = new PackageGroup("Exhaustive");
+            _latestMinors = new PackageGroup("LatestMinors");
+            _comprehensive = new PackageGroup("Comprehensive");
 
             _strategyGenerator = new XunitStrategyFileGenerator(
                 Path.Combine(
@@ -52,8 +52,8 @@ namespace GeneratePackageVersions
 
         private static async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries)
         {
-            _typical.Start();
-            _exhaustive.Start();
+            _latestMinors.Start();
+            _comprehensive.Start();
             _strategyGenerator.Start();
 
             foreach (var entry in entries)
@@ -70,15 +70,12 @@ namespace GeneratePackageVersions
 
                 var typicalTestVersions = new HashSet<string>();
 
-                // Add the first for every major
                 // Add the last for every minor
 
                 var majorGroups = typedVersions.GroupBy(v => v.Major);
 
                 foreach (var majorGroup in majorGroups)
                 {
-                    typicalTestVersions.Add(majorGroup.First().ToString());
-
                     var minorGroups = majorGroup.GroupBy(v => v.Minor);
                     foreach (var minorGroup in minorGroups)
                     {
@@ -87,13 +84,13 @@ namespace GeneratePackageVersions
                 }
 
                 var allVersions = typedVersions.Select(v => v.ToString()).ToHashSet();
-                _typical.Write(entry, typicalTestVersions);
-                _exhaustive.Write(entry, allVersions);
+                _latestMinors.Write(entry, typicalTestVersions);
+                _comprehensive.Write(entry, allVersions);
                 _strategyGenerator.Write(entry, null);
             }
 
-            _typical.Finish();
-            _exhaustive.Finish();
+            _latestMinors.Finish();
+            _comprehensive.Finish();
             _strategyGenerator.Finish();
         }
 

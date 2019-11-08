@@ -19,28 +19,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersions
     {
-#if EXHAUSTIVE_TESTS
-        public static readonly bool IsExhaustive = true;
+#if COMPREHENSIVE_TESTS
+        public static readonly bool IsComprehensive = true;
 #else
-        public static readonly bool IsExhaustive = false;
+        public static readonly bool IsComprehensive = false;
 #endif
 
-        public static IEnumerable<object[]> MongoDB => IsExhaustive ? PackageVersionsExhaustive.MongoDB : PackageVersionsTypical.MongoDB;
+        public static IEnumerable<object[]> MongoDB => IsComprehensive ? PackageVersionsComprehensive.MongoDB : PackageVersionsLatestMinors.MongoDB;
 
-        public static IEnumerable<object[]> ElasticSearch6 => IsExhaustive ? PackageVersionsExhaustive.ElasticSearch6 : PackageVersionsTypical.ElasticSearch6;
+        public static IEnumerable<object[]> ElasticSearch6 => IsComprehensive ? PackageVersionsComprehensive.ElasticSearch6 : PackageVersionsLatestMinors.ElasticSearch6;
 
-        public static IEnumerable<object[]> ElasticSearch5 => IsExhaustive ? PackageVersionsExhaustive.ElasticSearch5 : PackageVersionsTypical.ElasticSearch5;
+        public static IEnumerable<object[]> ElasticSearch5 => IsComprehensive ? PackageVersionsComprehensive.ElasticSearch5 : PackageVersionsLatestMinors.ElasticSearch5;
 
-        public static IEnumerable<object[]> Npgsql => IsExhaustive ? PackageVersionsExhaustive.Npgsql : PackageVersionsTypical.Npgsql;
+        public static IEnumerable<object[]> Npgsql => IsComprehensive ? PackageVersionsComprehensive.Npgsql : PackageVersionsLatestMinors.Npgsql;
 
-        public static IEnumerable<object[]> SqlClient => IsExhaustive ? PackageVersionsExhaustive.SqlClient : PackageVersionsTypical.SqlClient;
+        public static IEnumerable<object[]> SqlClient => IsComprehensive ? PackageVersionsComprehensive.SqlClient : PackageVersionsLatestMinors.SqlClient;
 
-        public static IEnumerable<object[]> StackExchangeRedis => IsExhaustive ? PackageVersionsExhaustive.StackExchangeRedis : PackageVersionsTypical.StackExchangeRedis;
+        public static IEnumerable<object[]> StackExchangeRedis => IsComprehensive ? PackageVersionsComprehensive.StackExchangeRedis : PackageVersionsLatestMinors.StackExchangeRedis;
 
-        public static IEnumerable<object[]> ServiceStackRedis => IsExhaustive ? PackageVersionsExhaustive.ServiceStackRedis : PackageVersionsTypical.ServiceStackRedis;
+        public static IEnumerable<object[]> ServiceStackRedis => IsComprehensive ? PackageVersionsComprehensive.ServiceStackRedis : PackageVersionsLatestMinors.ServiceStackRedis;
 
 #if NETCOREAPP2_1
-        public static IEnumerable<object[]> AspNetCoreMvc2 => IsExhaustive ? PackageVersionsExhaustive.AspNetCoreMvc2 : PackageVersionsTypical.AspNetCoreMvc2;
+        public static IEnumerable<object[]> AspNetCoreMvc2 => IsComprehensive ? PackageVersionsComprehensive.AspNetCoreMvc2 : PackageVersionsLatestMinors.AspNetCoreMvc2;
 #endif
     }
 }

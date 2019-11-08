@@ -29,10 +29,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage(""StyleCop.CSharp.LayoutRules"", ""SA1516:Elements must be separated by blank line"", Justification = ""This is an auto-generated file."")]
     public class PackageVersions
     {
-#if EXHAUSTIVE_TESTS
-        public static readonly bool IsExhaustive = true;
+#if COMPREHENSIVE_TESTS
+        public static readonly bool IsComprehensive = true;
 #else
-        public static readonly bool IsExhaustive = false;
+        public static readonly bool IsComprehensive = false;
 #endif";
 
         private const string FooterConst =
@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 }";
 
         private const string BodyFormat =
-@"{1}        public static IEnumerable<object[]> {0} => IsExhaustive ? PackageVersionsExhaustive.{0} : PackageVersionsTypical.{0};{2}";
+@"{1}        public static IEnumerable<object[]> {0} => IsComprehensive ? PackageVersionsComprehensive.{0} : PackageVersionsLatestMinors.{0};{2}";
 
         private const string EndIfDirectiveConst =
             @"

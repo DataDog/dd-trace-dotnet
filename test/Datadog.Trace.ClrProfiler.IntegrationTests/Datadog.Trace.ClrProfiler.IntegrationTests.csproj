@@ -5,18 +5,12 @@
 
     <!--These should be consolidated in a file that can be shared for the tests and samples directories -->
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
-    <DefineConstants Condition="'$(PerformExhaustiveTesting)'=='true'">$(DefineConstants);EXHAUSTIVE_TESTS</DefineConstants>
+    <DefineConstants Condition="'$(PerformComprehensiveTesting)'=='true'">$(DefineConstants);COMPREHENSIVE_TESTS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**"
-             CopyToOutputDirectory="Always"
-             CopyToPublishDirectory="Always"
-             Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
-    <Content Include="..\..\integrations.json"
-             CopyToOutputDirectory="Always"
-             CopyToPublishDirectory="Always"
-             Link="profiler-lib\integrations.json" />
+    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <Content Include="..\..\integrations.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\integrations.json" />
   </ItemGroup>
 
   <ItemGroup>

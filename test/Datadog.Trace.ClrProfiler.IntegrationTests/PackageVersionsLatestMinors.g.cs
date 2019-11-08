@@ -17,7 +17,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
-    public class PackageVersionsTypical
+    public class PackageVersionsLatestMinors
     {
         public static IEnumerable<object[]> MongoDB =>
 
@@ -26,7 +26,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-                new object[] { "2.0.0" },
                 new object[] { "2.0.2" },
                 new object[] { "2.1.1" },
                 new object[] { "2.2.4" },
@@ -47,7 +46,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-                new object[] { "6.0.0" },
                 new object[] { "6.0.2" },
                 new object[] { "6.1.0" },
                 new object[] { "6.2.0" },
@@ -67,7 +65,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-                new object[] { "5.3.0" },
                 new object[] { "5.3.1" },
                 new object[] { "5.4.0" },
                 new object[] { "5.5.0" },
@@ -82,7 +79,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-                new object[] { "4.0.0" },
                 new object[] { "4.0.10" },
                 new object[] { "4.1.1" },
 #endif
@@ -111,7 +107,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-                new object[] { "1.0.187" },
                 new object[] { "1.0.488" },
                 new object[] { "1.1.608" },
                 new object[] { "1.2.6" },
@@ -125,10 +120,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-                new object[] { "4.0.48" },
                 new object[] { "4.0.62" },
                 new object[] { "4.5.14" },
-                new object[] { "5.0.0" },
                 new object[] { "5.0.2" },
                 new object[] { "5.1.0" },
                 new object[] { "5.2.0" },
@@ -147,7 +140,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
-                new object[] { "2.0.0" },
                 new object[] { "2.0.4" },
                 new object[] { "2.1.3" },
                 new object[] { "2.2.0" },
