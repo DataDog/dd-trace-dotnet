@@ -82,8 +82,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Debug.Assert(Started, "Cannot call Write() before calling Start()");
             Debug.Assert(!Finished, "Cannot call Write() after calling Finish()");
 
-            StringBuilder bodyStringBuilder = new StringBuilder();
-            foreach (string packageVersion in packageVersions)
+            var bodyStringBuilder = new StringBuilder();
+            foreach (var packageVersion in packageVersions)
             {
                 bodyStringBuilder.AppendLine();
                 bodyStringBuilder.Append(string.Format(EntryFormat, packageVersion));
