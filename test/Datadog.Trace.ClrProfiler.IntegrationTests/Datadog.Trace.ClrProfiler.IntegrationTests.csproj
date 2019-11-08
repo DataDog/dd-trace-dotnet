@@ -2,7 +2,10 @@
 
   <PropertyGroup>
     <Platforms>x64;x86</Platforms>
+
+    <!--These should be consolidated in a file that can be shared for the tests and samples directories -->
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
+    <DefineConstants Condition="'$(PerformExhaustiveTesting)'=='true'">$(DefineConstants);EXHAUSTIVE_TESTS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
