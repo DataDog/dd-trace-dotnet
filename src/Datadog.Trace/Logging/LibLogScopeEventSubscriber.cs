@@ -39,7 +39,6 @@ namespace Datadog.Trace.Logging
             }
             else
             {
-                SetDefaultValues();
                 _scopeManager.SpanActivated += MapOnSpanActivated;
                 _scopeManager.TraceEnded += MapOnTraceEnded;
             }
