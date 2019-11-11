@@ -1,3 +1,5 @@
+#define TRACE
+
 using System;
 using System.Reflection;
 
@@ -15,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         static Startup()
         {
             ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+            System.Diagnostics.Trace.WriteLine(string.Format("ManagedProfilerDirectory: {0}", ManagedProfilerDirectory));
+
             AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
             TryLoadManagedAssembly();
         }
@@ -28,8 +32,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 Assembly.Load(new AssemblyName("Datadog.Trace.ClrProfiler.Managed, Version=1.9.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"));
                 return true;
             }
-            catch
+            catch (Exception e)
             {
+                System.Diagnostics.Trace.WriteLine(string.Format("Exception in TryLoadManagedAssembly: {0}", e.Message));
                 return false;
             }
         }

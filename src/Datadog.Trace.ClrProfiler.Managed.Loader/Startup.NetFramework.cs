@@ -1,5 +1,7 @@
 #if NETFRAMEWORK
 
+#define TRACE
+
 using System;
 using System.IO;
 using System.Reflection;
@@ -30,15 +32,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
-            string assemblyName = new AssemblyName(args.Name).Name;
-            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
-
-            if (File.Exists(path))
+            try
             {
-                return Assembly.LoadFrom(path);
-            }
+                string assemblyName = new AssemblyName(args.Name).Name;
+                var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
 
-            return null;
+                if (File.Exists(path))
+                {
+                    return Assembly.LoadFrom(path);
+                }
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                System.Diagnostics.Trace.WriteLine(string.Format("Exception in AssemblyResolve_ManagedProfilerDependencies: {0}", e.Message));
+                return null;
+            }
         }
     }
 }
