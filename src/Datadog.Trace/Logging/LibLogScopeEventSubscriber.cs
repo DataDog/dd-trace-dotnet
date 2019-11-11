@@ -39,6 +39,16 @@ namespace Datadog.Trace.Logging
             }
             else
             {
+                // Do not set default values because the Tracer (and this event
+                // subscriber) may be initialized at a time when it is not safe
+                // to add properties to the MDC of the underlying logging framework.
+                //
+                // This previously caused a SerializationException when the Tracer
+                //  was initialized in the Asp.Net HttpModule startup, the default
+                // values were added to the underlying log4net framework, and,
+                // upon handling a new request, Asp.Net tried to copy the type
+                // log4net.Util.PropertiesDictionary from one AppDomain to another
+                // even though the type did not implement MarshalObjectByRef
                 _scopeManager.SpanActivated += MapOnSpanActivated;
                 _scopeManager.TraceEnded += MapOnTraceEnded;
             }

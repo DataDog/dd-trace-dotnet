@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public void Init(HttpApplication httpApplication)
         {
             // only register http module if integration is enabled
-            // this also serves a dual-purpose to initialize the Tracer if ithasn't been initialized
+            // this also serves a dual-purpose to initialize the Tracer if it hasn't already been initialized
             if (Tracer.Instance.Settings.IsIntegrationEnabled(AspNetHttpModule.IntegrationName))
             {
                 httpApplication.BeginRequest += OnBeginRequest;
