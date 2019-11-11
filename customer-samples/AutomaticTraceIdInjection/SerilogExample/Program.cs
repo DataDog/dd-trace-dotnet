@@ -11,21 +11,19 @@ namespace SerilogExample
     {
         static void Main(string[] args)
         {
-            // Delete all log files from the last run
-            File.Delete("log-Serilog-textFile-allProperties.log");
-            File.Delete("log-Serilog-jsonFile-allProperties.log");
-            File.Delete("log-Serilog-compactJsonFile-allProperties.log");
-
             var loggerConfiguration = new LoggerConfiguration()
                                           .Enrich.FromLogContext()
                                           .MinimumLevel.Is(Serilog.Events.LogEventLevel.Information);
 
-            // When using a message template, you must emit all properties in order to emit `dd.trace_id` and `dd.span_id`
+            // When using a message template, you must emit all properties using the {Properties} syntax in order to emit `dd.trace_id` and `dd.span_id`
             // This is because Serilog cannot look up these individual keys by name due to the '.' in the key name (see https://github.com/serilog/serilog/wiki/Writing-Log-Events#message-template-syntax)
+            //
+            // Additions to layout:
+            // -  Properties={Properties}
+            //
             loggerConfiguration = loggerConfiguration
                                       .WriteTo.File(
                                           "log-Serilog-textFile-allProperties.log",
-                                          // Use {Properties} to print out all property values
                                           outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} | Exception={Exception} | Properties={Properties}{NewLine}");
 
             // The built-in JsonFormatter will display all properties by default,
