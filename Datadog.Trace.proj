@@ -17,7 +17,8 @@
     <FrameworkReproduction Include="reproductions\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
   </ItemGroup>
 
-  <Import Project="PackageVersions.g.props" />
+  <Import Condition="'$(PerformComprehensiveTesting)'=='true'" Project="PackageVersionsComprehensive.g.props" />
+  <Import Condition="'$(PerformComprehensiveTesting)'!='true'" Project="PackageVersionsLatestMinors.g.props" />
 
   <Target Name="Restore">
     <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject)"/>
