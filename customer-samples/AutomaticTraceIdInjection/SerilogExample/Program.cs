@@ -19,22 +19,26 @@ namespace SerilogExample
             // This is because Serilog cannot look up these individual keys by name due to the '.' in the key name (see https://github.com/serilog/serilog/wiki/Writing-Log-Events#message-template-syntax)
             //
             // Additions to layout:
-            // -  Properties={Properties}
+            // - Properties={Properties}
             //
             loggerConfiguration = loggerConfiguration
                                       .WriteTo.File(
                                           "log-Serilog-textFile-allProperties.log",
                                           outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} | Exception={Exception} | Properties={Properties}{NewLine}");
 
-            // The built-in JsonFormatter will display all properties by default,
-            // so no extra work is needed to emit `dd.trace_id` and `dd.span_id`
+            // The built-in JsonFormatter will display all properties by default, so no extra work is needed to emit `dd.trace_id` and `dd.span_id`
+            //
+            // Additions to layout: none
+            //
             loggerConfiguration = loggerConfiguration
                                       .WriteTo.File(
                                           new JsonFormatter(),
                                           "log-Serilog-jsonFile-allProperties.log");
 
-            // The CompactJsonFormatter from the Serilog.Formatting.Compact NuGet package will display all properties by default,
-            // so no extra work is needed to emit `dd.trace_id` and `dd.span_id`
+            // The CompactJsonFormatter from the Serilog.Formatting.Compact NuGet package will display all properties by default, so no extra work is needed to emit `dd.trace_id` and `dd.span_id`
+            //
+            // Additions to layout: none
+            //
             loggerConfiguration = loggerConfiguration
                                       .WriteTo.File(
                                           new CompactJsonFormatter(),
