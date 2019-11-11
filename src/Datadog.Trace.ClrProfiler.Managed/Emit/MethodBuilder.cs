@@ -71,6 +71,15 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return new MethodBuilder<TDelegate>(moduleVersionId, mdToken, opCode, methodName);
         }
 
+        public static MethodBuilder<TDelegate> Start(Module module, int mdToken, int opCode, string methodName)
+        {
+            return new MethodBuilder<TDelegate>(
+                module,
+                mdToken,
+                opCode,
+                methodName);
+        }
+
         public static MethodBuilder<TDelegate> Start(long moduleVersionPtr, int mdToken, int opCode, string methodName)
         {
             return new MethodBuilder<TDelegate>(

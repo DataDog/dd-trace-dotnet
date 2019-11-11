@@ -44,6 +44,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public string ServiceName { get; set; }
 
+        public static string GetTag(MockTracerAgent.Span span, string tag)
+        {
+            span.Tags.TryGetValue(tag, out var value);
+            return value;
+        }
+
         public virtual string Detail()
         {
             return $"service={ServiceName}, operation={OperationName}, type={Type}, resource={ResourceName}";
@@ -170,12 +176,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected string FailureMessage(string name, string actual, string expected)
         {
             return $"({name} mismatch: actual: {actual ?? "NULL"}, expected: {expected ?? "NULL"})";
-        }
-
-        protected string GetTag(MockTracerAgent.Span span, string tag)
-        {
-            span.Tags.TryGetValue(tag, out var value);
-            return value;
         }
 
         private IEnumerable<string> ExpectBasicSpanDataExists(MockTracerAgent.Span span)
