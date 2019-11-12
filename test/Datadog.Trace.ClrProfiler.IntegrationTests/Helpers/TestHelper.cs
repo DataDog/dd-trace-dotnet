@@ -215,6 +215,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        protected void EnableDebugMode()
+        {
+            _environmentHelper.DebugModeEnabled = true;
+        }
+
         protected async Task AssertHttpSpan(
             string path,
             MockTracerAgent agent,

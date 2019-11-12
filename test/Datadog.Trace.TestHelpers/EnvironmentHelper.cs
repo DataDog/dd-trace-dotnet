@@ -75,6 +75,8 @@ namespace Datadog.Trace.TestHelpers
                           : string.Empty;
         }
 
+        public bool DebugModeEnabled { get; set; }
+
         public string SampleName { get; }
 
         public static EnvironmentHelper NonProfiledHelper(Type anchor, string appName, string directory)
@@ -223,6 +225,11 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(profilerPath);
 
                 processName = Path.GetFileName(processPath);
+            }
+
+            if (DebugModeEnabled)
+            {
+                environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
             environmentVariables["DD_PROFILER_PROCESSES"] = processName;

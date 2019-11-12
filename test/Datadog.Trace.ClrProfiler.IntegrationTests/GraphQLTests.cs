@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 var spans = graphQLValidateSpans.Concat(graphQLExecuteSpans).ToList();
-                WebServerTestHelpers.AssertExpectationsMet(_expectations, spans);
+                SpanTestHelpers.AssertExpectationsMet(_expectations, spans);
             }
         }
 
@@ -125,8 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string graphQLOperationName,
             string graphQLSource,
             bool failsValidation = false,
-            bool failsExecution = false,
-            Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
+            bool failsExecution = false)
         {
             _requests.Add(new RequestInfo()
             {
@@ -136,15 +135,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
 
             // Expect a 'validate' span
-            _expectations.Add(new GraphQLSpanExpectation
+            _expectations.Add(new GraphQLSpanExpectation("Samples.GraphQL-graphql", _graphQLValidateOperationName)
             {
                 OriginalUri = url,
-                OperationName = _graphQLValidateOperationName,
                 ResourceName = _graphQLValidateOperationName,
-                ServiceName = "Samples.GraphQL-graphql",
-                Type = SpanTypes.GraphQL,
-                CustomAssertion = additionalCheck,
-
                 GraphQLRequestBody = graphQLRequestBody,
                 GraphQLOperationType = null,
                 GraphQLOperationName = graphQLOperationName,
@@ -156,15 +150,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (failsValidation) { return; }
 
             // Expect an 'execute' span
-            _expectations.Add(new GraphQLSpanExpectation
+            _expectations.Add(new GraphQLSpanExpectation("Samples.GraphQL-graphql", _graphQLExecuteOperationName)
             {
                 OriginalUri = url,
-                OperationName = _graphQLExecuteOperationName,
                 ResourceName = _graphQLExecuteOperationName,
-                ServiceName = "Samples.GraphQL-graphql",
-                Type = SpanTypes.GraphQL,
-                CustomAssertion = additionalCheck,
-
                 GraphQLRequestBody = graphQLRequestBody,
                 GraphQLOperationType = graphQLOperationType,
                 GraphQLOperationName = graphQLOperationName,
