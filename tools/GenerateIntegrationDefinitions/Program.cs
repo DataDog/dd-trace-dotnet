@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,21 +17,19 @@ namespace GenerateIntegrationDefinitions
             var integrationsAssembly = typeof(Instrumentation).Assembly;
 
             // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
+            var integrationGroups = from wrapperType in integrationsAssembly.GetTypes()
+                                    from wrapperMethod in wrapperType.GetRuntimeMethods()
+                                    let attributes = wrapperMethod.GetCustomAttributes<InterceptMethodAttribute>(inherit: false)
+                                    where attributes.Any()
+                                    from attribute in attributes
+                                    let integrationName = attribute.Integration ?? GetIntegrationName(wrapperType)
+                                    orderby integrationName
+                                    group new { wrapperType, wrapperMethod, attribute }
+                                        by integrationName into g
+                                    select g;
+
             // and create objects that will generate correct JSON schema
-            var integrations = from wrapperType in integrationsAssembly.GetTypes()
-                               from wrapperMethod in wrapperType.GetRuntimeMethods()
-                               let attributes = wrapperMethod.GetCustomAttributes<InterceptMethodAttribute>(inherit: false)
-                               where attributes.Any()
-                               from attribute in attributes
-                               let integrationName = attribute.Integration ?? GetIntegrationName(wrapperType)
-                               orderby integrationName
-                               group new
-                                   {
-                                       wrapperType,
-                                       wrapperMethod,
-                                       attribute
-                                   }
-                                   by integrationName into g
+            var integrations = from g in integrationGroups
                                select new
                                {
                                    name = g.Key,
@@ -86,6 +85,21 @@ namespace GenerateIntegrationDefinitions
 
             var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
             File.WriteAllText(filename, json, utf8NoBom);
+
+            var betaIntegrations = new HashSet<string>();
+
+            foreach (var integrationMethod in integrationGroups.SelectMany(g => g.ToList()))
+            {
+                var betaFlag =
+                    integrationMethod.wrapperType.GetCustomAttributes<BetaFeatureAttribute>(inherit: true);
+
+                if (betaFlag.Any())
+                {
+                    betaIntegrations.Add(integrationMethod.wrapperType.Name);
+                }
+            }
+
+            BetaIntegrations.CreateFile(betaIntegrations);
         }
 
         private static string GetIntegrationName(Type wrapperType)

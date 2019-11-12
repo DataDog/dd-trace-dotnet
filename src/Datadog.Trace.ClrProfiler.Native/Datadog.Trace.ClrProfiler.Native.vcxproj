@@ -144,6 +144,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="beta_integrations.h" />
     <ClInclude Include="class_factory.h" />
     <ClInclude Include="com_ptr.h" />
     <ClInclude Include="cor_profiler.h" />

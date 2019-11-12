@@ -67,6 +67,10 @@ const WSTRING log_path = "DD_TRACE_LOG_PATH"_W;
 // https://github.com/dotnet/coreclr/issues/12468
 const WSTRING clr_disable_optimizations = "DD_CLR_DISABLE_OPTIMIZATIONS"_W;
 
+// Sets whether to opt in to beta features
+// Default is false
+const WSTRING beta_features_enabled = "DD_DOTNET_BETA_FEATURES_ENABLED"_W;
+
 }  // namespace environment
 }  // namespace trace
 

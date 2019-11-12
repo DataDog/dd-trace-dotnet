@@ -4,6 +4,7 @@
 #include <string>
 #include "corhlpr.h"
 
+#include "beta_integrations.h"
 #include "clr_helpers.h"
 #include "dllmain.h"
 #include "environment_variables.h"
@@ -89,7 +90,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      environment::env,
                      environment::service_name,
                      environment::disabled_integrations,
-                     environment::clr_disable_optimizations};
+                     environment::clr_disable_optimizations,
+                     environment::beta_features_enabled};
 
   for (auto&& env_var : env_vars) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
@@ -116,6 +118,13 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // remove disabled integrations
   integrations_ =
       FilterIntegrationsByName(all_integrations, disabled_integration_names);
+
+  const WSTRING beta_features_enabled =
+      GetEnvironmentValue(environment::beta_features_enabled);
+  if (beta_features_enabled != "1"_W && beta_features_enabled != "true"_W) {
+    // remove beta integrations
+    integrations_ = FilterIntegrationsByName(integrations_, beta_integrations);
+  }
 
   // check if there are any enabled integrations left
   if (integrations_.empty()) {
@@ -310,8 +319,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   ModuleMetadata* module_metadata = new ModuleMetadata(
       metadata_import, metadata_emit, assembly_import, assembly_emit,
-      module_info.assembly.name, app_domain_id,
-      module_version_id, filtered_integrations);
+      module_info.assembly.name, app_domain_id, module_version_id,
+      filtered_integrations);
 
   // store module info for later lookup
   module_id_to_info_map_[module_id] = module_metadata;
@@ -412,7 +421,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
       first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
-      first_jit_compilation_app_domains.end()) {
+          first_jit_compilation_app_domains.end()) {
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                           function_token);
@@ -454,7 +463,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         method_replacement.wrapper_method.get_method_cache_key();
     mdMemberRef wrapper_method_ref = mdMemberRefNil;
 
-    // Exit early if we previously failed to store the method ref for this wrapper_method
+    // Exit early if we previously failed to store the method ref for this
+    // wrapper_method
     if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
       continue;
     }
@@ -532,8 +542,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      // Resolve the MethodRef now. If the method is generic, we'll need to use it
-      // to define a MethodSpec
+      // Resolve the MethodRef now. If the method is generic, we'll need to use
+      // it to define a MethodSpec
       if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
                                                    wrapper_method_ref)) {
         const auto module_info = GetModuleInfo(this->info_, module_id);
@@ -671,13 +681,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
+      if (!ProfilerAssemblyIsLoadedIntoAppDomain(
+              module_metadata->app_domain_id)) {
         Info(
             "JITCompilationStarted skipping method: Method replacement "
             "found but the managed profiler has not yet been loaded. "
             "function_id=",
-            function_id, " token=", function_token, " target_name=", target.type.name,
-            ".", target.name, "()");
+            function_id, " token=", function_token,
+            " target_name=", target.type.name, ".", target.name, "()");
         continue;
       }
 
@@ -688,11 +699,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       // additional arguments for the wrapper method
       //
       // IMPORTANT: Conditional branches may jump to this call instruction, so
-      // we cannot add the argument-loading instructions BEFORE this instruction,
-      // otherwise this will surface in an InvalidProgramException.
-      // Either begin loading the additional arguments starting with this ILInstr
-      // structure or make the current ILInstr a no-op and do all of the argument
-      // loading after this instruction.
+      // we cannot add the argument-loading instructions BEFORE this
+      // instruction, otherwise this will surface in an InvalidProgramException.
+      // Either begin loading the additional arguments starting with this
+      // ILInstr structure or make the current ILInstr a no-op and do all of the
+      // argument loading after this instruction.
       ILRewriterWrapper rewriter_wrapper(&rewriter);
       rewriter_wrapper.SetILPosition(pInstr);
       auto original_methodcall_opcode = pInstr->m_opcode;
@@ -703,10 +714,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       rewriter_wrapper.CallMemberAfter(wrapper_method_ref, false);
       rewriter_wrapper.SetILPosition(pInstr->m_pNext);
 
-      // add the additional arguments before calling the wrapper method, in order
+      // add the additional arguments before calling the wrapper method, in
+      // order
       rewriter_wrapper.LoadInt32(original_methodcall_opcode);
       rewriter_wrapper.LoadInt32(method_def_md_token);
-      rewriter_wrapper.LoadInt64(reinterpret_cast<INT64>(module_version_id_ptr));
+      rewriter_wrapper.LoadInt64(
+          reinterpret_cast<INT64>(module_version_id_ptr));
 
       modified = true;
 
@@ -734,7 +747,8 @@ bool CorProfiler::IsAttached() const { return is_attached_; }
 //
 // Startup methods
 //
-bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id) {
+bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(
+    AppDomainID app_domain_id) {
   return managed_profiler_loaded_domain_neutral ||
          managed_profiler_loaded_app_domains.find(app_domain_id) !=
              managed_profiler_loaded_app_domains.end();
@@ -746,7 +760,8 @@ HRESULT CorProfiler::RunILStartupHook(
   mdMethodDef ret_method_token;
   auto hr = GenerateVoidILStartupMethod(module_id, &ret_method_token);
   if (FAILED(hr)) {
-    Warn("RunILStartupHook: Call to GenerateVoidILStartupMethod failed for ", module_id);
+    Warn("RunILStartupHook: Call to GenerateVoidILStartupMethod failed for ",
+         module_id);
     return S_OK;
   }
 
@@ -766,14 +781,15 @@ HRESULT CorProfiler::RunILStartupHook(
   return S_OK;
 }
 
-HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
-                                                 mdMethodDef* ret_method_token) {
+HRESULT CorProfiler::GenerateVoidILStartupMethod(
+    const ModuleID module_id, mdMethodDef* ret_method_token) {
   ComPtr<IUnknown> metadata_interfaces;
   auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite,
                                            IID_IMetaDataImport2,
                                            metadata_interfaces.GetAddressOf());
   if (FAILED(hr)) {
-    Warn("GenerateVoidILStartupMethod: failed to get metadata interface for ", module_id);
+    Warn("GenerateVoidILStartupMethod: failed to get metadata interface for ",
+         module_id);
     return hr;
   }
 
@@ -795,13 +811,14 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   metadata.usBuildNumber = 0;
   metadata.usRevisionNumber = 0;
   BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
-  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), "mscorlib"_W.c_str(),
-                                   &metadata, NULL, 0, 0, &mscorlib_ref);
+  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key),
+                                   "mscorlib"_W.c_str(), &metadata, NULL, 0, 0,
+                                   &mscorlib_ref);
 
   // Define a TypeRef for System.Object
   mdTypeRef object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.Object"_W.c_str(),
-                                          &object_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(
+      mscorlib_ref, "System.Object"_W.c_str(), &object_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
     return hr;
@@ -809,42 +826,42 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
   // Define a new TypeDef __DDVoidMethodType__ that extends System.Object
   mdTypeDef new_type_def;
-  hr = metadata_emit->DefineTypeDef("__DDVoidMethodType__"_W.c_str(), tdAbstract | tdSealed,
-                               object_type_ref, NULL, &new_type_def);
+  hr = metadata_emit->DefineTypeDef("__DDVoidMethodType__"_W.c_str(),
+                                    tdAbstract | tdSealed, object_type_ref,
+                                    NULL, &new_type_def);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeDef failed");
     return hr;
   }
 
-  // Define a new static method __DDVoidMethodCall__ on the new type that has a void return type and takes no arguments
+  // Define a new static method __DDVoidMethodCall__ on the new type that has a
+  // void return type and takes no arguments
   BYTE initialize_signature[] = {
-    IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
-    0,                             // Number of parameters
-    ELEMENT_TYPE_VOID,             // Return type
-    ELEMENT_TYPE_OBJECT            // List of parameter types
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
+      0,                              // Number of parameters
+      ELEMENT_TYPE_VOID,              // Return type
+      ELEMENT_TYPE_OBJECT             // List of parameter types
   };
-  hr = metadata_emit->DefineMethod(new_type_def,
-                              "__DDVoidMethodCall__"_W.c_str(),
-                              mdStatic,
-                              initialize_signature,
-                              sizeof(initialize_signature),
-                              0,
-                              0,
-                              ret_method_token);
+  hr = metadata_emit->DefineMethod(
+      new_type_def, "__DDVoidMethodCall__"_W.c_str(), mdStatic,
+      initialize_signature, sizeof(initialize_signature), 0, 0,
+      ret_method_token);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineMethod failed");
     return hr;
   }
 
-  // Define a method on the managed side that will PInvoke into the profiler method:
-  // C++: void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize)
-  // C#: static extern void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
+  // Define a method on the managed side that will PInvoke into the profiler
+  // method: C++: void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int*
+  // assemblySize, BYTE** pSymbolsArray, int* symbolsSize) C#: static extern
+  // void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int
+  // assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
   mdMethodDef pinvoke_method_def;
   COR_SIGNATURE get_assembly_bytes_signature[] = {
-      IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
-      4,                             // Number of parameters
-      ELEMENT_TYPE_VOID,             // Return type
-      ELEMENT_TYPE_BYREF,            // List of parameter types
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
+      4,                              // Number of parameters
+      ELEMENT_TYPE_VOID,              // Return type
+      ELEMENT_TYPE_BYREF,             // List of parameter types
       ELEMENT_TYPE_I,
       ELEMENT_TYPE_BYREF,
       ELEMENT_TYPE_I4,
@@ -854,9 +871,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       ELEMENT_TYPE_I4,
   };
   hr = metadata_emit->DefineMethod(
-      new_type_def, "GetAssemblyAndSymbolsBytes"_W.c_str(), mdStatic | mdPinvokeImpl | mdHideBySig,
-      get_assembly_bytes_signature, sizeof(get_assembly_bytes_signature), 0, 0,
-      &pinvoke_method_def);
+      new_type_def, "GetAssemblyAndSymbolsBytes"_W.c_str(),
+      mdStatic | mdPinvokeImpl | mdHideBySig, get_assembly_bytes_signature,
+      sizeof(get_assembly_bytes_signature), 0, 0, &pinvoke_method_def);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineMethod failed");
     return hr;
@@ -870,26 +887,43 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
 
 #ifdef _WIN32
   WSTRING native_profiler_file = "DATADOG.TRACE.CLRPROFILER.NATIVE.DLL"_W;
-#else // _WIN32
+#else  // _WIN32
 
 #ifdef BIT64
-  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH_64"_W);
-  Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+  WSTRING native_profiler_file =
+      GetEnvironmentValue("CORECLR_PROFILER_PATH_64"_W);
+  Debug(
+      "GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_64 defined "
+      "as: ",
+      native_profiler_file);
   if (native_profiler_file == ""_W) {
     native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
-    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+    Debug(
+        "GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined "
+        "as: ",
+        native_profiler_file);
   }
-#else // BIT64
-  WSTRING native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH_32"_W);
-  Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+#else   // BIT64
+  WSTRING native_profiler_file =
+      GetEnvironmentValue("CORECLR_PROFILER_PATH_32"_W);
+  Debug(
+      "GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined "
+      "as: ",
+      native_profiler_file);
   if (native_profiler_file == ""_W) {
     native_profiler_file = GetEnvironmentValue("CORECLR_PROFILER_PATH"_W);
-    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+    Debug(
+        "GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined "
+        "as: ",
+        native_profiler_file);
   }
-#endif // BIT64
-Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler library path to ", native_profiler_file);
+#endif  // BIT64
+  Debug(
+      "GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler "
+      "library path to ",
+      native_profiler_file);
 
-#endif // _WIN32
+#endif  // _WIN32
 
   mdModuleRef profiler_ref;
   hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(),
@@ -899,8 +933,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
     return hr;
   }
 
-  hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def,
-                                       0,
+  hr = metadata_emit->DefinePinvokeMap(pinvoke_method_def, 0,
                                        "GetAssemblyAndSymbolsBytes"_W.c_str(),
                                        profiler_ref);
   if (FAILED(hr)) {
@@ -910,8 +943,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.Byte
   mdTypeRef byte_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          "System.Byte"_W.c_str(),
+  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref, "System.Byte"_W.c_str(),
                                           &byte_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
@@ -920,26 +952,26 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.Runtime.InteropServices.Marshal
   mdTypeRef marshal_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          "System.Runtime.InteropServices.Marshal"_W.c_str(),
-                                          &marshal_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(
+      mscorlib_ref, "System.Runtime.InteropServices.Marshal"_W.c_str(),
+      &marshal_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
     return hr;
   }
 
-  // Get a MemberRef for System.Runtime.InteropServices.Marshal.Copy(IntPtr, Byte[], int, int)
+  // Get a MemberRef for System.Runtime.InteropServices.Marshal.Copy(IntPtr,
+  // Byte[], int, int)
   mdMemberRef marshal_copy_member_ref;
   COR_SIGNATURE marshal_copy_signature[] = {
-      IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
-      4,                             // Number of parameters
-      ELEMENT_TYPE_VOID,             // Return type
-      ELEMENT_TYPE_I,                // List of parameter types
+      IMAGE_CEE_CS_CALLCONV_DEFAULT,  // Calling convention
+      4,                              // Number of parameters
+      ELEMENT_TYPE_VOID,              // Return type
+      ELEMENT_TYPE_I,                 // List of parameter types
       ELEMENT_TYPE_SZARRAY,
       ELEMENT_TYPE_U1,
       ELEMENT_TYPE_I4,
-      ELEMENT_TYPE_I4
-  };
+      ELEMENT_TYPE_I4};
   hr = metadata_emit->DefineMemberRef(
       marshal_type_ref, "Copy"_W.c_str(), marshal_copy_signature,
       sizeof(marshal_copy_signature), &marshal_copy_member_ref);
@@ -950,9 +982,9 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.Reflection.Assembly
   mdTypeRef system_reflection_assembly_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          "System.Reflection.Assembly"_W.c_str(),
-                                          &system_reflection_assembly_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(
+      mscorlib_ref, "System.Reflection.Assembly"_W.c_str(),
+      &system_reflection_assembly_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
     return hr;
@@ -960,9 +992,8 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a MemberRef for System.Object.ToString()
   mdTypeRef system_object_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          "System.Object"_W.c_str(),
-                                          &system_object_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(
+      mscorlib_ref, "System.Object"_W.c_str(), &system_object_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
     return hr;
@@ -970,9 +1001,8 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Get a TypeRef for System.AppDomain
   mdTypeRef system_appdomain_type_ref;
-  hr = metadata_emit->DefineTypeRefByName(mscorlib_ref,
-                                          "System.AppDomain"_W.c_str(),
-                                          &system_appdomain_type_ref);
+  hr = metadata_emit->DefineTypeRefByName(
+      mscorlib_ref, "System.AppDomain"_W.c_str(), &system_appdomain_type_ref);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineTypeRefByName failed");
     return hr;
@@ -983,30 +1013,27 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Create method signature for AppDomain.CurrentDomain property
   COR_SIGNATURE appdomain_get_current_domain_signature_start[] = {
-      IMAGE_CEE_CS_CALLCONV_DEFAULT,
-      0,
-      ELEMENT_TYPE_CLASS, // ret = System.AppDomain
+      IMAGE_CEE_CS_CALLCONV_DEFAULT, 0,
+      ELEMENT_TYPE_CLASS,  // ret = System.AppDomain
       // insert compressed token for System.AppDomain TypeRef here
   };
   ULONG start_length = sizeof(appdomain_get_current_domain_signature_start);
 
   BYTE system_appdomain_type_ref_compressed_token[4];
-  ULONG token_length = CorSigCompressToken(system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
+  ULONG token_length = CorSigCompressToken(
+      system_appdomain_type_ref, system_appdomain_type_ref_compressed_token);
 
-  COR_SIGNATURE* appdomain_get_current_domain_signature = new COR_SIGNATURE[start_length + token_length];
+  COR_SIGNATURE* appdomain_get_current_domain_signature =
+      new COR_SIGNATURE[start_length + token_length];
   memcpy(appdomain_get_current_domain_signature,
-         appdomain_get_current_domain_signature_start,
-         start_length);
+         appdomain_get_current_domain_signature_start, start_length);
   memcpy(&appdomain_get_current_domain_signature[start_length],
-         system_appdomain_type_ref_compressed_token,
-         token_length);
+         system_appdomain_type_ref_compressed_token, token_length);
 
   mdMemberRef appdomain_get_current_domain_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref,
-      "get_CurrentDomain"_W.c_str(),
-      appdomain_get_current_domain_signature,
-      start_length + token_length,
+      system_appdomain_type_ref, "get_CurrentDomain"_W.c_str(),
+      appdomain_get_current_domain_signature, start_length + token_length,
       &appdomain_get_current_domain_member_ref);
   delete[] appdomain_get_current_domain_signature;
 
@@ -1017,40 +1044,34 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Create method signature for AppDomain.Load(byte[], byte[])
   COR_SIGNATURE appdomain_load_signature_start[] = {
-      IMAGE_CEE_CS_CALLCONV_HASTHIS,
-      2,
+      IMAGE_CEE_CS_CALLCONV_HASTHIS, 2,
       ELEMENT_TYPE_CLASS  // ret = System.Reflection.Assembly
       // insert compressed token for System.Reflection.Assembly TypeRef here
   };
   COR_SIGNATURE appdomain_load_signature_end[] = {
-      ELEMENT_TYPE_SZARRAY,
-      ELEMENT_TYPE_U1,
-      ELEMENT_TYPE_SZARRAY,
-      ELEMENT_TYPE_U1
-  };
+      ELEMENT_TYPE_SZARRAY, ELEMENT_TYPE_U1, ELEMENT_TYPE_SZARRAY,
+      ELEMENT_TYPE_U1};
   start_length = sizeof(appdomain_load_signature_start);
   ULONG end_length = sizeof(appdomain_load_signature_end);
 
   BYTE system_reflection_assembly_type_ref_compressed_token[4];
-  token_length = CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
+  token_length =
+      CorSigCompressToken(system_reflection_assembly_type_ref,
+                          system_reflection_assembly_type_ref_compressed_token);
 
-  COR_SIGNATURE* appdomain_load_signature = new COR_SIGNATURE[start_length + token_length + end_length];
-  memcpy(appdomain_load_signature,
-         appdomain_load_signature_start,
+  COR_SIGNATURE* appdomain_load_signature =
+      new COR_SIGNATURE[start_length + token_length + end_length];
+  memcpy(appdomain_load_signature, appdomain_load_signature_start,
          start_length);
   memcpy(&appdomain_load_signature[start_length],
-         system_reflection_assembly_type_ref_compressed_token,
-         token_length);
+         system_reflection_assembly_type_ref_compressed_token, token_length);
   memcpy(&appdomain_load_signature[start_length + token_length],
-         appdomain_load_signature_end,
-         end_length);
+         appdomain_load_signature_end, end_length);
 
   mdMemberRef appdomain_load_member_ref;
   hr = metadata_emit->DefineMemberRef(
-      system_appdomain_type_ref, "Load"_W.c_str(),
-      appdomain_load_signature,
-      start_length + token_length + end_length,
-      &appdomain_load_member_ref);
+      system_appdomain_type_ref, "Load"_W.c_str(), appdomain_load_signature,
+      start_length + token_length + end_length, &appdomain_load_member_ref);
   delete[] appdomain_load_signature;
 
   if (FAILED(hr)) {
@@ -1060,11 +1081,9 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   // Create method signature for Assembly.CreateInstance(string)
   COR_SIGNATURE assembly_create_instance_signature[] = {
-      IMAGE_CEE_CS_CALLCONV_HASTHIS,
-      1,
+      IMAGE_CEE_CS_CALLCONV_HASTHIS, 1,
       ELEMENT_TYPE_OBJECT,  // ret = System.Object
-      ELEMENT_TYPE_STRING
-  };
+      ELEMENT_TYPE_STRING};
 
   mdMemberRef assembly_create_instance_member_ref;
   hr = metadata_emit->DefineMemberRef(
@@ -1077,23 +1096,24 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
     return hr;
   }
 
-  // Create a string representing "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"
-  // Create OS-specific implementations because on Windows, creating the string via
-  // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str() does not create the
-  // proper string for CreateInstance to successfully call
+  // Create a string representing
+  // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup" Create OS-specific
+  // implementations because on Windows, creating the string via
+  // "Datadog.Trace.ClrProfiler.Managed.Loader.Startup"_W.c_str() does not
+  // create the proper string for CreateInstance to successfully call
 #ifdef _WIN32
-  LPCWSTR load_helper_str =
-      L"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
+  LPCWSTR load_helper_str = L"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
   auto load_helper_str_size = wcslen(load_helper_str);
 #else
   char16_t load_helper_str[] =
       u"Datadog.Trace.ClrProfiler.Managed.Loader.Startup";
-  auto load_helper_str_size = std::char_traits<char16_t>::length(load_helper_str);
+  auto load_helper_str_size =
+      std::char_traits<char16_t>::length(load_helper_str);
 #endif
 
   mdString load_helper_token;
-  hr = metadata_emit->DefineUserString(load_helper_str, (ULONG) load_helper_str_size,
-                                  &load_helper_token);
+  hr = metadata_emit->DefineUserString(
+      load_helper_str, (ULONG)load_helper_str_size, &load_helper_token);
   if (FAILED(hr)) {
     Warn("GenerateVoidILStartupMethod: DefineUserString failed");
     return hr;
@@ -1115,12 +1135,13 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   //   [3] System.Int32  ("symbolsSize" - size of symbols bytes)
   //   [4] System.Byte[] ("assemblyBytes" - managed byte array for assembly)
   //   [5] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
-  //   [6] class System.Reflection.Assembly ("loadedAssembly" - assembly instance to save loaded assembly)
+  //   [6] class System.Reflection.Assembly ("loadedAssembly" - assembly
+  //   instance to save loaded assembly)
   mdSignature locals_signature_token;
   COR_SIGNATURE locals_signature[15] = {
-      IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
-      7,                               // Number of variables
-      ELEMENT_TYPE_I,                  // List of variable types
+      IMAGE_CEE_CS_CALLCONV_LOCAL_SIG,  // Calling convention
+      7,                                // Number of variables
+      ELEMENT_TYPE_I,                   // List of variable types
       ELEMENT_TYPE_I4,
       ELEMENT_TYPE_I,
       ELEMENT_TYPE_I4,
@@ -1133,10 +1154,13 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   };
   CorSigCompressToken(system_reflection_assembly_type_ref,
                       &locals_signature[11]);
-  hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature),
-                                 &locals_signature_token);
+  hr = metadata_emit->GetTokenFromSig(
+      locals_signature, sizeof(locals_signature), &locals_signature_token);
   if (FAILED(hr)) {
-    Warn("GenerateVoidILStartupMethod: Unable to generate locals signature. ModuleID=", module_id);
+    Warn(
+        "GenerateVoidILStartupMethod: Unable to generate locals signature. "
+        "ModuleID=",
+        module_id);
     return hr;
   }
 
@@ -1148,15 +1172,18 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   ILInstr* pFirstInstr = rewriter_void.GetILList()->m_pNext;
   ILInstr* pNewInstr = NULL;
 
-  // Step 1) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
+  // Step 1) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out
+  // int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
 
-  // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index 0)
+  // ldloca.s 0 : Load the address of the "assemblyPtr" variable (locals index
+  // 0)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOCA_S;
   pNewInstr->m_Arg32 = 0;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloca.s 1 : Load the address of the "assemblySize" variable (locals index 1)
+  // ldloca.s 1 : Load the address of the "assemblySize" variable (locals index
+  // 1)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOCA_S;
   pNewInstr->m_Arg32 = 1;
@@ -1168,32 +1195,37 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   pNewInstr->m_Arg32 = 2;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloca.s 3 : Load the address of the "symbolsSize" variable (locals index 3)
+  // ldloca.s 3 : Load the address of the "symbolsSize" variable (locals index
+  // 3)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOCA_S;
   pNewInstr->m_Arg32 = 3;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
+  // call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int
+  // assemblySize, out IntPtr symbolsPtr, out int symbolsSize)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_CALL;
   pNewInstr->m_Arg32 = pinvoke_method_def;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // Step 2) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the managed assembly bytes
+  // Step 2) Call void Marshal.Copy(IntPtr source, byte[] destination, int
+  // startIndex, int length) to populate the managed assembly bytes
 
   // ldloc.1 : Load the "assemblySize" variable (locals index 1)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_1;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // newarr System.Byte : Create a new Byte[] to hold a managed copy of the assembly data
+  // newarr System.Byte : Create a new Byte[] to hold a managed copy of the
+  // assembly data
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_NEWARR;
   pNewInstr->m_Arg32 = byte_type_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // stloc.s 4 : Assign the Byte[] to the "assemblyBytes" variable (locals index 4)
+  // stloc.s 4 : Assign the Byte[] to the "assemblyBytes" variable (locals index
+  // 4)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_STLOC_S;
   pNewInstr->m_Arg8 = 4;
@@ -1215,31 +1247,36 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   pNewInstr->m_opcode = CEE_LDC_I4_0;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloc.1 : Load the "assemblySize" variable (locals index 1) for the Marshal.Copy length parameter
+  // ldloc.1 : Load the "assemblySize" variable (locals index 1) for the
+  // Marshal.Copy length parameter
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_1;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // call Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length)
+  // call Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int
+  // length)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_CALL;
   pNewInstr->m_Arg32 = marshal_copy_member_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // Step 3) Call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length) to populate the symbols bytes
+  // Step 3) Call void Marshal.Copy(IntPtr source, byte[] destination, int
+  // startIndex, int length) to populate the symbols bytes
 
   // ldloc.3 : Load the "symbolsSize" variable (locals index 3)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_3;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // newarr System.Byte : Create a new Byte[] to hold a managed copy of the symbols data
+  // newarr System.Byte : Create a new Byte[] to hold a managed copy of the
+  // symbols data
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_NEWARR;
   pNewInstr->m_Arg32 = byte_type_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // stloc.s 5 : Assign the Byte[] to the "symbolsBytes" variable (locals index 5)
+  // stloc.s 5 : Assign the Byte[] to the "symbolsBytes" variable (locals index
+  // 5)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_STLOC_S;
   pNewInstr->m_Arg8 = 5;
@@ -1261,18 +1298,21 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   pNewInstr->m_opcode = CEE_LDC_I4_0;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloc.3 : Load the "symbolsSize" variable (locals index 3) for the Marshal.Copy length parameter
+  // ldloc.3 : Load the "symbolsSize" variable (locals index 3) for the
+  // Marshal.Copy length parameter
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_3;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex, int length)
+  // call void Marshal.Copy(IntPtr source, byte[] destination, int startIndex,
+  // int length)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_CALL;
   pNewInstr->m_Arg32 = marshal_copy_member_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // Step 4) Call System.Reflection.Assembly System.AppDomain.CurrentDomain.Load(byte[], byte[]))
+  // Step 4) Call System.Reflection.Assembly
+  // System.AppDomain.CurrentDomain.Load(byte[], byte[]))
 
   // call System.AppDomain System.AppDomain.CurrentDomain property
   pNewInstr = rewriter_void.NewILInstr();
@@ -1280,13 +1320,15 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   pNewInstr->m_Arg32 = appdomain_get_current_domain_member_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4) for the first byte[] parameter of AppDomain.Load(byte[], byte[])
+  // ldloc.s 4 : Load the "assemblyBytes" variable (locals index 4) for the
+  // first byte[] parameter of AppDomain.Load(byte[], byte[])
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_S;
   pNewInstr->m_Arg8 = 4;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 5) for the second byte[] parameter of AppDomain.Load(byte[], byte[])
+  // ldloc.s 5 : Load the "symbolsBytes" variable (locals index 5) for the
+  // second byte[] parameter of AppDomain.Load(byte[], byte[])
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_S;
   pNewInstr->m_Arg8 = 5;
@@ -1298,15 +1340,18 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
   pNewInstr->m_Arg32 = appdomain_load_member_ref;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // stloc.s 6 : Assign the System.Reflection.Assembly object to the "loadedAssembly" variable (locals index 6)
+  // stloc.s 6 : Assign the System.Reflection.Assembly object to the
+  // "loadedAssembly" variable (locals index 6)
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_STLOC_S;
   pNewInstr->m_Arg8 = 6;
   rewriter_void.InsertBefore(pFirstInstr, pNewInstr);
 
-  // Step 4) Call instance method Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
+  // Step 4) Call instance method
+  // Assembly.CreateInstance("Datadog.Trace.ClrProfiler.Managed.Loader.Startup")
 
-  // ldloc.s 6 : Load the "loadedAssembly" variable (locals index 6) to call Assembly.CreateInstance
+  // ldloc.s 6 : Load the "loadedAssembly" variable (locals index 6) to call
+  // Assembly.CreateInstance
   pNewInstr = rewriter_void.NewILInstr();
   pNewInstr->m_opcode = CEE_LDLOC_S;
   pNewInstr->m_Arg8 = 6;
@@ -1336,7 +1381,8 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   hr = rewriter_void.Export();
   if (FAILED(hr)) {
-    Warn("GenerateVoidILStartupMethod: Unable to save the IL body. ModuleID=", module_id);
+    Warn("GenerateVoidILStartupMethod: Unable to save the IL body. ModuleID=",
+         module_id);
     return hr;
   }
 
@@ -1344,14 +1390,21 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 }
 
 #ifndef _WIN32
-extern uint8_t dll_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_start");
-extern uint8_t dll_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_end");
+extern uint8_t dll_start[] asm(
+    "_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_start");
+extern uint8_t dll_end[] asm(
+    "_binary_Datadog_Trace_ClrProfiler_Managed_Loader_dll_end");
 
-extern uint8_t pdb_start[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_start");
-extern uint8_t pdb_end[] asm("_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
+extern uint8_t pdb_start[] asm(
+    "_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_start");
+extern uint8_t pdb_end[] asm(
+    "_binary_Datadog_Trace_ClrProfiler_Managed_Loader_pdb_end");
 #endif
 
-void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray, int* symbolsSize) const {
+void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray,
+                                             int* assemblySize,
+                                             BYTE** pSymbolsArray,
+                                             int* symbolsSize) const {
 #ifdef _WIN32
   HINSTANCE hInstance = DllHandle;
   LPCWSTR dllLpName;
