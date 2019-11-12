@@ -3,7 +3,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class WebServerSpanExpectation : SpanExpectation
     {
         public WebServerSpanExpectation(string serviceName, string operationName)
-            : base(serviceName, operationName, SpanTypes.Web)
+            : this(serviceName, operationName, SpanTypes.Web)
         {
         }
 
