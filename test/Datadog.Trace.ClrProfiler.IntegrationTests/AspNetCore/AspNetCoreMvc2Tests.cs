@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     process.Kill();
                 }
 
-                WebServerTestHelpers.AssertExpectationsMet(_expectations, spans);
+                SpanTestHelpers.AssertExpectationsMet(_expectations, spans);
             }
         }
 
@@ -108,17 +108,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             string resourceUrl,
             Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
         {
-            return new WebServerSpanExpectation
+            var expectation = new WebServerSpanExpectation("Samples.AspNetCoreMvc2", _topLevelOperationName)
             {
                 OriginalUri = url,
                 HttpMethod = httpMethod,
-                OperationName = _topLevelOperationName,
-                ServiceName = "Samples.AspNetCoreMvc2",
                 ResourceName = $"{httpMethod.ToUpper()} {resourceUrl}",
                 StatusCode = httpStatus,
-                Type = SpanTypes.Web,
-                CustomAssertion = additionalCheck
             };
+
+            expectation.RegisterDelegateExpectation(additionalCheck);
+
+            return expectation;
         }
 
         private void SubmitRequests(int aspNetCorePort, string[] paths)
