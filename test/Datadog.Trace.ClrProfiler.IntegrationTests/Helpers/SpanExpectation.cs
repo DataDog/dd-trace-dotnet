@@ -106,6 +106,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public void RegisterDelegateExpectation(Func<MockTracerAgent.Span, IEnumerable<string>> expectation)
         {
+            if (expectation == null)
+            {
+                return;
+            }
+
             Assertions.Add(span =>
             {
                 var failures = expectation(span);
