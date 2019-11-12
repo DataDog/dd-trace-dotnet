@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                         if (route != null)
                         {
-                            var resourceUrl = (route.Url ?? string.Empty).ToLowerInvariant();
+                            var resourceUrl = route.Url?.ToLowerInvariant() ?? string.Empty;
                             if (resourceUrl.FirstOrDefault() != '/')
                             {
                                 resourceUrl = string.Concat("/", resourceUrl);
