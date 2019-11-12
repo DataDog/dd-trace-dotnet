@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var failures = expectation(span);
 
-                if (failures.Any())
+                if (failures != null && failures.Any())
                 {
                     return string.Join(",", failures);
                 }
