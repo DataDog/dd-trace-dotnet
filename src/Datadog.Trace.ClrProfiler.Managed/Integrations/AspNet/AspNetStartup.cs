@@ -14,7 +14,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         public static void Register()
         {
-            HttpApplication.RegisterModule(typeof(AspNetHttpModule));
+            Tracer.Instance = new Tracer(
+                settings: null,
+                agentWriter: null,
+                sampler: null,
+                scopeManager: new AspNetScopeManager(),
+                statsd: null);
+
+            if (Tracer.Instance.Settings.IsIntegrationEnabled(AspNetHttpModule.IntegrationName))
+            {
+                // only register http module if integration is enabled
+                HttpApplication.RegisterModule(typeof(AspNetHttpModule));
+            }
         }
     }
 }
