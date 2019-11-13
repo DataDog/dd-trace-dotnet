@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net452;net461</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
+    <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\reproduction-dependencies\ApplicationWithLog4Net\ApplicationWithLog4Net.csproj" />
+  </ItemGroup>
+
+  <Target Name="AfterBuildMoveApplicationWithLog4Net" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <!-- Subfolders of the output directory should each be a target framework -->
+      <OtherApplicationFiles Include="$(OutputPath)*.dll" />
+      <OtherApplicationFiles Include="$(OutputPath)*.xml" />
+      <OtherApplicationFiles Include="$(OutputPath)*.pdb" Exclude="$(OutputPath)Log4Net.SerializationException.pdb" />
+      <OtherApplicationFiles Include="$(OutputPath)log4net.config" />
+    </ItemGroup>
+
+    <Move SourceFiles="@(OtherApplicationFiles)" DestinationFolder="$(OutputPath)ApplicationFiles" />
+  </Target>
+
+</Project>
