@@ -26,6 +26,7 @@ namespace ApplicationWithLog4Net
 
             // Let's call AspNetStartup.Register now
             // This will create a Tracer and, if buggy, store items in the CallContext
+            // which will need to be passed by ref or deserialized when transitioning AppDomains
             AspNetStartup.Register();
 
             return "ApplicationWithLog4Net.Program";
