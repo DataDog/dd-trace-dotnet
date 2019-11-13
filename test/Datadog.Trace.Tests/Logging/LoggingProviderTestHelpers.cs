@@ -34,6 +34,8 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void PerformParentChildScopeSequence(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
         {
+            logger.Log(LogLevel.Info, () => $"{LogPrefix}Logged before starting/activating a scope");
+
             parentScope = tracer.StartActive("parent");
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Started and activated parent scope.");
 

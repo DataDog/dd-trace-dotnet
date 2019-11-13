@@ -22,9 +22,21 @@ namespace Datadog.Trace.Logging
         // IMPORTANT: Serilog -- The logging contexts (throughout the entire application)
         //            are maintained in a stack, as opposed to a map, and must be closed
         //            in reverse-order of opening. When operating on the stack-based model,
-        //            it is only valid to add the properties once unset them once.
+        //            it is only valid to add the properties once and unset them once.
         private readonly ConcurrentStack<IDisposable> _contextDisposalStack = new ConcurrentStack<IDisposable>();
 
+        // IMPORTANT: For all logging frameworks, do not set any default values for
+        //            "dd.trace_id" and "dd.span_id" when initializing the subscriber
+        //            because the Tracer may be initialized at a time when it is not safe
+        //            to add properties logging context of the underlying logging framework.
+        //
+        //            Failure to abide by this can cause a SerializationException when
+        //            control is passed from one AppDomain to another where the originating
+        //            AppDomain used a logging framework that stored logging context properties
+        //            inside the System.Runtime.Remoting.Messaging.CallContext structure
+        //            but the target AppDomain is unable to de-serialize the object --
+        //            this can easily happen if the target AppDomain cannot find/load the
+        //            logging framework assemblies.
         public LibLogScopeEventSubscriber(IScopeManager scopeManager)
         {
             _scopeManager = scopeManager;
@@ -39,7 +51,6 @@ namespace Datadog.Trace.Logging
             }
             else
             {
-                SetDefaultValues();
                 _scopeManager.SpanActivated += MapOnSpanActivated;
                 _scopeManager.TraceEnded += MapOnTraceEnded;
             }

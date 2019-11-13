@@ -44,6 +44,14 @@ namespace Datadog.Trace.Tests.Logging
             var logIndex = 0;
             LogEvent logEvent;
 
+            // The first log should not have dd.span_id or dd.trace_id
+            // Scope: N/A
+            // Custom property: N/A
+            logEvent = _logEvents[logIndex++];
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+
             // Scope: Parent scope
             // Custom property: N/A
             logEvent = _logEvents[logIndex++];
@@ -100,6 +108,13 @@ namespace Datadog.Trace.Tests.Logging
 
             int logIndex = 0;
             LogEvent logEvent;
+
+            // Scope: N/A
+            // Custom property: N/A
+            logEvent = _logEvents[logIndex++];
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
 
             // Scope: N/A
             // Custom property: N/A
