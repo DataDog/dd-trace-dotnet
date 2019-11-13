@@ -8,9 +8,10 @@ namespace SynchronizeVersions
 {
     public class Program
     {
-        private static int major = 1;
-        private static int minor = 9;
-        private static int patch = 0;
+        private const int Major = 1;
+        private const int Minor = 9;
+        private const int Patch = 1;
+        private const bool IsPreRelease = true;
 
         public static void Main(string[] args)
         {
@@ -70,17 +71,17 @@ namespace SynchronizeVersions
 
         private static string FullVersionReplace(string text, string split)
         {
-            return Regex.Replace(text, VersionPattern(split), VersionString(split));
+            return Regex.Replace(text, VersionPattern(split), VersionString(split), RegexOptions.Singleline);
         }
 
         private static string FullAssemblyNameReplace(string text)
         {
-            return Regex.Replace(text, AssemblyString(VersionPattern()), AssemblyString(VersionString()));
+            return Regex.Replace(text, AssemblyString(VersionPattern()), AssemblyString(VersionString()), RegexOptions.Singleline);
         }
 
         private static string NugetVersionReplace(string text)
         {
-            return Regex.Replace(text, $"<Version>{VersionPattern()}</Version>", $"<Version>{VersionString()}</Version>");
+            return Regex.Replace(text, $"<Version>{VersionPattern(withPrereleasePostfix: true)}</Version>", $"<Version>{VersionString(withPrereleasePostfix: true)}</Version>", RegexOptions.Singleline);
         }
 
         private static void SynchronizeVersion(string path, Func<string, string> transform)
@@ -101,19 +102,33 @@ namespace SynchronizeVersions
             File.WriteAllText(fullPath, newFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
 
-        private static string VersionString(string split = ".")
+        private static string VersionString(string split = ".", bool withPrereleasePostfix = false)
         {
-            return $"{major}{split}{minor}{split}{patch}";
+            var newVersion = $"{Major}{split}{Minor}{split}{Patch}";
+
+            if (withPrereleasePostfix && IsPreRelease)
+            {
+                newVersion = newVersion + "-prerelease";
+            }
+
+            return newVersion;
         }
 
-        private static string VersionPattern(string split = ".")
+        private static string VersionPattern(string split = ".", bool withPrereleasePostfix = false)
         {
             if (split == ".")
             {
                 split = @"\.";
             }
 
-            return $@"\d+{split}\d+{split}\d+";
+            var pattern = $@"\d+{split}\d+{split}\d+";
+
+            if (withPrereleasePostfix)
+            {
+                pattern = pattern + "(\\-prerelease)?";
+            }
+
+            return pattern;
         }
 
         private static string AssemblyString(string versionText)
