@@ -144,6 +144,84 @@
           "method": "AfterAction",
           "signature": "00 07 01 1C 1C 1C 1C 08 08 0A"
         }
+      },
+      {
+        "caller": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core"
+        },
+        "target": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core",
+          "type": "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker",
+          "method": "Rethrow",
+          "signature_types": [
+            "System.Void",
+            "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResourceExecutedContextSealed"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.9.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc3Integration",
+          "method": "Rethrow_ResourceExecutedContextSealed",
+          "signature": "00 04 01 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core"
+        },
+        "target": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core",
+          "type": "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker",
+          "method": "Rethrow",
+          "signature_types": [
+            "System.Void",
+            "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ExceptionContextSealed"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.9.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc3Integration",
+          "method": "Rethrow_ExceptionContextSealed",
+          "signature": "00 04 01 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core"
+        },
+        "target": {
+          "assembly": "Microsoft.AspNetCore.Mvc.Core",
+          "type": "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker",
+          "method": "Rethrow",
+          "signature_types": [
+            "System.Void",
+            "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultExecutedContextSealed"
+          ],
+          "minimum_major": 1,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 6,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.9.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMvc3Integration",
+          "method": "Rethrow_ResultExecutedContextSealed",
+          "signature": "00 04 01 1C 08 08 0A"
+        }
       }
     ]
   },

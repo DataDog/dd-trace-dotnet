@@ -36,6 +36,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private const string RouteDataTypeName = "Microsoft.AspNetCore.Routing.RouteData";
 
+        private const string ResourceExecutedContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResourceExecutedContextSealed";
+        private const string ExceptionContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ExceptionContextSealed";
+        private const string ResultExecutedContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultExecutedContextSealed";
+
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetCoreMvc3Integration));
 
         private static AspNetCoreMvcContext CreateContext(object actionDescriptor, object httpContext)
@@ -300,6 +304,126 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             finally
             {
                 context?.Scope?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Wrapper method used to catch unhandled exceptions in the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
+        /// </summary>
+        /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            CallerAssembly = AspnetMvcCore,
+            TargetAssembly = AspnetMvcCore,
+            TargetType = ResourceInvokerTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Void, ResourceExecutedContextSealedTypeName },
+            TargetMethod = nameof(Rethrow),
+            TargetMinimumVersion = MinimumVersion,
+            TargetMaximumVersion = MaximumVersion)]
+        public static void Rethrow_ResourceExecutedContextSealed(object context, int opCode, int mdToken, long moduleVersionPtr)
+        {
+            Rethrow(context, opCode, mdToken, moduleVersionPtr, ResourceExecutedContextSealedTypeName);
+        }
+
+        /// <summary>
+        /// Wrapper method used to catch unhandled exceptions in the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
+        /// </summary>
+        /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            CallerAssembly = AspnetMvcCore,
+            TargetAssembly = AspnetMvcCore,
+            TargetType = ResourceInvokerTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Void, ExceptionContextSealedTypeName },
+            TargetMethod = nameof(Rethrow),
+            TargetMinimumVersion = MinimumVersion,
+            TargetMaximumVersion = MaximumVersion)]
+        public static void Rethrow_ExceptionContextSealed(object context, int opCode, int mdToken, long moduleVersionPtr)
+        {
+            Rethrow(context, opCode, mdToken, moduleVersionPtr, ExceptionContextSealedTypeName);
+        }
+
+        /// <summary>
+        /// Wrapper method used to catch unhandled exceptions in the incoming request pipeline for Microsoft.AspNetCore.Mvc.Core
+        /// </summary>
+        /// <param name="context">The DiagnosticSource that this extension method was called on.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        [InterceptMethod(
+            CallerAssembly = AspnetMvcCore,
+            TargetAssembly = AspnetMvcCore,
+            TargetType = ResourceInvokerTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Void, ResultExecutedContextSealedTypeName },
+            TargetMethod = nameof(Rethrow),
+            TargetMinimumVersion = MinimumVersion,
+            TargetMaximumVersion = MaximumVersion)]
+        public static void Rethrow_ResultExecutedContextSealed(object context, int opCode, int mdToken, long moduleVersionPtr)
+        {
+            Rethrow(context, opCode, mdToken, moduleVersionPtr, ResultExecutedContextSealedTypeName);
+        }
+
+        private static void Rethrow(object context, int opCode, int mdToken, long moduleVersionPtr, string contextType)
+        {
+            Action<object> instrumentedMethod;
+
+            try
+            {
+                var module = ModuleLookup.GetByPointer(moduleVersionPtr);
+                var concreteType = module.GetType(contextType);
+
+                instrumentedMethod =
+                    MethodBuilder<Action<object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(Rethrow))
+                       .WithConcreteType(concreteType)
+                       .WithParameters(context)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, contextType)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: ResourceInvokerTypeName,
+                    methodName: nameof(Rethrow),
+                    instanceType: null,
+                    relevantArguments: new[] { context.GetType().AssemblyQualifiedName });
+                throw;
+            }
+
+            AspNetCoreMvcContext integration = null;
+
+            try
+            {
+                if (context.TryGetPropertyValue("HttpContext", out object httpContext))
+                {
+                    if (httpContext.TryGetPropertyValue("Items", out IDictionary<object, object> contextItems))
+                    {
+                        integration = contextItems?[HttpContextKey] as AspNetCoreMvcContext;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Error accessing {nameof(AspNetCoreMvc3Integration)}.");
+            }
+
+            try
+            {
+                // call the original method, observing any unhandled exceptions
+                instrumentedMethod.Invoke(context);
+            }
+            catch (Exception ex)
+            {
+                integration?.Scope?.Span?.SetException(ex);
+                throw;
             }
         }
 

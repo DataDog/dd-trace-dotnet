@@ -13,7 +13,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>-->
 
-  <!--Begin linked files section (Shared code with AspNetCoreMvc2 -->
+  <!--Begin linked files section (Shared code with AspNetCoreMvc2) -->
   <ItemGroup>
     <Compile Include="..\Samples.AspNetCoreMvc2\Attributes\StackTraceHelper.cs" Link="Attributes\StackTraceHelper.cs" />
     <Compile Include="..\Samples.AspNetCoreMvc2\Controllers\ApiController.cs" Link="Controllers\ApiController.cs" />
