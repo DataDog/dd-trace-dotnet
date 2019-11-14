@@ -14,25 +14,18 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <!-- Custom InstallerVersion property for the generated installer,
-         value is set to build constant InstallerVersion below and
-         accessed as $(var.InstallerVersion) from WiX files.
-         This is the default value if one is not specified when building. -->
-    <InstallerVersion Condition="'$(InstallerVersion)'==''">0.1</InstallerVersion>
+    <InstallerVersion>3.9.8</InstallerVersion>
     <!-- default msi filename if not specified -->
-    <OutputName Condition="'$(OutputName)'==''">datadog-dotnet-apm-$(InstallerVersion)-$(Platform)-$(Configuration)</OutputName>
+    <OutputName>datadog-dotnet-apm-3.9.8-$(Platform)-$(Configuration)</OutputName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DefineConstants>InstallerVersion=3.9.8</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DefineConstants>Debug;InstallerVersion=$(InstallerVersion)</DefineConstants>
+    <DefineConstants>$(DefineConstants);Debug</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-    <DefineConstants>Debug;InstallerVersion=$(InstallerVersion)</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <DefineConstants>$(DefineConstants);Debug</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Files.Managed.Net45.GAC.wxs" />

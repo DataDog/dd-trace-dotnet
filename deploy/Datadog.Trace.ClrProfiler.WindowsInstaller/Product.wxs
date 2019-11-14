@@ -6,7 +6,7 @@
   <Product Id="*"
            Name="$(var.ProductName)"
            Language="1033"
-           Version="$(var.InstallerVersion)"
+           Version="$(InstallerVersion)"
            Manufacturer="$(var.ArpManufacturer)"
            UpgradeCode="fc228e86-eae2-4c2a-ae82-135b718c269e">
     <Package InstallerVersion="200"

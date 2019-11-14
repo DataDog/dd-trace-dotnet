@@ -2,17 +2,12 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Datadog.Trace.TestHelpers;
+using Datadog.Core.Tools;
 
 namespace SynchronizeVersions
 {
     public class Program
     {
-        private const int Major = 1;
-        private const int Minor = 9;
-        private const int Patch = 1;
-        private const bool IsPreRelease = true;
-
         public static void Main(string[] args)
         {
             Console.WriteLine($"Updating version instances to {VersionString()}");
@@ -66,6 +61,14 @@ namespace SynchronizeVersions
                 "src/Datadog.Trace/Datadog.Trace.csproj",
                 NugetVersionReplace);
 
+            SynchronizeVersion(
+                "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
+                WixProjReplace);
+
+            // SynchronizeVersion(
+            //    "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Product.wxs",
+            //    WxsFileReplace);
+
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
         }
 
@@ -84,9 +87,43 @@ namespace SynchronizeVersions
             return Regex.Replace(text, $"<Version>{VersionPattern(withPrereleasePostfix: true)}</Version>", $"<Version>{VersionString(withPrereleasePostfix: true)}</Version>", RegexOptions.Singleline);
         }
 
+        private static string WixProjReplace(string text)
+        {
+            text = Regex.Replace(
+                text,
+                $"<OutputName>datadog-dotnet-apm-{VersionPattern(withPrereleasePostfix: true)}-\\$\\(Platform\\)-\\$\\(Configuration\\)</OutputName>",
+                $"<OutputName>datadog-dotnet-apm-{VersionString(withPrereleasePostfix: true)}-$(Platform)-$(Configuration)</OutputName>",
+                RegexOptions.Singleline);
+
+            text = Regex.Replace(
+                text,
+                $"InstallerVersion={VersionPattern()}",
+                $"InstallerVersion={VersionString()}",
+                RegexOptions.Singleline);
+
+            text = Regex.Replace(
+                text,
+                $"<InstallerVersion>{VersionPattern()}</InstallerVersion>",
+                $"<InstallerVersion>{VersionString()}</InstallerVersion>",
+                RegexOptions.Singleline);
+
+            return text;
+        }
+
+        private static string WxsFileReplace(string text)
+        {
+            text = Regex.Replace(
+                text,
+                $"Version=\"{VersionPattern()}\"",
+                $"Version=\"{VersionString()}\"",
+                RegexOptions.Singleline);
+
+            return text;
+        }
+
         private static void SynchronizeVersion(string path, Func<string, string> transform)
         {
-            var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
+            var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
             var fullPath = Path.Combine(solutionDirectory, path);
 
             Console.WriteLine($"Updating version instances for {path}");
@@ -104,9 +141,10 @@ namespace SynchronizeVersions
 
         private static string VersionString(string split = ".", bool withPrereleasePostfix = false)
         {
-            var newVersion = $"{Major}{split}{Minor}{split}{Patch}";
+            var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Patch}";
 
-            if (withPrereleasePostfix && IsPreRelease)
+            // ReSharper disable once RedundantLogicalConditionalExpressionOperand
+            if (withPrereleasePostfix && TracerVersion.IsPreRelease)
             {
                 newVersion = newVersion + "-prerelease";
             }
