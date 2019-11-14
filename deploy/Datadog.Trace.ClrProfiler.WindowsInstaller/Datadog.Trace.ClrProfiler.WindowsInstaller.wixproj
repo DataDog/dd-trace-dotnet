@@ -14,12 +14,12 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <InstallerVersion>3.9.8</InstallerVersion>
+    <InstallerVersion>1.9.1</InstallerVersion>
     <!-- default msi filename if not specified -->
-    <OutputName>datadog-dotnet-apm-3.9.8-$(Platform)-$(Configuration)</OutputName>
+    <OutputName>datadog-dotnet-apm-1.9.1-prerelease-$(Platform)-$(Configuration)</OutputName>
   </PropertyGroup>
   <PropertyGroup>
-    <DefineConstants>InstallerVersion=3.9.8</DefineConstants>
+    <DefineConstants>InstallerVersion=1.9.1</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>
