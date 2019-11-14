@@ -16,12 +16,24 @@
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <OutputName>datadog-dotnet-apm-1.9.1-prerelease-$(Platform)</OutputName>
   </PropertyGroup>
+
   <PropertyGroup>
     <DefineConstants>InstallerVersion=1.9.1</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <DefineConstants>$(DefineConstants);Debug</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="Files.Managed.Net45.GAC.wxs" />
     <Compile Include="Files.Managed.Net45.wxs" />
