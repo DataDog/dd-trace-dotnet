@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Specialized;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Datadog.Core.Tools;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -18,8 +18,6 @@ namespace Datadog.Trace.TestHelpers
         private static readonly Assembly EntryAssembly = Assembly.GetEntryAssembly();
         private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
-
-        private static string _solutionDirectory;
 
         private readonly ITestOutputHelper _output;
         private readonly int _major;
@@ -136,33 +134,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static string GetSolutionDirectory()
         {
-            if (_solutionDirectory == null)
-            {
-                var startDirectory = Environment.CurrentDirectory;
-                var currentDirectory = Directory.GetParent(startDirectory);
-                const string searchItem = @"Datadog.Trace.sln";
-
-                while (true)
-                {
-                    var slnFile = currentDirectory.GetFiles(searchItem).SingleOrDefault();
-
-                    if (slnFile != null)
-                    {
-                        break;
-                    }
-
-                    currentDirectory = currentDirectory.Parent;
-
-                    if (currentDirectory == null || !currentDirectory.Exists)
-                    {
-                        throw new Exception($"Unable to find solution directory from: {startDirectory}");
-                    }
-                }
-
-                _solutionDirectory = currentDirectory.FullName;
-            }
-
-            return _solutionDirectory;
+            return EnvironmentTools.GetSolutionDirectory();
         }
 
         public static void ClearProfilerEnvironmentVariables()

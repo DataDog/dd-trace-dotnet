@@ -10,30 +10,30 @@
     <ProjectGuid>3054de0e-f140-4758-b2da-0b9470c6ede1</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
     <OutputType>Package</OutputType>
-    <OutputPath>bin\</OutputPath>
+    <OutputPath>bin\$(Configuration)\$(Platform)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <!-- Custom InstallerVersion property for the generated installer,
-         value is set to build constant InstallerVersion below and
-         accessed as $(var.InstallerVersion) from WiX files.
-         This is the default value if one is not specified when building. -->
-    <InstallerVersion Condition="'$(InstallerVersion)'==''">0.1</InstallerVersion>
-    <!-- default msi filename if not specified -->
-    <OutputName Condition="'$(OutputName)'==''">datadog-dotnet-apm-$(InstallerVersion)-$(Platform)-$(Configuration)</OutputName>
+    <OutputName>datadog-dotnet-apm-1.9.1-prerelease-$(Platform)</OutputName>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants>InstallerVersion=1.9.1</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DefineConstants>Debug;InstallerVersion=$(InstallerVersion)</DefineConstants>
+    <DefineConstants>$(DefineConstants);Debug</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
+    <DefineConstants>$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-    <DefineConstants>Debug;InstallerVersion=$(InstallerVersion)</DefineConstants>
+    <DefineConstants>$(DefineConstants);Debug</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <DefineConstants>InstallerVersion=$(InstallerVersion)</DefineConstants>
+    <DefineConstants>$(DefineConstants)</DefineConstants>
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="Files.Managed.Net45.GAC.wxs" />
     <Compile Include="Files.Managed.Net45.wxs" />
