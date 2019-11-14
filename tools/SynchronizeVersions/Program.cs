@@ -110,17 +110,6 @@ namespace SynchronizeVersions
             return text;
         }
 
-        private static string WxsFileReplace(string text)
-        {
-            text = Regex.Replace(
-                text,
-                $"Version=\"{VersionPattern()}\"",
-                $"Version=\"{VersionString()}\"",
-                RegexOptions.Singleline);
-
-            return text;
-        }
-
         private static void SynchronizeVersion(string path, Func<string, string> transform)
         {
             var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
