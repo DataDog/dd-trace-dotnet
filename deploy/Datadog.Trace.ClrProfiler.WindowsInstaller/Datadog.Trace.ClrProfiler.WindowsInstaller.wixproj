@@ -15,7 +15,6 @@
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <InstallerVersion>1.9.1</InstallerVersion>
-    <!-- default msi filename if not specified -->
     <OutputName>datadog-dotnet-apm-1.9.1-prerelease-$(Platform)-$(Configuration)</OutputName>
   </PropertyGroup>
   <PropertyGroup>
