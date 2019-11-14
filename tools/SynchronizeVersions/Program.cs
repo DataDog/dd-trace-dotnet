@@ -65,10 +65,6 @@ namespace SynchronizeVersions
                 "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
                 WixProjReplace);
 
-            // SynchronizeVersion(
-            //    "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Product.wxs",
-            //    WxsFileReplace);
-
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
         }
 
