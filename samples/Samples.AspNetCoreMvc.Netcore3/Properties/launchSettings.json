@@ -10,7 +10,7 @@
   "profiles": {
     "IIS Express": {
       "commandName": "IISExpress",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
 
@@ -32,7 +32,7 @@
     },
     "Samples.AspNetCoreMvc.Netcore3": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
 
@@ -47,7 +47,7 @@
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
 
-        "DD_TRACE_DEBUG":  "false" 
+        "DD_TRACE_DEBUG": "false"
       },
       "applicationUrl": "http://localhost:54567/",
       "nativeDebugging": true
