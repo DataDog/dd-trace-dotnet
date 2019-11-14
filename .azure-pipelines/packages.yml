@@ -90,7 +90,7 @@ jobs:
     displayName: publish msi artifact
     inputs:
       artifactName: windows-msi-$(buildPlatform)
-      targetPath: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/en-us
+      targetPath: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
 
 #### Linux packages
 
