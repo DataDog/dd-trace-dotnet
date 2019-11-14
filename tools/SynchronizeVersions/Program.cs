@@ -87,20 +87,14 @@ namespace SynchronizeVersions
         {
             text = Regex.Replace(
                 text,
-                $"<OutputName>datadog-dotnet-apm-{VersionPattern(withPrereleasePostfix: true)}-\\$\\(Platform\\)-\\$\\(Configuration\\)</OutputName>",
-                $"<OutputName>datadog-dotnet-apm-{VersionString(withPrereleasePostfix: true)}-$(Platform)-$(Configuration)</OutputName>",
+                $"<OutputName>datadog-dotnet-apm-{VersionPattern(withPrereleasePostfix: true)}-\\$\\(Platform\\)</OutputName>",
+                $"<OutputName>datadog-dotnet-apm-{VersionString(withPrereleasePostfix: true)}-$(Platform)</OutputName>",
                 RegexOptions.Singleline);
 
             text = Regex.Replace(
                 text,
                 $"InstallerVersion={VersionPattern()}",
                 $"InstallerVersion={VersionString()}",
-                RegexOptions.Singleline);
-
-            text = Regex.Replace(
-                text,
-                $"<InstallerVersion>{VersionPattern()}</InstallerVersion>",
-                $"<InstallerVersion>{VersionString()}</InstallerVersion>",
                 RegexOptions.Singleline);
 
             return text;
