@@ -14,6 +14,7 @@ namespace Datadog.Core.Tools
         /// <summary>
         /// Find the solution directory from anywhere in the hierarchy.
         /// </summary>
+        /// <returns>The solution directory.</returns>
         public static string GetSolutionDirectory()
         {
             if (_solutionDirectory == null)

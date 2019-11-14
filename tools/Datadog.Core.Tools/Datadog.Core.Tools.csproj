@@ -8,10 +8,4 @@
     <PackageReference Include="System.Linq" Version="4.3.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="System.IO.FileSystem">
-      <HintPath>..\..\..\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\3.0.0\ref\netcoreapp3.0\System.IO.FileSystem.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>
