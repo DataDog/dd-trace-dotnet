@@ -519,10 +519,35 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
           current_index++;
           auto type_data = RetrieveTypeForSignature(
               metadata_import, function_info, current_index, token_length);
+
+          mdToken examined_type_token = type_data.id;
+          auto examined_type_name = type_data.name;
+          auto ongoing_type_name = examined_type_name;
+
+          // check for whether this may be a nested class
+          while (examined_type_name.find_first_of("."_W) == std::string::npos) {
+            // This may possibly be a nested class, check for the parent
+            mdToken potentialParentToken;
+            metadata_import->GetNestedClassProps(examined_type_token,
+                                                 &potentialParentToken);
+
+            if (potentialParentToken == mdTokenNil) {
+              break;
+            }
+
+            auto nesting_type =
+                GetTypeInfo(metadata_import, potentialParentToken);
+
+            examined_type_token = nesting_type.id;
+            examined_type_name = nesting_type.name;
+
+            ongoing_type_name = examined_type_name + "."_W + ongoing_type_name;
+          }
+
           // index will be moved up one on every loop
           // handle tokens which have more than one byte
           current_index += token_length - 1;
-          current_type_name.append(type_data.name);
+          current_type_name.append(ongoing_type_name);
           break;
         }
 

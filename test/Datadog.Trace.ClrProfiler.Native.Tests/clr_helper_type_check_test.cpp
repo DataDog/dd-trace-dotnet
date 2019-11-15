@@ -47,6 +47,24 @@ TEST_F(CLRHelperTypeCheckTest, GetsVeryComplexNestedGenericTypeStrings) {
   EXPECT_EQ(expected, actual);
 }
 
+
+TEST_F(CLRHelperTypeCheckTest, SimpleStringReturnWithNestedTypeParamsNoGenerics) {
+  std::vector<WSTRING> expected = {
+      L"System.String", L"Samples.ExampleLibrary.FakeClient.Biscuit.Cookie",
+      L"Samples.ExampleLibrary.FakeClient.Biscuit.Cookie.Raisin"};
+  std::vector<std::wstring> actual;
+
+  const auto target = FunctionToTest(
+      "Samples.ExampleLibrary.FakeClient.DogClient`2"_W, "TellMeIfTheCookieIsYummy"_W);
+
+  EXPECT_TRUE(target.name.size() > 1) << "Test target method not found.";
+
+  TryParseSignatureTypes(metadata_import_, target, actual);
+
+  EXPECT_EQ(expected, actual);
+}
+
+
 TEST_F(CLRHelperTypeCheckTest, SimpleClassReturnWithSimpleParamsNoGenerics) {
   std::vector<WSTRING> expected = {L"Samples.ExampleLibrary.FakeClient.Biscuit",
                                  L"System.Guid", L"System.Int16",
