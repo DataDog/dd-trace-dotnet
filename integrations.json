@@ -99,7 +99,7 @@
           "method": "BeforeAction",
           "signature_types": [
             "System.Void",
-            "Microsoft.AspNetCore.Mvc.MvcCoreDiagnosticListenerExtensions",
+            "System.Diagnostics.DiagnosticListener",
             "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
             "Microsoft.AspNetCore.Http.DefaultHttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"
@@ -126,7 +126,7 @@
           "method": "BeforeAction",
           "signature_types": [
             "System.Void",
-            "Microsoft.AspNetCore.Mvc.MvcCoreDiagnosticListenerExtensions",
+            "System.Diagnostics.DiagnosticListener",
             "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
             "Microsoft.AspNetCore.Http.HttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"
@@ -153,7 +153,7 @@
           "method": "AfterAction",
           "signature_types": [
             "System.Void",
-            "Microsoft.AspNetCore.Mvc.MvcCoreDiagnosticListenerExtensions",
+            "System.Diagnostics.DiagnosticListener",
             "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
             "Microsoft.AspNetCore.Http.DefaultHttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"
@@ -180,7 +180,7 @@
           "method": "AfterAction",
           "signature_types": [
             "System.Void",
-            "Microsoft.AspNetCore.Mvc.MvcCoreDiagnosticListenerExtensions",
+            "System.Diagnostics.DiagnosticListener",
             "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor",
             "Microsoft.AspNetCore.Http.HttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"

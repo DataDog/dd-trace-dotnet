@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Type for unobtrusive hooking into Microsoft.AspNetCore.Mvc pipeline.
         /// </summary>
-        private const string DiagnosticListenerTypeName = "Microsoft.AspNetCore.Mvc.MvcCoreDiagnosticListenerExtensions";
+        private const string DiagnosticListenerExtensionsTypeName = "Microsoft.AspNetCore.Mvc.MvcCoreDiagnosticListenerExtensions";
 
         /// <summary>
         /// Base type used for traversing the pipeline in Microsoft.AspNetCore.Mvc.Core.
@@ -37,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private const string RouteDataTypeName = "Microsoft.AspNetCore.Routing.RouteData";
 
+        private const string DiagnosticListenerTypeName = "System.Diagnostics.DiagnosticListener";
         private const string ResourceExecutedContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResourceExecutedContextSealed";
         private const string ExceptionContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ExceptionContextSealed";
         private const string ResultExecutedContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultExecutedContextSealed";
@@ -137,13 +138,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
             TargetAssembly = AspnetMvcCore,
-            TargetType = DiagnosticListenerTypeName,
+            TargetType = DiagnosticListenerExtensionsTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, DiagnosticListenerTypeName, ControllerActionDescriptorTypeName, DefaultHttpContextTypeName, RouteDataTypeName },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]
         [InterceptMethod(
             TargetAssembly = AspnetMvcCore,
-            TargetType = DiagnosticListenerTypeName,
+            TargetType = DiagnosticListenerExtensionsTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, DiagnosticListenerTypeName, ControllerActionDescriptorTypeName, HttpContextTypeName, RouteDataTypeName },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]
@@ -179,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 var module = ModuleLookup.GetByPointer(moduleVersionPtr);
-                concreteType = module.GetType(DiagnosticListenerTypeName);
+                concreteType = module.GetType(DiagnosticListenerExtensionsTypeName);
 
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
@@ -201,7 +202,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: DiagnosticListenerTypeName,
+                    instrumentedType: DiagnosticListenerExtensionsTypeName,
                     methodName: nameof(BeforeAction),
                     instanceType: null,
                     relevantArguments: new[] { concreteType?.AssemblyQualifiedName });
@@ -236,13 +237,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
             TargetAssembly = AspnetMvcCore,
-            TargetType = DiagnosticListenerTypeName,
+            TargetType = DiagnosticListenerExtensionsTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, DiagnosticListenerTypeName, ControllerActionDescriptorTypeName, DefaultHttpContextTypeName, RouteDataTypeName },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]
         [InterceptMethod(
             TargetAssembly = AspnetMvcCore,
-            TargetType = DiagnosticListenerTypeName,
+            TargetType = DiagnosticListenerExtensionsTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, DiagnosticListenerTypeName, ControllerActionDescriptorTypeName, HttpContextTypeName, RouteDataTypeName },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]
@@ -275,7 +276,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 var module = ModuleLookup.GetByPointer(moduleVersionPtr);
-                concreteType = module.GetType(DiagnosticListenerTypeName);
+                concreteType = module.GetType(DiagnosticListenerExtensionsTypeName);
 
                 instrumentedMethod =
                     MethodBuilder<Action<object, object, object, object>>
@@ -297,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: DiagnosticListenerTypeName,
+                    instrumentedType: DiagnosticListenerExtensionsTypeName,
                     methodName: nameof(AfterAction),
                     instanceType: null,
                     relevantArguments: new[] { concreteType?.AssemblyQualifiedName });

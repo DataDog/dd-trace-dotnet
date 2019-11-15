@@ -605,10 +605,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         method_def_md_token = target.method_def_id;
       }
 
-      std::vector<WSTRING> sig_types;
+      std::vector<WSTRING> actual_sig;
       const auto successfully_parsed_signature = TryParseSignatureTypes(
-          module_metadata->metadata_import, target, sig_types);
-      auto expected_sig_types =
+          module_metadata->metadata_import, target, actual_sig);
+      auto expected_sig =
           method_replacement.target_method.signature_types;
 
       if (!successfully_parsed_signature) {
@@ -619,14 +619,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
               function_id, " token=", function_token,
               " target_name=", target.type.name, ".", target.name, "()",
               " successfully_parsed_signature=", successfully_parsed_signature,
-              " sig_types.size()=", sig_types.size(),
-              " expected_sig_types.size()=", expected_sig_types.size());
+              " sig_types.size()=", actual_sig.size(),
+              " expected_sig_types.size()=", expected_sig.size());
         }
 
         continue;
       }
 
-      if (sig_types.size() != expected_sig_types.size()) {
+      if (actual_sig.size() != expected_sig.size()) {
         // we can't safely assume our wrapper methods handle the types
         if (debug_logging_enabled) {
           Debug(
@@ -636,20 +636,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
               " target_name=", target.type.name, ".", target.name,
               "() successfully_parsed_signature=",
               successfully_parsed_signature,
-              " sig_types.size()=", sig_types.size(),
-              " expected_sig_types.size()=", expected_sig_types.size());
+              " sig_types.size()=", actual_sig.size(),
+              " expected_sig_types.size()=", expected_sig.size());
         }
 
         continue;
       }
 
       auto is_match = true;
-      for (size_t i = 0; i < expected_sig_types.size(); i++) {
-        if (expected_sig_types[i] == "_"_W) {
+      for (size_t i = 0; i < expected_sig.size(); i++) {
+        if (expected_sig[i] == "_"_W) {
           // We are supposed to ignore this index
           continue;
         }
-        if (expected_sig_types[i] != sig_types[i]) {
+        if (expected_sig[i] != actual_sig[i]) {
           // we have a type mismatch, drop out
           if (debug_logging_enabled) {
             Debug(
@@ -657,8 +657,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
                 "match. function_id=",
                 function_id, " token=", function_token,
                 " target_name=", target.type.name, ".", target.name,
-                "() sig_types[", i, "]=", sig_types[i], "expected_sig_types[",
-                i, "]=", expected_sig_types[i]);
+                "() actual[", i, "]=", actual_sig[i], ", expected[",
+                i, "]=", expected_sig[i]);
           }
 
           is_match = false;
