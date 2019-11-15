@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public AspNetCoreMvc3Tests(ITestOutputHelper output)
             : base("AspNetCoreMvc.Netcore3", output)
         {
-            EnableDebugMode();
+            // EnableDebugMode();
         }
 
 #if NETCOREAPP3_0

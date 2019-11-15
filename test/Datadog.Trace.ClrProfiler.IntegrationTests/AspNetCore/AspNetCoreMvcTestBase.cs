@@ -20,11 +20,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}");
             CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}");
             CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}");
-            // TODO: The below test succeeds in IISExpress, but fails in self host when expecting a status code of 500.
             CreateTopLevelExpectation(
                 url: "/bad-request",
                 httpMethod: "GET",
-                httpStatus: null,
+                httpStatus: null, // TODO: Enable status code tests
                 resourceUrl: "bad-request",
                 additionalCheck: span =>
                 {
@@ -71,16 +70,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                         Output.WriteLine($"[webserver][stderr] {args.Data}");
                     }
                 };
+
                 process.BeginErrorReadLine();
 
-                // wait for server to start
                 wh.WaitOne(5000);
+
+                var maxTimesToCheck = 20;
+
+                // wait for server to be ready to receive requests
+                while (!SubmitRequest(aspNetCorePort, "/alive-check"))
+                {
+                    maxTimesToCheck--;
+
+                    if (maxTimesToCheck <= 0)
+                    {
+                        throw new Exception("Unable to verify whether the server is ready to receive requests.");
+                    }
+
+                    Thread.Sleep(500);
+                }
+
+                var testStart = DateTime.Now;
 
                 var paths = Expectations.Select(e => e.OriginalUri).ToArray();
                 SubmitRequests(aspNetCorePort, paths);
-                var spans = agent.WaitForSpans(Expectations.Count, operationName: TopLevelOperationName, returnAllOperations: true)
-                                 .OrderBy(s => s.Start)
-                                 .ToList();
+
+                var spans =
+                    agent.WaitForSpans(
+                              Expectations.Count,
+                              operationName: TopLevelOperationName,
+                              returnAllOperations: true,
+                              minDateTime: testStart)
+                         .OrderBy(s => s.Start)
+                         .ToList();
 
                 if (!process.HasExited)
                 {
@@ -115,40 +137,49 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             foreach (var path in paths)
             {
-                try
+                SubmitRequest(aspNetCorePort, path);
+            }
+        }
+
+        protected bool SubmitRequest(int aspNetCorePort, string path)
+        {
+            try
+            {
+                var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{path}");
+                using (var response = (HttpWebResponse)request.GetResponse())
+                using (var stream = response.GetResponseStream())
+                using (var reader = new StreamReader(stream))
                 {
-                    var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{path}");
-                    using (var response = (HttpWebResponse)request.GetResponse())
+                    string responseText;
+                    try
+                    {
+                        responseText = reader.ReadToEnd();
+                    }
+                    catch (Exception ex)
+                    {
+                        responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
+                        Output.WriteLine(ex.ToString());
+                    }
+
+                    Output.WriteLine($"[http] {response.StatusCode} {responseText}");
+                }
+            }
+            catch (WebException wex)
+            {
+                Output.WriteLine($"[http] exception: {wex}");
+                if (wex.Response is HttpWebResponse response)
+                {
                     using (var stream = response.GetResponseStream())
                     using (var reader = new StreamReader(stream))
                     {
-                        string responseText;
-                        try
-                        {
-                            responseText = reader.ReadToEnd();
-                        }
-                        catch (Exception ex)
-                        {
-                            responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
-                            Output.WriteLine(ex.ToString());
-                        }
+                        Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
+                    }
+                }
 
-                        Output.WriteLine($"[http] {response.StatusCode} {responseText}");
-                    }
-                }
-                catch (WebException wex)
-                {
-                    Output.WriteLine($"[http] exception: {wex}");
-                    if (wex.Response is HttpWebResponse response)
-                    {
-                        using (var stream = response.GetResponseStream())
-                        using (var reader = new StreamReader(stream))
-                        {
-                            Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
-                        }
-                    }
-                }
+                return false;
             }
+
+            return true;
         }
     }
 }
