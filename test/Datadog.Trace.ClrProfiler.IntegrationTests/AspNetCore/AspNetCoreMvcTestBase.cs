@@ -47,6 +47,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             using (var agent = new MockTracerAgent(agentPort))
             using (var process = StartSample(agent.Port, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
             {
+                agent.Filters.Add(IsNotServerLifeCheck);
+
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
                 process.OutputDataReceived += (sender, args) =>
@@ -186,6 +188,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             }
 
             return true;
+        }
+
+        private bool IsNotServerLifeCheck(MockTracerAgent.Span span)
+        {
+            var url = SpanExpectation.GetTag(span, Tags.HttpUrl);
+            if (url == null)
+            {
+                return true;
+            }
+
+            return !url.Contains("alive-check");
         }
     }
 }

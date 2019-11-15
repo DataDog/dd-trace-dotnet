@@ -68,6 +68,8 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public int Port { get; }
 
+        public List<Func<Span, bool>> Filters { get; private set; } = new List<Func<Span, bool>>();
+
         public IImmutableList<Span> Spans { get; private set; } = ImmutableList<Span>.Empty;
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
@@ -97,6 +99,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 relevantSpans =
                     Spans
+                       .Where(s => Filters.All(shouldReturn => shouldReturn(s)))
                        .Where(s => s.Start > minimumOffset)
                        .ToImmutableList();
 
@@ -129,7 +132,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 relevantSpans =
                     relevantSpans
-                       .Where(s => s.Start > minimumOffset)
                        .Where(s => operationName == null || s.Name == operationName)
                        .ToImmutableList();
             }
