@@ -30,9 +30,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         private const string ResourceInvokerTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker";
 
-        private const string ControllerActionDescriptorTypeName = "Microsoft.AspNetCore.Http.DefaultHttpContext";
+        private const string ControllerActionDescriptorTypeName = "Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor";
 
         private const string DefaultHttpContextTypeName = "Microsoft.AspNetCore.Http.DefaultHttpContext";
+        private const string HttpContextTypeName = "Microsoft.AspNetCore.Http.HttpContext";
 
         private const string RouteDataTypeName = "Microsoft.AspNetCore.Routing.RouteData";
 
@@ -137,7 +138,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = AspnetMvcCore,
             TargetType = DiagnosticListenerTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, ControllerActionDescriptorTypeName, DefaultHttpContextTypeName, RouteDataTypeName },
+            TargetSignatureTypes = new[] { ClrNames.Void, DiagnosticListenerTypeName, ControllerActionDescriptorTypeName, DefaultHttpContextTypeName, RouteDataTypeName },
+            TargetMinimumVersion = MinimumVersion,
+            TargetMaximumVersion = MaximumVersion)]
+        [InterceptMethod(
+            TargetAssembly = AspnetMvcCore,
+            TargetType = DiagnosticListenerTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Void, DiagnosticListenerTypeName, ControllerActionDescriptorTypeName, HttpContextTypeName, RouteDataTypeName },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]
         public static void BeforeAction(
@@ -230,7 +237,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = AspnetMvcCore,
             TargetType = DiagnosticListenerTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.Ignore, ControllerActionDescriptorTypeName, DefaultHttpContextTypeName, RouteDataTypeName },
+            TargetSignatureTypes = new[] { ClrNames.Void, DiagnosticListenerTypeName, ControllerActionDescriptorTypeName, DefaultHttpContextTypeName, RouteDataTypeName },
+            TargetMinimumVersion = MinimumVersion,
+            TargetMaximumVersion = MaximumVersion)]
+        [InterceptMethod(
+            TargetAssembly = AspnetMvcCore,
+            TargetType = DiagnosticListenerTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Void, DiagnosticListenerTypeName, ControllerActionDescriptorTypeName, HttpContextTypeName, RouteDataTypeName },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]
         public static void AfterAction(
@@ -315,7 +328,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
-            CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
             TargetType = ResourceInvokerTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, ResourceExecutedContextSealedTypeName },
@@ -335,7 +347,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
-            CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
             TargetType = ResourceInvokerTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, ExceptionContextSealedTypeName },
@@ -355,7 +366,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
-            CallerAssembly = AspnetMvcCore,
             TargetAssembly = AspnetMvcCore,
             TargetType = ResourceInvokerTypeName,
             TargetSignatureTypes = new[] { ClrNames.Void, ResultExecutedContextSealedTypeName },
