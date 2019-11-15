@@ -216,12 +216,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                context?.Scope?.Span?.SetException(ex);
+                // BeforeAction should never throw exceptions as it is diagnostic only.
+                // If we are here, it means we've likely messed up.
+                // Set an exception and close our span
+                if (context?.Scope != null)
+                {
+                    context.Scope?.Span?.SetException(ex);
+                    context.Scope?.Dispose();
+                    context.ShouldInstrument = false;
+                    context.Scope = null;
+                }
+
                 throw;
-            }
-            finally
-            {
-                context?.Scope?.Dispose();
             }
         }
 
