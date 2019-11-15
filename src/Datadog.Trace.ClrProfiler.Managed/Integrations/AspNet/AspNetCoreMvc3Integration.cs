@@ -38,9 +38,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string RouteDataTypeName = "Microsoft.AspNetCore.Routing.RouteData";
 
         private const string DiagnosticListenerTypeName = "System.Diagnostics.DiagnosticListener";
-        private const string ResourceExecutedContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResourceExecutedContextSealed";
-        private const string ExceptionContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ExceptionContextSealed";
-        private const string ResultExecutedContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultExecutedContextSealed";
+        private const string ResourceExecutedContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker+ResourceExecutedContextSealed";
+        private const string ExceptionContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker+ExceptionContextSealed";
+        private const string ResultExecutedContextSealedTypeName = "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker+ResultExecutedContextSealed";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetCoreMvc3Integration));
 

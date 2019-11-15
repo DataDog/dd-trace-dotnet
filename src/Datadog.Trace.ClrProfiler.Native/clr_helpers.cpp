@@ -541,7 +541,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
             examined_type_token = nesting_type.id;
             examined_type_name = nesting_type.name;
 
-            ongoing_type_name = examined_type_name + "."_W + ongoing_type_name;
+            ongoing_type_name = examined_type_name + "+"_W + ongoing_type_name;
           }
 
           // index will be moved up one on every loop

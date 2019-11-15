@@ -207,7 +207,7 @@
           "method": "Rethrow",
           "signature_types": [
             "System.Void",
-            "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResourceExecutedContextSealed"
+            "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker+ResourceExecutedContextSealed"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -231,7 +231,7 @@
           "method": "Rethrow",
           "signature_types": [
             "System.Void",
-            "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ExceptionContextSealed"
+            "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker+ExceptionContextSealed"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,
@@ -255,7 +255,7 @@
           "method": "Rethrow",
           "signature_types": [
             "System.Void",
-            "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.ResultExecutedContextSealed"
+            "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker+ResultExecutedContextSealed"
           ],
           "minimum_major": 1,
           "minimum_minor": 0,

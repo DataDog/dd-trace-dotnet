@@ -50,8 +50,8 @@ TEST_F(CLRHelperTypeCheckTest, GetsVeryComplexNestedGenericTypeStrings) {
 
 TEST_F(CLRHelperTypeCheckTest, SimpleStringReturnWithNestedTypeParamsNoGenerics) {
   std::vector<WSTRING> expected = {
-      L"System.String", L"Samples.ExampleLibrary.FakeClient.Biscuit.Cookie",
-      L"Samples.ExampleLibrary.FakeClient.Biscuit.Cookie.Raisin"};
+      L"System.String", L"Samples.ExampleLibrary.FakeClient.Biscuit+Cookie",
+      L"Samples.ExampleLibrary.FakeClient.Biscuit+Cookie+Raisin"};
   std::vector<std::wstring> actual;
 
   const auto target = FunctionToTest(
