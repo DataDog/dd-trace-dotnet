@@ -236,6 +236,8 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
   std::set<std::wstring> expected = {
       L"<>c",
       L"<StayAndLayDown>d__3`2",
+      L"Cookie",
+      L"Raisin"
       L"Samples.ExampleLibrary.Class1",
       L"Samples.ExampleLibrary.FakeClient.Biscuit",
       L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
