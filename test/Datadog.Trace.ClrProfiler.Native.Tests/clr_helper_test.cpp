@@ -237,7 +237,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
       L"<>c",
       L"<StayAndLayDown>d__3`2",
       L"Cookie",
-      L"Raisin"
+      L"Raisin",
       L"Samples.ExampleLibrary.Class1",
       L"Samples.ExampleLibrary.FakeClient.Biscuit",
       L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
