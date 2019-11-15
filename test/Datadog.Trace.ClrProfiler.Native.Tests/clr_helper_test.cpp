@@ -235,7 +235,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromModuleRefs) {
 TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
   std::set<std::wstring> expected = {
       L"<>c",
-      L"<StayAndLayDown>d__3`2",
+      L"<StayAndLayDown>d__4`2",
       L"Cookie",
       L"Raisin",
       L"Samples.ExampleLibrary.Class1",
