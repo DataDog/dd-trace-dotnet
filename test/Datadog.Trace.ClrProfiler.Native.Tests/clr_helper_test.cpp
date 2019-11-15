@@ -156,7 +156,7 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
 TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
   std::set<std::wstring> expected = {
       L"<>c",
-      L"<StayAndLayDown>d__3`2",
+      L"<StayAndLayDown>d__4`2",
       L"Cookie",
       L"Raisin",
       L"Samples.ExampleLibrary.Class1",
