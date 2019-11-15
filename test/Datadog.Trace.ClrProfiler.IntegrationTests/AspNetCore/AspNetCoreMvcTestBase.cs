@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 var maxTimesToCheck = 20;
 
                 // wait for server to be ready to receive requests
-                while (!SubmitRequest(aspNetCorePort, "/alive-check"))
+                while (true)
                 {
                     maxTimesToCheck--;
 
@@ -87,7 +87,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                         throw new Exception("Unable to verify whether the server is ready to receive requests.");
                     }
 
-                    Thread.Sleep(500);
+                    var ready = SubmitRequest(aspNetCorePort, "/alive-check");
+
+                    Thread.Sleep(300);
+
+                    if (ready)
+                    {
+                        break;
+                    }
                 }
 
                 var testStart = DateTime.Now;

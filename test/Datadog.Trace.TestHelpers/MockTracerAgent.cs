@@ -129,6 +129,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 relevantSpans =
                     relevantSpans
+                       .Where(s => s.Start > minimumOffset)
                        .Where(s => operationName == null || s.Name == operationName)
                        .ToImmutableList();
             }

@@ -1,3 +1,5 @@
+using Datadog.Trace.TestHelpers;
+
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class WebServerSpanExpectation : SpanExpectation
@@ -20,5 +22,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public string StatusCode { get; set; }
 
         public string HttpMethod { get; set; }
+
+        public override bool Matches(MockTracerAgent.Span span)
+        {
+            var spanUri = GetTag(span, Tags.HttpUrl);
+            if (spanUri == null || !spanUri.Contains(OriginalUri))
+            {
+                return false;
+            }
+
+            return base.Matches(span);
+        }
     }
 }
