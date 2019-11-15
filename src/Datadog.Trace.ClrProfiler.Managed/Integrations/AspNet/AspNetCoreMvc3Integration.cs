@@ -189,10 +189,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithParameters(diagnosticListener, controllerActionDescriptor, httpContext, routeData)
                        .WithNamespaceAndNameFilters(
                             ClrNames.Void,
+                            DiagnosticListenerTypeName,
+                            ControllerActionDescriptorTypeName,
                             ClrNames.Ignore,
-                            ClrNames.Ignore,
-                            ClrNames.Ignore,
-                            ClrNames.Ignore)
+                            RouteDataTypeName)
                        .Build();
             }
             catch (Exception ex)
@@ -285,10 +285,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .WithParameters(diagnosticListener, controllerActionDescriptor, httpContext, routeData)
                        .WithNamespaceAndNameFilters(
                             ClrNames.Void,
+                            DiagnosticListenerTypeName,
+                            ControllerActionDescriptorTypeName,
                             ClrNames.Ignore,
-                            ClrNames.Ignore,
-                            ClrNames.Ignore,
-                            ClrNames.Ignore)
+                            RouteDataTypeName)
                        .Build();
             }
             catch (Exception ex)

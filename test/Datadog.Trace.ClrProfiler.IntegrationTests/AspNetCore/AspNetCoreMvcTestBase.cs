@@ -99,7 +99,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     agent.WaitForSpans(
                               Expectations.Count,
                               operationName: TopLevelOperationName,
-                              returnAllOperations: true,
                               minDateTime: testStart)
                          .OrderBy(s => s.Start)
                          .ToList();
