@@ -17,8 +17,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string IntegrationName = "AspNetCoreMvc3";
         private const string OperationName = "aspnet-coremvc.request";
         private const string AspnetMvcCore = "Microsoft.AspNetCore.Mvc.Core";
-        private const string MinimumVersion = "1";
-        private const string MaximumVersion = "6";
+        private const string MinimumVersion = "3";
+        private const string MaximumVersion = "3";
 
         /// <summary>
         /// Type for unobtrusive hooking into Microsoft.AspNetCore.Mvc pipeline.

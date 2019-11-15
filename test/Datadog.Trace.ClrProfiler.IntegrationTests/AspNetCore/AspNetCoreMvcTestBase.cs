@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                     var ready = SubmitRequest(aspNetCorePort, "/alive-check");
 
-                    Thread.Sleep(300);
+                    Thread.Sleep(500);
 
                     if (ready)
                     {

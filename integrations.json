@@ -104,10 +104,10 @@
             "Microsoft.AspNetCore.Http.DefaultHttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"
           ],
-          "minimum_major": 1,
+          "minimum_major": 3,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 6,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -131,10 +131,10 @@
             "Microsoft.AspNetCore.Http.HttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"
           ],
-          "minimum_major": 1,
+          "minimum_major": 3,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 6,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -158,10 +158,10 @@
             "Microsoft.AspNetCore.Http.DefaultHttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"
           ],
-          "minimum_major": 1,
+          "minimum_major": 3,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 6,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -185,10 +185,10 @@
             "Microsoft.AspNetCore.Http.HttpContext",
             "Microsoft.AspNetCore.Routing.RouteData"
           ],
-          "minimum_major": 1,
+          "minimum_major": 3,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 6,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -209,10 +209,10 @@
             "System.Void",
             "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker+ResourceExecutedContextSealed"
           ],
-          "minimum_major": 1,
+          "minimum_major": 3,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 6,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -233,10 +233,10 @@
             "System.Void",
             "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker+ExceptionContextSealed"
           ],
-          "minimum_major": 1,
+          "minimum_major": 3,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 6,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -257,10 +257,10 @@
             "System.Void",
             "Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker+ResultExecutedContextSealed"
           ],
-          "minimum_major": 1,
+          "minimum_major": 3,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 6,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
