@@ -16,7 +16,9 @@ TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
       L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
       L"Samples.ExampleLibrary.FakeClient.DogTrick",
       L"<>c",
-      L"<StayAndLayDown>d__3`2"};
+      L"Cookie",
+      L"<StayAndLayDown>d__4`2",
+      L"Raisin"};
 
   std::vector<std::wstring> actual_types;
 
@@ -155,6 +157,8 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
   std::set<std::wstring> expected = {
       L"<>c",
       L"<StayAndLayDown>d__3`2",
+      L"Cookie",
+      L"Raisin",
       L"Samples.ExampleLibrary.Class1",
       L"Samples.ExampleLibrary.FakeClient.Biscuit",
       L"Samples.ExampleLibrary.FakeClient.Biscuit`1",

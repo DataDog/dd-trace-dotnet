@@ -68,7 +68,10 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public int Port { get; }
 
-        public List<Func<Span, bool>> Filters { get; private set; } = new List<Func<Span, bool>>();
+        /// <summary>
+        /// Gets the filters used to filter out spans we don't want to look at for a test.
+        /// </summary>
+        public List<Func<Span, bool>> SpanFilters { get; private set; } = new List<Func<Span, bool>>();
 
         public IImmutableList<Span> Spans { get; private set; } = ImmutableList<Span>.Empty;
 
@@ -99,7 +102,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 relevantSpans =
                     Spans
-                       .Where(s => Filters.All(shouldReturn => shouldReturn(s)))
+                       .Where(s => SpanFilters.All(shouldReturn => shouldReturn(s)))
                        .Where(s => s.Start > minimumOffset)
                        .ToImmutableList();
 

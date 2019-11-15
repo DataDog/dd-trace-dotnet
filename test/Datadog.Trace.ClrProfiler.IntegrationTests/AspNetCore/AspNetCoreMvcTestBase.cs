@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             using (var agent = new MockTracerAgent(agentPort))
             using (var process = StartSample(agent.Port, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
             {
-                agent.Filters.Add(IsNotServerLifeCheck);
+                agent.SpanFilters.Add(IsNotServerLifeCheck);
 
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -77,26 +77,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                 wh.WaitOne(5000);
 
-                var maxTimesToCheck = 20;
+                var maxMillisecondsToWait = 15_000;
+                var intervalMilliseconds = 500;
+                var intervals = maxMillisecondsToWait / intervalMilliseconds;
+                var serverReady = false;
 
                 // wait for server to be ready to receive requests
-                while (true)
+                while (intervals-- > 0)
                 {
-                    maxTimesToCheck--;
+                    serverReady = SubmitRequest(aspNetCorePort, "/alive-check");
 
-                    if (maxTimesToCheck <= 0)
-                    {
-                        throw new Exception("Unable to verify whether the server is ready to receive requests.");
-                    }
-
-                    var ready = SubmitRequest(aspNetCorePort, "/alive-check");
-
-                    Thread.Sleep(500);
-
-                    if (ready)
+                    if (serverReady)
                     {
                         break;
                     }
+
+                    Thread.Sleep(intervalMilliseconds);
+                }
+
+                if (!serverReady)
+                {
+                    throw new Exception("Couldn't verify the application is ready to receive requests.");
                 }
 
                 var testStart = DateTime.Now;
