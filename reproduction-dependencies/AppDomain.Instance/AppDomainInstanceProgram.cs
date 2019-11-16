@@ -59,6 +59,7 @@ namespace AppDomain.Instance
                 return -10;
             }
 
+            Console.ReadKey();
             return 0;
         }
     }
