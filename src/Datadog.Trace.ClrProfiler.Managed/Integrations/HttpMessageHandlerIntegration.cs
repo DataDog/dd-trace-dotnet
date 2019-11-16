@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             var callOpCode = (OpCodeValue)opCode;
-            var httpMessageHandler = typeof(HttpMessageHandler); // Note the HttpMessageHandler to match the method call we replaced
+            var httpMessageHandler = handler.GetInstrumentedType(HttpMessageHandler);
 
             Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> instrumentedMethod = null;
 
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
             var callOpCode = (OpCodeValue)opCode;
-            var httpClientHandler = typeof(HttpClientHandler); // Note the HttpClientHandler to match the method call we replaced
+            var httpClientHandler = handler.GetInstrumentedType(HttpClientHandler);
 
             Func<HttpMessageHandler, HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> instrumentedMethod = null;
 
