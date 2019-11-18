@@ -89,13 +89,13 @@ namespace Datadog.Trace.Tests.Sampling
             var totalExpectedAllowed = 2 * actualIntervalLimit;
             var expectedRate = totalExpectedAllowed / (float)totalExpectedSent;
 
-            var lowestRate = expectedRate - 0.35f;
+            var lowestRate = expectedRate - 0.40f;
             if (lowestRate < 0)
             {
                 lowestRate = expectedRate / 2;
             }
 
-            var highestRate = expectedRate + 0.30f;
+            var highestRate = expectedRate + 0.40f;
 
             Assert.True(
                 result.ReportedRate >= lowestRate && result.ReportedRate <= highestRate,
