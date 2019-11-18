@@ -101,12 +101,12 @@ services:
     volumes:
     - ./:/project
 
-  Samples.Amazon.SQS:
+  Samples.Aws.Sqs:
     build:
       context: ./
       dockerfile: ./docker/dotnet.dockerfile
     image: datadog-dotnet
-    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticmq:9324 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Amazon.SQS/bin/Release/netcoreapp2.1/publish/Samples.Amazon.SQS.dll"
+    command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it elasticmq:9324 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.Aws.Sqs/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.Aws.Sqs.dll"
     environment:
     - Amazon_SQS_HOST=elasticmq:9324
     volumes:

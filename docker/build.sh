@@ -22,7 +22,7 @@ then
     dotnet publish -f $publishTargetFramework -c $buildConfiguration samples/Samples.AspNetCoreMvc2/Samples.AspNetCoreMvc2.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 fi
 
-for sample in Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStack.Redis Samples.StackExchange.Redis Samples.SqlServer Samples.MongoDB Samples.HttpMessageHandler Samples.Npgsql Samples.MySql Samples.GraphQL Samples.Amazon.SQS ; do
+for sample in Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStack.Redis Samples.StackExchange.Redis Samples.SqlServer Samples.MongoDB Samples.HttpMessageHandler Samples.Npgsql Samples.MySql Samples.GraphQL Samples.Aws.Sqs ; do
     dotnet publish -f $publishTargetFramework -c $buildConfiguration samples/$sample/$sample.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 done
 
