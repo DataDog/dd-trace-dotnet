@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource.TrimEnd(), expected: ResourceName);
 
             RegisterTagExpectation(
-                key: nameof(Tags.Language),
+                key: Tags.Language,
                 expected: TracerConstants.Language,
                 when: s => GetTag(s, Tags.SpanKind) != SpanKinds.Client);
         }
