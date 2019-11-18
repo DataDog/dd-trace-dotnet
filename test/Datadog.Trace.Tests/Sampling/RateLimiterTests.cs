@@ -75,7 +75,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var expectedLimit = totalMilliseconds * actualIntervalLimit / 1_000;
 
-            var acceptableVariance = (actualIntervalLimit * 0.8);
+            var acceptableVariance = (actualIntervalLimit * 1.0);
             var upperLimit = expectedLimit + acceptableVariance;
             var lowerLimit = expectedLimit - acceptableVariance;
 
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests.Sampling
             var totalExpectedAllowed = 2 * actualIntervalLimit;
             var expectedRate = totalExpectedAllowed / (float)totalExpectedSent;
 
-            var lowestRate = expectedRate - 0.20f;
+            var lowestRate = expectedRate - 0.35f;
             if (lowestRate < 0)
             {
                 lowestRate = expectedRate / 2;
