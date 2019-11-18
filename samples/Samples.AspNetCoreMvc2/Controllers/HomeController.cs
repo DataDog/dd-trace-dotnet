@@ -55,5 +55,11 @@ namespace Samples.AspNetCoreMvc2.Controllers
             HttpContext.Response.StatusCode = statusCode;
             return $"Status code has been set to {statusCode}";
         }
+
+        [Route("alive-check")]
+        public string IsAlive()
+        {
+            return "Yes";
+        }
     }
 }

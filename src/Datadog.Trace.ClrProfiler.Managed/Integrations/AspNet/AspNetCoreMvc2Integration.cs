@@ -254,8 +254,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             Action<object, object, object, object> instrumentedMethod = null;
 
-            string methodDef = $"{DiagnosticSourceTypeName}.{nameof(AfterAction)}(...)";
-
             try
             {
                 instrumentedMethod =

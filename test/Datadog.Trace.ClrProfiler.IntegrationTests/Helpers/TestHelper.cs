@@ -17,8 +17,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class TestHelper
     {
-        private readonly EnvironmentHelper _environmentHelper;
-
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, string disabledIntegrations = null)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides, disabledIntegrations), output)
         {
@@ -31,20 +29,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected TestHelper(EnvironmentHelper environmentHelper, ITestOutputHelper output)
         {
-            _environmentHelper = environmentHelper;
-            SampleAppName = _environmentHelper.SampleName;
+            EnvironmentHelper = environmentHelper;
+            SampleAppName = EnvironmentHelper.SampleName;
             Output = output;
 
-            PathToSample = _environmentHelper.GetSampleApplicationOutputDirectory();
+            PathToSample = EnvironmentHelper.GetSampleApplicationOutputDirectory();
             Output.WriteLine($"Platform: {EnvironmentHelper.GetPlatform()}");
             Output.WriteLine($"Configuration: {EnvironmentHelper.GetBuildConfiguration()}");
-            Output.WriteLine($"TargetFramework: {_environmentHelper.GetTargetFramework()}");
+            Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Application: {GetSampleApplicationPath()}");
-            Output.WriteLine($"Profiler DLL: {_environmentHelper.GetProfilerPath()}");
+            Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
         }
 
-        protected string TestPrefix => $"{EnvironmentHelper.GetBuildConfiguration()}.{_environmentHelper.GetTargetFramework()}";
+        protected EnvironmentHelper EnvironmentHelper { get; set; }
+
+        protected string TestPrefix => $"{EnvironmentHelper.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
 
         protected string SampleAppName { get; }
 
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public string GetSampleApplicationPath(string packageVersion = "")
         {
-            return _environmentHelper.GetSampleApplicationPath(packageVersion);
+            return EnvironmentHelper.GetSampleApplicationPath(packageVersion);
         }
 
         public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort)
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
             return ProfilerHelper.StartProcessWithProfiler(
-                _environmentHelper,
+                EnvironmentHelper,
                 integrationPaths,
                 arguments,
                 traceAgentPort: traceAgentPort,
@@ -104,11 +104,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
-            var exe = _environmentHelper.GetSampleExecutionSource();
+            var exe = EnvironmentHelper.GetSampleExecutionSource();
             var args = new string[]
                 {
                     $"/clr:v4.0",
-                    $"/path:{_environmentHelper.GetSampleProjectDirectory()}",
+                    $"/path:{EnvironmentHelper.GetSampleProjectDirectory()}",
                     $"/systray:false",
                     $"/port:{iisPort}",
                     $"/trace:info",
@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"[webserver] starting {exe} {string.Join(" ", args)}");
 
             var process = ProfilerHelper.StartProcessWithProfiler(
-                _environmentHelper,
+                EnvironmentHelper,
                 integrationPaths,
                 arguments: string.Join(" ", args),
                 redirectStandardInput: true,
@@ -217,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected void EnableDebugMode()
         {
-            _environmentHelper.DebugModeEnabled = true;
+            EnvironmentHelper.DebugModeEnabled = true;
         }
 
         protected async Task AssertHttpSpan(

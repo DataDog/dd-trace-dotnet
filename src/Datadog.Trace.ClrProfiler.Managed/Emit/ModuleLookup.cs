@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Emit
@@ -20,6 +21,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         private static int _failures = 0;
         private static bool _shortCircuitLogicHasLogged = false;
+
+        public static Module GetByPointer(long moduleVersionPointer)
+        {
+            return Get(PointerHelpers.GetGuidFromNativePointer(moduleVersionPointer));
+        }
 
         public static Module Get(Guid moduleVersionId)
         {

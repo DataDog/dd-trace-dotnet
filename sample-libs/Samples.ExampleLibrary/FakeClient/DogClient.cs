@@ -11,6 +11,21 @@ namespace Samples.ExampleLibrary.FakeClient
             Task.Delay(1).Wait();
         }
 
+        public string TellMeIfTheCookieIsYummy(Biscuit.Cookie cookie, Biscuit.Cookie.Raisin raisin)
+        {
+            if (cookie.IsYummy)
+            {
+                if (raisin.IsPurple)
+                {
+                    return "Yes, it is yummy, with purple raisins.";
+                }
+
+                return "Yes, it is yummy, with white raisins.";
+            }
+
+            return "No, it is not yummy";
+        }
+
         public void Sit(
             string message, 
             int howManyTimes, 

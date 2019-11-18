@@ -1,0 +1,59 @@
+﻿@model List<KeyValuePair<string, string>>
+
+@{
+    ViewData["Title"] = "Home Page";
+    ViewData["Description"] = "The home page of my website";
+}
+
+<div class="container">
+    <table class="table table-striped table-hover">
+        <tbody>
+            <tr>
+                <th scope="row">Application bitness</th>
+                <td>@(Environment.Is64BitProcess ? "64-bit" : "32-bit")</td>
+            </tr>
+            <tr>
+                <th scope="row">Profiler attached</th>
+                <td>@Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached</td>
+            </tr>
+            <tr>
+                <th scope="row">Datadog.Trace.dll path</th>
+                <td>@typeof(Datadog.Trace.Tracer).Assembly.Location</td>
+            </tr>
+            <tr>
+                <th scope="row">Datadog.Trace.ClrProfiler.Managed.dll</th>
+                <td>@typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.Location</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="container">
+    <div>Environment Variables:</div>
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Any())
+            {
+                foreach (var envVar in Model)
+                {
+                    <tr>
+                        <th scope="row">@envVar.Key</th>
+                        <td>@envVar.Value</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="2">(empty)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
