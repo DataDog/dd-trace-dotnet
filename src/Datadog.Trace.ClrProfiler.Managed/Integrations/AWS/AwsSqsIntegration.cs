@@ -37,13 +37,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original method's return value.</returns>
-        [InterceptMethod(
-            TargetAssembly = AWSCoreAssemblyName,
-            TargetType = RuntimePipelineTypeName,
-            TargetMethod = InvokeSyncMethod,
-            TargetSignatureTypes = new[] { IResponseContextTypeName, IExecutionContextTypeName },
-            TargetMinimumVersion = Major3Minor3,
-            TargetMaximumVersion = Major3)]
+        // [InterceptMethod(
+        //     TargetAssembly = AWSCoreAssemblyName,
+        //     TargetType = RuntimePipelineTypeName,
+        //     TargetMethod = InvokeSyncMethod,
+        //     TargetSignatureTypes = new[] { IResponseContextTypeName, IExecutionContextTypeName },
+        //     TargetMinimumVersion = Major3Minor3,
+        //     TargetMaximumVersion = Major3)]
+        // ** NOTE: Disabled until completion of RFC and re-prioritization **
         public static object InvokeSync(
             object runtimePipeline,
             object executionContext,
@@ -109,13 +110,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original method's return value.</returns>
-        [InterceptMethod(
-            TargetAssembly = AWSCoreAssemblyName,
-            TargetType = RuntimePipelineTypeName,
-            TargetMethod = InvokeAsyncMethod,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", IExecutionContextTypeName },
-            TargetMinimumVersion = Major3Minor3,
-            TargetMaximumVersion = Major3)]
+        // [InterceptMethod(
+        //     TargetAssembly = AWSCoreAssemblyName,
+        //     TargetType = RuntimePipelineTypeName,
+        //     TargetMethod = InvokeAsyncMethod,
+        //     TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", IExecutionContextTypeName },
+        //     TargetMinimumVersion = Major3Minor3,
+        //     TargetMaximumVersion = Major3)]
+        // ** NOTE: Disabled until completion of RFC and re-prioritization **
         public static object InvokeAsync<T>(
             object runtimePipeline,
             object executionContext,

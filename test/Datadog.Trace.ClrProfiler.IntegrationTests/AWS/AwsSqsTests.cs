@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 #endif
         }
 
-        [Theory]
+        [Theory(Skip = "Disabled until completion of RFC and re-prioritization")]
         [MemberData(nameof(PackageVersions.AwsSqs), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)

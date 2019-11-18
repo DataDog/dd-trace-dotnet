@@ -179,59 +179,6 @@
     ]
   },
   {
-    "name": "AwsSqs",
-    "method_replacements": [
-      {
-        "caller": {},
-        "target": {
-          "assembly": "AWSSDK.Core",
-          "type": "Amazon.Runtime.Internal.RuntimePipeline",
-          "method": "InvokeSync",
-          "signature_types": [
-            "Amazon.Runtime.IResponseContext",
-            "Amazon.Runtime.IExecutionContext"
-          ],
-          "minimum_major": 3,
-          "minimum_minor": 3,
-          "minimum_patch": 0,
-          "maximum_major": 3,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.9.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AwsSqsIntegration",
-          "method": "InvokeSync",
-          "signature": "00 05 1C 1C 1C 08 08 0A"
-        }
-      },
-      {
-        "caller": {},
-        "target": {
-          "assembly": "AWSSDK.Core",
-          "type": "Amazon.Runtime.Internal.RuntimePipeline",
-          "method": "InvokeAsync",
-          "signature_types": [
-            "System.Threading.Tasks.Task`1<T>",
-            "Amazon.Runtime.IExecutionContext"
-          ],
-          "minimum_major": 3,
-          "minimum_minor": 3,
-          "minimum_patch": 0,
-          "maximum_major": 3,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.9.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AwsSqsIntegration",
-          "method": "InvokeAsync",
-          "signature": "10 01 05 1C 1C 1C 08 08 0A"
-        }
-      }
-    ]
-  },
-  {
     "name": "DbCommand",
     "method_replacements": [
       {
@@ -1544,7 +1491,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.9.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.9.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
           "method": "GetResponseAsync",
           "signature": "00 04 1C 1C 08 08 0A"
