@@ -43,6 +43,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> AspNetCoreMvc2 => IsComprehensive ? PackageVersionsComprehensive.AspNetCoreMvc2 : PackageVersionsLatestMinors.AspNetCoreMvc2;
 #endif
 
-        public static IEnumerable<object[]> AmazonSqs => IsComprehensive ? PackageVersionsComprehensive.AmazonSqs : PackageVersionsLatestMinors.AmazonSqs;
+        public static IEnumerable<object[]> AwsSqs => IsComprehensive ? PackageVersionsComprehensive.AwsSqs : PackageVersionsLatestMinors.AwsSqs;
     }
 }

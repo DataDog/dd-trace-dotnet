@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         }
 
         [Theory]
-        [MemberData(nameof(PackageVersions.AmazonSqs), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(PackageVersions.AwsSqs), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {

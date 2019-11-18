@@ -267,19 +267,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UpdateVendors", "tools\Upda
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SynchronizeInstaller", "tools\SynchronizeInstaller\SynchronizeInstaller.csproj", "{EBDDF6D7-59B8-4831-80C6-458C1ABBFC63}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWSSDK.SQS", "samples\Samples.AWSSDK.SQS\Samples.AWSSDK.SQS.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Log4Net.SerializationException", "reproductions\Log4Net.SerializationException\Log4Net.SerializationException.csproj", "{35F581E9-3D7C-4E80-8DFF-D437B0D86710}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApplicationWithLog4Net", "reproduction-dependencies\ApplicationWithLog4Net\ApplicationWithLog4Net.csproj", "{1C34D970-6081-4EFA-8F2F-5AD2B146AC58}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Core.Tools", "tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj", "{3BEACB10-89FE-4F74-8022-1A52F223CE82}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Amazon.SQS", "samples\Samples.Amazon.SQS\Samples.Amazon.SQS.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Amazon.Sqs", "samples\Samples.Amazon.SQS\Samples.Amazon.Sqs.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Aws.Sqs", "samples\Samples.Amazon.SQS\Samples.Aws.Sqs.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Aws.Sqs", "samples\Samples.Aws.Sqs\Samples.Aws.Sqs.csproj", "{CF4242ED-E3F1-4AA6-B268-6F1D0A891E64}"
 EndProject

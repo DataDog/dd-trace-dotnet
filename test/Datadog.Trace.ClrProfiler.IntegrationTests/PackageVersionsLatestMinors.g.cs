@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
                 new object[] { "4.0.10" },
-                new object[] { "4.1.1" },
+                new object[] { "4.1.2" },
 #endif
             };
 
@@ -147,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 #endif
 
-        public static IEnumerable<object[]> AmazonSqs =>
+        public static IEnumerable<object[]> AwsSqs =>
 
             new List<object[]>
             {

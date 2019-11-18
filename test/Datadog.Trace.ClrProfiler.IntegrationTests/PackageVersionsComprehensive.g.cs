@@ -128,6 +128,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.10" },
                 new object[] { "4.1.0" },
                 new object[] { "4.1.1" },
+                new object[] { "4.1.2" },
 #endif
             };
 
@@ -279,7 +280,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 #endif
 
-        public static IEnumerable<object[]> AmazonSqs =>
+        public static IEnumerable<object[]> AwsSqs =>
 
             new List<object[]>
             {
@@ -425,8 +426,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.3.102.29" },
                 new object[] { "3.3.3.30" },
                 new object[] { "3.3.100.30" },
+                new object[] { "3.3.102.30" },
                 new object[] { "3.3.3.31" },
                 new object[] { "3.3.100.31" },
+                new object[] { "3.3.102.31" },
                 new object[] { "3.3.3.32" },
                 new object[] { "3.3.100.32" },
                 new object[] { "3.3.3.33" },
