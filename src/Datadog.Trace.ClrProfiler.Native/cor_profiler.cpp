@@ -776,6 +776,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       rewriter_wrapper.LoadInt32(method_def_md_token);
       rewriter_wrapper.LoadInt64(reinterpret_cast<INT64>(module_version_id_ptr));
 
+      // after the call is made, unbox any valuetypes
+      mdToken typeToken;
+      if (UnboxReturnValue(module_metadata->metadata_import,
+                           module_metadata->metadata_emit,
+                           caller, target, &typeToken)) {
+        rewriter_wrapper.SetILPosition(pInstr->m_pNext);
+        rewriter_wrapper.UnboxAny(typeToken);
+      }
+
       modified = true;
 
       Info("*** JITCompilationStarted() replaced calls from ", caller.type.name,

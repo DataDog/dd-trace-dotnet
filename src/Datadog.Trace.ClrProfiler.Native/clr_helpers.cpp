@@ -682,4 +682,206 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
 
   return true;
 }
+
+int ParseType(PCCOR_SIGNATURE p_sig) {
+  const auto cor_element_type = CorElementType(*p_sig);
+
+  switch (cor_element_type) {
+    case ELEMENT_TYPE_BOOLEAN:
+    case ELEMENT_TYPE_CHAR:
+    case ELEMENT_TYPE_I1:
+    case ELEMENT_TYPE_U1:
+    case ELEMENT_TYPE_I2:
+    case ELEMENT_TYPE_U2:
+    case ELEMENT_TYPE_I4:
+    case ELEMENT_TYPE_U4:
+    case ELEMENT_TYPE_I8:
+    case ELEMENT_TYPE_U8:
+    case ELEMENT_TYPE_R4:
+    case ELEMENT_TYPE_R8:
+    case ELEMENT_TYPE_STRING:
+    case ELEMENT_TYPE_OBJECT:
+      return 1;
+    case ELEMENT_TYPE_PTR:
+      return 1;  // FIX LATER
+    case ELEMENT_TYPE_VALUETYPE:
+    case ELEMENT_TYPE_CLASS:
+      mdToken type_token;
+      return 1 + CorSigUncompressToken((p_sig + 1), &type_token);
+    case ELEMENT_TYPE_VAR:
+    case ELEMENT_TYPE_MVAR:
+      return 1 + CorSigUncompressedDataSize(p_sig + 1);
+    case ELEMENT_TYPE_FNPTR:
+      return 1;  // FIX LATER
+    case ELEMENT_TYPE_ARRAY:
+      return 1;  // FIX LATER
+    case ELEMENT_TYPE_SZARRAY:
+      return 1;  // FIX LATER
+    case ELEMENT_TYPE_GENERICINST:
+      return 1;  // FIX LATER
+    default:
+      return 0;
+  }
+}
+
+bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
+                      const ComPtr<IMetaDataEmit2>& metadata_emit,
+                      const FunctionInfo& caller_function_info,
+                      const FunctionInfo& target_function_info,
+                      mdToken* ret_type_token) {
+
+  try {
+    const auto signature_size = target_function_info.signature.data.size();
+    const auto generic_count =
+        target_function_info.signature.NumberOfTypeArguments();
+    const auto param_count = target_function_info.signature.NumberOfArguments();
+    size_t current_index = 2;  // Where the parameters actually start
+
+    if (generic_count > 0) {
+      current_index++;  // offset by one because the method is generic
+    }
+
+    mdToken type_token;
+    ULONG token_length;
+    auto param_piece = target_function_info.signature.data[current_index];
+    const auto cor_element_type = CorElementType(param_piece);
+
+    switch (cor_element_type) {
+        /*
+      case ELEMENT_TYPE_VOID:
+      case ELEMENT_TYPE_BOOLEAN:
+      case ELEMENT_TYPE_CHAR:
+      case ELEMENT_TYPE_I1:
+      case ELEMENT_TYPE_U1:
+      case ELEMENT_TYPE_I2:
+      case ELEMENT_TYPE_U2:
+      case ELEMENT_TYPE_I4:
+      case ELEMENT_TYPE_U4:
+      case ELEMENT_TYPE_I8:
+      case ELEMENT_TYPE_U8:
+      case ELEMENT_TYPE_R4:
+      case ELEMENT_TYPE_R8: {
+        Warn("[trace::UnboxReturnValue] primitive CorElementType found: ",
+             cor_element_type);
+        Warn(
+            "[trace::UnboxReturnValue] fix the integration method to specify "
+            "the correct primitive return type");
+        return false;
+      }
+      case ELEMENT_TYPE_STRING:
+      case ELEMENT_TYPE_PTR:
+      case ELEMENT_TYPE_BYREF:
+      case ELEMENT_TYPE_OBJECT:
+      case ELEMENT_TYPE_CLASS:
+      case ELEMENT_TYPE_SZARRAY:
+        return false;
+      case ELEMENT_TYPE_VALUETYPE: {
+        // Format: VALUETYPE TypeDefOrRefEncoded
+        current_index++;
+        token_length = CorSigUncompressToken(
+            PCCOR_SIGNATURE(
+                &target_function_info.signature.data[current_index]),
+            ret_type_token);
+        return true;
+      }
+      */
+      case ELEMENT_TYPE_VAR: {
+        Warn("[trace::UnboxReturnValue] CorElementType ELEMENT_TYPE_VAR found");
+
+        // Format: VAR number
+        current_index++; // Advance the current_index to point to "number"
+        ULONG type_arg_index;
+        CorSigUncompressData(
+            PCCOR_SIGNATURE(
+                &target_function_info.signature.data[current_index]),
+            &type_arg_index);
+        size_t i = 0;
+        mdToken owning_type_token = target_function_info.type.id;
+
+        const auto token_type = TypeFromToken(target_function_info.id);
+        mdToken parent_token = mdTokenNil;
+        HRESULT hr;
+
+        switch (token_type) {
+          case mdtMemberRef:
+            hr = metadata_import->GetMemberRefProps(target_function_info.id,
+                                                    &parent_token, nullptr, 0,
+                                                    nullptr, nullptr, nullptr);
+            break;
+          case mdtMethodDef:
+            hr = metadata_import->GetMemberProps(
+                target_function_info.id, &parent_token, nullptr, 0, nullptr,
+                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                nullptr);
+            break;
+          default:
+            break;  //
+        }
+
+        // parent_token should be a TypeSpec
+        PCCOR_SIGNATURE signature{};
+        ULONG signature_length{};
+
+        hr = metadata_import->GetTypeSpecFromToken(parent_token, &signature,
+                                                   &signature_length);
+
+        // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded
+        // GenArgCount Type Type* Skip to the type def
+        current_index = 2;
+        mdToken dummy_token;
+        token_length = CorSigUncompressToken(
+            PCCOR_SIGNATURE(&signature[current_index]), &dummy_token);
+        current_index += token_length;
+
+        ULONG num_generic_arguments;
+        current_index += CorSigUncompressData(
+            PCCOR_SIGNATURE(&signature[current_index]), &num_generic_arguments);
+
+        for (i = 0; i < num_generic_arguments; i++) {
+          CorElementType element_type = CorElementType();
+
+          if (i != type_arg_index) {
+            current_index += ParseType(&signature[current_index]);
+          } else if (signature[current_index] == ELEMENT_TYPE_VALUETYPE ||
+                     signature[current_index] == ELEMENT_TYPE_CLASS) {
+            token_length = CorSigUncompressToken(
+                PCCOR_SIGNATURE(&signature[current_index]), ret_type_token);
+            return true;
+          } else if (signature[current_index] == ELEMENT_TYPE_MVAR) {
+            hr = metadata_emit->GetTokenFromTypeSpec(&signature[current_index], 2,
+                                                ret_type_token);
+            return true;
+          }
+        }
+
+        return false;
+      }
+      /*
+      case ELEMENT_TYPE_MVAR: {
+        // Format: MVAR number
+        // TODO: fill in
+        current_index++;
+        ULONG type_arg_index;
+        CorSigUncompressData(
+            PCCOR_SIGNATURE(
+                &target_function_info.signature.data[current_index]),
+            &type_arg_index);
+        return true;
+      }
+      */
+      default: {
+        Warn("[trace::UnboxReturnValue] unexpected CorElementType found: ",
+             cor_element_type);
+        return false;
+      }
+    }
+  } catch (...) {
+    // TODO: Add precise exceptions and log
+    // We were unable to parse for some reason
+    // Return that we've failed
+    return false;
+  }
+
+  return false;
+}
 }  // namespace trace
