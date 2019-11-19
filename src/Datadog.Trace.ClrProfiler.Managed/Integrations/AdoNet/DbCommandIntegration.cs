@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(DbCommandIntegration));
 
         /// <summary>
-        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteDbDataReader"/>.
+        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteReader()"/>.
         /// </summary>
         /// <param name="command">The object referenced "this" in the instrumented method.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteDbDataReader"/>.
+        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteReader(CommandBehavior)"/>.
         /// </summary>
         /// <param name="command">The object referenced "this" in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
@@ -149,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for DbCommand.ExecuteReaderAsync().
+        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteReaderAsync()"/>.
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
@@ -232,7 +232,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for DbCommand.ExecuteNonQuery().
+        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteNonQuery"/>.
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -285,7 +285,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for DbCommand.ExecuteNonQueryAsync().
+        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteNonQueryAsync(CancellationToken)"/>
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="cancellationTokenSource">The <see cref="CancellationToken"/> value used in the original method call.</param>
@@ -357,7 +357,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for DbCommand.ExecuteScalar().
+        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteScalar"/>
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
@@ -410,7 +410,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         }
 
         /// <summary>
-        /// Instrumentation wrapper for DbCommand.ExecuteScalarAsync().
+        /// Instrumentation wrapper for <see cref="DbCommand.ExecuteScalarAsync(CancellationToken)"/>
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="cancellationTokenSource">The <see cref="CancellationToken"/> value used in the original method call.</param>
