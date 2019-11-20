@@ -18,7 +18,17 @@ namespace Datadog.Trace.ClrProfiler.Emit
         /// </summary>
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MethodBuilder<TDelegate>));
+
+        /// <summary>
+        /// Feature flag used primarily for forcing testing of the token lookup strategy.
+        /// </summary>
+        // ReSharper disable once StaticMemberInGenericType
         private static readonly bool ForceMdTokenLookup;
+
+        /// <summary>
+        /// Feature flag used primarily for forcing testing of the fallback lookup strategy.
+        /// </summary>
+        // ReSharper disable once StaticMemberInGenericType
         private static readonly bool ForceFallbackLookup;
 
         private readonly Module _resolutionModule;
