@@ -781,8 +781,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       if (UnboxReturnValue(module_metadata->metadata_import,
                            module_metadata->metadata_emit,
                            caller, target, &typeToken)) {
-        rewriter_wrapper.SetILPosition(pInstr->m_pNext);
-        rewriter_wrapper.UnboxAny(typeToken);
+        rewriter_wrapper.UnboxAnyAfter(typeToken);
       }
 
       modified = true;

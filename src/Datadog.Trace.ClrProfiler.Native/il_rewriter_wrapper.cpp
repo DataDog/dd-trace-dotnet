@@ -90,6 +90,13 @@ void ILRewriterWrapper::UnboxAny(const mdTypeRef type_ref) const {
   m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
 }
 
+void ILRewriterWrapper::UnboxAnyAfter(const mdTypeRef type_ref) const {
+  ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+  pNewInstr->m_opcode = CEE_UNBOX_ANY;
+  pNewInstr->m_Arg32 = type_ref;
+  m_ILRewriter->InsertAfter(m_ILInstr, pNewInstr);
+}
+
 void ILRewriterWrapper::CreateArray(const mdTypeRef type_ref,
                                     const INT32 size) const {
   mdTypeRef typeRef = mdTypeRefNil;
