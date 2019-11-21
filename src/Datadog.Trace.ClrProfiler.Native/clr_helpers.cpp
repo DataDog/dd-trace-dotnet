@@ -828,13 +828,74 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
       }
       case ELEMENT_TYPE_MVAR: {
         // Format: MVAR number
-        // The return type is defined as a generic type for the caller method.
-        // No additional translation necessary, just retrieve the corresponding
-        // token for the `M#` TypeSpec
-        auto hr = metadata_emit->GetTokenFromTypeSpec(
-            &target_function_info.signature.data[method_def_sig_index], 2,
-            ret_type_token);
-        return SUCCEEDED(hr);
+        // The return type is defined as a generic type on the target method,
+        // which needs to be translated to a type that the caller method understands.
+
+        // Extract the number which is an index into the generic type arguments
+        method_def_sig_index++;  // Advance the current_index to point to "number"
+        ULONG type_arg_index;
+        CorSigUncompressData(
+            PCCOR_SIGNATURE(
+                &target_function_info.signature.data[method_def_sig_index]),
+            &type_arg_index);
+        size_t i = 0;
+
+        // Get the token for the owning type, which has the generic type
+        // arguments
+        const auto token_type = TypeFromToken(target_function_info.id);
+        mdToken parent_token = mdTokenNil;
+        HRESULT hr;
+
+        // parent_token should be a TypeSpec, so extract its signature
+        PCCOR_SIGNATURE signature{};
+        ULONG signature_length{};
+
+        switch (token_type) {
+          case mdtMethodSpec:
+            hr = metadata_import->GetMethodSpecProps(target_function_info.id,
+                                                    &parent_token, &signature, &signature_length);
+            break;
+          default:
+            Warn("[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_MVAR: function token was not a mdtMethodSpec");
+            return false;  // TODO see if anything hits this
+        }
+
+        if (FAILED(hr)) {
+          return false;
+        }
+
+        // Format: GENRICINST GenArgCount Type Type*
+        // Read the value of GenArgCount
+        ULONG spec_sig_index = 1;
+        ULONG num_generic_arguments;
+        spec_sig_index += CorSigUncompressData(
+            PCCOR_SIGNATURE(&signature[spec_sig_index]), &num_generic_arguments);
+
+        // Iterate to specified generic type argument index and return the appropriate class token
+        for (i = 0; i < num_generic_arguments; i++) {
+          CorElementType element_type = CorElementType();
+
+          if (i != type_arg_index) {
+            spec_sig_index += ParseType(&signature[spec_sig_index]);
+          } else if (signature[spec_sig_index] == ELEMENT_TYPE_MVAR ||
+                     signature[spec_sig_index] == ELEMENT_TYPE_VAR) {
+            // Retrieve the corresponding token for the `M#` TypeSpec, if
+            // defined on the caller method, or Retrieve the corresponding token
+            // for the `T#` TypeSpec, if defined on the caller method's owning
+            // type
+            hr = metadata_emit->GetTokenFromTypeSpec(&signature[spec_sig_index],
+                                                     2, ret_type_token);
+            return SUCCEEDED(hr);
+          } else {
+            Warn(
+                "[trace::UnboxReturnValue] UNHANDLED CASE: element type of "
+                "matching generic argument was: ",
+                signature[spec_sig_index]);
+            return false;
+          }
+        }
+
+        return false;
       }
 
       case ELEMENT_TYPE_VOID:            // 0x01
