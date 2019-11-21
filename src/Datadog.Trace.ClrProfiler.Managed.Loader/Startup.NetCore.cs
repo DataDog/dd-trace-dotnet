@@ -32,7 +32,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 && assemblyName.FullName.IndexOf("PublicKeyToken=def86d061d0d2eeb", StringComparison.OrdinalIgnoreCase) >= 0
                 && File.Exists(path))
             {
-                return Assembly.LoadFrom(path); // Load the main profiler and tracer into the default Assembly Load Context
+                // Load the main profiler and tracer into the default Assembly Load Context
+                var assembly = Assembly.LoadFrom(path);
+
+                if (assembly.GetName() == assemblyName)
+                {
+                    // check that we loaded the exact assembly we are expecting
+                    // (not a higher version, for example)
+                    return assembly;
+                }
             }
             else if (File.Exists(path))
             {

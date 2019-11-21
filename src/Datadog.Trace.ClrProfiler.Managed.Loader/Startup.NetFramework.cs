@@ -30,12 +30,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
-            string assemblyName = new AssemblyName(args.Name).Name;
-            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
+            var assemblyName = new AssemblyName(args.Name);
+            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
 
             if (File.Exists(path))
             {
-                return Assembly.LoadFrom(path);
+                var assembly = Assembly.LoadFrom(path);
+
+                if (assembly.GetName() == assemblyName)
+                {
+                    // check that we loaded the exact assembly we are expecting
+                    // (not a higher version, for example)
+                    return assembly;
+                }
             }
 
             return null;
