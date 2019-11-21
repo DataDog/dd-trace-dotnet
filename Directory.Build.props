@@ -3,6 +3,7 @@
     <IsPackable>false</IsPackable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <LangVersion>latest</LangVersion>
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
