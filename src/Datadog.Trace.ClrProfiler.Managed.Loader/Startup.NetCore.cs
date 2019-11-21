@@ -35,9 +35,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // Load the main profiler and tracer into the default Assembly Load Context
                 var assembly = Assembly.LoadFrom(path);
 
-                if (assembly.GetName() == assemblyName)
+                if (assembly.GetName().Version == assemblyName.Version)
                 {
-                    // check that we loaded the exact assembly we are expecting
+                    // check that we loaded the exact version we are expecting
                     // (not a higher version, for example)
                     return assembly;
                 }
