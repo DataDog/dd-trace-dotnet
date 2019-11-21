@@ -733,29 +733,22 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
   try {
     // MethodDefSig Format: [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount) ParamCount RetType Param* [SENTINEL Param+]
     const auto generic_count = target_function_info.signature.NumberOfTypeArguments();
-    size_t current_index = 2;  // Initialize the index to the non-Generic index of RetType: 2
+    size_t method_def_sig_index = generic_count == 0 ? 2 : 3;  // Initialize the index to point to RetType
+    auto ret_type_byte = target_function_info.signature.data[method_def_sig_index];
+    const auto ret_type = CorElementType(ret_type_byte);
 
-    if (generic_count > 0) {
-      current_index++;  // Increment the index to account for the additional GenParamCount in the signature
-    }
-
-    mdToken type_token;
-    ULONG token_length;
-    auto param_piece = target_function_info.signature.data[current_index];
-    const auto cor_element_type = CorElementType(param_piece);
-
-    switch (cor_element_type) {
+    switch (ret_type) {
       case ELEMENT_TYPE_VAR: {
         // Format: VAR number
         // The return type is defined as a generic type on the target object's type,
         // which needs to be translated to a type that the caller method understands.
 
         // Extract the number which is an index into the generic type arguments
-        current_index++; // Advance the current_index to point to "number"
+        method_def_sig_index++; // Advance the current_index to point to "number"
         ULONG type_arg_index;
         CorSigUncompressData(
             PCCOR_SIGNATURE(
-                &target_function_info.signature.data[current_index]),
+                &target_function_info.signature.data[method_def_sig_index]),
             &type_arg_index);
         size_t i = 0;
 
@@ -794,33 +787,33 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
 
         // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type* Skip to the type def
         // Skip to the GenArgCount
-        current_index = 2;
+        method_def_sig_index = 2;
         mdToken dummy_token;
-        token_length = CorSigUncompressToken(
-            PCCOR_SIGNATURE(&signature[current_index]), &dummy_token);
-        current_index += token_length;
+        ULONG token_length = CorSigUncompressToken(
+            PCCOR_SIGNATURE(&signature[method_def_sig_index]), &dummy_token);
+        method_def_sig_index += token_length;
 
         // Read value of GenArgCount
         ULONG num_generic_arguments;
-        current_index += CorSigUncompressData(
-            PCCOR_SIGNATURE(&signature[current_index]), &num_generic_arguments);
+        method_def_sig_index += CorSigUncompressData(
+            PCCOR_SIGNATURE(&signature[method_def_sig_index]), &num_generic_arguments);
 
         // Iterate to specified generic type argument index and return the appropriate class token
         for (i = 0; i < num_generic_arguments; i++) {
           CorElementType element_type = CorElementType();
 
           if (i != type_arg_index) {
-            current_index += ParseType(&signature[current_index]);
-          } else if (signature[current_index] == ELEMENT_TYPE_MVAR ||
-                     signature[current_index] == ELEMENT_TYPE_VAR) {
+            method_def_sig_index += ParseType(&signature[method_def_sig_index]);
+          } else if (signature[method_def_sig_index] == ELEMENT_TYPE_MVAR ||
+                     signature[method_def_sig_index] == ELEMENT_TYPE_VAR) {
             // Retrieve the corresponding token for the `M#` TypeSpec, if defined on the caller method, or
             // Retrieve the corresponding token for the `T#` TypeSpec, if defined on the caller method's owning type
-            hr = metadata_emit->GetTokenFromTypeSpec(&signature[current_index], 2,
+            hr = metadata_emit->GetTokenFromTypeSpec(&signature[method_def_sig_index], 2,
                                                 ret_type_token);
             return SUCCEEDED(hr);
           } else {
             Warn("[trace::UnboxReturnValue] UNHANDLED CASE: element type of matching generic argument was: ",
-                signature[current_index]);
+                signature[method_def_sig_index]);
             return false;
           }
         }
@@ -833,7 +826,7 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
         // No additional translation necessary, just retrieve the corresponding
         // token for the `M#` TypeSpec
         auto hr = metadata_emit->GetTokenFromTypeSpec(
-            &target_function_info.signature.data[current_index], 2,
+            &target_function_info.signature.data[method_def_sig_index], 2,
             ret_type_token);
         return SUCCEEDED(hr);
       }
@@ -860,11 +853,11 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
       // case ELEMENT_TYPE_VALUETYPE:   // 0x11  // HANDLED SEPARATELY
       case ELEMENT_TYPE_CLASS:          // 0x12
         return false;
-      // case ELEMENT_TYPE_VAR:         // 0x13  // HANDLED SEPARATELY
+      // case ELEMENT_TYPE_VAR:         // 0x13  // HANDLED ABOVE
       // case ELEMENT_TYPE_ARRAY:          // 0x14
       case ELEMENT_TYPE_GENERICINST:    // 0X15  // Ex. Task<HttpResponseMessage>. It would be nice to figure out when this is a VALUETYPE
-        current_index++;
-        if (target_function_info.signature.data[current_index] == ELEMENT_TYPE_VALUETYPE) {
+        method_def_sig_index++;
+        if (target_function_info.signature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE) {
             Warn("[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_GENERICINST found whose type is a VALUETYPE");
         }
         return false;
@@ -878,10 +871,10 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
         return false;
       // case ELEMENT_TYPE_SZARRAY:     // 0x1d
 
-      // case ELEMENT_TYPE_MVAR:        // 0x1e // HANDLED SEPARATELY
+      // case ELEMENT_TYPE_MVAR:        // 0x1e // HANDLED ABOVE
       default: {
         Warn("[trace::UnboxReturnValue] UNHANDLED CASE: unexpected CorElementType found: ",
-             cor_element_type);
+             ret_type);
         return false;
       }
     }
