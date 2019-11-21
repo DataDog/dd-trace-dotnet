@@ -771,49 +771,55 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
             break;
           default:
             Warn("[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_VAR: function token was not a mdtMemberRef or mdtMethodDef");
-            break;  // TODO see if anything hits this
+            return false;  // TODO see if anything hits this
         }
 
-        // parent_token should be a TypeSpec, so extract its signature
-        PCCOR_SIGNATURE signature{};
-        ULONG signature_length{};
-
-        hr = metadata_import->GetTypeSpecFromToken(parent_token, &signature,
-                                                   &signature_length);
         if (FAILED(hr)) {
-          Warn("[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_VAR: GetTypeSpecFromToken failed");
           return false;
         }
 
-        // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type* Skip to the type def
-        // Skip to the GenArgCount
+        // parent_token should be a TypeSpec, so extract its signature
+        PCCOR_SIGNATURE spec_signature{};
+        ULONG spec_signature_length{};
+
+        hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature,
+                                                   &spec_signature_length);
+        if (FAILED(hr)) {
+          Warn(
+              "[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_VAR: "
+              "GetTypeSpecFromToken failed");
+          return false;
+        }
+
+        // TypeSpec Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
+        // Skip over TypeDefOrRefEncoded by parsing the signature at index 2
         method_def_sig_index = 2;
         mdToken dummy_token;
         ULONG token_length = CorSigUncompressToken(
-            PCCOR_SIGNATURE(&signature[method_def_sig_index]), &dummy_token);
+            PCCOR_SIGNATURE(&spec_signature[method_def_sig_index]), &dummy_token);
         method_def_sig_index += token_length;
 
         // Read value of GenArgCount
         ULONG num_generic_arguments;
         method_def_sig_index += CorSigUncompressData(
-            PCCOR_SIGNATURE(&signature[method_def_sig_index]), &num_generic_arguments);
+            PCCOR_SIGNATURE(&spec_signature[method_def_sig_index]), &num_generic_arguments);
 
         // Iterate to specified generic type argument index and return the appropriate class token
         for (i = 0; i < num_generic_arguments; i++) {
           CorElementType element_type = CorElementType();
 
           if (i != type_arg_index) {
-            method_def_sig_index += ParseType(&signature[method_def_sig_index]);
-          } else if (signature[method_def_sig_index] == ELEMENT_TYPE_MVAR ||
-                     signature[method_def_sig_index] == ELEMENT_TYPE_VAR) {
+            method_def_sig_index += ParseType(&spec_signature[method_def_sig_index]);
+          } else if (spec_signature[method_def_sig_index] == ELEMENT_TYPE_MVAR ||
+                     spec_signature[method_def_sig_index] == ELEMENT_TYPE_VAR) {
             // Retrieve the corresponding token for the `M#` TypeSpec, if defined on the caller method, or
             // Retrieve the corresponding token for the `T#` TypeSpec, if defined on the caller method's owning type
-            hr = metadata_emit->GetTokenFromTypeSpec(&signature[method_def_sig_index], 2,
+            hr = metadata_emit->GetTokenFromTypeSpec(&spec_signature[method_def_sig_index], 2,
                                                 ret_type_token);
             return SUCCEEDED(hr);
           } else {
             Warn("[trace::UnboxReturnValue] UNHANDLED CASE: element type of matching generic argument was: ",
-                signature[method_def_sig_index]);
+                spec_signature[method_def_sig_index]);
             return false;
           }
         }
