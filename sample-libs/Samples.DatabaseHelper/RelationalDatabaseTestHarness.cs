@@ -246,13 +246,7 @@ namespace Samples.DatabaseHelper
                 command.AddParameterWithValue("Name", "Name2");
                 command.AddParameterWithValue("Id", 1);
 
-                if (_executeNonQueryAsync == null)
-                {
-                    // fallback to the sync version to get the side effects
-                    int records = _executeNonQuery(command);
-                    Console.WriteLine($"Updated {records} record(s).");
-                }
-                else
+                if (_executeNonQueryAsync != null)
                 {
                     int records = await _executeNonQueryAsync(command);
                     Console.WriteLine($"Updated {records} record(s).");
@@ -284,13 +278,7 @@ namespace Samples.DatabaseHelper
                 command.AddParameterWithValue("Id", 1);
                 command.AddParameterWithValue("Name", "Name1");
 
-                if (_executeNonQueryAsync == null)
-                {
-                    // fallback to the sync version to get the side effects
-                    int records = _executeNonQuery(command);
-                    Console.WriteLine($"Updated {records} record(s).");
-                }
-                else
+                if (_executeNonQueryAsync != null)
                 {
                     int records = await _executeNonQueryAsync(command);
                     Console.WriteLine($"Inserted {records} record(s).");
@@ -304,13 +292,7 @@ namespace Samples.DatabaseHelper
             {
                 command.CommandText = DropCommandText;
 
-                if (_executeNonQueryAsync == null)
-                {
-                    // fallback to the sync version to get the side effects
-                    int records = _executeNonQuery(command);
-                    Console.WriteLine($"Updated {records} record(s).");
-                }
-                else
+                if (_executeNonQueryAsync != null)
                 {
                     int records = await _executeNonQueryAsync(command);
                     Console.WriteLine($"Dropped and recreated table. {records} record(s) affected.");
