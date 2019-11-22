@@ -1,6 +1,5 @@
 using System;
 using System.Data;
-using System.Data.Common;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
@@ -15,10 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
 
-        // ReSharper disable InconsistentNaming
-        private const string IDbCommandTypeName = "System.Data.IDbCommand";
-        private const string IDataReaderTypeName = "System.Data.IDataReader";
-        // ReSharper restore InconsistentNaming
+        private const string DbCommandTypeName = "System.Data.IDbCommand";
+        private const string DataReaderTypeName = "System.Data.IDataReader";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(IDbCommandIntegration));
 
@@ -32,8 +29,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
-            TargetType = IDbCommandTypeName,
-            TargetSignatureTypes = new[] { IDataReaderTypeName },
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { DataReaderTypeName },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteReader(
@@ -50,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     MethodBuilder<Func<IDbCommand, IDataReader>>
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
                        .WithConcreteType(typeof(IDbCommand))
-                       .WithNamespaceAndNameFilters(IDataReaderTypeName)
+                       .WithNamespaceAndNameFilters(DataReaderTypeName)
                        .Build();
             }
             catch (Exception ex)
@@ -60,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: IDbCommandTypeName,
+                    instrumentedType: DbCommandTypeName,
                     methodName: nameof(ExecuteReader),
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -94,8 +91,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
-            TargetType = IDbCommandTypeName,
-            TargetSignatureTypes = new[] { IDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
+            TargetType = DbCommandTypeName,
+            TargetSignatureTypes = new[] { DataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteReaderWithBehavior(
@@ -115,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                        .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
                        .WithConcreteType(typeof(IDbCommand))
                        .WithParameters(commandBehavior)
-                       .WithNamespaceAndNameFilters(IDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
+                       .WithNamespaceAndNameFilters(DataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
             }
             catch (Exception ex)
@@ -125,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: IDbCommandTypeName,
+                    instrumentedType: DbCommandTypeName,
                     methodName: nameof(ExecuteReader),
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -157,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
-            TargetType = IDbCommandTypeName,
+            TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -180,7 +177,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {IDbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
+                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
                 throw;
             }
 
@@ -210,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon },
-            TargetType = IDbCommandTypeName,
+            TargetType = DbCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -233,7 +230,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {IDbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
+                Log.Error(ex, $"Error resolving {DbCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
                 throw;
             }
 
