@@ -275,7 +275,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Core.Tools", "tools
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc.Netcore3", "samples\Samples.AspNetCoreMvc.Netcore3\Samples.AspNetCoreMvc.Netcore3.csproj", "{64235C59-8EAB-401A-86B0-C41E513F0AE8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NugetProfilerVersionMismatch.TypeLoadException", "reproductions\NugetProfilerVersionMismatch.TypeLoadException\NugetProfilerVersionMismatch.TypeLoadException.csproj", "{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "performance", "performance", "{CD9D9813-A195-464A-A0F1-59E02D16E181}"
+	ProjectSection(SolutionItems) = preProject
+		performance\Directory.Build.props = performance\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Performance.StackExchange.Redis", "performance\Performance.StackExchange.Redis\Performance.StackExchange.Redis.csproj", "{9D210EEC-DC79-46D4-AA82-F77D576E26DA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyResolveMscorlibResources.InfiniteRecursionCrash", "reproductions\AssemblyResolveMscorlibResources.InfiniteRecursionCrash\AssemblyResolveMscorlibResources.InfiniteRecursionCrash.csproj", "{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}"
 EndProject
@@ -937,6 +942,18 @@ Global
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x64.Build.0 = Release|x64
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x86.ActiveCfg = Release|x86
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x86.Build.0 = Release|x86
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Debug|x64.Build.0 = Debug|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Debug|x86.Build.0 = Debug|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Release|x64.ActiveCfg = Release|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Release|x64.Build.0 = Release|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Release|x86.ActiveCfg = Release|Any CPU
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1004,6 +1021,7 @@ Global
 		{64235C59-8EAB-401A-86B0-C41E513F0AE8} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{9D210EEC-DC79-46D4-AA82-F77D576E26DA} = {CD9D9813-A195-464A-A0F1-59E02D16E181}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

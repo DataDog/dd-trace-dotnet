@@ -45,5 +45,11 @@ namespace Datadog.Core.Tools
 
             return _solutionDirectory;
         }
+
+        public static string GetCurrentTracerVersion()
+        {
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            return $"{TracerVersion.Major}.{TracerVersion.Minor}.{TracerVersion.Patch}{(TracerVersion.IsPreRelease ? "-prerelease" : string.Empty)}";
+        }
     }
 }

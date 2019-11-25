@@ -1,0 +1,19 @@
+{
+  "profiles": {
+    "Performance.StackExchange.Redis": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "COR_ENABLE_PROFILING": "1",
+        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+
+        "CORECLR_ENABLE_PROFILING": "1",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+
+        "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
+
+        "DD_TRACE_DEBUG":  "0"
+      },
+      "nativeDebugging": false
+    }
+  }
+}
