@@ -73,6 +73,11 @@ namespace Datadog.Trace.DogStatsd
         public static class Health
         {
             /// <summary>
+            /// Gauge: Set to 1 by each Tracer instance.
+            /// </summary>
+            public const string Heartbeat = "datadog.tracer.heartbeat";
+
+            /// <summary>
             /// Count: The number of exceptions thrown by the Tracer.
             /// </summary>
             public const string Exceptions = "datadog.tracer.health.exceptions";

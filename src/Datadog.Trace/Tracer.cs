@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -22,6 +24,7 @@ namespace Datadog.Trace
 
         private readonly IScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
+        private readonly Timer _heartbeatTimer;
 
         static Tracer()
         {
@@ -83,6 +86,8 @@ namespace Datadog.Trace
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
+
+            _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
 
             // If configured, add/remove the correlation identifiers into the
             // LibLog logging context when a scope is activated/closed
@@ -337,6 +342,17 @@ namespace Datadog.Trace
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             _agentWriter.FlushAndCloseAsync().Wait();
+        }
+
+        private void HeartbeatCallback(object state)
+        {
+            if (Statsd != null)
+            {
+                bool isGlobalTracer = Instance == this;
+                string[] tags = { $"is-global:{isGlobalTracer}" };
+
+                Statsd.Send<Statsd.Counting, int>(TracerMetricNames.Health.Heartbeat, value: 1, sampleRate: 1, tags);
+            }
         }
     }
 }
