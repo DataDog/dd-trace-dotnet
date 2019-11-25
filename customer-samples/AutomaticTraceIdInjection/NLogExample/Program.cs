@@ -11,12 +11,14 @@ namespace NLogExample
         {
             using (MappedDiagnosticsLogicalContext.SetScoped("order-number", 1024))
             {
+                Logger.Info("Message before a trace.");
+
                 using (var scope = Tracer.Instance.StartActive("NLogExample - Main()"))
                 {
-                    Logger.Info("Message inside a trace.");
+                    Logger.Info("Message during a trace.");
                 }
 
-                Logger.Info("Message outside a trace.");
+                Logger.Info("Message after a trace.");
             }
         }
     }
