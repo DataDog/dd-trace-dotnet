@@ -19,9 +19,20 @@ namespace HttpMessageHandler.StackOverflowException
             return $"Host={Host()};Username=postgres;Password=postgres;Database={database}";
         }
 
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            OneLevelOfIndrection();
+            try
+            {
+                OneLevelOfIndrection();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"We have encountered an exception, the smoke test fails: {ex.Message}");
+                Console.Error.WriteLine(ex);
+                return (int)ExitCode.UnknownError;
+            }
+
+            return (int)ExitCode.Success;
         }
 
         private static void OneLevelOfIndrection()
