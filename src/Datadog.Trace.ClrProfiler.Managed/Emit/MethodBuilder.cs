@@ -8,7 +8,6 @@ using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.StatsdClient;
 using Sigil;
 
 namespace Datadog.Trace.ClrProfiler.Emit

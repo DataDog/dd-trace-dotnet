@@ -1,7 +1,6 @@
 using System;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.DogStatsd;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
 {
