@@ -1,0 +1,13 @@
+{
+  "ProfilerVersion": "1.9.1-prerelease",
+  "TargetFramework": ".net framework 4.8.4042.0",
+  "ProfilerEnabled": true,
+  "OperationName": "StringSet -> StringGet",
+  "TestStart": "2019-11-25T17:13:15.8448081-05:00",
+  "TestEnd": "0001-01-01T00:00:00",
+  "FirstCallMilliseconds": 152262.0,
+  "AverageCallMilliseconds": 0.0,
+  "TotalMilliseconds": 0.0,
+  "OperationCount": 50000.0,
+  "ExceptionInformation": "System.TimeoutException: Timeout performing EVAL, inst: 1, mgr: ExecuteSelect, err: never, queue: 2, qu: 0, qs: 2, qc: 0, wr: 0, wq: 0, in: 0, ar: 0, clientName: COLIN-X1, IOCP: (Busy=0,Free=1000,Min=12,Max=1000), WORKER: (Busy=0,Free=32767,Min=12,Max=32767), Local-CPU: 56.18% (Please take a look at this article for some common client-side issues that can cause timeouts: https://github.com/StackExchange/StackExchange.Redis/tree/master/Docs/Timeouts.md)\r\n   at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server)\r\n   at Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Object multiplexer, Object message, Object processor, Object server, Int32 opCode, Int32 mdToken, Int64 moduleVersionPtr)\r\n   at StackExchange.Redis.RedisBase.ExecuteSync[T](Message message, ResultProcessor`1 processor, ServerEndPoint server)\r\n   at StackExchange.Redis.RedisDatabase.ScriptEvaluate(String script, RedisKey[] keys, RedisValue[] values, CommandFlags flags)\r\n   at StackExchange.Redis.LuaScript.Evaluate(IDatabase db, Object ps, Nullable`1 withKeyPrefix, CommandFlags flags)\r\n   at StackExchange.Redis.RedisDatabase.ScriptEvaluate(LuaScript script, Object parameters, CommandFlags flags)\r\n   at Performance.Redis.Program.DoStringSetGetCalls(IConnectionMultiplexer redis)\r\n   at Performance.Redis.Program.RunStackExchange(String prefix)"
+}
