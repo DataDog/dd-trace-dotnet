@@ -58,7 +58,7 @@ namespace Datadog.Trace
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IStatsd statsd)
         {
             // keep a count of Tracer instances created
-            Interlocked.Add(ref _tracerCount, 1);
+            Interlocked.Increment(ref _tracerCount);
 
             Settings = settings ?? TracerSettings.FromDefaultSources();
 
@@ -101,6 +101,14 @@ namespace Datadog.Trace
             {
                 InitializeLibLogScopeEventSubscriber(_scopeManager);
             }
+        }
+
+        /// <summary>
+        /// Finalizes an instance of the <see cref="Tracer"/> class.
+        /// </summary>
+        ~Tracer()
+        {
+            Interlocked.Decrement(ref _tracerCount);
         }
 
         /// <summary>
