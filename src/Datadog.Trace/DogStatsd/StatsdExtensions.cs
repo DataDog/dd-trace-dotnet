@@ -55,5 +55,11 @@ namespace Datadog.Trace.DogStatsd
 
             return statsd;
         }
+
+        public static IStatsd AppendHeartbeat(this IStatsd statsd, string[] tags = null)
+        {
+            statsd?.Add<Statsd.Gauge, int>(TracerMetricNames.Health.Heartbeat, value: 1, sampleRate: 1, tags);
+            return statsd;
+        }
     }
 }
