@@ -28,29 +28,27 @@ namespace Datadog.Trace.DogStatsd
         public static class Queue
         {
             /// <summary>
-            /// Count: Total number of traces pushed into the queue, where "accepted - dropped = total to be flushed"
+            /// Count: Total number of traces pushed into the queue (does not include traces dropped due to a full queue)
             /// </summary>
             public const string EnqueuedTraces = "datadog.tracer.queue.enqueued_traces";
 
             /// <summary>
-            /// Count: Total number of spans pushed into the queue
+            /// Count: Total number of spans pushed into the queue (does not include traces dropped due to a full queue)
             /// </summary>
             public const string EnqueuedSpans = "datadog.tracer.queue.enqueued_spans";
 
             /// <summary>
-            /// Count: Total size in bytes of traces pushed into the queue
+            /// Count: Total size in bytes of traces pushed into the queue (does not include traces dropped due to a full queue)
             /// </summary>
             public const string EnqueuedBytes = "datadog.tracer.queue.enqueued_bytes";
 
             /// <summary>
-            /// Count: Total number of traces dropped by the queue.
-            /// This is the number of traces attempted to write into the queue above the max
-            /// (e.g. more than 1k traces, we start dropping traces)
+            /// Count: Total number of traces dropped due to a full queue
             /// </summary>
             public const string DroppedTraces = "datadog.tracer.queue.dropped_traces";
 
             /// <summary>
-            /// Count: Number of traces pulled from the queue for flushing (should be between zero and queue.max_length)
+            /// Count: Number of traces pulled from the queue for flushing
             /// </summary>
             public const string DequeuedTraces = "datadog.tracer.queue.dequeued_traces";
 
