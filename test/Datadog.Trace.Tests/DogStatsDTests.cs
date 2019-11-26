@@ -50,11 +50,11 @@ namespace Datadog.Trace.Tests
                 Times.Once());
 
             statsd.Verify(
-                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedTraces, 1, 1, null),
+                s => s.Add<Statsd.Counting, int>(TracerMetricNames.Queue.DequeuedTraces, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedSpans, 1, 1, null),
+                s => s.Add<Statsd.Counting, int>(TracerMetricNames.Queue.DequeuedSpans, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tests
 
             // these method can be called multiple times (send heartbeat)
             statsd.Verify(
-                s => s.Send<Statsd.Gauge, int>(TracerMetricNames.Health.Heartbeat, 1, 1, "is-global:False"),
+                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Health.Heartbeat, It.IsAny<int>(), 1, null),
                 Times.AtLeastOnce());
 
             // no other methods should be called on the IStatsd
