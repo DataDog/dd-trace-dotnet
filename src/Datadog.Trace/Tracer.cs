@@ -351,7 +351,7 @@ namespace Datadog.Trace
                 bool isGlobalTracer = Instance == this;
                 string[] tags = { $"is-global:{isGlobalTracer}" };
 
-                Statsd.Send<Statsd.Counting, int>(TracerMetricNames.Health.Heartbeat, value: 1, sampleRate: 1, tags);
+                Statsd.Send<Statsd.Gauge, int>(TracerMetricNames.Health.Heartbeat, value: 1, sampleRate: 1, tags);
             }
         }
     }
