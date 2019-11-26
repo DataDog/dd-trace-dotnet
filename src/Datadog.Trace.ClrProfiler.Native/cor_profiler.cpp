@@ -204,8 +204,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 
   // Configure a version string to compare with the profiler version
   WSTRINGSTREAM ws;
-  ws << assembly_metadata.version.major << '.'_W << assembly_metadata.version.minor << '.'_W << assembly_metadata.version.build;
-  
+  ws << ToWSTRING(assembly_metadata.version.major)
+      << '.'_W
+      << ToWSTRING(assembly_metadata.version.minor)
+      << '.'_W
+      << ToWSTRING(assembly_metadata.version.build);
+
   // Check that Major.Minor.Build match the profiler version
   if (ws.str() == ToWSTRING(PROFILER_VERSION)) {
     Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " matched profiler version v", PROFILER_VERSION);
