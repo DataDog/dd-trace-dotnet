@@ -50,17 +50,17 @@ namespace Datadog.Trace.DogStatsd
             public const string DroppedTraces = "datadog.tracer.queue.dropped";
 
             /// <summary>
-            /// Gauge: Number of traces pulled from the queue for flushing (should be between zero and queue.max_length)
+            /// Count: Number of traces pulled from the queue for flushing (should be between zero and queue.max_length)
             /// </summary>
             public const string DequeuedTraces = "datadog.tracer.queue.length";
 
             /// <summary>
-            /// Gauge: Total number of spans pulled from the queue for flushing
+            /// Count: Total number of spans pulled from the queue for flushing
             /// </summary>
             public const string DequeuedSpans = "datadog.tracer.queue.spans";
 
             /// <summary>
-            /// Gauge: Size in bytes of traces pulled from the queue for flushing
+            /// Count: Size in bytes of traces pulled from the queue for flushing
             /// </summary>
             public const string DequeuedBytes = "datadog.tracer.queue.size";
 
