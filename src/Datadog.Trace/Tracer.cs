@@ -57,10 +57,15 @@ namespace Datadog.Trace
         {
             Settings = settings ?? TracerSettings.FromDefaultSources();
 
+            // if not configured, try to determine an appropriate service name
+            DefaultServiceName = Settings.ServiceName ??
+                                 GetApplicationName() ??
+                                 UnknownServiceName;
+
             // only set DogStatsdClient if tracer metrics are enabled
             if (Settings.TracerMetricsEnabled)
             {
-                Statsd = statsd ?? CreateDogStatsdClient(Settings);
+                Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName);
             }
 
             // fall back to default implementations of each dependency if not provided
@@ -76,11 +81,6 @@ namespace Datadog.Trace
                     Sampler.RegisterRule(rule);
                 }
             }
-
-            // if not configured, try to determine an appropriate service name
-            DefaultServiceName = Settings.ServiceName ??
-                                 GetApplicationName() ??
-                                 UnknownServiceName;
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
@@ -309,7 +309,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static IStatsd CreateDogStatsdClient(TracerSettings settings)
+        private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
         {
             var frameworkDescription = FrameworkDescription.Create();
 
@@ -318,7 +318,8 @@ namespace Datadog.Trace
                 "lang:.NET",
                 $"lang_interpreter:{frameworkDescription.Name}",
                 $"lang_version:{frameworkDescription.ProductVersion}",
-                $"tracer_version:{TracerConstants.AssemblyVersion}"
+                $"tracer_version:{TracerConstants.AssemblyVersion}",
+                $"service_name:{serviceName}"
             };
 
             var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, settings.DogStatsdPort, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
