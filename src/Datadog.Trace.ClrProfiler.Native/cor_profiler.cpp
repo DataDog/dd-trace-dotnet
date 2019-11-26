@@ -4,6 +4,7 @@
 #include <string>
 #include "corhlpr.h"
 
+#include "version.h"
 #include "clr_helpers.h"
 #include "dllmain.h"
 #include "environment_variables.h"
@@ -126,6 +127,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION |
                      COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                      COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
+                     COR_PRF_MONITOR_ASSEMBLY_LOADS |
                      COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
   if (DisableOptimizations()) {
@@ -147,6 +149,82 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;
+  return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_id,
+    HRESULT hr_status) {
+  if (FAILED(hr_status)) {
+    // if assembly failed to load, skip it entirely,
+    // otherwise we can crash the process if module is not valid
+    CorProfilerBase::AssemblyLoadFinished(assembly_id, hr_status);
+    return S_OK;
+  }
+
+  if (!is_attached_) {
+    return S_OK;
+  }
+
+  if (debug_logging_enabled) {
+    Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
+  }
+
+  // keep this lock until we are done using the module,
+  // to prevent it from unloading while in use
+  std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+  const auto assembly_info = GetAssemblyInfo(this->info_, assembly_id);
+  if (!assembly_info.IsValid()) {
+    return S_OK;
+  }
+
+  if (debug_logging_enabled) {
+    Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name);
+  }
+
+  if (assembly_info.name != "Datadog.Trace.ClrProfiler.Managed"_W) {
+    return S_OK;
+  }
+
+  ComPtr<IUnknown> metadata_interfaces;
+  auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead | ofWrite,
+                                           IID_IMetaDataImport2,
+                                           metadata_interfaces.GetAddressOf());
+
+  if (FAILED(hr)) {
+    Warn("AssemblyLoadFinished failed to get metadata interface for module id ", assembly_info.manifest_module_id,
+         " from assembly ", assembly_info.name);
+    return S_OK;
+  }
+
+  // Get the IMetaDataAssemblyImport interface to get metadata from the managed assembly
+  const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(
+      IID_IMetaDataAssemblyImport);
+  const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
+
+  // Configure a version string to compare with the profiler version
+  WSTRINGSTREAM ws;
+  ws << ToWSTRING(assembly_metadata.version.major)
+      << '.'_W
+      << ToWSTRING(assembly_metadata.version.minor)
+      << '.'_W
+      << ToWSTRING(assembly_metadata.version.build);
+
+  // Check that Major.Minor.Build match the profiler version
+  if (ws.str() == ToWSTRING(PROFILER_VERSION)) {
+    Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " matched profiler version v", PROFILER_VERSION);
+    managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
+      
+    if (runtime_information_.is_desktop() && corlib_module_loaded &&
+          assembly_info.app_domain_id == corlib_app_domain_id) {
+      Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
+      managed_profiler_loaded_domain_neutral = true;
+    }
+  }
+  else {
+    Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " did not match profiler version v", PROFILER_VERSION);
+  }
+
   return S_OK;
 }
 
@@ -188,16 +266,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     corlib_module_loaded = true;
     corlib_app_domain_id = app_domain_id;
     return S_OK;
-  }
-
-  // Identify the AppDomain ID of the managed profiler entrypoint
-  if (module_info.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
-    managed_profiler_loaded_app_domains.insert(app_domain_id);
-
-    if (runtime_information_.is_desktop() && corlib_module_loaded &&
-        app_domain_id == corlib_app_domain_id) {
-      managed_profiler_loaded_domain_neutral = true;
-    }
   }
 
   if (module_info.IsWindowsRuntime()) {

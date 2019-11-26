@@ -31,9 +31,10 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
   WCHAR assembly_name[kNameMaxSize];
   DWORD assembly_name_len = 0;
   AppDomainID app_domain_id;
+  ModuleID manifest_module_id;
 
   auto hr = info->GetAssemblyInfo(assembly_id, kNameMaxSize, &assembly_name_len,
-                                  assembly_name, &app_domain_id, nullptr);
+                                  assembly_name, &app_domain_id, &manifest_module_id);
 
   if (FAILED(hr) || assembly_name_len == 0) {
     return {};
@@ -49,7 +50,7 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo3* info,
     return {};
   }
 
-  return {assembly_id, WSTRING(assembly_name), app_domain_id,
+  return {assembly_id, WSTRING(assembly_name), manifest_module_id, app_domain_id,
           WSTRING(app_domain_name)};
 }
 
