@@ -49,10 +49,5 @@ namespace Datadog.Trace.DogStatsd
                 statsd.Add<Statsd.Counting, int>(TracerMetricNames.Health.Warnings, value: 1, sampleRate: 1, allTags);
             }
         }
-
-        public static void AppendHeartbeat(this IStatsd statsd, string[] tags = null)
-        {
-            statsd?.Add<Statsd.Gauge, int>(TracerMetricNames.Health.Heartbeat, value: 1, sampleRate: 1, tags);
-        }
     }
 }

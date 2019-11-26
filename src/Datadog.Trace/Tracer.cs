@@ -22,6 +22,8 @@ namespace Datadog.Trace
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
 
+        private static int _tracerCount;
+
         private readonly IScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
         private readonly Timer _heartbeatTimer;
@@ -55,6 +57,9 @@ namespace Datadog.Trace
 
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IStatsd statsd)
         {
+            // keep a count of Tracer instances created
+            Interlocked.Add(ref _tracerCount, 1);
+
             Settings = settings ?? TracerSettings.FromDefaultSources();
 
             // if not configured, try to determine an appropriate service name
@@ -350,7 +355,7 @@ namespace Datadog.Trace
         {
             if (Statsd != null)
             {
-                Statsd.AppendHeartbeat();
+                Statsd.AppendSetGauge(TracerMetricNames.Health.Heartbeat, _tracerCount);
                 Statsd.Send();
             }
         }
