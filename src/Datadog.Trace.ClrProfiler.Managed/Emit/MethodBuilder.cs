@@ -424,7 +424,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             if (statsd != null)
             {
                 string[] tags = { $"instrumented-method:{_concreteTypeName}.{_methodName}" };
-                statsd.AppendWarning(source: nameof(MethodBuilder), message: "Using fallback method matching", tags);
+                statsd.AppendWarning(source: $"{nameof(MethodBuilder)}.{nameof(TryFindMethod)}", message: "Using fallback method matching", tags);
                 statsd.Send();
             }
 
