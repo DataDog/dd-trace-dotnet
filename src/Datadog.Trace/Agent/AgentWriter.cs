@@ -33,7 +33,7 @@ namespace Datadog.Trace.Agent
 
             if (!success)
             {
-                Log.Debug("Trace buffer is full, dropping it.");
+                Log.Debug("Trace buffer is full. Dropping a trace from the buffer.");
             }
 
             if (_statsd != null)
@@ -44,6 +44,7 @@ namespace Datadog.Trace.Agent
                 if (!success)
                 {
                     _statsd.AppendIncrementCount(TracerMetricNames.Queue.DroppedTraces);
+                    _statsd.AppendIncrementCount(TracerMetricNames.Queue.DroppedSpans, trace.Count);
                 }
 
                 _statsd.Send();

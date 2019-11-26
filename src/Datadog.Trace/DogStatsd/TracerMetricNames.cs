@@ -48,6 +48,11 @@ namespace Datadog.Trace.DogStatsd
             public const string DroppedTraces = "datadog.tracer.queue.dropped_traces";
 
             /// <summary>
+            /// Count: Total number of spans dropped due to a full queue
+            /// </summary>
+            public const string DroppedSpans = "datadog.tracer.queue.dropped_spans";
+
+            /// <summary>
             /// Count: Number of traces pulled from the queue for flushing
             /// </summary>
             public const string DequeuedTraces = "datadog.tracer.queue.dequeued_traces";
