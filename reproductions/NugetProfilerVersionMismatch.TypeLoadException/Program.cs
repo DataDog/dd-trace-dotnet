@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
 
-namespace HttpMessageHandler.StackOverflowException
+namespace NugetProfilerVersionMismatch.TypeLoadException
 {
     internal class Program
     {
