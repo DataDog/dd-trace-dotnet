@@ -55,7 +55,6 @@ namespace Datadog.Trace
 
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IStatsd statsd)
         {
-            // fall back to default implementations of each dependency if not provided
             Settings = settings ?? TracerSettings.FromDefaultSources();
 
             // only set DogStatsdClient if tracer metrics are enabled
@@ -64,6 +63,7 @@ namespace Datadog.Trace
                 Statsd = statsd ?? CreateDogStatsdClient(Settings);
             }
 
+            // fall back to default implementations of each dependency if not provided
             IApi apiClient = new Api(Settings.AgentUri, delegatingHandler: null, Statsd);
             _agentWriter = agentWriter ?? new AgentWriter(apiClient, Statsd);
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
@@ -87,6 +87,7 @@ namespace Datadog.Trace
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
 
+            // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
 
             // If configured, add/remove the correlation identifiers into the
