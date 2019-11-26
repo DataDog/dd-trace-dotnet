@@ -22,7 +22,12 @@ namespace Datadog.Trace
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
 
-        private static int _tracerCount;
+        /// <summary>
+        /// The number of Tracer instances that have been created and not yet destroyed.
+        /// This is used in the heartbeat metrics to estimate the number of
+        /// "live" Tracers that could potentially be sending traces to the Agent.
+        /// </summary>
+        private static int _liveTracerCount;
 
         private readonly IScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
@@ -57,8 +62,8 @@ namespace Datadog.Trace
 
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IStatsd statsd)
         {
-            // keep a count of Tracer instances created
-            Interlocked.Increment(ref _tracerCount);
+            // update the count of Tracer instances
+            Interlocked.Increment(ref _liveTracerCount);
 
             Settings = settings ?? TracerSettings.FromDefaultSources();
 
@@ -108,7 +113,8 @@ namespace Datadog.Trace
         /// </summary>
         ~Tracer()
         {
-            Interlocked.Decrement(ref _tracerCount);
+            // update the count of Tracer instances
+            Interlocked.Decrement(ref _liveTracerCount);
         }
 
         /// <summary>
@@ -363,7 +369,10 @@ namespace Datadog.Trace
         {
             if (Statsd != null)
             {
-                Statsd.AppendSetGauge(TracerMetricNames.Health.Heartbeat, _tracerCount);
+                // use the count of Tracer instances as the heartbeat value
+                // to estimate the number of "live" Tracers than can potentially
+                // send traces to the Agent
+                Statsd.AppendSetGauge(TracerMetricNames.Health.Heartbeat, _liveTracerCount);
                 Statsd.Send();
             }
         }
