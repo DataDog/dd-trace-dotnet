@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Immutable;
 using System.Threading;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
@@ -22,7 +21,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void Dont_send_metrics_when_disabled()
+        public void Do_not_send_metrics_when_disabled()
         {
             var statsd = new Mock<IStatsd>();
             var spans = SendSpan(tracerMetricsEnabled: false, statsd);
@@ -51,11 +50,11 @@ namespace Datadog.Trace.Tests
                 Times.Once());
 
             statsd.Verify(
-                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedTraces, 1, 1, null),
+                s => s.Add<Statsd.Counting, int>(TracerMetricNames.Queue.DequeuedTraces, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
-                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.DequeuedSpans, 1, 1, null),
+                s => s.Add<Statsd.Counting, int>(TracerMetricNames.Queue.DequeuedSpans, 1, 1, null),
                 Times.Once());
 
             statsd.Verify(
@@ -79,11 +78,17 @@ namespace Datadog.Trace.Tests
 
             // these method can be called multiple times with a "1000" value (the max buffer size, constant)
             statsd.Verify(
-                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.MaxCapacity, 1000, 1, null),
+                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.MaxTraces, 1000, 1, null),
                 Times.AtLeastOnce());
 
+            // these method can be called multiple times (send buffered commands)
             statsd.Verify(
                 s => s.Send(),
+                Times.AtLeastOnce());
+
+            // these method can be called multiple times (send heartbeat)
+            statsd.Verify(
+                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Health.Heartbeat, It.IsAny<int>(), 1, null),
                 Times.AtLeastOnce());
 
             // no other methods should be called on the IStatsd
@@ -103,7 +108,7 @@ namespace Datadog.Trace.Tests
                                    TracerMetricsEnabled = tracerMetricsEnabled
                                };
 
-                var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: statsd.Object);
+                var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd.Object);
 
                 using (var scope = tracer.StartActive("root"))
                 {

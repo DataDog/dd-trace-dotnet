@@ -33,7 +33,7 @@ namespace Datadog.Trace.Agent
 
             if (!success)
             {
-                Log.Debug("Trace buffer is full, dropping it.");
+                Log.Debug("Trace buffer is full. Dropping a trace from the buffer.");
             }
 
             if (_statsd != null)
@@ -44,6 +44,7 @@ namespace Datadog.Trace.Agent
                 if (!success)
                 {
                     _statsd.AppendIncrementCount(TracerMetricNames.Queue.DroppedTraces);
+                    _statsd.AppendIncrementCount(TracerMetricNames.Queue.DroppedSpans, trace.Count);
                 }
 
                 _statsd.Send();
@@ -69,13 +70,14 @@ namespace Datadog.Trace.Agent
         private async Task FlushTracesAsync()
         {
             var traces = _tracesBuffer.Pop();
-            var spanCount = traces.Sum(t => t.Count);
 
             if (_statsd != null)
             {
-                _statsd.AppendSetGauge(TracerMetricNames.Queue.DequeuedTraces, traces.Count);
-                _statsd.AppendSetGauge(TracerMetricNames.Queue.DequeuedSpans, spanCount);
-                _statsd.AppendSetGauge(TracerMetricNames.Queue.MaxCapacity, TraceBufferSize);
+                var spanCount = traces.Sum(t => t.Count);
+
+                _statsd.AppendIncrementCount(TracerMetricNames.Queue.DequeuedTraces, traces.Count);
+                _statsd.AppendIncrementCount(TracerMetricNames.Queue.DequeuedSpans, spanCount);
+                _statsd.AppendSetGauge(TracerMetricNames.Queue.MaxTraces, TraceBufferSize);
                 _statsd.Send();
             }
 

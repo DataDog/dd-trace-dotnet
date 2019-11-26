@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -20,8 +22,16 @@ namespace Datadog.Trace
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
 
+        /// <summary>
+        /// The number of Tracer instances that have been created and not yet destroyed.
+        /// This is used in the heartbeat metrics to estimate the number of
+        /// "live" Tracers that could potentially be sending traces to the Agent.
+        /// </summary>
+        private static int _liveTracerCount;
+
         private readonly IScopeManager _scopeManager;
         private readonly IAgentWriter _agentWriter;
+        private readonly Timer _heartbeatTimer;
 
         static Tracer()
         {
@@ -52,15 +62,23 @@ namespace Datadog.Trace
 
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IStatsd statsd)
         {
-            // fall back to default implementations of each dependency if not provided
+            // update the count of Tracer instances
+            Interlocked.Increment(ref _liveTracerCount);
+
             Settings = settings ?? TracerSettings.FromDefaultSources();
+
+            // if not configured, try to determine an appropriate service name
+            DefaultServiceName = Settings.ServiceName ??
+                                 GetApplicationName() ??
+                                 UnknownServiceName;
 
             // only set DogStatsdClient if tracer metrics are enabled
             if (Settings.TracerMetricsEnabled)
             {
-                Statsd = statsd ?? CreateDogStatsdClient(Settings);
+                Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName);
             }
 
+            // fall back to default implementations of each dependency if not provided
             IApi apiClient = new Api(Settings.AgentUri, delegatingHandler: null, Statsd);
             _agentWriter = agentWriter ?? new AgentWriter(apiClient, Statsd);
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
@@ -74,15 +92,13 @@ namespace Datadog.Trace
                 }
             }
 
-            // if not configured, try to determine an appropriate service name
-            DefaultServiceName = Settings.ServiceName ??
-                                 GetApplicationName() ??
-                                 UnknownServiceName;
-
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
+
+            // start the heartbeat loop
+            _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
 
             // If configured, add/remove the correlation identifiers into the
             // LibLog logging context when a scope is activated/closed
@@ -90,6 +106,15 @@ namespace Datadog.Trace
             {
                 InitializeLibLogScopeEventSubscriber(_scopeManager);
             }
+        }
+
+        /// <summary>
+        /// Finalizes an instance of the <see cref="Tracer"/> class.
+        /// </summary>
+        ~Tracer()
+        {
+            // update the count of Tracer instances
+            Interlocked.Decrement(ref _liveTracerCount);
         }
 
         /// <summary>
@@ -303,7 +328,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static IStatsd CreateDogStatsdClient(TracerSettings settings)
+        private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
         {
             var frameworkDescription = FrameworkDescription.Create();
 
@@ -312,7 +337,8 @@ namespace Datadog.Trace
                 "lang:.NET",
                 $"lang_interpreter:{frameworkDescription.Name}",
                 $"lang_version:{frameworkDescription.ProductVersion}",
-                $"tracer_version:{TracerConstants.AssemblyVersion}"
+                $"tracer_version:{TracerConstants.AssemblyVersion}",
+                $"service_name:{serviceName}"
             };
 
             var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, settings.DogStatsdPort, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
@@ -337,6 +363,18 @@ namespace Datadog.Trace
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
             _agentWriter.FlushAndCloseAsync().Wait();
+        }
+
+        private void HeartbeatCallback(object state)
+        {
+            if (Statsd != null)
+            {
+                // use the count of Tracer instances as the heartbeat value
+                // to estimate the number of "live" Tracers than can potentially
+                // send traces to the Agent
+                Statsd.AppendSetGauge(TracerMetricNames.Health.Heartbeat, _liveTracerCount);
+                Statsd.Send();
+            }
         }
     }
 }
