@@ -1,0 +1,61 @@
+trigger:
+  batch: 'true'
+  branches:
+    include:
+      - bob/iis-testing
+  paths:
+    exclude:
+      - docs/*
+      - .github/*
+
+variables:
+  buildConfiguration: Release
+  packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+  dotnetCoreSdkVersion: 3.0.x
+  dotnetCore21SdkVersion: 2.1.x
+  publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
+
+jobs:
+
+- job: Windows
+
+  pool:
+    vmImage: windows-2019
+
+  variables:
+    buildPlatform: 'x64'
+
+  steps:
+
+  - task: NuGetCommand@2
+    displayName: nuget restore native
+    inputs:
+      restoreSolution: Datadog.Trace.Native.sln
+      vstsFeed: $(packageFeed)
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: msbuild native
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:BuildCpp
+      maximumCpuCount: true
+
+  - task: NuGetCommand@2
+    displayName: 'nuget restore reproductions/**/packages.config'
+    inputs:
+      restoreSolution: reproductions/**/packages.config
+      restoreDirectory: $(Build.SourcesDirectory)/packages
+      vstsFeed: $(packageFeed)
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: 'Build .NET Framework projects (not SDK-based projects)'
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: '$(buildPlatform)'
+      configuration: '$(buildConfiguration)'
+      msbuildArguments: '/t:BuildFrameworkReproductions'
+      maximumCpuCount: true
