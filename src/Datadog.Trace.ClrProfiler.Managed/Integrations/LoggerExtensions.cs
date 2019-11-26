@@ -34,8 +34,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 exception,
                 $"Error (MVID: {moduleVersionId}, mdToken: {mdToken}, opCode: {opCode}) could not retrieve: {instrumentedMethod}");
 
-            string[] tags = { $"instrumented-method:{instrumentedMethod}" };
-            Tracer.Instance.Statsd?.SendException(exception, source: instrumentedType, message: "Error retrieving instrumented method", tags);
+            var statsd = Tracer.Instance.Statsd;
+
+            if (statsd != null)
+            {
+                string[] tags = { $"instrumented-method:{instrumentedMethod}" };
+                statsd.AppendException(exception, source: instrumentedType, message: "Error retrieving instrumented method", tags);
+                statsd.Send();
+            }
         }
     }
 }

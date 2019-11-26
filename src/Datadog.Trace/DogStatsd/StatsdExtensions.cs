@@ -18,7 +18,7 @@ namespace Datadog.Trace.DogStatsd
             return statsd;
         }
 
-        public static IStatsd SendException(this IStatsd statsd, Exception exception, string source, string message, string[] tags = null)
+        public static IStatsd AppendException(this IStatsd statsd, Exception exception, string source, string message, string[] tags = null)
         {
             if (statsd != null)
             {
@@ -32,13 +32,13 @@ namespace Datadog.Trace.DogStatsd
 
                 string[] allTags = exceptionTags.Concat(tags ?? Enumerable.Empty<string>()).ToArray();
 
-                statsd.Send<Statsd.Counting, int>(TracerMetricNames.Health.Exceptions, value: 1, sampleRate: 1, allTags);
+                statsd.Add<Statsd.Counting, int>(TracerMetricNames.Health.Exceptions, value: 1, sampleRate: 1, allTags);
             }
 
             return statsd;
         }
 
-        public static IStatsd SendWarning(this IStatsd statsd, string source, string message, string[] tags = null)
+        public static IStatsd AppendWarning(this IStatsd statsd, string source, string message, string[] tags = null)
         {
             if (statsd != null)
             {
@@ -50,7 +50,7 @@ namespace Datadog.Trace.DogStatsd
 
                 string[] allTags = warningTags.Concat(tags ?? Enumerable.Empty<string>()).ToArray();
 
-                statsd.Send<Statsd.Counting, int>(TracerMetricNames.Health.Warnings, value: 1, sampleRate: 1, allTags);
+                statsd.Add<Statsd.Counting, int>(TracerMetricNames.Health.Warnings, value: 1, sampleRate: 1, allTags);
             }
 
             return statsd;
