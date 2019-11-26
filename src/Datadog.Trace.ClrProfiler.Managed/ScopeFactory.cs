@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Data.Common;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -65,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler
             return scope;
         }
 
-        public static Scope CreateDbCommandScope(Tracer tracer, DbCommand command, string integrationName)
+        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, string integrationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationName))
             {

@@ -8,9 +8,9 @@ using Datadog.Trace;
 namespace Samples.DatabaseHelper
 {
     public class RelationalDatabaseTestHarness<TConnection, TCommand, TDataReader>
-        where TConnection : DbConnection
-        where TCommand : DbCommand
-        where TDataReader : DbDataReader
+        where TConnection : class, IDbConnection
+        where TCommand : class, IDbCommand
+        where TDataReader : class, IDataReader
     {
         private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY, Name varchar(100));";
         private const string InsertCommandText = "INSERT INTO Employees (Id, Name) VALUES (@Id, @Name);";
@@ -49,10 +49,9 @@ namespace Samples.DatabaseHelper
             _executeReader = executeReader ?? throw new ArgumentNullException(nameof(executeReader));
             _executeReaderWithBehavior = executeReaderWithBehavior ?? throw new ArgumentNullException(nameof(executeReaderWithBehavior));
 
-            _executeNonQueryAsync = executeNonQueryAsync ?? throw new ArgumentNullException(nameof(executeNonQueryAsync));
-            _executeScalarAsync = executeScalarAsync ?? throw new ArgumentNullException(nameof(executeScalarAsync));
-
-            // these two are not implemented by all ADO.NET providers, so they can be null
+            // async methods are not implemented by all ADO.NET providers, so they can be null
+            _executeNonQueryAsync = executeNonQueryAsync;
+            _executeScalarAsync = executeScalarAsync;
             _executeReaderAsync = executeReaderAsync;
             _executeReaderWithBehaviorAsync = executeReaderWithBehaviorAsync;
         }
@@ -77,26 +76,29 @@ namespace Samples.DatabaseHelper
                     _connection.Close();
                 }
 
-                // leave a small space between spans, for better visibility in the UI
-                await Task.Delay(TimeSpan.FromSeconds(0.1));
-
-                using (var scopeAsync = Tracer.Instance.StartActive("run.async"))
+                if (_connection is DbConnection connection)
                 {
-                    scopeAsync.Span.SetTag("command-type", typeof(TCommand).FullName);
+                    // leave a small space between spans, for better visibility in the UI
+                    await Task.Delay(TimeSpan.FromSeconds(0.1));
 
-                    await _connection.OpenAsync();
-                    await CreateNewTableAsync(_connection);
-                    await InsertRowAsync(_connection);
-                    await SelectScalarAsync(_connection);
-                    await UpdateRowAsync(_connection);
-                    await SelectRecordsAsync(_connection);
-                    await DeleteRecordAsync(_connection);
-                    _connection.Close();
+                    using (var scopeAsync = Tracer.Instance.StartActive("run.async"))
+                    {
+                        scopeAsync.Span.SetTag("command-type", typeof(TCommand).FullName);
+
+                        await connection.OpenAsync();
+                        await CreateNewTableAsync(_connection);
+                        await InsertRowAsync(_connection);
+                        await SelectScalarAsync(_connection);
+                        await UpdateRowAsync(_connection);
+                        await SelectRecordsAsync(_connection);
+                        await DeleteRecordAsync(_connection);
+                        _connection.Close();
+                    }
                 }
             }
         }
 
-        private void DeleteRecord(DbConnection connection)
+        private void DeleteRecord(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
@@ -108,7 +110,7 @@ namespace Samples.DatabaseHelper
             }
         }
 
-        private void SelectRecords(DbConnection connection)
+        private void SelectRecords(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
@@ -137,7 +139,7 @@ namespace Samples.DatabaseHelper
             }
         }
 
-        private void UpdateRow(DbConnection connection)
+        private void UpdateRow(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
@@ -150,7 +152,7 @@ namespace Samples.DatabaseHelper
             }
         }
 
-        private void SelectScalar(DbConnection connection)
+        private void SelectScalar(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
@@ -162,7 +164,7 @@ namespace Samples.DatabaseHelper
             }
         }
 
-        private void InsertRow(DbConnection connection)
+        private void InsertRow(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
@@ -175,7 +177,7 @@ namespace Samples.DatabaseHelper
             }
         }
 
-        private void CreateNewTable(DbConnection connection)
+        private void CreateNewTable(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
@@ -186,19 +188,22 @@ namespace Samples.DatabaseHelper
             }
         }
 
-        private async Task DeleteRecordAsync(DbConnection connection)
+        private async Task DeleteRecordAsync(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
                 command.CommandText = DeleteCommandText;
                 command.AddParameterWithValue("Id", 1);
 
-                int records = await _executeNonQueryAsync(command);
-                Console.WriteLine($"Deleted {records} record(s).");
+                if (_executeNonQueryAsync != null)
+                {
+                    int records = await _executeNonQueryAsync(command);
+                    Console.WriteLine($"Deleted {records} record(s).");
+                }
             }
         }
 
-        private async Task SelectRecordsAsync(DbConnection connection)
+        private async Task SelectRecordsAsync(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
@@ -233,7 +238,7 @@ namespace Samples.DatabaseHelper
             }
         }
 
-        private async Task UpdateRowAsync(DbConnection connection)
+        private async Task UpdateRowAsync(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
@@ -241,25 +246,31 @@ namespace Samples.DatabaseHelper
                 command.AddParameterWithValue("Name", "Name2");
                 command.AddParameterWithValue("Id", 1);
 
-                int records = await _executeNonQueryAsync(command);
-                Console.WriteLine($"Updated {records} record(s).");
+                if (_executeNonQueryAsync != null)
+                {
+                    int records = await _executeNonQueryAsync(command);
+                    Console.WriteLine($"Updated {records} record(s).");
+                }
             }
         }
 
-        private async Task SelectScalarAsync(DbConnection connection)
+        private async Task SelectScalarAsync(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
                 command.CommandText = SelectOneCommandText;
                 command.AddParameterWithValue("Id", 1);
 
-                object nameObj = await _executeScalarAsync(command);
-                var name = nameObj as string;
-                Console.WriteLine($"Selected scalar `{name ?? "(null)"}`.");
+                if (_executeScalarAsync != null)
+                {
+                    object nameObj = await _executeScalarAsync(command);
+                    var name = nameObj as string;
+                    Console.WriteLine($"Selected scalar `{name ?? "(null)"}`.");
+                }
             }
         }
 
-        private async Task InsertRowAsync(DbConnection connection)
+        private async Task InsertRowAsync(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
@@ -267,19 +278,25 @@ namespace Samples.DatabaseHelper
                 command.AddParameterWithValue("Id", 1);
                 command.AddParameterWithValue("Name", "Name1");
 
-                int records = await _executeNonQueryAsync(command);
-                Console.WriteLine($"Inserted {records} record(s).");
+                if (_executeNonQueryAsync != null)
+                {
+                    int records = await _executeNonQueryAsync(command);
+                    Console.WriteLine($"Inserted {records} record(s).");
+                }
             }
         }
 
-        private async Task CreateNewTableAsync(DbConnection connection)
+        private async Task CreateNewTableAsync(IDbConnection connection)
         {
             using (var command = (TCommand)connection.CreateCommand())
             {
                 command.CommandText = DropCommandText;
 
-                int records = await _executeNonQueryAsync(command);
-                Console.WriteLine($"Dropped and recreated table. {records} record(s) affected.");
+                if (_executeNonQueryAsync != null)
+                {
+                    int records = await _executeNonQueryAsync(command);
+                    Console.WriteLine($"Dropped and recreated table. {records} record(s) affected.");
+                }
             }
         }
     }

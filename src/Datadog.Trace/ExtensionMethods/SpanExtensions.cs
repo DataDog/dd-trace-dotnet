@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Data.Common;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -28,7 +29,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="span">The span to add the tags to.</param>
         /// <param name="command">The db command to get tags values from.</param>
-        public static void AddTagsFromDbCommand(this Span span, DbCommand command)
+        public static void AddTagsFromDbCommand(this Span span, IDbCommand command)
         {
             span.ResourceName = command.CommandText;
             span.Type = SpanTypes.Sql;

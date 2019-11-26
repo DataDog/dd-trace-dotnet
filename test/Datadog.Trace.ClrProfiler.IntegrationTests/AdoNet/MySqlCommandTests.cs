@@ -15,7 +15,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            const int expectedSpanCount = 14;
+            // In .NET Framework, the MySQL client injects
+            // a few extra queries the first time it connects to a database
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 21 : 24;
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.MySql-" + dbType;
