@@ -1,7 +1,6 @@
-# `dd-trace-dotnet` Release Notes
+# Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
-
-## Release 1.10.0
+## [Release 1.10.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.10.0)
 
 ### New
 - Add ASP.NET Core MVC 3 integration (#555)
@@ -23,9 +22,8 @@
 - Clean up `MockTraceAgent`, add event-based API (#501)
 - Clean up project settings (#565)
 
-### Other changes
-- Add comments to prevent heart attacks (#563)
+[All commits](https://github.com/DataDog/dd-trace-dotnet/compare/v1.9.0...v1.10.0) | [Full diff](https://github.com/DataDog/dd-trace-dotnet/compare/v1.9.0..v1.10.0)
 
-[All commits](https://github.com/DataDog/dd-trace-dotnet/compare/v1.9.0...v1.10.0)
+---
 
-[Full diff](https://github.com/DataDog/dd-trace-dotnet/compare/v1.9.0..v1.10.0)
+### Release notes for releases before 1.10.0 can be found in the [releases page](https://github.com/DataDog/dd-trace-dotnet/releases) on GitHub.
