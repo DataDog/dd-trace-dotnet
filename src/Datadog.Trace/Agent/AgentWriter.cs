@@ -69,10 +69,11 @@ namespace Datadog.Trace.Agent
         private async Task FlushTracesAsync()
         {
             var traces = _tracesBuffer.Pop();
-            var spanCount = traces.Sum(t => t.Count);
 
             if (_statsd != null)
             {
+                var spanCount = traces.Sum(t => t.Count);
+
                 _statsd.AppendSetGauge(TracerMetricNames.Queue.DequeuedTraces, traces.Count);
                 _statsd.AppendSetGauge(TracerMetricNames.Queue.DequeuedSpans, spanCount);
                 _statsd.AppendSetGauge(TracerMetricNames.Queue.MaxCapacity, TraceBufferSize);
