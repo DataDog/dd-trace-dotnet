@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests
 
             // these method can be called multiple times with a "1000" value (the max buffer size, constant)
             statsd.Verify(
-                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.MaxCapacity, 1000, 1, null),
+                s => s.Add<Statsd.Gauge, int>(TracerMetricNames.Queue.MaxTraces, 1000, 1, null),
                 Times.AtLeastOnce());
 
             // these method can be called multiple times (send buffered commands)
