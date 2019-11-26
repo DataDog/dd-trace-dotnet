@@ -275,7 +275,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Core.Tools", "tools
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc.Netcore3", "samples\Samples.AspNetCoreMvc.Netcore3\Samples.AspNetCoreMvc.Netcore3.csproj", "{64235C59-8EAB-401A-86B0-C41E513F0AE8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Crash.TypeLoadException", "reproductions\Crash.TypeLoadException\Crash.TypeLoadException.csproj", "{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NugetProfilerVersionMismatch.TypeLoadException", "reproductions\NugetProfilerVersionMismatch.TypeLoadException\NugetProfilerVersionMismatch.TypeLoadException.csproj", "{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
