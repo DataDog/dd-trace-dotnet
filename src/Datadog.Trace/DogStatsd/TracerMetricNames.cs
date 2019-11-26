@@ -30,44 +30,44 @@ namespace Datadog.Trace.DogStatsd
             /// <summary>
             /// Count: Total number of traces pushed into the queue, where "accepted - dropped = total to be flushed"
             /// </summary>
-            public const string EnqueuedTraces = "datadog.tracer.queue.accepted";
+            public const string EnqueuedTraces = "datadog.tracer.queue.enqueued_traces";
 
             /// <summary>
             /// Count: Total number of spans pushed into the queue
             /// </summary>
-            public const string EnqueuedSpans = "datadog.tracer.queue.accepted_lengths";
+            public const string EnqueuedSpans = "datadog.tracer.queue.enqueued_spans";
 
             /// <summary>
             /// Count: Total size in bytes of traces pushed into the queue
             /// </summary>
-            public const string EnqueuedBytes = "datadog.tracer.queue.accepted_size";
+            public const string EnqueuedBytes = "datadog.tracer.queue.enqueued_bytes";
 
             /// <summary>
             /// Count: Total number of traces dropped by the queue.
             /// This is the number of traces attempted to write into the queue above the max
             /// (e.g. more than 1k traces, we start dropping traces)
             /// </summary>
-            public const string DroppedTraces = "datadog.tracer.queue.dropped";
+            public const string DroppedTraces = "datadog.tracer.queue.dropped_traces";
 
             /// <summary>
             /// Count: Number of traces pulled from the queue for flushing (should be between zero and queue.max_length)
             /// </summary>
-            public const string DequeuedTraces = "datadog.tracer.queue.length";
+            public const string DequeuedTraces = "datadog.tracer.queue.dequeued_traces";
 
             /// <summary>
             /// Count: Total number of spans pulled from the queue for flushing
             /// </summary>
-            public const string DequeuedSpans = "datadog.tracer.queue.spans";
+            public const string DequeuedSpans = "datadog.tracer.queue.dequeued_spans";
 
             /// <summary>
             /// Count: Size in bytes of traces pulled from the queue for flushing
             /// </summary>
-            public const string DequeuedBytes = "datadog.tracer.queue.size";
+            public const string DequeuedBytes = "datadog.tracer.queue.dequeued_bytes";
 
             /// <summary>
             /// Gauge: The maximum number of traces buffered by the background writer (this is static at 1k for now)
             /// </summary>
-            public const string MaxCapacity = "datadog.tracer.queue.max_length";
+            public const string MaxCapacity = "datadog.tracer.queue.max_traces";
         }
 
         public static class Health
