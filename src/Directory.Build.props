@@ -9,6 +9,7 @@
     <!-- NuGet packages -->
     <IsPackable>true</IsPackable>
     <PackageIconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</PackageIconUrl>
+    <PackageIcon>packageIcon.png</PackageIcon>
     <PackageProjectUrl>https://docs.datadoghq.com/tracing/setup/dotnet/</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -19,8 +20,11 @@
     <Copyright>Datadog, Inc. 2017-2019</Copyright>
   </PropertyGroup>
 
-  <!-- StyleCop -->
   <ItemGroup>
+    <!-- NuGet -->
+    <None Include="$(MSBuildThisFileDirectory)\..\datadog-logo-64x64.png" Pack="true" Visible="false" PackagePath="packageIcon.png" />
+    
+    <!-- StyleCop -->
     <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
   </ItemGroup>
 </Project>
