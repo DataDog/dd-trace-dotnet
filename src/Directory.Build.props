@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <!-- NuGet -->
-    <None Include="$(MSBuildThisFileDirectory)\..\datadog-logo-64x64.png" Pack="true" Visible="false" PackagePath="packageIcon.png" />
+    <None Include="$(MSBuildThisFileDirectory)\..\datadog-logo-256x256.png" Pack="true" Visible="false" PackagePath="packageIcon.png" />
     
     <!-- StyleCop -->
     <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
