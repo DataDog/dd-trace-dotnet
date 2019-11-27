@@ -22,7 +22,7 @@ then
     dotnet publish -f $publishTargetFramework -c $buildConfiguration samples/Samples.AspNetCoreMvc2/Samples.AspNetCoreMvc2.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 fi
 
-# Only build Samples.AspNetCoreMvc2 for netcoreapp3.0
+# Only build Samples.AspNetCoreMvc.Netcore3 for netcoreapp3.0
 if [ "$publishTargetFramework" == "netcoreapp3.0" ]
 then
     dotnet publish -f $publishTargetFramework -c $buildConfiguration samples/Samples.AspNetCoreMvc.Netcore3/Samples.AspNetCoreMvc.Netcore3.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
@@ -32,7 +32,7 @@ for sample in Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStac
     dotnet publish -f $publishTargetFramework -c $buildConfiguration samples/$sample/$sample.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 done
 
-for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance AssemblyLoad.FileNotFoundException TraceContext.InvalidOperationException ; do
+for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance AssemblyLoad.FileNotFoundException TraceContext.InvalidOperationException AssemblyLoad.FileNotFoundException ; do
     dotnet publish -f $publishTargetFramework -c $buildConfiguration reproductions/$sample/$sample.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 done
 
