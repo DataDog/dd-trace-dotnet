@@ -277,6 +277,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc.Netco
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NugetProfilerVersionMismatch.TypeLoadException", "reproductions\NugetProfilerVersionMismatch.TypeLoadException\NugetProfilerVersionMismatch.TypeLoadException.csproj", "{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InfiniteRecursionCrash", "reproductions\InfiniteRecursionCrash\InfiniteRecursionCrash.csproj", "{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -925,6 +927,16 @@ Global
 		{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}.Release|x64.Build.0 = Release|x64
 		{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}.Release|x86.ActiveCfg = Release|x86
 		{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA}.Release|x86.Build.0 = Release|x86
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Debug|x64.ActiveCfg = Debug|x64
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Debug|x64.Build.0 = Debug|x64
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Debug|x86.ActiveCfg = Debug|x86
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Debug|x86.Build.0 = Debug|x86
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|Any CPU.ActiveCfg = Release|x86
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x64.ActiveCfg = Release|x64
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x64.Build.0 = Release|x64
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x86.ActiveCfg = Release|x86
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -991,6 +1003,7 @@ Global
 		{3BEACB10-89FE-4F74-8022-1A52F223CE82} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{64235C59-8EAB-401A-86B0-C41E513F0AE8} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{F2C7F89B-4248-42E8-9FC1-F0506FEBC4EA} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
