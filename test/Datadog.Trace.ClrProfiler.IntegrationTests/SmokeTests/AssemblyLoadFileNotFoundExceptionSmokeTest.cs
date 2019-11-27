@@ -12,7 +12,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
