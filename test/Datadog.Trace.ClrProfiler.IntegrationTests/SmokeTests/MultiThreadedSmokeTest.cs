@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact]
+        [Fact(Skip = "Investigation needed to understand timeout issues.")]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
