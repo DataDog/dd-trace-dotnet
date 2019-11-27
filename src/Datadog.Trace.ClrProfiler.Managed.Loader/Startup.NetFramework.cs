@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             // infinite recursion.
             if (string.Equals(assemblyName, "mscorlib.resources", StringComparison.OrdinalIgnoreCase))
             {
-                return null;
+                // return null; // Commenting out so we can see the failure in CI
             }
 
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
