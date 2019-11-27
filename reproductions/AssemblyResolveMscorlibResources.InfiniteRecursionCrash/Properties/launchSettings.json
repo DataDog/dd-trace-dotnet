@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "InfiniteRecursionCrash": {
+    "AssemblyResolveMscorlibResources.InfiniteRecursionCrash": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",

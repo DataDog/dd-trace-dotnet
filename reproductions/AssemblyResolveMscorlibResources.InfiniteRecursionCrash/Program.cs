@@ -5,7 +5,7 @@ using System.IO.IsolatedStorage;
 using System.Net.Http;
 using System.Threading;
 
-namespace InfiniteRecursionCrash
+namespace AssemblyResolveMscorlibResources.InfiniteRecursionCrash
 {
     internal class Program
     {
