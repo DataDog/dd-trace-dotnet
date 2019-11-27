@@ -157,6 +157,16 @@ struct MethodSignature {
     return 0;
   }
 
+  bool RetTypeIsObject() const {
+    if (data.size() > 2 &&
+        (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+      return data[3] == ELEMENT_TYPE_OBJECT;
+    }
+    if (data.size() > 1) {
+      return data[2] == ELEMENT_TYPE_OBJECT;
+    }
+  }
+
   WSTRING str() const {
     WSTRINGSTREAM ss;
     for (auto& b : data) {
