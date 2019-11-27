@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Core.Tools;
 using Newtonsoft.Json;
@@ -64,7 +66,7 @@ namespace Performance.Redis
 
             var threadCount = 20;
             var iterationsPerThread = 50_000;
-            var expectedIterations = 50_000; // threadCount * iterationsPerThread;
+            var expectedIterations = 100_000; // threadCount * iterationsPerThread;
             var performance = new Performance()
             {
                 ProfilerEnabled = profilerEnabled,
@@ -80,7 +82,7 @@ namespace Performance.Redis
                 var firstCallTimer = new Stopwatch();
 
                 firstCallTimer.Start();
-                DoStringSetGetCalls();
+                DoEvalSetOnLargeString();
                 firstCallTimer.Stop();
                 expectedIterations--;
                 performance.FirstCallMilliseconds = firstCallTimer.ElapsedMilliseconds;
@@ -97,7 +99,7 @@ namespace Performance.Redis
                 //                        var i = 0;
                 //                        while (i++ < iterationsPerThread)
                 //                        {
-                //                            DoStringSetGetCalls(redis);
+                //                            DoEvalSetOnLargeString(redis);
                 //                        }
                 //                    }
                 //                    catch
@@ -116,7 +118,7 @@ namespace Performance.Redis
                 //    Thread.Sleep(1000);
                 //}
 
-                for (var i = 0; i < 5_000; i++)
+                for (var i = 0; i < 10_000; i++)
                 {
                     ReallyBigString += "-";
                 }
@@ -130,7 +132,7 @@ namespace Performance.Redis
                 {
                     try
                     {
-                        DoStringSetGetCalls();
+                        DoEvalSetOnLargeString();
 
                     }
                     catch (Exception ex)
@@ -154,9 +156,11 @@ namespace Performance.Redis
                 Multiplexer?.Dispose();
             }
 
+            performance.ExceptionInformation = exceptionDictionary.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
             var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
 
-            var fileFriendlyDate = performance.TestStart.ToString("yyyy-dd-M--HH-mm-ss");
+            var fileFriendlyDate = performance.TestStart.ToString("yyyy-dd-M_HH-mm-ss");
             var writePath = Path.Combine(solutionDirectory, "performance");
             var fileName = $"stackexchangeredis_{performance.ProfilerVersion}_{fileFriendlyDate}";
             if (profilerEnabled)
@@ -174,7 +178,7 @@ namespace Performance.Redis
             File.WriteAllText(filePath, json);
         }
 
-        private static void DoStringSetGetCalls()
+        private static void DoEvalSetOnLargeString()
         {
             var redis = GetMultiplexer();
             var db = redis.GetDatabase();
@@ -214,7 +218,7 @@ namespace Performance.Redis
 
             public decimal OperationCount { get; set; }
 
-            public string ExceptionInformation { get; set; }
+            public Dictionary<string, int> ExceptionInformation { get; set; }
         }
     }
 }

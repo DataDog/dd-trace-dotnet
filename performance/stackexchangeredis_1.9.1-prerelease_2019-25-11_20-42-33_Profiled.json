@@ -1,0 +1,13 @@
+{
+  "ProfilerVersion": "1.9.1-prerelease",
+  "TargetFramework": ".net framework 4.8.4042.0",
+  "ProfilerEnabled": true,
+  "OperationName": "StringSet -> StringGet",
+  "TestStart": "2019-11-25T20:42:33.554499-05:00",
+  "TestEnd": "2019-11-25T20:44:13.4433135-05:00",
+  "FirstCallMilliseconds": 3573.0,
+  "AverageCallMilliseconds": 1.997799955999119982399647993,
+  "TotalMilliseconds": 99888.0,
+  "OperationCount": 50000.0,
+  "ExceptionInformation": {}
+}
