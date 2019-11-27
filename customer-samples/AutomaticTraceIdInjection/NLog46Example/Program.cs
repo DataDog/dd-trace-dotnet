@@ -1,7 +1,7 @@
 using Datadog.Trace;
 using NLog;
 
-namespace NLogExample
+namespace NLog46Example
 {
     class Program
     {
@@ -13,7 +13,7 @@ namespace NLogExample
             {
                 Logger.Info("Message before a trace.");
 
-                using (var scope = Tracer.Instance.StartActive("NLogExample - Main()"))
+                using (var scope = Tracer.Instance.StartActive("NLog46Example - Main()"))
                 {
                     Logger.Info("Message during a trace.");
                 }
