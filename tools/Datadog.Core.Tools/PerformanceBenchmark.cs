@@ -8,6 +8,11 @@ namespace Datadog.Core.Tools
 {
     public class PerformanceBenchmark
     {
+        public PerformanceBenchmark(string projectName)
+        {
+            ProjectName = projectName;
+        }
+
         private static readonly string _frameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
 
 #if DEBUG
@@ -25,6 +30,8 @@ namespace Datadog.Core.Tools
         public string OSArchitecture { get; set; } = RuntimeInformation.OSArchitecture.ToString();
 
         public string ProcessArchitecture { get; set; } = RuntimeInformation.ProcessArchitecture.ToString();
+
+        public bool ProjectName { get; set; }
 
         public bool ProfilerEnabled { get; set; }
 
@@ -49,12 +56,12 @@ namespace Datadog.Core.Tools
         /// </summary>
         public string Comments { get; set; } = string.Empty;
 
-        public void Save(string projectName)
+        public void Save()
         {
             var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
 
             var fileFriendlyDate = TestStart.ToString("yyyy-dd-mm_HH-mm-ss");
-            var projectPath = Path.Combine(solutionDirectory, "performance", projectName);
+            var projectPath = Path.Combine(solutionDirectory, "performance", ProjectName);
             var resultsPath = Path.Combine(projectPath, "results");
 
             if (!Directory.Exists(resultsPath))
@@ -62,7 +69,7 @@ namespace Datadog.Core.Tools
                 Directory.CreateDirectory(resultsPath);
             }
 
-            var fileName = $"{projectName}_{ProfilerVersion}_{BuildConfiguration}_{fileFriendlyDate}";
+            var fileName = $"{ProjectName}_{ProfilerVersion}_{BuildConfiguration}_{fileFriendlyDate}";
             if (ProfilerEnabled)
             {
                 fileName += "_Profiled";

@@ -54,7 +54,7 @@ namespace Performance.StackExchange.Redis
             var threadCount = 20;
             var iterationsPerThread = 20_000;
             var expectedIterations = threadCount * iterationsPerThread;
-            var performance = new PerformanceBenchmark()
+            var performance = new PerformanceBenchmark("Performance.StackExchange.Redis")
             {
                 OperationCount = expectedIterations,
                 OperationName = "Redis Eval Set String"
@@ -101,7 +101,7 @@ namespace Performance.StackExchange.Redis
 
             performance.ExceptionCounts = concurrencyHelper.GetExceptionSummary();
 
-            performance.Save("Performance.StackExchange.Redis");
+            performance.Save();
         }
 
         private static void DoEvalSetOnLargeString()
