@@ -30,9 +30,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
-            string assemblyName = new AssemblyName(args.Name).Name;
-            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
+            var assemblyName = new AssemblyName(args.Name).Name;
 
+            // On .NET Framework, having a non-US locale can cause mscorlib
+            // to enter the AssemblyResolve event when searching for resources
+            // in its satellite assemblies. Exit early so we don't cause
+            // infinite recursion.
+            if (string.Equals(assemblyName, "mscorlib.resources", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
             if (File.Exists(path))
             {
                 return Assembly.LoadFrom(path);

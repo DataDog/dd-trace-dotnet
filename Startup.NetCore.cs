@@ -26,6 +26,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static Assembly AssemblyResolve_ManagedProfilerDependencies(object sender, ResolveEventArgs args)
         {
             var assemblyName = new AssemblyName(args.Name);
+
+            // On .NET Framework, having a non-US locale can cause mscorlib
+            // to enter the AssemblyResolve event when searching for resources
+            // in its satellite assemblies. This seems to have been fixed in
+            // .NET Core in the 2.0 servicing branch, so we should not see this
+            // occur, but guard against it anyways. If we do see it, exit early
+            // so we don't cause infinite recursion.
+            if (string.Equals(assemblyName.Name, "System.Private.CoreLib.resources", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
 
             if (assemblyName.Name.StartsWith("Datadog.Trace", StringComparison.OrdinalIgnoreCase)
