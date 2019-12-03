@@ -45,6 +45,7 @@ namespace Datadog.Trace.ExtensionMethods
             span.SetTag(Tags.HttpMethod, method);
             span.SetTag(Tags.HttpRequestHeadersHost, host);
             span.SetTag(Tags.HttpUrl, httpUrl);
+            span.SetTag(Tags.Language, TracerConstants.Language);
         }
 
         private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)
