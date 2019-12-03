@@ -27,5 +27,4 @@ createIISWebApps
 
 installDotnetTracer
 
-Get-ItemProperty -Path HKLM:\SOFTWARE\Datadog
-Get-ItemProperty -Path "HKLM:\SOFTWARE\Datadog\Datadog .NET Tracer 64-bit"
+Get-ChildItem -Path $env:ProgramFiles
