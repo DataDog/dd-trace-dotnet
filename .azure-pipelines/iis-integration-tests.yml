@@ -111,3 +111,10 @@ jobs:
       configuration: Release
       msbuildArguments: /t:msi /p:Configuration=Release;Platform=x64
       maximumCpuCount: True
+
+  - task: PowerShell@2
+    displayName: 'Create IIS web applications and install .NET Tracer'
+    inputs:
+      targetType: 'filePath'
+      filePath: 'prepIISTesting.ps1'
+      workingDirectory: 'samples-aspnet\scripts'
