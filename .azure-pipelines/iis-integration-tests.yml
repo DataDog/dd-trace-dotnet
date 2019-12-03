@@ -116,5 +116,5 @@ jobs:
     displayName: 'Create IIS web applications and install .NET Tracer'
     inputs:
       targetType: 'filePath'
-      filePath: 'prepIISTesting.ps1'
+      filePath: 'samples-aspnet\scripts\prepIISTesting.ps1'
       workingDirectory: 'samples-aspnet\scripts'
