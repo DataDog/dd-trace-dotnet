@@ -13,7 +13,7 @@ namespace Datadog.Trace.Web
     {
         internal const string IntegrationName = "AspNet";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetHttpModule));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
         private readonly string _httpContextDelegateKey;
         private readonly string _operationName;
