@@ -20,12 +20,12 @@ function installDotnetTracer
 
     Write-Host "About to do msi installation..."
 
-    Start-Process "msiexec.exe" -ErrorAction SilentlyContinue -Wait -ArgumentList '/I deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi'
+    Start-Process "msiexec.exe" -ArgumentList '/I d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi'
 
     if( -not $? )
     {
         $msg = $Error[0].Exception.Message
-        "Encountered error during MSI installation. Error Message is $msg. Please check."
+        Write-Host "Encountered error during MSI installation. Error Message is $msg. Please check."
     }
 }
 
@@ -36,4 +36,5 @@ createIISWebApps
 
 installDotnetTracer
 
-# Get-ChildItem -Path $env:ProgramFiles
+Get-ChildItem -Path 'C:\Program Files\Datadog'
+
