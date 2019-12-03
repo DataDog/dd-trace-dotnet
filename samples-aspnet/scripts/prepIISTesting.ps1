@@ -17,7 +17,7 @@ function installDotnetTracer
 {
     # TODO
     #  1. Get full path name of msi file
-    Start-Process "msiexec.exe" -Wait -ArgumentList '/I .\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi /quiet'
+    Start-Process "msiexec.exe" -Wait -ArgumentList '/I deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi'
 }
 
 
