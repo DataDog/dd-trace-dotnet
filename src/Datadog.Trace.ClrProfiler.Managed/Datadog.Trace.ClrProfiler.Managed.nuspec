@@ -3,11 +3,10 @@
   <metadata>
     <id>Datadog.Trace.ClrProfiler.Managed</id>
     <version>1.10.0</version>
-    <title></title>
     <authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd;bobuva</authors>
-    <owners>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd;bobuva</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectUrl>https://docs.datadoghq.com/tracing/setup/dotnet/</projectUrl>
+    <icon>packageIcon.png</icon>
     <iconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</iconUrl>
     <description>
       OBSOLETE. This package is no longer required and exists only for backwards compatibility.
@@ -15,6 +14,9 @@
       Users who need ASP.NET instrumentation should reference Datadog.Trace.AspNet directly.
     </description>
     <copyright>Datadog, Inc. 2017-2019</copyright>
+    <license type="expression">Apache-2.0</license>
+    <tags>Datadog;APM;tracing;profiling;instrumentation</tags>
+    <repository type="git" url="https://github.com/DataDog/dd-trace-dotnet.git"/>
     <dependencies>
       <group targetFramework=".NETFramework4.5">
         <dependency id="Datadog.Trace" version="1.10.0" />
@@ -29,4 +31,7 @@
       </group>
     </dependencies>
   </metadata>
+  <files>
+    <file src="../../datadog-logo-256x256.png" target="packageIcon.png" />
+  </files>
 </package>
