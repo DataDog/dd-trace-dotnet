@@ -114,10 +114,11 @@ jobs:
 
   - task: PowerShell@2
     displayName: 'Create IIS web applications and install .NET Tracer'
-    filePath: 'samples-aspnet\scripts\prepIISTesting.ps1'
-    workingDirectory: 'samples-aspnet\scripts'
-    failOnStderr: True
-    errorActionPreference: stop
+    inputs:
+      filePath: 'samples-aspnet\scripts\prepIISTesting.ps1'
+      workingDirectory: 'samples-aspnet\scripts'
+      failOnStderr: True
+      errorActionPreference: stop
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
