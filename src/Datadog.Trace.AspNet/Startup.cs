@@ -1,9 +1,9 @@
 using System.Web;
-using Datadog.Trace.Web;
+using Datadog.Trace.AspNet;
 
 [assembly: PreApplicationStartMethod(typeof(Startup), "Register")]
 
-namespace Datadog.Trace.Web
+namespace Datadog.Trace.AspNet
 {
     /// <summary>
     ///     Used as the target of a PreApplicationStartMethodAttribute on the assembly to load the TracingHttpModule into the pipeline

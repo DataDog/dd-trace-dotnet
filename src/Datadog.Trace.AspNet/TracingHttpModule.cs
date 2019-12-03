@@ -4,7 +4,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Web
+namespace Datadog.Trace.AspNet
 {
     /// <summary>
     ///     IHttpModule used to trace within an ASP.NET HttpApplication request

@@ -10,7 +10,7 @@ Package|Download
 Windows and Linux Installers|[See releases](https://github.com/DataDog/dd-trace-dotnet/releases)
 `Datadog.Trace`|[![Datadog.Trace](https://img.shields.io/nuget/vpre/Datadog.Trace.svg)](https://www.nuget.org/packages/Datadog.Trace)
 `Datadog.Trace.OpenTracing`|[![Datadog.Trace.OpenTracing](https://img.shields.io/nuget/vpre/Datadog.Trace.OpenTracing.svg)](https://www.nuget.org/packages/Datadog.Trace.OpenTracing)
-`Datadog.Trace.Web`|[![Datadog.Trace.Web](https://img.shields.io/nuget/vpre/Datadog.Trace.Web.svg)](https://www.nuget.org/packages/Datadog.Trace.Web)
+`Datadog.Trace.AspNet`|[![Datadog.Trace.AspNet](https://img.shields.io/nuget/vpre/Datadog.Trace.AspNet.svg)](https://www.nuget.org/packages/Datadog.Trace.AspNet)
 
 ## Build Status
 
