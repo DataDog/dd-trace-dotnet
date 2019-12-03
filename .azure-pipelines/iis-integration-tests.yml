@@ -111,19 +111,3 @@ jobs:
       configuration: Release
       msbuildArguments: /t:msi /p:Configuration=Release;Platform=x64
       maximumCpuCount: True
-
-  - task: PowerShell@2
-    displayName: 'Create IIS web applications and install .NET Tracer'
-    inputs:
-      filePath: 'samples-aspnet\scripts\prepIISTesting.ps1'
-      workingDirectory: 'samples-aspnet\scripts'
-      failOnStderr: True
-      errorActionPreference: stop
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet test
-    inputs:
-      command: test
-      configuration: $(buildConfiguration)
-      projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: '--filter "RunOnWindows=True|Category=Smoke" -p:Platform=$(buildPlatform)'
