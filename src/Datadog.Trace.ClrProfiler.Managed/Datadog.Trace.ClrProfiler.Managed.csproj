@@ -7,7 +7,6 @@
     <Version>1.10.0</Version>
     <Title>Datadog APM - ClrProfiler</Title>
     <Description>Automatic instrumentation library used by .NET Tracer for Datadog APM. Requires separate native library that implements the CLR Profiling API.</Description>
-    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the

@@ -5,9 +5,8 @@
 
     <!-- NuGet -->
     <Version>1.0</Version>
-    <Title>Datadog APM - Web Tracing</Title>
-    <Description>Provides tracing for ASP.NET web application. </Description>
-    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
+    <Title>Datadog APM Tracing for ASP.NET</Title>
+    <Description>Provides tracing for ASP.NET web applications.</Description>
   </PropertyGroup>
 
   <ItemGroup>
