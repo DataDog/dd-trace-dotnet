@@ -818,8 +818,6 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
                                                 ret_type_token);
             return SUCCEEDED(hr);
           } else {
-            Warn("[trace::UnboxReturnValue] UNHANDLED CASE: element type of matching generic argument was: ",
-                spec_signature[method_def_sig_index]);
             return false;
           }
         }
@@ -856,7 +854,6 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
                                                     &parent_token, &signature, &signature_length);
             break;
           default:
-            Warn("[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_MVAR: function token was not a mdtMethodSpec");
             return false;  // TODO see if anything hits this
         }
 
@@ -887,10 +884,6 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
                                                      2, ret_type_token);
             return SUCCEEDED(hr);
           } else {
-            Warn(
-                "[trace::UnboxReturnValue] UNHANDLED CASE: element type of "
-                "matching generic argument was: ",
-                signature[spec_sig_index]);
             return false;
           }
         }
@@ -898,60 +891,62 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
         return false;
       }
 
-      case ELEMENT_TYPE_VOID:            // 0x01
-      case ELEMENT_TYPE_BOOLEAN:         // 0x02
-      case ELEMENT_TYPE_CHAR:            // 0x03
-      case ELEMENT_TYPE_I1:              // 0x04
-      case ELEMENT_TYPE_U1:              // 0x05
-      case ELEMENT_TYPE_I2:              // 0x06
-      case ELEMENT_TYPE_U2:              // 0x07
-      case ELEMENT_TYPE_I4:              // 0x08
-      case ELEMENT_TYPE_U4:              // 0x09
-      case ELEMENT_TYPE_I8:              // 0x0a
-      case ELEMENT_TYPE_U8:              // 0x0b
-      case ELEMENT_TYPE_R4:              // 0x0c
-      case ELEMENT_TYPE_R8:              // 0x0d
-      case ELEMENT_TYPE_STRING:          // 0x0e
+      // This list should match up with the CorElementType in corhdr.h
+      // ELEMENT_TYPE_VAR and ELEMENT_TYPE_MVAR are listed again here to illustrate that all cases are handled
+      case ELEMENT_TYPE_VOID:          // 0x01
+      case ELEMENT_TYPE_BOOLEAN:       // 0x02
+      case ELEMENT_TYPE_CHAR:          // 0x03
+      case ELEMENT_TYPE_I1:            // 0x04
+      case ELEMENT_TYPE_U1:            // 0x05
+      case ELEMENT_TYPE_I2:            // 0x06
+      case ELEMENT_TYPE_U2:            // 0x07
+      case ELEMENT_TYPE_I4:            // 0x08
+      case ELEMENT_TYPE_U4:            // 0x09
+      case ELEMENT_TYPE_I8:            // 0x0a
+      case ELEMENT_TYPE_U8:            // 0x0b
+      case ELEMENT_TYPE_R4:            // 0x0c
+      case ELEMENT_TYPE_R8:            // 0x0d
+      case ELEMENT_TYPE_STRING:        // 0x0e
         return false;
 
-      // case ELEMENT_TYPE_PTR:         // 0x0f
-      // case ELEMENT_TYPE_BYREF:       // 0x10
-
-      // case ELEMENT_TYPE_VALUETYPE:   // 0x11  // HANDLED SEPARATELY
-      case ELEMENT_TYPE_CLASS:          // 0x12
+      case ELEMENT_TYPE_PTR:           // 0x0f
+      case ELEMENT_TYPE_BYREF:         // 0x10
         return false;
-      // case ELEMENT_TYPE_VAR:         // 0x13  // HANDLED ABOVE
-      // case ELEMENT_TYPE_ARRAY:          // 0x14
-      case ELEMENT_TYPE_GENERICINST:    // 0X15  // Ex. Task<HttpResponseMessage>. It would be nice to figure out when this is a VALUETYPE
+
+      case ELEMENT_TYPE_VALUETYPE:     // 0x11 // Return true
+        return true;
+      case ELEMENT_TYPE_CLASS:         // 0x12
+        return false;
+      // case ELEMENT_TYPE_VAR:        // 0x13  // HANDLED ABOVE
+      case ELEMENT_TYPE_ARRAY:         // 0x14
+        return false;
+      case ELEMENT_TYPE_GENERICINST:   // 0X15  // Example: Task<HttpResponseMessage>. Return true if the type is VALUETYPE
         method_def_sig_index++;
-        if (target_function_info.signature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE) {
-            Warn("[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_GENERICINST found whose type is a VALUETYPE");
-        }
+        return target_function_info.signature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE;
+      case ELEMENT_TYPE_TYPEDBYREF:    // 0X16
         return false;
-        
-      // case ELEMENT_TYPE_TYPEDBYREF:  // 0X16
 
-      // case ELEMENT_TYPE_I:           // 0x18
-      // case ELEMENT_TYPE_U:           // 0x19
-      // case ELEMENT_TYPE_FNPTR:       // 0x1b
-      case ELEMENT_TYPE_OBJECT:         // 0x1c
+      case ELEMENT_TYPE_I:             // 0x18 // Represents System.IntPtr (struct), return true
+      case ELEMENT_TYPE_U:             // 0x19 // Represents System.UIntPtr (struct), return true
+        return true;
+
+      case ELEMENT_TYPE_FNPTR:         // 0x1b
+      case ELEMENT_TYPE_OBJECT:        // 0x1c
+      case ELEMENT_TYPE_SZARRAY:       // 0x1d
         return false;
-      // case ELEMENT_TYPE_SZARRAY:     // 0x1d
 
-      // case ELEMENT_TYPE_MVAR:        // 0x1e // HANDLED ABOVE
-      default: {
+      // case ELEMENT_TYPE_MVAR:       // 0x1e // HANDLED ABOVE
+      default:
         Warn("[trace::UnboxReturnValue] UNHANDLED CASE: unexpected CorElementType found: ",
              ret_type);
         return false;
-      }
     }
   } catch (...) {
     // TODO: Add precise exceptions and log
     // We were unable to parse for some reason
     // Return that we've failed
+    Warn("[trace::UnboxReturnValue] UNHANDLED CASE: unexpected failed in try/catch block");
     return false;
   }
-
-  return false;
 }
 }  // namespace trace
