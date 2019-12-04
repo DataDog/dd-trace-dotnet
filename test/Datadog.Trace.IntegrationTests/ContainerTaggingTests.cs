@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Containers;
 using Datadog.Trace.TestHelpers;
@@ -45,7 +46,7 @@ namespace Datadog.Trace.IntegrationTests
                 Assert.Equal(1, spans.Count);
                 Assert.Equal(expectedContainedId, actualContainerId);
 
-                if (EnvironmentHelper.IsWindows())
+                if (EnvironmentTools.IsWindows())
                 {
                     // we don't extract the containerId on Windows (yet?)
                     Assert.Null(actualContainerId);

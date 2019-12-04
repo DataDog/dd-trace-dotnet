@@ -1,3 +1,4 @@
+using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -16,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
-            if (EnvironmentHelper.IsWindows())
+            if (EnvironmentTools.IsWindows())
             {
                 Output.WriteLine("Ignored for Windows");
                 return;

@@ -11,10 +11,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public class EnvironmentHelper
     {
-        public const string ProfilerClsId = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
-        public const string DotNetFramework = ".NETFramework";
-        public const string CoreFramework = ".NETCoreApp";
-
         private static readonly Assembly EntryAssembly = Assembly.GetEntryAssembly();
         private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
@@ -57,7 +53,7 @@ namespace Datadog.Trace.TestHelpers
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
-            _isCoreClr = _runtime.Equals(CoreFramework);
+            _isCoreClr = _runtime.Equals(EnvironmentTools.CoreFramework);
 
             var versionParts = parts[1].Replace("Version=v", string.Empty).Split('.');
             _major = int.Parse(versionParts[0]);
@@ -95,33 +91,6 @@ namespace Datadog.Trace.TestHelpers
             return ExecutingAssembly.Location;
         }
 
-        public static string GetOS()
-        {
-            return IsWindows() ? "win" :
-                   RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
-                   RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "osx" :
-                                                                       string.Empty;
-        }
-
-        public static bool IsWindows()
-        {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-        }
-
-        public static string GetPlatform()
-        {
-            return RuntimeInformation.ProcessArchitecture.ToString();
-        }
-
-        public static string GetBuildConfiguration()
-        {
-#if DEBUG
-            return "Debug";
-#else
-            return "Release";
-#endif
-        }
-
         public static bool IsCoreClr()
         {
             return RuntimeFrameworkDescription.Contains("core");
@@ -131,7 +100,7 @@ namespace Datadog.Trace.TestHelpers
         {
             return IsCoreClr()
                        ? string.Empty
-                       : $"{EnvironmentHelper.GetOS()}-{GetPlatform()}";
+                       : $"{EnvironmentTools.GetOS()}-{EnvironmentTools.GetPlatform()}";
         }
 
         public static string GetSolutionDirectory()
@@ -183,7 +152,7 @@ namespace Datadog.Trace.TestHelpers
             if (IsCoreClr())
             {
                 environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
-                environmentVariables["CORECLR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
+                environmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
 
                 profilerPath = GetProfilerPath();
                 environmentVariables["CORECLR_PROFILER_PATH"] = profilerPath;
@@ -192,7 +161,7 @@ namespace Datadog.Trace.TestHelpers
             else
             {
                 environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
-                environmentVariables["COR_PROFILER"] = EnvironmentHelper.ProfilerClsId;
+                environmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
 
                 profilerPath = GetProfilerPath();
                 environmentVariables["COR_PROFILER_PATH"] = profilerPath;
@@ -285,7 +254,7 @@ namespace Datadog.Trace.TestHelpers
         {
             if (_profilerFileLocation == null)
             {
-                string extension = IsWindows()
+                string extension = EnvironmentTools.IsWindows()
                                        ? "dll"
                                        : "so";
 
@@ -354,9 +323,9 @@ namespace Datadog.Trace.TestHelpers
             {
                 executor = $"C:\\Program Files{(Environment.Is64BitProcess ? string.Empty : " (x86)")}\\IIS Express\\iisexpress.exe";
             }
-            else if (EnvironmentHelper.IsCoreClr())
+            else if (IsCoreClr())
             {
-                executor = IsWindows() ? "dotnet.exe" : "dotnet";
+                executor = EnvironmentTools.IsWindows() ? "dotnet.exe" : "dotnet";
             }
             else
             {
@@ -394,13 +363,13 @@ namespace Datadog.Trace.TestHelpers
             {
                 outputDir = binDir;
             }
-            else if (EnvironmentHelper.GetOS() == "win")
+            else if (EnvironmentTools.GetOS() == "win")
             {
                 outputDir = Path.Combine(
                     binDir,
                     packageVersion,
-                    GetPlatform(),
-                    GetBuildConfiguration(),
+                    EnvironmentTools.GetPlatform(),
+                    EnvironmentTools.GetBuildConfiguration(),
                     GetTargetFramework());
             }
             else
@@ -408,7 +377,7 @@ namespace Datadog.Trace.TestHelpers
                 outputDir = Path.Combine(
                     binDir,
                     packageVersion,
-                    GetBuildConfiguration(),
+                    EnvironmentTools.GetBuildConfiguration(),
                     GetTargetFramework(),
                     "publish");
             }
@@ -433,8 +402,8 @@ namespace Datadog.Trace.TestHelpers
                 "src",
                 "Datadog.Trace.ClrProfiler.Native",
                 "bin",
-                GetBuildConfiguration(),
-                GetPlatform().ToLower());
+                EnvironmentTools.GetBuildConfiguration(),
+                EnvironmentTools.GetPlatform().ToLower());
         }
 
         private string GetExecutingProjectBin()
