@@ -113,7 +113,7 @@ namespace Datadog.Core.Tools
             await Task.FromResult(0);
         }
 
-        public Dictionary<string, int> GetExceptionSummary()
+        public IReadOnlyDictionary<string, int> GetExceptionSummary()
         {
             return Levels.SelectMany(l => l.Exceptions).GroupBy(ex => ex.Message).ToDictionary(group => group.Key, group => group.Count());
         }
