@@ -38,5 +38,5 @@ createIISWebApps
 
 installDotnetTracer
 
-Get-ChildItem -Path 'C:\Program Files\Datadog'
+# Get-ChildItem -Path 'C:\Program Files\Datadog'
 
