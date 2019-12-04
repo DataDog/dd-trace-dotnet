@@ -16,6 +16,8 @@ namespace Datadog.Trace.AspNet
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
         private readonly string _httpContextScopeKey;
+        private readonly string _httpContextEndRequestCountKey;
+        private readonly string _httpContextErrorCountKey;
         private readonly string _requestOperationName;
 
         /// <summary>
@@ -35,6 +37,8 @@ namespace Datadog.Trace.AspNet
             _requestOperationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
             _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _requestOperationName);
+            _httpContextEndRequestCountKey = string.Concat(_httpContextScopeKey, "-endrequestcount");
+            _httpContextErrorCountKey = string.Concat(_httpContextScopeKey, "-errorcount");
         }
 
         /// <inheritdoc />
@@ -72,6 +76,13 @@ namespace Datadog.Trace.AspNet
                     return;
                 }
 
+                if (httpContext.Items.TryGetValue<int>(_httpContextEndRequestCountKey, out var endRequestCount))
+                {
+                    httpContext.Items[_httpContextEndRequestCountKey] = endRequestCount + 1;
+                    httpContext.Items[_httpContextErrorCountKey] = endRequestCount + 1;
+                    return;
+                }
+
                 HttpRequest httpRequest = httpContext.Request;
                 SpanContext propagatedContext = null;
 
@@ -103,6 +114,8 @@ namespace Datadog.Trace.AspNet
                 scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
                 httpContext.Items[_httpContextScopeKey] = scope;
+                httpContext.Items[_httpContextEndRequestCountKey] = 1;
+                httpContext.Items[_httpContextErrorCountKey] = 1;
             }
             catch (Exception ex)
             {
@@ -122,10 +135,19 @@ namespace Datadog.Trace.AspNet
                     return;
                 }
 
-                if (sender is HttpApplication app &&
-                    app.Context.Items[_httpContextScopeKey] is Scope scope)
+                var httpContext = (sender as HttpApplication)?.Context;
+
+                if (httpContext != null &&
+                    httpContext.Items.TryGetValue<int>(_httpContextEndRequestCountKey, out var endRequestCount))
                 {
-                    scope.Dispose();
+                    endRequestCount--;
+                    httpContext.Items[_httpContextEndRequestCountKey] = endRequestCount;
+
+                    if (endRequestCount == 0 &&
+                        httpContext.Items[_httpContextScopeKey] is Scope scope)
+                    {
+                        scope.Dispose();
+                    }
                 }
             }
             catch (Exception ex)
@@ -141,9 +163,16 @@ namespace Datadog.Trace.AspNet
                 var httpContext = (sender as HttpApplication)?.Context;
 
                 if (httpContext?.Error != null &&
-                    httpContext.Items[_httpContextScopeKey] is Scope scope)
+                    httpContext.Items.TryGetValue<int>(_httpContextErrorCountKey, out var errorCount))
                 {
-                    scope.Span.SetException(httpContext.Error);
+                    errorCount--;
+                    httpContext.Items[_httpContextErrorCountKey] = errorCount;
+
+                    if (errorCount == 0 &&
+                        httpContext.Items[_httpContextScopeKey] is Scope scope)
+                    {
+                        scope.Span.SetException(httpContext.Error);
+                    }
                 }
             }
             catch (Exception ex)
