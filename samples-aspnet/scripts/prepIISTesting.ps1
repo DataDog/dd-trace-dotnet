@@ -30,7 +30,7 @@ function installDotnetTracer
 
     Write-Host "About to do msi installation..."
 
-    Start-Process "msiexec.exe" -NoNewWindow -Wait -ArgumentList '/I d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi'
+    Start-Process "msiexec.exe" -NoNewWindow -Wait -ArgumentList '/I d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi /quiet'
 
     
 
