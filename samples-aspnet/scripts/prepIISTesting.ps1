@@ -18,7 +18,7 @@ function installDotnetTracer
     # TODO
     #  1. Get full path name of msi file
 
-    Write-Host $PSVersionTable.PSVersion
+    Get-Item -Path d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\*.msi
 
     $fullMsiPath = "d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi"
 
