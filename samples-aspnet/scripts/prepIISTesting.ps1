@@ -18,11 +18,22 @@ function installDotnetTracer
     # TODO
     #  1. Get full path name of msi file
 
+    Write-Host "Powershell version is $PSVersionTable.PSVersion "
+
+
+    $fullMsiPath = "d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi"
+
+    If (-Not (Test-Path $fullMsiPath ))
+    {
+        Write-Host "Could not find $fullMsiPath"
+        exit 1
+    }
+
     Write-Host "About to do msi installation..."
 
-    # Start-Process "msiexec.exe" -ArgumentList '/I d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi'
+    Start-Process "msiexec.exe" -ArgumentList '/I d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi'
 
-    d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi
+    
 
     if( -not $? )
     {
