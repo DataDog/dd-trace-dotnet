@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Performance.StackExchange.Redis.StackExchangeRedisBenchmarks-20191204-101458</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet=v0.12.0, OS=Windows 10.0.18362
+Intel Core i7-8750H CPU 2.20GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical cores
+  [Host]     : .NET Framework 4.8 (4.8.4042.0), X64 RyuJIT
+  Job-YRNBIY : .NET Framework 4.8 (4.8.4042.0), X64 RyuJIT
+</code></pre>
+<pre><code>IterationCount=100  LaunchCount=1  WarmupCount=0  
+</code></pre>
+
+<table>
+<thead><tr><th>      Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Max</th><th>Gen 0</th><th>Gen 1</th><th>Gen 2</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>EvalSetLargeString</td><td>508.3 us</td><td>8.66 us</td><td>24.15 us</td><td>464.8 us</td><td>573.1 us</td><td>1.9531</td><td>-</td><td>-</td><td>10.55 KB</td>
+</tr></tbody></table>
+</body>
+</html>

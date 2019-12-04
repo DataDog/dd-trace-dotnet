@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>Performance.StackExchange.Redis.StackExchangeRedisBenchmarks-20191203-220723</title>
+<title>Performance.StackExchange.Redis.StackExchangeRedisBenchmarks-20191204-102259</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -16,16 +16,15 @@
 BenchmarkDotNet=v0.12.0, OS=Windows 10.0.18362
 Intel Core i7-8750H CPU 2.20GHz (Coffee Lake), 1 CPU, 12 logical and 6 physical cores
   [Host]     : .NET Framework 4.8 (4.8.4042.0), X64 RyuJIT  [AttachedDebugger]
-  Job-XZSNKY : .NET Framework 4.8 (4.8.4042.0), X64 RyuJIT
+  Job-YRNBIY : .NET Framework 4.8 (4.8.4042.0), X64 RyuJIT
 </code></pre>
-<pre><code>Jit=RyuJit  Platform=X64  Runtime=.NET 4.8  
-IterationCount=1000  LaunchCount=1  WarmupCount=0  
+<pre><code>IterationCount=100  LaunchCount=1  WarmupCount=0  
 </code></pre>
 
 <table>
-<thead><tr><th>      Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Median</th><th>Min</th><th> Max</th>
+<thead><tr><th>      Method</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Min</th><th>Max</th><th>Gen 0</th><th>Gen 1</th><th>Gen 2</th><th>Allocated</th>
 </tr>
-</thead><tbody><tr><td>EvalSetLargeString</td><td>813.2 us</td><td>11.12 us</td><td>105.1 us</td><td>789.9 us</td><td>622.4 us</td><td>1,110.7 us</td>
+</thead><tbody><tr><td>EvalSetLargeString</td><td>2.671 ms</td><td>0.0720 ms</td><td>0.2018 ms</td><td>2.226 ms</td><td>3.233 ms</td><td>-</td><td>-</td><td>-</td><td>105.81 KB</td>
 </tr></tbody></table>
 </body>
 </html>

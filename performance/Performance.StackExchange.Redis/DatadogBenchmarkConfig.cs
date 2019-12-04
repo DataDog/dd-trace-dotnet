@@ -1,5 +1,5 @@
 using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Environments;
+using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
 
 namespace Performance.StackExchange.Redis
@@ -8,18 +8,14 @@ namespace Performance.StackExchange.Redis
     {
         public DatadogBenchmarkConfig()
         {
-            this.With(ConfigOptions.DisableOptimizationsValidator);
-
-            var runtimes = new[] { ClrRuntime.Net48 };
-
-            foreach (var clrRuntime in runtimes)
+            Add(MemoryDiagnoser.Default);
+#if NETCOREAPP3_0
+            Add(ThreadingDiagnoser.Default);
+#endif
+            Add(new Job
             {
-                Add(new Job(EnvironmentMode.RyuJitX64, RunMode.VeryLong)
-                {
-                    Environment = { Runtime = clrRuntime },
-                    Run = { LaunchCount = 1, WarmupCount = 0, IterationCount = 1000 }
-                });
-            }
+                Run = { LaunchCount = 1, WarmupCount = 0, IterationCount = 100 }
+            });
         }
     }
 }

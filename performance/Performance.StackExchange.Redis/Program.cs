@@ -50,7 +50,7 @@ namespace Performance.StackExchange.Redis
 
             var resultDirectory = Path.Combine(currentDirectory, _benchmarkResultFolder);
 
-            if (!Directory.Exists(benchmarkDirectory))
+            if (!Directory.Exists(resultDirectory))
             {
                 throw new Exception("Can't find the benchmarks to save");
             }

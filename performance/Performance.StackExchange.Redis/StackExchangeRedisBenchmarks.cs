@@ -6,7 +6,7 @@ using StackExchange.Redis;
 namespace Performance.StackExchange.Redis
 {
     [MinColumn, MaxColumn]
-    [MarkdownExporter, AsciiDocExporter, HtmlExporter, CsvExporter, RPlotExporter]
+    [MarkdownExporter, AsciiDocExporter, HtmlExporter, CsvExporter]
     [Config(typeof(DatadogBenchmarkConfig))]
     public class StackExchangeRedisBenchmarks
     {
