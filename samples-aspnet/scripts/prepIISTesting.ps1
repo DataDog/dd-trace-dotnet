@@ -17,11 +17,14 @@ function installDotnetTracer
 {
     $msifiles = Get-Item -Path d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\*.msi
 
+    Write-Host 'number msi files: ' $msifiles.Count
+    Write-Host 'name of file: ' $msifiles[0].Name
+
     $fullMsiPath = "D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\" + $msifiles[0].Name
 
     Write-Host "About to run installer: " $fullMsiPath
 
-    If (-Not (Test-Path $fullMsiPath ))
+    If (-Not (Test-Path $fullMsiPath )) 
     {
         Write-Host "Could not find $fullMsiPath"
         exit 1
