@@ -8,7 +8,7 @@ using Datadog.Trace;
 
 namespace Samples.WebForms
 {
-    public class CustomLoggingModule : IHttpModule
+    public class DDCustomLoggingModule : IHttpModule
     {
         public void Dispose()
         {
@@ -23,12 +23,12 @@ namespace Samples.WebForms
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
-            Debug.Write("\nCustomLoggingModule: OnBeginRequest: call from: " + HttpContext.Current.Request.Path + "\n");
+            Debug.Write("\nDDCustomLoggingModule: OnBeginRequest: call from: " + HttpContext.Current.Request.Path + "\n");
         }
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
-            Debug.Write("\nCustomLoggingModule: OnEndRequest: call from: " + HttpContext.Current.Request.Path + "\n");
+            Debug.Write("\nDDCustomLoggingModule: OnEndRequest: call from: " + HttpContext.Current.Request.Path + "\n");
         }
     }
 }
