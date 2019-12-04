@@ -15,12 +15,16 @@ function createIISWebApps
 
 function installDotnetTracer
 {
+    # $msifiles = Get-Item -Path d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\*.msi
+    
     $msifiles = Get-Item -Path d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\*.msi
+    $basefilename = $msifiles[0].Name
 
     Write-Host 'number msi files: ' $msifiles.Count
     Write-Host 'name of file: ' $msifiles[0].Name
 
-    $fullMsiPath = "D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\" + $msifiles[0].Name
+    # $fullMsiPath = "D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\" + $msifiles[0].Name
+    $fullMsiPath = "D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\" + $basefilename
 
     Write-Host "About to run installer: " $fullMsiPath
 
@@ -61,3 +65,4 @@ function VerifyInstall
 createIISWebApps
 installDotnetTracer
 VerifyInstall
+
