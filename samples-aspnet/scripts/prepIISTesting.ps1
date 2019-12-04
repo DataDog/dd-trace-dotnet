@@ -41,23 +41,26 @@ function installDotnetTracer
     }
 }
 
+function VerifyInstall
+{
+    $instpath = $env:ProgramFiles
+    $instpath += '\Datadog'
+
+    If (-Not (Test-Path $instpath ))
+    {
+        Write-Host 'No installation path found: ' $instpath
+    }
+    Else
+    {
+        Write-Host 'Found installation path: ' $instpath
+    }
+
+}
+
 
 # Main entry point of script
 
 createIISWebApps
-
 installDotnetTracer
-
-$instpath = $env:ProgramFiles\Datadog
-
-If (-Not (Test-Path $instpath ))
-{
-    Write-Host "No installation path found: $instpath"
-}
-Else
-{
-    Write-Host "Found installation path: $instpath"
-}
-
-# Get-ChildItem -Path 'C:\Program Files\Datadog'
+VerifyInstall
 
