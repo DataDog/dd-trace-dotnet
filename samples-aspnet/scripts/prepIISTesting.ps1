@@ -18,8 +18,7 @@ function installDotnetTracer
     # TODO
     #  1. Get full path name of msi file
 
-    Write-Host "Powershell version is $PSVersionTable.PSVersion "
-
+    Write-Host $PSVersionTable.PSVersion
 
     $fullMsiPath = "d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi"
 
@@ -31,7 +30,7 @@ function installDotnetTracer
 
     Write-Host "About to do msi installation..."
 
-    Start-Process "msiexec.exe" -ArgumentList '/I d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi'
+    Start-Process "msiexec.exe" -NoNewWindow -Wait -ArgumentList '/I d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi'
 
     
 
@@ -48,6 +47,17 @@ function installDotnetTracer
 createIISWebApps
 
 installDotnetTracer
+
+$instpath = $env:ProgramFiles\Datadog
+
+If (-Not (Test-Path $instpath ))
+{
+    Write-Host "No installation path found: $instpath"
+}
+Else
+{
+    Write-Host "Found installation path: $instpath"
+}
 
 # Get-ChildItem -Path 'C:\Program Files\Datadog'
 
