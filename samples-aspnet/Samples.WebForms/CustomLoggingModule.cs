@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Web;
@@ -22,12 +23,12 @@ namespace Samples.WebForms
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
-            File.WriteAllText("C:\\logs\\Samples.WebForms.log", $"dd.trace_id={CorrelationIdentifier.TraceId}, dd.span_id={CorrelationIdentifier.SpanId}{Environment.NewLine}");
+            Debug.Write("\nCustomLoggingModule: OnBeginRequest: call from: " + HttpContext.Current.Request.Path + "\n");
         }
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
-            // Do nothing
+            Debug.Write("\nCustomLoggingModule: OnEndRequest: call from: " + HttpContext.Current.Request.Path + "\n");
         }
     }
 }
