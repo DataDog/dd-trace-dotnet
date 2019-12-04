@@ -20,12 +20,9 @@ function installDotnetTracer
 
     $msifiles = Get-Item -Path d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\*.msi
 
-    Write-Host 'Count of msi files: ' $msifiles.Count
+    $fullMsiPath = "d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\" + $msifiles[0].Name
 
-    Write-Host $msifiles[0].Name
-
-
-    $fullMsiPath = "d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.9.1-prerelease-x64.msi"
+    Write-Host "About to run installer: " $fullMsiPath
 
     If (-Not (Test-Path $fullMsiPath ))
     {
