@@ -32,7 +32,7 @@ namespace Datadog.Core.Tools
 
         public void RegisterLevel(Action action, int iterations, string friendlyName = null, int numberOfRegisters = 1)
         {
-            while (numberOfRegisters-- > 0)
+            for (var i = 0; i < numberOfRegisters; i++)
             {
                 Levels.Add(new Level()
                 {
