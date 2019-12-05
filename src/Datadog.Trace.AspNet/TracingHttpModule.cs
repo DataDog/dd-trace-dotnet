@@ -65,7 +65,7 @@ namespace Datadog.Trace.AspNet
                     return;
                 }
 
-                var httpContext = GetHttpContext(sender);
+                var httpContext = (sender as HttpApplication)?.Context;
 
                 if (httpContext == null)
                 {
@@ -122,9 +122,8 @@ namespace Datadog.Trace.AspNet
                     return;
                 }
 
-                var httpContext = GetHttpContext(sender);
-
-                if (httpContext?.Items[_httpContextScopeKey] is Scope scope)
+                if (sender is HttpApplication app &&
+                    app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
                     scope.Dispose();
                 }
@@ -139,7 +138,7 @@ namespace Datadog.Trace.AspNet
         {
             try
             {
-                var httpContext = GetHttpContext(sender);
+                var httpContext = (sender as HttpApplication)?.Context;
 
                 if (httpContext?.Error != null &&
                     httpContext.Items[_httpContextScopeKey] is Scope scope)
@@ -151,16 +150,6 @@ namespace Datadog.Trace.AspNet
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
-        }
-
-        private HttpContext GetHttpContext(object sender)
-        {
-            if (sender is HttpApplication httpApp)
-            {
-                return httpApp.Context;
-            }
-
-            return null;
         }
     }
 }
