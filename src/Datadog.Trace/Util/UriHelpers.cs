@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Util
 {
     internal static class UriHelpers
     {

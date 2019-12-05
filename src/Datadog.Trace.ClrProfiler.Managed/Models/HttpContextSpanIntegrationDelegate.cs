@@ -7,6 +7,7 @@ using Datadog.Trace.ClrProfiler.Interfaces;
 using Datadog.Trace.ClrProfiler.Services;
 using Datadog.Trace.Interfaces;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Models
 {

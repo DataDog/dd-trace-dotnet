@@ -1,8 +1,8 @@
 using System;
 using System.Web;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AspNet
 {
