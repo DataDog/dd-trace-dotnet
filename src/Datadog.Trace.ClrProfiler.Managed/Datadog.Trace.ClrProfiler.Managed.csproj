@@ -3,7 +3,13 @@
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler</RootNamespace>
     <Version>1.10.0</Version>
-    <IsPackable>false</IsPackable>
+    <Title>Datadog APM - ClrProfiler</Title>
+    <Description>Automatic instrumentation library used by .NET Tracer for Datadog APM. Requires separate native library that implements the CLR Profiling API.</Description>	
+    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
+
+    <!-- Remove the Datadog.Trace.ClrProfiler.Managed.dll assembly from the output and hide inapplicable warning (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128) -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
