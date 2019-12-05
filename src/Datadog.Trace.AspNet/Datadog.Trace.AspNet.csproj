@@ -11,10 +11,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
-  </ItemGroup>
 
-  <ItemGroup>
     <Reference Include="System.Web" />
+
+    <!-- reference assemblies let us build with the .NET Framework SDK installed -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
