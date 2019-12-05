@@ -7,7 +7,7 @@
     <Description>OBSOLETE. This package is deprecated and exists only for backwards compatibility.
       Users who need manual instrumentation should reference the "Datadog.Trace" package.
       Users who need ASP.NET instrumentation should reference the "Datadog.Trace.AspNet" package.
-   </Description>	
+   </Description>
     <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
 
     <!-- Remove the Datadog.Trace.ClrProfiler.Managed.dll assembly from the output and hide inapplicable warning (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128) -->
@@ -30,6 +30,8 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Web" />
     <Reference Include="System.ServiceModel" />
+
+    <ProjectReference Include="..\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
