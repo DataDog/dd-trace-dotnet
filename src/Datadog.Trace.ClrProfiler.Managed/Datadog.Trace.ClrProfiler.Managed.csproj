@@ -4,7 +4,10 @@
     <RootNamespace>Datadog.Trace.ClrProfiler</RootNamespace>
     <Version>1.10.0</Version>
     <Title>Datadog APM - ClrProfiler</Title>
-    <Description>Automatic instrumentation library used by .NET Tracer for Datadog APM. Requires separate native library that implements the CLR Profiling API.</Description>	
+    <Description>OBSOLETE. This package is deprecated and exists only for backwards compatibility.
+      Users who need manual instrumentation should reference the "Datadog.Trace" package.
+      Users who need ASP.NET instrumentation should reference the "Datadog.Trace.AspNet" package.
+   </Description>	
     <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
 
     <!-- Remove the Datadog.Trace.ClrProfiler.Managed.dll assembly from the output and hide inapplicable warning (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128) -->
