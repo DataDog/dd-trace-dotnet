@@ -15,7 +15,7 @@ namespace Datadog.Trace.AspNet
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
-        private readonly string _httpContextDelegateKey;
+        private readonly string _httpContextScopeKey;
         private readonly string _operationName;
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Datadog.Trace.AspNet
         {
             _operationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
-            _httpContextDelegateKey = string.Concat("__Datadog.Trace.ClrProfiler.Integrations.TracingHttpModule-", _operationName);
+            _httpContextScopeKey = string.Concat("__Datadog.Trace.ClrProfiler.Integrations.TracingHttpModule-", _operationName);
         }
 
         /// <inheritdoc />
@@ -102,7 +102,7 @@ namespace Datadog.Trace.AspNet
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
                 scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
-                httpContext.Items[_httpContextDelegateKey] = scope;
+                httpContext.Items[_httpContextScopeKey] = scope;
             }
             catch (Exception ex)
             {
@@ -124,7 +124,7 @@ namespace Datadog.Trace.AspNet
 
                 var httpContext = GetHttpContext(sender);
 
-                if (httpContext?.Items[_httpContextDelegateKey] is Scope scope)
+                if (httpContext?.Items[_httpContextScopeKey] is Scope scope)
                 {
                     scope.Dispose();
                 }
@@ -142,7 +142,7 @@ namespace Datadog.Trace.AspNet
                 var httpContext = GetHttpContext(sender);
 
                 if (httpContext?.Error != null &&
-                    httpContext.Items[_httpContextDelegateKey] is Scope scope)
+                    httpContext.Items[_httpContextScopeKey] is Scope scope)
                 {
                     scope.Span.SetException(httpContext.Error);
                 }
