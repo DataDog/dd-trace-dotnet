@@ -31,9 +31,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string expectedResourceSuffix)
         {
             await AssertHttpSpan(
+                "Samples.AspNetMvc5",
                 path,
                 _iisFixture.Agent,
-                _iisFixture.HttpPort,
                 HttpStatusCode.OK,
                 "web",
                 "aspnet-mvc.request",

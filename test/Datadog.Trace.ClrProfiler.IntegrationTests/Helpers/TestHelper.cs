@@ -221,9 +221,47 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         protected async Task AssertHttpSpan(
+            string application,
+            string path,
+            MockTracerAgent agent,
+            HttpStatusCode expectedHttpStatusCode,
+            string expectedSpanType,
+            string expectedOperationName,
+            string expectedResourceName)
+        {
+            await InternalAssertHttpSpan(
+                application,
+                path,
+                agent,
+                expectedHttpStatusCode,
+                expectedSpanType,
+                expectedOperationName,
+                expectedResourceName);
+        }
+
+        protected async Task AssertHttpSpan(
             string path,
             MockTracerAgent agent,
             int httpPort,
+            HttpStatusCode expectedHttpStatusCode,
+            string expectedSpanType,
+            string expectedOperationName,
+            string expectedResourceName)
+        {
+            await InternalAssertHttpSpan(
+                $"http://localhost:{httpPort}",
+                path,
+                agent,
+                expectedHttpStatusCode,
+                expectedSpanType,
+                expectedOperationName,
+                expectedResourceName);
+        }
+
+        protected async Task InternalAssertHttpSpan(
+            string application,
+            string path,
+            MockTracerAgent agent,
             HttpStatusCode expectedHttpStatusCode,
             string expectedSpanType,
             string expectedOperationName,
@@ -236,7 +274,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // disable tracing for this HttpClient request
                 httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
                 var testStart = DateTime.UtcNow;
-                var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
+                var response = await httpClient.GetAsync(application + path);
                 var content = await response.Content.ReadAsStringAsync();
                 Output.WriteLine($"[http] {response.StatusCode} {content}");
                 Assert.Equal(expectedHttpStatusCode, response.StatusCode);
