@@ -146,10 +146,6 @@
       <Project>{b4ae8b0f-c2b2-41df-88bb-d97e267d8964}</Project>
       <Name>Samples.Shared</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj">
-      <Project>{f2780421-295d-4187-912c-71d34ec35c27}</Project>
-      <Name>Datadog.Trace.AspNet</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
       <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
       <Name>Datadog.Trace.ClrProfiler.Managed</Name>
