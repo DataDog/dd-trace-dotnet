@@ -15,8 +15,6 @@ function createIISWebApps
 
 function installDotnetTracer
 {
-    # $msifiles = Get-Item -Path d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\*.msi
-    
     $msifiles = Get-Item -Path d:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\*.msi
     $basefilename = $msifiles[0].Name
 
@@ -24,9 +22,10 @@ function installDotnetTracer
     Write-Host 'name of file: ' $msifiles[0].Name
 
     # $fullMsiPath = "D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\" + $msifiles[0].Name
-    # $fullMsiPath = "D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\" + $basefilename
+    $fullMsiPath = 'D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\'
+    $fullMsiPath += $basefilename
 
-    $fullMsiPath = "D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.10.0-x64.msi"
+    # $fullMsiPath = "D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.10.0-x64.msi"
 
     Write-Host "About to run installer: " $fullMsiPath
 
@@ -36,8 +35,12 @@ function installDotnetTracer
         exit 1
     }
 
+    $arguments = '/I '
+    $arguments += $fullMsiPath
+    $arguments += ' /quiet'
+    Start-Process "msiexec.exe" -NoNewWindow -Wait -ArgumentList $arguments
     # Start-Process "msiexec.exe" -NoNewWindow -Wait -ArgumentList '/I $fullMsiPath /quiet'
-    Start-Process "msiexec.exe" -NoNewWindow -Wait -ArgumentList '/I D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.10.0-x64.msi /quiet'
+    # Start-Process "msiexec.exe" -NoNewWindow -Wait -ArgumentList '/I D:\a\1\s\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\Release\x64\en-us\datadog-dotnet-apm-1.10.0-x64.msi /quiet'
 
     if( -not $? )
     {
