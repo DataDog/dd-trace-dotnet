@@ -1,20 +1,23 @@
 using System.Web;
 using Datadog.Trace.AspNet;
 
-[assembly: PreApplicationStartMethod(typeof(Startup), "Register")]
+[assembly: PreApplicationStartMethod(typeof(HttpApplicationStartup), "Register")]
 
 namespace Datadog.Trace.AspNet
 {
     /// <summary>
-    ///     Used as the target of a PreApplicationStartMethodAttribute on the assembly to load the TracingHttpModule into the pipeline
+    /// Helper class use to register the <see cref="TracingHttpModule"/> into the ASP.NET pipeline.
     /// </summary>
-    public static class Startup
+    public static class HttpApplicationStartup
     {
         /// <summary>
-        ///     Registers the TracingHttpModule at ASP.NET startup into the pipeline
+        /// Registers the <see cref="TracingHttpModule"/> into the ASP.NET pipeline.
         /// </summary>
+        /// <remarks>This method replaces <see cref="Tracer.Instance"/> with a new <see cref="Tracer"/> instance.</remarks>
         public static void Register()
         {
+            // in ASP.NET, we always want to try to use AspNetScopeManager,
+            // even if the "AspNet" integration is disabled
             Tracer.Instance = new Tracer(
                 settings: null,
                 agentWriter: null,
