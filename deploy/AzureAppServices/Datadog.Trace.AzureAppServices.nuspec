@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Datadog.Trace.AzureAppServices</id>
+    <version>1.10.19-prerelease</version>
+    <title>Beta .NET Tracer for Datadog APM</title>
+    <authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd;bobuva</authors>
+    <!--<icon>packageIcon.png</icon>-->
+    <license type="expression">Apache-2.0</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+      Beta .NET Tracer
+    </description>
+    <tags>AzureSiteExtension Datadog .NET APM Tracing</tags>
+    <packageTypes>
+      <packageType name="AzureSiteExtension" />
+    </packageTypes>
+  </metadata>
+  <files>
+    <file src="content\**\*.*" target="content" />
+  </files>
+</package>

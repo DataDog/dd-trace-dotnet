@@ -15,7 +15,8 @@ const WSTRING debug_enabled = "DD_TRACE_DEBUG"_W;
 
 // Sets the paths to integration definition JSON files.
 // Supports multiple values separated with semi-colons, for example:
-// "C:\Program Files\Datadog .NET Tracer\integrations.json;D:\temp\test_integrations.json"
+// "C:\Program Files\Datadog .NET
+// Tracer\integrations.json;D:\temp\test_integrations.json"
 const WSTRING integrations_path = "DD_INTEGRATIONS"_W;
 
 // Sets the path to the profiler's home directory, for example:
@@ -66,6 +67,20 @@ const WSTRING log_path = "DD_TRACE_LOG_PATH"_W;
 // https://github.com/dotnet/coreclr/issues/24676
 // https://github.com/dotnet/coreclr/issues/12468
 const WSTRING clr_disable_optimizations = "DD_CLR_DISABLE_OPTIMIZATIONS"_W;
+
+// Custom sampling rules to be applied by the tracer
+const WSTRING custom_sampling_rules = "DD_CUSTOM_SAMPLING_RULES"_W;
+
+// Indicates whether the profiler is running in the context
+// of Azure App Services
+const WSTRING azure_app_services = "DD_AZURE_APP_SERVICES"_W;
+
+// The app_pool_id in the context of azure app services
+const WSTRING azure_app_services_app_pool_id = "APP_POOL_ID"_W;
+
+// The DOTNET_CLI_TELEMETRY_PROFILE in the context of azure app services
+const WSTRING azure_app_services_cli_telemetry_profile_value =
+    "DOTNET_CLI_TELEMETRY_PROFILE"_W;
 
 }  // namespace environment
 }  // namespace trace

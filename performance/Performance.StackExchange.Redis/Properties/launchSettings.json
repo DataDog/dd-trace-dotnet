@@ -14,7 +14,7 @@
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
 
-        "DD_TRACE_DEBUG": "0"
+        "DD_TRACE_DEBUG": "0",
 
         "DD_CUSTOM_SAMPLING_RULES": "rate=0.05, service=.+-redis"
       },

@@ -256,6 +256,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper", "s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UpdateVendors", "tools\UpdateVendors\UpdateVendors.csproj", "{72FB583A-A1B0-4B5F-8658-617B100DCD8E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrepareRelease", "tools\PrepareRelease\PrepareRelease.csproj", "{EBDDF6D7-59B8-4831-80C6-458C1ABBFC63}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Log4Net.SerializationException", "reproductions\Log4Net.SerializationException\Log4Net.SerializationException.csproj", "{35F581E9-3D7C-4E80-8DFF-D437B0D86710}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApplicationWithLog4Net", "reproduction-dependencies\ApplicationWithLog4Net\ApplicationWithLog4Net.csproj", "{1C34D970-6081-4EFA-8F2F-5AD2B146AC58}"
@@ -284,6 +286,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc31", "samples\Samples.AspNetCoreMvc31\Samples.AspNetCoreMvc31.csproj", "{303F8E41-691F-4453-AB7D-88A0036C0465}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc21", "samples\Samples.AspNetCoreMvc21\Samples.AspNetCoreMvc21.csproj", "{D141BD06-DD95-4CAF-85CD-657116E0DAD4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AzureAppServices", "deploy\AzureAppServices\Datadog.Trace.AzureAppServices.csproj", "{BD818084-A89D-4FF4-9C8A-09A1491B6569}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateAzureSiteExtension", "tools\GenerateAzureSiteExtension\GenerateAzureSiteExtension.csproj", "{454B9EA7-9B9A-4CB8-B019-988579533BC1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NLog10LogsInjection.NullReferenceException", "reproductions\NLog10LogsInjection.NullReferenceException\NLog10LogsInjection.NullReferenceException.csproj", "{6209C19B-42E4-4FCF-A539-FD1E4F4A34DB}"
 EndProject

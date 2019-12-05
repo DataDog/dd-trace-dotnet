@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+ 
+  <PropertyGroup>
+    <!-- TODO: Get rid of this if possible -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <!-- This is a content only project, it exists only to auto-update so we see the entire site extensions package automatically -->
+  <Target Name="Build"/>
+  <Target Name="Rebuild"/>
+  <Target Name="Clean"/>
+  
+</Project> 
