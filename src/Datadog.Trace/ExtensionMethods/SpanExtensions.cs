@@ -10,6 +10,21 @@ namespace Datadog.Trace.ExtensionMethods
     public static class SpanExtensions
     {
         /// <summary>
+        /// Sets the sampling priority for the trace that contains the specified <see cref="Span"/>.
+        /// </summary>
+        /// <param name="span">A span that belongs to the trace.</param>
+        /// <param name="samplingPriority">The new sampling priority for the trace.</param>
+        public static void SetTraceSamplingPriority(this Span span, SamplingPriority samplingPriority)
+        {
+            if (span == null) { throw new ArgumentNullException(nameof(span)); }
+
+            if (span.Context.TraceContext != null)
+            {
+                span.Context.TraceContext.SamplingPriority = samplingPriority;
+            }
+        }
+
+        /// <summary>
         /// Adds standard tags to a span with values taken from the specified <see cref="DbCommand"/>.
         /// </summary>
         /// <param name="span">The span to add the tags to.</param>
