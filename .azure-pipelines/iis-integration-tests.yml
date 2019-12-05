@@ -118,3 +118,11 @@ jobs:
       targetType: 'filePath'
       filePath: 'samples-aspnet\scripts\prepIISTesting.ps1'
       workingDirectory: 'samples-aspnet\scripts'
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+      arguments: '--filter "RunOnWindows=True|Category=Smoke" -p:Platform=$(buildPlatform)'
