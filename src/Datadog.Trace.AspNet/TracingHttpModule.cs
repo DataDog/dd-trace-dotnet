@@ -114,14 +114,14 @@ namespace Datadog.Trace.AspNet
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
-            {
-                // integration disabled
-                return;
-            }
-
             try
             {
+                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+                {
+                    // integration disabled
+                    return;
+                }
+
                 var httpContext = GetHttpContext(sender);
 
                 if (httpContext?.Items[_httpContextDelegateKey] is Scope scope)
