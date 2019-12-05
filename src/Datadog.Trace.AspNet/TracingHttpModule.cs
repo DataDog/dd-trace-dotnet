@@ -34,7 +34,7 @@ namespace Datadog.Trace.AspNet
         {
             _operationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
-            _httpContextScopeKey = string.Concat("__Datadog.Trace.ClrProfiler.Integrations.TracingHttpModule-", _operationName);
+            _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _operationName);
         }
 
         /// <inheritdoc />
