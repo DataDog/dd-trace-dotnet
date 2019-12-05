@@ -23,12 +23,12 @@ namespace Samples.WebForms
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
-            Debug.Write("\nDDCustomLoggingModule: OnBeginRequest: call from: " + HttpContext.Current.Request.Path + "\n");
+            Debug.Write("\nDDCustomLoggingModule: OnBeginRequest: call from: " + HttpContext.Current.Request.Path + ". TraceID:" + CorrelationIdentifier.TraceId + "\n");
         }
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
-            Debug.Write("\nDDCustomLoggingModule: OnEndRequest: call from: " + HttpContext.Current.Request.Path + "\n");
+            Debug.Write("\nDDCustomLoggingModule: OnEndRequest: call from: " + HttpContext.Current.Request.Path + ". TraceID:" + CorrelationIdentifier.TraceId + "\n");
         }
     }
 }
