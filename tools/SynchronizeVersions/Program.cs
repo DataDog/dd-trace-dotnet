@@ -62,6 +62,10 @@ namespace SynchronizeVersions
                 NugetVersionReplace);
 
             SynchronizeVersion(
+                "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                NugetVersionReplace);
+
+            SynchronizeVersion(
                 "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
                 WixProjReplace);
 
