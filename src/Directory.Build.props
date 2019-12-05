@@ -2,8 +2,7 @@
   <Import Project="..\Directory.Build.props" />
 
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;net461;netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net45;net461;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <!-- NuGet packages -->
@@ -27,5 +26,8 @@
 
     <!-- StyleCop -->
     <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
+
+    <!-- reference assemblies let us target .NET Framework without the SDK (for example, on non-Windows) -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
 </Project>
