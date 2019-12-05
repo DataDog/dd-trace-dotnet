@@ -112,6 +112,38 @@ jobs:
       msbuildArguments: /t:msi /p:Configuration=Release;Platform=x64
       maximumCpuCount: True
 
+  # Install the .NET Core 3.0 SDK and use it from here on out, since it is only
+  # the .NET Core sample apps that require the .NET Core 3.0 SDK
+  - task: UseDotNet@2
+    displayName: install dotnet core 3.0 sdk
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore
+    inputs:
+      command: restore
+      projects: |
+        reproductions/**/*.csproj
+        samples/**/*.csproj
+        test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        !reproductions/**/ExpenseItDemo*.csproj
+        !reproductions/**/EntityFramework6x*.csproj
+      vstsFeed: $(packageFeed)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build integration tests
+    inputs:
+      command: build
+      projects: |
+        reproductions/**/*.csproj
+        samples/**/*.csproj
+        test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        !reproductions/**/ExpenseItDemo*.csproj
+        !reproductions/**/EntityFramework6x*.csproj
+      arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
+
   - task: PowerShell@2
     displayName: 'Create IIS web applications and install .NET Tracer'
     inputs:
