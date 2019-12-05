@@ -16,7 +16,7 @@ namespace Datadog.Trace.AspNet
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
         private readonly string _httpContextScopeKey;
-        private readonly string _operationName;
+        private readonly string _requestOperationName;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TracingHttpModule" /> class.
@@ -32,9 +32,9 @@ namespace Datadog.Trace.AspNet
         /// <param name="operationName">The operation name to be used for the trace/span data generated</param>
         public TracingHttpModule(string operationName)
         {
-            _operationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
+            _requestOperationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
-            _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _operationName);
+            _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _requestOperationName);
         }
 
         /// <inheritdoc />
@@ -95,7 +95,7 @@ namespace Datadog.Trace.AspNet
                 string path = UriHelpers.GetRelativeUrl(httpRequest.Url, tryRemoveIds: true);
                 string resourceName = $"{httpMethod} {path.ToLowerInvariant()}";
 
-                scope = tracer.StartActive(_operationName, propagatedContext);
+                scope = tracer.StartActive(_requestOperationName, propagatedContext);
                 scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url);
 
                 // set analytics sample rate if enabled
