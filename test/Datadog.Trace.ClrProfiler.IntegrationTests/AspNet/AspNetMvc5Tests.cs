@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
+    [Trait("Category", "IISTests")]
     public class AspNetMvc5Tests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;

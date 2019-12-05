@@ -157,4 +157,4 @@ jobs:
       command: test
       configuration: $(buildConfiguration)
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-      arguments: '--filter "RunOnWindows=True|Category=Smoke" -p:Platform=$(buildPlatform)'
+      arguments: '--filter "RunOnWindows=True|Category=IISTests" -p:Platform=x64'
