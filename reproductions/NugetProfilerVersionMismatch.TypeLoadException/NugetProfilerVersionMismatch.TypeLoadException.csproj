@@ -1,9 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
 
-  <PropertyGroup>
-    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Datadog.Trace.ClrProfiler.Managed" Version="1.8.0" />
     <PackageReference Include="Npgsql" Version="4.0.4" />

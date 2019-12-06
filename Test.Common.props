@@ -19,8 +19,7 @@
     <DefineConstants Condition="'$(PerformComprehensiveTesting)'=='true'">$(DefineConstants);COMPREHENSIVE_TESTS</DefineConstants>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(ExcludeManagedProfiler)' != 'true' and
-                        '$(LoadManagedProfilerFromProfilerDirectory)' != 'true' ">
+  <ItemGroup Condition="'$(ExcludeManagedProfiler)' != 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
   </ItemGroup>
 
@@ -35,7 +34,7 @@
              Link="profiler-lib\integrations.json" />
   </ItemGroup>
 
-  <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild" Condition=" '$(LoadManagedProfilerFromProfilerDirectory)' == 'true'">
+  <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild">
     <ItemGroup>
       <!-- Subfolders of the output directory should each be a target framework -->
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
