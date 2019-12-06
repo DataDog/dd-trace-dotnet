@@ -19,7 +19,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static string ResolveManagedProfilerDirectory()
         {
             string tracerFrameworkDirectory = "netstandard2.0";
+            Console.WriteLine($"ResolveManagedProfilerDirectory: DD_DOTNET_TRACER_HOME={Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME")}");
+            Console.WriteLine($"ResolveManagedProfilerDirectory: DD_INTEGRATIONS={Environment.GetEnvironmentVariable("DD_INTEGRATIONS")}");
             var tracerHomeDirectory = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? Path.GetDirectoryName(Environment.GetEnvironmentVariable("DD_INTEGRATIONS")) ?? string.Empty;
+            Console.WriteLine($"ResolveManagedProfilerDirectory: returning {Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory)}");
             return Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
         }
 
