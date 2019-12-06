@@ -9,6 +9,7 @@
 
 #include "../../src/Datadog.Trace.ClrProfiler.Native/integration_loader.h"
 #include "../../src/Datadog.Trace.ClrProfiler.Native/environment_variables.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/util.h"
 
 using namespace trace;
 
@@ -196,7 +197,7 @@ TEST(IntegrationLoaderTest, LoadsFromEnvironment) {
   std::vector<std::wstring> expected_names = {L"test-integration-1",
                                               L"test-integration-2"};
   std::vector<std::wstring> actual_names;
-  for (auto& integration : LoadIntegrationsFromEnvironment()) {
+  for (auto& integration : LoadIntegrations(GetEnvironmentValue(trace::environment::integrations_path))) {
     actual_names.push_back(integration.integration_name);
   }
   EXPECT_EQ(expected_names, actual_names);

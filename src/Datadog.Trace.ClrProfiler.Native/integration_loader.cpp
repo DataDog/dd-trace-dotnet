@@ -11,9 +11,9 @@ namespace trace {
 
 using json = nlohmann::json;
 
-std::vector<Integration> LoadIntegrationsFromEnvironment() {
+std::vector<Integration> LoadIntegrations(const WSTRING& file_paths) {
   std::vector<Integration> integrations;
-  for (const auto f : GetEnvironmentValues(environment::integrations_path)) {
+  for (const auto f : GetValues(file_paths)) {
     Debug("Loading integrations from file: ", f);
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {

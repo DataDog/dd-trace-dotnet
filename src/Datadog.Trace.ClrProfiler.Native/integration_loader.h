@@ -14,9 +14,9 @@ namespace trace {
 
 using json = nlohmann::json;
 
-// LoadIntegrationsFromEnvironment loads integrations from any files specified
-// in the DD_INTEGRATIONS environment variable
-std::vector<Integration> LoadIntegrationsFromEnvironment();
+// LoadIntegrations loads integrations from any files specified
+// in the input string
+std::vector<Integration> LoadIntegrations(const WSTRING& file_paths);
 // LoadIntegrationsFromFile loads the integrations from a file
 std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path);
 // LoadIntegrationsFromFile loads the integrations from a stream

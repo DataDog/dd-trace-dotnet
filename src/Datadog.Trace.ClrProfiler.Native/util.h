@@ -23,13 +23,13 @@ WSTRING Trim(const WSTRING &str);
 // name. Space is trimmed.
 WSTRING GetEnvironmentValue(const WSTRING &name);
 
-// GetEnvironmentValues returns environment variable values for the given name
-// split by the delimiter. Space is trimmed and empty values are ignored.
-std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name,
-                                          const wchar_t delim);
+// GetValues splits the input string by the delimiter, additionally
+// trimming space and ignoring empty values.
+std::vector<WSTRING> GetValues(const WSTRING &delimited_values,
+                               const wchar_t delim);
 
-// GetEnvironmentValues calls GetEnvironmentValues with a semicolon delimiter.
-std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name);
+// GetValues calls GetValues with a semicolon delimiter.
+std::vector<WSTRING> GetValues(const WSTRING &delimited_values);
 
 template <class Container>
 bool Contains(const Container &items,

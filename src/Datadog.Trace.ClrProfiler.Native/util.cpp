@@ -66,10 +66,10 @@ WSTRING GetEnvironmentValue(const WSTRING &name) {
 #endif
 }
 
-std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name,
-                                          const wchar_t delim) {
+std::vector<WSTRING> GetValues(const WSTRING &delimited_values,
+                               const wchar_t delim) {
   std::vector<WSTRING> values;
-  for (auto s : Split(GetEnvironmentValue(name), delim)) {
+  for (auto s : Split(delimited_values, delim)) {
     s = Trim(s);
     if (!s.empty()) {
       values.push_back(s);
@@ -78,8 +78,8 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name,
   return values;
 }
 
-std::vector<WSTRING> GetEnvironmentValues(const WSTRING &name) {
-  return GetEnvironmentValues(name, L';');
+std::vector<WSTRING> GetValues(const WSTRING &delimited_values) {
+  return GetValues(delimited_values, L';');
 }
 
 }  // namespace trace
