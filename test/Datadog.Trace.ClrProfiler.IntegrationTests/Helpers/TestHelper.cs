@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -34,8 +35,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output = output;
 
             PathToSample = EnvironmentHelper.GetSampleApplicationOutputDirectory();
-            Output.WriteLine($"Platform: {EnvironmentHelper.GetPlatform()}");
-            Output.WriteLine($"Configuration: {EnvironmentHelper.GetBuildConfiguration()}");
+            Output.WriteLine($"Platform: {EnvironmentTools.GetPlatform()}");
+            Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Application: {GetSampleApplicationPath()}");
@@ -44,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected EnvironmentHelper EnvironmentHelper { get; set; }
 
-        protected string TestPrefix => $"{EnvironmentHelper.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
+        protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
 
         protected string SampleAppName { get; }
 

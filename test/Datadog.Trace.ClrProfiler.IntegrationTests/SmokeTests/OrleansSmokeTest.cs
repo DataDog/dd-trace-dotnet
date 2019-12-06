@@ -1,5 +1,4 @@
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
-using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
-            CheckForSmoke();
+            CheckForSmoke(shouldDeserializeTraces: false);
         }
     }
 }
