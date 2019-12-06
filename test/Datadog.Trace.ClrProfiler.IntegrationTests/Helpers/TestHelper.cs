@@ -229,7 +229,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string expectedResourceName)
         {
             await InternalAssertHttpSpan(
-                application,
+                "http://localhost/" + application,
                 path,
                 agent,
                 expectedHttpStatusCode,
