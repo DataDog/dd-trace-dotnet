@@ -1,7 +1,7 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.ClrProfiler.Integrations;
+using Datadog.Trace.AspNet;
 using log4net;
 using log4net.Config;
 
@@ -27,7 +27,7 @@ namespace ApplicationWithLog4Net
             // Let's call AspNetStartup.Register now
             // This will create a Tracer and, if buggy, store items in the CallContext
             // which will need to be passed by ref or deserialized when transitioning AppDomains
-            AspNetStartup.Register();
+            HttpApplicationStartup.Register();
 
             return "ApplicationWithLog4Net.Program";
         }
