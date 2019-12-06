@@ -284,7 +284,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyResolveMscorlibReso
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Performance.StackExchange.Redis", "performance\Performance.StackExchange.Redis\Performance.StackExchange.Redis.csproj", "{E41C87E9-7339-4FC0-8791-D57752C5BC12}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MissingDotnetTracerHomeEnv", "samples\Samples.MissingDotnetTracerHomeEnv\MissingDotnetTracerHomeEnv.csproj", "{082BEBF8-2BCA-402C-AE2B-E058149B787D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpClient.MissingDotnetTracerHomeEnv", "samples\Samples.MissingDotnetTracerHomeEnv\Samples.HttpClient.MissingDotnetTracerHomeEnv.csproj", "{082BEBF8-2BCA-402C-AE2B-E058149B787D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
