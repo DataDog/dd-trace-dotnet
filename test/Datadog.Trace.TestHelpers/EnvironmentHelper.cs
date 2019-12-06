@@ -176,6 +176,9 @@ namespace Datadog.Trace.TestHelpers
             }
 
             environmentVariables["DD_PROFILER_PROCESSES"] = processName;
+
+            string integrations = string.Join(";", GetIntegrationsFilePaths());
+            environmentVariables["DD_INTEGRATIONS"] = integrations;
             environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "localhost";
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 

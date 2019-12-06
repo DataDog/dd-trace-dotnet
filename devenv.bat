@@ -52,6 +52,7 @@ SET DD_PROFILER_EXCLUDE_PROCESSES=devenv.exe;Microsoft.ServiceHub.Controller.exe
 
 rem Set dotnet tracer home path
 SET DD_DOTNET_TRACER_HOME=%~dp0
+SET DD_INTEGRATIONS=%DD_DOTNET_TRACER_HOME%\integrations.json
 
 if "%start_visual_studio%" == "true" (
     echo Starting Visual Studio...
