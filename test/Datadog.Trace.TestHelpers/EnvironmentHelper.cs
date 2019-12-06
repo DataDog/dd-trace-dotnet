@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
@@ -14,6 +15,13 @@ namespace Datadog.Trace.TestHelpers
         private static readonly Assembly EntryAssembly = Assembly.GetEntryAssembly();
         private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
+        private static readonly List<string> DefaultEnvironmentVariablesToUnset = null;
+        /*
+        private static readonly List<string> DefaultEnvironmentVariablesToUnset = new List<string>()
+        {
+            "DD_INTEGRATIONS"
+        };
+        */
 
         private readonly ITestOutputHelper _output;
         private readonly int _major;
@@ -24,7 +32,7 @@ namespace Datadog.Trace.TestHelpers
         private readonly string _runtime;
         private readonly bool _isCoreClr;
         private readonly string _samplesDirectory;
-        private readonly string _disabledIntegrations;
+        private readonly List<string> _environmentVariablesToUnset;
         private readonly Type _anchorType;
         private readonly Assembly _anchorAssembly;
         private readonly TargetFrameworkAttribute _targetFramework;
@@ -38,13 +46,13 @@ namespace Datadog.Trace.TestHelpers
             Type anchorType,
             ITestOutputHelper output,
             string samplesDirectory = "samples",
-            string disabledIntegrations = null,
+            List<string> environmentVariablesToUnset = null,
             bool prependSamplesToAppName = true,
             bool requiresProfiling = true)
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? "samples";
-            _disabledIntegrations = disabledIntegrations;
+            _environmentVariablesToUnset = environmentVariablesToUnset ?? DefaultEnvironmentVariablesToUnset;
             _anchorType = anchorType;
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = _anchorAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
@@ -194,9 +202,12 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
 
-            if (_disabledIntegrations != null)
+            if (_environmentVariablesToUnset != null)
             {
-                environmentVariables["DD_DISABLED_INTEGRATIONS"] = _disabledIntegrations;
+                foreach (var environmentVariable in _environmentVariablesToUnset)
+                {
+                    environmentVariables[environmentVariable] = null;
+                }
             }
         }
 

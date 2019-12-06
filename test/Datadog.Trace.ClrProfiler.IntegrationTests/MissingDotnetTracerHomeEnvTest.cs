@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using Datadog.Trace.TestHelpers;
@@ -8,8 +9,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class MissingDotnetTracerHomeEnvTest : TestHelper
     {
+        private static readonly List<string> EnvironmentVariablesToUnset = new List<string>()
+        {
+            "DD_DOTNET_TRACER_HOME"
+        };
+
         public MissingDotnetTracerHomeEnvTest(ITestOutputHelper output)
-            : base("HttpClient.MissingDotnetTracerHomeEnv", output)
+            : base("HttpClient.MissingDotnetTracerHomeEnv", output, environmentVariablesToUnset: EnvironmentVariablesToUnset)
         {
         }
 
