@@ -1,6 +1,6 @@
 {
     "profiles": {
-      "MissingDotnetTracerHomeEnv": {
+      "Samples.HttpClient.MissingDotnetTracerHomeEnv": {
         "commandName": "Project",
         "environmentVariables": {
           "COR_ENABLE_PROFILING": "1",
