@@ -16,6 +16,7 @@ const WSTRING debug_enabled = "DD_TRACE_DEBUG"_W;
 // Sets the paths to integration definition JSON files.
 // Supports multiple values separated with semi-colons, for example:
 // "C:\Program Files\Datadog .NET Tracer\integrations.json;D:\temp\test_integrations.json"
+// If empty, the integration definition JSON file will default to $DD_DOTNET_TRACE_HOME/integrations.json
 const WSTRING integrations_path = "DD_INTEGRATIONS"_W;
 
 // Sets the path to the profiler's home directory, for example:
