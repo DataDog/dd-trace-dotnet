@@ -1,5 +1,6 @@
 #include "integration_loader.h"
 
+#include <filesystem>
 #include <exception>
 #include <stdexcept>
 
@@ -11,9 +12,24 @@ namespace trace {
 
 using json = nlohmann::json;
 
-std::vector<Integration> LoadIntegrations(const WSTRING& file_paths) {
+std::vector<Integration> LoadIntegrationsFromEnvironment() {
   std::vector<Integration> integrations;
-  for (const auto f : GetValues(file_paths)) {
+  WSTRING integrations_paths =
+      GetEnvironmentValue(environment::integrations_path);
+  
+  // If DD_INTEGRATIONS is empty (the new default), use the
+  // DD_DOTNET_TRACER_HOME variable to look for a fallback integrations.json
+  if (integrations_paths.empty()) {
+    auto profiler_home_path =
+        GetEnvironmentValue(environment::profiler_home_path);
+
+    if (!profiler_home_path.empty()) {
+      const auto fallback_integration_path = std::filesystem::path(profiler_home_path) / "integrations.json";
+      integrations_paths = fallback_integration_path.wstring();
+    }
+  }
+
+  for (const auto f : GetValues(integrations_paths)) {
     Debug("Loading integrations from file: ", f);
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {

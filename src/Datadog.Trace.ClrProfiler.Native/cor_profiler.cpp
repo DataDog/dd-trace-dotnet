@@ -118,7 +118,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   // load all available integrations from JSON files
   const std::vector<Integration> all_integrations =
-      LoadIntegrations(integrations_paths);
+      LoadIntegrationsFromEnvironment();
 
   // get list of disabled integration names
   const std::vector<WSTRING> disabled_integration_names =

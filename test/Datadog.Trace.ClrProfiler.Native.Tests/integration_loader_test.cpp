@@ -9,7 +9,6 @@
 
 #include "../../src/Datadog.Trace.ClrProfiler.Native/integration_loader.h"
 #include "../../src/Datadog.Trace.ClrProfiler.Native/environment_variables.h"
-#include "../../src/Datadog.Trace.ClrProfiler.Native/util.h"
 
 using namespace trace;
 
@@ -175,7 +174,7 @@ TEST(IntegrationLoaderTest, HandlesSingleIntegrationWithInvalidTarget) {
   EXPECT_STREQ(L"", mr.target_method.method_name.c_str());
 }
 
-TEST(IntegrationLoaderTest, LoadsFromEnvironment) {
+TEST(IntegrationLoaderTest, LoadsFromEnvironmentWithOnlyIntegrationsEnv) {
   auto tmpname1 = std::filesystem::temp_directory_path() / "test-1.json";
   auto tmpname2 = std::filesystem::temp_directory_path() / "test-2.json";
   std::ofstream f;
@@ -191,19 +190,90 @@ TEST(IntegrationLoaderTest, LoadsFromEnvironment) {
   f.close();
 
   auto name = tmpname1.wstring() + L";" + tmpname2.wstring();
-
-  SetEnvironmentVariableW(trace::environment::integrations_path.data(), name.data());
-
   std::vector<std::wstring> expected_names = {L"test-integration-1",
                                               L"test-integration-2"};
   std::vector<std::wstring> actual_names;
-  for (auto& integration : LoadIntegrations(GetEnvironmentValue(trace::environment::integrations_path))) {
+
+  SetEnvironmentVariableW(trace::environment::integrations_path.data(),
+                          name.data());
+  for (auto& integration : LoadIntegrationsFromEnvironment()) {
     actual_names.push_back(integration.integration_name);
   }
-  EXPECT_EQ(expected_names, actual_names);
 
+  SetEnvironmentVariableW(trace::environment::integrations_path.data(),
+                          NULL);
   std::filesystem::remove(tmpname1);
   std::filesystem::remove(tmpname2);
+
+  EXPECT_EQ(expected_names, actual_names);
+}
+
+TEST(IntegrationLoaderTest, LoadsFromEnvironmentWithOnlyTracerHomeEnv) {
+  auto tracerHomeDir = std::filesystem::temp_directory_path() / "TracerHome1";
+  auto tmpIntegrations = tracerHomeDir / "integrations.json";
+  std::filesystem::create_directory(tracerHomeDir);
+  std::ofstream f;
+  f.open(tmpIntegrations);
+  f << R"TEXT(
+        [{ "name": "test-integration-1" }]
+    )TEXT";
+  f.close();
+
+  auto tracerHome = tracerHomeDir.wstring();
+  std::vector<std::wstring> expected_names = {L"test-integration-1"};
+  std::vector<std::wstring> actual_names;
+
+  SetEnvironmentVariableW(trace::environment::profiler_home_path.data(),
+                          tracerHome.data());
+  for (auto& integration : LoadIntegrationsFromEnvironment()) {
+    actual_names.push_back(integration.integration_name);
+  }
+  SetEnvironmentVariableW(trace::environment::profiler_home_path.data(),
+                          NULL);
+  std::filesystem::remove(tmpIntegrations);
+  std::filesystem::remove(tracerHomeDir);
+
+  EXPECT_EQ(expected_names, actual_names);
+}
+
+TEST(IntegrationLoaderTest, LoadsFromEnvironmentPrefersIntegrationsEnv) {
+  auto targetIntegrations = std::filesystem::temp_directory_path() / "target.json";
+  auto tracerHomeDir = std::filesystem::temp_directory_path() / "TracerHome2";
+  auto fallbackIntegrations = tracerHomeDir / "integrations.json";
+  std::filesystem::create_directory(tracerHomeDir);
+  std::ofstream f;
+  f.open(targetIntegrations);
+  f << R"TEXT(
+        [{ "name": "test-integration-target" }]
+    )TEXT";
+  f.close();
+  f.open(fallbackIntegrations);
+  f << R"TEXT(
+        [{ "name": "test-integration-fallback" }]
+    )TEXT";
+  f.close();
+
+  auto integrationsPath = targetIntegrations.wstring();
+  auto tracerHome = tracerHomeDir.wstring();
+  std::vector<std::wstring> expected_names = {L"test-integration-target"};
+  std::vector<std::wstring> actual_names;
+
+  SetEnvironmentVariableW(trace::environment::integrations_path.data(),
+                          integrationsPath.data());
+  SetEnvironmentVariableW(trace::environment::profiler_home_path.data(),
+                          tracerHome.data());
+  for (auto& integration : LoadIntegrationsFromEnvironment()) {
+    actual_names.push_back(integration.integration_name);
+  }
+  SetEnvironmentVariableW(trace::environment::integrations_path.data(),
+                          NULL);
+  SetEnvironmentVariableW(trace::environment::profiler_home_path.data(),
+                          NULL);
+  std::filesystem::remove(targetIntegrations);
+  std::filesystem::remove(fallbackIntegrations);
+  std::filesystem::remove(tracerHomeDir);
+
+  EXPECT_EQ(expected_names, actual_names);
 }
 
 TEST(IntegrationLoaderTest, DeserializesSignatureTypeArray) {
