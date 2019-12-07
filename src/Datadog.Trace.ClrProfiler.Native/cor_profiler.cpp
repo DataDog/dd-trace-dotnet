@@ -97,18 +97,28 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // get path to integration definition JSON files
-  const WSTRING integrations_paths =
+  WSTRING integrations_paths =
       GetEnvironmentValue(environment::integrations_path);
 
   if (integrations_paths.empty()) {
-    Warn("Profiler disabled: ", environment::integrations_path,
-         " environment variable not set.");
+    auto profiler_home_path =
+        GetEnvironmentValue(environment::profiler_home_path);
+
+    if (!profiler_home_path.empty()) {
+      const auto fallback_integration_path = std::filesystem::path(profiler_home_path) / "integrations.json";
+      integrations_paths = fallback_integration_path.wstring();
+    }
+  }
+
+  if (integrations_paths.empty()) {
+    Warn("Profiler disabled: Unable to find integrations.json file from ", environment::integrations_path,
+         " and ", environment::profiler_home_path, " environment variables.");
     return E_FAIL;
   }
 
   // load all available integrations from JSON files
   const std::vector<Integration> all_integrations =
-      LoadIntegrations(GetEnvironmentValue(environment::integrations_path));
+      LoadIntegrations(integrations_paths);
 
   // get list of disabled integration names
   const std::vector<WSTRING> disabled_integration_names =
