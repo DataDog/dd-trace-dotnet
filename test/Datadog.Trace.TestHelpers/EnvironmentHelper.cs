@@ -15,13 +15,10 @@ namespace Datadog.Trace.TestHelpers
         private static readonly Assembly EntryAssembly = Assembly.GetEntryAssembly();
         private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
-        private static readonly List<string> DefaultEnvironmentVariablesToUnset = null;
-        /*
         private static readonly List<string> DefaultEnvironmentVariablesToUnset = new List<string>()
         {
             "DD_INTEGRATIONS"
         };
-        */
 
         private readonly ITestOutputHelper _output;
         private readonly int _major;
