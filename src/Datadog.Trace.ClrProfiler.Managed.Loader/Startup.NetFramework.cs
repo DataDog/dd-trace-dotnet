@@ -24,10 +24,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var corlib461Version = new Version(corlib461FileVersionString);
             var tracerFrameworkDirectory = corlibVersion < corlib461Version ? "net45" : "net461";
 
-            Console.WriteLine($"ResolveManagedProfilerDirectory: DD_DOTNET_TRACER_HOME={Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME")}");
-            Console.WriteLine($"ResolveManagedProfilerDirectory: DD_INTEGRATIONS={Environment.GetEnvironmentVariable("DD_INTEGRATIONS")}");
-            var tracerHomeDirectory = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? Path.GetDirectoryName(Environment.GetEnvironmentVariable("DD_INTEGRATIONS")) ?? string.Empty;
-            Console.WriteLine($"ResolveManagedProfilerDirectory: returning {Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory)}");
+            var tracerHomeDirectory = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+            if (string.IsNullOrWhiteSpace(tracerHomeDirectory))
+            {
+                tracerHomeDirectory = Path.GetDirectoryName(Environment.GetEnvironmentVariable("DD_INTEGRATIONS")) ?? string.Empty;
+            }
+
             return Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
         }
 
