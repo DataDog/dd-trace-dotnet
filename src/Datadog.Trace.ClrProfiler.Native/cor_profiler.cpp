@@ -49,7 +49,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   const auto process_name = GetCurrentProcessName();
   const auto include_process_names =
-      GetValues(GetEnvironmentValue(environment::include_process_names));
+      SplitAndTrim(GetEnvironmentValue(environment::include_process_names));
 
   // if there is a process inclusion list, attach profiler only if this
   // process's name is on the list
@@ -61,7 +61,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   const auto exclude_process_names =
-      GetValues(GetEnvironmentValue(environment::exclude_process_names));
+      SplitAndTrim(GetEnvironmentValue(environment::exclude_process_names));
 
   // attach profiler only if this process's name is NOT on the list
   if (Contains(exclude_process_names, process_name)) {
@@ -123,7 +123,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   // get list of disabled integration names
   const std::vector<WSTRING> disabled_integration_names =
-      GetValues(GetEnvironmentValue(environment::disabled_integrations));
+      SplitAndTrim(GetEnvironmentValue(environment::disabled_integrations));
 
   // remove disabled integrations
   integrations_ =

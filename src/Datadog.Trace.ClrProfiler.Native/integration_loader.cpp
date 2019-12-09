@@ -29,7 +29,7 @@ std::vector<Integration> LoadIntegrationsFromEnvironment() {
     }
   }
 
-  for (const auto f : GetValues(integrations_paths)) {
+  for (const auto f : SplitAndTrim(integrations_paths)) {
     Debug("Loading integrations from file: ", f);
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {

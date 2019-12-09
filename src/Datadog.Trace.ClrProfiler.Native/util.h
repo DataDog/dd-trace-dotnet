@@ -23,13 +23,13 @@ WSTRING Trim(const WSTRING &str);
 // name. Space is trimmed.
 WSTRING GetEnvironmentValue(const WSTRING &name);
 
-// GetValues splits the input string by the delimiter, additionally
+// SplitAndTrim splits the input string by the delimiter, additionally
 // trimming space and ignoring empty values.
-std::vector<WSTRING> GetValues(const WSTRING &delimited_values,
+std::vector<WSTRING> SplitAndTrim(const WSTRING &delimited_values,
                                const wchar_t delim);
 
-// GetValues calls GetValues with a semicolon delimiter.
-std::vector<WSTRING> GetValues(const WSTRING &delimited_values);
+// SplitAndTrim calls SplitAndTrim with a semicolon delimiter.
+std::vector<WSTRING> SplitAndTrim(const WSTRING &delimited_values);
 
 template <class Container>
 bool Contains(const Container &items,
