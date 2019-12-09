@@ -209,7 +209,7 @@ TEST(IntegrationLoaderTest, LoadsFromEnvironmentWithOnlyIntegrationsEnv) {
 }
 
 TEST(IntegrationLoaderTest, LoadsFromEnvironmentWithOnlyTracerHomeEnv) {
-  auto tracerHomeDir = std::filesystem::temp_directory_path() / "TracerHome1";
+  auto tracerHomeDir = std::filesystem::temp_directory_path() / "TracerHome1" / "";
   auto tmpIntegrations = tracerHomeDir / "integrations.json";
   std::filesystem::create_directory(tracerHomeDir);
   std::ofstream f;
@@ -236,9 +236,36 @@ TEST(IntegrationLoaderTest, LoadsFromEnvironmentWithOnlyTracerHomeEnv) {
   EXPECT_EQ(expected_names, actual_names);
 }
 
+TEST(IntegrationLoaderTest, LoadsFromEnvironmentWithOnlyTracerHomeEnvNoTrailingSlash) {
+  auto tracerHomeDir = std::filesystem::temp_directory_path() / "TracerHome2";
+  auto tmpIntegrations = tracerHomeDir / "integrations.json";
+  std::filesystem::create_directory(tracerHomeDir);
+  std::ofstream f;
+  f.open(tmpIntegrations);
+  f << R"TEXT(
+        [{ "name": "test-integration-1" }]
+    )TEXT";
+  f.close();
+
+  auto tracerHome = tracerHomeDir.wstring();
+  std::vector<std::wstring> expected_names = {L"test-integration-1"};
+  std::vector<std::wstring> actual_names;
+
+  SetEnvironmentVariableW(trace::environment::profiler_home_path.data(),
+                          tracerHome.data());
+  for (auto& integration : LoadIntegrationsFromEnvironment()) {
+    actual_names.push_back(integration.integration_name);
+  }
+  SetEnvironmentVariableW(trace::environment::profiler_home_path.data(), NULL);
+  std::filesystem::remove(tmpIntegrations);
+  std::filesystem::remove(tracerHomeDir);
+
+  EXPECT_EQ(expected_names, actual_names);
+}
+
 TEST(IntegrationLoaderTest, LoadsFromEnvironmentPrefersIntegrationsEnv) {
   auto targetIntegrations = std::filesystem::temp_directory_path() / "target.json";
-  auto tracerHomeDir = std::filesystem::temp_directory_path() / "TracerHome2";
+  auto tracerHomeDir = std::filesystem::temp_directory_path() / "TracerHome3" / "";
   auto fallbackIntegrations = tracerHomeDir / "integrations.json";
   std::filesystem::create_directory(tracerHomeDir);
   std::ofstream f;
