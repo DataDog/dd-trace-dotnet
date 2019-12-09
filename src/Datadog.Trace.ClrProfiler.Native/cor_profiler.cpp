@@ -2,6 +2,7 @@
 
 #include <corprof.h>
 #include <string>
+#include <filesystem>
 #include "corhlpr.h"
 
 #include "version.h"
