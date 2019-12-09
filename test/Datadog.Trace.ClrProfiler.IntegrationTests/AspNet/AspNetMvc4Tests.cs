@@ -7,15 +7,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class AspNetMvc4Tests : TestHelper, IClassFixture<IisFixture>
+    public class AspNetMvc4Tests : TestHelper, IClassFixture<IISExpressFixture>
     {
-        private readonly IisFixture _iisFixture;
+        private readonly IISExpressFixture _iisFixture;
 
-        public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output)
+        public AspNetMvc4Tests(IISExpressFixture iisFixture, ITestOutputHelper output)
             : base("AspNetMvc4", "samples-aspnet", output)
         {
             _iisFixture = iisFixture;
-            _iisFixture.TryStartIis(this);
+            _iisFixture.TryStartIISExpress(this);
         }
 
         [Theory]
