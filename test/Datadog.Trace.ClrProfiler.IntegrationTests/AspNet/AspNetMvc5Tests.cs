@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
     [Trait("Category", "IISTests")]
-    public class AspNetMvc5Tests : TestHelper, IClassFixture<IISExpressFixture>
+    public class AspNetMvc5Tests : TestHelper, IClassFixture<IISFixture>
     {
         private readonly IISFixture _iisFixture;
 
