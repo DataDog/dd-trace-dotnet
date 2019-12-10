@@ -98,6 +98,10 @@ namespace Datadog.Trace.Configuration
             TracerMetricsEnabled = source?.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
                                    // default value
                                    false;
+
+            CustomSamplingRules = source?.GetString(ConfigurationKeys.CustomSamplingRules) ??
+                                   // default value
+                                   null;
         }
 
         /// <summary>
