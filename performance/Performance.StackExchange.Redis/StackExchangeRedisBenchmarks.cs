@@ -32,7 +32,7 @@ namespace Performance.StackExchange.Redis
             return _database ?? (_database = GetMultiplexer().GetDatabase());
         }
 
-        private static RedisResult DoEvalSetOnLargeString()
+        public static RedisResult DoEvalSetOnLargeString()
         {
             var db = GetDatabase();
             const string script = "redis.call('set', @key, @value)";
