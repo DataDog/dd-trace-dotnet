@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler</RootNamespace>
-    <Version>1.10.0</Version>
+
+    <!-- NuGet -->
+    <Version>1.10.1-prerelease</Version>
     <Title>Datadog APM - ClrProfiler</Title>
     <Description>OBSOLETE. This package is deprecated and exists only for backwards compatibility.
       Users who need manual instrumentation should reference the "Datadog.Trace" package.
