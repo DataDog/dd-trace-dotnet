@@ -6,6 +6,11 @@
   <Fragment>
     <ComponentGroup Id="Files.Managed.Net461" Directory="net461">
       <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.AspNet.dll"
+              Source="$(var.ManagedDllPath)\net461\Datadog.Trace.AspNet.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.ClrProfiler.Managed.dll"
               Source="$(var.ManagedDllPath)\net461\Datadog.Trace.ClrProfiler.Managed.dll"
               KeyPath="yes" Checksum="yes"/>
