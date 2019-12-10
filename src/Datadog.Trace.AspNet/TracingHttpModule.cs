@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Web;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -15,8 +16,11 @@ namespace Datadog.Trace.AspNet
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
+        private static HashSet<HttpApplication> registeredEventHandlers = new HashSet<HttpApplication>();
+
         private readonly string _httpContextScopeKey;
         private readonly string _requestOperationName;
+        private HttpApplication _httpApplication;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TracingHttpModule" /> class.
@@ -40,15 +44,23 @@ namespace Datadog.Trace.AspNet
         /// <inheritdoc />
         public void Init(HttpApplication httpApplication)
         {
-            httpApplication.BeginRequest += OnBeginRequest;
-            httpApplication.EndRequest += OnEndRequest;
-            httpApplication.Error += OnError;
+            _httpApplication = httpApplication;
+
+            // The first HttpModule to run Init for this HttpApplication will register for events
+            if (registeredEventHandlers.Add(httpApplication))
+            {
+                httpApplication.BeginRequest += OnBeginRequest;
+                httpApplication.EndRequest += OnEndRequest;
+                httpApplication.Error += OnError;
+            }
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            // Nothing to do...
+            // Remove the HttpApplication mapping so we don't keep the object alive
+            registeredEventHandlers.Remove(_httpApplication);
+            _httpApplication = null;
         }
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
