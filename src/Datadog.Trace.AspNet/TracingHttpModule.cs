@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Web;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -15,9 +16,11 @@ namespace Datadog.Trace.AspNet
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
+        private static HashSet<HttpApplication> registeredEventHandlers = new HashSet<HttpApplication>();
+
         private readonly string _httpContextScopeKey;
-        private readonly string _httpContextOwningModuleKey;
         private readonly string _requestOperationName;
+        private HttpApplication _httpApplication;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TracingHttpModule" /> class.
@@ -36,21 +39,28 @@ namespace Datadog.Trace.AspNet
             _requestOperationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
             _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _requestOperationName);
-            _httpContextOwningModuleKey = string.Concat(_httpContextScopeKey, "-owningmodule");
         }
 
         /// <inheritdoc />
         public void Init(HttpApplication httpApplication)
         {
-            httpApplication.BeginRequest += OnBeginRequest;
-            httpApplication.EndRequest += OnEndRequest;
-            httpApplication.Error += OnError;
+            _httpApplication = httpApplication;
+
+            // The first HttpModule to run Init for this HttpApplication will register for events
+            if (registeredEventHandlers.Add(httpApplication))
+            {
+                httpApplication.BeginRequest += OnBeginRequest;
+                httpApplication.EndRequest += OnEndRequest;
+                httpApplication.Error += OnError;
+            }
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            // Nothing to do...
+            // Remove the HttpApplication mapping so we don't keep the object alive
+            registeredEventHandlers.Remove(_httpApplication);
+            _httpApplication = null;
         }
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
@@ -70,13 +80,6 @@ namespace Datadog.Trace.AspNet
                 var httpContext = (sender as HttpApplication)?.Context;
 
                 if (httpContext == null)
-                {
-                    return;
-                }
-
-                // Only one HttpModule will respond to ASP.NET lifecycle events
-                // Do nothing if another HttpModule has already been run
-                if (httpContext.Items[_httpContextOwningModuleKey] is TracingHttpModule)
                 {
                     return;
                 }
@@ -112,8 +115,6 @@ namespace Datadog.Trace.AspNet
                 scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
                 httpContext.Items[_httpContextScopeKey] = scope;
-                // Register this HttpModule instance as the only one allowed to respond to further callbacks
-                httpContext.Items[_httpContextOwningModuleKey] = this;
             }
             catch (Exception ex)
             {
@@ -136,15 +137,9 @@ namespace Datadog.Trace.AspNet
                 var httpContext = (sender as HttpApplication)?.Context;
 
                 if (httpContext != null &&
-                    httpContext.Items[_httpContextOwningModuleKey] is TracingHttpModule module &&
-                    ReferenceEquals(module, this))
+                    httpContext.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    httpContext.Items[_httpContextOwningModuleKey] = null;
-
-                    if (httpContext.Items[_httpContextScopeKey] is Scope scope)
-                    {
-                        scope.Dispose();
-                    }
+                    scope.Dispose();
                 }
             }
             catch (Exception ex)
@@ -160,8 +155,6 @@ namespace Datadog.Trace.AspNet
                 var httpContext = (sender as HttpApplication)?.Context;
 
                 if (httpContext?.Error != null &&
-                    httpContext.Items[_httpContextOwningModuleKey] is TracingHttpModule module &&
-                    ReferenceEquals(module, this) &&
                     httpContext.Items[_httpContextScopeKey] is Scope scope)
                 {
                     scope.Span.SetException(httpContext.Error);
