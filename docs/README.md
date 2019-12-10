@@ -67,14 +67,18 @@ msbuild Datadog.Trace.proj /t:BuildCsharp /p:Configuration=Release
 rem Build NuGet packages
 dotnet pack src\Datadog.Trace\Datadog.Trace.csproj
 dotnet pack src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj
-dotnet pack src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj
+dotnet pack src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj
 
-rem Build C++ projects (Platform: x64 or x86)
+rem Build C++ projects
 rem The native profiler depends on the Datadog.Trace.ClrProfiler.Managed.Loader C# project so be sure that is built first
 msbuild Datadog.Trace.proj /t:BuildCpp /p:Configuration=Release;Platform=x64
+msbuild Datadog.Trace.proj /t:BuildCpp /p:Configuration=Release;Platform=x86
 
-rem Build MSI installer (Platform: x64 or x86)
+rem Build MSI installer for Windows x64 (supports both x64 and x86 apps)
 msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x64
+
+rem Build MSI installer for Windows x86 (supports x86 apps only)
+msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x86
 ```
 
 ## Linux
@@ -82,7 +86,7 @@ msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x64
 ### Minimum requirements
 
 To build C# projects and NuGet packages only
-- [.NET Core SDK 2.1](https://dotnet.microsoft.com/download/dotnet-core/2.1)
+- [.NET Core SDK 3.0](https://dotnet.microsoft.com/download/dotnet-core/3.0)
 
 To build everything and run integration tests
 - [Docker Compose](https://docs.docker.com/compose/install/)
