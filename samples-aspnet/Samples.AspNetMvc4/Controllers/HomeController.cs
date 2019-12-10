@@ -37,5 +37,10 @@ namespace Samples.AspNetMvc4.Controllers
 
             return View();
         }
+
+        public ActionResult BadRequest()
+        {
+            throw new Exception("Oops, it broke.");
+        }
     }
 }
