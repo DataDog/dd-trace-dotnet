@@ -134,10 +134,8 @@ namespace Datadog.Trace.AspNet
                     return;
                 }
 
-                var httpContext = (sender as HttpApplication)?.Context;
-
-                if (httpContext != null &&
-                    httpContext.Items[_httpContextScopeKey] is Scope scope)
+                if (sender is HttpApplication app &&
+                    app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
                     scope.Dispose();
                 }
