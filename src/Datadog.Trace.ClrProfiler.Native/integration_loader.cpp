@@ -1,6 +1,5 @@
 #include "integration_loader.h"
 
-#include <filesystem>
 #include <exception>
 #include <stdexcept>
 
