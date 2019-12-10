@@ -4,7 +4,7 @@
     <TargetFrameworks>net45</TargetFrameworks>
 
     <!-- NuGet -->
-    <Version>1.10.0</Version>
+    <Version>1.10.1-prerelease</Version>
     <Title>Datadog APM Tracing for ASP.NET</Title>
     <Description>Provides tracing for ASP.NET web applications.</Description>
   </PropertyGroup>
