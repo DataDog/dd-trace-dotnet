@@ -12,8 +12,24 @@ namespace Performance.StackExchange.Redis
         public static void Main(string[] args)
         {
             var benchmarkDate = DateTime.Now;
+
+#if DEBUG
+            StackExchangeRedisBenchmarks.DoEvalSetOnLargeString();
+            var debugModeConcurrencyRunner = new ConcurrencyHelper();
+            debugModeConcurrencyRunner.RegisterLevel(
+                () =>
+                {
+                    StackExchangeRedisBenchmarks.DoEvalSetOnLargeString();
+                },
+                1_000,
+                friendlyName: "redis eval load test",
+                numberOfRegisters: 20);
+            debugModeConcurrencyRunner.Start().Wait();
+            var averageRuntime = debugModeConcurrencyRunner.GetAverageActionRuntime();
+#else
             var redisSummary = BenchmarkRunner.Run<StackExchangeRedisBenchmarks>();
             Save("Performance.StackExchange.Redis", DateTime.Now);
+#endif
         }
 
         public static void Save(string benchmarkName, DateTime date)
