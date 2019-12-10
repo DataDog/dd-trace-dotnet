@@ -16,8 +16,7 @@ namespace Datadog.Trace.AspNet
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
         private readonly string _httpContextScopeKey;
-        private readonly string _httpContextEndRequestCountKey;
-        private readonly string _httpContextErrorCountKey;
+        private readonly string _httpContextOwningModuleKey;
         private readonly string _requestOperationName;
 
         /// <summary>
@@ -37,8 +36,7 @@ namespace Datadog.Trace.AspNet
             _requestOperationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
             _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _requestOperationName);
-            _httpContextEndRequestCountKey = string.Concat(_httpContextScopeKey, "-endrequestcount");
-            _httpContextErrorCountKey = string.Concat(_httpContextScopeKey, "-errorcount");
+            _httpContextOwningModuleKey = string.Concat(_httpContextScopeKey, "-owningmodule");
         }
 
         /// <inheritdoc />
@@ -76,10 +74,10 @@ namespace Datadog.Trace.AspNet
                     return;
                 }
 
-                if (httpContext.Items.TryGetValue<int>(_httpContextEndRequestCountKey, out var endRequestCount))
+                // Only one HttpModule will respond to ASP.NET lifecycle events
+                // Do nothing if another HttpModule has already been run
+                if (httpContext.Items[_httpContextOwningModuleKey] is TracingHttpModule)
                 {
-                    httpContext.Items[_httpContextEndRequestCountKey] = endRequestCount + 1;
-                    httpContext.Items[_httpContextErrorCountKey] = endRequestCount + 1;
                     return;
                 }
 
@@ -114,8 +112,8 @@ namespace Datadog.Trace.AspNet
                 scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
                 httpContext.Items[_httpContextScopeKey] = scope;
-                httpContext.Items[_httpContextEndRequestCountKey] = 1;
-                httpContext.Items[_httpContextErrorCountKey] = 1;
+                // Set this HttpModule instance as the only module allowed to respond to further callbacks
+                httpContext.Items[_httpContextOwningModuleKey] = this;
             }
             catch (Exception ex)
             {
@@ -138,13 +136,12 @@ namespace Datadog.Trace.AspNet
                 var httpContext = (sender as HttpApplication)?.Context;
 
                 if (httpContext != null &&
-                    httpContext.Items.TryGetValue<int>(_httpContextEndRequestCountKey, out var endRequestCount))
+                    httpContext.Items[_httpContextOwningModuleKey] is TracingHttpModule module &&
+                    ReferenceEquals(module, this))
                 {
-                    endRequestCount--;
-                    httpContext.Items[_httpContextEndRequestCountKey] = endRequestCount;
+                    httpContext.Items[_httpContextOwningModuleKey] = null;
 
-                    if (endRequestCount == 0 &&
-                        httpContext.Items[_httpContextScopeKey] is Scope scope)
+                    if (httpContext.Items[_httpContextScopeKey] is Scope scope)
                     {
                         scope.Dispose();
                     }
@@ -163,13 +160,10 @@ namespace Datadog.Trace.AspNet
                 var httpContext = (sender as HttpApplication)?.Context;
 
                 if (httpContext?.Error != null &&
-                    httpContext.Items.TryGetValue<int>(_httpContextErrorCountKey, out var errorCount))
+                    httpContext.Items[_httpContextOwningModuleKey] is TracingHttpModule module &&
+                    ReferenceEquals(module, this))
                 {
-                    errorCount--;
-                    httpContext.Items[_httpContextErrorCountKey] = errorCount;
-
-                    if (errorCount == 0 &&
-                        httpContext.Items[_httpContextScopeKey] is Scope scope)
+                    if (httpContext.Items[_httpContextScopeKey] is Scope scope)
                     {
                         scope.Span.SetException(httpContext.Error);
                     }
