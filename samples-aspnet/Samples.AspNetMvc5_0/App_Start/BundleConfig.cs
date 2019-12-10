@@ -1,7 +1,7 @@
 ﻿using System.Web;
 using System.Web.Optimization;
 
-namespace Samples.AspNetMvc.5.0
+namespace Samples.AspNetMvc5_0
 {
     public class BundleConfig
     {

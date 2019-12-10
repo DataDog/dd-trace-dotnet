@@ -5,7 +5,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 
-namespace Samples.AspNetMvc.5.0.Controllers
+namespace Samples.AspNetMvc5_0.Controllers
 {
     public class HomeController : Controller
     {
@@ -36,6 +36,11 @@ namespace Samples.AspNetMvc.5.0.Controllers
             ViewBag.Message = "Your contact page.";
 
             return View();
+        }
+
+        public ActionResult BadRequest()
+        {
+            throw new Exception("Oops, it broke.");
         }
     }
 }

@@ -291,8 +291,8 @@
             "System.AsyncCallback",
             "System.Object"
           ],
-          "minimum_major": 5,
-          "minimum_minor": 1,
+          "minimum_major": 4,
+          "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
           "maximum_minor": 65535,
@@ -317,8 +317,8 @@
             "System.Boolean",
             "System.IAsyncResult"
           ],
-          "minimum_major": 5,
-          "minimum_minor": 1,
+          "minimum_major": 4,
+          "minimum_minor": 0,
           "minimum_patch": 0,
           "maximum_major": 5,
           "maximum_minor": 65535,

@@ -1,9 +1,9 @@
 using System.Web.Routing;
 using AttributeRouting.Web.Mvc;
 
-[assembly: WebActivator.PreApplicationStartMethod(typeof(Samples.AspNetMvc.5.0.AttributeRoutingConfig), "Start")]
+[assembly: WebActivator.PreApplicationStartMethod(typeof(Samples.AspNetMvc5_0.AttributeRoutingConfig), "Start")]
 
-namespace Samples.AspNetMvc.5.0 
+namespace Samples.AspNetMvc5_0 
 {
     public static class AttributeRoutingConfig
 	{

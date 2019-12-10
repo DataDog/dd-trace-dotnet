@@ -7,12 +7,12 @@
     <ProductVersion>
     </ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{6D86109F-B7C9-477D-86D7-45735A3A0818}</ProjectGuid>
+    <ProjectGuid>{D0424A27-4ED4-406E-80D5-2EFDCC53399B}</ProjectGuid>
     <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Samples.AspNetMvc.5.0</RootNamespace>
-    <AssemblyName>Samples.AspNetMvc.5.0</AssemblyName>
+    <RootNamespace>Samples.AspNetMvc5_0</RootNamespace>
+    <AssemblyName>Samples.AspNetMvc5_0</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <UseIISExpress>false</UseIISExpress>
     <Use64BitIISExpress>true</Use64BitIISExpress>
@@ -273,7 +273,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>50578</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost/Samples.AspNetMvc.5.0</IISUrl>
+          <IISUrl>http://localhost/Samples.AspNetMvc5_0</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>
