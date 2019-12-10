@@ -112,7 +112,7 @@ namespace Datadog.Trace.AspNet
                 scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
                 httpContext.Items[_httpContextScopeKey] = scope;
-                // Set this HttpModule instance as the only module allowed to respond to further callbacks
+                // Register this HttpModule instance as the only one allowed to respond to further callbacks
                 httpContext.Items[_httpContextOwningModuleKey] = this;
             }
             catch (Exception ex)
@@ -161,12 +161,10 @@ namespace Datadog.Trace.AspNet
 
                 if (httpContext?.Error != null &&
                     httpContext.Items[_httpContextOwningModuleKey] is TracingHttpModule module &&
-                    ReferenceEquals(module, this))
+                    ReferenceEquals(module, this) &&
+                    httpContext.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    if (httpContext.Items[_httpContextScopeKey] is Scope scope)
-                    {
-                        scope.Span.SetException(httpContext.Error);
-                    }
+                    scope.Span.SetException(httpContext.Error);
                 }
             }
             catch (Exception ex)
