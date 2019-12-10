@@ -7,7 +7,7 @@
     <OutputPath>..\bin\ProfilerResources\</OutputPath>
 
     <!-- NuGet -->
-    <Version>1.10.0</Version>
+    <Version>1.11.0-prerelease</Version>
   </PropertyGroup>
 
 </Project>
