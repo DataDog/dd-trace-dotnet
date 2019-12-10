@@ -86,7 +86,7 @@ msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x86
 ### Minimum requirements
 
 To build C# projects and NuGet packages only
-- [.NET Core SDK 2.1](https://dotnet.microsoft.com/download/dotnet-core/2.1)
+- [.NET Core SDK 3.0](https://dotnet.microsoft.com/download/dotnet-core/3.0)
 
 To build everything and run integration tests
 - [Docker Compose](https://docs.docker.com/compose/install/)
