@@ -1,9 +1,8 @@
-#if !NETSTANDARD2_0
 using System;
 using System.Web;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.AspNet
 {
     internal class AspNetScopeManager : IScopeManager
     {
@@ -97,4 +96,3 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
     }
 }
-#endif

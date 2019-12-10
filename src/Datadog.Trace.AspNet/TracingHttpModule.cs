@@ -1,42 +1,40 @@
-#if !NETSTANDARD2_0
 using System;
 using System.Web;
-using Datadog.Trace.ClrProfiler.Interfaces;
-using Datadog.Trace.ClrProfiler.Models;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.AspNet
 {
     /// <summary>
     ///     IHttpModule used to trace within an ASP.NET HttpApplication request
     /// </summary>
-    public class AspNetHttpModule : IHttpModule
+    public class TracingHttpModule : IHttpModule
     {
         internal const string IntegrationName = "AspNet";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetHttpModule));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
-        private readonly string _httpContextDelegateKey;
-        private readonly string _operationName;
+        private readonly string _httpContextScopeKey;
+        private readonly string _requestOperationName;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AspNetHttpModule" /> class.
+        ///     Initializes a new instance of the <see cref="TracingHttpModule" /> class.
         /// </summary>
-        public AspNetHttpModule()
+        public TracingHttpModule()
             : this("aspnet.request")
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AspNetHttpModule" /> class.
+        ///     Initializes a new instance of the <see cref="TracingHttpModule" /> class.
         /// </summary>
         /// <param name="operationName">The operation name to be used for the trace/span data generated</param>
-        public AspNetHttpModule(string operationName)
+        public TracingHttpModule(string operationName)
         {
-            _operationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
+            _requestOperationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
 
-            _httpContextDelegateKey = string.Concat("__Datadog.Trace.ClrProfiler.Integrations.AspNetHttpModule-", _operationName);
+            _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _requestOperationName);
         }
 
         /// <inheritdoc />
@@ -55,23 +53,26 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
-            var tracer = Tracer.Instance;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
-            {
-                // integration disabled
-                return;
-            }
-
             Scope scope = null;
 
             try
             {
-                if (!TryGetContext(sender, out var httpContext))
+                var tracer = Tracer.Instance;
+
+                if (!tracer.Settings.IsIntegrationEnabled(IntegrationName))
+                {
+                    // integration disabled
+                    return;
+                }
+
+                var httpContext = (sender as HttpApplication)?.Context;
+
+                if (httpContext == null)
                 {
                     return;
                 }
 
+                HttpRequest httpRequest = httpContext.Request;
                 SpanContext propagatedContext = null;
 
                 if (tracer.ActiveScope == null)
@@ -79,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     try
                     {
                         // extract propagated http headers
-                        var headers = httpContext.Request.Headers.Wrap();
+                        var headers = httpRequest.Headers.Wrap();
                         propagatedContext = SpanContextPropagator.Instance.Extract(headers);
                     }
                     catch (Exception ex)
@@ -88,13 +89,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                scope = tracer.StartActive(_operationName, propagatedContext);
+                string host = httpRequest.Headers.Get("Host");
+                string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
+                string url = httpRequest.RawUrl.ToLowerInvariant();
+                string path = UriHelpers.GetRelativeUrl(httpRequest.Url, tryRemoveIds: true);
+                string resourceName = $"{httpMethod} {path.ToLowerInvariant()}";
+
+                scope = tracer.StartActive(_requestOperationName, propagatedContext);
+                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
                 scope.Span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
-                httpContext.Items[_httpContextDelegateKey] = HttpContextSpanIntegrationDelegate.CreateAndBegin(httpContext, scope);
+                httpContext.Items[_httpContextScopeKey] = scope;
             }
             catch (Exception ex)
             {
@@ -106,21 +114,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
-            {
-                // integration disabled
-                return;
-            }
-
             try
             {
-                if (!TryGetContext(sender, out var httpContext) ||
-                    !httpContext.Items.TryGetValue<ISpanIntegrationDelegate>(_httpContextDelegateKey, out var integrationDelegate))
+                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
                 {
+                    // integration disabled
                     return;
                 }
 
-                integrationDelegate.OnEnd();
+                if (sender is HttpApplication app &&
+                    app.Context.Items[_httpContextScopeKey] is Scope scope)
+                {
+                    scope.Dispose();
+                }
             }
             catch (Exception ex)
             {
@@ -132,34 +138,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
-                if (!TryGetContext(sender, out var httpContext) || httpContext.Error == null ||
-                    !httpContext.Items.TryGetValue<ISpanIntegrationDelegate>(_httpContextDelegateKey, out var integrationDelegate))
-                {
-                    return;
-                }
+                var httpContext = (sender as HttpApplication)?.Context;
 
-                integrationDelegate.OnError();
+                if (httpContext?.Error != null &&
+                    httpContext.Items[_httpContextScopeKey] is Scope scope)
+                {
+                    scope.Span.SetException(httpContext.Error);
+                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
-
-        private bool TryGetContext(object sender, out HttpContext httpContext)
-        {
-            if (sender == null || !(sender is HttpApplication httpApp) || httpApp?.Context?.Items == null)
-            {
-                httpContext = null;
-
-                return false;
-            }
-
-            httpContext = httpApp.Context;
-
-            return true;
-        }
     }
 }
-
-#endif

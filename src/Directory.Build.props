@@ -2,8 +2,7 @@
   <Import Project="..\Directory.Build.props" />
 
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;net461;netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net45;net461;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <!-- NuGet packages -->
@@ -18,13 +17,17 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/DataDog/dd-trace-dotnet.git</RepositoryUrl>
     <Copyright>Datadog, Inc. 2017-2019</Copyright>
+    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd;bobuva</Authors>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- NuGet -->
     <None Include="$(MSBuildThisFileDirectory)\..\datadog-logo-256x256.png" Pack="true" Visible="false" PackagePath="packageIcon.png" />
-    
+
     <!-- StyleCop -->
     <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
+
+    <!-- reference assemblies let us target .NET Framework without the SDK (for example, on non-Windows) -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
 </Project>

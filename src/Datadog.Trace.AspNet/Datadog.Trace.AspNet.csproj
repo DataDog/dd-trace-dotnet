@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45</TargetFrameworks>
+
+    <!-- NuGet -->
+    <Version>1.10.1-prerelease</Version>
+    <Title>Datadog APM Tracing for ASP.NET</Title>
+    <Description>Provides tracing for ASP.NET web applications.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+
+    <Reference Include="System.Web" />
+  </ItemGroup>
+
+</Project>

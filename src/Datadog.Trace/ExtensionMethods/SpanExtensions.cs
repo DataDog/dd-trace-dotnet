@@ -10,7 +10,7 @@ namespace Datadog.Trace.ExtensionMethods
     public static class SpanExtensions
     {
         /// <summary>
-        /// Sets the sampling priority for the trace that the specified <see cref="Span"/> belongs to.
+        /// Sets the sampling priority for the trace that contains the specified <see cref="Span"/>.
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
@@ -45,6 +45,22 @@ namespace Datadog.Trace.ExtensionMethods
 
             string server = GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host");
             span.SetTag(Tags.OutHost, server);
+        }
+
+        internal static void DecorateWebServerSpan(
+            this Span span,
+            string resourceName,
+            string method,
+            string host,
+            string httpUrl)
+        {
+            span.Type = SpanTypes.Web;
+            span.ResourceName = resourceName?.Trim();
+            span.SetTag(Tags.SpanKind, SpanKinds.Server);
+            span.SetTag(Tags.HttpMethod, method);
+            span.SetTag(Tags.HttpRequestHeadersHost, host);
+            span.SetTag(Tags.HttpUrl, httpUrl);
+            span.SetTag(Tags.Language, TracerConstants.Language);
         }
 
         private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)

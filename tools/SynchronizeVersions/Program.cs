@@ -62,6 +62,10 @@ namespace SynchronizeVersions
                 NugetVersionReplace);
 
             SynchronizeVersion(
+                "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                NugetVersionReplace);
+
+            SynchronizeVersion(
                 "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
                 WixProjReplace);
 
@@ -122,8 +126,11 @@ namespace SynchronizeVersions
         {
             var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Patch}";
 
-            // ReSharper disable once RedundantLogicalConditionalExpressionOperand
-            if (withPrereleasePostfix && TracerVersion.IsPreRelease)
+            // this gets around a compiler warning about unreachable code below
+            var isPreRelease = TracerVersion.IsPreRelease;
+
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+            if (withPrereleasePostfix && isPreRelease)
             {
                 newVersion = newVersion + "-prerelease";
             }

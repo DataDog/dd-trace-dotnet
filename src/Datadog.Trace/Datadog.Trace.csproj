@@ -5,7 +5,6 @@
     <Version>1.10.1-prerelease</Version>
     <Title>Datadog APM</Title>
     <Description>Manual instrumentation library for Datadog APM</Description>
-    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
