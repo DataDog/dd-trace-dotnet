@@ -23,6 +23,11 @@ WSTRING Trim(const WSTRING &str);
 // name. Space is trimmed.
 WSTRING GetEnvironmentValue(const WSTRING &name);
 
+// AppendToPath adds the second path to the first, adding an 
+// OS-dependent directory separator if the first string did not
+// already end in one
+WSTRING AppendToPath(const WSTRING &path1, const WSTRING &path2);
+
 // SplitAndTrim splits the input string by the delimiter, additionally
 // trimming space and ignoring empty values.
 std::vector<WSTRING> SplitAndTrim(const WSTRING &delimited_values,

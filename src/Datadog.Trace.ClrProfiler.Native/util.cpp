@@ -66,6 +66,23 @@ WSTRING GetEnvironmentValue(const WSTRING &name) {
 #endif
 }
 
+WSTRING AppendToPath(const WSTRING &path1, const WSTRING &path2) {
+  WSTRING result = path1;
+  const WCHAR directorySeparatorChar =
+#ifdef _WIN32
+      '\\'_W;
+#else
+        '/'_W;
+#endif
+
+  if (path1.back() != directorySeparatorChar) {
+    result.push_back(directorySeparatorChar);
+  }
+
+  result.append(path2);
+  return result;
+}
+
 std::vector<WSTRING> SplitAndTrim(const WSTRING &delimited_values,
                                const wchar_t delim) {
   std::vector<WSTRING> values;

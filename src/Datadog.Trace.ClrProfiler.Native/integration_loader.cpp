@@ -24,8 +24,7 @@ std::vector<Integration> LoadIntegrationsFromEnvironment() {
         GetEnvironmentValue(environment::profiler_home_path);
 
     if (!profiler_home_path.empty()) {
-      const auto fallback_integration_path = std::filesystem::path(profiler_home_path) / "integrations.json";
-      integrations_paths = fallback_integration_path.wstring();
+      integrations_paths = AppendToPath(profiler_home_path, "integrations.json"_W);
     }
   }
 
