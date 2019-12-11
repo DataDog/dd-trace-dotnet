@@ -66,6 +66,10 @@ namespace SynchronizeVersions
                 NugetVersionReplace);
 
             SynchronizeVersion(
+                "src/Datadog.Trace.AspNet/AssemblyInfo.cs",
+                text => MajorAssemblyVersionReplace(text, "."));
+
+            SynchronizeVersion(
                 "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
                 WixProjReplace);
 
@@ -80,6 +84,11 @@ namespace SynchronizeVersions
         private static string FullAssemblyNameReplace(string text)
         {
             return Regex.Replace(text, AssemblyString(VersionPattern()), AssemblyString(VersionString()), RegexOptions.Singleline);
+        }
+
+        private static string MajorAssemblyVersionReplace(string text, string split)
+        {
+            return Regex.Replace(text, VersionPattern(fourPartVersion: true), MajorVersionString(split), RegexOptions.Singleline);
         }
 
         private static string NugetVersionReplace(string text)
@@ -122,6 +131,11 @@ namespace SynchronizeVersions
             File.WriteAllText(fullPath, newFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
 
+        private static string MajorVersionString(string split = ".")
+        {
+            return $"{TracerVersion.Major}{split}0{split}0{split}0";
+        }
+
         private static string VersionString(string split = ".", bool withPrereleasePostfix = false)
         {
             var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Patch}";
@@ -138,7 +152,7 @@ namespace SynchronizeVersions
             return newVersion;
         }
 
-        private static string VersionPattern(string split = ".", bool withPrereleasePostfix = false)
+        private static string VersionPattern(string split = ".", bool withPrereleasePostfix = false, bool fourPartVersion = false)
         {
             if (split == ".")
             {
@@ -146,6 +160,11 @@ namespace SynchronizeVersions
             }
 
             var pattern = $@"\d+{split}\d+{split}\d+";
+
+            if (fourPartVersion)
+            {
+                pattern = pattern + $@"{split}\d+";
+            }
 
             if (withPrereleasePostfix)
             {
