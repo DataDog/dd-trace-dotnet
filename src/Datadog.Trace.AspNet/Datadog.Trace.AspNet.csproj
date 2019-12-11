@@ -7,6 +7,11 @@
     <Version>1.10.2-prerelease</Version>
     <Title>Datadog APM Tracing for ASP.NET</Title>
     <Description>Provides tracing for ASP.NET web applications.</Description>
+
+    <!-- Allow the GenerateAssemblyInfo task in the .NET SDK to generate all
+         assembly attributes except for the AssemblyVersionAttribute. This will
+         be locked at Major.0.0.0 and is defined in AssemblyInfo.cs -->
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
   </PropertyGroup>
 
   <ItemGroup>
