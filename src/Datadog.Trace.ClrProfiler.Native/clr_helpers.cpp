@@ -684,6 +684,21 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
 }
 
 int ParseType(PCCOR_SIGNATURE p_sig) {
+  /*
+  Type Format = BOOLEAN | CHAR | I1 | U1 | U2 | U2 | I4 | U4 | I8 | U8 | R4 | R8 | I | U | STRING | OBJECT
+                  | VALUETYPE TypeDefOrRefEncoded
+                  | CLASS TypeDefOrRefEncoded
+                  | PTR CustomMod* VOID
+                  | PTR CustomMod* Type
+                  | FNPTR MethodDefSig
+                  | FNPTR MethodRefSig
+                  | ARRAY Type ArrayShape
+                  | SZARRAY CustomMod* Type
+                  | GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+                  | VAR Number
+                  | MVAR Number
+  */
+
   const auto cor_element_type = CorElementType(*p_sig);
 
   switch (cor_element_type) {
@@ -702,15 +717,15 @@ int ParseType(PCCOR_SIGNATURE p_sig) {
     case ELEMENT_TYPE_STRING:
     case ELEMENT_TYPE_OBJECT:
       return 1;
-    case ELEMENT_TYPE_PTR:
-      return 1;  // FIX LATER
+
     case ELEMENT_TYPE_VALUETYPE:
     case ELEMENT_TYPE_CLASS:
       mdToken type_token;
       return 1 + CorSigUncompressToken((p_sig + 1), &type_token);
-    case ELEMENT_TYPE_VAR:
-    case ELEMENT_TYPE_MVAR:
-      return 1 + CorSigUncompressedDataSize(p_sig + 1);
+
+    case ELEMENT_TYPE_PTR:
+      return 1;  // FIX LATER
+
     case ELEMENT_TYPE_FNPTR:
       return 1;  // FIX LATER
     case ELEMENT_TYPE_ARRAY:
@@ -719,6 +734,11 @@ int ParseType(PCCOR_SIGNATURE p_sig) {
       return 1;  // FIX LATER
     case ELEMENT_TYPE_GENERICINST:
       return 1;  // FIX LATER
+
+    case ELEMENT_TYPE_VAR:
+    case ELEMENT_TYPE_MVAR:
+      return 1 + CorSigUncompressedDataSize(p_sig + 1);
+
     default:
       return 0;
   }
@@ -893,46 +913,49 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
 
       // This list should match up with the CorElementType in corhdr.h
       // ELEMENT_TYPE_VAR and ELEMENT_TYPE_MVAR are listed again here to illustrate that all cases are handled
-      case ELEMENT_TYPE_VOID:          // 0x01
-      case ELEMENT_TYPE_BOOLEAN:       // 0x02
-      case ELEMENT_TYPE_CHAR:          // 0x03
-      case ELEMENT_TYPE_I1:            // 0x04
-      case ELEMENT_TYPE_U1:            // 0x05
-      case ELEMENT_TYPE_I2:            // 0x06
-      case ELEMENT_TYPE_U2:            // 0x07
-      case ELEMENT_TYPE_I4:            // 0x08
-      case ELEMENT_TYPE_U4:            // 0x09
-      case ELEMENT_TYPE_I8:            // 0x0a
-      case ELEMENT_TYPE_U8:            // 0x0b
-      case ELEMENT_TYPE_R4:            // 0x0c
-      case ELEMENT_TYPE_R8:            // 0x0d
-      case ELEMENT_TYPE_STRING:        // 0x0e
-        return false;
 
-      case ELEMENT_TYPE_PTR:           // 0x0f
-      case ELEMENT_TYPE_BYREF:         // 0x10
-        return false;
-
-      case ELEMENT_TYPE_VALUETYPE:     // 0x11 // Return true
+      // The following are primitives that are valuetypes
+      case ELEMENT_TYPE_VOID:          // 0x01  // System.Void (struct)
+      case ELEMENT_TYPE_BOOLEAN:       // 0x02  // System.Boolean (struct)
+      case ELEMENT_TYPE_CHAR:          // 0x03  // System.Char (struct)
+      case ELEMENT_TYPE_I1:            // 0x04  // System.SByte (struct)
+      case ELEMENT_TYPE_U1:            // 0x05  // System.Byte (struct)
+      case ELEMENT_TYPE_I2:            // 0x06  // System.Int16 (struct)
+      case ELEMENT_TYPE_U2:            // 0x07  // System.UInt16 (struct)
+      case ELEMENT_TYPE_I4:            // 0x08  // System.Int32 (struct)
+      case ELEMENT_TYPE_U4:            // 0x09  // System.UInt32 (struct)
+      case ELEMENT_TYPE_I8:            // 0x0a  // System.Int64 (struct)
+      case ELEMENT_TYPE_U8:            // 0x0b  // System.UInt64 (struct)
+      case ELEMENT_TYPE_R4:            // 0x0c  // System.Single (struct)
+      case ELEMENT_TYPE_R8:            // 0x0d  // System.Double (struct)
         return true;
-      case ELEMENT_TYPE_CLASS:         // 0x12
+
+      // The following are primitives that are not valuetypes
+      case ELEMENT_TYPE_STRING:        // 0x0e  // System.String
+      case ELEMENT_TYPE_PTR:           // 0x0f  // No managed type
+      case ELEMENT_TYPE_BYREF:         // 0x10  // No managed type
         return false;
+
+      // The following define non-primitive types as valuetypes or not
+      case ELEMENT_TYPE_VALUETYPE:     // 0x11  // Valuetype. Return true
+        return true;
+      case ELEMENT_TYPE_CLASS:         // 0x12  // Reference type. Return false
+        return false;
+
       // case ELEMENT_TYPE_VAR:        // 0x13  // HANDLED ABOVE
-      case ELEMENT_TYPE_ARRAY:         // 0x14
+      case ELEMENT_TYPE_ARRAY:         // 0x14  // Array reference. Return false
         return false;
       case ELEMENT_TYPE_GENERICINST:   // 0X15  // Example: Task<HttpResponseMessage>. Return true if the type is VALUETYPE
         method_def_sig_index++;
         return target_function_info.signature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE;
-      case ELEMENT_TYPE_TYPEDBYREF:    // 0X16
-        return false;
-
-      case ELEMENT_TYPE_I:             // 0x18 // Represents System.IntPtr (struct), return true
-      case ELEMENT_TYPE_U:             // 0x19 // Represents System.UIntPtr (struct), return true
+      case ELEMENT_TYPE_TYPEDBYREF:    // 0X16  // System.TypedReference (struct)
+      case ELEMENT_TYPE_I:             // 0x18  // System.IntPtr (struct)
+      case ELEMENT_TYPE_U:             // 0x19  // System.UIntPtr (struct)
         return true;
 
-      case ELEMENT_TYPE_FNPTR:         // 0x1b
-      case ELEMENT_TYPE_OBJECT:        // 0x1c
-      case ELEMENT_TYPE_SZARRAY:       // 0x1d
+      // case ELEMENT_TYPE_FNPTR:      // 0x1b  // Unsure how we could get this. Fall through to default case
+      case ELEMENT_TYPE_OBJECT:        // 0x1c  // Shortcut for System.Object, return false
+      case ELEMENT_TYPE_SZARRAY:       // 0x1d  // Shortcut for single dimension zero lower bound array, return false
         return false;
 
       // case ELEMENT_TYPE_MVAR:       // 0x1e // HANDLED ABOVE
@@ -945,7 +968,7 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
     // TODO: Add precise exceptions and log
     // We were unable to parse for some reason
     // Return that we've failed
-    Warn("[trace::UnboxReturnValue] UNHANDLED CASE: unexpected failed in try/catch block");
+    Warn("[trace::UnboxReturnValue] UNHANDLED CASE: unexpected failure in try/catch block");
     return false;
   }
 }
