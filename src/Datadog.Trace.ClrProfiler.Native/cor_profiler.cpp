@@ -782,6 +782,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           && UnboxReturnValue(module_metadata->metadata_import,
                               module_metadata->metadata_emit,
                               caller, target, &typeToken)) {
+        if (debug_logging_enabled) {
+          Debug(
+              "JITCompilationStarted inserting 'unbox.any ", typeToken,
+              "' instruction after calling target function."
+              " function_id=", function_id,
+              " token=", function_token,
+              " target_name=", target.type.name, ".", target.name,"()");
+        }
         rewriter_wrapper.UnboxAnyAfter(typeToken);
       }
 
