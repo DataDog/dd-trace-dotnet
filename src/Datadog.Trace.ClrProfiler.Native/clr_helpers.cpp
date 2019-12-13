@@ -683,23 +683,108 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
   return true;
 }
 
-int ParseType(PCCOR_SIGNATURE p_sig) {
+bool ParseNumber(PCCOR_SIGNATURE* p_sig, ULONG* number) {
+  ULONG result = CorSigUncompressData(*p_sig, number);
+  if (result == -1) {
+    return false;
+  }
+
+  p_sig += result;
+  return true;
+}
+
+bool ParseMethod(PCCOR_SIGNATURE* p_sig) {
+  // Format:  [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount)
+  //                    ParamCount RetType Param* [SENTINEL Param+]
+  return true;  // TODO: Implement
+}
+
+bool ParseArrayShape(PCCOR_SIGNATURE* p_sig) {
+  // Format: Rank NumSizes Size* NumLoBounds LoBound*
+  ULONG rank = 0, numsizes = 0, size = 0;
+  if (!ParseNumber(p_sig, &rank) || !ParseNumber(p_sig, &numsizes)) {
+    return false;
+  }
+
+  for (ULONG i = 0; i < numsizes; i++) {
+    if (!ParseNumber(p_sig, &size)) {
+      return false;
+    }
+  }
+
+  if (!ParseNumber(p_sig, &numsizes)) {
+    return false;
+  }
+
+  for (ULONG i = 0; i < numsizes; i++) {
+    if (!ParseNumber(p_sig, &size)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE* p_sig) {
+  mdToken type_token;
+  ULONG result;
+  result = CorSigUncompressToken(*p_sig, &type_token);
+  if (result == -1) {
+    return false;
+  }
+
+  *p_sig += result;
+  return true;
+}
+
+bool ParseCustomMod(PCCOR_SIGNATURE* p_sig) {
+  if (**p_sig == ELEMENT_TYPE_CMOD_OPT || **p_sig == ELEMENT_TYPE_CMOD_REQD) {
+    *p_sig += 1;
+    return ParseTypeDefOrRefEncoded(p_sig);
+  }
+
+  return false;
+}
+
+bool ParseOptionalCustomMods(PCCOR_SIGNATURE* p_sig) {
+  for (;;) {
+    switch (**p_sig) {
+      case ELEMENT_TYPE_CMOD_OPT:
+      case ELEMENT_TYPE_CMOD_REQD:
+        if (!ParseCustomMod(p_sig)) {
+          return false;
+        }
+        break;
+      default:
+        return true;
+    }
+  }
+
+  return false;
+}
+
+// Returns whether or not the Type signature at the given address could be parsed.
+// If successful, the input pointer will point to the next byte following the Type signature.
+// If not, the input pointer may point to invalid data.
+bool ParseType(PCCOR_SIGNATURE* p_sig) {
   /*
-  Type Format = BOOLEAN | CHAR | I1 | U1 | U2 | U2 | I4 | U4 | I8 | U8 | R4 | R8 | I | U | STRING | OBJECT
-                  | VALUETYPE TypeDefOrRefEncoded
-                  | CLASS TypeDefOrRefEncoded
-                  | PTR CustomMod* VOID
-                  | PTR CustomMod* Type
-                  | FNPTR MethodDefSig
-                  | FNPTR MethodRefSig
-                  | ARRAY Type ArrayShape
-                  | SZARRAY CustomMod* Type
-                  | GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
-                  | VAR Number
-                  | MVAR Number
+  Format = BOOLEAN | CHAR | I1 | U1 | U2 | U2 | I4 | U4 | I8 | U8 | R4 | R8 | I | U | STRING | OBJECT
+               | VALUETYPE TypeDefOrRefEncoded
+               | CLASS TypeDefOrRefEncoded
+               | PTR CustomMod* VOID
+               | PTR CustomMod* Type
+               | FNPTR MethodDefSig
+               | FNPTR MethodRefSig
+               | ARRAY Type ArrayShape
+               | SZARRAY CustomMod* Type
+               | GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+               | VAR Number
+               | MVAR Number
   */
 
-  const auto cor_element_type = CorElementType(*p_sig);
+  const auto cor_element_type = CorElementType(**p_sig);
+  ULONG number = 0;
+  *p_sig += 1;
 
   switch (cor_element_type) {
     case ELEMENT_TYPE_BOOLEAN:
@@ -716,31 +801,76 @@ int ParseType(PCCOR_SIGNATURE p_sig) {
     case ELEMENT_TYPE_R8:
     case ELEMENT_TYPE_STRING:
     case ELEMENT_TYPE_OBJECT:
-      return 1;
+      return true;
+
+    case ELEMENT_TYPE_PTR:
+      // Format: PTR CustomMod* VOID
+      // Format: PTR CustomMod* Type
+      if (!ParseOptionalCustomMods(p_sig)) {
+        return false;
+      }
+
+      if (**p_sig == ELEMENT_TYPE_VOID) {
+        *p_sig += 1;
+        return true;
+      } else {
+        return ParseType(p_sig);
+      }
 
     case ELEMENT_TYPE_VALUETYPE:
     case ELEMENT_TYPE_CLASS:
-      mdToken type_token;
-      return 1 + CorSigUncompressToken((p_sig + 1), &type_token);
-
-    case ELEMENT_TYPE_PTR:
-      return 1;  // FIX LATER
+      // Format: CLASS TypeDefOrRefEncoded
+      // Format: VALUETYPE TypeDefOrRefEncoded
+      return ParseTypeDefOrRefEncoded(p_sig);
 
     case ELEMENT_TYPE_FNPTR:
-      return 1;  // FIX LATER
+      // Format: FNPTR MethodDefSig
+      // Format: FNPTR MethodRefSig
+      return ParseMethod(p_sig);
+
     case ELEMENT_TYPE_ARRAY:
-      return 1;  // FIX LATER
+      // Format: ARRAY Type ArrayShape
+      if (!ParseType(p_sig)) {
+        return false;
+      }
+      return ParseArrayShape(p_sig);
+
     case ELEMENT_TYPE_SZARRAY:
-      return 1;  // FIX LATER
+      // Format: SZARRAY CustomMod* Type
+      if (!ParseOptionalCustomMods(p_sig)) {
+        return false;
+      }
+      return ParseType(p_sig);
+
     case ELEMENT_TYPE_GENERICINST:
-      return 1;  // FIX LATER
+      if (**p_sig != ELEMENT_TYPE_VALUETYPE && **p_sig != ELEMENT_TYPE_CLASS) {
+        return false;
+      }
+
+      *p_sig += 1;
+      if (!ParseTypeDefOrRefEncoded(p_sig)) {
+        return false;
+      }
+
+      if (!ParseNumber(p_sig, &number)) {
+        return false;
+      }
+
+      for (ULONG i = 0; i < number; i++) {
+        if (!ParseType(p_sig)) {
+          return false;
+        }
+      }
+      return true;
 
     case ELEMENT_TYPE_VAR:
     case ELEMENT_TYPE_MVAR:
-      return 1 + CorSigUncompressedDataSize(p_sig + 1);
+      // Format: VAR Number
+      // Format: MVAR Number
+      return ParseNumber(p_sig, &number);
 
     default:
-      return 0;
+      return false;
   }
 }
 
@@ -756,6 +886,8 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
     size_t method_def_sig_index = generic_count == 0 ? 2 : 3;  // Initialize the index to point to RetType
     auto ret_type_byte = target_function_info.signature.data[method_def_sig_index];
     const auto ret_type = CorElementType(ret_type_byte);
+
+    // Debug("[trace::UnboxReturnValue] ENTER ", target_function_info.name, ": return type is ", ret_type);
 
     switch (ret_type) {
       case ELEMENT_TYPE_VAR: {
@@ -790,11 +922,12 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
                 nullptr);
             break;
           default:
-            Warn("[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_VAR: function token was not a mdtMemberRef or mdtMethodDef");
-            return false;  // TODO see if anything hits this
+            Warn("[trace::UnboxReturnValue] ELEMENT_TYPE_VAR: function token was not a mdtMemberRef or mdtMethodDef");
+            return false;
         }
 
         if (FAILED(hr)) {
+          Warn("[trace::UnboxReturnValue] ELEMENT_TYPE_VAR: failed to get parent token");
           return false;
         }
 
@@ -805,9 +938,7 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
         hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature,
                                                    &spec_signature_length);
         if (FAILED(hr)) {
-          Warn(
-              "[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_VAR: "
-              "GetTypeSpecFromToken failed");
+          Warn("[trace::UnboxReturnValue] ELEMENT_TYPE_VAR: GetTypeSpecFromToken failed");
           return false;
         }
 
@@ -816,25 +947,32 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
         method_def_sig_index = 2;
         mdToken dummy_token;
         ULONG token_length = CorSigUncompressToken(
-            PCCOR_SIGNATURE(&spec_signature[method_def_sig_index]), &dummy_token);
+            &spec_signature[method_def_sig_index], &dummy_token);
         method_def_sig_index += token_length;
 
         // Read value of GenArgCount
         ULONG num_generic_arguments;
         method_def_sig_index += CorSigUncompressData(
-            PCCOR_SIGNATURE(&spec_signature[method_def_sig_index]), &num_generic_arguments);
+            &spec_signature[method_def_sig_index], &num_generic_arguments);
+
+        // Get a pointer to the PCCOR_SIGNATURE pointer that we can pass around and increment
+        PCCOR_SIGNATURE p_current_byte = spec_signature + method_def_sig_index;
 
         // Iterate to specified generic type argument index and return the appropriate class token
         for (i = 0; i < num_generic_arguments; i++) {
-          CorElementType element_type = CorElementType();
-
           if (i != type_arg_index) {
-            method_def_sig_index += ParseType(&spec_signature[method_def_sig_index]);
-          } else if (spec_signature[method_def_sig_index] == ELEMENT_TYPE_MVAR ||
-                     spec_signature[method_def_sig_index] == ELEMENT_TYPE_VAR) {
+            if (!ParseType(&p_current_byte)) {
+              Warn(
+                  "[trace::UnboxReturnValue] ELEMENT_TYPE_VAR: Unable to parse "
+                  "generic type argument ", i,
+                  "from TypeSpec for parent_token:", parent_token);
+              return false;
+            }
+          } else if (*p_current_byte == ELEMENT_TYPE_MVAR ||
+                     *p_current_byte == ELEMENT_TYPE_VAR) {
             // Retrieve the corresponding token for the `M#` TypeSpec, if defined on the caller method, or
             // Retrieve the corresponding token for the `T#` TypeSpec, if defined on the caller method's owning type
-            hr = metadata_emit->GetTokenFromTypeSpec(&spec_signature[method_def_sig_index], 2,
+            hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte, 2,
                                                 ret_type_token);
             return SUCCEEDED(hr);
           } else {
@@ -874,7 +1012,8 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
                                                     &parent_token, &signature, &signature_length);
             break;
           default:
-            return false;  // TODO see if anything hits this
+            Warn("[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_MVAR: function token was not a mdtMethodSpec");
+            return false;
         }
 
         if (FAILED(hr)) {
@@ -886,21 +1025,27 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
         ULONG spec_sig_index = 1;
         ULONG num_generic_arguments;
         spec_sig_index += CorSigUncompressData(
-            PCCOR_SIGNATURE(&signature[spec_sig_index]), &num_generic_arguments);
+            &signature[spec_sig_index], &num_generic_arguments);
+
+        // Get a pointer to the PCCOR_SIGNATURE pointer that we can pass around
+        // and increment
+        PCCOR_SIGNATURE p_current_byte = signature + method_def_sig_index;
 
         // Iterate to specified generic type argument index and return the appropriate class token
         for (i = 0; i < num_generic_arguments; i++) {
           CorElementType element_type = CorElementType();
 
           if (i != type_arg_index) {
-            spec_sig_index += ParseType(&signature[spec_sig_index]);
-          } else if (signature[spec_sig_index] == ELEMENT_TYPE_MVAR ||
-                     signature[spec_sig_index] == ELEMENT_TYPE_VAR) {
+            if (!ParseType(&p_current_byte)) {
+              return false;
+            }
+          } else if (*p_current_byte == ELEMENT_TYPE_MVAR ||
+                     *p_current_byte == ELEMENT_TYPE_VAR) {
             // Retrieve the corresponding token for the `M#` TypeSpec, if
             // defined on the caller method, or Retrieve the corresponding token
             // for the `T#` TypeSpec, if defined on the caller method's owning
             // type
-            hr = metadata_emit->GetTokenFromTypeSpec(&signature[spec_sig_index],
+            hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte,
                                                      2, ret_type_token);
             return SUCCEEDED(hr);
           } else {
