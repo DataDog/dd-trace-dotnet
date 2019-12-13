@@ -357,7 +357,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
                          std::vector<WSTRING>& signature_result);
 
-bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
+bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
                       const FunctionInfo &caller_function_info,
                       const FunctionInfo &target_function_info,

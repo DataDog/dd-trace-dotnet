@@ -779,7 +779,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       // after the call is made, unbox any valuetypes
       mdToken typeToken;
       if (method_replacement.wrapper_method.method_signature.RetTypeIsObject()
-          && UnboxReturnValue(module_metadata->metadata_import,
+          && ReturnTypeIsValuetypeOrGeneric(module_metadata->metadata_import,
                               module_metadata->metadata_emit,
                               caller, target, &typeToken)) {
         if (debug_logging_enabled) {

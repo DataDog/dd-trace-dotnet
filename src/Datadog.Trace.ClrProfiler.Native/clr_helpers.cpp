@@ -686,7 +686,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
 
 
 
-bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
+bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
                       const FunctionInfo& caller_function_info,
                       const FunctionInfo& target_function_info,
@@ -699,7 +699,7 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
     auto ret_type_byte = target_function_info.signature.data[method_def_sig_index];
     const auto ret_type = CorElementType(ret_type_byte);
 
-    // Debug("[trace::UnboxReturnValue] ENTER ", target_function_info.name, ": return type is ", ret_type);
+    // Debug("[trace::ReturnTypeIsValuetypeOrGeneric] ENTER ", target_function_info.name, ": return type is ", ret_type);
 
     switch (ret_type) {
       case ELEMENT_TYPE_VAR: {
@@ -734,12 +734,12 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
                 nullptr);
             break;
           default:
-            Warn("[trace::UnboxReturnValue] ELEMENT_TYPE_VAR: function token was not a mdtMemberRef or mdtMethodDef");
+            Warn("[trace::ReturnTypeIsValuetypeOrGeneric] ELEMENT_TYPE_VAR: function token was not a mdtMemberRef or mdtMethodDef");
             return false;
         }
 
         if (FAILED(hr)) {
-          Warn("[trace::UnboxReturnValue] ELEMENT_TYPE_VAR: failed to get parent token");
+          Warn("[trace::ReturnTypeIsValuetypeOrGeneric] ELEMENT_TYPE_VAR: failed to get parent token");
           return false;
         }
 
@@ -750,7 +750,7 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
         hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature,
                                                    &spec_signature_length);
         if (FAILED(hr)) {
-          Warn("[trace::UnboxReturnValue] ELEMENT_TYPE_VAR: GetTypeSpecFromToken failed");
+          Warn("[trace::ReturnTypeIsValuetypeOrGeneric] ELEMENT_TYPE_VAR: GetTypeSpecFromToken failed");
           return false;
         }
 
@@ -775,7 +775,7 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
           if (i != type_arg_index) {
             if (!ParseType(&p_current_byte)) {
               Warn(
-                  "[trace::UnboxReturnValue] ELEMENT_TYPE_VAR: Unable to parse "
+                  "[trace::ReturnTypeIsValuetypeOrGeneric] ELEMENT_TYPE_VAR: Unable to parse "
                   "generic type argument ", i,
                   "from TypeSpec for parent_token:", parent_token);
               return false;
@@ -824,7 +824,7 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
                                                     &parent_token, &signature, &signature_length);
             break;
           default:
-            Warn("[trace::UnboxReturnValue] UNHANDLED CASE: ELEMENT_TYPE_MVAR: function token was not a mdtMethodSpec");
+            Warn("[trace::ReturnTypeIsValuetypeOrGeneric] UNHANDLED CASE: ELEMENT_TYPE_MVAR: function token was not a mdtMethodSpec");
             return false;
         }
 
@@ -917,7 +917,7 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
 
       // case ELEMENT_TYPE_MVAR:       // 0x1e // HANDLED ABOVE
       default:
-        Warn("[trace::UnboxReturnValue] UNHANDLED CASE: unexpected CorElementType found: ",
+        Warn("[trace::ReturnTypeIsValuetypeOrGeneric] UNHANDLED CASE: unexpected CorElementType found: ",
              ret_type);
         return false;
     }
@@ -925,7 +925,7 @@ bool UnboxReturnValue(const ComPtr<IMetaDataImport2>& metadata_import,
     // TODO: Add precise exceptions and log
     // We were unable to parse for some reason
     // Return that we've failed
-    Warn("[trace::UnboxReturnValue] UNHANDLED CASE: unexpected failure in try/catch block");
+    Warn("[trace::ReturnTypeIsValuetypeOrGeneric] UNHANDLED CASE: unexpected failure in try/catch block");
     return false;
   }
 }
