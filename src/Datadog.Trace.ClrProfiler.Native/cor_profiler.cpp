@@ -781,7 +781,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       if (method_replacement.wrapper_method.method_signature.RetTypeIsObject()
           && ReturnTypeIsValuetypeOrGeneric(module_metadata->metadata_import,
                               module_metadata->metadata_emit,
-                              caller, target, &typeToken)) {
+                              target.id,
+                              target.signature,
+                              &typeToken)) {
         if (debug_logging_enabled) {
           Debug(
               "JITCompilationStarted inserting 'unbox.any ", typeToken,

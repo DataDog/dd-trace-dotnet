@@ -359,8 +359,8 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
 
 bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
-                      const FunctionInfo &caller_function_info,
-                      const FunctionInfo &target_function_info,
+                      const mdToken targetFunctionToken,
+                      const MethodSignature targetFunctionSignature,
                       mdToken* ret_type_token);
 }  // namespace trace
 

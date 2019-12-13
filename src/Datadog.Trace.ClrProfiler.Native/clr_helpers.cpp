@@ -688,15 +688,15 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
 
 bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
-                      const FunctionInfo& caller_function_info,
-                      const FunctionInfo& target_function_info,
+                      const mdToken targetFunctionToken,
+                      const MethodSignature targetFunctionSignature,
                       mdToken* ret_type_token) {
 
   try {
     // MethodDefSig Format: [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount) ParamCount RetType Param* [SENTINEL Param+]
-    const auto generic_count = target_function_info.signature.NumberOfTypeArguments();
+    const auto generic_count = targetFunctionSignature.NumberOfTypeArguments();
     size_t method_def_sig_index = generic_count == 0 ? 2 : 3;  // Initialize the index to point to RetType
-    auto ret_type_byte = target_function_info.signature.data[method_def_sig_index];
+    auto ret_type_byte = targetFunctionSignature.data[method_def_sig_index];
     const auto ret_type = CorElementType(ret_type_byte);
 
     // Debug("[trace::ReturnTypeIsValuetypeOrGeneric] ENTER ", target_function_info.name, ": return type is ", ret_type);
@@ -712,24 +712,24 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
         ULONG type_arg_index;
         CorSigUncompressData(
             PCCOR_SIGNATURE(
-                &target_function_info.signature.data[method_def_sig_index]),
+                &targetFunctionSignature.data[method_def_sig_index]),
             &type_arg_index);
         size_t i = 0;
 
         // Get the token for the owning type, which has the generic type arguments
-        const auto token_type = TypeFromToken(target_function_info.id);
+        const auto token_type = TypeFromToken(targetFunctionToken);
         mdToken parent_token = mdTokenNil;
         HRESULT hr;
 
         switch (token_type) {
           case mdtMemberRef:
-            hr = metadata_import->GetMemberRefProps(target_function_info.id,
+            hr = metadata_import->GetMemberRefProps(targetFunctionToken,
                                                     &parent_token, nullptr, 0,
                                                     nullptr, nullptr, nullptr);
             break;
           case mdtMethodDef:
             hr = metadata_import->GetMemberProps(
-                target_function_info.id, &parent_token, nullptr, 0, nullptr,
+                targetFunctionToken, &parent_token, nullptr, 0, nullptr,
                 nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
                 nullptr);
             break;
@@ -804,13 +804,13 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
         ULONG type_arg_index;
         CorSigUncompressData(
             PCCOR_SIGNATURE(
-                &target_function_info.signature.data[method_def_sig_index]),
+                &targetFunctionSignature.data[method_def_sig_index]),
             &type_arg_index);
         size_t i = 0;
 
         // Get the token for the owning type, which has the generic type
         // arguments
-        const auto token_type = TypeFromToken(target_function_info.id);
+        const auto token_type = TypeFromToken(targetFunctionToken);
         mdToken parent_token = mdTokenNil;
         HRESULT hr;
 
@@ -820,7 +820,7 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
 
         switch (token_type) {
           case mdtMethodSpec:
-            hr = metadata_import->GetMethodSpecProps(target_function_info.id,
+            hr = metadata_import->GetMethodSpecProps(targetFunctionToken,
                                                     &parent_token, &signature, &signature_length);
             break;
           default:
@@ -904,7 +904,7 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
         return false;
       case ELEMENT_TYPE_GENERICINST:   // 0X15  // Example: Task<HttpResponseMessage>. Return true if the type is VALUETYPE
         method_def_sig_index++;
-        return target_function_info.signature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE;
+        return targetFunctionSignature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE;
       case ELEMENT_TYPE_TYPEDBYREF:    // 0X16  // System.TypedReference (struct)
       case ELEMENT_TYPE_I:             // 0x18  // System.IntPtr (struct)
       case ELEMENT_TYPE_U:             // 0x19  // System.UIntPtr (struct)
