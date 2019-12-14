@@ -853,7 +853,7 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
                                               ret_type_token);
           return SUCCEEDED(hr);
         } else {
-          return false;
+          return ElementTypeIsAlwaysValuetype(CorElementType(*p_current_byte));
         }
       }
 
