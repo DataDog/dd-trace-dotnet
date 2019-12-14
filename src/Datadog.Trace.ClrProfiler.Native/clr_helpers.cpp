@@ -751,7 +751,9 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
   const auto ret_type = CorElementType(ret_type_byte);
 
   switch (ret_type) {
-    case ELEMENT_TYPE_GENERICINST:   // 0X15  // Example: Task<HttpResponseMessage>. Return true if the type is VALUETYPE
+    case ELEMENT_TYPE_GENERICINST:
+      // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+      // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
       method_def_sig_index++;
       return targetFunctionSignature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE;
 
