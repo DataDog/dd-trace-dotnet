@@ -684,184 +684,184 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
   return true;
 }
 
+bool ElementTypeIsAlwaysValuetype(CorElementType element_type) {
+  switch (element_type) {
+    // This list should match up with the CorElementType in corhdr.h
+    case ELEMENT_TYPE_END:           // 0x00
+      return false;
+
+    // The following are primitives that are valuetypes
+    case ELEMENT_TYPE_VOID:          // 0x01  // System.Void (struct)
+    case ELEMENT_TYPE_BOOLEAN:       // 0x02  // System.Boolean (struct)
+    case ELEMENT_TYPE_CHAR:          // 0x03  // System.Char (struct)
+    case ELEMENT_TYPE_I1:            // 0x04  // System.SByte (struct)
+    case ELEMENT_TYPE_U1:            // 0x05  // System.Byte (struct)
+    case ELEMENT_TYPE_I2:            // 0x06  // System.Int16 (struct)
+    case ELEMENT_TYPE_U2:            // 0x07  // System.UInt16 (struct)
+    case ELEMENT_TYPE_I4:            // 0x08  // System.Int32 (struct)
+    case ELEMENT_TYPE_U4:            // 0x09  // System.UInt32 (struct)
+    case ELEMENT_TYPE_I8:            // 0x0a  // System.Int64 (struct)
+    case ELEMENT_TYPE_U8:            // 0x0b  // System.UInt64 (struct)
+    case ELEMENT_TYPE_R4:            // 0x0c  // System.Single (struct)
+    case ELEMENT_TYPE_R8:            // 0x0d  // System.Double (struct)
+      return true;
+
+    // The following are primitives that are not valuetypes
+    case ELEMENT_TYPE_STRING:        // 0x0e  // System.String
+    case ELEMENT_TYPE_PTR:           // 0x0f  // No managed type
+    case ELEMENT_TYPE_BYREF:         // 0x10  // No managed type
+      return false;
+
+    case ELEMENT_TYPE_VALUETYPE:     // 0x11  // Valuetype. Return true
+      return true;
+
+    case ELEMENT_TYPE_CLASS:         // 0x12  // Reference type. Return false
+    case ELEMENT_TYPE_VAR:           // 0x13  // Depends on the runtime type. Return false
+    case ELEMENT_TYPE_ARRAY:         // 0x14  // Array reference. Return false
+    case ELEMENT_TYPE_GENERICINST:   // 0X15  // Depends on the defining type. Return false
+      return false;
+
+    case ELEMENT_TYPE_TYPEDBYREF:    // 0X16  // System.TypedReference (struct)
+    case ELEMENT_TYPE_I:             // 0x18  // System.IntPtr (struct)
+    case ELEMENT_TYPE_U:             // 0x19  // System.UIntPtr (struct)
+      return true;
+
+    case ELEMENT_TYPE_FNPTR:         // 0x1b  // No managed type
+    case ELEMENT_TYPE_OBJECT:        // 0x1c  // Shortcut for System.Object, return false
+    case ELEMENT_TYPE_SZARRAY:       // 0x1d  // Shortcut for single dimension zero lower bound array. return false
+    case ELEMENT_TYPE_MVAR:          // 0x1e  // Depends on the runtime type. Return false
+      return false;
+
+    default:
+      Warn("[trace::ElementTypeIsAlwaysValuetype] UNHANDLED CASE: unexpected CorElementType found: ", element_type);
+      return false;
+  }
+}
+
 bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
                       const mdToken targetFunctionToken,
                       const MethodSignature targetFunctionSignature,
                       mdToken* ret_type_token) {
 
-  try {
-    // MethodDefSig Format: [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount) ParamCount RetType Param* [SENTINEL Param+]
-    const auto generic_count = targetFunctionSignature.NumberOfTypeArguments();
-    size_t method_def_sig_index = generic_count == 0 ? 2 : 3;  // Initialize the index to point to RetType
-    auto ret_type_byte = targetFunctionSignature.data[method_def_sig_index];
-    const auto ret_type = CorElementType(ret_type_byte);
+  // MethodDefSig Format: [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount) ParamCount RetType Param* [SENTINEL Param+]
+  const auto generic_count = targetFunctionSignature.NumberOfTypeArguments();
+  size_t method_def_sig_index = generic_count == 0 ? 2 : 3;  // Initialize the index to point to RetType
+  auto ret_type_byte = targetFunctionSignature.data[method_def_sig_index];
+  const auto ret_type = CorElementType(ret_type_byte);
 
-    switch (ret_type) {
-      case ELEMENT_TYPE_VAR:
-      case ELEMENT_TYPE_MVAR: {
-        // Format: VAR number
-        // Format: MVAR number
+  switch (ret_type) {
+    case ELEMENT_TYPE_GENERICINST:   // 0X15  // Example: Task<HttpResponseMessage>. Return true if the type is VALUETYPE
+      method_def_sig_index++;
+      return targetFunctionSignature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE;
 
-        // Extract the number, which is an index into the generic type arguments of the method or the type
-        method_def_sig_index++; // Advance the current_index to point to "number"
-        ULONG type_arg_index;
-        if (CorSigUncompressData(PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
-                                 &type_arg_index) == -1) {
-          Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": unable to read VAR|MVAR index");
-          return false;
-        }
+    case ELEMENT_TYPE_VAR:
+    case ELEMENT_TYPE_MVAR: {
+      // Format: VAR number
+      // Format: MVAR number
 
-        // Get the signature of the parent_token, which lists the generic type arguments
-        const auto token_type = TypeFromToken(targetFunctionToken);
-        mdToken parent_token = mdTokenNil;
-        HRESULT hr;
-        PCCOR_SIGNATURE spec_signature{};
-        ULONG spec_signature_length{};
-
-        switch (token_type) {
-          case mdtMemberRef:
-            hr = metadata_import->GetMemberRefProps(targetFunctionToken,
-                                                    &parent_token, nullptr, 0,
-                                                    nullptr, nullptr, nullptr);
-            if (SUCCEEDED(hr)) {
-              hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature,
-                                                    &spec_signature_length);
-            }
-            break;
-          case mdtMethodDef:
-            hr = metadata_import->GetMemberProps(
-                targetFunctionToken, &parent_token, nullptr, 0, nullptr,
-                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-                nullptr);
-            if (SUCCEEDED(hr)) {
-              hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature,
-                                                    &spec_signature_length);
-            }
-            break;
-          case mdtMethodSpec:
-            hr = metadata_import->GetMethodSpecProps(targetFunctionToken,
-                                                    &parent_token, &spec_signature, &spec_signature_length);
-            break;
-          default:
-            Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": function token was not a mdtMemberRef or mdtMethodDef");
-            return false;
-        }
-
-        if (FAILED(hr)) {
-          Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": failed to get parent token or signature");
-          return false;
-        }
-
-        // Determine the index of GenArgCount in the signature
-        if (token_type == mdtMemberRef || token_type == mdtMethodDef) {
-          // TypeSpec Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
-          // Skip over TypeDefOrRefEncoded by parsing the signature at index 2
-          method_def_sig_index = 2;
-          mdToken dummy_token;
-          ULONG token_length = CorSigUncompressToken(
-              &spec_signature[method_def_sig_index], &dummy_token);
-          method_def_sig_index += token_length;
-        } else if (token_type == mdtMethodSpec) {
-          // MethodSpec Format: GENRICINST GenArgCount Type Type*
-          method_def_sig_index = 1;
-        } else {
-          Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": token_type (", token_type , ") not recognized");
-          return false;
-        }
-
-        // Read the value of GenArgCount in the signature
-        ULONG num_generic_arguments;
-        method_def_sig_index += CorSigUncompressData(
-            &spec_signature[method_def_sig_index], &num_generic_arguments);
-
-        // Get a pointer to the PCCOR_SIGNATURE pointer that we can pass around and increment
-        PCCOR_SIGNATURE p_current_byte = spec_signature + method_def_sig_index;
-
-        // Iterate to specified generic type argument index and return the appropriate class token or TypeSpec
-        for (size_t i = 0; i < num_generic_arguments; i++) {
-          if (i != type_arg_index) {
-            if (!ParseType(&p_current_byte)) {
-              Warn(
-                  "[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": Unable to parse "
-                  "generic type argument ", i,
-                  "from TypeSpec for parent_token:", parent_token);
-              return false;
-            }
-          } else if (*p_current_byte == ELEMENT_TYPE_MVAR ||
-                     *p_current_byte == ELEMENT_TYPE_VAR) {
-            // Retrieve the corresponding TypeSpec token for the `M#` MVAR description, or
-            // Retrieve the corresponding TypeSpec token for the `T#` VAR description
-            hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte, 2,
-                                                ret_type_token);
-            return SUCCEEDED(hr);
-          } else {
-            return false;
-          }
-        }
-
+      // Extract the number, which is an index into the generic type arguments of the method or the type
+      method_def_sig_index++; // Advance the current_index to point to "number"
+      ULONG type_arg_index;
+      if (CorSigUncompressData(PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
+                                &type_arg_index) == -1) {
+        Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": unable to read VAR|MVAR index");
         return false;
       }
 
-      // This list should match up with the CorElementType in corhdr.h
-      // ELEMENT_TYPE_VAR and ELEMENT_TYPE_MVAR are listed again here to illustrate that all cases are handled
+      // Get the signature of the parent_token, which lists the generic type arguments
+      const auto token_type = TypeFromToken(targetFunctionToken);
+      mdToken parent_token = mdTokenNil;
+      HRESULT hr;
+      PCCOR_SIGNATURE spec_signature{};
+      ULONG spec_signature_length{};
 
-      // The following are primitives that are valuetypes
-      case ELEMENT_TYPE_VOID:          // 0x01  // System.Void (struct)
-      case ELEMENT_TYPE_BOOLEAN:       // 0x02  // System.Boolean (struct)
-      case ELEMENT_TYPE_CHAR:          // 0x03  // System.Char (struct)
-      case ELEMENT_TYPE_I1:            // 0x04  // System.SByte (struct)
-      case ELEMENT_TYPE_U1:            // 0x05  // System.Byte (struct)
-      case ELEMENT_TYPE_I2:            // 0x06  // System.Int16 (struct)
-      case ELEMENT_TYPE_U2:            // 0x07  // System.UInt16 (struct)
-      case ELEMENT_TYPE_I4:            // 0x08  // System.Int32 (struct)
-      case ELEMENT_TYPE_U4:            // 0x09  // System.UInt32 (struct)
-      case ELEMENT_TYPE_I8:            // 0x0a  // System.Int64 (struct)
-      case ELEMENT_TYPE_U8:            // 0x0b  // System.UInt64 (struct)
-      case ELEMENT_TYPE_R4:            // 0x0c  // System.Single (struct)
-      case ELEMENT_TYPE_R8:            // 0x0d  // System.Double (struct)
-        return true;
+      switch (token_type) {
+        case mdtMemberRef:
+          hr = metadata_import->GetMemberRefProps(targetFunctionToken,
+                                                  &parent_token, nullptr, 0,
+                                                  nullptr, nullptr, nullptr);
+          if (SUCCEEDED(hr)) {
+            hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature,
+                                                  &spec_signature_length);
+          }
+          break;
+        case mdtMethodDef:
+          hr = metadata_import->GetMemberProps(
+              targetFunctionToken, &parent_token, nullptr, 0, nullptr,
+              nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+              nullptr);
+          if (SUCCEEDED(hr)) {
+            hr = metadata_import->GetTypeSpecFromToken(parent_token, &spec_signature,
+                                                  &spec_signature_length);
+          }
+          break;
+        case mdtMethodSpec:
+          hr = metadata_import->GetMethodSpecProps(targetFunctionToken,
+                                                  &parent_token, &spec_signature, &spec_signature_length);
+          break;
+        default:
+          Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": function token was not a mdtMemberRef or mdtMethodDef");
+          return false;
+      }
 
-      // The following are primitives that are not valuetypes
-      case ELEMENT_TYPE_STRING:        // 0x0e  // System.String
-      case ELEMENT_TYPE_PTR:           // 0x0f  // No managed type
-      case ELEMENT_TYPE_BYREF:         // 0x10  // No managed type
+      if (FAILED(hr)) {
+        Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": failed to get parent token or signature");
         return false;
+      }
 
-      // The following define non-primitive types as valuetypes or not
-      case ELEMENT_TYPE_VALUETYPE:     // 0x11  // Valuetype. Return true
-        return true;
-      case ELEMENT_TYPE_CLASS:         // 0x12  // Reference type. Return false
+      // Determine the index of GenArgCount in the signature
+      if (token_type == mdtMemberRef || token_type == mdtMethodDef) {
+        // TypeSpec Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
+        // Skip over TypeDefOrRefEncoded by parsing the signature at index 2
+        method_def_sig_index = 2;
+        mdToken dummy_token;
+        ULONG token_length = CorSigUncompressToken(
+            &spec_signature[method_def_sig_index], &dummy_token);
+        method_def_sig_index += token_length;
+      } else if (token_type == mdtMethodSpec) {
+        // MethodSpec Format: GENRICINST GenArgCount Type Type*
+        method_def_sig_index = 1;
+      } else {
+        Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": token_type (", token_type , ") not recognized");
         return false;
+      }
 
-      // case ELEMENT_TYPE_VAR:        // 0x13  // HANDLED ABOVE
-      case ELEMENT_TYPE_ARRAY:         // 0x14  // Array reference. Return false
-        return false;
-      case ELEMENT_TYPE_GENERICINST:   // 0X15  // Example: Task<HttpResponseMessage>. Return true if the type is VALUETYPE
-        method_def_sig_index++;
-        return targetFunctionSignature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE;
-      case ELEMENT_TYPE_TYPEDBYREF:    // 0X16  // System.TypedReference (struct)
-      case ELEMENT_TYPE_I:             // 0x18  // System.IntPtr (struct)
-      case ELEMENT_TYPE_U:             // 0x19  // System.UIntPtr (struct)
-        return true;
+      // Read the value of GenArgCount in the signature
+      ULONG num_generic_arguments;
+      method_def_sig_index += CorSigUncompressData(
+          &spec_signature[method_def_sig_index], &num_generic_arguments);
 
-      // case ELEMENT_TYPE_FNPTR:      // 0x1b  // Unsure how we could get this. Fall through to default case
-      case ELEMENT_TYPE_OBJECT:        // 0x1c  // Shortcut for System.Object, return false
-      case ELEMENT_TYPE_SZARRAY:       // 0x1d  // Shortcut for single dimension zero lower bound array, return false
-        return false;
+      // Get a pointer to the PCCOR_SIGNATURE pointer that we can pass around and increment
+      PCCOR_SIGNATURE p_current_byte = spec_signature + method_def_sig_index;
 
-      // case ELEMENT_TYPE_MVAR:       // 0x1e // HANDLED ABOVE
-      default:
-        Warn("[trace::ReturnTypeIsValuetypeOrGeneric] UNHANDLED CASE: unexpected CorElementType found: ",
-             ret_type);
-        return false;
+      // Iterate to specified generic type argument index and return the appropriate class token or TypeSpec
+      for (size_t i = 0; i < num_generic_arguments; i++) {
+        if (i != type_arg_index) {
+          if (!ParseType(&p_current_byte)) {
+            Warn(
+                "[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": Unable to parse "
+                "generic type argument ", i,
+                "from TypeSpec for parent_token:", parent_token);
+            return false;
+          }
+        } else if (*p_current_byte == ELEMENT_TYPE_MVAR ||
+                    *p_current_byte == ELEMENT_TYPE_VAR) {
+          // Retrieve the corresponding TypeSpec token for the `M#` MVAR description, or
+          // Retrieve the corresponding TypeSpec token for the `T#` VAR description
+          hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte, 2,
+                                              ret_type_token);
+          return SUCCEEDED(hr);
+        } else {
+          return false;
+        }
+      }
+
+      return false;
     }
-  } catch (...) {
-    // TODO: Add precise exceptions and log
-    // We were unable to parse for some reason
-    // Return that we've failed
-    Warn("[trace::ReturnTypeIsValuetypeOrGeneric] UNHANDLED CASE: unexpected failure in try/catch block");
-    return false;
+
+    default:
+      return ElementTypeIsAlwaysValuetype(ret_type);
   }
 }
 }  // namespace trace
