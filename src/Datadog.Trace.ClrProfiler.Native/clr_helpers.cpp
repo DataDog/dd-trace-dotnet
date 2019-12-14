@@ -684,8 +684,6 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
   return true;
 }
 
-
-
 bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
                       const mdToken targetFunctionToken,
@@ -699,32 +697,25 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
     auto ret_type_byte = targetFunctionSignature.data[method_def_sig_index];
     const auto ret_type = CorElementType(ret_type_byte);
 
-    // Debug("[trace::ReturnTypeIsValuetypeOrGeneric] ENTER ", target_function_info.name, ": return type is ", ret_type);
-
     switch (ret_type) {
       case ELEMENT_TYPE_VAR:
       case ELEMENT_TYPE_MVAR: {
         // Format: VAR number
         // Format: MVAR number
 
-        // The return type is defined as a generic type on the target object's type
-        // or the target method, which may need to be translated to a type that the caller method understands.
-
-        // Extract the number which is an index into the generic type arguments
+        // Extract the number, which is an index into the generic type arguments of the method or the type
         method_def_sig_index++; // Advance the current_index to point to "number"
         ULONG type_arg_index;
-        CorSigUncompressData(
-            PCCOR_SIGNATURE(
-                &targetFunctionSignature.data[method_def_sig_index]),
-            &type_arg_index);
-        size_t i = 0;
+        if (CorSigUncompressData(PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
+                                 &type_arg_index) == -1) {
+          Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": unable to read VAR|MVAR index");
+          return false;
+        }
 
-        // Get the signature of the parent_token, which will have the generic type arguments
+        // Get the signature of the parent_token, which lists the generic type arguments
         const auto token_type = TypeFromToken(targetFunctionToken);
         mdToken parent_token = mdTokenNil;
         HRESULT hr;
-
-        // parent_token should be a TypeSpec, so extract its signature
         PCCOR_SIGNATURE spec_signature{};
         ULONG spec_signature_length{};
 
@@ -779,7 +770,7 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
           return false;
         }
 
-        // Read value of GenArgCount
+        // Read the value of GenArgCount in the signature
         ULONG num_generic_arguments;
         method_def_sig_index += CorSigUncompressData(
             &spec_signature[method_def_sig_index], &num_generic_arguments);
@@ -787,8 +778,8 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
         // Get a pointer to the PCCOR_SIGNATURE pointer that we can pass around and increment
         PCCOR_SIGNATURE p_current_byte = spec_signature + method_def_sig_index;
 
-        // Iterate to specified generic type argument index and return the appropriate class token
-        for (i = 0; i < num_generic_arguments; i++) {
+        // Iterate to specified generic type argument index and return the appropriate class token or TypeSpec
+        for (size_t i = 0; i < num_generic_arguments; i++) {
           if (i != type_arg_index) {
             if (!ParseType(&p_current_byte)) {
               Warn(
@@ -799,8 +790,8 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
             }
           } else if (*p_current_byte == ELEMENT_TYPE_MVAR ||
                      *p_current_byte == ELEMENT_TYPE_VAR) {
-            // Retrieve the corresponding token for the `M#` TypeSpec, if defined on the caller method, or
-            // Retrieve the corresponding token for the `T#` TypeSpec, if defined on the caller method's owning type
+            // Retrieve the corresponding TypeSpec token for the `M#` MVAR description, or
+            // Retrieve the corresponding TypeSpec token for the `T#` VAR description
             hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte, 2,
                                                 ret_type_token);
             return SUCCEEDED(hr);
