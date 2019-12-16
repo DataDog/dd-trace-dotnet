@@ -106,6 +106,7 @@ bool ParseType(PCCOR_SIGNATURE* p_sig) {
   *p_sig += 1;
 
   switch (cor_element_type) {
+    case ELEMENT_TYPE_VOID:
     case ELEMENT_TYPE_BOOLEAN:
     case ELEMENT_TYPE_CHAR:
     case ELEMENT_TYPE_I1:

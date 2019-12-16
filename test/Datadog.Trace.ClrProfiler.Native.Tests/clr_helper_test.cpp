@@ -10,6 +10,10 @@ class CLRHelperTest : public ::CLRHelperTestBase {};
 TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
   std::vector<std::wstring> expected_types = {
       L"Samples.ExampleLibrary.Class1",
+      L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
+      L"Samples.ExampleLibrary.GenericTests.ComprehensiveTarget`2",
+      L"Samples.ExampleLibrary.GenericTests.PointStruct",
+      L"Samples.ExampleLibrary.GenericTests.StructContainer`1",
       L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
       L"Samples.ExampleLibrary.FakeClient.Biscuit",
       L"Samples.ExampleLibrary.FakeClient.DogClient`2",
@@ -42,8 +46,8 @@ TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
 
 TEST_F(CLRHelperTest, EnumeratesAssemblyRefs) {
   std::vector<std::wstring> expected_assemblies = {
-      L"System.Runtime", L"System.Diagnostics.Debug", L"System.Collections",
-      L"System.Threading.Tasks"};
+      L"System.Runtime", L"System.Threading.Tasks", L"System.Diagnostics.Debug",
+      L"System.Collections"};
   std::vector<std::wstring> actual_assemblies;
   for (auto& ref : EnumAssemblyRefs(assembly_import_)) {
     auto name = GetReferencedAssemblyMetadata(assembly_import_, ref).name;
@@ -165,7 +169,11 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
       L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
       L"Samples.ExampleLibrary.FakeClient.DogClient`2",
       L"Samples.ExampleLibrary.FakeClient.DogTrick",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick`1"};
+      L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
+      L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
+      L"Samples.ExampleLibrary.GenericTests.ComprehensiveTarget`2",
+      L"Samples.ExampleLibrary.GenericTests.PointStruct",
+      L"Samples.ExampleLibrary.GenericTests.StructContainer`1"};
   std::set<std::wstring> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
     auto type_info = GetTypeInfo(metadata_import_, type_def);
@@ -211,7 +219,8 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
       L"System.Threading.Tasks.Task`1",
       L"System.Tuple`2",
       L"System.Tuple`7",
-      L"System.Type"};
+      L"System.Type",
+      L"System.ValueType"};
   std::set<std::wstring> actual;
   for (auto& type_ref : EnumTypeRefs(metadata_import_)) {
     auto type_info = GetTypeInfo(metadata_import_, type_ref);
@@ -244,7 +253,11 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
       L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
       L"Samples.ExampleLibrary.FakeClient.DogClient`2",
       L"Samples.ExampleLibrary.FakeClient.DogTrick",
-      L"Samples.ExampleLibrary.FakeClient.DogTrick`1"};
+      L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
+      L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
+      L"Samples.ExampleLibrary.GenericTests.ComprehensiveTarget`2",
+      L"Samples.ExampleLibrary.GenericTests.PointStruct",
+      L"Samples.ExampleLibrary.GenericTests.StructContainer`1"};
   std::set<std::wstring> actual;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
     for (auto& method_def : EnumMethods(metadata_import_, type_def)) {
