@@ -11,7 +11,7 @@ TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
   std::vector<std::wstring> expected_types = {
       L"Samples.ExampleLibrary.Class1",
       L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
-      L"Samples.ExampleLibrary.GenericTests.ComprehensiveTarget`2",
+      L"Samples.ExampleLibrary.GenericTests.GenericTarget`2",
       L"Samples.ExampleLibrary.GenericTests.PointStruct",
       L"Samples.ExampleLibrary.GenericTests.StructContainer`1",
       L"Samples.ExampleLibrary.FakeClient.Biscuit`1",
@@ -171,7 +171,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
       L"Samples.ExampleLibrary.FakeClient.DogTrick",
       L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
       L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
-      L"Samples.ExampleLibrary.GenericTests.ComprehensiveTarget`2",
+      L"Samples.ExampleLibrary.GenericTests.GenericTarget`2",
       L"Samples.ExampleLibrary.GenericTests.PointStruct",
       L"Samples.ExampleLibrary.GenericTests.StructContainer`1"};
   std::set<std::wstring> actual;
@@ -255,7 +255,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
       L"Samples.ExampleLibrary.FakeClient.DogTrick",
       L"Samples.ExampleLibrary.FakeClient.DogTrick`1",
       L"Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2",
-      L"Samples.ExampleLibrary.GenericTests.ComprehensiveTarget`2",
+      L"Samples.ExampleLibrary.GenericTests.GenericTarget`2",
       L"Samples.ExampleLibrary.GenericTests.PointStruct",
       L"Samples.ExampleLibrary.GenericTests.StructContainer`1"};
   std::set<std::wstring> actual;
@@ -266,6 +266,39 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
         actual.insert(type_info.name);
       }
     }
+  }
+  EXPECT_EQ(actual, expected);
+}
+
+TEST_F(CLRHelperTest,
+       ElementTypeIsAlwaysValuetypeReturnsCorrectlyForMethodSpecs) {
+  std::vector<std::pair<std::wstring, bool>> expected = {
+      {L"ReturnM1", true},
+      {L"ReturnM1", true},
+      {L"ReturnM1", false},
+      {L"ReturnM1", true},
+      {L"ReturnM1", false},
+      {L"ReturnM1", true},
+  
+      {L"ReturnM2", true},
+      {L"ReturnM2", true},
+      {L"ReturnM2", false},
+      {L"ReturnM2", true},
+      {L"ReturnM2", false},
+      {L"ReturnM2", true},
+
+      {L"Start", false},
+      {L"AwaitUnsafeOnCompleted", false},
+      {L"FromResult", false},
+      {L"AwaitUnsafeOnCompleted", false}};
+  std::vector<std::pair<std::wstring, bool>> actual;
+  
+  for (mdMethodSpec current = mdtMethodSpec + 1; metadata_import_->IsValidToken(current); current++) {
+    mdToken result;
+    auto target = GetFunctionInfo(metadata_import_, current);
+    actual.push_back({target.name, ReturnTypeIsValuetypeOrGeneric(
+        metadata_import_, metadata_emit_, target.id,
+        target.signature, &result)});
   }
   EXPECT_EQ(actual, expected);
 }

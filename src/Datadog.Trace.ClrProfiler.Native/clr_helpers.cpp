@@ -751,6 +751,10 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
   const auto ret_type = CorElementType(ret_type_byte);
 
   switch (ret_type) {
+    case ELEMENT_TYPE_VOID:
+      // No object is returned, so return false.
+      return false;
+
     case ELEMENT_TYPE_GENERICINST:
       // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
       // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
@@ -780,6 +784,14 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
 
       switch (token_type) {
         case mdtMemberRef:
+          // The compiler will only add method calls to instantiations of
+          // generic methods (MethodSpec's), so we never expect to hit this at
+          // run-time. If we are evaluating the MethodDef/MethodRef of a generic
+          // method return false because it is invalid.
+          if (generic_count > 0) {
+            return false;
+          }
+
           hr = metadata_import->GetMemberRefProps(targetFunctionToken,
                                                   &parent_token, nullptr, 0,
                                                   nullptr, nullptr, nullptr);
@@ -789,6 +801,13 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
           }
           break;
         case mdtMethodDef:
+          // The compiler will only add method calls to instantiations of generic methods (MethodSpec's),
+          // so we never expect to hit this at run-time. If we are evaluating the MethodDef/MethodRef of
+          // a generic method return false because it is invalid.
+          if (generic_count > 0) {
+            return false;
+          }
+
           hr = metadata_import->GetMemberProps(
               targetFunctionToken, &parent_token, nullptr, 0, nullptr,
               nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
@@ -854,6 +873,9 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
           hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte, 2,
                                               ret_type_token);
           return SUCCEEDED(hr);
+        } else if (*p_current_byte == ELEMENT_TYPE_GENERICINST) {
+          p_current_byte += 1;
+          return *p_current_byte == ELEMENT_TYPE_VALUETYPE;
         } else {
           return ElementTypeIsAlwaysValuetype(CorElementType(*p_current_byte));
         }

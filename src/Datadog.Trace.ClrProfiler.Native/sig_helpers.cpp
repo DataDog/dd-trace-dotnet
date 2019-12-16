@@ -8,7 +8,7 @@ bool ParseNumber(PCCOR_SIGNATURE* p_sig, ULONG* number) {
     return false;
   }
 
-  p_sig += result;
+  *p_sig += result;
   return true;
 }
 
