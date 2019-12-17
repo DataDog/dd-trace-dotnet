@@ -271,6 +271,37 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
 }
 
 TEST_F(CLRHelperTest,
+       ElementTypeIsAlwaysValuetypeReturnsCorrectlyForMemberRefs) {
+  std::vector<std::pair<std::wstring, bool>> expected = {
+      {L"ReturnT1", true},
+      {L"ReturnT1", true},
+      {L"ReturnT1", false},
+      {L"ReturnT1", true},
+      {L"ReturnT1", false},
+      {L"ReturnT1", true},
+  
+      {L"ReturnT2", true},
+      {L"ReturnT2", true},
+      {L"ReturnT2", false},
+      {L"ReturnT2", true},
+      {L"ReturnT2", false},
+      {L"ReturnT2", true}};
+  std::vector<std::pair<std::wstring, bool>> actual;
+  
+  for (mdMemberRef current = mdtMemberRef + 1; metadata_import_->IsValidToken(current); current++) {
+    mdToken result;
+    auto target = GetFunctionInfo(metadata_import_, current);
+    if (target.name == L"ReturnT1" || target.name == L"ReturnT2") {
+      actual.push_back(
+          {target.name, ReturnTypeIsValuetypeOrGeneric(
+                            metadata_import_, metadata_emit_, target.id,
+                            target.signature, &result)});
+    }
+  }
+  EXPECT_EQ(actual, expected);
+}
+
+TEST_F(CLRHelperTest,
        ElementTypeIsAlwaysValuetypeReturnsCorrectlyForMethodSpecs) {
   std::vector<std::pair<std::wstring, bool>> expected = {
       {L"ReturnM1", true},
@@ -285,20 +316,18 @@ TEST_F(CLRHelperTest,
       {L"ReturnM2", false},
       {L"ReturnM2", true},
       {L"ReturnM2", false},
-      {L"ReturnM2", true},
-
-      {L"Start", false},
-      {L"AwaitUnsafeOnCompleted", false},
-      {L"FromResult", false},
-      {L"AwaitUnsafeOnCompleted", false}};
+      {L"ReturnM2", true}};
   std::vector<std::pair<std::wstring, bool>> actual;
   
   for (mdMethodSpec current = mdtMethodSpec + 1; metadata_import_->IsValidToken(current); current++) {
     mdToken result;
     auto target = GetFunctionInfo(metadata_import_, current);
-    actual.push_back({target.name, ReturnTypeIsValuetypeOrGeneric(
-        metadata_import_, metadata_emit_, target.id,
-        target.signature, &result)});
+    if (target.name.find(L"ReturnM") != std::string::npos) {
+      actual.push_back(
+          {target.name, ReturnTypeIsValuetypeOrGeneric(
+                            metadata_import_, metadata_emit_, target.id,
+                            target.signature, &result)});
+    }
   }
   EXPECT_EQ(actual, expected);
 }

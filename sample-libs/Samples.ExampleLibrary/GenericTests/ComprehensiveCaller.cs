@@ -107,27 +107,27 @@ namespace Samples.ExampleLibrary.GenericTests
             target.ReturnT2(input);
         }
 
-        public void CallReturnT2WithCallerTypeArgsReversed(GenericTarget<CallerT2, CallerT1> target, object input)
+        public void CallReturnT2WithCallerTypeArgsReversed(GenericTarget<object, CallerT1> target, object input)
         {
             target.ReturnT2(input);
         }
 
-        public void CallReturnT2WithClass(GenericTarget<CallerT1, Exception> target, object input)
+        public void CallReturnT2WithClass(GenericTarget<int, Exception> target, object input)
         {
             target.ReturnT2(input);
         }
 
-        public void CallReturnT2WithStruct(GenericTarget<CallerT1, PointStruct> target, object input)
+        public void CallReturnT2WithStruct(GenericTarget<StructContainer<Exception>, PointStruct> target, object input)
         {
             target.ReturnT2(input);
         }
 
-        public void CallReturnT2WithReferenceTypeGenericInstantiation(GenericTarget<CallerT1, Task<Exception>> target, object input)
+        public void CallReturnT2WithReferenceTypeGenericInstantiation(GenericTarget<Task<Task<Task<Exception>>>, Task<Exception>> target, object input)
         {
             target.ReturnT2(input);
         }
 
-        public void CallReturnT2WithValueTypeGenericInstantiation(GenericTarget<CallerT1, StructContainer<Exception>> target, object input)
+        public void CallReturnT2WithValueTypeGenericInstantiation(GenericTarget<PointStruct, StructContainer<Exception>> target, object input)
         {
             target.ReturnT2(input);
         }
