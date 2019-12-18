@@ -684,7 +684,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
   return true;
 }
 
-bool ElementTypeIsAlwaysValuetype(CorElementType element_type) {
+bool ElementTypeIsAlwaysValueType(CorElementType element_type) {
   switch (element_type) {
     // This list should match up with the CorElementType in corhdr.h
     case ELEMENT_TYPE_END:           // 0x00
@@ -733,12 +733,12 @@ bool ElementTypeIsAlwaysValuetype(CorElementType element_type) {
       return false;
 
     default:
-      Warn("[trace::ElementTypeIsAlwaysValuetype] UNHANDLED CASE: unexpected CorElementType found: ", element_type);
+      Warn("[trace::ElementTypeIsAlwaysValueType] UNHANDLED CASE: unexpected CorElementType found: ", element_type);
       return false;
   }
 }
 
-bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
+bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
                       const mdToken targetFunctionToken,
                       const MethodSignature targetFunctionSignature,
@@ -771,7 +771,7 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
       ULONG type_arg_index;
       if (CorSigUncompressData(PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
                                 &type_arg_index) == -1) {
-        Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": unable to read VAR|MVAR index");
+        Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": unable to read VAR|MVAR index");
         return false;
       }
 
@@ -822,12 +822,12 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
                                                   &parent_token, &spec_signature, &spec_signature_length);
           break;
         default:
-          Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": function token was not a mdtMemberRef or mdtMethodDef");
+          Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": function token was not a mdtMemberRef or mdtMethodDef");
           return false;
       }
 
       if (FAILED(hr)) {
-        Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": failed to get parent token or signature");
+        Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": failed to get parent token or signature");
         return false;
       }
 
@@ -844,7 +844,7 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
         // MethodSpec Format: GENRICINST GenArgCount Type Type*
         method_def_sig_index = 1;
       } else {
-        Warn("[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": token_type (", token_type , ") not recognized");
+        Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": token_type (", token_type , ") not recognized");
         return false;
       }
 
@@ -861,7 +861,7 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
         if (i != type_arg_index) {
           if (!ParseType(&p_current_byte)) {
             Warn(
-                "[trace::ReturnTypeIsValuetypeOrGeneric] element_type=", ret_type, ": Unable to parse "
+                "[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": Unable to parse "
                 "generic type argument ", i,
                 "from TypeSpec for parent_token:", parent_token);
             return false;
@@ -877,7 +877,7 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
           p_current_byte += 1;
           return *p_current_byte == ELEMENT_TYPE_VALUETYPE;
         } else {
-          return ElementTypeIsAlwaysValuetype(CorElementType(*p_current_byte));
+          return ElementTypeIsAlwaysValueType(CorElementType(*p_current_byte));
         }
       }
 
@@ -885,7 +885,7 @@ bool ReturnTypeIsValuetypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
     }
 
     default:
-      return ElementTypeIsAlwaysValuetype(ret_type);
+      return ElementTypeIsAlwaysValueType(ret_type);
   }
 }
 }  // namespace trace

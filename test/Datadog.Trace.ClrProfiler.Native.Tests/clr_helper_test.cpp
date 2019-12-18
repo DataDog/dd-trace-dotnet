@@ -271,7 +271,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
 }
 
 TEST_F(CLRHelperTest,
-       ElementTypeIsAlwaysValuetypeReturnsCorrectlyForMemberRefs) {
+       ElementTypeIsAlwaysValueTypeReturnsCorrectlyForMemberRefs) {
   std::vector<std::pair<std::wstring, bool>> expected = {
       {L"ReturnT1", true},
       {L"ReturnT1", true},
@@ -293,7 +293,7 @@ TEST_F(CLRHelperTest,
     auto target = GetFunctionInfo(metadata_import_, current);
     if (target.name == L"ReturnT1" || target.name == L"ReturnT2") {
       actual.push_back(
-          {target.name, ReturnTypeIsValuetypeOrGeneric(
+          {target.name, ReturnTypeIsValueTypeOrGeneric(
                             metadata_import_, metadata_emit_, target.id,
                             target.signature, &result)});
     }
@@ -302,7 +302,7 @@ TEST_F(CLRHelperTest,
 }
 
 TEST_F(CLRHelperTest,
-       ElementTypeIsAlwaysValuetypeReturnsCorrectlyForMethodSpecs) {
+       ElementTypeIsAlwaysValueTypeReturnsCorrectlyForMethodSpecs) {
   std::vector<std::pair<std::wstring, bool>> expected = {
       {L"ReturnM1", true},
       {L"ReturnM1", true},
@@ -324,7 +324,7 @@ TEST_F(CLRHelperTest,
     auto target = GetFunctionInfo(metadata_import_, current);
     if (target.name.find(L"ReturnM") != std::string::npos) {
       actual.push_back(
-          {target.name, ReturnTypeIsValuetypeOrGeneric(
+          {target.name, ReturnTypeIsValueTypeOrGeneric(
                             metadata_import_, metadata_emit_, target.id,
                             target.signature, &result)});
     }
@@ -332,7 +332,7 @@ TEST_F(CLRHelperTest,
   EXPECT_EQ(actual, expected);
 }
 
-TEST_F(CLRHelperTest, ElementTypeIsAlwaysValuetypeReturnsCorrectly) {
+TEST_F(CLRHelperTest, ElementTypeIsAlwaysValueTypeReturnsCorrectly) {
   std::vector<CorElementType> positive_list = {
     ELEMENT_TYPE_VOID,
     ELEMENT_TYPE_BOOLEAN,
@@ -365,9 +365,9 @@ TEST_F(CLRHelperTest, ElementTypeIsAlwaysValuetypeReturnsCorrectly) {
     ELEMENT_TYPE_SZARRAY,
     ELEMENT_TYPE_MVAR};
   for (auto& element_type : positive_list) {
-    ASSERT_TRUE(ElementTypeIsAlwaysValuetype(element_type));
+    ASSERT_TRUE(ElementTypeIsAlwaysValueType(element_type));
   }
   for (auto& element_type : negative_list) {
-    ASSERT_FALSE(ElementTypeIsAlwaysValuetype(element_type));
+    ASSERT_FALSE(ElementTypeIsAlwaysValueType(element_type));
   }
 }
