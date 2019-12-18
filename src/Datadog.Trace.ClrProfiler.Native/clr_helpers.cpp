@@ -824,7 +824,7 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
                                                   &parent_token, &spec_signature, &spec_signature_length);
           break;
         default:
-          Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": function token was not a mdtMemberRef or mdtMethodDef");
+          Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": function token was not a MemberRef, MethodDef, or MethodSpec");
           return false;
       }
 
