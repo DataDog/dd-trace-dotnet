@@ -104,7 +104,8 @@ TEST_F(CLRHelperTypeCheckTest, GenericAsyncMethodWithNestedGenericTask) {
 
 TEST_F(CLRHelperTypeCheckTest, SuccessfullyParsesEverySignature) {
   std::set<WSTRING> expected_failures = {
-      L"Samples.ExampleLibrary.Class1.ToMdArray"
+      L"Samples.ExampleLibrary.Class1.ToMdArray",
+      L"Samples.ExampleLibrary.Class1.ToEnumerator"
   };
   std::set<WSTRING> actual_failures;
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {

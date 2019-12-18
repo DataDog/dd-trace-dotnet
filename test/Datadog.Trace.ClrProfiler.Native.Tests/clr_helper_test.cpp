@@ -189,6 +189,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
 TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
   std::set<std::wstring> expected = {
       L"DebuggingModes",
+      L"Enumerator",
       L"System.Array",
       L"System.Collections.Generic.Dictionary`2",
       L"System.Collections.Generic.IList`1",
@@ -269,6 +270,39 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
       auto type_info = GetTypeInfo(metadata_import_, method_def);
       if (type_info.IsValid()) {
         actual.insert(type_info.name);
+      }
+    }
+  }
+  EXPECT_EQ(actual, expected);
+}
+
+TEST_F(CLRHelperTest,
+       ElementTypeIsAlwaysValueTypeReturnsCorrectlyForMethodDefs) {
+  std::vector<std::pair<std::wstring, bool>> expected = {
+      {L"Add", true},
+      {L"Multiply", true},
+      {L"ToCustomString", false},
+      {L"ToObject", false},
+      {L"ToArray", false},
+      {L"ToCustomArray", false},
+      {L"ToMdArray", false},
+      {L"ToJaggedArray", false},
+      {L"ToList", false},
+      {L"ToEnumerator", true},
+      {L".ctor", false}};
+  std::vector<std::pair<std::wstring, bool>> actual;
+
+  for (auto& type_def : EnumTypeDefs(metadata_import_)) {
+    for (auto& method_def : EnumMethods(metadata_import_, type_def)) {
+      auto type_info = GetTypeInfo(metadata_import_, method_def);
+      if (type_info.IsValid() &&
+          type_info.name == L"Samples.ExampleLibrary.Class1") {
+        mdToken result;
+        auto target = GetFunctionInfo(metadata_import_, method_def);
+        actual.push_back(
+            {target.name, ReturnTypeIsValueTypeOrGeneric(
+                              metadata_import_, metadata_emit_, target.id,
+                              target.signature, &result)});
       }
     }
   }

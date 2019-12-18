@@ -61,5 +61,10 @@ namespace Samples.ExampleLibrary
         {
             return new List<Class1>() { this };
         }
+
+        public List<Class1>.Enumerator ToEnumerator()
+        {
+            return ToList().GetEnumerator();
+        }
     }
 }
