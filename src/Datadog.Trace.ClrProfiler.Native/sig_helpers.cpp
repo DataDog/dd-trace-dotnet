@@ -12,6 +12,44 @@ bool ParseNumber(PCCOR_SIGNATURE* p_sig, ULONG* number) {
   return true;
 }
 
+bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE* p_sig) {
+  mdToken type_token;
+  ULONG result;
+  result = CorSigUncompressToken(*p_sig, &type_token);
+  if (result == -1) {
+    return false;
+  }
+
+  *p_sig += result;
+  return true;
+}
+
+bool ParseCustomMod(PCCOR_SIGNATURE* p_sig) {
+  if (**p_sig == ELEMENT_TYPE_CMOD_OPT || **p_sig == ELEMENT_TYPE_CMOD_REQD) {
+    *p_sig += 1;
+    return ParseTypeDefOrRefEncoded(p_sig);
+  }
+
+  return false;
+}
+
+bool ParseOptionalCustomMods(PCCOR_SIGNATURE* p_sig) {
+  for (;;) {
+    switch (**p_sig) {
+      case ELEMENT_TYPE_CMOD_OPT:
+      case ELEMENT_TYPE_CMOD_REQD:
+        if (!ParseCustomMod(p_sig)) {
+          return false;
+        }
+        break;
+      default:
+        return true;
+    }
+  }
+
+  return false;
+}
+
 bool ParseRetType(PCCOR_SIGNATURE* p_sig) {
   if (!ParseOptionalCustomMods(p_sig)) {
     return false;
@@ -112,44 +150,6 @@ bool ParseArrayShape(PCCOR_SIGNATURE* p_sig) {
   }
 
   return true;
-}
-
-bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE* p_sig) {
-  mdToken type_token;
-  ULONG result;
-  result = CorSigUncompressToken(*p_sig, &type_token);
-  if (result == -1) {
-    return false;
-  }
-
-  *p_sig += result;
-  return true;
-}
-
-bool ParseCustomMod(PCCOR_SIGNATURE* p_sig) {
-  if (**p_sig == ELEMENT_TYPE_CMOD_OPT || **p_sig == ELEMENT_TYPE_CMOD_REQD) {
-    *p_sig += 1;
-    return ParseTypeDefOrRefEncoded(p_sig);
-  }
-
-  return false;
-}
-
-bool ParseOptionalCustomMods(PCCOR_SIGNATURE* p_sig) {
-  for (;;) {
-    switch (**p_sig) {
-      case ELEMENT_TYPE_CMOD_OPT:
-      case ELEMENT_TYPE_CMOD_REQD:
-        if (!ParseCustomMod(p_sig)) {
-          return false;
-        }
-        break;
-      default:
-        return true;
-    }
-  }
-
-  return false;
 }
 
 // Returns whether or not the Type signature at the given address could be parsed.
