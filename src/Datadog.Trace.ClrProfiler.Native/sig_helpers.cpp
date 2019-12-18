@@ -12,10 +12,80 @@ bool ParseNumber(PCCOR_SIGNATURE* p_sig, ULONG* number) {
   return true;
 }
 
+bool ParseRetType(PCCOR_SIGNATURE* p_sig) {
+  if (!ParseOptionalCustomMods(p_sig)) {
+    return false;
+  }
+
+  if (**p_sig == ELEMENT_TYPE_TYPEDBYREF ||
+      **p_sig == ELEMENT_TYPE_VOID) {
+    *p_sig += 1;
+    return true;
+  }
+
+  if (**p_sig == ELEMENT_TYPE_BYREF) {
+    *p_sig += 1;
+  }
+
+  return ParseType(p_sig);
+}
+
+bool ParseParam(PCCOR_SIGNATURE* p_sig) {
+  if (!ParseOptionalCustomMods(p_sig)) {
+    return false;
+  }
+
+  if (**p_sig == ELEMENT_TYPE_TYPEDBYREF) {
+    *p_sig += 1;
+    return true;
+  }
+
+  if (**p_sig == ELEMENT_TYPE_BYREF) {
+    *p_sig += 1;
+  }
+
+  return ParseType(p_sig);
+}
+
 bool ParseMethod(PCCOR_SIGNATURE* p_sig) {
   // Format:  [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount)
   //                    ParamCount RetType Param* [SENTINEL Param+]
-  return true;  // TODO: Implement
+  if (**p_sig == IMAGE_CEE_CS_CALLCONV_GENERIC) {
+    *p_sig += 1;
+
+    ULONG generic_count = 0;
+    if (!ParseNumber(p_sig, &generic_count)) {
+      return false;
+    }
+  }
+
+  ULONG param_count = 0;
+  if (!ParseNumber(p_sig, &param_count)) {
+    return false;
+  }
+
+  if (!ParseRetType(p_sig)) {
+    return false;
+  }
+
+  bool sentinel_found = false;
+  for (int i = 0; i < param_count; i++) {
+    if (**p_sig == ELEMENT_TYPE_SENTINEL) {
+      if (sentinel_found) {
+        return false;
+      }
+
+      sentinel_found = true;
+      *p_sig += 1;
+    }
+
+
+    if (!ParseParam(p_sig)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool ParseArrayShape(PCCOR_SIGNATURE* p_sig) {
