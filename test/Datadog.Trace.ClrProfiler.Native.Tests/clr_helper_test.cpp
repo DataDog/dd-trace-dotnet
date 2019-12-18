@@ -277,7 +277,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
 }
 
 TEST_F(CLRHelperTest,
-       ElementTypeIsAlwaysValueTypeReturnsCorrectlyForMethodDefs) {
+       ReturnTypeIsValueTypeOrGenericReturnsCorrectlyForMethodDefs) {
   std::vector<std::pair<std::wstring, bool>> expected = {
       {L"Add", true},
       {L"Multiply", true},
@@ -310,7 +310,7 @@ TEST_F(CLRHelperTest,
 }
 
 TEST_F(CLRHelperTest,
-       ElementTypeIsAlwaysValueTypeReturnsCorrectlyForMemberRefs) {
+       ReturnTypeIsValueTypeOrGenericReturnsCorrectlyForMemberRefs) {
   std::vector<std::pair<std::wstring, bool>> expected = {
       {L"ReturnT1", true},
       {L"ReturnT1", true},
@@ -341,7 +341,7 @@ TEST_F(CLRHelperTest,
 }
 
 TEST_F(CLRHelperTest,
-       ElementTypeIsAlwaysValueTypeReturnsCorrectlyForMethodSpecs) {
+       ReturnTypeIsValueTypeOrGenericReturnsCorrectlyForMethodSpecs) {
   std::vector<std::pair<std::wstring, bool>> expected = {
       {L"ReturnM1", true},
       {L"ReturnM1", true},

@@ -768,14 +768,15 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
 
       // Extract the number, which is an index into the generic type arguments of the method or the type
       method_def_sig_index++; // Advance the current_index to point to "number"
-      ULONG type_arg_index;
+      ULONG generic_type_index;
       if (CorSigUncompressData(PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
-                                &type_arg_index) == -1) {
+                                &generic_type_index) == -1) {
         Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": unable to read VAR|MVAR index");
         return false;
       }
 
-      // Get the signature of the parent_token, which lists the generic type arguments
+      // Get the signature of the MethodSpec or the method's parent TypeSpec
+      // Each spec will clearly list the types used for the generic type variables
       const auto token_type = TypeFromToken(targetFunctionToken);
       mdToken parent_token = mdTokenNil;
       HRESULT hr;
@@ -784,8 +785,8 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
 
       switch (token_type) {
         case mdtMemberRef:
-          // The compiler will only add method calls to instantiations of
-          // generic methods (MethodSpec's), so we never expect to hit this at
+          // The compiler will never make method calls to generic methods without
+          // the generic context, so we never expect to hit this at
           // run-time. If we are evaluating the MethodDef/MethodRef of a generic
           // method return false because it is invalid.
           if (generic_count > 0) {
@@ -801,9 +802,10 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
           }
           break;
         case mdtMethodDef:
-          // The compiler will only add method calls to instantiations of generic methods (MethodSpec's),
-          // so we never expect to hit this at run-time. If we are evaluating the MethodDef/MethodRef of
-          // a generic method return false because it is invalid.
+          // The compiler will never make method calls to generic methods without
+          // the generic context, so we never expect to hit this at
+          // run-time. If we are evaluating the MethodDef/MethodRef of a generic
+          // method return false because it is invalid.
           if (generic_count > 0) {
             return false;
           }
@@ -832,17 +834,18 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
       }
 
       // Determine the index of GenArgCount in the signature
+      size_t parent_token_index;
       if (token_type == mdtMemberRef || token_type == mdtMethodDef) {
         // TypeSpec Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type Type*
         // Skip over TypeDefOrRefEncoded by parsing the signature at index 2
-        method_def_sig_index = 2;
+        parent_token_index = 2;
         mdToken dummy_token;
         ULONG token_length = CorSigUncompressToken(
-            &spec_signature[method_def_sig_index], &dummy_token);
-        method_def_sig_index += token_length;
+            &spec_signature[parent_token_index], &dummy_token);
+        parent_token_index += token_length;
       } else if (token_type == mdtMethodSpec) {
         // MethodSpec Format: GENRICINST GenArgCount Type Type*
-        method_def_sig_index = 1;
+        parent_token_index = 1;
       } else {
         Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": token_type (", token_type , ") not recognized");
         return false;
@@ -850,26 +853,26 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
 
       // Read the value of GenArgCount in the signature
       ULONG num_generic_arguments;
-      method_def_sig_index += CorSigUncompressData(
-          &spec_signature[method_def_sig_index], &num_generic_arguments);
+      parent_token_index += CorSigUncompressData(
+          &spec_signature[parent_token_index], &num_generic_arguments);
 
-      // Get a pointer to the PCCOR_SIGNATURE pointer that we can pass around and increment
-      PCCOR_SIGNATURE p_current_byte = spec_signature + method_def_sig_index;
+      // Get a pointer to first type after GenArgCount that we can increment to read the signature
+      PCCOR_SIGNATURE p_current_byte = spec_signature + parent_token_index;
 
       // Iterate to specified generic type argument index and return the appropriate class token or TypeSpec
       for (size_t i = 0; i < num_generic_arguments; i++) {
-        if (i != type_arg_index) {
+        if (i != generic_type_index) {
           if (!ParseType(&p_current_byte)) {
             Warn(
                 "[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": Unable to parse "
                 "generic type argument ", i,
-                "from TypeSpec for parent_token:", parent_token);
+                "from signature of parent_token:", parent_token);
             return false;
           }
         } else if (*p_current_byte == ELEMENT_TYPE_MVAR ||
                     *p_current_byte == ELEMENT_TYPE_VAR) {
-          // Retrieve the corresponding TypeSpec token for the `M#` MVAR description, or
-          // Retrieve the corresponding TypeSpec token for the `T#` VAR description
+          // The method was defined with a method-level generic type argument from the caller. Return the TypeSpec token for the `M#` MVAR description, or
+          // The method was defined with a type-level generic type argument from the caller. Return the TypeSpec token for the `T#` VAR description
           hr = metadata_emit->GetTokenFromTypeSpec(p_current_byte, 2,
                                               ret_type_token);
           return SUCCEEDED(hr);
