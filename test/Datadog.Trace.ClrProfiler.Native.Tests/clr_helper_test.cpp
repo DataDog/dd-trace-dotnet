@@ -297,12 +297,12 @@ TEST_F(CLRHelperTest,
       auto type_info = GetTypeInfo(metadata_import_, method_def);
       if (type_info.IsValid() &&
           type_info.name == L"Samples.ExampleLibrary.Class1") {
-        mdToken result;
+        mdToken type_token = mdTokenNil;
         auto target = GetFunctionInfo(metadata_import_, method_def);
-        actual.push_back(
-            {target.name, ReturnTypeIsValueTypeOrGeneric(
-                              metadata_import_, metadata_emit_, target.id,
-                              target.signature, &result)});
+        bool result = ReturnTypeIsValueTypeOrGeneric(
+            metadata_import_, metadata_emit_, target.id, target.signature,
+            &type_token) && type_token != mdTokenNil;
+        actual.push_back({target.name, result});
       }
     }
   }
@@ -328,13 +328,13 @@ TEST_F(CLRHelperTest,
   std::vector<std::pair<std::wstring, bool>> actual;
   
   for (mdMemberRef current = mdtMemberRef + 1; metadata_import_->IsValidToken(current); current++) {
-    mdToken result;
     auto target = GetFunctionInfo(metadata_import_, current);
     if (target.name == L"ReturnT1" || target.name == L"ReturnT2") {
-      actual.push_back(
-          {target.name, ReturnTypeIsValueTypeOrGeneric(
-                            metadata_import_, metadata_emit_, target.id,
-                            target.signature, &result)});
+      mdToken type_token = mdTokenNil;
+      bool result = ReturnTypeIsValueTypeOrGeneric(
+          metadata_import_, metadata_emit_, target.id, target.signature,
+          &type_token) && type_token != mdTokenNil;
+      actual.push_back({target.name, result});
     }
   }
   EXPECT_EQ(actual, expected);
@@ -359,13 +359,13 @@ TEST_F(CLRHelperTest,
   std::vector<std::pair<std::wstring, bool>> actual;
   
   for (mdMethodSpec current = mdtMethodSpec + 1; metadata_import_->IsValidToken(current); current++) {
-    mdToken result;
+    mdToken type_token = mdTokenNil;
     auto target = GetFunctionInfo(metadata_import_, current);
     if (target.name.find(L"ReturnM") != std::string::npos) {
-      actual.push_back(
-          {target.name, ReturnTypeIsValueTypeOrGeneric(
-                            metadata_import_, metadata_emit_, target.id,
-                            target.signature, &result)});
+      bool result = ReturnTypeIsValueTypeOrGeneric(
+          metadata_import_, metadata_emit_, target.id, target.signature,
+          &type_token) && type_token != mdTokenNil;
+      actual.push_back({target.name, result});
     }
   }
   EXPECT_EQ(actual, expected);

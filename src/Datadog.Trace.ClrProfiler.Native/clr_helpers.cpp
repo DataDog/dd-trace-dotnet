@@ -755,11 +755,23 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
       // No object is returned, so return false.
       return false;
 
-    case ELEMENT_TYPE_GENERICINST:
+    case ELEMENT_TYPE_GENERICINST: {
       // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
       // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
-      method_def_sig_index++;
-      return targetFunctionSignature.data[method_def_sig_index] == ELEMENT_TYPE_VALUETYPE;
+      if (targetFunctionSignature.data[method_def_sig_index + 1] != ELEMENT_TYPE_VALUETYPE) {
+        return false;
+      }
+
+      PCCOR_SIGNATURE p_start_byte = PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]);
+      PCCOR_SIGNATURE p_end_byte = p_start_byte;
+      if (!ParseType(&p_end_byte)) {
+        return false;
+      }
+
+      size_t length = p_end_byte - p_start_byte;
+      HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, length, ret_type_token);
+      return SUCCEEDED(hr);
+    }
 
     case ELEMENT_TYPE_VAR:
     case ELEMENT_TYPE_MVAR: {
@@ -877,8 +889,22 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
                                               ret_type_token);
           return SUCCEEDED(hr);
         } else if (*p_current_byte == ELEMENT_TYPE_GENERICINST) {
-          p_current_byte += 1;
-          return *p_current_byte == ELEMENT_TYPE_VALUETYPE;
+          // Format: GENERICINST (CLASS | VALUETYPE) TypeDefOrRefEncoded GenArgCount Type *
+          // Example: Task<HttpResponseMessage>. Return true if the type is a VALUETYPE
+          if (*(p_current_byte + 1) != ELEMENT_TYPE_VALUETYPE) {
+            return false;
+          }
+
+          PCCOR_SIGNATURE p_start_byte = p_current_byte;
+          PCCOR_SIGNATURE p_end_byte = p_start_byte;
+          if (!ParseType(&p_end_byte)) {
+            return false;
+          }
+
+          size_t length = p_end_byte - p_start_byte;
+          HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, length,
+                                                           ret_type_token);
+          return SUCCEEDED(hr);
         } else {
           return ElementTypeIsAlwaysValueType(CorElementType(*p_current_byte));
         }
