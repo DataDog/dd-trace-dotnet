@@ -46,8 +46,10 @@ TEST_F(CLRHelperTest, EnumeratesTypeDefs) {
 
 TEST_F(CLRHelperTest, EnumeratesAssemblyRefs) {
   std::vector<std::wstring> expected_assemblies = {
-      L"System.Runtime", L"System.Threading.Tasks", L"System.Diagnostics.Debug",
-      L"System.Collections"};
+      L"System.Runtime",
+      L"System.Collections",
+      L"System.Threading.Tasks",
+      L"System.Diagnostics.Debug"};
   std::vector<std::wstring> actual_assemblies;
   for (auto& ref : EnumAssemblyRefs(assembly_import_)) {
     auto name = GetReferencedAssemblyMetadata(assembly_import_, ref).name;
@@ -187,6 +189,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeDefs) {
 TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
   std::set<std::wstring> expected = {
       L"DebuggingModes",
+      L"System.Array",
       L"System.Collections.Generic.Dictionary`2",
       L"System.Collections.Generic.IList`1",
       L"System.Collections.Generic.List`1",
@@ -198,6 +201,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
       L"System.Exception",
       L"System.Func`3",
       L"System.Guid",
+      L"System.Int32",
       L"System.Object",
       L"System.Reflection.AssemblyCompanyAttribute",
       L"System.Reflection.AssemblyConfigurationAttribute",
@@ -214,6 +218,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
       L"System.Runtime.CompilerServices.TaskAwaiter",
       L"System.Runtime.CompilerServices.TaskAwaiter`1",
       L"System.Runtime.Versioning.TargetFrameworkAttribute",
+      L"System.RuntimeTypeHandle",
       L"System.String",
       L"System.Threading.Tasks.Task",
       L"System.Threading.Tasks.Task`1",

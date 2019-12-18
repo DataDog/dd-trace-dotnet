@@ -3,6 +3,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 
 namespace Samples.ExampleLibrary
 {
@@ -19,5 +20,46 @@ namespace Samples.ExampleLibrary
         }
 
         public Func<int, int, int> Divide = (int x, int y) => x / y;
+
+        public string ToCustomString()
+        {
+            return "Custom";
+        }
+
+        public object ToObject()
+        {
+            return this;
+        }
+
+        public Class1[] ToArray()
+        {
+            return new Class1[] { this };
+        }
+
+        public Array ToCustomArray()
+        {
+            var lengthsArray = new int[2] { 5, 10 };
+            var lowerBoundsArray = new int[2] { 20, 15 };
+            return Array.CreateInstance(typeof(Class1), lengthsArray, lowerBoundsArray);
+        }
+
+        public Class1[, ,] ToMdArray()
+        {
+            return new Class1[4, 2, 3];
+        }
+
+        public Class1[][] ToJaggedArray()
+        {
+            return new Class1[][]
+            {
+                new Class1[] { this },
+                new Class1[] { null, null }
+            };
+        }
+
+        public List<Class1> ToList()
+        {
+            return new List<Class1>() { this };
+        }
     }
 }
