@@ -781,6 +781,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       if (method_replacement.wrapper_method.method_signature.RetTypeIsObject()
           && ReturnTypeIsValueTypeOrGeneric(module_metadata->metadata_import,
                               module_metadata->metadata_emit,
+                              module_metadata->assembly_emit,
                               target.id,
                               target.signature,
                               &typeToken)) {
@@ -873,17 +874,10 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  // TODO fix this for .NET Core
-  // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
   mdModuleRef mscorlib_ref;
-  ASSEMBLYMETADATA metadata{};
-  metadata.usMajorVersion = 4;
-  metadata.usMinorVersion = 0;
-  metadata.usBuildNumber = 0;
-  metadata.usRevisionNumber = 0;
-  BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
-  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), "mscorlib"_W.c_str(),
-                                   &metadata, NULL, 0, 0, &mscorlib_ref);
+  if (!CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref)) {
+    Warn("GenerateVoidILStartupMethod: CreateAssemblyRefToMscorlib failed.");
+  }
 
   // Define a TypeRef for System.Object
   mdTypeRef object_type_ref;

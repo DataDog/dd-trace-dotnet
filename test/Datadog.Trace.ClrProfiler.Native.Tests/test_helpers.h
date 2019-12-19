@@ -11,6 +11,7 @@ class CLRHelperTestBase : public ::testing::Test {
   ComPtr<IMetaDataImport2> metadata_import_;
   ComPtr<IMetaDataEmit2> metadata_emit_;
   ComPtr<IMetaDataAssemblyImport> assembly_import_;
+  ComPtr<IMetaDataAssemblyEmit> assembly_emit_;
   Version min_ver_ = Version(0, 0, 0, 0);
   Version max_ver_ = Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX);
   std::vector<WSTRING> empty_sig_type_;
@@ -48,8 +49,10 @@ class CLRHelperTestBase : public ::testing::Test {
         metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport2);
     metadata_emit_ =
         metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-    assembly_import_ = metadataInterfaces.As<IMetaDataAssemblyImport>(
-        IID_IMetaDataAssemblyImport);
+    assembly_import_ =
+        metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+    assembly_emit_ =
+        metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
   }
 
   void SetUp() override { LoadMetadataDependencies(); }

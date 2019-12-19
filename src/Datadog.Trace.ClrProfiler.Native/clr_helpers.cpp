@@ -738,8 +738,121 @@ bool ElementTypeIsAlwaysValueType(CorElementType element_type) {
   }
 }
 
-bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
+bool CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, mdAssemblyRef* mscorlib_ref) {
+  // TODO fix this for .NET Core
+  // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
+  ASSEMBLYMETADATA metadata{};
+  metadata.usMajorVersion = 4;
+  metadata.usMinorVersion = 0;
+  metadata.usBuildNumber = 0;
+  metadata.usRevisionNumber = 0;
+  BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
+  HRESULT hr = assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key),
+                                   "mscorlib"_W.c_str(), &metadata, NULL, 0, 0,
+                                   mscorlib_ref);
+
+  return SUCCEEDED(hr);
+}
+
+bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,                                        
+                                            const ComPtr<IMetaDataEmit2>& metadata_emit,
+                                            const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
+                                            mdToken* ret_type_token) {
+  const auto cor_element_type = CorElementType(*p_sig);
+  LPCWSTR managed_type_name = NULL;
+
+  switch (cor_element_type) {
+    case ELEMENT_TYPE_VALUETYPE: {
+      ULONG result;
+      result = CorSigUncompressToken(p_sig + 1, ret_type_token);
+      if (result == -1) {
+        Warn("[trace::ReturnTypeTokenforElementType] ELEMENT_TYPE_VALUETYPE failed to find uncompress TypeRef or TypeDef");
+        return false;
+      }
+
+      return true;
+    }
+
+    case ELEMENT_TYPE_VOID:     // 0x01  // System.Void (struct)
+      managed_type_name = "System.Void"_W.c_str();
+      break;
+    case ELEMENT_TYPE_BOOLEAN:  // 0x02  // System.Boolean (struct)
+      managed_type_name = "System.Boolean"_W.c_str();
+      break;
+    case ELEMENT_TYPE_CHAR:     // 0x03  // System.Char (struct)
+      managed_type_name = "System.Char"_W.c_str();
+      break;
+    case ELEMENT_TYPE_I1:       // 0x04  // System.SByte (struct)
+      managed_type_name = "System.SByte"_W.c_str();
+      break;
+    case ELEMENT_TYPE_U1:       // 0x05  // System.Byte (struct)
+      managed_type_name = "System.Byte"_W.c_str();
+      break;
+    case ELEMENT_TYPE_I2:       // 0x06  // System.Int16 (struct)
+      managed_type_name = "System.Int16"_W.c_str();
+      break;
+    case ELEMENT_TYPE_U2:       // 0x07  // System.UInt16 (struct)
+      managed_type_name = "System.UInt16"_W.c_str();
+      break;
+    case ELEMENT_TYPE_I4:       // 0x08  // System.Int32 (struct)
+      managed_type_name = "System.Int32"_W.c_str();
+      break;
+    case ELEMENT_TYPE_U4:       // 0x09  // System.UInt32 (struct)
+      managed_type_name = "System.UInt32"_W.c_str();
+      break;
+    case ELEMENT_TYPE_I8:       // 0x0a  // System.Int64 (struct)
+      managed_type_name = "System.Int64"_W.c_str();
+      break;
+    case ELEMENT_TYPE_U8:       // 0x0b  // System.UInt64 (struct)
+      managed_type_name = "System.UInt64"_W.c_str();
+      break;
+    case ELEMENT_TYPE_R4:       // 0x0c  // System.Single (struct)
+      managed_type_name = "System.Single"_W.c_str();
+      break;
+    case ELEMENT_TYPE_R8:       // 0x0d  // System.Double (struct)
+      managed_type_name = "System.Double"_W.c_str();
+      break;
+    case ELEMENT_TYPE_TYPEDBYREF:  // 0X16  // System.TypedReference (struct)
+      managed_type_name = "System.TypedReference"_W.c_str();
+      break;
+    case ELEMENT_TYPE_I:           // 0x18  // System.IntPtr (struct)
+      managed_type_name = "System.IntPtr"_W.c_str();
+      break;
+    case ELEMENT_TYPE_U:           // 0x19  // System.UIntPtr (struct)
+      managed_type_name = "System.UIntPtr"_W.c_str();
+      break;
+    default:
+      return false;
+  }
+
+  // Create reference to Mscorlib
+  mdModuleRef mscorlib_ref;
+  if (!CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref)) {
+    Warn("[trace::ReturnTypeTokenforElementType] failed to define AssemblyRef to mscorlib");
+    return false;
+  }
+
+  // Create/Get TypeRef to the listed type
+  if (managed_type_name == NULL) {
+    Warn("[trace::ReturnTypeTokenforElementType] no managed type name given");
+    return false;
+  }
+
+  HRESULT hr = metadata_emit->DefineTypeRefByName(
+      mscorlib_ref, managed_type_name, ret_type_token);
+
+  if (FAILED(hr)) {
+    Warn("[trace::ReturnTypeTokenforElementType] unable to create type ref for managed_type_name=", managed_type_name);
+    return false;
+  }
+
+  return true;
+}
+
+bool ReturnTypeIsValueTypeOrGeneric(
+                      const ComPtr<IMetaDataImport2>& metadata_import,
                       const ComPtr<IMetaDataEmit2>& metadata_emit,
+                      const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
                       const mdToken targetFunctionToken,
                       const MethodSignature targetFunctionSignature,
                       mdToken* ret_type_token) {
@@ -906,7 +1019,11 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
                                                            ret_type_token);
           return SUCCEEDED(hr);
         } else {
-          return ElementTypeIsAlwaysValueType(CorElementType(*p_current_byte));
+          return ReturnTypeTokenforValueTypeElementType(
+              p_current_byte,
+              metadata_emit,
+              assembly_emit,
+              ret_type_token);
         }
       }
 
@@ -914,7 +1031,11 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
     }
 
     default:
-      return ElementTypeIsAlwaysValueType(ret_type);
+      return ReturnTypeTokenforValueTypeElementType(
+          PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
+          metadata_emit,
+          assembly_emit,
+          ret_type_token);
   }
 }
 }  // namespace trace

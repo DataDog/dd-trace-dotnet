@@ -3,6 +3,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Samples.ExampleLibrary
@@ -65,6 +66,11 @@ namespace Samples.ExampleLibrary
         public List<Class1>.Enumerator ToEnumerator()
         {
             return ToList().GetEnumerator();
+        }
+
+        public DictionaryEntry ToDictionaryEntry()
+        {
+            return new DictionaryEntry("Class1", this);
         }
     }
 }

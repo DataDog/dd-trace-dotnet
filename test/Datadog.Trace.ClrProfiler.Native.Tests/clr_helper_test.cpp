@@ -141,8 +141,10 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
                               {},
                               empty_sig_type_};
 
-  MethodReference excluded = {L"Samples.ExampleLibrary", L"SomeType",
-                              L"SomeOtherMethod",        Version(0, 0, 0, 0),
+  MethodReference excluded = {L"Samples.ExampleLibrary",
+                              L"SomeType",
+                              L"SomeOtherMethod",
+                              Version(0, 0, 0, 0),
                               Version(0, 1, 0, 0),
                               {},
                               empty_sig_type_};
@@ -191,6 +193,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
       L"DebuggingModes",
       L"Enumerator",
       L"System.Array",
+      L"System.Collections.DictionaryEntry",
       L"System.Collections.Generic.Dictionary`2",
       L"System.Collections.Generic.IList`1",
       L"System.Collections.Generic.List`1",
@@ -289,6 +292,7 @@ TEST_F(CLRHelperTest,
       {L"ToJaggedArray", false},
       {L"ToList", false},
       {L"ToEnumerator", true},
+      {L"ToDictionaryEntry", true},
       {L".ctor", false}};
   std::vector<std::pair<std::wstring, bool>> actual;
 
@@ -299,9 +303,13 @@ TEST_F(CLRHelperTest,
           type_info.name == L"Samples.ExampleLibrary.Class1") {
         mdToken type_token = mdTokenNil;
         auto target = GetFunctionInfo(metadata_import_, method_def);
-        bool result = ReturnTypeIsValueTypeOrGeneric(
-            metadata_import_, metadata_emit_, target.id, target.signature,
-            &type_token) && type_token != mdTokenNil;
+        bool result = ReturnTypeIsValueTypeOrGeneric(metadata_import_,
+                                                     metadata_emit_,
+                                                     assembly_emit_,
+                                                     target.id,
+                                                     target.signature,
+                                                     &type_token) &&
+                      type_token != mdTokenNil;
         actual.push_back({target.name, result});
       }
     }
@@ -318,7 +326,7 @@ TEST_F(CLRHelperTest,
       {L"ReturnT1", true},
       {L"ReturnT1", false},
       {L"ReturnT1", true},
-  
+
       {L"ReturnT2", true},
       {L"ReturnT2", true},
       {L"ReturnT2", false},
@@ -326,14 +334,18 @@ TEST_F(CLRHelperTest,
       {L"ReturnT2", false},
       {L"ReturnT2", true}};
   std::vector<std::pair<std::wstring, bool>> actual;
-  
+
   for (mdMemberRef current = mdtMemberRef + 1; metadata_import_->IsValidToken(current); current++) {
     auto target = GetFunctionInfo(metadata_import_, current);
     if (target.name == L"ReturnT1" || target.name == L"ReturnT2") {
       mdToken type_token = mdTokenNil;
-      bool result = ReturnTypeIsValueTypeOrGeneric(
-          metadata_import_, metadata_emit_, target.id, target.signature,
-          &type_token) && type_token != mdTokenNil;
+      bool result = ReturnTypeIsValueTypeOrGeneric(metadata_import_,
+                                                  metadata_emit_,
+                                                  assembly_emit_,
+                                                  target.id,
+                                                  target.signature,
+                                                  &type_token) &&
+                    type_token != mdTokenNil;
       actual.push_back({target.name, result});
     }
   }
@@ -349,7 +361,7 @@ TEST_F(CLRHelperTest,
       {L"ReturnM1", true},
       {L"ReturnM1", false},
       {L"ReturnM1", true},
-  
+
       {L"ReturnM2", true},
       {L"ReturnM2", true},
       {L"ReturnM2", false},
@@ -357,14 +369,18 @@ TEST_F(CLRHelperTest,
       {L"ReturnM2", false},
       {L"ReturnM2", true}};
   std::vector<std::pair<std::wstring, bool>> actual;
-  
+
   for (mdMethodSpec current = mdtMethodSpec + 1; metadata_import_->IsValidToken(current); current++) {
     mdToken type_token = mdTokenNil;
     auto target = GetFunctionInfo(metadata_import_, current);
     if (target.name.find(L"ReturnM") != std::string::npos) {
-      bool result = ReturnTypeIsValueTypeOrGeneric(
-          metadata_import_, metadata_emit_, target.id, target.signature,
-          &type_token) && type_token != mdTokenNil;
+      bool result = ReturnTypeIsValueTypeOrGeneric(metadata_import_,
+                                                   metadata_emit_,
+                                                   assembly_emit_,
+                                                   target.id,
+                                                   target.signature,
+                                                   &type_token) &&
+                    type_token != mdTokenNil;
       actual.push_back({target.name, result});
     }
   }
@@ -373,36 +389,36 @@ TEST_F(CLRHelperTest,
 
 TEST_F(CLRHelperTest, ElementTypeIsAlwaysValueTypeReturnsCorrectly) {
   std::vector<CorElementType> positive_list = {
-    ELEMENT_TYPE_VOID,
-    ELEMENT_TYPE_BOOLEAN,
-    ELEMENT_TYPE_CHAR,
-    ELEMENT_TYPE_I1,
-    ELEMENT_TYPE_U1,
-    ELEMENT_TYPE_I2,
-    ELEMENT_TYPE_U2,
-    ELEMENT_TYPE_I4,
-    ELEMENT_TYPE_U4,
-    ELEMENT_TYPE_I8,
-    ELEMENT_TYPE_U8,
-    ELEMENT_TYPE_R4,
-    ELEMENT_TYPE_R8,
-    ELEMENT_TYPE_VALUETYPE,
-    ELEMENT_TYPE_TYPEDBYREF,
-    ELEMENT_TYPE_I,
-    ELEMENT_TYPE_U};
+      ELEMENT_TYPE_VOID,
+      ELEMENT_TYPE_BOOLEAN,
+      ELEMENT_TYPE_CHAR,
+      ELEMENT_TYPE_I1,
+      ELEMENT_TYPE_U1,
+      ELEMENT_TYPE_I2,
+      ELEMENT_TYPE_U2,
+      ELEMENT_TYPE_I4,
+      ELEMENT_TYPE_U4,
+      ELEMENT_TYPE_I8,
+      ELEMENT_TYPE_U8,
+      ELEMENT_TYPE_R4,
+      ELEMENT_TYPE_R8,
+      ELEMENT_TYPE_VALUETYPE,
+      ELEMENT_TYPE_TYPEDBYREF,
+      ELEMENT_TYPE_I,
+      ELEMENT_TYPE_U};
   std::vector<CorElementType> negative_list = {
-    ELEMENT_TYPE_END,
-    ELEMENT_TYPE_STRING,
-    ELEMENT_TYPE_PTR,
-    ELEMENT_TYPE_BYREF,
-    ELEMENT_TYPE_CLASS,
-    ELEMENT_TYPE_VAR,
-    ELEMENT_TYPE_ARRAY,
-    ELEMENT_TYPE_GENERICINST,
-    ELEMENT_TYPE_FNPTR,
-    ELEMENT_TYPE_OBJECT,
-    ELEMENT_TYPE_SZARRAY,
-    ELEMENT_TYPE_MVAR};
+      ELEMENT_TYPE_END,
+      ELEMENT_TYPE_STRING,
+      ELEMENT_TYPE_PTR,
+      ELEMENT_TYPE_BYREF,
+      ELEMENT_TYPE_CLASS,
+      ELEMENT_TYPE_VAR,
+      ELEMENT_TYPE_ARRAY,
+      ELEMENT_TYPE_GENERICINST,
+      ELEMENT_TYPE_FNPTR,
+      ELEMENT_TYPE_OBJECT,
+      ELEMENT_TYPE_SZARRAY,
+      ELEMENT_TYPE_MVAR};
   for (auto& element_type : positive_list) {
     ASSERT_TRUE(ElementTypeIsAlwaysValueType(element_type));
   }
