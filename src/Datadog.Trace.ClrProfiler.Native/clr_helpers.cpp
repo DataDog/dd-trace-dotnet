@@ -684,60 +684,6 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
   return true;
 }
 
-bool ElementTypeIsAlwaysValueType(CorElementType element_type) {
-  switch (element_type) {
-    // This list should match up with the CorElementType in corhdr.h
-    case ELEMENT_TYPE_END:           // 0x00
-      return false;
-
-    // The following are primitives that are valuetypes
-    case ELEMENT_TYPE_VOID:          // 0x01  // System.Void (struct)
-    case ELEMENT_TYPE_BOOLEAN:       // 0x02  // System.Boolean (struct)
-    case ELEMENT_TYPE_CHAR:          // 0x03  // System.Char (struct)
-    case ELEMENT_TYPE_I1:            // 0x04  // System.SByte (struct)
-    case ELEMENT_TYPE_U1:            // 0x05  // System.Byte (struct)
-    case ELEMENT_TYPE_I2:            // 0x06  // System.Int16 (struct)
-    case ELEMENT_TYPE_U2:            // 0x07  // System.UInt16 (struct)
-    case ELEMENT_TYPE_I4:            // 0x08  // System.Int32 (struct)
-    case ELEMENT_TYPE_U4:            // 0x09  // System.UInt32 (struct)
-    case ELEMENT_TYPE_I8:            // 0x0a  // System.Int64 (struct)
-    case ELEMENT_TYPE_U8:            // 0x0b  // System.UInt64 (struct)
-    case ELEMENT_TYPE_R4:            // 0x0c  // System.Single (struct)
-    case ELEMENT_TYPE_R8:            // 0x0d  // System.Double (struct)
-      return true;
-
-    // The following are primitives that are not valuetypes
-    case ELEMENT_TYPE_STRING:        // 0x0e  // System.String
-    case ELEMENT_TYPE_PTR:           // 0x0f  // No managed type
-    case ELEMENT_TYPE_BYREF:         // 0x10  // No managed type
-      return false;
-
-    case ELEMENT_TYPE_VALUETYPE:     // 0x11  // Valuetype. Return true
-      return true;
-
-    case ELEMENT_TYPE_CLASS:         // 0x12  // Reference type. Return false
-    case ELEMENT_TYPE_VAR:           // 0x13  // Depends on the runtime type. Return false
-    case ELEMENT_TYPE_ARRAY:         // 0x14  // Array reference. Return false
-    case ELEMENT_TYPE_GENERICINST:   // 0X15  // Depends on the defining type. Return false
-      return false;
-
-    case ELEMENT_TYPE_TYPEDBYREF:    // 0X16  // System.TypedReference (struct)
-    case ELEMENT_TYPE_I:             // 0x18  // System.IntPtr (struct)
-    case ELEMENT_TYPE_U:             // 0x19  // System.UIntPtr (struct)
-      return true;
-
-    case ELEMENT_TYPE_FNPTR:         // 0x1b  // No managed type
-    case ELEMENT_TYPE_OBJECT:        // 0x1c  // Shortcut for System.Object, return false
-    case ELEMENT_TYPE_SZARRAY:       // 0x1d  // Shortcut for single dimension zero lower bound array. return false
-    case ELEMENT_TYPE_MVAR:          // 0x1e  // Depends on the runtime type. Return false
-      return false;
-
-    default:
-      Warn("[trace::ElementTypeIsAlwaysValueType] UNHANDLED CASE: unexpected CorElementType found: ", element_type);
-      return false;
-  }
-}
-
 bool CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, mdAssemblyRef* mscorlib_ref) {
   // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
   ASSEMBLYMETADATA metadata{};
