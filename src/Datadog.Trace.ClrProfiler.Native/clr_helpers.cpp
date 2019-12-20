@@ -739,7 +739,6 @@ bool ElementTypeIsAlwaysValueType(CorElementType element_type) {
 }
 
 bool CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, mdAssemblyRef* mscorlib_ref) {
-  // TODO fix this for .NET Core
   // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
   ASSEMBLYMETADATA metadata{};
   metadata.usMajorVersion = 4;
