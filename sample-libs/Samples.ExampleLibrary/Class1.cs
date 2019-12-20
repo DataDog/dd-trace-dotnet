@@ -72,5 +72,65 @@ namespace Samples.ExampleLibrary
         {
             return new DictionaryEntry("Class1", this);
         }
+
+        public bool ToBool()
+        {
+            return false;
+        }
+
+        public char ToChar()
+        {
+            return 'b';
+        }
+
+        public sbyte ToSByte()
+        {
+            return 0x1;
+        }
+
+        public byte ToByte()
+        {
+            return 0x1;
+        }
+
+        public Int16 ToInt16()
+        {
+            return 16;
+        }
+
+        public UInt16 ToUInt16()
+        {
+            return 16;
+        }
+
+        public Int32 ToInt32()
+        {
+            return 32;
+        }
+
+        public UInt32 ToUInt32()
+        {
+            return 32;
+        }
+
+        public Int64 ToInt64()
+        {
+            return 64;
+        }
+
+        public UInt64 ToUInt64()
+        {
+            return 64;
+        }
+
+        public float ToSingle()
+        {
+            return 0.1f;
+        }
+
+        public double ToDouble()
+        {
+            return 0.1;
+        }
     }
 }

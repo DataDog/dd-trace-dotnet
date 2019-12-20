@@ -759,7 +759,7 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
                                             const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
                                             mdToken* ret_type_token) {
   const auto cor_element_type = CorElementType(*p_sig);
-  LPCWSTR managed_type_name = NULL;
+  WSTRING managed_type_name = ""_W;
 
   switch (cor_element_type) {
     case ELEMENT_TYPE_VALUETYPE: {
@@ -774,52 +774,52 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
     }
 
     case ELEMENT_TYPE_VOID:     // 0x01  // System.Void (struct)
-      managed_type_name = "System.Void"_W.c_str();
+      managed_type_name = "System.Void"_W;
       break;
     case ELEMENT_TYPE_BOOLEAN:  // 0x02  // System.Boolean (struct)
-      managed_type_name = "System.Boolean"_W.c_str();
+      managed_type_name = "System.Boolean"_W;
       break;
     case ELEMENT_TYPE_CHAR:     // 0x03  // System.Char (struct)
-      managed_type_name = "System.Char"_W.c_str();
+      managed_type_name = "System.Char"_W;
       break;
     case ELEMENT_TYPE_I1:       // 0x04  // System.SByte (struct)
-      managed_type_name = "System.SByte"_W.c_str();
+      managed_type_name = "System.SByte"_W;
       break;
     case ELEMENT_TYPE_U1:       // 0x05  // System.Byte (struct)
-      managed_type_name = "System.Byte"_W.c_str();
+      managed_type_name = "System.Byte"_W;
       break;
     case ELEMENT_TYPE_I2:       // 0x06  // System.Int16 (struct)
-      managed_type_name = "System.Int16"_W.c_str();
+      managed_type_name = "System.Int16"_W;
       break;
     case ELEMENT_TYPE_U2:       // 0x07  // System.UInt16 (struct)
-      managed_type_name = "System.UInt16"_W.c_str();
+      managed_type_name = "System.UInt16"_W;
       break;
     case ELEMENT_TYPE_I4:       // 0x08  // System.Int32 (struct)
-      managed_type_name = "System.Int32"_W.c_str();
+      managed_type_name = "System.Int32"_W;
       break;
     case ELEMENT_TYPE_U4:       // 0x09  // System.UInt32 (struct)
-      managed_type_name = "System.UInt32"_W.c_str();
+      managed_type_name = "System.UInt32"_W;
       break;
     case ELEMENT_TYPE_I8:       // 0x0a  // System.Int64 (struct)
-      managed_type_name = "System.Int64"_W.c_str();
+      managed_type_name = "System.Int64"_W;
       break;
     case ELEMENT_TYPE_U8:       // 0x0b  // System.UInt64 (struct)
-      managed_type_name = "System.UInt64"_W.c_str();
+      managed_type_name = "System.UInt64"_W;
       break;
     case ELEMENT_TYPE_R4:       // 0x0c  // System.Single (struct)
-      managed_type_name = "System.Single"_W.c_str();
+      managed_type_name = "System.Single"_W;
       break;
     case ELEMENT_TYPE_R8:       // 0x0d  // System.Double (struct)
-      managed_type_name = "System.Double"_W.c_str();
+      managed_type_name = "System.Double"_W;
       break;
     case ELEMENT_TYPE_TYPEDBYREF:  // 0X16  // System.TypedReference (struct)
-      managed_type_name = "System.TypedReference"_W.c_str();
+      managed_type_name = "System.TypedReference"_W;
       break;
     case ELEMENT_TYPE_I:           // 0x18  // System.IntPtr (struct)
-      managed_type_name = "System.IntPtr"_W.c_str();
+      managed_type_name = "System.IntPtr"_W;
       break;
     case ELEMENT_TYPE_U:           // 0x19  // System.UIntPtr (struct)
-      managed_type_name = "System.UIntPtr"_W.c_str();
+      managed_type_name = "System.UIntPtr"_W;
       break;
     default:
       return false;
@@ -833,13 +833,13 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
   }
 
   // Create/Get TypeRef to the listed type
-  if (managed_type_name == NULL) {
+  if (managed_type_name == ""_W) {
     Warn("[trace::ReturnTypeTokenforElementType] no managed type name given");
     return false;
   }
 
   HRESULT hr = metadata_emit->DefineTypeRefByName(
-      mscorlib_ref, managed_type_name, ret_type_token);
+      mscorlib_ref, managed_type_name.c_str(), ret_type_token);
 
   if (FAILED(hr)) {
     Warn("[trace::ReturnTypeTokenforElementType] unable to create type ref for managed_type_name=", managed_type_name);
