@@ -281,20 +281,34 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
 
 TEST_F(CLRHelperTest,
        ReturnTypeIsValueTypeOrGenericReturnsCorrectlyForMethodDefs) {
-  std::vector<std::pair<std::wstring, bool>> expected = {
-      {L"Add", true},
-      {L"Multiply", true},
-      {L"ToCustomString", false},
-      {L"ToObject", false},
-      {L"ToArray", false},
-      {L"ToCustomArray", false},
-      {L"ToMdArray", false},
-      {L"ToJaggedArray", false},
-      {L"ToList", false},
-      {L"ToEnumerator", true},
-      {L"ToDictionaryEntry", true},
-      {L".ctor", false}};
-  std::vector<std::pair<std::wstring, bool>> actual;
+  std::set<std::pair<std::wstring, std::wstring>> expected = {
+      {L".ctor", L""},
+      {L"Add", L"System.Int32"},
+      {L"Multiply", L"System.Int32"},
+      {L"ToCustomString", L""},
+      {L"ToObject", L""},
+      {L"ToArray", L""},
+      {L"ToCustomArray", L""},
+      {L"ToMdArray", L""},
+      {L"ToJaggedArray", L""},
+      {L"ToList", L""},
+      {L"ToEnumerator", L""},
+      {L"ToDictionaryEntry", L""},
+
+      // Primitive tests
+      {L"ToBool", L"System.Boolean"},
+      {L"ToChar", L"System.Char"},
+      {L"ToSByte", L"System.SByte"},
+      {L"ToByte", L"System.Byte"},
+      {L"ToInt16", L"System.Int16"},
+      {L"ToUInt16", L"System.UInt16"},
+      {L"ToInt32", L"System.ToInt32"},
+      {L"ToUInt32", L"System.ToUInt32"},
+      {L"ToInt64", L"System.Int64"},
+      {L"ToUInt64", L"System.UInt64"},
+      {L"ToSingle", L"System.Single"},
+      {L"ToDouble", L"System.Double"}};
+  std::set<std::pair<std::wstring, std::wstring>> actual;
 
   for (auto& type_def : EnumTypeDefs(metadata_import_)) {
     for (auto& method_def : EnumMethods(metadata_import_, type_def)) {
@@ -310,7 +324,12 @@ TEST_F(CLRHelperTest,
                                                      target.signature,
                                                      &type_token) &&
                       type_token != mdTokenNil;
-        actual.push_back({target.name, result});
+        if (result) {
+          auto new_type_ref_info = GetTypeInfo(metadata_import_, type_token);
+          actual.insert({target.name, new_type_ref_info.name});
+        } else {
+          actual.insert({target.name, L""});
+        }
       }
     }
   }
