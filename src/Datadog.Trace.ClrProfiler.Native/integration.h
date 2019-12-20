@@ -157,7 +157,7 @@ struct MethodSignature {
     return 0;
   }
 
-  bool RetTypeIsObject() const {
+  bool ReturnTypeIsObject() const {
     if (data.size() > 2 &&
         (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
       return data[3] == ELEMENT_TYPE_OBJECT;
