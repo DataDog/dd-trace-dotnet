@@ -34,7 +34,7 @@ bool ParseCustomMod(PCCOR_SIGNATURE* p_sig) {
 }
 
 bool ParseOptionalCustomMods(PCCOR_SIGNATURE* p_sig) {
-  for (;;) {
+  while (true) {
     switch (**p_sig) {
       case ELEMENT_TYPE_CMOD_OPT:
       case ELEMENT_TYPE_CMOD_REQD:
