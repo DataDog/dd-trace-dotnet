@@ -357,7 +357,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
                          const FunctionInfo& function_info,
                          std::vector<WSTRING>& signature_result);
 
-bool CreateAssemblyRefToMscorlib(
+HRESULT CreateAssemblyRefToMscorlib(
     const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
     mdAssemblyRef* mscorlib_ref);
 

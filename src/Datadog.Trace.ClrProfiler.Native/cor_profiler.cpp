@@ -875,8 +875,11 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
   mdModuleRef mscorlib_ref;
-  if (!CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref)) {
-    Warn("GenerateVoidILStartupMethod: CreateAssemblyRefToMscorlib failed.");
+  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: failed to define AssemblyRef to mscorlib");
+    return hr;
   }
 
   // Define a TypeRef for System.Object

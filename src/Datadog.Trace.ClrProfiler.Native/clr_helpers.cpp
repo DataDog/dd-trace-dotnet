@@ -684,7 +684,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
   return true;
 }
 
-bool CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, mdAssemblyRef* mscorlib_ref) {
+HRESULT CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, mdAssemblyRef* mscorlib_ref) {
   // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
   ASSEMBLYMETADATA metadata{};
   metadata.usMajorVersion = 4;
@@ -696,7 +696,7 @@ bool CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembly_e
                                    "mscorlib"_W.c_str(), &metadata, NULL, 0, 0,
                                    mscorlib_ref);
 
-  return SUCCEEDED(hr);
+  return hr;
 }
 
 bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,                                        
@@ -772,7 +772,10 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
 
   // Create reference to Mscorlib
   mdModuleRef mscorlib_ref;
-  if (!CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref)) {
+  HRESULT hr;
+  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+
+  if (FAILED(hr)) {
     Warn("[trace::ReturnTypeTokenforElementType] failed to define AssemblyRef to mscorlib");
     return false;
   }
@@ -783,7 +786,7 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
     return false;
   }
 
-  HRESULT hr = metadata_emit->DefineTypeRefByName(
+  hr = metadata_emit->DefineTypeRefByName(
       mscorlib_ref, managed_type_name.c_str(), ret_type_token);
 
   if (FAILED(hr)) {
