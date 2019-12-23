@@ -75,6 +75,9 @@ const WSTRING custom_sampling_rules = "DD_CUSTOM_SAMPLING_RULES"_W;
 // of Azure App Services
 const WSTRING azure_app_services = "DD_AZURE_APP_SERVICES"_W;
 
+// Gets the home directory of agent dependencies in azure app services
+const WSTRING azure_agent_home = "DD_AZURE_AGENT_HOME"_W;
+
 // The app_pool_id in the context of azure app services
 const WSTRING azure_app_services_app_pool_id = "APP_POOL_ID"_W;
 
