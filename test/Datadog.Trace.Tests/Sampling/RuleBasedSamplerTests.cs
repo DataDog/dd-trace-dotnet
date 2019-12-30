@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void RateLimiter_Denies_All_Traces()
         {
             var sampler = new RuleBasedSampler(new DenyAll());
-            sampler.RegisterRule(new RegexSamplingRule(1, "Allow_all", ".*", ".*"));
+            sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
             RunSamplerTest(
                 sampler,
                 500,
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Everything_Rule()
         {
             var sampler = new RuleBasedSampler(new NoLimits());
-            sampler.RegisterRule(new RegexSamplingRule(1, "Allow_all", ".*", ".*"));
+            sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
             RunSamplerTest(
                 sampler,
                 500,
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Nothing_Rule()
         {
             var sampler = new RuleBasedSampler(new NoLimits());
-            sampler.RegisterRule(new RegexSamplingRule(0, "Allow_nothing", ".*", ".*"));
+            sampler.RegisterRule(new CustomSamplingRule(0, "Allow_nothing", ".*", ".*"));
             RunSamplerTest(
                 sampler,
                 500,
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Half_Rule()
         {
             var sampler = new RuleBasedSampler(new NoLimits());
-            sampler.RegisterRule(new RegexSamplingRule(0.5f, "Allow_nothing", ".*", ".*"));
+            sampler.RegisterRule(new CustomSamplingRule(0.5f, "Allow_nothing", ".*", ".*"));
             RunSamplerTest(
                 sampler,
                 10_000, // Higher number for lower variance
@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private class NoLimits : IRateLimiter
         {
-            public bool Allowed(ulong traceId)
+            public bool Allowed(Span span)
             {
                 return true;
             }
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private class DenyAll : IRateLimiter
         {
-            public bool Allowed(ulong traceId)
+            public bool Allowed(Span span)
             {
                 return false;
             }

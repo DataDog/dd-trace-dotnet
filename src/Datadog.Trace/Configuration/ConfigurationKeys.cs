@@ -102,29 +102,29 @@ namespace Datadog.Trace.Configuration
         /// The rule is matched in order of specification. The first match in a list is used.
         ///
         /// Per entry:
-        ///   The item 'rate' is required in decimal format.
-        ///   The item 'service' is optional in regular expression format, to match on service name.
-        ///   The item 'operation' is optional in regular expression format, to match on operation name.
+        ///   The item "sample_rate" is required in decimal format.
+        ///   The item "service" is optional in regular expression format, to match on service name.
+        ///   The item "name" is optional in regular expression format, to match on operation name.
         ///
         /// To give a rate of 50% to any traces in a service starting with the text "cart":
-        ///   'rate=0.5, service=cart.*'
+        ///   '[{"sample_rate"=0.5, "service"="cart.*"}]'
         ///
         /// To give a rate of 20% to any traces which have an operation name of "http.request":
-        ///   'rate=0.2, operation=http.request'
+        ///   '[{"sample_rate"=0.2, "name"="http.request"}]'
         ///
         /// To give a rate of 100% to any traces within a service named "background" and with an operation name of "sql.query":
-        ///   'rate=1.0, service=background, operation=sql.query
+        ///   '[{"sample_rate"=1.0, "service"="background", "name"="sql.query"}]
         ///
         /// To give a rate of 10% to all traces
-        ///   'rate=0.1'
+        ///   '[{"sample_rate"=0.1}]'
         ///
         /// To configure multiple rules, separate by semi-colon and order from most specific to least specific:
-        ///   'rate=0.5, service=cart.*; rate=0.2, operation=http.request; rate=1.0, service=background, operation=sql.query; rate=0.1'
+        ///   '[{"sample_rate"=0.5, "service"="cart.*"}, {"sample_rate"=0.2, "name"="http.request"}, {"sample_rate"=1.0, "service"="background", "name"="sql.query"}, {"sample_rate"=0.1}]'
         ///
         /// If no rules are specified, or none match, default internal sampling logic will be used.
         /// </summary>
         /// <seealso cref="TracerSettings.CustomSamplingRules"/>
-        public const string CustomSamplingRules = "DD_CUSTOM_SAMPLING_RULES";
+        public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
 
         /// <summary>
         /// Configuration key for the DogStatsd port where the Tracer can send metrics.
