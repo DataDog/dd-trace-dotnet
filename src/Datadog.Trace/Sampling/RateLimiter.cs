@@ -33,37 +33,47 @@ namespace Datadog.Trace.Sampling
             _windowBegin = _lastRefresh = DateTime.Now;
         }
 
-        public bool Allowed(ulong traceId)
+        public bool Allowed(Span span)
         {
-            if (_maxTracesPerInterval == 0)
+            try
             {
-                // Rate limit of 0 blocks everything
-                return false;
-            }
+                if (_maxTracesPerInterval == 0)
+                {
+                    // Rate limit of 0 blocks everything
+                    return false;
+                }
 
-            if (_maxTracesPerInterval < 0)
-            {
-                // Negative rate limit disables rate limiting
+                if (_maxTracesPerInterval < 0)
+                {
+                    // Negative rate limit disables rate limiting
+                    return true;
+                }
+
+                WaitForRefresh();
+
+                // This must happen after the wait, because we check for window statistics, modifying this number
+                Interlocked.Increment(ref _windowChecks);
+
+                var count = _intervalQueue.Count;
+
+                if (count >= _maxTracesPerInterval)
+                {
+                    Log.Debug("Dropping trace id {0} with count of {1} for last {2}ms.", span.TraceId, count, _intervalMilliseconds);
+                    return false;
+                }
+
+                _intervalQueue.Enqueue(DateTime.Now);
+                Interlocked.Increment(ref _windowAllowed);
+
                 return true;
             }
-
-            WaitForRefresh();
-
-            // This must happen after the wait, because we check for window statistics, modifying this number
-            Interlocked.Increment(ref _windowChecks);
-
-            var count = _intervalQueue.Count;
-
-            if (count >= _maxTracesPerInterval)
+            finally
             {
-                Log.Debug("Dropping trace id {0} with count of {1} for last {2}ms.", traceId, count, _intervalMilliseconds);
-                return false;
+                // Always set the sample rate metric whether it was allowed or not
+                // DEV: Setting this allows us to properly compute metrics and debug the
+                //      various sample rates that are getting applied to this span
+                span.SetMetric(Metrics.SamplingLimitDecision, GetEffectiveRate());
             }
-
-            _intervalQueue.Enqueue(DateTime.Now);
-            Interlocked.Increment(ref _windowAllowed);
-
-            return true;
         }
 
         public float GetEffectiveRate()

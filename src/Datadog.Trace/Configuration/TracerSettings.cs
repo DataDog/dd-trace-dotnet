@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Configuration
 {
@@ -81,9 +82,19 @@ namespace Datadog.Trace.Configuration
                                    // default value
                                    false;
 
-            MaxTracesSubmittedPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond) ??
-                                          // default value
-                                          100;
+            var maxTracesPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond);
+
+            if (maxTracesPerSecond != null)
+            {
+                // Ensure our flag for the rate limiter is enabled
+                RuleBasedSampler.OptInTracingWithoutLimits();
+            }
+            else
+            {
+                maxTracesPerSecond = 100; // default
+            }
+
+            MaxTracesSubmittedPerSecond = maxTracesPerSecond.Value;
 
             Integrations = new IntegrationSettingsCollection(source);
 
