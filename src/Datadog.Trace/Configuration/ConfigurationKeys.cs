@@ -107,19 +107,19 @@ namespace Datadog.Trace.Configuration
         ///   The item "name" is optional in regular expression format, to match on operation name.
         ///
         /// To give a rate of 50% to any traces in a service starting with the text "cart":
-        ///   '[{"sample_rate"=0.5, "service"="cart.*"}]'
+        ///   '[{"sample_rate":0.5, "service":"cart.*"}]'
         ///
         /// To give a rate of 20% to any traces which have an operation name of "http.request":
-        ///   '[{"sample_rate"=0.2, "name"="http.request"}]'
+        ///   '[{"sample_rate":0.2, "name":"http.request"}]'
         ///
         /// To give a rate of 100% to any traces within a service named "background" and with an operation name of "sql.query":
-        ///   '[{"sample_rate"=1.0, "service"="background", "name"="sql.query"}]
+        ///   '[{"sample_rate":1.0, "service":"background", "name":"sql.query"}]
         ///
         /// To give a rate of 10% to all traces
-        ///   '[{"sample_rate"=0.1}]'
+        ///   '[{"sample_rate":0.1}]'
         ///
         /// To configure multiple rules, separate by semi-colon and order from most specific to least specific:
-        ///   '[{"sample_rate"=0.5, "service"="cart.*"}, {"sample_rate"=0.2, "name"="http.request"}, {"sample_rate"=1.0, "service"="background", "name"="sql.query"}, {"sample_rate"=0.1}]'
+        ///   '[{"sample_rate":0.5, "service":"cart.*"}, {"sample_rate":0.2, "name":"http.request"}, {"sample_rate":1.0, "service":"background", "name":"sql.query"}, {"sample_rate":0.1}]'
         ///
         /// If no rules are specified, or none match, default internal sampling logic will be used.
         /// </summary>
