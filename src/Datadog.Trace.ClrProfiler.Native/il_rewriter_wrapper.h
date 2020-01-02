@@ -23,6 +23,7 @@ class ILRewriterWrapper {
   void Cast(mdTypeRef type_ref) const;
   void Box(mdTypeRef type_ref) const;
   void UnboxAny(mdTypeRef type_ref) const;
+  void UnboxAnyAfter(mdTypeRef type_ref) const;
   void CreateArray(mdTypeRef type_ref, INT32 size) const;
   void CallMember(const mdMemberRef& member_ref, bool is_virtual) const;
   void CallMemberAfter(const mdMemberRef& member_ref, bool is_virtual) const;

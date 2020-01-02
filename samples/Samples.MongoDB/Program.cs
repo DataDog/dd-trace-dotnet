@@ -5,6 +5,7 @@ using Datadog.Trace;
 using Datadog.Trace.ClrProfiler;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Operations;
 
 namespace Samples.MongoDB
 {
@@ -67,6 +68,21 @@ namespace Samples.MongoDB
                 var find = collection.Find(allFilter);
                 var allDocuments = find.ToList();
                 Console.WriteLine(allDocuments.FirstOrDefault());
+
+                // Run an explain query to invoke problematic MongoDB.Driver.Core.Operations.FindOpCodeOperation<TDocument>
+                // https://stackoverflow.com/questions/49506857/how-do-i-run-an-explain-query-with-the-2-4-c-sharp-mongo-driver
+                var options = new FindOptions
+                {
+                    Modifiers = new BsonDocument("$explain", true)
+                };
+                // Without properly unboxing generic arguments whose instantiations
+                // are valuetypes, the following line will fail with
+                // System.EntryPointNotFoundException: Entry point was not found.
+                var cursor = collection.Find(x => true, options).ToCursor();
+                foreach (var document in cursor.ToEnumerable())
+                {
+                    Console.WriteLine(document);
+                }
 #endif
             }
         }

@@ -161,6 +161,7 @@
     <ClInclude Include="miniutfdata.h" />
     <ClInclude Include="module_metadata.h" />
     <ClInclude Include="pal.h" />
+    <ClInclude Include="sig_helpers.h" />
     <ClInclude Include="string.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="version.h" />
@@ -177,6 +178,7 @@
     <ClCompile Include="logging.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="miniutf.cpp" />
+    <ClCompile Include="sig_helpers.cpp" />
     <ClCompile Include="string.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>

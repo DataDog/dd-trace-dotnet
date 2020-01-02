@@ -776,6 +776,26 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
       rewriter_wrapper.LoadInt32(method_def_md_token);
       rewriter_wrapper.LoadInt64(reinterpret_cast<INT64>(module_version_id_ptr));
 
+      // after the call is made, unbox any valuetypes
+      mdToken typeToken;
+      if (method_replacement.wrapper_method.method_signature.ReturnTypeIsObject()
+          && ReturnTypeIsValueTypeOrGeneric(module_metadata->metadata_import,
+                              module_metadata->metadata_emit,
+                              module_metadata->assembly_emit,
+                              target.id,
+                              target.signature,
+                              &typeToken)) {
+        if (debug_logging_enabled) {
+          Debug(
+              "JITCompilationStarted inserting 'unbox.any ", typeToken,
+              "' instruction after calling target function."
+              " function_id=", function_id,
+              " token=", function_token,
+              " target_name=", target.type.name, ".", target.name,"()");
+        }
+        rewriter_wrapper.UnboxAnyAfter(typeToken);
+      }
+
       modified = true;
 
       Info("*** JITCompilationStarted() replaced calls from ", caller.type.name,
@@ -854,17 +874,13 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  // TODO fix this for .NET Core
-  // Define an AssemblyRef to mscorlib, needed to create TypeRefs later
   mdModuleRef mscorlib_ref;
-  ASSEMBLYMETADATA metadata{};
-  metadata.usMajorVersion = 4;
-  metadata.usMinorVersion = 0;
-  metadata.usBuildNumber = 0;
-  metadata.usRevisionNumber = 0;
-  BYTE public_key[] = {0xB7, 0x7A, 0x5C, 0x56, 0x19, 0x34, 0xE0, 0x89};
-  assembly_emit->DefineAssemblyRef(public_key, sizeof(public_key), "mscorlib"_W.c_str(),
-                                   &metadata, NULL, 0, 0, &mscorlib_ref);
+  hr = CreateAssemblyRefToMscorlib(assembly_emit, &mscorlib_ref);
+
+  if (FAILED(hr)) {
+    Warn("GenerateVoidILStartupMethod: failed to define AssemblyRef to mscorlib");
+    return hr;
+  }
 
   // Define a TypeRef for System.Object
   mdTypeRef object_type_ref;
