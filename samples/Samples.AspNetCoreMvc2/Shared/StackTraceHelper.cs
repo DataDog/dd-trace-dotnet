@@ -1,8 +1,8 @@
 using System;
 
-namespace Samples.AspNetCoreMvc2.Attributes
+namespace Samples.AspNetCoreMvc.Shared
 {
-    public class StackTraceHelper
+    public static class StackTraceHelper
     {
         public static string[] GetUsefulStack()
         {

@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Samples.AspNetCoreMvc2.Attributes;
+using Samples.AspNetCoreMvc.Shared;
 
-namespace Samples.AspNetCoreMvc2.Controllers
+namespace Samples.AspNetCoreMvc.Controllers
 {
     public class HomeController : Controller
     {

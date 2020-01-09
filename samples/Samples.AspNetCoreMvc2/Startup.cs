@@ -1,5 +1,3 @@
-using System.IO;
-using System.Reflection;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -7,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Samples.AspNetCoreMvc2
+namespace Samples.AspNetCoreMvc
 {
     public class Startup
     {
@@ -23,7 +21,6 @@ namespace Samples.AspNetCoreMvc2
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseContentRoot(DetermineContentRoot())
                 .UseStartup<Startup>()
                 .Build();
 
@@ -50,22 +47,6 @@ namespace Samples.AspNetCoreMvc2
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
-        }
-
-        private static string DetermineContentRoot()
-        {
-            string executableDirectory = typeof(Startup).Assembly.Location;
-
-            for (string searchPath = executableDirectory; !string.IsNullOrEmpty(searchPath); searchPath = Path.GetDirectoryName(searchPath))
-            {
-                string candidatePath = Path.Combine(searchPath, "Views");
-                if (Directory.Exists(candidatePath))
-                {
-                    return searchPath;
-                }
-            }
-            
-            return Path.GetDirectoryName(executableDirectory);
         }
     }
 }
