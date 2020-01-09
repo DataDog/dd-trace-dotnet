@@ -3,15 +3,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    public class AspNetCoreMvc3Tests : AspNetCoreMvcTestBase
+    public class AspNetCoreMvc31Tests : AspNetCoreMvcTestBase
     {
-        public AspNetCoreMvc3Tests(ITestOutputHelper output)
-            : base("AspNetCoreMvc.Netcore3", output)
+        public AspNetCoreMvc31Tests(ITestOutputHelper output)
+            : base("AspNetCoreMvc31", output)
         {
             // EnableDebugMode();
         }
 
-#if NETCOREAPP3_0
+#if NETCOREAPP3_1
         [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
