@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Samples.AspNetCoreMvc.Netcore3
+namespace Samples.AspNetCoreMvc
 {
     public class Program
     {

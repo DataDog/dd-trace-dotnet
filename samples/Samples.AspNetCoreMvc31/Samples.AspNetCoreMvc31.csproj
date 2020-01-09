@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <RootNamespace>Samples.AspNetCoreMvc</RootNamespace>
+  </PropertyGroup>
+
+  <!--Files shared with AspNetCoreMvc2 -->
+  <ItemGroup>
+    <Compile Include="..\Samples.AspNetCoreMvc2\Controllers\**\*.*" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Samples.AspNetCoreMvc2\Shared\**\*.*" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="..\Samples.AspNetCoreMvc2\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\sample-libs\Samples.Shared\Samples.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
