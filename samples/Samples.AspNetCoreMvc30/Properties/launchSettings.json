@@ -3,7 +3,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:54563",
+      "applicationUrl": "http://localhost:54563/",
       "sslPort": 0
     }
   },
@@ -45,8 +45,8 @@
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json"
       },
-      "nativeDebugging": true,
-      "applicationUrl": "http://localhost:54567"
+      "applicationUrl": "http://localhost:54567/",
+      "nativeDebugging": true
     }
   }
 }
