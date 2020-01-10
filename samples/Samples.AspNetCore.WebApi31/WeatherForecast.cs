@@ -1,6 +1,6 @@
 using System;
 
-namespace TodoApi
+namespace Samples.AspNetCore.WebApi31
 {
     public class WeatherForecast
     {

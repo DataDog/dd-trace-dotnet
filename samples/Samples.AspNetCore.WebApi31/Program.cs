@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace TodoApi
+namespace Samples.AspNetCore.WebApi31
 {
     public class Program
     {
