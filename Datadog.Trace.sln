@@ -293,7 +293,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc21", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DotnetNewWebApi.3.1", "samples\Samples.DotnetNewWebApi.3.1\Samples.DotnetNewWebApi.3.1.csproj", "{87F20FE5-E57B-4F92-9C43-533E355AD9C8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DotnetNewWebApi.2.1", "samples\Samples.DotnetNewWebApi.2.1\Samples.DotnetNewWebApi.2.1.csproj", "{00460BDF-8A55-432B-963B-488907A85F86}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCore.WebApi21", "samples\Samples.AspNetCore.WebApi21\Samples.AspNetCore.WebApi21.csproj", "{00460BDF-8A55-432B-963B-488907A85F86}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

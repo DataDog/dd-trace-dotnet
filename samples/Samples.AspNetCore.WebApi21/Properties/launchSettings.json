@@ -28,7 +28,7 @@
       "use64Bit": true,
       "nativeDebugging": true
     },
-    "Samples.DotnetNewWebApi.2.1": {
+    "Samples.AspNetCore.WebApi21": {
       "commandName": "Project",
       "launchBrowser": false,
       "environmentVariables": {

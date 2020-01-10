@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Samples.DotnetNewWebApi._2._1
+namespace Samples.AspNetCore.WebApi21
 {
     public class Startup
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Samples.DotnetNewWebApi._2._1.Controllers
+namespace Samples.AspNetCore.WebApi21.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
