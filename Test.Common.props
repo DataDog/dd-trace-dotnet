@@ -1,8 +1,8 @@
 <Project>
   <PropertyGroup>
     <OutputType Condition="'$(OutputType)' == ''">Exe</OutputType>
-    <TargetFrameworks Condition="'$(TargetFrameworks)' == '' and '$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(TargetFrameworks)' == ''">netcoreapp2.1;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TargetFrameworks)' == '' and '$(OS)' == 'Windows_NT'">net452;net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(TargetFrameworks)' == ''">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1</TargetFrameworks>
     <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
 
