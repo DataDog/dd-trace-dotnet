@@ -1,9 +1,7 @@
-trigger:
-  batch: 'true'
+pr:
   branches:
     include:
       - master
-      - develop
   paths:
     exclude:
       - docs/*
@@ -12,8 +10,6 @@ trigger:
 variables:
   buildConfiguration: Debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
-  dotnetCoreSdkVersion: 3.0.x
-  dotnetCore21SdkVersion: 2.1.x
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
 jobs:
@@ -22,9 +18,14 @@ jobs:
   strategy:
     matrix:
       netcoreapp2_1:
+        dotnetCoreSdkVersion: 2.1.x
         publishTargetFramework: netcoreapp2.1
       netcoreapp3_0:
+        dotnetCoreSdkVersion: 3.0.x
         publishTargetFramework: netcoreapp3.0
+      netcoreapp3_1:
+        dotnetCoreSdkVersion: 3.1.x
+        publishTargetFramework: netcoreapp3.1
 
   pool:
     vmImage: ubuntu-16.04
@@ -68,10 +69,22 @@ jobs:
 
   steps:
   - task: UseDotNet@2
-    displayName: install dotnet core 2.1 sdk
+    displayName: install dotnet core runtime 2.1
+    inputs:
+      packageType: runtime
+      version: 2.1.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core runtime 3.0
+    inputs:
+      packageType: runtime
+      version: 3.0.x
+
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk 3.1
     inputs:
       packageType: sdk
-      version: $(dotnetCore21SdkVersion)
+      version: 3.1.x
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build src/**/*.csproj
@@ -143,14 +156,6 @@ jobs:
       configuration: '$(buildConfiguration)'
       msbuildArguments: '/t:BuildFrameworkReproductions'
       maximumCpuCount: true
-
-  # Install the .NET Core 3.0 SDK and use it from here on out, since it is only
-  # the .NET Core sample apps that require the .NET Core 3.0 SDK
-  - task: UseDotNet@2
-    displayName: install dotnet core 3.0 sdk
-    inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet restore
