@@ -6,9 +6,9 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 {
-    public class TargetFrameworkVersionsFact : FactAttribute
+    public class TargetFrameworkVersionsTheory : TheoryAttribute
     {
-        public TargetFrameworkVersionsFact(string targetFrameworkMonikers)
+        public TargetFrameworkVersionsTheory(string targetFrameworkMonikers)
         {
             var compiledTargetFrameworkString = Assembly.GetExecutingAssembly().GetTargetFrameworkMoniker();
 
