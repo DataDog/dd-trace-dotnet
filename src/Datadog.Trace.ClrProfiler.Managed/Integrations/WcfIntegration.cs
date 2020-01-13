@@ -142,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var span = scope.Span;
 
                 span.DecorateWebServerSpan(
-                    resourceName: requestMessage.Headers.Action ?? requestMessage.Headers.To.LocalPath,
+                    resourceName: requestMessage.Headers.Action ?? requestMessage.Headers.To?.LocalPath,
                     httpMethod,
                     host,
                     httpUrl: requestMessage.Headers.To?.AbsoluteUri);
