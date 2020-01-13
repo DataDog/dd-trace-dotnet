@@ -22,8 +22,6 @@ namespace Datadog.Trace
     {
         private const string UnknownServiceName = "UnknownService";
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
-
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
         /// This is used in the heartbeat metrics to estimate the number of
@@ -37,6 +35,7 @@ namespace Datadog.Trace
 
         static Tracer()
         {
+            TracerSubProcessManager.StartStandaloneAgentProcessesWhenConfigured();
             // create the default global Tracer
             Instance = new Tracer();
         }
@@ -103,7 +102,7 @@ namespace Datadog.Trace
 
                 if (globalRate < 0f || globalRate > 1f)
                 {
-                    Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
+                    DatadogLogging.RegisterStartupLog(log => log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate));
                 }
                 else
                 {
@@ -417,7 +416,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating default service name.");
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error creating default service name."));
                 return null;
             }
         }

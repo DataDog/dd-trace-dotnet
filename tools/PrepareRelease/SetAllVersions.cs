@@ -73,30 +73,7 @@ namespace PrepareRelease
                 "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
                 WixProjReplace);
 
-            SynchronizeVersion(
-                "deploy/AzureAppServices/Datadog.Trace.AzureAppServices.nuspec",
-                NuspecVersionReplace);
-
-            SynchronizeVersion(
-                "deploy/AzureAppServices/content/applicationHost.xdt",
-                text =>
-                {
-                    return FullVersionReplace(text, "_");
-                });
-
-            SynchronizeVersion(
-                "deploy/AzureAppServices/content/install.cmd",
-                text =>
-                {
-                    return FullVersionReplace(text, "_");
-                });
-
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
-        }
-
-        private static string AzureAppServicesReplace(string text)
-        {
-            return Regex.Replace(text, VersionPattern("_"), VersionString("_"), RegexOptions.Singleline);
         }
 
         private static string FullVersionReplace(string text, string split)

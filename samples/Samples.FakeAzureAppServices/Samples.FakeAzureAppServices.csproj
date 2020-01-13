@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <!--<ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <None Include="$(ProjectDir)$(OutputPath)Samples.FakeAzureAppServices.exe"
+          CopyToOutputDirectory="Always"
+          CopyToPublishDirectory="Always"
+          Link="Samples.FakeTraceAgent%(Extension)" />
+  </ItemGroup>-->
+
+</Project>

@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -12,12 +12,14 @@ namespace Datadog.Trace.Logging
     internal static class DatadogLogging
     {
         private const string NixDefaultDirectory = "/var/log/datadog/";
-        private static readonly string WindowsDefaultDirectory;
 
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
-        private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Warning;
+        private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Information;
+
+        private static readonly ConcurrentQueue<Action<ILogger>> ActionsToRunWhenLoggerReady = new ConcurrentQueue<Action<ILogger>>();
 
         private static readonly ILogger SharedLogger = null;
+        private static readonly bool Initialized = false;
 
         static DatadogLogging()
         {
@@ -28,10 +30,8 @@ namespace Datadog.Trace.Logging
                    .CreateLogger();
             try
             {
-                var currentAppDomain = AppDomain.CurrentDomain;
-                var currentProcess = Process.GetCurrentProcess();
-
-                if (Tracer.Instance?.Settings.DebugEnabled == true)
+                // We use environment variables and not the tracer settings to avoid a startup race condition between the logger and the tracer.
+                if (Environment.GetEnvironmentVariable(ConfigurationKeys.DebugEnabled) == "1")
                 {
                     MinimumLogEventLevel = LogEventLevel.Verbose;
                 }
@@ -57,10 +57,10 @@ namespace Datadog.Trace.Logging
                 //   - Path.GetTempPath
                 if (logDirectory == null)
                 {
-                    WindowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
-                    if (Directory.Exists(WindowsDefaultDirectory))
+                    var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
+                    if (Directory.Exists(windowsDefaultDirectory))
                     {
-                        logDirectory = WindowsDefaultDirectory;
+                        logDirectory = windowsDefaultDirectory;
                     }
                     else if (Directory.Exists(NixDefaultDirectory))
                     {
@@ -73,11 +73,13 @@ namespace Datadog.Trace.Logging
                     }
                 }
 
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 if (logDirectory == null)
                 {
                     return;
                 }
 
+                var currentProcess = Process.GetCurrentProcess();
                 // Ends in a dash because of the date postfix
                 var managedLogPath = Path.Combine(logDirectory, $"dotnet-tracer-{currentProcess.ProcessName}-.log");
 
@@ -94,6 +96,7 @@ namespace Datadog.Trace.Logging
 
                 try
                 {
+                    var currentAppDomain = AppDomain.CurrentDomain;
                     loggerConfiguration.Enrich.WithProperty("MachineName", currentProcess.MachineName);
                     loggerConfiguration.Enrich.WithProperty("ProcessName", currentProcess.ProcessName);
                     loggerConfiguration.Enrich.WithProperty("PID", currentProcess.Id);
@@ -106,17 +109,48 @@ namespace Datadog.Trace.Logging
 
                 SharedLogger = loggerConfiguration.CreateLogger();
 
+                // Use to immediately execute any startup logs
+                Initialized = true;
+
                 // Log some information to correspond with the app domain
-                SharedLogger.Debug(
-                    "OSArchitecture: {0}, OSDescription: {1}, ProcessArchitecture: {2}, FrameworkDescription: {3}",
-                    RuntimeInformation.OSArchitecture,
-                    RuntimeInformation.OSDescription,
-                    RuntimeInformation.ProcessArchitecture,
-                    RuntimeInformation.FrameworkDescription);
+                SharedLogger.Information(FrameworkDescription.Create().ToString());
+
+                while (ActionsToRunWhenLoggerReady.TryDequeue(out var logAction))
+                {
+                    try
+                    {
+                        logAction(SharedLogger);
+                    }
+                    catch (Exception ex)
+                    {
+                        SharedLogger.Error(ex, "Failure on logger startup subscriber");
+                    }
+                }
             }
             catch
             {
-                // nothing to do here
+                // If for some reason the logger initialization fails, don't let the queue fill
+                Initialized = true;
+                // nothing else to do here
+            }
+        }
+
+        public static void RegisterStartupLog(Action<ILogger> logAction)
+        {
+            try
+            {
+                if (Initialized)
+                {
+                    logAction(SharedLogger);
+                }
+                else
+                {
+                    ActionsToRunWhenLoggerReady.Enqueue(logAction);
+                }
+            }
+            catch
+            {
+                // ignored
             }
         }
 

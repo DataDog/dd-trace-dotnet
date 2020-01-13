@@ -1,4 +1,4 @@
-namespace PrepareRelease
+namespace GenerateAzureSiteExtension
 {
     public class Program
     {

@@ -23,9 +23,7 @@
         "CORECLR_PROFILER_PATH": "$(ProjectDir)$(OutputPath)profiler-lib\\Datadog.Trace.ClrProfiler.Native.dll",
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
-        "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
-        "DD_AZURE_APP_SERVICES": "1",
-        "DD_AZURE_AGENT_HOME": "C:\\Github\\dd-trace-dotnet\\deploy\\AzureAppServices\\content\\Agent"
+        "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json"
       },
       "use64Bit": true,
       "nativeDebugging": true
@@ -45,9 +43,7 @@
         "CORECLR_PROFILER_PATH": "$(ProjectDir)$(OutputPath)profiler-lib\\Datadog.Trace.ClrProfiler.Native.dll",
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
-        "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
-        "DD_AZURE_APP_SERVICES": "1",
-        "DD_AZURE_AGENT_HOME": "C:\\Github\\dd-trace-dotnet\\deploy\\AzureAppServices\\content\\Agent"
+        "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json"
       },
       "applicationUrl": "http://localhost:54566/",
       "nativeDebugging": true
