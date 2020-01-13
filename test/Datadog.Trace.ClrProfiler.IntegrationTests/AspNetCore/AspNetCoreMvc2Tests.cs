@@ -1,3 +1,4 @@
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -10,15 +11,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
         }
 
-#if NETCOREAPP2_1
-        [Theory]
+        [TargetFrameworkVersionsFact("netcoreapp2.1")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(PackageVersions.AspNetCoreMvc2), MemberType = typeof(PackageVersions))]
-        public void MeetsAllAspNetCoreMvcExpectations(string packageVersion)
+        public void MeetsAllAspNetCoreMvcExpectations()
         {
-            RunTraceTestOnSelfHosted(packageVersion);
+            // No package versions are relevant because this is built-in
+            RunTraceTestOnSelfHosted(string.Empty);
         }
-#endif
     }
 }
