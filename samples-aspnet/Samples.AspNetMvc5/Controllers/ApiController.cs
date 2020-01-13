@@ -29,5 +29,18 @@ namespace Samples.AspNetMvc5.Controllers
         {
             return Json(System.Environment.GetEnvironmentVariables());
         }
+
+        [HttpGet]
+        [Route("api/transient-failure/{value}")]
+        public IHttpActionResult TransientFailure(string value)
+        {
+            bool success = bool.TryParse(value, out bool result) && result;
+            if (success)
+            {
+                return Json(System.Environment.GetEnvironmentVariables());
+            }
+
+            throw new ArgumentException($"Passed in value was not 'true': {value}");
+        }
     }
 }
