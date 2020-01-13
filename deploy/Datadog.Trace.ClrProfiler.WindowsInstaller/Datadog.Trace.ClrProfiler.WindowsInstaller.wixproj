@@ -14,11 +14,11 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <OutputName>datadog-dotnet-apm-1.11.0-$(Platform)</OutputName>
+    <OutputName>datadog-dotnet-apm-1.11.1-prerelease-$(Platform)</OutputName>
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>InstallerVersion=1.11.0</DefineConstants>
+    <DefineConstants>InstallerVersion=1.11.1</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
