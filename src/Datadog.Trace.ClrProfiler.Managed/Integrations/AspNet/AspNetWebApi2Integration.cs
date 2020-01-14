@@ -122,6 +122,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
                 catch (Exception ex)
                 {
+                    if (scope != null)
+                    {
+                        // some fields aren't set till after execution, so populate anything missing
+                        UpdateSpan(controllerContext, scope.Span);
+                    }
+
                     scope?.Span.SetException(ex);
                     throw;
                 }

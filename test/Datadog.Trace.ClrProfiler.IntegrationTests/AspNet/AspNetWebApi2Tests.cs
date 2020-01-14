@@ -25,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [InlineData("/api/environment", "GET api/environment")]
         [InlineData("/api/delay/0", "GET api/delay/{seconds}")]
         [InlineData("/api/delay-async/0", "GET api/delay-async/{seconds}")]
+        [InlineData("/api/transient-failure/true", "GET api/delay-async/{value}")]
+        [InlineData("/api/transient-failure/false", "GET api/delay-async/{value}")]
         public async Task SubmitsTraces(
             string path,
             string expectedResourceName)
