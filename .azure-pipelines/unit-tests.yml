@@ -2,6 +2,8 @@ trigger:
   branches:
     include:
       - '*'
+    exclude:
+      - refs/pull/*/head
   paths:
     exclude:
       - docs/*
