@@ -3,6 +3,7 @@
   <PropertyGroup>
     <!-- override to remove net452 -->
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1</TargetFrameworks>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.1.3</ApiVersion>
     <RootNamespace>Samples.AspNetCoreMvc</RootNamespace>
 
