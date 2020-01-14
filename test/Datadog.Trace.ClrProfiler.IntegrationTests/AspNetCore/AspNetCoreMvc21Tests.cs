@@ -4,10 +4,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    public class AspNetCoreMvc2Tests : AspNetCoreMvcTestBase
+    public class AspNetCoreMvc21Tests : AspNetCoreMvcTestBase
     {
-        public AspNetCoreMvc2Tests(ITestOutputHelper output)
-            : base("AspNetCoreMvc2", output)
+        public AspNetCoreMvc21Tests(ITestOutputHelper output)
+            : base("AspNetCoreMvc21", output)
         {
         }
 

@@ -5,17 +5,17 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 {
-    public class AspNetCoreMvc2LoadTests : LoadTestBase
+    public class AspNetCoreMvc21LoadTests : LoadTestBase
     {
         private static readonly string TopLevelOperationName = "aspnet-coremvc.request";
 
-        private static readonly string CoreMvc = "Samples.AspNetCoreMvc2";
+        private static readonly string CoreMvc = "Samples.AspNetCoreMvc21";
         private static readonly string LoadTestConsole = "AspNetMvcCorePerformance";
 
         private static readonly int Threads = 10;
         private static readonly int IterationsPerThread = 20;
 
-        public AspNetCoreMvc2LoadTests(ITestOutputHelper output)
+        public AspNetCoreMvc21LoadTests(ITestOutputHelper output)
             : base(output)
         {
             var aspNetCoreMvc2Port = TcpPortProvider.GetOpenPort();

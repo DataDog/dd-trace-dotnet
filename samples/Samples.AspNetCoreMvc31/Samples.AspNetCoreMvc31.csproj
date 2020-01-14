@@ -5,11 +5,11 @@
     <RootNamespace>Samples.AspNetCoreMvc</RootNamespace>
   </PropertyGroup>
 
-  <!--Files shared with AspNetCoreMvc2 -->
+  <!--Files shared with AspNetCoreMvc21 -->
   <ItemGroup>
-    <Compile Include="..\Samples.AspNetCoreMvc2\Controllers\**\*.*" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Samples.AspNetCoreMvc2\Shared\**\*.*" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Content Include="..\Samples.AspNetCoreMvc2\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Samples.AspNetCoreMvc21\Controllers\**\*.*" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Samples.AspNetCoreMvc21\Shared\**\*.*" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="..\Samples.AspNetCoreMvc21\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -16,10 +16,10 @@ done
 
 dotnet publish -f netstandard2.0 -c $buildConfiguration src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj -o "$PUBLISH_OUTPUT/netstandard2.0"
 
-# Only build Samples.AspNetCoreMvc2 for netcoreapp2.1
+# Only build Samples.AspNetCoreMvc21 for netcoreapp2.1
 if [ "$publishTargetFramework" == "netcoreapp2.1" ]
 then
-    dotnet publish -f $publishTargetFramework -c $buildConfiguration samples/Samples.AspNetCoreMvc2/Samples.AspNetCoreMvc2.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
+    dotnet publish -f $publishTargetFramework -c $buildConfiguration samples/Samples.AspNetCoreMvc21/Samples.AspNetCoreMvc21.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 fi
 
 # Only build Samples.AspNetCoreMvc30 for netcoreapp3.0
