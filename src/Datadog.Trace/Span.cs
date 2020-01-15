@@ -2,8 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Interfaces;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -318,14 +318,6 @@ namespace Datadog.Trace
                 SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
             }
         }
-
-        /// <summary>
-        /// Proxy to SetException without return value
-        /// See <see cref="Span.SetException(Exception)"/> for more information
-        /// </summary>
-        /// <param name="exception">The exception.</param>
-        void ISpan.SetException(Exception exception)
-            => SetException(exception);
 
         /// <summary>
         /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed

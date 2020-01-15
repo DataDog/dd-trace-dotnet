@@ -144,12 +144,6 @@ namespace Datadog.Trace
         public Scope ActiveScope => _scopeManager.Active;
 
         /// <summary>
-        /// Gets a value indicating whether debugging mode is enabled.
-        /// </summary>
-        /// <value><c>true</c> is debugging is enabled, otherwise <c>false</c>.</value>
-        bool IDatadogTracer.IsDebugEnabled => Settings.DebugEnabled;
-
-        /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
         public string DefaultServiceName { get; }
@@ -201,18 +195,29 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Make a span active and return a scope that can be disposed to close the span
+        /// Make a span the active span and return its new scope.
         /// </summary>
-        /// <param name="span">The span to activate</param>
-        /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
-        /// <returns>A Scope object wrapping this span</returns>
+        /// <param name="span">The span to activate.</param>
+        /// <returns>A Scope object wrapping this span.</returns>
+        Scope IDatadogTracer.ActivateSpan(Span span)
+        {
+            return ActivateSpan(span);
+        }
+
+        /// <summary>
+        /// Make a span the active span and return its new scope.
+        /// </summary>
+        /// <param name="span">The span to activate.</param>
+        /// <param name="finishOnClose">Determines whether closing the returned scope will also finish the span.</param>
+        /// <returns>A Scope object wrapping this span.</returns>
         public Scope ActivateSpan(Span span, bool finishOnClose = true)
         {
             return _scopeManager.Activate(span, finishOnClose);
         }
 
         /// <summary>
-        /// This is a shortcut for <see cref="StartSpan"/> and <see cref="ActivateSpan"/>, it creates a new span with the given parameters and makes it active.
+        /// This is a shortcut for <see cref="StartSpan(string, ISpanContext, string, DateTimeOffset?, bool)"/>
+        /// and <see cref="ActivateSpan"/>, it creates a new span with the given parameters and makes it active.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
         /// <param name="parent">The span's parent</param>
@@ -225,6 +230,27 @@ namespace Datadog.Trace
         {
             var span = StartSpan(operationName, parent, serviceName, startTime, ignoreActiveScope);
             return _scopeManager.Activate(span, finishOnClose);
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="Span"/> with the specified parameters.
+        /// </summary>
+        /// <param name="operationName">The span's operation name</param>
+        /// <returns>The newly created span</returns>
+        Span IDatadogTracer.StartSpan(string operationName)
+        {
+            return StartSpan(operationName);
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="Span"/> with the specified parameters.
+        /// </summary>
+        /// <param name="operationName">The span's operation name</param>
+        /// <param name="parent">The span's parent</param>
+        /// <returns>The newly created span</returns>
+        Span IDatadogTracer.StartSpan(string operationName, ISpanContext parent)
+        {
+            return StartSpan(operationName, parent);
         }
 
         /// <summary>

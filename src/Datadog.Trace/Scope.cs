@@ -1,4 +1,4 @@
-using Datadog.Trace.Interfaces;
+using Datadog.Trace.Abstractions;
 
 namespace Datadog.Trace
 {

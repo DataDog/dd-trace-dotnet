@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Interfaces;
+using Datadog.Trace.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -10,7 +10,7 @@ namespace Datadog.Trace.TestHelpers
 
         public string Type { get; set; }
 
-        public bool Error { get; private set; }
+        public bool Error { get; set; }
 
         private Dictionary<string, string> Tags { get; } = new Dictionary<string, string>();
 
