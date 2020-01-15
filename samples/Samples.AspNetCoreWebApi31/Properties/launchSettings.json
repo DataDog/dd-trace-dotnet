@@ -45,7 +45,7 @@
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json"
       },
-      "applicationUrl": "https://localhost:54598",
+      "applicationUrl": "http://localhost:54598",
       "nativeDebugging": true
     }
   }
