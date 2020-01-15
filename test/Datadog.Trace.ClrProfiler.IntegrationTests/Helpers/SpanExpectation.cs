@@ -10,10 +10,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     /// </summary>
     public class SpanExpectation
     {
-        public SpanExpectation(string serviceName, string operationName, string type)
+        public SpanExpectation(string serviceName, string operationName, string resourceName, string type)
         {
             ServiceName = serviceName;
             OperationName = operationName;
+            ResourceName = resourceName;
             Type = type;
 
             // Expectations for all spans regardless of type should go here
@@ -21,8 +22,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             RegisterCustomExpectation(nameof(OperationName), actual: s => s.Name, expected: OperationName);
             RegisterCustomExpectation(nameof(ServiceName), actual: s => s.Service, expected: ServiceName);
+            RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource.ToLowerInvariant().TrimEnd(), expected: ResourceName.ToLowerInvariant());
             RegisterCustomExpectation(nameof(Type), actual: s => s.Type, expected: Type);
-            RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource.TrimEnd(), expected: ResourceName);
 
             RegisterTagExpectation(
                 key: Tags.Language,

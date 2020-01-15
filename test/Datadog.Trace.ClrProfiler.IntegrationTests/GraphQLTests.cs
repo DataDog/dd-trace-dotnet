@@ -135,10 +135,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
 
             // Expect a 'validate' span
-            _expectations.Add(new GraphQLSpanExpectation("Samples.GraphQL-graphql", _graphQLValidateOperationName)
+            _expectations.Add(new GraphQLSpanExpectation("Samples.GraphQL-graphql", _graphQLValidateOperationName, _graphQLValidateOperationName)
             {
                 OriginalUri = url,
-                ResourceName = _graphQLValidateOperationName,
                 GraphQLRequestBody = graphQLRequestBody,
                 GraphQLOperationType = null,
                 GraphQLOperationName = graphQLOperationName,
@@ -150,10 +149,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (failsValidation) { return; }
 
             // Expect an 'execute' span
-            _expectations.Add(new GraphQLSpanExpectation("Samples.GraphQL-graphql", _graphQLExecuteOperationName)
+            _expectations.Add(new GraphQLSpanExpectation("Samples.GraphQL-graphql", _graphQLExecuteOperationName, _graphQLExecuteOperationName)
             {
                 OriginalUri = url,
-                ResourceName = _graphQLExecuteOperationName,
                 GraphQLRequestBody = graphQLRequestBody,
                 GraphQLOperationType = graphQLOperationType,
                 GraphQLOperationName = graphQLOperationName,
