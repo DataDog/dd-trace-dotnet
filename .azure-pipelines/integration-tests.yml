@@ -70,15 +70,15 @@ jobs:
 
   steps:
   - task: UseDotNet@2
-    displayName: install dotnet core runtime 2.1
+    displayName: install dotnet core sdk 2.1
     inputs:
-      packageType: runtime
+      packageType: sdk
       version: 2.1.x
 
   - task: UseDotNet@2
-    displayName: install dotnet core runtime 3.0
+    displayName: install dotnet core sdk 3.0
     inputs:
-      packageType: runtime
+      packageType: sdk
       version: 3.0.x
 
   - task: UseDotNet@2
