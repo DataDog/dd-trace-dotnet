@@ -291,9 +291,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc31", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc21", "samples\Samples.AspNetCoreMvc21\Samples.AspNetCoreMvc21.csproj", "{D141BD06-DD95-4CAF-85CD-657116E0DAD4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCore.WebApi31", "samples\Samples.AspNetCore.WebApi31\Samples.AspNetCore.WebApi31.csproj", "{87F20FE5-E57B-4F92-9C43-533E355AD9C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreWebApi31", "samples\Samples.AspNetCoreWebApi31\Samples.AspNetCoreWebApi31.csproj", "{87F20FE5-E57B-4F92-9C43-533E355AD9C8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCore.WebApi21", "samples\Samples.AspNetCore.WebApi21\Samples.AspNetCore.WebApi21.csproj", "{00460BDF-8A55-432B-963B-488907A85F86}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreWebApi21", "samples\Samples.AspNetCoreWebApi21\Samples.AspNetCoreWebApi21.csproj", "{00460BDF-8A55-432B-963B-488907A85F86}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

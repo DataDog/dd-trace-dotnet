@@ -1,6 +1,6 @@
 using System;
 
-namespace Samples.AspNetCore.WebApi31
+namespace Samples.AspNetCoreWebApi31
 {
     public class WeatherForecast
     {

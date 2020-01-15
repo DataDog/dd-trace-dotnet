@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Samples.AspNetCore.WebApi31
+namespace Samples.AspNetCoreWebApi31
 {
     public class Program
     {
