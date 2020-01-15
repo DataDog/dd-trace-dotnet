@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         private const string IntegrationName = "AspNetWebApi2";
         private const string OperationName = "aspnet-webapi.request";
-        private const string Major5Minor2 = "5.2";
+        private const string Major5Minor1 = "5.1";
         private const string Major5 = "5";
 
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = SystemWebHttpAssemblyName,
             TargetType = HttpControllerTypeName,
             TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, HttpControllerContextTypeName, ClrNames.CancellationToken },
-            TargetMinimumVersion = Major5Minor2,
+            TargetMinimumVersion = Major5Minor1,
             TargetMaximumVersion = Major5)]
         public static object ExecuteAsync(
             object apiController,

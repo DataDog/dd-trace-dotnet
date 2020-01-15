@@ -348,7 +348,7 @@
             "System.Threading.CancellationToken"
           ],
           "minimum_major": 5,
-          "minimum_minor": 2,
+          "minimum_minor": 1,
           "minimum_patch": 0,
           "maximum_major": 5,
           "maximum_minor": 65535,
