@@ -1,10 +1,6 @@
 <Project>
-
-  <PropertyGroup>
-    <Platforms>x64;x86</Platforms>
-    <PlatformTarget>$(Platform)</PlatformTarget>
-    <IsPackable>false</IsPackable>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-  </PropertyGroup>
-
+  <!--
+  This file intentionally left blank...
+  to stop msbuild from looking up the folder hierarchy
+  -->
 </Project>

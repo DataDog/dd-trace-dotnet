@@ -38,9 +38,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> StackExchangeRedis => IsComprehensive ? PackageVersionsComprehensive.StackExchangeRedis : PackageVersionsLatestMinors.StackExchangeRedis;
 
         public static IEnumerable<object[]> ServiceStackRedis => IsComprehensive ? PackageVersionsComprehensive.ServiceStackRedis : PackageVersionsLatestMinors.ServiceStackRedis;
-
-#if NETCOREAPP2_1
-        public static IEnumerable<object[]> AspNetCoreMvc2 => IsComprehensive ? PackageVersionsComprehensive.AspNetCoreMvc2 : PackageVersionsLatestMinors.AspNetCoreMvc2;
-#endif
     }
 }

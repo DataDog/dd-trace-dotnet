@@ -39,7 +39,7 @@ Integration tests | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-
     - Optional: ASP.NET and web development (to build samples)
   - Individual components
     - .NET Framework 4.7 targeting pack
-- [.NET Core 3.0 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.0)
+- [.NET Core 3.1 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.1)
 - Optional: [.NET Core 2.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/2.1) to test in .NET Core 2.1 locally.
 - Optional: [.NET Core 2.2 Runtime](https://dotnet.microsoft.com/download/dotnet-core/2.2) to test in .NET Core 2.2 locally.
 - Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v3.4.4 or newer
@@ -86,7 +86,7 @@ msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x86
 ### Minimum requirements
 
 To build C# projects and NuGet packages only
-- [.NET Core SDK 3.0](https://dotnet.microsoft.com/download/dotnet-core/3.0)
+- [.NET Core SDK 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1)
 
 To build everything and run integration tests
 - [Docker Compose](https://docs.docker.com/compose/install/)

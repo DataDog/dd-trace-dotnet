@@ -36,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.7.3" },
                 new object[] { "2.8.1" },
                 new object[] { "2.9.3" },
+                new object[] { "2.10.0" },
 #endif
             };
 
@@ -80,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
                 new object[] { "4.0.10" },
-                new object[] { "4.1.1" },
+                new object[] { "4.1.2" },
 #endif
             };
 
@@ -97,6 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.5.1" },
                 new object[] { "4.6.1" },
                 new object[] { "4.7.0" },
+                new object[] { "4.8.0" },
 #endif
             };
 
@@ -129,23 +131,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.0" },
                 new object[] { "5.6.0" },
                 new object[] { "5.7.0" },
+                new object[] { "5.8.0" },
 #endif
             };
-
-#if NETCOREAPP2_1
-        public static IEnumerable<object[]> AspNetCoreMvc2 =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-                new object[] { "2.0.4" },
-                new object[] { "2.1.3" },
-                new object[] { "2.2.0" },
-#endif
-            };
-#endif
 
     }
 }
