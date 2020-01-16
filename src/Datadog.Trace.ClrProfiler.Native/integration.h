@@ -165,6 +165,8 @@ struct MethodSignature {
     if (data.size() > 1) {
       return data[2] == ELEMENT_TYPE_OBJECT;
     }
+
+    return false;
   }
 
   WSTRING str() const {
