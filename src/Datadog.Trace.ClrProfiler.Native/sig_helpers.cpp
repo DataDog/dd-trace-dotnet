@@ -107,7 +107,7 @@ bool ParseMethod(PCCOR_SIGNATURE* p_sig) {
   }
 
   bool sentinel_found = false;
-  for (int i = 0; i < param_count; i++) {
+  for (ULONG i = 0; i < param_count; i++) {
     if (**p_sig == ELEMENT_TYPE_SENTINEL) {
       if (sentinel_found) {
         return false;
