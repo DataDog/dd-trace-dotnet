@@ -830,7 +830,7 @@ bool ReturnTypeIsValueTypeOrGeneric(
       }
 
       size_t length = p_end_byte - p_start_byte;
-      HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, length, ret_type_token);
+      HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, (ULONG) length, ret_type_token);
       return SUCCEEDED(hr);
     }
 
@@ -963,7 +963,7 @@ bool ReturnTypeIsValueTypeOrGeneric(
           }
 
           size_t length = p_end_byte - p_start_byte;
-          HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, length,
+          HRESULT hr = metadata_emit->GetTokenFromTypeSpec(p_start_byte, (ULONG) length,
                                                            ret_type_token);
           return SUCCEEDED(hr);
         } else {
