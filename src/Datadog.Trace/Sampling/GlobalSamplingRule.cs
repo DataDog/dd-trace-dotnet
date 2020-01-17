@@ -20,7 +20,7 @@ namespace Datadog.Trace.Sampling
         /// <summary>
         /// Gets the priority which is one beneath custom rules.
         /// </summary>
-        public int Priority => 2;
+        public int Priority => 0;
 
         public bool IsMatch(Span span)
         {
