@@ -10,17 +10,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             : base("AspNetCoreWebApi31", output)
         {
             Expectations.Clear();
-            CreateTopLevelExpectation(url: "/WeatherForecast", httpMethod: "GET", httpStatus: "200", resourceUrl: "WeatherForecast");
+            // TODO: When the automatic instrumentation begins to create traces from this sample,
+            // uncomment and remove the requestPathsOverride in MeetsAllAspNetCoreMvcExpectations
+            // CreateTopLevelExpectation(url: "/WeatherForecast", httpMethod: "GET", httpStatus: "200", resourceUrl: "WeatherForecast");
         }
 
         // TODO: Remove Skip property to run the sample in CI
-        [TargetFrameworkVersionsFact("netcoreapp3.1", Skip = "Do not run because our tracer currently will not generate traces on this sample")]
+        [TargetFrameworkVersionsFact("netcoreapp3.1")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public void MeetsAllAspNetCoreMvcExpectations()
         {
             // No package versions are relevant because this is built-in
-            RunTraceTestOnSelfHosted(string.Empty);
+            RunTraceTestOnSelfHosted(string.Empty, requestPathsOverride: new[] { "/WeatherForecast" });
         }
     }
 }

@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         protected List<AspNetCoreMvcSpanExpectation> Expectations { get; set; } = new List<AspNetCoreMvcSpanExpectation>();
 
-        public void RunTraceTestOnSelfHosted(string packageVersion)
+        public void RunTraceTestOnSelfHosted(string packageVersion, string[] requestPathsOverride = null)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             var aspNetCorePort = TcpPortProvider.GetOpenPort();
@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                 var testStart = DateTime.Now;
 
-                var paths = Expectations.Select(e => e.OriginalUri).ToArray();
+                var paths = requestPathsOverride ?? Expectations.Select(e => e.OriginalUri).ToArray();
                 SubmitRequests(aspNetCorePort, paths);
 
                 var spans =
