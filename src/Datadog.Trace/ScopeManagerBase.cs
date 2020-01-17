@@ -7,8 +7,6 @@ namespace Datadog.Trace
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ScopeManagerBase));
 
-        private readonly AsyncLocalCompat<Scope> _activeScope = new AsyncLocalCompat<Scope>();
-
         public event EventHandler<SpanEventArgs> SpanOpened;
 
         public event EventHandler<SpanEventArgs> SpanActivated;
@@ -29,7 +27,7 @@ namespace Datadog.Trace
 
             SpanOpened?.Invoke(this, scopeOpenedArgs);
 
-            _activeScope.Set(scope);
+            Active = scope;
 
             if (newParent != null)
             {
