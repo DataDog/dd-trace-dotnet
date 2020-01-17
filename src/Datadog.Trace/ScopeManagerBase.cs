@@ -17,7 +17,7 @@ namespace Datadog.Trace
 
         public event EventHandler<SpanEventArgs> TraceEnded;
 
-        public abstract Scope Active { get; set; }
+        public abstract Scope Active { get; protected set; }
 
         public Scope Activate(Span span, bool finishOnClose)
         {

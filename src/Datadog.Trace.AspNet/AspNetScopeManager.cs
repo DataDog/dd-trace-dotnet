@@ -22,7 +22,7 @@ namespace Datadog.Trace.AspNet
                 return _activeScopeFallback.Get();
             }
 
-            set
+            protected set
             {
                 var httpContext = HttpContext.Current;
                 if (httpContext != null)

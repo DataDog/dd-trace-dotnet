@@ -14,7 +14,7 @@ namespace Datadog.Trace
                 return _activeScope.Get();
             }
 
-            set
+            protected set
             {
                 _activeScope.Set(value);
             }
