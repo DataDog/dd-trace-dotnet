@@ -127,6 +127,11 @@ namespace Datadog.Trace.Configuration
         public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
 
         /// <summary>
+        /// Configuration key for setting the global rate for the sampler.
+        /// </summary>
+        public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";
+
+        /// <summary>
         /// Configuration key for the DogStatsd port where the Tracer can send metrics.
         /// Default value is 8125/
         /// </summary>

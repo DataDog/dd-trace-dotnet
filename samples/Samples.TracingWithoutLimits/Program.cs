@@ -45,7 +45,7 @@ namespace Samples.TracingWithoutLimits
             PrepKeys(ServiceCatRunner, RootRunOperation, total * 0.1m);
             PrepKeys(ServiceRatRunner, RootRunOperation, total * 0.0m);
 
-            PrepKeys(UnknownService, UnknownOperation, null);
+            PrepKeys(UnknownService, UnknownOperation, total * 0.6m);
 
             // Configured rules:
             // [{"service":"rat.*","name":".*run.*","sample_rate":0},{"service":"dog.*","name":".+walk","sample_rate":1.0},{"service":"cat.*","name":".+walk","sample_rate":0.8},{"name":".+walk","sample_rate":0.5},{"service":"dog.*","sample_rate":0.2},{"service":"cat.*","sample_rate":0.1}]
@@ -133,14 +133,7 @@ namespace Samples.TracingWithoutLimits
             var limitPsrKey = "_dd.limit_psr";
             var priorityKey = "_sampling_priority_v1";
 
-            if (serviceName == UnknownService)
-            {
-                if (metrics.ContainsKey(rulePsrKey))
-                {
-                    throw new Exception($"{rulePsrKey} should not be set in the fallback behavior.");
-                }
-            }
-            else if (!metrics.ContainsKey(rulePsrKey))
+            if (!metrics.ContainsKey(rulePsrKey))
             {
                 throw new Exception($"{rulePsrKey} must be set in a user defined rule.");
             }

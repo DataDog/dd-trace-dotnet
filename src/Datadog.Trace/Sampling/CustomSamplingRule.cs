@@ -84,7 +84,7 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            span.SetMetric(Metrics.SamplingAgentDecision, _samplingRate);
+            span.SetMetric(Metrics.SamplingRuleDecision, _samplingRate);
             return _samplingRate;
         }
 

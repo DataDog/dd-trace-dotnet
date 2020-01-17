@@ -111,8 +111,12 @@ namespace Datadog.Trace.Configuration
                                    false;
 
             CustomSamplingRules = source?.GetString(ConfigurationKeys.CustomSamplingRules) ??
-                                   // default value
-                                   null;
+                                  // default value
+                                  null;
+
+            GlobalSamplingRate = source?.GetDouble(ConfigurationKeys.GlobalSamplingRate) ??
+                                  // default value
+                                  null;
         }
 
         /// <summary>
@@ -185,6 +189,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
         public string CustomSamplingRules { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating a global rate for sampling.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
+        public double? GlobalSamplingRate { get; set; }
 
         /// <summary>
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.

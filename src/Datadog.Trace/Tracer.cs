@@ -95,6 +95,19 @@ namespace Datadog.Trace
                 }
             }
 
+            if (Settings.GlobalSamplingRate != null)
+            {
+                var globalRate = (float)Settings.GlobalSamplingRate;
+                if (globalRate < 0f || globalRate > 1f)
+                {
+                    Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
+                }
+                else
+                {
+                    Sampler.RegisterRule(new GlobalSamplingRule(globalRate));
+                }
+            }
+
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
