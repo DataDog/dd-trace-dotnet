@@ -2,12 +2,17 @@ using System;
 
 namespace Datadog.Trace
 {
-    internal class SpanEventArgs : EventArgs
+    /// <summary>
+    /// EventArgs for a Span
+    /// </summary>
+    public class SpanEventArgs : EventArgs
     {
-        public SpanEventArgs(Span span)
-        {
-            Span = span;
-        }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanEventArgs"/> class.
+        /// Creates a new <see cref="SpanEventArgs"/> using <paramref name="span"/>
+        /// </summary>
+        /// <param name="span">The <see cref="Span"/> used to initialize the <see cref="SpanEventArgs"/> object.</param>
+        public SpanEventArgs(Span span) => Span = span;
 
         internal Span Span { get; }
     }
