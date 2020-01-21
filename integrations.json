@@ -22,7 +22,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.11.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetIntegration",
           "method": "InitModules",
-          "signature": "00 06 1C 1C 1C 1C 08 08 0A"
+          "signature": "00 03 01 08 08 0A"
         }
       }
     ]
