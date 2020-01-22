@@ -186,6 +186,10 @@
     <Content Include="Scripts\jquery-3.3.1.min.map" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj">
+      <Project>{b34edbc7-c5fb-409d-8472-bc7469d6f2bd}</Project>
+      <Name>Datadog.Trace.AspNet</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
       <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
       <Name>Datadog.Trace.ClrProfiler.Managed</Name>
