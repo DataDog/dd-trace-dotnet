@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-            TargetAssembly = "System.Net",
+            TargetAssembly = "System",
             TargetType = WebRequestTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.WebResponse>" },
             TargetMinimumVersion = Major4,
