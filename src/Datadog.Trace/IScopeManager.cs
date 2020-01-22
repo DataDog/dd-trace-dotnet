@@ -5,7 +5,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Interface for managing a scope.
     /// </summary>
-    public interface IScopeManager
+    internal interface IScopeManager
     {
         /// <summary>
         /// SpanOpened event delegate

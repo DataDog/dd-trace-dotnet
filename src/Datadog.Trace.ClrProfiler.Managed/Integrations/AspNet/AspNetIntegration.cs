@@ -43,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
                     MethodBuilder<Func<HttpApplication>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(InitModules))
                        .WithConcreteType(typeof(HttpApplication))
+                       .WithReturnType(typeof(void))
                        .Build();
             }
             catch (Exception ex)
@@ -71,6 +72,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
             {
                 // only register http module if integration is enabled
                 HttpApplication.RegisterModule(typeof(TracingHttpModule));
+            }
+
+            try
+            {
+                instrumentedMethod();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: SystemWebHttpApplicationTypeName,
+                    methodName: nameof(InitModules),
+                    instanceType: SystemWebHttpApplicationTypeName);
+                throw;
             }
         }
     }

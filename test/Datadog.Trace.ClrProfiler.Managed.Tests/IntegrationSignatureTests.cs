@@ -8,6 +8,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
     public class IntegrationSignatureTests
     {
+        // This is a list of instrumented methods that are static, i.e., the target method is static.
         private static readonly List<MethodInfo> StaticInstrumentations = new List<MethodInfo>()
         {
         };
