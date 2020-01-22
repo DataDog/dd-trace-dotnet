@@ -11,7 +11,8 @@ namespace Datadog.Trace.Logging
     internal static class DatadogLogging
     {
         private const string NixDefaultDirectory = "/var/log/datadog/";
-        private static readonly string WindowsDefaultDirectory;
+        private static readonly string WindowsDefaultDirectory =
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
 
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
         private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Warning;
@@ -50,13 +51,8 @@ namespace Datadog.Trace.Logging
                     logDirectory = Path.GetDirectoryName(nativeLogFile);
                 }
 
-                // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission because of the following API calls
-                //   - Directory.Exists
-                //   - Environment.GetFolderPath
-                //   - Path.GetTempPath
                 if (logDirectory == null)
                 {
-                    WindowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
                     if (Directory.Exists(WindowsDefaultDirectory))
                     {
                         logDirectory = WindowsDefaultDirectory;
