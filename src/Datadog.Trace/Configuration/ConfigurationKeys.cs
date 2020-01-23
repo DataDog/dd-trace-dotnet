@@ -133,7 +133,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for the DogStatsd port where the Tracer can send metrics.
-        /// Default value is 8125/
+        /// Default value is 8125.
         /// </summary>
         public const string DogStatsdPort = "DD_DOGSTATSD_PORT";
 
@@ -142,6 +142,20 @@ namespace Datadog.Trace.Configuration
         /// Default value is <c>false</c> (disabled).
         /// </summary>
         public const string TracerMetricsEnabled = "DD_TRACE_METRICS_ENABLED";
+
+        /// <summary>
+        /// Configuration key for setting the approximate maximum size,
+        /// in bytes, for Tracer log files.
+        /// Default value is 10 MB.
+        /// </summary>
+        public const string MaxLogFileSize = "DD_MAX_LOGFILE_SIZE";
+
+        /// <summary>
+        /// Configuration key for setting the path to the profiler log file.
+        /// Default value is "%ProgramData%"\Datadog .NET Tracer\logs\dotnet-profiler.log" on Windows
+        /// or "/var/log/datadog/dotnet-profiler.log" on Linux.
+        /// </summary>
+        public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
 
         /// <summary>
         /// String format patterns used to match integration-specific configuration keys.

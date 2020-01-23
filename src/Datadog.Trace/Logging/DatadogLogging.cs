@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
@@ -11,8 +12,7 @@ namespace Datadog.Trace.Logging
     internal static class DatadogLogging
     {
         private const string NixDefaultDirectory = "/var/log/datadog/";
-        private static readonly string WindowsDefaultDirectory =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
+        private static readonly string WindowsDefaultDirectory;
 
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
         private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Warning;
@@ -36,14 +36,14 @@ namespace Datadog.Trace.Logging
                     MinimumLogEventLevel = LogEventLevel.Verbose;
                 }
 
-                var maxLogSizeVar = Environment.GetEnvironmentVariable("DD_MAX_LOGFILE_SIZE");
+                var maxLogSizeVar = Environment.GetEnvironmentVariable(ConfigurationKeys.MaxLogFileSize);
                 if (long.TryParse(maxLogSizeVar, out var maxLogSize))
                 {
                     // No verbose or debug logs
                     MaxLogFileSize = maxLogSize;
                 }
 
-                var nativeLogFile = Environment.GetEnvironmentVariable("DD_TRACE_LOG_PATH");
+                var nativeLogFile = Environment.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
                 string logDirectory = null;
 
                 if (!string.IsNullOrEmpty(nativeLogFile))
@@ -51,8 +51,13 @@ namespace Datadog.Trace.Logging
                     logDirectory = Path.GetDirectoryName(nativeLogFile);
                 }
 
+                // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission because of the following API calls
+                //   - Directory.Exists
+                //   - Environment.GetFolderPath
+                //   - Path.GetTempPath
                 if (logDirectory == null)
                 {
+                    WindowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
                     if (Directory.Exists(WindowsDefaultDirectory))
                     {
                         logDirectory = WindowsDefaultDirectory;
