@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
@@ -36,14 +37,14 @@ namespace Datadog.Trace.Logging
                     MinimumLogEventLevel = LogEventLevel.Verbose;
                 }
 
-                var maxLogSizeVar = Environment.GetEnvironmentVariable("DD_MAX_LOGFILE_SIZE");
+                var maxLogSizeVar = Environment.GetEnvironmentVariable(ConfigurationKeys.MaxLogFileSize);
                 if (long.TryParse(maxLogSizeVar, out var maxLogSize))
                 {
                     // No verbose or debug logs
                     MaxLogFileSize = maxLogSize;
                 }
 
-                var nativeLogFile = Environment.GetEnvironmentVariable("DD_TRACE_LOG_PATH");
+                var nativeLogFile = Environment.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
                 string logDirectory = null;
 
                 if (!string.IsNullOrEmpty(nativeLogFile))
