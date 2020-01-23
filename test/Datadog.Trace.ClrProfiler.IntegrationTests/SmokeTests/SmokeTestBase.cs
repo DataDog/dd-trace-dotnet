@@ -32,6 +32,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         protected bool AssumeSuccessOnTimeout { get; set; }
 
+        protected void SetEnvironmentVariable(string key, string value)
+        {
+            EnvironmentHelper.ExtraEnvironmentVariables.Add(key, value);
+        }
+
         /// <summary>
         /// Method to execute a smoke test.
         /// </summary>

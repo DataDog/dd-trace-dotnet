@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
@@ -70,6 +71,8 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public bool DebugModeEnabled { get; set; }
+
+        public Dictionary<string, string> ExtraEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
         public string SampleName { get; }
 
@@ -197,6 +200,11 @@ namespace Datadog.Trace.TestHelpers
             if (_disabledIntegrations != null)
             {
                 environmentVariables["DD_DISABLED_INTEGRATIONS"] = _disabledIntegrations;
+            }
+
+            foreach (var key in ExtraEnvironmentVariables.Keys)
+            {
+                environmentVariables[key] = ExtraEnvironmentVariables[key];
             }
         }
 

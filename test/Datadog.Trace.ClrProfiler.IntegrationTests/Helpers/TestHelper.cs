@@ -221,6 +221,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.DebugModeEnabled = true;
         }
 
+        protected void SetEnvironmentVariable(string key, string value)
+        {
+            EnvironmentHelper.ExtraEnvironmentVariables.Add(key, value);
+        }
+
         protected async Task AssertHttpSpan(
             string path,
             MockTracerAgent agent,
