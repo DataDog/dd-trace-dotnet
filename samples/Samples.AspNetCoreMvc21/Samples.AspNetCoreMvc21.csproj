@@ -9,8 +9,4 @@
     <PackageReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\sample-libs\Samples.Shared\Samples.Shared.csproj" />
-  </ItemGroup>
-
 </Project>

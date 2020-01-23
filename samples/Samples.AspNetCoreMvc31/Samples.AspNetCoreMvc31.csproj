@@ -12,8 +12,4 @@
     <Content Include="..\Samples.AspNetCoreMvc21\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\sample-libs\Samples.Shared\Samples.Shared.csproj" />
-  </ItemGroup>
-
 </Project>
