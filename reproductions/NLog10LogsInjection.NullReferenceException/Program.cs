@@ -1,5 +1,7 @@
 using Datadog.Trace;
 using NLog;
+using System;
+using System.Threading.Tasks;
 
 namespace NLog10LogsInjection.NullReferenceException
 {
@@ -7,12 +9,21 @@ namespace NLog10LogsInjection.NullReferenceException
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             using (var scope = Tracer.Instance.StartActive("NLog10LogsInjection.NullReferenceException.Program - Main()"))
             {
                 Logger.Info("Message during a trace.");
+
+                using (var innerScope = Tracer.Instance.StartActive("Main() - Inner Http call"))
+                {
+                    Logger.Info("Inner message during a trace.");
+                }
             }
+
+            Console.WriteLine("Successfully created a trace with two spans and didn't crash. Delay for five seconds to flush the trace.");
+            Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+            return 0;
         }
     }
 }

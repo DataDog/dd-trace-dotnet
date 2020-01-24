@@ -25,6 +25,8 @@ namespace Datadog.Trace.Logging
         //            it is only valid to add the properties once and unset them once.
         private readonly ConcurrentStack<IDisposable> _contextDisposalStack = new ConcurrentStack<IDisposable>();
 
+        private bool _safeToAddToMdc = true;
+
         // IMPORTANT: For all logging frameworks, do not set any default values for
         //            "dd.trace_id" and "dd.span_id" when initializing the subscriber
         //            because the Tracer may be initialized at a time when it is not safe
@@ -129,13 +131,26 @@ namespace Datadog.Trace.Logging
 
         private void SetCorrelationIdentifierContext(ulong traceId, ulong spanId)
         {
-            // TODO: Debug logs
-            _contextDisposalStack.Push(
-                LogProvider.OpenMappedContext(
-                    CorrelationIdentifier.TraceIdKey, traceId.ToString(), destructure: false));
-            _contextDisposalStack.Push(
-                LogProvider.OpenMappedContext(
-                    CorrelationIdentifier.SpanIdKey, spanId.ToString(), destructure: false));
+            if (!_safeToAddToMdc)
+            {
+                return;
+            }
+
+            try
+            {
+                // TODO: Debug logs
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.TraceIdKey, traceId.ToString(), destructure: false));
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.SpanIdKey, spanId.ToString(), destructure: false));
+            }
+            catch (Exception)
+            {
+                _safeToAddToMdc = false;
+                RemoveAllCorrelationIdentifierContexts();
+            }
         }
     }
 }
