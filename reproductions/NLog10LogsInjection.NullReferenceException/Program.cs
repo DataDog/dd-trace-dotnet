@@ -11,11 +11,11 @@ namespace NLog10LogsInjection.NullReferenceException
 
         static int Main(string[] args)
         {
-            using (var scope = Tracer.Instance.StartActive("NLog10LogsInjection.NullReferenceException.Program - Main()"))
+            using (var scope = Tracer.Instance.StartActive("Main"))
             {
                 Logger.Info("Message during a trace.");
 
-                using (var innerScope = Tracer.Instance.StartActive("Main() - Inner Http call"))
+                using (var innerScope = Tracer.Instance.StartActive("Main-Inner"))
                 {
                     Logger.Info("Inner message during a trace.");
                 }
