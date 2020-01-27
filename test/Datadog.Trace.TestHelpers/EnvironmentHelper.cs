@@ -25,7 +25,6 @@ namespace Datadog.Trace.TestHelpers
         private readonly string _runtime;
         private readonly bool _isCoreClr;
         private readonly string _samplesDirectory;
-        private readonly string _disabledIntegrations;
         private readonly Type _anchorType;
         private readonly Assembly _anchorAssembly;
         private readonly TargetFrameworkAttribute _targetFramework;
@@ -39,13 +38,11 @@ namespace Datadog.Trace.TestHelpers
             Type anchorType,
             ITestOutputHelper output,
             string samplesDirectory = "samples",
-            string disabledIntegrations = null,
             bool prependSamplesToAppName = true,
             bool requiresProfiling = true)
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? "samples";
-            _disabledIntegrations = disabledIntegrations;
             _anchorType = anchorType;
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = _anchorAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
@@ -72,7 +69,7 @@ namespace Datadog.Trace.TestHelpers
 
         public bool DebugModeEnabled { get; set; }
 
-        public Dictionary<string, string> ExtraEnvironmentVariables { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
         public string SampleName { get; }
 
@@ -142,7 +139,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public void SetEnvironmentVariableDefaults(
+        public void SetEnvironmentVariables(
             int agentPort,
             int aspNetCorePort,
             string processPath,
@@ -197,14 +194,9 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
 
-            if (_disabledIntegrations != null)
+            foreach (var key in CustomEnvironmentVariables.Keys)
             {
-                environmentVariables["DD_DISABLED_INTEGRATIONS"] = _disabledIntegrations;
-            }
-
-            foreach (var key in ExtraEnvironmentVariables.Keys)
-            {
-                environmentVariables[key] = ExtraEnvironmentVariables[key];
+                environmentVariables[key] = CustomEnvironmentVariables[key];
             }
         }
 
