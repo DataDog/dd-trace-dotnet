@@ -3,26 +3,29 @@
     "name": "AspNet",
     "method_replacements": [
       {
-        "caller": {},
+        "caller": {
+          "assembly": "System.Web"
+        },
         "target": {
           "assembly": "System.Web",
-          "type": "System.Web.HttpApplication",
-          "method": "InitModules",
+          "type": "System.Web.Compilation.BuildManager",
+          "method": "InvokePreStartInitMethods",
           "signature_types": [
-            "System.Void"
+            "System.Void",
+            "System.Collections.Generic.ICollection`1<System.Reflection.MethodInfo>"
           ],
-          "minimum_major": 0,
+          "minimum_major": 4,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 65535,
+          "maximum_major": 4,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.11.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetIntegration",
-          "method": "InitModules",
-          "signature": "00 03 01 08 08 0A"
+          "method": "InvokePreStartInitMethods",
+          "signature": "00 04 01 1C 08 08 0A"
         }
       }
     ]

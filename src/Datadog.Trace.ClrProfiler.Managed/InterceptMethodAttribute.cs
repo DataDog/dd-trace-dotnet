@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public string TargetAssembly
         {
-            get => throw new NotSupportedException("Use property TargetAssemblies instead of TargetAssembly.");
+            get => string.Empty;
             set => TargetAssemblies = new[] { value };
         }
 

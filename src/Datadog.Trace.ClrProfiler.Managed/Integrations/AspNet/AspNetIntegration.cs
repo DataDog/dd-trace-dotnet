@@ -8,42 +8,73 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
 {
     /// <summary>
-    /// Contains instrumentation wrappers for basic AspNet such as WebForms
+    /// Instrumentation wrapper for AspNet
     /// </summary>
     public static class AspNetIntegration
     {
         private const string IntegrationName = "AspNet";
         private const string OperationName = "aspnet.request";
+        private const string MinimumVersion = "4.0";
+        private const string MaximumVersion = "4";
 
-        private const string SystemWebAssemblyName = "System.Web";
-        private const string SystemWebHttpApplicationTypeName = "System.Web.HttpApplication";
+        private const string AssemblyName = "System.Web";
+        private const string BuildManagerTypeName = "System.Web.Compilation.BuildManager";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetIntegration));
 
         /// <summary>
-        /// Calls the underlying ExecuteAsync and traces the request.
+        /// Wrapper method used to instrument System.Web.Compilation.BuildManager.InvokePreStartInitMethods
         /// </summary>
+        /// <param name="methodInfoCollection">A collection of <see cref="System.Reflection.MethodInfo"> objects.</see>/></param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         [InterceptMethod(
-            TargetAssembly = SystemWebAssemblyName,
-            TargetType = SystemWebHttpApplicationTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Void })]
-        public static void InitModules(
+            CallerAssembly = AssemblyName,
+            TargetAssembly = AssemblyName,
+            TargetType = BuildManagerTypeName,
+            TargetSignatureTypes = new[] { ClrNames.Void, "System.Collections.Generic.ICollection`1<System.Reflection.MethodInfo>" },
+            TargetMinimumVersion = MinimumVersion,
+            TargetMaximumVersion = MaximumVersion)]
+        public static void InvokePreStartInitMethods(
+            object methodInfoCollection,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<HttpApplication> instrumentedMethod;
+            // The whole point of instrumenting a method so early on in the application load process
+            // is to register our HttpModule.
+            HttpApplication.RegisterModule(typeof(TracingHttpModule));
+
+            Action<object> instrumentedMethod;
+            Type concreteType = null;
+
+            try
+            {
+                var module = ModuleLookup.GetByPointer(moduleVersionPtr);
+                concreteType = module.GetType(BuildManagerTypeName);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: BuildManagerTypeName,
+                    methodName: nameof(InvokePreStartInitMethods),
+                    instanceType: null,
+                    relevantArguments: new[] { concreteType?.AssemblyQualifiedName });
+                throw;
+            }
 
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Func<HttpApplication>>
-                       .Start(moduleVersionPtr, mdToken, opCode, nameof(InitModules))
-                       .WithConcreteType(typeof(HttpApplication))
-                       .WithReturnType(typeof(void))
+                    MethodBuilder<Action<object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(InvokePreStartInitMethods))
+                       .WithParameters(methodInfoCollection)
+                       .WithConcreteType(concreteType)
                        .Build();
             }
             catch (Exception ex)
@@ -53,43 +84,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: SystemWebHttpApplicationTypeName,
-                    methodName: nameof(InitModules),
-                    instanceType: SystemWebHttpApplicationTypeName);
+                    null,
+                    methodName: nameof(InvokePreStartInitMethods));
                 throw;
             }
 
-            // in ASP.NET, we always want to try to use AspNetScopeManager,
-            // even if the "AspNet" integration is disabled
-            Tracer.Instance = new Tracer(
-                settings: null,
-                agentWriter: null,
-                sampler: null,
-                scopeManager: new AspNetScopeManager(),
-                statsd: null);
-
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(TracingHttpModule.IntegrationName))
-            {
-                // only register http module if integration is enabled
-                HttpApplication.RegisterModule(typeof(TracingHttpModule));
-            }
-
-            try
-            {
-                instrumentedMethod();
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorRetrievingMethod(
-                    exception: ex,
-                    moduleVersionPointer: moduleVersionPtr,
-                    mdToken: mdToken,
-                    opCode: opCode,
-                    instrumentedType: SystemWebHttpApplicationTypeName,
-                    methodName: nameof(InitModules),
-                    instanceType: SystemWebHttpApplicationTypeName);
-                throw;
-            }
+            instrumentedMethod(methodInfoCollection);
         }
     }
 }
