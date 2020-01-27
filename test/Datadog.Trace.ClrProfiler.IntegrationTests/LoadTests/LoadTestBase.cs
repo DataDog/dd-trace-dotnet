@@ -140,15 +140,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
             {
                 // .NET Core
                 startInfo = new ProcessStartInfo(executable, $"{applicationPath} {commandLineArgs}");
-                environmentHelper.SetEnvironmentVariableDefaults(agentPort, aspNetPort, executable, startInfo.EnvironmentVariables);
             }
             else
             {
                 // .NET Framework
                 startInfo = new ProcessStartInfo(executable, $"{commandLineArgs}");
-                environmentHelper.SetEnvironmentVariableDefaults(agentPort, aspNetPort, executable, startInfo.EnvironmentVariables);
             }
 
+            environmentHelper.SetEnvironmentVariables(agentPort, aspNetPort, executable, startInfo.EnvironmentVariables);
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;

@@ -18,13 +18,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class TestHelper
     {
-        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, string disabledIntegrations = null)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides, disabledIntegrations), output)
+        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
         {
         }
 
-        protected TestHelper(string sampleAppName, ITestOutputHelper output, string disabledIntegrations = null)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, disabledIntegrations), output)
+        protected TestHelper(string sampleAppName, ITestOutputHelper output)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output), output)
         {
         }
 
@@ -219,6 +219,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected void EnableDebugMode()
         {
             EnvironmentHelper.DebugModeEnabled = true;
+        }
+
+        protected void SetEnvironmentVariable(string key, string value)
+        {
+            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
         }
 
         protected async Task AssertHttpSpan(

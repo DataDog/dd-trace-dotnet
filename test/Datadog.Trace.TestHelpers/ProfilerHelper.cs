@@ -36,14 +36,14 @@ namespace Datadog.Trace.TestHelpers
             {
                 // .NET Core
                 startInfo = new ProcessStartInfo(executable, $"{applicationPath} {arguments ?? string.Empty}");
-                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
             }
             else
             {
                 // .NET Framework
                 startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
-                environmentHelper.SetEnvironmentVariableDefaults(traceAgentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
             }
+
+            environmentHelper.SetEnvironmentVariables(traceAgentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;

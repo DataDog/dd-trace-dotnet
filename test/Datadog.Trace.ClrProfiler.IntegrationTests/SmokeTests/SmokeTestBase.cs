@@ -32,6 +32,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         protected bool AssumeSuccessOnTimeout { get; set; }
 
+        protected void SetEnvironmentVariable(string key, string value)
+        {
+            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
+        }
+
         /// <summary>
         /// Method to execute a smoke test.
         /// </summary>
@@ -62,14 +67,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             {
                 // .NET Core
                 startInfo = new ProcessStartInfo(executable, $"{applicationPath}");
-                EnvironmentHelper.SetEnvironmentVariableDefaults(agentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
             }
             else
             {
                 // .NET Framework
                 startInfo = new ProcessStartInfo(executable);
-                EnvironmentHelper.SetEnvironmentVariableDefaults(agentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
             }
+
+            EnvironmentHelper.SetEnvironmentVariables(agentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
