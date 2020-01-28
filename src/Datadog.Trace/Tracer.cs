@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -122,6 +123,23 @@ namespace Datadog.Trace
             {
                 InitializeLibLogScopeEventSubscriber(_scopeManager);
             }
+
+#if NETSTANDARD2_0
+            // for now, only support DiagnosticSource for ASP.NET Core and only when running on .NET Core
+            if (Settings.DiagnosticSourceEnabled &&
+                Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
+            {
+                // instead of adding a hard dependency on DiagnosticSource,
+                // check that it is available before trying to use it
+                var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+
+                if (type != null)
+                {
+                    DiagnosticManager = InitializeDiagnosticObservers();
+                    DiagnosticManager?.Start();
+                }
+            }
+#endif
         }
 
         /// <summary>
@@ -162,6 +180,8 @@ namespace Datadog.Trace
         /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
         /// </summary>
         ISampler IDatadogTracer.Sampler => Sampler;
+
+        internal IDiagnosticManager DiagnosticManager { get; }
 
         internal ISampler Sampler { get; }
 
@@ -217,7 +237,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// This is a shortcut for <see cref="StartSpan(string, ISpanContext, string, DateTimeOffset?, bool)"/>
-        /// and <see cref="ActivateSpan"/>, it creates a new span with the given parameters and makes it active.
+        /// and <see cref="ActivateSpan(Span, bool)"/>, it creates a new span with the given parameters and makes it active.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
         /// <param name="parent">The span's parent</param>
@@ -390,6 +410,18 @@ namespace Datadog.Trace
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager)
         {
             new LibLogScopeEventSubscriber(scopeManager);
+        }
+
+        private IDiagnosticManager InitializeDiagnosticObservers()
+        {
+            var observers = new List<DiagnosticObserver>();
+
+#if NETSTANDARD2_0
+            var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
+            observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
+#endif
+
+            return new DiagnosticManager(observers);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
