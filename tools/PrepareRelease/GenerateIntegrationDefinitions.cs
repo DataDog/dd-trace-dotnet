@@ -7,12 +7,14 @@ using System.Text;
 using Datadog.Trace.ClrProfiler;
 using Newtonsoft.Json;
 
-namespace GenerateIntegrationDefinitions
+namespace PrepareRelease
 {
-    public static class Program
+    public static class GenerateIntegrationDefinitions
     {
-        public static void Main(string[] args)
+        public static void Run()
         {
+            Console.WriteLine("Updating the integrations definitions");
+
             var integrationsAssembly = typeof(Instrumentation).Assembly;
 
             // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
@@ -78,11 +80,6 @@ namespace GenerateIntegrationDefinitions
             Console.WriteLine(json);
 
             string filename = "integrations.json";
-
-            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
-            {
-                filename = args[0];
-            }
 
             var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
             File.WriteAllText(filename, json, utf8NoBom);

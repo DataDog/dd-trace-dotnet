@@ -2,10 +2,11 @@ using System;
 using System.IO;
 using System.Text;
 using Datadog.Trace.TestHelpers;
+using PrepareRelease.Tools;
 
-namespace SynchronizeInstaller
+namespace PrepareRelease
 {
-    public class Program
+    public class SyncMsiContent
     {
         private const string FileNameTemplate = @"{{file_name}}";
         private const string ComponentListTemplate = @"{{component_list}}";
@@ -33,7 +34,7 @@ namespace SynchronizeInstaller
 </Wix>
 ";
 
-        public static void Main(string[] args)
+        public static void Run()
         {
             CreateWixFile(
                 groupId: "Files.Managed.Net45.GAC",
@@ -59,18 +60,12 @@ namespace SynchronizeInstaller
             string filePrefix = null,
             bool isGac = false)
         {
+            Console.WriteLine($"Creating the {groupId} Group");
+
             groupDirectory = groupDirectory ?? $"{frameworkMoniker}";
             filePrefix = filePrefix ?? $"{frameworkMoniker.Replace(".", string.Empty)}_";
 
             var solutionDirectory = EnvironmentHelper.GetSolutionDirectory();
-            var requiredBuildConfig = "Release";
-            var managedProjectBin =
-                Path.Combine(
-                    solutionDirectory,
-                    "src",
-                    "Datadog.Trace.ClrProfiler.Managed",
-                    "bin",
-                    requiredBuildConfig);
 
             var wixProjectRoot =
                 Path.Combine(
@@ -78,17 +73,7 @@ namespace SynchronizeInstaller
                     "deploy",
                     "Datadog.Trace.ClrProfiler.WindowsInstaller");
 
-            var outputFolder = Path.Combine(managedProjectBin, frameworkMoniker);
-
-            var filePaths = Directory.GetFiles(
-                outputFolder,
-                "*.dll",
-                SearchOption.AllDirectories);
-
-            if (filePaths.Length == 0)
-            {
-                throw new Exception("Be sure to build in release mode before running this tool.");
-            }
+            var filePaths = DependencyHelpers.GetTracerReleaseBinContent(frameworkMoniker);
 
             var components = string.Empty;
 
@@ -118,6 +103,8 @@ namespace SynchronizeInstaller
             var wixFilePath = Path.Combine(wixProjectRoot, groupId + ".wxs");
 
             File.WriteAllText(wixFilePath, wixFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+            Console.WriteLine($"{groupId} Group successfully created.");
         }
     }
 }
