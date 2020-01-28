@@ -214,7 +214,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
   if (ws.str() == ToWSTRING(PROFILER_VERSION)) {
     Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " matched profiler version v", PROFILER_VERSION);
     managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
-      
+
     if (runtime_information_.is_desktop() && corlib_module_loaded &&
           assembly_info.app_domain_id == corlib_app_domain_id) {
       Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
@@ -478,8 +478,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
-  if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
-      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
+  if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
       first_jit_compilation_app_domains.end()) {
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,

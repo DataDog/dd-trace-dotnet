@@ -32,5 +32,14 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
         }
+
+        /// <summary>
+        /// Initializes global instrumentation values.
+        /// </summary>
+        public static void Initialize()
+        {
+            // ensure the global Tracer instance is created so it subscribes to DiagnosticSource events
+            var tracer = Tracer.Instance;
+        }
     }
 }
