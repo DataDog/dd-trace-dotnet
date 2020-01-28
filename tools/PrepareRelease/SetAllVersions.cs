@@ -4,11 +4,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Core.Tools;
 
-namespace SynchronizeVersions
+namespace PrepareRelease
 {
-    public class Program
+    public static class SetAllVersions
     {
-        public static void Main(string[] args)
+        public static void Run()
         {
             Console.WriteLine($"Updating version instances to {VersionString()}");
 
@@ -76,6 +76,11 @@ namespace SynchronizeVersions
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
         }
 
+        private static string AzureAppServicesReplace(string text)
+        {
+            return Regex.Replace(text, VersionPattern("_"), VersionString("_"), RegexOptions.Singleline);
+        }
+
         private static string FullVersionReplace(string text, string split)
         {
             return Regex.Replace(text, VersionPattern(split), VersionString(split), RegexOptions.Singleline);
@@ -94,6 +99,11 @@ namespace SynchronizeVersions
         private static string NugetVersionReplace(string text)
         {
             return Regex.Replace(text, $"<Version>{VersionPattern(withPrereleasePostfix: true)}</Version>", $"<Version>{VersionString(withPrereleasePostfix: true)}</Version>", RegexOptions.Singleline);
+        }
+
+        private static string NuspecVersionReplace(string text)
+        {
+            return Regex.Replace(text, $"<version>{VersionPattern(withPrereleasePostfix: true)}</version>", $"<version>{VersionString(withPrereleasePostfix: true)}</version>", RegexOptions.Singleline);
         }
 
         private static string WixProjReplace(string text)
