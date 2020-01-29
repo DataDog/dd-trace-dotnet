@@ -158,6 +158,12 @@ namespace Datadog.Trace.Configuration
         public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
 
         /// <summary>
+        /// Configuration key for enabling or disabling the use of <see cref="System.Diagnostics.DiagnosticSource"/>.
+        /// Default value is <c>true</c> (enabled).
+        /// </summary>
+        public const string DiagnosticSourceEnabled = "DD_DIAGNOSTIC_SOURCE_ENABLED";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations
