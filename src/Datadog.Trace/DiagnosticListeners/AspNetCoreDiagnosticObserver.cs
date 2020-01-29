@@ -18,7 +18,8 @@ namespace Datadog.Trace.DiagnosticListeners
     /// <para/>
     /// Unfortunately, ASP.NET Core only uses one <see cref="System.Diagnostics.DiagnosticListener"/> instance
     /// for everything so we also only create one observer to ensure best performance.
-    /// <para/>Hosting events: https://github.com/aspnet/Hosting/blob/dev/src/Microsoft.AspNetCore.Hosting/Internal/HostingApplicationDiagnostics.cs
+    /// <para/>
+    /// Hosting events: https://github.com/dotnet/aspnetcore/blob/master/src/Hosting/Hosting/src/Internal/HostingApplicationDiagnostics.cs
     /// </summary>
     internal sealed class AspNetCoreDiagnosticObserver : DiagnosticObserver
     {
