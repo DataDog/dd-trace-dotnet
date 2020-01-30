@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Configuration
@@ -221,7 +220,8 @@ namespace Datadog.Trace.Configuration
         public bool TracerMetricsEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the use of <see cref="System.Diagnostics.DiagnosticSource"/> is enabled."
+        /// Gets or sets a value indicating whether the use
+        /// of <see cref="System.Diagnostics.DiagnosticSource"/> is enabled.
         /// </summary>
         public bool DiagnosticSourceEnabled { get; set; }
 
