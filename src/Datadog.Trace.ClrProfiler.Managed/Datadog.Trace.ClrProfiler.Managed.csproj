@@ -8,7 +8,7 @@
     <Title>Datadog APM - ClrProfiler</Title>
     <Description>OBSOLETE. This package is deprecated and exists only for backwards compatibility.
 Users who need automatic instrumentation on .NET Core do not need a NuGet package anymore.
-Users who need automatic instrumentation on legacy ASP.NET instrumentation should reference the "Datadog.Trace.AspNet" package.
+Users who need automatic instrumentation on legacy ASP.NET should reference the "Datadog.Trace.AspNet" package.
 Users who need manual instrumentation should reference the "Datadog.Trace" package.
 
 See https://docs.datadoghq.com/tracing/setup/dotnet/ for more details.
