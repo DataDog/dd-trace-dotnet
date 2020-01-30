@@ -5,7 +5,7 @@ namespace Datadog.Trace
     /// <summary>
     /// EventArgs for a Span
     /// </summary>
-    public class SpanEventArgs : EventArgs
+    internal class SpanEventArgs : EventArgs
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanEventArgs"/> class.
