@@ -440,7 +440,7 @@ namespace Datadog.Trace
             {
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count); 
+                    Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
                 }
 
                 var diagnosticManager = new DiagnosticManager(observers);
