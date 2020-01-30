@@ -130,13 +130,13 @@ namespace Datadog.Trace
                 Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
             {
                 // instead of adding a hard dependency on DiagnosticSource,
-                // check that it is available before trying to use it
+                // check if it is available before trying to use it
                 var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
 
                 if (type != null)
                 {
                     DiagnosticManager = InitializeDiagnosticObservers();
-                    DiagnosticManager?.Start();
+                    DiagnosticManager.Start();
                 }
             }
 #endif
