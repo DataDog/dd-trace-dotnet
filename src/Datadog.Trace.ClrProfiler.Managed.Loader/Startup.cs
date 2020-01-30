@@ -35,11 +35,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     method?.Invoke(obj: null, parameters: null);
                 }
             }
-            catch (Exception e)
+            catch
             {
-                Console.Error.WriteLine();
-                Console.Error.WriteLine("Error calling Datadog.Trace.ClrProfiler.Instrumentation.Initialize():");
-                Console.Error.WriteLine(e.ToString());
+                // ignore
             }
         }
     }
