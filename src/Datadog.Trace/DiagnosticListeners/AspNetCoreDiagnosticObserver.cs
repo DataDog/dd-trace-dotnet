@@ -1,4 +1,4 @@
-#if NETSTANDARD2_0
+#if !NET45
 using System;
 using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;

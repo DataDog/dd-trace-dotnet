@@ -124,10 +124,7 @@ namespace Datadog.Trace
                 InitializeLibLogScopeEventSubscriber(_scopeManager);
             }
 
-#if NETSTANDARD2_0
-            // for now, only support DiagnosticSource for ASP.NET Core and only when running on .NET Core
-            if (Settings.DiagnosticSourceEnabled &&
-                Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
+            if (Settings.DiagnosticSourceEnabled)
             {
                 // instead of adding a hard dependency on DiagnosticSource,
                 // check if it is available before trying to use it
@@ -135,11 +132,9 @@ namespace Datadog.Trace
 
                 if (type != null)
                 {
-                    DiagnosticManager = InitializeDiagnosticObservers();
-                    DiagnosticManager.Start();
+                    DiagnosticManager = StartDiagnosticObservers();
                 }
             }
-#endif
         }
 
         /// <summary>
@@ -412,16 +407,27 @@ namespace Datadog.Trace
             new LibLogScopeEventSubscriber(scopeManager);
         }
 
-        private IDiagnosticManager InitializeDiagnosticObservers()
+        private IDiagnosticManager StartDiagnosticObservers()
         {
             var observers = new List<DiagnosticObserver>();
 
-#if NETSTANDARD2_0
-            var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
-            observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
+#if !NET45
+            if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
+            {
+                var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
+                observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
+            }
 #endif
 
-            return new DiagnosticManager(observers);
+            if (observers.Count > 0)
+            {
+                var diagnosticManager = new DiagnosticManager(observers);
+                diagnosticManager.Start();
+                return diagnosticManager;
+            }
+
+            // no observers enabled
+            return null;
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
