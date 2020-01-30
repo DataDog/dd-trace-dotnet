@@ -10,19 +10,19 @@
         <tbody>
             <tr>
                 <th scope="row">Application bitness</th>
-                <td>@(Environment.Is64BitProcess ? "64-bit" : "32-bit")</td>
+                <td>@(Environment.Is64BitProcess ? "x64" : "x86")</td>
             </tr>
             <tr>
                 <th scope="row">Profiler attached</th>
-                <td>@Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached</td>
+                <td>@ViewBag.ProfilerAttached</td>
             </tr>
             <tr>
                 <th scope="row">Datadog.Trace.dll path</th>
-                <td>@typeof(Datadog.Trace.Tracer).Assembly.Location</td>
+                <td>@ViewBag.TracerAssemblyLocation</td>
             </tr>
             <tr>
                 <th scope="row">Datadog.Trace.ClrProfiler.Managed.dll</th>
-                <td>@typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.Location</td>
+                <td>@ViewBag.ClrProfilerAssemblyLocation</td>
             </tr>
         </tbody>
     </table>
