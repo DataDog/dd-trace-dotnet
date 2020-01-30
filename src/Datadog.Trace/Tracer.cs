@@ -10,6 +10,7 @@ using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -101,7 +102,10 @@ namespace Datadog.Trace
                 var globalRate = (float)Settings.GlobalSamplingRate;
                 if (globalRate < 0f || globalRate > 1f)
                 {
-                    Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
+                    if (Log.IsEnabled(LogEventLevel.Warning))
+                    {
+                        Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
+                    }
                 }
                 else
                 {
@@ -130,7 +134,14 @@ namespace Datadog.Trace
                 // check if it is available before trying to use it
                 var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
 
-                if (type != null)
+                if (type == null)
+                {
+                    if (Log.IsEnabled(LogEventLevel.Warning))
+                    {
+                        Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
+                    }
+                }
+                else
                 {
                     DiagnosticManager = StartDiagnosticObservers();
                 }
@@ -380,7 +391,11 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating default service name.");
+                if (Log.IsEnabled(LogEventLevel.Error))
+                {
+                    Log.Error(ex, "Error creating default service name.");
+                }
+
                 return null;
             }
         }
@@ -414,6 +429,8 @@ namespace Datadog.Trace
 #if !NET45
             if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
             {
+                Log.Debug("Adding AspNetCoreDiagnosticObserver");
+
                 var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
                 observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
             }
@@ -421,6 +438,11 @@ namespace Datadog.Trace
 
             if (observers.Count > 0)
             {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count); 
+                }
+
                 var diagnosticManager = new DiagnosticManager(observers);
                 diagnosticManager.Start();
                 return diagnosticManager;
