@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public abstract class AspNetCoreMvcTestBase : TestHelper
     {
-        protected static readonly string TopLevelOperationName = "aspnet-coremvc.request";
+        protected static readonly string TopLevelOperationName = "aspnet_core.request";
 
         protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output)
             : base(sampleAppName, output)
@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             CreateTopLevelExpectation(
                 url: "/bad-request",
                 httpMethod: "GET",
-                httpStatus: null, // TODO: Enable status code tests
+                httpStatus: "500",
                 resourceUrl: "bad-request",
                 additionalCheck: span =>
                 {
