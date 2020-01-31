@@ -50,7 +50,7 @@ namespace Datadog.Trace.DiagnosticListeners
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        protected override string GetListenerName() => DiagnosticListenerName;
+        protected override string ListenerName => DiagnosticListenerName;
 
         protected override void OnNext(string eventName, object arg)
         {

@@ -16,6 +16,12 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected IDatadogTracer Tracer { get; }
 
+        /// <summary>
+        /// Gets the name of the <see cref="DiagnosticListener"/> that should be instrumented.
+        /// </summary>
+        /// <value>The name of the <see cref="DiagnosticListener"/> that should be instrumented.</value>
+        protected abstract string ListenerName { get; }
+
         public virtual bool IsSubscriberEnabled()
         {
             return true;
@@ -23,7 +29,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         public virtual IDisposable SubscribeIfMatch(DiagnosticListener diagnosticListener)
         {
-            if (diagnosticListener.Name == GetListenerName())
+            if (diagnosticListener.Name == ListenerName)
             {
                 return diagnosticListener.Subscribe(this, IsEventEnabled);
             }
@@ -50,12 +56,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 Log.Error(ex, "Event Exception: {0}", value.Key);
             }
         }
-
-        /// <summary>
-        /// Gets the name of the <see cref="DiagnosticListener"/> that should be instrumented.
-        /// </summary>
-        /// <returns>The name of the <see cref="DiagnosticListener"/> that should be instrumented.</returns>
-        protected abstract string GetListenerName();
 
         protected virtual bool IsEventEnabled(string eventName)
         {
