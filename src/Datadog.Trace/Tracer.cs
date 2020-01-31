@@ -350,6 +350,26 @@ namespace Datadog.Trace
 
         internal void StartDiagnosticObservers()
         {
+            // instead of adding a hard dependency on DiagnosticSource,
+            // check if it is available before trying to use it
+            var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+
+            if (type == null)
+            {
+                if (Log.IsEnabled(LogEventLevel.Warning))
+                {
+                    Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
+                }
+            }
+            else
+            {
+                // don't call this method unless the necessary types are available
+                StartDiagnosticObserversInternal();
+            }
+        }
+
+        internal void StartDiagnosticObserversInternal()
+        {
             DiagnosticManager?.Stop();
 
             var observers = new List<DiagnosticObserver>();
