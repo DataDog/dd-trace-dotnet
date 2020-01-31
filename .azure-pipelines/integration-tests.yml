@@ -60,6 +60,66 @@ jobs:
       testResultsFiles: test/**/*.trx
     condition: succeededOrFailed()
 
+- job: Alpine_Linux
+  strategy:
+    matrix:
+      netcoreapp2_1:
+        dotnetCoreSdkVersion: 2.1.x
+        publishTargetFramework: netcoreapp2.1
+      netcoreapp3_0:
+        dotnetCoreSdkVersion: 3.0.x
+        publishTargetFramework: netcoreapp3.0
+      netcoreapp3_1:
+        dotnetCoreSdkVersion: 3.1.x
+        publishTargetFramework: netcoreapp3.1
+
+  pool:
+    vmImage: ubuntu-16.04
+  
+  variables:
+    TestAllPackageVersions: true
+
+  steps:
+  - task: DockerCompose@0
+    displayName: docker-compose run build
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+
+  - task: DockerCompose@0
+    displayName: docker-compose run Profiler
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run Profiler
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests.Alpine.Core21
+    condition: eq(variables['publishTargetFramework'], 'netcoreapp2.1')
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core21
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests.Alpine.Core30
+    condition: eq(variables['publishTargetFramework'], 'netcoreapp3.0')
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core30
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests.Alpine.Core31
+    condition: eq(variables['publishTargetFramework'], 'netcoreapp3.1')
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
+
+  - task: PublishTestResults@2
+    displayName: publish test results
+    inputs:
+      testResultsFormat: VSTest
+      testResultsFiles: test/**/*.trx
+    condition: succeededOrFailed()
+
 - job: Windows
 
   pool:
