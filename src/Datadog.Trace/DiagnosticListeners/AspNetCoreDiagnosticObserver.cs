@@ -60,20 +60,20 @@ namespace Datadog.Trace.DiagnosticListeners
                     OnHostingHttpRequestInStart(arg);
                     break;
 
-                case "Microsoft.AspNetCore.Hosting.UnhandledException":
-                    OnHostingUnhandledException(arg);
-                    break;
-
-                case "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop":
-                    OnHostingHttpRequestInStop(arg);
-                    break;
-
                 case "Microsoft.AspNetCore.Mvc.BeforeAction":
                     OnMvcBeforeAction(arg);
                     break;
 
                 case "Microsoft.AspNetCore.Mvc.AfterOnActionExecuted":
                     OnMvcAfterOnActionExecuted(arg);
+                    break;
+
+                case "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop":
+                    OnHostingHttpRequestInStop(arg);
+                    break;
+
+                case "Microsoft.AspNetCore.Hosting.UnhandledException":
+                    OnHostingUnhandledException(arg);
                     break;
             }
         }
@@ -129,82 +129,17 @@ namespace Datadog.Trace.DiagnosticListeners
             return null;
         }
 
-        private void OnMvcAfterOnActionExecuted(object arg)
+        private bool ShouldIgnore(HttpContext httpContext)
         {
-            if (AfterOnActionActionExecutedContextFetcher.Fetch(arg) is ActionExecutedContext actionExecutedContext &&
-                actionExecutedContext.Exception != null &&
-                !actionExecutedContext.ExceptionHandled)
+            foreach (Func<HttpContext, bool> ignore in _options.IgnorePatterns)
             {
-                _tracer.ScopeManager.Active?.Span.SetException(actionExecutedContext.Exception);
-            }
-        }
-
-        private void OnHostingHttpRequestInStop(object arg)
-        {
-            IScope scope = _tracer.ScopeManager.Active;
-
-            if (scope != null)
-            {
-                var httpContext = (HttpContext)HttpRequestInStopHttpContextFetcher.Fetch(arg);
-                scope.Span.SetTag(Tags.HttpStatusCode, httpContext.Response.StatusCode.ToString());
-
-                if (httpContext.Response.StatusCode / 100 == 5)
+                if (ignore(httpContext))
                 {
-                    // 5xx codes are server-side errors
-                    scope.Span.Error = true;
-                }
-
-                scope.Dispose();
-            }
-        }
-
-        private void OnMvcBeforeAction(object arg)
-        {
-            var httpContext = (HttpContext)BeforeActionHttpContextFetcher.Fetch(arg);
-
-            if (ShouldIgnore(httpContext))
-            {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Ignoring request");
+                    return true;
                 }
             }
-            else
-            {
-                Span span = _tracer.ScopeManager.Active?.Span;
 
-                if (span != null)
-                {
-                    // NOTE: This event is the start of the action pipeline. The action has been selected, the route
-                    //       has been selected but no filters have run and model binding hasn't occured.
-                    var actionDescriptor = (ActionDescriptor)BeforeActionActionDescriptorFetcher.Fetch(arg);
-                    var controllerActionDescriptor = actionDescriptor as ControllerActionDescriptor;
-                    HttpRequest request = httpContext.Request;
-
-                    string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-                    string controllerName = controllerActionDescriptor?.ControllerName;
-                    string actionName = controllerActionDescriptor?.ActionName;
-                    string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template ?? $"{controllerName}/{actionName}";
-                    string resourceName = $"{httpMethod} {routeTemplate}";
-
-                    // override the parent's resource name with the MVC route template
-                    span.ResourceName = resourceName;
-                }
-            }
-        }
-
-        private void OnHostingUnhandledException(object arg)
-        {
-            ISpan span = _tracer.ScopeManager.Active?.Span;
-
-            if (span != null)
-            {
-                var exception = (Exception)UnhandledExceptionExceptionFetcher.Fetch(arg);
-                var httpContext = (HttpContext)UnhandledExceptionHttpContextFetcher.Fetch(arg);
-
-                span.SetException(exception);
-                _options.OnError?.Invoke(span, exception, httpContext);
-            }
+            return false;
         }
 
         private void OnHostingHttpRequestInStart(object arg)
@@ -247,17 +182,82 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private bool ShouldIgnore(HttpContext httpContext)
+        private void OnMvcBeforeAction(object arg)
         {
-            foreach (Func<HttpContext, bool> ignore in _options.IgnorePatterns)
+            var httpContext = (HttpContext)BeforeActionHttpContextFetcher.Fetch(arg);
+
+            if (ShouldIgnore(httpContext))
             {
-                if (ignore(httpContext))
+                if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    return true;
+                    Log.Debug("Ignoring request");
                 }
             }
+            else
+            {
+                Span span = _tracer.ScopeManager.Active?.Span;
 
-            return false;
+                if (span != null)
+                {
+                    // NOTE: This event is the start of the action pipeline. The action has been selected, the route
+                    //       has been selected but no filters have run and model binding hasn't occured.
+                    var actionDescriptor = (ActionDescriptor)BeforeActionActionDescriptorFetcher.Fetch(arg);
+                    var controllerActionDescriptor = actionDescriptor as ControllerActionDescriptor;
+                    HttpRequest request = httpContext.Request;
+
+                    string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                    string controllerName = controllerActionDescriptor?.ControllerName;
+                    string actionName = controllerActionDescriptor?.ActionName;
+                    string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template ?? $"{controllerName}/{actionName}";
+                    string resourceName = $"{httpMethod} {routeTemplate}";
+
+                    // override the parent's resource name with the MVC route template
+                    span.ResourceName = resourceName;
+                }
+            }
+        }
+
+        private void OnMvcAfterOnActionExecuted(object arg)
+        {
+            if (AfterOnActionActionExecutedContextFetcher.Fetch(arg) is ActionExecutedContext actionExecutedContext &&
+                actionExecutedContext.Exception != null &&
+                !actionExecutedContext.ExceptionHandled)
+            {
+                _tracer.ScopeManager.Active?.Span.SetException(actionExecutedContext.Exception);
+            }
+        }
+
+        private void OnHostingHttpRequestInStop(object arg)
+        {
+            IScope scope = _tracer.ScopeManager.Active;
+
+            if (scope != null)
+            {
+                var httpContext = (HttpContext)HttpRequestInStopHttpContextFetcher.Fetch(arg);
+                scope.Span.SetTag(Tags.HttpStatusCode, httpContext.Response.StatusCode.ToString());
+
+                if (httpContext.Response.StatusCode / 100 == 5)
+                {
+                    // 5xx codes are server-side errors
+                    scope.Span.Error = true;
+                }
+
+                scope.Dispose();
+            }
+        }
+
+        private void OnHostingUnhandledException(object arg)
+        {
+            ISpan span = _tracer.ScopeManager.Active?.Span;
+
+            if (span != null)
+            {
+                var exception = (Exception)UnhandledExceptionExceptionFetcher.Fetch(arg);
+                var httpContext = (HttpContext)UnhandledExceptionHttpContextFetcher.Fetch(arg);
+
+                span.SetException(exception);
+                _options.OnError?.Invoke(span, exception, httpContext);
+            }
         }
     }
 }
