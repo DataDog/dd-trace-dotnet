@@ -4,10 +4,10 @@ set -euxo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 $DIR/with-profiler-logs.bash \
-    dotnet test --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.IntegrationTests/results $DIR/../test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
+    dotnet test --framework $publishTargetFramework --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.IntegrationTests/results $DIR/../test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
 
 $DIR/with-profiler-logs.bash \
-    dotnet test --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.OpenTracing.IntegrationTests/results $DIR/../test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
+    dotnet test --framework $publishTargetFramework --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.OpenTracing.IntegrationTests/results $DIR/../test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
 
 $DIR/with-profiler-logs.bash \
     wait-for-it servicestackredis:6379 -- \
