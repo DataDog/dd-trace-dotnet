@@ -1,4 +1,6 @@
 using System;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -11,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets the CLSID for the Datadog .NET profiler
         /// </summary>
         public static readonly string ProfilerClsid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(Instrumentation));
 
         /// <summary>
         /// Gets a value indicating whether Datadog's profiler is attached to the current process.
@@ -38,8 +42,33 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public static void Initialize()
         {
-            // ensure the global Tracer instance is created so it subscribes to DiagnosticSource events
-            var tracer = Tracer.Instance;
+            try
+            {
+                var tracer = Tracer.Instance;
+
+                if (tracer.Settings.DiagnosticSourceEnabled)
+                {
+                    // instead of adding a hard dependency on DiagnosticSource,
+                    // check if it is available before trying to use it
+                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+
+                    if (type == null)
+                    {
+                        if (Log.IsEnabled(LogEventLevel.Warning))
+                        {
+                            Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
+                        }
+                    }
+                    else
+                    {
+                        tracer.StartDiagnosticObservers();
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
         }
     }
 }

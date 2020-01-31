@@ -127,25 +127,6 @@ namespace Datadog.Trace
             {
                 InitializeLibLogScopeEventSubscriber(_scopeManager);
             }
-
-            if (Settings.DiagnosticSourceEnabled)
-            {
-                // instead of adding a hard dependency on DiagnosticSource,
-                // check if it is available before trying to use it
-                var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
-
-                if (type == null)
-                {
-                    if (Log.IsEnabled(LogEventLevel.Warning))
-                    {
-                        Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
-                    }
-                }
-                else
-                {
-                    DiagnosticManager = StartDiagnosticObservers();
-                }
-            }
         }
 
         /// <summary>
@@ -187,7 +168,7 @@ namespace Datadog.Trace
         /// </summary>
         ISampler IDatadogTracer.Sampler => Sampler;
 
-        internal IDiagnosticManager DiagnosticManager { get; }
+        internal IDiagnosticManager DiagnosticManager { get; set; }
 
         internal ISampler Sampler { get; }
 
@@ -367,6 +348,33 @@ namespace Datadog.Trace
             await _agentWriter.FlushAndCloseAsync();
         }
 
+        internal void StartDiagnosticObservers()
+        {
+            var observers = new List<DiagnosticObserver>();
+
+#if !NET45
+            if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
+            {
+                Log.Debug("Adding AspNetCoreDiagnosticObserver");
+
+                var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
+                observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
+            }
+#endif
+
+            if (observers.Count > 0)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
+                }
+
+                var diagnosticManager = new DiagnosticManager(observers);
+                diagnosticManager.Start();
+                DiagnosticManager = diagnosticManager;
+            }
+        }
+
         /// <summary>
         /// Gets an "application name" for the executing application by looking at
         /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
@@ -420,36 +428,6 @@ namespace Datadog.Trace
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager)
         {
             new LibLogScopeEventSubscriber(scopeManager);
-        }
-
-        private IDiagnosticManager StartDiagnosticObservers()
-        {
-            var observers = new List<DiagnosticObserver>();
-
-#if !NET45
-            if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
-            {
-                Log.Debug("Adding AspNetCoreDiagnosticObserver");
-
-                var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
-                observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
-            }
-#endif
-
-            if (observers.Count > 0)
-            {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
-                }
-
-                var diagnosticManager = new DiagnosticManager(observers);
-                diagnosticManager.Start();
-                return diagnosticManager;
-            }
-
-            // no observers enabled
-            return null;
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
