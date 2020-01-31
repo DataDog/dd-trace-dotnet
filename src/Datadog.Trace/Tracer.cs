@@ -350,6 +350,8 @@ namespace Datadog.Trace
 
         internal void StartDiagnosticObservers()
         {
+            DiagnosticManager?.Stop();
+
             var observers = new List<DiagnosticObserver>();
 
 #if !NET45
