@@ -9,7 +9,6 @@ using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Datadog.Trace.DiagnosticListeners
 {
@@ -38,7 +37,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly PropertyFetcher UnhandledExceptionExceptionFetcher = new PropertyFetcher("Exception");
         private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("HttpContext");
         private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("ActionDescriptor");
-        private static readonly PropertyFetcher AfterOnActionActionExecutedContextFetcher = new PropertyFetcher("ActionExecutedContext");
 
         private readonly IDatadogTracer _tracer;
         private readonly AspNetCoreDiagnosticOptions _options;
@@ -62,10 +60,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 case "Microsoft.AspNetCore.Mvc.BeforeAction":
                     OnMvcBeforeAction(arg);
-                    break;
-
-                case "Microsoft.AspNetCore.Mvc.AfterOnActionExecuted":
-                    OnMvcAfterOnActionExecuted(arg);
                     break;
 
                 case "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop":
@@ -215,16 +209,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     // override the parent's resource name with the MVC route template
                     span.ResourceName = resourceName;
                 }
-            }
-        }
-
-        private void OnMvcAfterOnActionExecuted(object arg)
-        {
-            if (AfterOnActionActionExecutedContextFetcher.Fetch(arg) is ActionExecutedContext actionExecutedContext &&
-                actionExecutedContext.Exception != null &&
-                !actionExecutedContext.ExceptionHandled)
-            {
-                _tracer.ScopeManager.Active?.Span.SetException(actionExecutedContext.Exception);
             }
         }
 
