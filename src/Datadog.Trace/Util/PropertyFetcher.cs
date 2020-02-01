@@ -33,7 +33,7 @@ namespace Datadog.Trace.Util
             if (objType != _expectedType)
             {
                 TypeInfo typeInfo = objType.GetTypeInfo();
-                var propertyInfo = typeInfo.DeclaredProperties.FirstOrDefault(p => string.Equals(p.Name, _propertyName, StringComparison.InvariantCultureIgnoreCase));
+                var propertyInfo = typeInfo.DeclaredProperties.FirstOrDefault(p => string.Equals(p.Name, _propertyName, StringComparison.OrdinalIgnoreCase));
                 _fetchForExpectedType = PropertyFetch.FetcherForProperty(propertyInfo);
                 _expectedType = objType;
             }
