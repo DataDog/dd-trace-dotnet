@@ -96,6 +96,15 @@ services:
     volumes:
     - ./:/project
 
+  Profiler.Alpine:
+    build:
+      context: ./
+      dockerfile: ./docker/native.alpine.dockerfile
+    image: datadog-native-alpine
+    command: /project/docker/Datadog.Trace.ClrProfiler.Native.sh
+    volumes:
+    - ./:/project
+
   Samples.ServiceStack.Redis:
     build:
       context: ./
