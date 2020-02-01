@@ -4,10 +4,10 @@ set -euxo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 $DIR/with-profiler-logs.bash \
-    dotnet test --framework $publishTargetFramework --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.IntegrationTests/results $DIR/../test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
+    dotnet vstest --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.IntegrationTests/results $DIR/../test/Datadog.Trace.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/Datadog.Trace.IntegrationTests.dll
 
 $DIR/with-profiler-logs.bash \
-    dotnet test --framework $publishTargetFramework --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.OpenTracing.IntegrationTests/results $DIR/../test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
+    dotnet vstest --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.OpenTracing.IntegrationTests/results $DIR/../test/Datadog.Trace.OpenTracing.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/Datadog.Trace.OpenTracing.IntegrationTests.dll
 
 $DIR/with-profiler-logs.bash \
     wait-for-it servicestackredis:6379 -- \
@@ -17,4 +17,4 @@ $DIR/with-profiler-logs.bash \
     wait-for-it sqlserver:1433 -- \
     wait-for-it mongo:27017 -- \
     wait-for-it postgres:5432 -- \
-    dotnet test --framework $publishTargetFramework --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.ClrProfiler.IntegrationTests/results $DIR/../test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+    dotnet vstest --verbosity minimal --logger trx --results-directory $DIR/../test/Datadog.Trace.ClrProfiler.IntegrationTests/results $DIR/../test/Datadog.Trace.ClrProfiler.IntegrationTests/bin/$buildConfiguration/$publishTargetFramework/Datadog.Trace.ClrProfiler.IntegrationTests.dll
