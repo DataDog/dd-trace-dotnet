@@ -73,6 +73,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     break;
 
                 case "Microsoft.AspNetCore.Hosting.UnhandledException":
+                case "Microsoft.AspNetCore.Diagnostics.UnhandledException":
                     OnHostingUnhandledException(arg);
                     break;
             }
