@@ -44,6 +44,6 @@ done
 
 dotnet msbuild Datadog.Trace.proj -t:RestoreAndBuildSamplesForPackageVersions -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT" -p:TargetFramework=$publishTargetFramework
 
-for proj in Datadog.Trace.ClrProfiler.IntegrationTests ; do
+for proj in Datadog.Trace.IntegrationTests Datadog.Trace.OpenTracing.IntegrationTests Datadog.Trace.ClrProfiler.IntegrationTests ; do
     dotnet publish -f $publishTargetFramework -c $buildConfiguration test/$proj/$proj.csproj
 done
