@@ -15,7 +15,7 @@ WORKDIR /app
 COPY --from=build /app/out .
 
 # Set up Datadog APM
-RUN apk --no-cache update && apk add curl libc6-compat gcompat
+RUN apk --no-cache update && apk add curl
 ENV TRACER_VERSION=1.11.0
 RUN mkdir -p /var/log/datadog
 RUN mkdir -p /opt/datadog
