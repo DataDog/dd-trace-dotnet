@@ -214,5 +214,5 @@ jobs:
   - task: PublishPipelineArtifact@0
     displayName: publish artifacts
     inputs:
-      artifactName: linux-packages
+      artifactName: linux-alpine-packages
       targetPath: deploy/linux
