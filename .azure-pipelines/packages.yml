@@ -163,3 +163,56 @@ jobs:
     inputs:
       artifactName: linux-packages
       targetPath: deploy/linux
+
+- job: linux_alpine_packages
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  steps:
+  - task: UseDotNet@2
+    displayName: install dotnet core sdk
+    inputs:
+      version: $(dotnetCoreSdkVersion)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore
+    inputs:
+      command: restore
+      projects: src/**/*.csproj
+      vstsFeed: $(packageFeed)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      command: build
+      projects: src/**/*.csproj
+      arguments: --configuration $(buildConfiguration)
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework netstandard2.0
+    inputs:
+      command: publish
+      publishWebProjects: false
+      modifyOutputPath: false
+      zipAfterPublish: false
+      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+
+  - task: DockerCompose@0
+    displayName: docker-compose run Profiler.Alpine
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run Profiler.Alpine
+
+  - task: DockerCompose@0
+    displayName: docker-compose run package.alpine
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run package.alpine
+
+  - task: PublishPipelineArtifact@0
+    displayName: publish artifacts
+    inputs:
+      artifactName: linux-packages
+      targetPath: deploy/linux

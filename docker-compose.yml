@@ -83,6 +83,20 @@ services:
       context: ./
       dockerfile: ./docker/package.dockerfile
     image: datadog-package
+    environment:
+    - PKGTYPES=deb rpm tar
+    command: /project/docker/package.sh
+    volumes:
+    - ./:/project
+  
+  package.alpine:
+    build:
+      context: ./
+      dockerfile: ./docker/package.alpine.dockerfile
+    image: datadog-package-alpine
+    environment:
+    - PKGTYPES=tar
+    - MUSL=true
     command: /project/docker/package.sh
     volumes:
     - ./:/project
@@ -292,15 +306,6 @@ services:
     - MYSQL_PORT=3306
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.1
-    depends_on:
-    - servicestackredis
-    - stackexchangeredis
-    - elasticsearch6
-    - elasticsearch5
-    - sqlserver
-    - mongo
-    - postgres
-    - mysql
 
   IntegrationTests:
     build:
