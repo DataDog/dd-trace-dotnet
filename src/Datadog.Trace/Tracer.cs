@@ -100,12 +100,10 @@ namespace Datadog.Trace
             if (Settings.GlobalSamplingRate != null)
             {
                 var globalRate = (float)Settings.GlobalSamplingRate;
+
                 if (globalRate < 0f || globalRate > 1f)
                 {
-                    if (Log.IsEnabled(LogEventLevel.Warning))
-                    {
-                        Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
-                    }
+                    Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
                 }
                 else
                 {
@@ -356,10 +354,7 @@ namespace Datadog.Trace
 
             if (type == null)
             {
-                if (Log.IsEnabled(LogEventLevel.Warning))
-                {
-                    Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
-                }
+                Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
             }
             else
             {
@@ -386,10 +381,7 @@ namespace Datadog.Trace
 
             if (observers.Count > 0)
             {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
-                }
+                Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
 
                 var diagnosticManager = new DiagnosticManager(observers);
                 diagnosticManager.Start();
@@ -421,11 +413,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                if (Log.IsEnabled(LogEventLevel.Error))
-                {
-                    Log.Error(ex, "Error creating default service name.");
-                }
-
+                Log.Error(ex, "Error creating default service name.");
                 return null;
             }
         }

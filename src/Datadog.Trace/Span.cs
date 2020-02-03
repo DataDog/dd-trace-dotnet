@@ -18,6 +18,7 @@ namespace Datadog.Trace
     public class Span : IDisposable, ISpan
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
+        private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private readonly object _lock = new object();
 
@@ -271,7 +272,8 @@ namespace Datadog.Trace
             if (shouldCloseSpan)
             {
                 Context.TraceContext.CloseSpan(this);
-                if (Log.IsEnabled(LogEventLevel.Debug))
+
+                if (IsLogLevelDebugEnabled)
                 {
                     Log.Debug(
                         "Span closed: [s_id: {0}, p_id: {1}, t_id: {2}] for (Service: {3}, Resource: {4}, Operation: {5}, Tags: [{6}])",

@@ -40,6 +40,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private readonly IDatadogTracer _tracer;
         private readonly AspNetCoreDiagnosticOptions _options;
+        private readonly bool _isLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         public AspNetCoreDiagnosticObserver(IDatadogTracer tracer, AspNetCoreDiagnosticOptions options)
             : base(tracer)
@@ -115,10 +116,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
             catch (Exception ex)
             {
-                if (Log.IsEnabled(LogEventLevel.Error))
-                {
-                    Log.Error(ex, "Error extracting propagated HTTP headers.");
-                }
+                Log.Error(ex, "Error extracting propagated HTTP headers.");
             }
 
             return null;
@@ -143,7 +141,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (ShouldIgnore(httpContext))
             {
-                if (Log.IsEnabled(LogEventLevel.Debug))
+                if (_isLogLevelDebugEnabled)
                 {
                     Log.Debug("Ignoring request");
                 }
@@ -183,7 +181,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (ShouldIgnore(httpContext))
             {
-                if (Log.IsEnabled(LogEventLevel.Debug))
+                if (_isLogLevelDebugEnabled)
                 {
                     Log.Debug("Ignoring request");
                 }
