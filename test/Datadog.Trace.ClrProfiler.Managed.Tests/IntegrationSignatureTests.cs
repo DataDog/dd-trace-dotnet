@@ -2,14 +2,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.Integrations;
+#if !NETCOREAPP2_1 && !NETCOREAPP3_0 && !NETCOREAPP3_1
+using Datadog.Trace.ClrProfiler.Integrations.AspNet;
+#endif
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
     public class IntegrationSignatureTests
     {
+        // This is a list of instrumented methods that are static, i.e., the target method is static.
         private static readonly List<MethodInfo> StaticInstrumentations = new List<MethodInfo>()
         {
+#if !NETCOREAPP2_1 && !NETCOREAPP3_0 && !NETCOREAPP3_1
+             typeof(AspNetIntegration).GetMethod(nameof(AspNetIntegration.InvokePreStartInitMethods)),
+#endif
         };
 
         public static IEnumerable<object[]> GetWrapperMethodWithInterceptionAttributes()

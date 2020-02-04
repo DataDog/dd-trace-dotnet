@@ -138,9 +138,6 @@
     <Reference Include="System.Diagnostics.DiagnosticSource">
       <HintPath>..\..\packages\System.Diagnostics.DiagnosticSource.4.4.1\lib\net45\System.Diagnostics.DiagnosticSource.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.AspNet.TelemetryCorrelation">
-      <HintPath>..\..\packages\Microsoft.AspNet.TelemetryCorrelation.1.0.0\lib\net45\Microsoft.AspNet.TelemetryCorrelation.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform">
       <HintPath>..\..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.0\lib\net45\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll</HintPath>
     </Reference>
@@ -197,14 +194,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj">
-      <Project>{f2780421-295d-4187-912c-71d34ec35c27}</Project>
-      <Name>Datadog.Trace.AspNet</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-      <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
-      <Name>Datadog.Trace.ClrProfiler.Managed</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj">
       <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
       <Name>Datadog.Trace</Name>

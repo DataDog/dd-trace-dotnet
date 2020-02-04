@@ -2,6 +2,9 @@ using System;
 
 namespace Datadog.Trace
 {
+    /// <summary>
+    /// Interface for managing a scope.
+    /// </summary>
     internal interface IScopeManager
     {
         event EventHandler<SpanEventArgs> SpanOpened;
