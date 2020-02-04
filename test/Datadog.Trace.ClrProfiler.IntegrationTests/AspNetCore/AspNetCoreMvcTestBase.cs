@@ -149,12 +149,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             string resourceUrl,
             Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
         {
-            var expectation = new AspNetCoreMvcSpanExpectation(EnvironmentHelper.FullSampleName, TopLevelOperationName)
+            var expectation = new AspNetCoreMvcSpanExpectation(EnvironmentHelper.FullSampleName, TopLevelOperationName, httpStatus, httpMethod)
             {
                 OriginalUri = url,
-                HttpMethod = httpMethod,
                 ResourceName = $"{httpMethod.ToUpper()} {resourceUrl}",
-                StatusCode = httpStatus,
             };
 
             expectation.RegisterDelegateExpectation(additionalCheck);
