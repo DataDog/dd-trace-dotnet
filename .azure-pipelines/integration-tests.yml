@@ -87,10 +87,10 @@ jobs:
       dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
 
   - task: DockerCompose@0
-    displayName: docker-compose run Profiler.Alpine
+    displayName: docker-compose run Profiler.Alpine (temporarily use the regular linux build)
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: run Profiler.Alpine
+      dockerComposeCommand: run Profiler
 
   - task: DockerCompose@0
     displayName: docker-compose run IntegrationTests.Alpine.Core21
