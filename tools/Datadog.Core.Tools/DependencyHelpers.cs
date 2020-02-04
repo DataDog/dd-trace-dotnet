@@ -14,10 +14,10 @@ namespace PrepareRelease.Tools
             var projectBin =
                 Path.Combine(
                     solutionDirectory,
-                    "src",
-                    "Datadog.Trace.ClrProfiler.Managed",
+                    "tools",
+                    "PrepareRelease",
                     "bin",
-                    RequiredBuildConfig);
+                    "tracer-home");
 
             var outputFolder = Path.Combine(projectBin, frameworkMoniker);
 

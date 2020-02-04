@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler;
 using Newtonsoft.Json;
 
@@ -79,7 +80,7 @@ namespace PrepareRelease
             var json = JsonConvert.SerializeObject(integrations, serializerSettings);
             Console.WriteLine(json);
 
-            string filename = "integrations.json";
+            string filename = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "integrations.json");
 
             var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
             File.WriteAllText(filename, json, utf8NoBom);
