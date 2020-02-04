@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return value;
         }
 
-        public virtual string Detail()
+        public override string ToString()
         {
             return $"service={ServiceName}, operation={OperationName}, type={Type}, resource={ResourceName}";
         }
@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Assertions.Add(span =>
             {
-                var failures = expectation(span);
+                var failures = expectation(span)?.ToArray();
 
                 if (failures != null && failures.Any())
                 {
@@ -153,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string expected,
             Func<MockTracerAgent.Span, bool> when = null)
         {
-            when = when ?? Always;
+            when ??= Always;
 
             Assertions.Add(span =>
             {
