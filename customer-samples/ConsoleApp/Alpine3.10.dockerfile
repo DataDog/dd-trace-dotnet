@@ -19,7 +19,7 @@ RUN apk --no-cache update && apk add curl
 ENV TRACER_VERSION=1.11.0
 RUN mkdir -p /var/log/datadog
 RUN mkdir -p /opt/datadog
-RUN curl -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm-${TRACER_VERSION}.tar.gz \
+RUN curl -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm-${TRACER_VERSION}-musl.tar.gz \
   |  tar xzf - -C /opt/datadog
 
 ENV CORECLR_ENABLE_PROFILING=1
