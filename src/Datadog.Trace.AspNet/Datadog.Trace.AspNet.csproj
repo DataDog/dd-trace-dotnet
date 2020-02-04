@@ -6,12 +6,19 @@
     <!-- NuGet -->
     <Version>1.11.1-prerelease</Version>
     <Title>Datadog APM Tracing for ASP.NET</Title>
-    <Description>Provides tracing for ASP.NET web applications.</Description>
+    <Description>
+      OBSOLETE. This package is deprecated and exists only for backwards compatibility.
+      Users who need manual instrumentation should reference the "Datadog.Trace" package.
+      ASP.NET is now automatically instrumented.
+    </Description>
 
     <!-- Allow the GenerateAssemblyInfo task in the .NET SDK to generate all
          assembly attributes except for the AssemblyVersionAttribute. This will
          be locked at Major.0.0.0 and is defined in AssemblyInfo.cs -->
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

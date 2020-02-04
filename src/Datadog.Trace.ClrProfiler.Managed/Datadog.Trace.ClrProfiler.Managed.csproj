@@ -6,13 +6,13 @@
     <!-- NuGet -->
     <Version>1.11.1-prerelease</Version>
     <Title>Datadog APM - ClrProfiler</Title>
-    <Description>OBSOLETE. This package is deprecated and exists only for backwards compatibility.
-Users who need automatic instrumentation on .NET Core do not need a NuGet package anymore.
-Users who need automatic instrumentation on legacy ASP.NET should reference the "Datadog.Trace.AspNet" package.
-Users who need manual instrumentation should reference the "Datadog.Trace" package.
-
-See https://docs.datadoghq.com/tracing/setup/dotnet/ for more details.
+    <Description>
+      OBSOLETE. This package is deprecated and exists only for backwards compatibility.
+      Users who need manual instrumentation should reference the "Datadog.Trace" package.
+      ASP.NET is now automatically instrumented.
+      See https://docs.datadoghq.com/tracing/setup/dotnet/ for more details.
    </Description>
+    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
 
     <!-- Remove the Datadog.Trace.ClrProfiler.Managed.dll assembly from the output and hide inapplicable warning (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128) -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
