@@ -28,9 +28,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 additionalCheck: span =>
                 {
                     var failures = new List<string>();
-                    if (SpanExpectation.GetTag(span, Tags.ErrorMsg) != "This was a bad request.")
+
+                    if (span.Error == 0)
+                    {
+                        failures.Add($"Expected Error flag set within {span.Resource}");
+                    }
+
+                    if (SpanExpectation.GetTag(span, Tags.ErrorType) != "System.Exception")
                     {
                         failures.Add($"Expected specific exception within {span.Resource}");
+                    }
+
+                    var errorMessage = SpanExpectation.GetTag(span, Tags.ErrorMsg);
+
+                    if (errorMessage != "This was a bad request.")
+                    {
+                        failures.Add($"Expected specific error message within {span.Resource}. Found \"{errorMessage}\"");
                     }
 
                     return failures;
