@@ -47,11 +47,18 @@ namespace Datadog.Trace.AspNet
         /// <inheritdoc />
         public void Init(HttpApplication httpApplication)
         {
-            _httpApplication = httpApplication;
-
-            // The first HttpModule to run Init for this HttpApplication will register for events
+            // Intent: The first HttpModule to run Init for this HttpApplication will register for events
+            // Actual: Each HttpApplication that comes through here is potentially a new .NET object, even
+            //         if it refers to the same web application. Based on my reading, it appears that initialization
+            //         is done for several types of resources. Read more in this SO article -- look at Sunday Ironfoot's
+            //         (yes, reliable sounding name of course) response toward the end of this article:
+            //         https://stackoverflow.com/questions/1140915/httpmodule-init-method-is-called-several-times-why
+            //         I've discovered that not letting each of these unique application objects be added, and thus
+            //         the event handlers be registered within each HttpApplication object, leads to the runtime
+            //         weirdness: at one point it crashed consistently for me, and later, I saw no spans at all.
             if (registeredEventHandlers.Add(httpApplication))
             {
+                _httpApplication = httpApplication;
                 httpApplication.BeginRequest += OnBeginRequest;
                 httpApplication.EndRequest += OnEndRequest;
                 httpApplication.Error += OnError;
