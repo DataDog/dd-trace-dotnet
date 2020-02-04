@@ -9,9 +9,9 @@
     <Description>
       OBSOLETE. This package is deprecated and exists only for backwards compatibility.
       Users who need manual instrumentation should reference the "Datadog.Trace" package.
-      ASP.NET is now automatically instrumented.
-      See https://docs.datadoghq.com/tracing/setup/dotnet/ for more details.
-   </Description>
+      ASP.NET is now automatically instrumented. If your project references this package 
+      or the Datadog.Trace.ClrProfiler.Managed assembly, you can remove them.
+    </Description>
     <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
 
     <!-- Remove the Datadog.Trace.ClrProfiler.Managed.dll assembly from the output and hide inapplicable warning (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128) -->

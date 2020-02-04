@@ -52,7 +52,7 @@ namespace Datadog.Trace.AspNet
             //         if it refers to the same web application. Based on my reading, it appears that initialization
             //         is done for several types of resources. Read more in this SO article -- look at Sunday Ironfoot's
             //         (yes, reliable sounding name of course) response toward the end of this article:
-            //         https://stackoverflow.com/questions/1140915/httpmodule-init-method-is-called-several-times-why
+            //         https://stackoverflow.com/a/2416546/24231.
             //         I've discovered that not letting each of these unique application objects be added, and thus
             //         the event handlers be registered within each HttpApplication object, leads to the runtime
             //         weirdness: at one point it crashed consistently for me, and later, I saw no spans at all.

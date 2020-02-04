@@ -8,8 +8,8 @@
     <Title>Datadog APM Tracing for ASP.NET</Title>
     <Description>
       OBSOLETE. This package is deprecated and exists only for backwards compatibility.
-      Users who need manual instrumentation should reference the "Datadog.Trace" package.
-      ASP.NET is now automatically instrumented.
+      ASP.NET is now automatically instrumented. If your project references this package 
+      or Datadog.Trace.AspNet, you can remove them.
     </Description>
 
     <!-- Allow the GenerateAssemblyInfo task in the .NET SDK to generate all
