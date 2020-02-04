@@ -98,7 +98,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 // wait for server to be ready to receive requests
                 while (intervals-- > 0)
                 {
-                    serverReady = SubmitRequest(aspNetCorePort, "/alive-check");
+                    try
+                    {
+                        serverReady = SubmitRequest(aspNetCorePort, "/alive-check");
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
 
                     if (serverReady)
                     {
@@ -185,6 +192,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                     Output.WriteLine($"[http] {response.StatusCode} {responseText}");
                 }
+
+                return true;
             }
             catch (WebException wex)
             {
@@ -198,10 +207,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     }
                 }
 
-                return false;
+                throw;
             }
-
-            return true;
         }
 
         private bool IsNotServerLifeCheck(MockTracerAgent.Span span)
