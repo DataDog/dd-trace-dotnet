@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
@@ -49,6 +49,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     return failures;
                 });
         }
+
+        protected HttpClient HttpClient { get; } = new HttpClient();
 
         protected List<AspNetCoreMvcSpanExpectation> Expectations { get; set; } = new List<AspNetCoreMvcSpanExpectation>();
 
@@ -100,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     try
                     {
-                        serverReady = SubmitRequest(aspNetCorePort, "/alive-check");
+                        serverReady = SubmitRequest(aspNetCorePort, "/alive-check") == HttpStatusCode.OK;
                     }
                     catch
                     {
@@ -168,45 +170,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             }
         }
 
-        protected bool SubmitRequest(int aspNetCorePort, string path)
+        protected HttpStatusCode SubmitRequest(int aspNetCorePort, string path)
         {
-            try
-            {
-                var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{path}");
-                using (var response = (HttpWebResponse)request.GetResponse())
-                using (var stream = response.GetResponseStream())
-                using (var reader = new StreamReader(stream))
-                {
-                    string responseText;
-                    try
-                    {
-                        responseText = reader.ReadToEnd();
-                    }
-                    catch (Exception ex)
-                    {
-                        responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
-                        Output.WriteLine(ex.ToString());
-                    }
-
-                    Output.WriteLine($"[http] {response.StatusCode} {responseText}");
-                }
-
-                return true;
-            }
-            catch (WebException wex)
-            {
-                Output.WriteLine($"[http] exception: {wex}");
-                if (wex.Response is HttpWebResponse response)
-                {
-                    using (var stream = response.GetResponseStream())
-                    using (var reader = new StreamReader(stream))
-                    {
-                        Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
-                    }
-                }
-
-                throw;
-            }
+            HttpResponseMessage response = HttpClient.GetAsync($"http://localhost:{aspNetCorePort}{path}").Result;
+            string responseText = response.Content.ReadAsStringAsync().Result;
+            Output.WriteLine($"[http] {response.StatusCode} {responseText}");
+            return response.StatusCode;
         }
 
         private bool IsNotServerLifeCheck(MockTracerAgent.Span span)
