@@ -2,8 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Interfaces;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -18,6 +18,7 @@ namespace Datadog.Trace
     public class Span : IDisposable, ISpan
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
+        private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private readonly object _lock = new object();
 
@@ -271,7 +272,8 @@ namespace Datadog.Trace
             if (shouldCloseSpan)
             {
                 Context.TraceContext.CloseSpan(this);
-                if (Log.IsEnabled(LogEventLevel.Debug))
+
+                if (IsLogLevelDebugEnabled)
                 {
                     Log.Debug(
                         "Span closed: [s_id: {0}, p_id: {1}, t_id: {2}] for (Service: {3}, Resource: {4}, Operation: {5}, Tags: [{6}])",
@@ -318,14 +320,6 @@ namespace Datadog.Trace
                 SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
             }
         }
-
-        /// <summary>
-        /// Proxy to SetException without return value
-        /// See <see cref="Span.SetException(Exception)"/> for more information
-        /// </summary>
-        /// <param name="exception">The exception.</param>
-        void ISpan.SetException(Exception exception)
-            => SetException(exception);
 
         /// <summary>
         /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed

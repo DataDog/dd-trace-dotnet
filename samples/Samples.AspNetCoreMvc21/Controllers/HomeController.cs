@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,12 @@ namespace Samples.AspNetCoreMvc.Controllers
     {
         public IActionResult Index()
         {
+            var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace.ClrProfiler.Managed");
+            ViewBag.ProfilerAttached = instrumentationType?.GetProperty("ProfilerAttached", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ?? false;
+            ViewBag.TracerAssemblyLocation = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace")?.Assembly.Location;
+            ViewBag.ClrProfilerAssemblyLocation = instrumentationType?.Assembly.Location;
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
+
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
 
             var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()

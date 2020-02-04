@@ -3,7 +3,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:54564",
+      "applicationUrl": "http://localhost:54570",
       "sslPort": 0
     }
   },
@@ -24,7 +24,7 @@
       "use64Bit": true,
       "nativeDebugging": true
     },
-    "Samples.AspNetCoreMvc31": {
+    "Samples.AspNetCore31": {
       "commandName": "Project",
       "launchBrowser": false,
       "environmentVariables": {
@@ -38,7 +38,7 @@
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json"
       },
       "nativeDebugging": true,
-      "applicationUrl": "http://localhost:54568"
+      "applicationUrl": "http://localhost:54571"
     }
   }
 }

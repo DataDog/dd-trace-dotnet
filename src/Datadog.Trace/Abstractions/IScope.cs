@@ -1,6 +1,6 @@
 using System;
 
-namespace Datadog.Trace.Interfaces
+namespace Datadog.Trace.Abstractions
 {
     internal interface IScope : IDisposable
     {

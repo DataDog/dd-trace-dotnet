@@ -10,15 +10,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     {
         private static readonly List<MethodInfo> StaticInstrumentations = new List<MethodInfo>()
         {
-             typeof(AspNetCoreMvc2Integration).GetMethod(nameof(AspNetCoreMvc2Integration.BeforeAction)),
-             typeof(AspNetCoreMvc2Integration).GetMethod(nameof(AspNetCoreMvc2Integration.AfterAction)),
-             typeof(AspNetCoreMvc2Integration).GetMethod(nameof(AspNetCoreMvc2Integration.Rethrow)),
-
-             typeof(AspNetCoreMvc3Integration).GetMethod(nameof(AspNetCoreMvc3Integration.BeforeAction)),
-             typeof(AspNetCoreMvc3Integration).GetMethod(nameof(AspNetCoreMvc3Integration.AfterAction)),
-             typeof(AspNetCoreMvc3Integration).GetMethod(nameof(AspNetCoreMvc3Integration.Rethrow_ExceptionContextSealed)),
-             typeof(AspNetCoreMvc3Integration).GetMethod(nameof(AspNetCoreMvc3Integration.Rethrow_ResourceExecutedContextSealed)),
-             typeof(AspNetCoreMvc3Integration).GetMethod(nameof(AspNetCoreMvc3Integration.Rethrow_ResultExecutedContextSealed)),
         };
 
         public static IEnumerable<object[]> GetWrapperMethodWithInterceptionAttributes()

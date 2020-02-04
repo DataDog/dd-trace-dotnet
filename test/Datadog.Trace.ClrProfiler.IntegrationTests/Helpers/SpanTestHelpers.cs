@@ -25,13 +25,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                        .Where(s => expectation.Matches(s))
                        .ToList();
 
-                var count = possibleSpans.Count;
-
-                var detail = $"({expectation.Detail()})";
-
-                if (count == 0)
+                if (possibleSpans.Count == 0)
                 {
-                    failures.Add($"No spans for: {detail}");
+                    failures.Add($"No spans for: {expectation}");
                     continue;
                 }
 
@@ -44,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (!expectation.MeetsExpectations(resultSpan, out var failureMessage))
                 {
-                    failures.Add($"{detail} failed with: {failureMessage}");
+                    failures.Add($"{expectation} failed with: {failureMessage}");
                 }
             }
 

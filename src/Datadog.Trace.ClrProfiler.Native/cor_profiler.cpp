@@ -214,7 +214,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
   if (ws.str() == ToWSTRING(PROFILER_VERSION)) {
     Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " matched profiler version v", PROFILER_VERSION);
     managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
-      
+
     if (runtime_information_.is_desktop() && corlib_module_loaded &&
           assembly_info.app_domain_id == corlib_app_domain_id) {
       Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
@@ -351,13 +351,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   const auto assembly_emit =
       metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-  filtered_integrations =
-      FilterIntegrationsByTarget(filtered_integrations, assembly_import);
-  if (filtered_integrations.empty()) {
-    // we don't need to instrument anything in this module, skip it
-    Debug("ModuleLoadFinished skipping module (filtered by target): ",
-          module_id, " ", module_info.assembly.name);
-    return S_OK;
+  // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
+  // subscribe to DiagnosticSource events
+  if (module_info.assembly.name != "Microsoft.AspNetCore.Hosting"_W) {
+    filtered_integrations =
+        FilterIntegrationsByTarget(filtered_integrations, assembly_import);
+
+    if (filtered_integrations.empty()) {
+      // we don't need to instrument anything in this module, skip it
+      Debug("ModuleLoadFinished skipping module (filtered by target): ",
+            module_id, " ", module_info.assembly.name);
+      return S_OK;
+    }
   }
 
   mdModule module;
@@ -478,13 +483,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
-  if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
-      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
+  if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
       first_jit_compilation_app_domains.end()) {
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                           function_token);
     RETURN_OK_IF_FAILED(hr);
+  }
+
+  // we don't actually need to instrument anything in
+  // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
+  // hook is called
+  if (module_metadata->assemblyName == "Microsoft.AspNetCore.Hosting"_W) {
+    return S_OK;
   }
 
   // Do not perform any modification if the owning module has been

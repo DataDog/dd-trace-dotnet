@@ -10,4 +10,11 @@
     <ProjectReference Include="..\..\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+  </ItemGroup>
 </Project>

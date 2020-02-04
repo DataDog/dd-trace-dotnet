@@ -6,9 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -98,6 +100,7 @@ namespace Datadog.Trace
             if (Settings.GlobalSamplingRate != null)
             {
                 var globalRate = (float)Settings.GlobalSamplingRate;
+
                 if (globalRate < 0f || globalRate > 1f)
                 {
                     Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
@@ -144,12 +147,6 @@ namespace Datadog.Trace
         public Scope ActiveScope => _scopeManager.Active;
 
         /// <summary>
-        /// Gets a value indicating whether debugging mode is enabled.
-        /// </summary>
-        /// <value><c>true</c> is debugging is enabled, otherwise <c>false</c>.</value>
-        bool IDatadogTracer.IsDebugEnabled => Settings.DebugEnabled;
-
-        /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
         public string DefaultServiceName { get; }
@@ -168,6 +165,8 @@ namespace Datadog.Trace
         /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
         /// </summary>
         ISampler IDatadogTracer.Sampler => Sampler;
+
+        internal IDiagnosticManager DiagnosticManager { get; set; }
 
         internal ISampler Sampler { get; }
 
@@ -201,18 +200,29 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Make a span active and return a scope that can be disposed to close the span
+        /// Make a span the active span and return its new scope.
         /// </summary>
-        /// <param name="span">The span to activate</param>
-        /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
-        /// <returns>A Scope object wrapping this span</returns>
+        /// <param name="span">The span to activate.</param>
+        /// <returns>A Scope object wrapping this span.</returns>
+        Scope IDatadogTracer.ActivateSpan(Span span)
+        {
+            return ActivateSpan(span);
+        }
+
+        /// <summary>
+        /// Make a span the active span and return its new scope.
+        /// </summary>
+        /// <param name="span">The span to activate.</param>
+        /// <param name="finishOnClose">Determines whether closing the returned scope will also finish the span.</param>
+        /// <returns>A Scope object wrapping this span.</returns>
         public Scope ActivateSpan(Span span, bool finishOnClose = true)
         {
             return _scopeManager.Activate(span, finishOnClose);
         }
 
         /// <summary>
-        /// This is a shortcut for <see cref="StartSpan"/> and <see cref="ActivateSpan"/>, it creates a new span with the given parameters and makes it active.
+        /// This is a shortcut for <see cref="StartSpan(string, ISpanContext, string, DateTimeOffset?, bool)"/>
+        /// and <see cref="ActivateSpan(Span, bool)"/>, it creates a new span with the given parameters and makes it active.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
         /// <param name="parent">The span's parent</param>
@@ -225,6 +235,27 @@ namespace Datadog.Trace
         {
             var span = StartSpan(operationName, parent, serviceName, startTime, ignoreActiveScope);
             return _scopeManager.Activate(span, finishOnClose);
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="Span"/> with the specified parameters.
+        /// </summary>
+        /// <param name="operationName">The span's operation name</param>
+        /// <returns>The newly created span</returns>
+        Span IDatadogTracer.StartSpan(string operationName)
+        {
+            return StartSpan(operationName);
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="Span"/> with the specified parameters.
+        /// </summary>
+        /// <param name="operationName">The span's operation name</param>
+        /// <param name="parent">The span's parent</param>
+        /// <returns>The newly created span</returns>
+        Span IDatadogTracer.StartSpan(string operationName, ISpanContext parent)
+        {
+            return StartSpan(operationName, parent);
         }
 
         /// <summary>
@@ -313,6 +344,49 @@ namespace Datadog.Trace
         internal async Task FlushAsync()
         {
             await _agentWriter.FlushAndCloseAsync();
+        }
+
+        internal void StartDiagnosticObservers()
+        {
+            // instead of adding a hard dependency on DiagnosticSource,
+            // check if it is available before trying to use it
+            var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+
+            if (type == null)
+            {
+                Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
+            }
+            else
+            {
+                // don't call this method unless the necessary types are available
+                StartDiagnosticObserversInternal();
+            }
+        }
+
+        internal void StartDiagnosticObserversInternal()
+        {
+            DiagnosticManager?.Stop();
+
+            var observers = new List<DiagnosticObserver>();
+
+#if !NET45
+            if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
+            {
+                Log.Debug("Adding AspNetCoreDiagnosticObserver");
+
+                var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
+                observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
+            }
+#endif
+
+            if (observers.Count > 0)
+            {
+                Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
+
+                var diagnosticManager = new DiagnosticManager(observers);
+                diagnosticManager.Start();
+                DiagnosticManager = diagnosticManager;
+            }
         }
 
         /// <summary>

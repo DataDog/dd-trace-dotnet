@@ -110,13 +110,13 @@ namespace Datadog.Trace.Configuration
                                    // default value
                                    false;
 
-            CustomSamplingRules = source?.GetString(ConfigurationKeys.CustomSamplingRules) ??
-                                  // default value
-                                  null;
+            CustomSamplingRules = source?.GetString(ConfigurationKeys.CustomSamplingRules);
 
-            GlobalSamplingRate = source?.GetDouble(ConfigurationKeys.GlobalSamplingRate) ??
-                                  // default value
-                                  null;
+            GlobalSamplingRate = source?.GetDouble(ConfigurationKeys.GlobalSamplingRate);
+
+            DiagnosticSourceEnabled = source?.GetBool(ConfigurationKeys.DiagnosticSourceEnabled) ??
+                                      // default value
+                                      true;
         }
 
         /// <summary>
@@ -215,9 +215,15 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets or sets a value indicating whether internal metrics
-        /// are enabled and send to DogStatsd.
+        /// are enabled and sent to DogStatsd.
         /// </summary>
         public bool TracerMetricsEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the use
+        /// of <see cref="System.Diagnostics.DiagnosticSource"/> is enabled.
+        /// </summary>
+        public bool DiagnosticSourceEnabled { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
