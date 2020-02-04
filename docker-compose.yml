@@ -306,6 +306,15 @@ services:
     - MYSQL_PORT=3306
     - buildConfiguration=${buildConfiguration}
     - publishTargetFramework=netcoreapp3.1
+    depends_on:
+    - servicestackredis
+    - stackexchangeredis
+    - elasticsearch6
+    - elasticsearch5
+    - sqlserver
+    - mongo
+    - postgres
+    - mysql
 
   IntegrationTests:
     build:
