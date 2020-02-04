@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     /// </summary>
     public static class SqlCommandIntegration
     {
-        private const string IntegrationName = "SqlCommand";
+        private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
 
         private const string SqlCommandTypeName = "System.Data.SqlClient.SqlCommand";
