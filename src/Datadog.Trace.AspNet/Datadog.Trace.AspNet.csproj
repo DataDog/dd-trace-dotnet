@@ -7,16 +7,20 @@
     <Version>1.11.1-prerelease</Version>
     <Title>Datadog APM Tracing for ASP.NET</Title>
     <Description>
-      OBSOLETE. This package is deprecated and exists only for backwards compatibility.
-      ASP.NET is now automatically instrumented. If your project references this package 
-      or Datadog.Trace.AspNet, you can remove them.
-    </Description>
+DEPRECATED. This package exists only for backwards compatibility. If your project references this package ("Datadog.Trace.AspNet") or "Datadog.Trace.ClrProfiler.Managed", you can remove them both.
 
+.NET Core applications no longer require any NuGet package to enable automatic instrumentation.
+
+Automatic instrumentation for both ASP.NET and ASP.NET Core is now automatically enabled.
+
+Users who need manual instrumentation should reference the "Datadog.Trace" package.
+    </Description>
     <!-- Allow the GenerateAssemblyInfo task in the .NET SDK to generate all
          assembly attributes except for the AssemblyVersionAttribute. This will
          be locked at Major.0.0.0 and is defined in AssemblyInfo.cs -->
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
 
+    <!-- Remove the Datadog.Trace.AspNet.dll assembly from the output and hide inapplicable warning (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128) -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
