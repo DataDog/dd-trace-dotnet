@@ -10,7 +10,7 @@
       OBSOLETE. This package is deprecated and exists only for backwards compatibility.
       Users who need manual instrumentation should reference the "Datadog.Trace" package.
       ASP.NET is now automatically instrumented. If your project references this package 
-      or the Datadog.Trace.ClrProfiler.Managed assembly, you can remove them.
+      (Datadog.Trace.ClrProfiler.Managed) or Datadog.Trace.AspNet, you can remove them.
     </Description>
     <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
 
