@@ -23,16 +23,13 @@ namespace PrepareRelease
 
             var solutionDir = EnvironmentTools.GetSolutionDirectory();
             Environment.SetEnvironmentVariable("SOLUTION_DIR", solutionDir);
-            var tracerHomeOutput = Path.Combine(solutionDir, "tools", "PrepareRelease", "bin", "tracer-home");
-            Environment.SetEnvironmentVariable("TRACER_HOME_OUTPUT_DIR", tracerHomeOutput);
-
             var publishBatch = Path.Combine(solutionDir, "tools", "PrepareRelease", "publish-all.bat");
             ExecuteCommand(publishBatch);
 
             if (JobShouldRun(Integrations, args))
             {
                 Console.WriteLine("--------------- Integrations Job Started ---------------");
-                GenerateIntegrationDefinitions.Run(solutionDir, tracerHomeOutput);
+                GenerateIntegrationDefinitions.Run(solutionDir);
                 Console.WriteLine("--------------- Integrations Job Complete ---------------");
             }
 
@@ -51,12 +48,10 @@ namespace PrepareRelease
 
         private static void ExecuteCommand(string command)
         {
-            var processInfo = new ProcessStartInfo("cmd.exe", "/c " + command);
-            processInfo.CreateNoWindow = true;
-            processInfo.UseShellExecute = true;
+            var processInfo = new ProcessStartInfo("cmd.exe", "/c " + command) { CreateNoWindow = true, UseShellExecute = true };
             var process = Process.Start(processInfo);
-            process?.WaitForExit(50_000);
-            Console.WriteLine("Publish ExitCode: " + ((process?.ExitCode.ToString()) ?? "NO PROCESS").ToString(), "ExecuteCommand");
+            process.WaitForExit(120_000);
+            Console.WriteLine("Publish ExitCode: " + process.ExitCode, "ExecuteCommand");
             process?.Close();
         }
     }
