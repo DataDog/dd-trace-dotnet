@@ -36,33 +36,13 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net461_System.Net.Http.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Net.Http.dll"
+        <File Id="net461_System.Diagnostics.DiagnosticSource.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.DiagnosticSource.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_System.Runtime.InteropServices.RuntimeInformation.dll"
               Source="$(var.ManagedDllPath)\net461\System.Runtime.InteropServices.RuntimeInformation.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_System.Security.Cryptography.Algorithms.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Algorithms.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_System.Security.Cryptography.Encoding.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Encoding.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_System.Security.Cryptography.Primitives.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Primitives.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_System.Security.Cryptography.X509Certificates.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.X509Certificates.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>
