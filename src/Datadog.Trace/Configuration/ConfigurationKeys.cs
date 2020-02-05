@@ -158,6 +158,26 @@ namespace Datadog.Trace.Configuration
         public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
 
         /// <summary>
+        /// Configuration key for when a standalone instance of the Trace Agent needs to be started.
+        /// </summary>
+        public const string TraceAgentPath = "DD_TRACE_AGENT_PATH";
+
+        /// <summary>
+        /// Configuration key for arguments to pass to the Trace Agent process.
+        /// </summary>
+        public const string TraceAgentArgs = "DD_TRACE_AGENT_ARGS";
+
+        /// <summary>
+        /// Configuration key for when a standalone instance of DogStatsD needs to be started.
+        /// </summary>
+        public const string DogStatsDPath = "DD_DOGSTATSD_PATH";
+
+        /// <summary>
+        /// Configuration key for arguments to pass to the DogStatsD process.
+        /// </summary>
+        public const string DogStatsDArgs = "DD_DOGSTATSD_ARGS";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the use of <see cref="System.Diagnostics.DiagnosticSource"/>.
         /// Default value is <c>true</c> (enabled).
         /// </summary>

@@ -67,6 +67,17 @@ const WSTRING log_path = "DD_TRACE_LOG_PATH"_W;
 // https://github.com/dotnet/coreclr/issues/12468
 const WSTRING clr_disable_optimizations = "DD_CLR_DISABLE_OPTIMIZATIONS"_W;
 
+// Indicates whether the profiler is running in the context
+// of Azure App Services
+const WSTRING azure_app_services = "DD_AZURE_APP_SERVICES"_W;
+
+// The app_pool_id in the context of azure app services
+const WSTRING azure_app_services_app_pool_id = "APP_POOL_ID"_W;
+
+// The DOTNET_CLI_TELEMETRY_PROFILE in the context of azure app services
+const WSTRING azure_app_services_cli_telemetry_profile_value =
+    "DOTNET_CLI_TELEMETRY_PROFILE"_W;
+
 }  // namespace environment
 }  // namespace trace
 

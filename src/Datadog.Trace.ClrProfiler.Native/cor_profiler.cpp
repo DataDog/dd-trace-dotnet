@@ -90,10 +90,40 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      environment::env,
                      environment::service_name,
                      environment::disabled_integrations,
-                     environment::clr_disable_optimizations};
+                     environment::clr_disable_optimizations,
+                     environment::azure_app_services,
+                     environment::azure_app_services_app_pool_id,
+                     environment::azure_app_services_cli_telemetry_profile_value};
 
   for (auto&& env_var : env_vars) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
+  }
+
+  const WSTRING azure_app_services_value =
+      GetEnvironmentValue(environment::azure_app_services);
+
+  if (azure_app_services_value == "1"_W) {
+    Info("Profiler is operating within Azure App Services context.");
+    in_azure_app_services = true;
+
+    const auto app_pool_id_value =
+        GetEnvironmentValue(environment::azure_app_services_app_pool_id);
+
+    if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~') {
+      Info("Profiler disabled: ", environment::azure_app_services_app_pool_id,
+           " ", app_pool_id_value,
+           " is recognized as an Azure App Services infrastructure process.");
+      return E_FAIL;
+    }
+
+    const auto cli_telemetry_profile_value = GetEnvironmentValue(
+        environment::azure_app_services_cli_telemetry_profile_value);
+
+    if (cli_telemetry_profile_value == "AzureKudu"_W) {
+      Info("Profiler disabled: ", app_pool_id_value,
+           " is recognized as Kudu, an Azure App Services reserved process.");
+      return E_FAIL;
+    }
   }
 
   // get path to integration definition JSON files

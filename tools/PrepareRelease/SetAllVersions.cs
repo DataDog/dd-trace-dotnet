@@ -76,11 +76,6 @@ namespace PrepareRelease
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
         }
 
-        private static string AzureAppServicesReplace(string text)
-        {
-            return Regex.Replace(text, VersionPattern("_"), VersionString("_"), RegexOptions.Singleline);
-        }
-
         private static string FullVersionReplace(string text, string split)
         {
             return Regex.Replace(text, VersionPattern(split), VersionString(split), RegexOptions.Singleline);

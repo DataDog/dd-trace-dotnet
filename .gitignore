@@ -268,3 +268,4 @@ BenchmarkDotNet.Artifacts/
 *.trx
 
 deploy/linux/
+deploy/AzureAppServices/

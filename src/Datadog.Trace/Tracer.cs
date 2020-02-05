@@ -10,7 +10,6 @@ using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -21,8 +20,6 @@ namespace Datadog.Trace
     public class Tracer : IDatadogTracer
     {
         private const string UnknownServiceName = "UnknownService";
-
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
 
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
@@ -37,6 +34,7 @@ namespace Datadog.Trace
 
         static Tracer()
         {
+            TracerSubProcessManager.StartStandaloneAgentProcessesWhenConfigured();
             // create the default global Tracer
             Instance = new Tracer();
         }
@@ -103,7 +101,7 @@ namespace Datadog.Trace
 
                 if (globalRate < 0f || globalRate > 1f)
                 {
-                    Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
+                    DatadogLogging.RegisterStartupLog(log => log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate));
                 }
                 else
                 {
@@ -354,7 +352,7 @@ namespace Datadog.Trace
 
             if (type == null)
             {
-                Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
+                DatadogLogging.RegisterStartupLog(log => log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers."));
             }
             else
             {
@@ -372,7 +370,7 @@ namespace Datadog.Trace
 #if NETSTANDARD
             if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
             {
-                Log.Debug("Adding AspNetCoreDiagnosticObserver");
+                DatadogLogging.RegisterStartupLog(log => log.Debug("Adding AspNetCoreDiagnosticObserver"));
 
                 var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
                 observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
@@ -381,11 +379,11 @@ namespace Datadog.Trace
 
             if (observers.Count == 0)
             {
-                Log.Debug("DiagnosticManager not started, zero observers added.");
+                DatadogLogging.RegisterStartupLog(log => log.Debug("DiagnosticManager not started, zero observers added."));
             }
             else
             {
-                Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
+                DatadogLogging.RegisterStartupLog(log => log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count));
 
                 var diagnosticManager = new DiagnosticManager(observers);
                 diagnosticManager.Start();
@@ -417,7 +415,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating default service name.");
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error creating default service name."));
                 return null;
             }
         }

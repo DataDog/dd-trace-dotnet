@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Performance.StackExchange.Redis": {
+    "Samples.FakeAzureAppServices": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
@@ -13,10 +13,9 @@
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
-
-        "DD_TRACE_DEBUG": "0",
-
-        "DD_CUSTOM_SAMPLING_RULES": "rate=0.05, service=.+-redis"
+        "DD_AZURE_APP_SERVICES": "1",
+        "DD_AGENT_PATH": "$(ProjectDir)$(OutputPath)Samples.FakeTraceAgent.exe",
+        "DD_AGENT_CONFIG_PATH": "I_AM_THE_CONFIG_PATH"
       },
       "nativeDebugging": true
     }

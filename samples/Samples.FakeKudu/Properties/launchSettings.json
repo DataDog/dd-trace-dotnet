@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Performance.StackExchange.Redis": {
+    "Samples.FakeKudu": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
@@ -13,10 +13,8 @@
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
-
-        "DD_TRACE_DEBUG": "0",
-
-        "DD_CUSTOM_SAMPLING_RULES": "rate=0.05, service=.+-redis"
+        "DD_AZURE_APP_SERVICES": "1", // We need to pretend we are in the context of AAS to filter by the APP_POOL_ID
+        "APP_POOL_ID": "~1KuduScmProcessIsFilteredByTilde"
       },
       "nativeDebugging": true
     }
