@@ -10,7 +10,6 @@ using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -353,7 +352,7 @@ namespace Datadog.Trace
 
             if (type == null)
             {
-                Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
+                DatadogLogging.RegisterStartupLog(log => log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers."));
             }
             else
             {
@@ -371,7 +370,7 @@ namespace Datadog.Trace
 #if NETSTANDARD
             if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
             {
-                Log.Debug("Adding AspNetCoreDiagnosticObserver");
+                DatadogLogging.RegisterStartupLog(log => log.Debug("Adding AspNetCoreDiagnosticObserver"));
 
                 var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
                 observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
@@ -380,11 +379,11 @@ namespace Datadog.Trace
 
             if (observers.Count == 0)
             {
-                Log.Debug("DiagnosticManager not started, zero observers added.");
+                DatadogLogging.RegisterStartupLog(log => log.Debug("DiagnosticManager not started, zero observers added."));
             }
             else
             {
-                Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
+                DatadogLogging.RegisterStartupLog(log => log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count));
 
                 var diagnosticManager = new DiagnosticManager(observers);
                 diagnosticManager.Start();
