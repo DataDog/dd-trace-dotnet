@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.6.0" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'net461'">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <!-- Instrumented libraries -->
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.0.0" PrivateAssets="All" />
