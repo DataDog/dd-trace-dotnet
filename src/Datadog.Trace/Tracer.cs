@@ -369,7 +369,7 @@ namespace Datadog.Trace
 
             var observers = new List<DiagnosticObserver>();
 
-#if !NET45
+#if NETSTANDARD
             if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
             {
                 Log.Debug("Adding AspNetCoreDiagnosticObserver");
@@ -379,7 +379,11 @@ namespace Datadog.Trace
             }
 #endif
 
-            if (observers.Count > 0)
+            if (observers.Count == 0)
+            {
+                Log.Debug("DiagnosticManager not started, zero observers added.");
+            }
+            else
             {
                 Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
 
