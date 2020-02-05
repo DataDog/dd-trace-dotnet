@@ -8,7 +8,6 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Mvc.Controllers;
 
 namespace Datadog.Trace.DiagnosticListeners
 {
@@ -195,12 +194,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                     //       has been selected but no filters have run and model binding hasn't occured.
                     var actionDescriptor = (ActionDescriptor)BeforeActionActionDescriptorFetcher.Fetch(arg);
-                    var controllerActionDescriptor = actionDescriptor as ControllerActionDescriptor;
                     HttpRequest request = httpContext.Request;
 
                     string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-                    string controllerName = controllerActionDescriptor?.ControllerName;
-                    string actionName = controllerActionDescriptor?.ActionName;
+                    string controllerName = actionDescriptor.RouteValues["controller"];
+                    string actionName = actionDescriptor.RouteValues["action"];
                     string routeTemplate = actionDescriptor.AttributeRouteInfo?.Template ?? $"{controllerName}/{actionName}";
                     string resourceName = $"{httpMethod} {routeTemplate}";
 

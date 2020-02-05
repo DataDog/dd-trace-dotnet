@@ -26,7 +26,7 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'net461'">
     <!-- Instrumented libraries -->
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.0" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.0.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
