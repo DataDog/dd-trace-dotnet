@@ -42,9 +42,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
     <Reference Include="System.Web" />
     <Reference Include="System.ServiceModel" />
 
-    <!-- include this dependency in the NuGet package for backwards compatiblity with
-         users who were using "Datadog.Trace.ClrProfiler.Managed" to instrument ASP.NET -->
-    <ProjectReference Include="..\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
