@@ -5,6 +5,10 @@
     <RootNamespace>Samples.AspNetCoreMvc</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+  </ItemGroup>
+
   <!--Files shared with AspNetCoreMvc21 -->
   <ItemGroup>
     <Compile Include="..\Samples.AspNetCoreMvc21\Controllers\**\*.*" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
