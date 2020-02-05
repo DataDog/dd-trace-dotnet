@@ -73,7 +73,7 @@ namespace PrepareRelease
                     "deploy",
                     "Datadog.Trace.ClrProfiler.WindowsInstaller");
 
-            var filePaths = DependencyHelpers.GetTracerReleaseBinaries(frameworkMoniker);
+            var filePaths = DependencyHelpers.GetTracerBinContent(frameworkMoniker);
 
             var components = string.Empty;
 

@@ -22,9 +22,6 @@ namespace PrepareRelease
             }
 
             var solutionDir = EnvironmentTools.GetSolutionDirectory();
-            Environment.SetEnvironmentVariable("SOLUTION_DIR", solutionDir);
-            var publishBatch = Path.Combine(solutionDir, "tools", "PrepareRelease", "publish-all.bat");
-            ExecuteCommand(publishBatch);
 
             if (JobShouldRun(Integrations, args))
             {
@@ -35,6 +32,10 @@ namespace PrepareRelease
 
             if (JobShouldRun(Msi, args))
             {
+                Environment.SetEnvironmentVariable("SOLUTION_DIR", solutionDir);
+                var publishBatch = Path.Combine(solutionDir, "tools", "PrepareRelease", "publish-all.bat");
+                ExecuteCommand(publishBatch);
+
                 Console.WriteLine("--------------- MSI Job Started ---------------");
                 SyncMsiContent.Run();
                 Console.WriteLine("--------------- MSI Job Complete ---------------");
