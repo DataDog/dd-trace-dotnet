@@ -22,14 +22,17 @@ namespace PrepareRelease
             }
 
             var solutionDir = EnvironmentTools.GetSolutionDirectory();
-            Environment.SetEnvironmentVariable("SOLUTION_DIR", EnvironmentTools.GetSolutionDirectory());
+            Environment.SetEnvironmentVariable("SOLUTION_DIR", solutionDir);
+            var tracerHomeOutput = Path.Combine(solutionDir, "tools", "PrepareRelease", "bin", "tracer-home");
+            Environment.SetEnvironmentVariable("TRACER_HOME_OUTPUT_DIR", tracerHomeOutput);
+
             var publishBatch = Path.Combine(solutionDir, "tools", "PrepareRelease", "publish-all.bat");
             ExecuteCommand(publishBatch);
 
             if (JobShouldRun(Integrations, args))
             {
                 Console.WriteLine("--------------- Integrations Job Started ---------------");
-                GenerateIntegrationDefinitions.Run();
+                GenerateIntegrationDefinitions.Run(solutionDir, tracerHomeOutput);
                 Console.WriteLine("--------------- Integrations Job Complete ---------------");
             }
 

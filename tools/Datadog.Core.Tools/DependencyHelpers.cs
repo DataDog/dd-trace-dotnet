@@ -40,10 +40,10 @@ namespace PrepareRelease.Tools
             var outputFolder =
                 Path.Combine(
                     solutionDirectory,
-                    "src",
-                    "Datadog.Trace.ClrProfiler.Native",
+                    "tools",
+                    "PrepareRelease",
                     "bin",
-                    RequiredBuildConfig,
+                    "tracer-home",
                     architecture);
 
             var filePaths = Directory.GetFiles(
