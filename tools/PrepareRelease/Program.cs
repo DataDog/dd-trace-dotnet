@@ -55,10 +55,9 @@ namespace PrepareRelease
             processInfo.CreateNoWindow = true;
             processInfo.UseShellExecute = true;
             var process = Process.Start(processInfo);
-            process.WaitForExit(30_000);
-            var exitCode = process.ExitCode;
-            Console.WriteLine("Publish ExitCode: " + exitCode.ToString(), "ExecuteCommand");
-            process.Close();
+            process?.WaitForExit(50_000);
+            Console.WriteLine("Publish ExitCode: " + ((process?.ExitCode.ToString()) ?? "NO PROCESS").ToString(), "ExecuteCommand");
+            process?.Close();
         }
     }
 }
