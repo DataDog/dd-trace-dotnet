@@ -16,10 +16,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
-            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "/");
+            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index");
             CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}");
             CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}");
-            CreateTopLevelExpectation(url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "not-found");
+            CreateTopLevelExpectation(url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "/not-found");
             CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}");
             CreateTopLevelExpectation(
                 url: "/bad-request",
@@ -152,10 +152,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             string resourceUrl,
             Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
         {
-            var expectation = new AspNetCoreMvcSpanExpectation(EnvironmentHelper.FullSampleName, TopLevelOperationName, httpStatus, httpMethod)
+            var resourceName = $"{httpMethod.ToUpper()} {resourceUrl}";
+            var expectation = new AspNetCoreMvcSpanExpectation(EnvironmentHelper.FullSampleName, TopLevelOperationName, resourceName, httpStatus, httpMethod)
             {
                 OriginalUri = url,
-                ResourceName = $"{httpMethod.ToUpper()} {resourceUrl}",
             };
 
             expectation.RegisterDelegateExpectation(additionalCheck);
