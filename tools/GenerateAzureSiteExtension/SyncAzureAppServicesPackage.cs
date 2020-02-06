@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Datadog.Core.Tools;
-using PrepareRelease.Tools;
 
 namespace GenerateAzureSiteExtension
 {
@@ -42,7 +41,7 @@ namespace GenerateAzureSiteExtension
 
             Directory.CreateDirectory(outputDirectory);
 
-            var sourceFiles = DependencyHelpers.GetTracerReleaseBinContent(frameworkMoniker);
+            var sourceFiles = DependencyHelpers.GetTracerBinContent(frameworkMoniker);
 
             foreach (var sourceFile in sourceFiles)
             {
@@ -63,7 +62,7 @@ namespace GenerateAzureSiteExtension
 
             Directory.CreateDirectory(outputDirectory);
 
-            var sourceFiles = DependencyHelpers.GetProfilerReleaseBinContent(architecture);
+            var sourceFiles = DependencyHelpers.GetTracerBinContent(architecture);
 
             foreach (var sourceFile in sourceFiles)
             {

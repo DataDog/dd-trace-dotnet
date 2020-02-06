@@ -1,5 +1,8 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using Datadog.Core.Tools;
 
 namespace PrepareRelease
 {
@@ -11,13 +14,6 @@ namespace PrepareRelease
 
         public static void Main(string[] args)
         {
-            if (JobShouldRun(Integrations, args))
-            {
-                Console.WriteLine("--------------- Integrations Job Started ---------------");
-                GenerateIntegrationDefinitions.Run();
-                Console.WriteLine("--------------- Integrations Job Complete ---------------");
-            }
-
             if (JobShouldRun(Versions, args))
             {
                 Console.WriteLine("--------------- Versions Job Started ---------------");
@@ -25,8 +21,21 @@ namespace PrepareRelease
                 Console.WriteLine("--------------- Versions Job Complete ---------------");
             }
 
+            var solutionDir = EnvironmentTools.GetSolutionDirectory();
+
+            if (JobShouldRun(Integrations, args))
+            {
+                Console.WriteLine("--------------- Integrations Job Started ---------------");
+                GenerateIntegrationDefinitions.Run(solutionDir);
+                Console.WriteLine("--------------- Integrations Job Complete ---------------");
+            }
+
             if (JobShouldRun(Msi, args))
             {
+                Environment.SetEnvironmentVariable("SOLUTION_DIR", solutionDir);
+                var publishBatch = Path.Combine(solutionDir, "tools", "PrepareRelease", "publish-all.bat");
+                ExecuteCommand(publishBatch);
+
                 Console.WriteLine("--------------- MSI Job Started ---------------");
                 SyncMsiContent.Run();
                 Console.WriteLine("--------------- MSI Job Complete ---------------");
@@ -36,6 +45,15 @@ namespace PrepareRelease
         private static bool JobShouldRun(string jobName, string[] args)
         {
             return args.Length == 0 || args.Any(a => string.Equals(a, jobName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static void ExecuteCommand(string command)
+        {
+            var processInfo = new ProcessStartInfo("cmd.exe", "/c " + command) { CreateNoWindow = true, UseShellExecute = true };
+            var process = Process.Start(processInfo);
+            process.WaitForExit(120_000);
+            Console.WriteLine("Publish ExitCode: " + process.ExitCode, "ExecuteCommand");
+            process?.Close();
         }
     }
 }

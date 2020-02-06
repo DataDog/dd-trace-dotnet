@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler;
 using Newtonsoft.Json;
 
@@ -11,7 +12,7 @@ namespace PrepareRelease
 {
     public static class GenerateIntegrationDefinitions
     {
-        public static void Run()
+        public static void Run(params string[] outputDirectories)
         {
             Console.WriteLine("Updating the integrations definitions");
 
@@ -79,10 +80,12 @@ namespace PrepareRelease
             var json = JsonConvert.SerializeObject(integrations, serializerSettings);
             Console.WriteLine(json);
 
-            string filename = "integrations.json";
-
-            var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-            File.WriteAllText(filename, json, utf8NoBom);
+            foreach (var outputDirectory in outputDirectories)
+            {
+                var filename = Path.Combine(outputDirectory, "integrations.json");
+                var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+                File.WriteAllText(filename, json, utf8NoBom);
+            }
         }
 
         private static string GetIntegrationName(Type wrapperType)

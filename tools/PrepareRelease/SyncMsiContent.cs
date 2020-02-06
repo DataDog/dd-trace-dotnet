@@ -1,8 +1,8 @@
 using System;
 using System.IO;
 using System.Text;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
-using PrepareRelease.Tools;
 
 namespace PrepareRelease
 {
@@ -73,7 +73,7 @@ namespace PrepareRelease
                     "deploy",
                     "Datadog.Trace.ClrProfiler.WindowsInstaller");
 
-            var filePaths = DependencyHelpers.GetTracerReleaseBinContent(frameworkMoniker);
+            var filePaths = DependencyHelpers.GetTracerBinContent(frameworkMoniker);
 
             var components = string.Empty;
 
