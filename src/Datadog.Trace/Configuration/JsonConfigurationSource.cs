@@ -37,6 +37,7 @@ namespace Datadog.Trace.Configuration
         public static JsonConfigurationSource FromFile(string filename)
         {
             string json = File.ReadAllText(filename);
+            Log.Warning("FULL TEXT OF datadog.json: {0}", json);
             return new JsonConfigurationSource(json);
         }
 

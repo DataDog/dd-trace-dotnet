@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Configuration
@@ -21,6 +22,8 @@ namespace Datadog.Trace.Configuration
         /// The default port value for <see cref="AgentUri"/>.
         /// </summary>
         public const int DefaultAgentPort = 8126;
+
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracerSettings));
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
@@ -265,6 +268,8 @@ namespace Datadog.Trace.Configuration
             }
 #endif
 
+            Log.Warning("the curr dir: {0}", currentDirectory);
+
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
                                         Path.Combine(currentDirectory, "datadog.json");
@@ -272,7 +277,22 @@ namespace Datadog.Trace.Configuration
             if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
                 File.Exists(configurationFileName))
             {
+                Log.Warning("1 - FOUND datadog.json");
                 configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
+            }
+            else
+            {
+                var tracerHomeDirectory = System.Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
+                configurationFileName = Path.Combine(tracerHomeDirectory, "datadog.json");
+
+                Log.Warning("ELSE PATH: config filename = {0}", configurationFileName);
+
+                if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
+                    File.Exists(configurationFileName))
+                {
+                    Log.Warning("2 - FOUND datadog.json");
+                    configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
+                }
             }
 
             return configurationSource;
