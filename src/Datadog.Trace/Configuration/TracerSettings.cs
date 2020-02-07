@@ -268,8 +268,6 @@ namespace Datadog.Trace.Configuration
             }
 #endif
 
-            Log.Warning("CURRENT DIR: {0}", currentDirectory);
-
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
                                         Path.Combine(currentDirectory, "datadog.json");
@@ -277,8 +275,17 @@ namespace Datadog.Trace.Configuration
             if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
                 File.Exists(configurationFileName))
             {
-                Log.Warning("1 - FOUND datadog.json");
                 configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
+            }
+            else
+            {
+                var tracerHomeDirectory = System.Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
+                configurationFileName = Path.Combine(tracerHomeDirectory, "datadog.json");
+                if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
+                    File.Exists(configurationFileName))
+                {
+                    configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
+                }
             }
 
             return configurationSource;
