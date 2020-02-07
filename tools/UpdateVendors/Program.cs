@@ -32,27 +32,27 @@ namespace UpdateVendors
 
             await UpdateVendorAsync(
                 libraryName: "Serilog",
-                masterBranchDownload: "https://github.com/serilog/serilog/archive/master.zip",
-                latestCommitUrl: "https://api.github.com/repos/serilog/serilog/commits/master",
-                pathToSrc: new[] { "serilog-master", "src", "Serilog" },
+                branchDownload: "https://github.com/serilog/serilog/archive/v2.8.0.zip",
+                commitUrl: "https://api.github.com/repos/serilog/serilog/commits/v2.8.0",
+                pathToSrc: new[] { "serilog-2.8.0", "src", "Serilog" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
 
             await UpdateVendorAsync(
                 libraryName: "Serilog.Sinks.File",
-                masterBranchDownload: "https://github.com/serilog/serilog-sinks-file/archive/master.zip",
-                latestCommitUrl: "https://api.github.com/repos/serilog/serilog-sinks-file/commits/master",
-                pathToSrc: new[] { "serilog-sinks-file-master", "src", "Serilog.Sinks.File" },
+                branchDownload: "https://github.com/serilog/serilog-sinks-file/archive/v4.0.0.zip",
+                commitUrl: "https://api.github.com/repos/serilog/serilog-sinks-file/commits/v4.0.0",
+                pathToSrc: new[] { "serilog-sinks-file-4.0.0", "src", "Serilog.Sinks.File" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
 
             await UpdateVendorAsync(
                 libraryName: "StatsdClient",
-                masterBranchDownload: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
-                latestCommitUrl: "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/commits/3.3.0",
+                branchDownload: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
+                commitUrl: "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/commits/3.3.0",
                 pathToSrc: new[] { "dogstatsd-csharp-client-3.3.0", "src", "StatsdClient" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
         }
 
-        private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace)
+        private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, Func<string, string, string> extraTransform = null)
         {
             if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
             {
@@ -71,18 +71,25 @@ namespace UpdateVendors
 
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"
-                        return Regex.Replace(
+                        var result = Regex.Replace(
                             builder.ToString(),
                             @"public(\s+((abstract|sealed|static)\s+)?(partial\s+)?(class|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
+
+                        if (extraTransform != null)
+                        {
+                            result = extraTransform(filePath, result);
+                        }
+
+                        return result;
                     });
             }
         }
 
         private static async Task UpdateVendorAsync(
             string libraryName,
-            string masterBranchDownload,
-            string latestCommitUrl,
+            string branchDownload,
+            string commitUrl,
             string[] pathToSrc,
             Action<string> transform = null)
         {
@@ -93,7 +100,7 @@ namespace UpdateVendors
 
             using (var repoDownloadClient = new WebClient())
             {
-                repoDownloadClient.DownloadFile(masterBranchDownload, zipLocation);
+                repoDownloadClient.DownloadFile(branchDownload, zipLocation);
             }
 
             Console.WriteLine($"Downloaded {libraryName} upgrade.");
@@ -146,7 +153,7 @@ namespace UpdateVendors
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", githubToken);
 
-                commitInformation = await client.GetStringAsync(latestCommitUrl);
+                commitInformation = await client.GetStringAsync(commitUrl);
             }
 
             // save commit information to a formatted json file
