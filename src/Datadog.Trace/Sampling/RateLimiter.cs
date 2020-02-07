@@ -37,6 +37,8 @@ namespace Datadog.Trace.Sampling
         {
             try
             {
+                Log.Warning("MAX TRACES PER SECOND: {0}", _maxTracesPerInterval);
+
                 if (_maxTracesPerInterval == 0)
                 {
                     // Rate limit of 0 blocks everything

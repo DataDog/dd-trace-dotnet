@@ -268,7 +268,7 @@ namespace Datadog.Trace.Configuration
             }
 #endif
 
-            Log.Warning("the curr dir: {0}", currentDirectory);
+            Log.Warning("CURRENT DIR: {0}", currentDirectory);
 
             // if environment variable is not set, look for default file name in the current directory
             var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
@@ -280,26 +280,19 @@ namespace Datadog.Trace.Configuration
                 Log.Warning("1 - FOUND datadog.json");
                 configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
             }
-            else
-            {
-                var tracerHomeDirectory = System.Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-                configurationFileName = Path.Combine(tracerHomeDirectory, "datadog.json");
-
-                Log.Warning("ELSE PATH: config filename = {0}", configurationFileName);
-
-                if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
-                    File.Exists(configurationFileName))
-                {
-                    Log.Warning("2 - FOUND datadog.json");
-                    configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
-                }
-            }
 
             return configurationSource;
         }
 
         internal bool IsIntegrationEnabled(string name)
         {
+            Log.Warning("IN IsIntegrationEnabled -- name = {0}", name);
+            Log.Warning("        Number of Disabled Ints = {0}", DisabledIntegrationNames == null ? 0 : DisabledIntegrationNames.Count);
+            foreach (var entry in DisabledIntegrationNames)
+            {
+                Log.Warning("ENTRY: {0}", entry.ToString());
+            }
+
             bool disabled = Integrations[name].Enabled == false || DisabledIntegrationNames.Contains(name);
             return TraceEnabled && !disabled;
         }
