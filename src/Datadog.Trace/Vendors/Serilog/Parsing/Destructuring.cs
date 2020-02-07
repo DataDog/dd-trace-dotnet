@@ -22,7 +22,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
     /// Instructs the logger on how to store information about provided
     /// parameters.
     /// </summary>
-    public enum Destructuring
+    internal enum Destructuring
     {
         /// <summary>
         /// Convert known types and objects to scalars, arrays to sequences.

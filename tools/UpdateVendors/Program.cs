@@ -23,36 +23,33 @@ namespace UpdateVendors
         private static readonly string DownloadDirectory = Path.Combine(Environment.CurrentDirectory, "downloads");
         private static string _vendorProjectDirectory;
 
-        public static async Task Main(string[] args)
+        public static void Main()
         {
             InitializeCleanDirectory(DownloadDirectory);
             var solutionDirectory = GetSolutionDirectory();
             _vendorProjectDirectory = Path.Combine(solutionDirectory, "src", "Datadog.Trace", "Vendors");
             InitializeCleanDirectory(_vendorProjectDirectory);
 
-            await UpdateVendorAsync(
+            UpdateVendor(
                 libraryName: "Serilog",
-                masterBranchDownload: "https://github.com/serilog/serilog/archive/master.zip",
-                latestCommitUrl: "https://api.github.com/repos/serilog/serilog/commits/master",
-                pathToSrc: new[] { "serilog-master", "src", "Serilog" },
+                branchDownload: "https://github.com/serilog/serilog/archive/v2.8.0.zip",
+                pathToSrc: new[] { "serilog-2.8.0", "src", "Serilog" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
 
-            await UpdateVendorAsync(
+            UpdateVendor(
                 libraryName: "Serilog.Sinks.File",
-                masterBranchDownload: "https://github.com/serilog/serilog-sinks-file/archive/master.zip",
-                latestCommitUrl: "https://api.github.com/repos/serilog/serilog-sinks-file/commits/master",
-                pathToSrc: new[] { "serilog-sinks-file-master", "src", "Serilog.Sinks.File" },
+                branchDownload: "https://github.com/serilog/serilog-sinks-file/archive/v4.0.0.zip",
+                pathToSrc: new[] { "serilog-sinks-file-4.0.0", "src", "Serilog.Sinks.File" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
 
-            await UpdateVendorAsync(
+            UpdateVendor(
                 libraryName: "StatsdClient",
-                masterBranchDownload: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
-                latestCommitUrl: "https://api.github.com/repos/DataDog/dogstatsd-csharp-client/commits/3.3.0",
+                branchDownload: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
                 pathToSrc: new[] { "dogstatsd-csharp-client-3.3.0", "src", "StatsdClient" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
         }
 
-        private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace)
+        private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, Func<string, string, string> extraTransform = null)
         {
             if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
             {
@@ -79,10 +76,9 @@ namespace UpdateVendors
             }
         }
 
-        private static async Task UpdateVendorAsync(
+        private static void UpdateVendor(
             string libraryName,
-            string masterBranchDownload,
-            string latestCommitUrl,
+            string branchDownload,
             string[] pathToSrc,
             Action<string> transform = null)
         {
@@ -93,7 +89,7 @@ namespace UpdateVendors
 
             using (var repoDownloadClient = new WebClient())
             {
-                repoDownloadClient.DownloadFile(masterBranchDownload, zipLocation);
+                repoDownloadClient.DownloadFile(branchDownload, zipLocation);
             }
 
             Console.WriteLine($"Downloaded {libraryName} upgrade.");
@@ -132,27 +128,6 @@ namespace UpdateVendors
                 Console.WriteLine($"Finished transforms on files for {libraryName}.");
             }
 
-            // Add information about the commit we are downloading
-            var githubToken = Environment.GetEnvironmentVariable("DD_VENDOR_TOOL_TOKEN");
-            if (githubToken == null)
-            {
-                throw new ArgumentException("You must specify a valid OAuth token for the github API.");
-            }
-
-            string commitInformation;
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Datadog.Trace.UpdateVendors", "1.0"));
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", githubToken);
-
-                commitInformation = await client.GetStringAsync(latestCommitUrl);
-            }
-
-            // save commit information to a formatted json file
-            var commitJsonPath = Path.Combine(sourceLocation, "commit-info.json");
-            SaveFormattedJson(commitInformation, commitJsonPath);
-
             // Move it all to the vendors directory
             Console.WriteLine($"Copying source of {libraryName} to vendor project.");
             var vendorFinalPath = Path.Combine(_vendorProjectDirectory, libraryName);
@@ -182,18 +157,6 @@ namespace UpdateVendors
             if (Directory.Exists(directoryPath))
             {
                 Directory.Delete(directoryPath, recursive: true);
-            }
-        }
-
-        private static void SaveFormattedJson(string json, string path)
-        {
-            var options = new JsonWriterOptions { Indented = true };
-
-            using (var jsonDocument = JsonDocument.Parse(json))
-            using (var fileStream = File.OpenWrite(path))
-            using (var utf8JsonWriter = new Utf8JsonWriter(fileStream, options))
-            {
-                jsonDocument.WriteTo(utf8JsonWriter);
             }
         }
 

@@ -21,7 +21,7 @@ namespace Datadog.Trace.Vendors.Serilog.Parsing
     /// <summary>
     /// Defines the direction of the alignment.
     /// </summary>
-    public enum AlignmentDirection
+    internal enum AlignmentDirection
     {
         /// <summary>
         /// Text will be left-aligned.
