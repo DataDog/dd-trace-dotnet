@@ -71,17 +71,10 @@ namespace UpdateVendors
 
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"
-                        var result = Regex.Replace(
+                        return Regex.Replace(
                             builder.ToString(),
                             @"public(\s+((abstract|sealed|static)\s+)?(partial\s+)?(class|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
-
-                        if (extraTransform != null)
-                        {
-                            result = extraTransform(filePath, result);
-                        }
-
-                        return result;
                     });
             }
         }
@@ -146,19 +139,26 @@ namespace UpdateVendors
                 throw new ArgumentException("You must specify a valid OAuth token for the github API.");
             }
 
-            string commitInformation;
-            using (var client = new HttpClient())
+            try
             {
-                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Datadog.Trace.UpdateVendors", "1.0"));
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", githubToken);
+                string commitInformation;
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Datadog.Trace.UpdateVendors", "1.0"));
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", githubToken);
 
-                commitInformation = await client.GetStringAsync(commitUrl);
+                    commitInformation = await client.GetStringAsync(commitUrl);
+                }
+
+                // save commit information to a formatted json file
+                var commitJsonPath = Path.Combine(sourceLocation, "commit-info.json");
+                SaveFormattedJson(commitInformation, commitJsonPath);
             }
-
-            // save commit information to a formatted json file
-            var commitJsonPath = Path.Combine(sourceLocation, "commit-info.json");
-            SaveFormattedJson(commitInformation, commitJsonPath);
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
 
             // Move it all to the vendors directory
             Console.WriteLine($"Copying source of {libraryName} to vendor project.");
