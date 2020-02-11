@@ -60,6 +60,66 @@ jobs:
       testResultsFiles: test/**/*.trx
     condition: succeededOrFailed()
 
+- job: Alpine_Linux
+  strategy:
+    matrix:
+      netcoreapp2_1:
+        dotnetCoreSdkVersion: 2.1.x
+        publishTargetFramework: netcoreapp2.1
+      netcoreapp3_0:
+        dotnetCoreSdkVersion: 3.0.x
+        publishTargetFramework: netcoreapp3.0
+      netcoreapp3_1:
+        dotnetCoreSdkVersion: 3.1.x
+        publishTargetFramework: netcoreapp3.1
+
+  pool:
+    vmImage: ubuntu-16.04
+  
+  variables:
+    TestAllPackageVersions: true
+
+  steps:
+  - task: DockerCompose@0
+    displayName: docker-compose run build
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) -e publishTargetFramework=$(publishTargetFramework) build
+
+  - task: DockerCompose@0
+    displayName: docker-compose run Profiler.Alpine
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run Profiler.Alpine
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests.Alpine.Core21
+    condition: eq(variables['publishTargetFramework'], 'netcoreapp2.1')
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core21
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests.Alpine.Core30
+    condition: eq(variables['publishTargetFramework'], 'netcoreapp3.0')
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core30
+
+  - task: DockerCompose@0
+    displayName: docker-compose run IntegrationTests.Alpine.Core31
+    condition: eq(variables['publishTargetFramework'], 'netcoreapp3.1')
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: run -e TestAllPackageVersions=true -e buildConfiguration=$(buildConfiguration) IntegrationTests.Alpine.Core31
+
+  - task: PublishTestResults@2
+    displayName: publish test results
+    inputs:
+      testResultsFormat: VSTest
+      testResultsFiles: test/**/*.trx
+    condition: succeededOrFailed()
+
 - job: Windows
 
   pool:
@@ -165,7 +225,9 @@ jobs:
       projects: |
         reproductions/**/*.csproj
         samples/**/*.csproj
+        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
         !reproductions/**/EntityFramework6x*.csproj
       vstsFeed: $(packageFeed)
@@ -177,7 +239,9 @@ jobs:
       projects: |
         reproductions/**/*.csproj
         samples/**/*.csproj
+        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
         !reproductions/**/EntityFramework6x*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
@@ -208,6 +272,16 @@ jobs:
 #      targetType: filePath
 #      filePath: './ci/install-sqlserver.ps1'
 #    enabled: false
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: |
+        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
+        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
+      arguments: '-p:Platform=$(buildPlatform)'
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test

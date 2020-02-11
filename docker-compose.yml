@@ -83,6 +83,20 @@ services:
       context: ./
       dockerfile: ./docker/package.dockerfile
     image: datadog-package
+    environment:
+    - PKGTYPES=deb rpm tar
+    command: /project/docker/package.sh
+    volumes:
+    - ./:/project
+  
+  package.alpine:
+    build:
+      context: ./
+      dockerfile: ./docker/package.alpine.dockerfile
+    image: datadog-package-alpine
+    environment:
+    - PKGTYPES=tar
+    - MUSL=true
     command: /project/docker/package.sh
     volumes:
     - ./:/project
@@ -92,6 +106,15 @@ services:
       context: ./
       dockerfile: ./docker/native.dockerfile
     image: datadog-native
+    command: /project/docker/Datadog.Trace.ClrProfiler.Native.sh
+    volumes:
+    - ./:/project
+
+  Profiler.Alpine:
+    build:
+      context: ./
+      dockerfile: ./docker/native.alpine.dockerfile
+    image: datadog-native-alpine
     command: /project/docker/Datadog.Trace.ClrProfiler.Native.sh
     volumes:
     - ./:/project
@@ -199,6 +222,99 @@ services:
     - ./:/project
     depends_on:
     - mongo
+
+  # .NET Core does not have apk packages for .NET Core runtimes, they only have base images
+  # Until it's resolved, have a separate Dockerfile for each runtime
+  # (see: https://github.com/dotnet/runtime/issues/3406)
+  IntegrationTests.Alpine.Core21:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.alpine.core21.dockerfile
+    image: datadog-dotnet-alpine-core21
+    command: /project/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    volumes:
+    - ./:/project
+    environment:
+    - MONGO_HOST=mongo
+    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+    - ELASTICSEARCH6_HOST=elasticsearch6:9200
+    - ELASTICSEARCH5_HOST=elasticsearch5:9200
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
+    - POSTGRES_HOST=postgres
+    - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
+    - buildConfiguration=${buildConfiguration}
+    - publishTargetFramework=netcoreapp2.1
+    depends_on:
+    - servicestackredis
+    - stackexchangeredis
+    - elasticsearch6
+    - elasticsearch5
+    - sqlserver
+    - mongo
+    - postgres
+    - mysql
+
+  IntegrationTests.Alpine.Core30:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.alpine.core30.dockerfile
+    image: datadog-dotnet-alpine-core30
+    command: /project/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    volumes:
+    - ./:/project
+    environment:
+    - MONGO_HOST=mongo
+    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+    - ELASTICSEARCH6_HOST=elasticsearch6:9200
+    - ELASTICSEARCH5_HOST=elasticsearch5:9200
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
+    - POSTGRES_HOST=postgres
+    - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
+    - buildConfiguration=${buildConfiguration}
+    - publishTargetFramework=netcoreapp3.0
+    depends_on:
+    - servicestackredis
+    - stackexchangeredis
+    - elasticsearch6
+    - elasticsearch5
+    - sqlserver
+    - mongo
+    - postgres
+    - mysql
+
+  IntegrationTests.Alpine.Core31:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.alpine.core31.dockerfile
+    image: datadog-dotnet-alpine-core31
+    command: /project/docker/Datadog.Trace.ClrProfiler.IntegrationTests.sh
+    volumes:
+    - ./:/project
+    environment:
+    - MONGO_HOST=mongo
+    - SERVICESTACK_REDIS_HOST=servicestackredis:6379
+    - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+    - ELASTICSEARCH6_HOST=elasticsearch6:9200
+    - ELASTICSEARCH5_HOST=elasticsearch5:9200
+    - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
+    - POSTGRES_HOST=postgres
+    - MYSQL_HOST=mysql
+    - MYSQL_PORT=3306
+    - buildConfiguration=${buildConfiguration}
+    - publishTargetFramework=netcoreapp3.1
+    depends_on:
+    - servicestackredis
+    - stackexchangeredis
+    - elasticsearch6
+    - elasticsearch5
+    - sqlserver
+    - mongo
+    - postgres
+    - mysql
 
   IntegrationTests:
     build:
