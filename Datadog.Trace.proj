@@ -139,4 +139,41 @@
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
+  
+  <Target Name="CreateHomeDirectory" DependsOnTargets="BuildCsharp;BuildCpp;PublishManagedProfilerOnDisk">
+      <ItemGroup>
+	    <PublishedManagedTracerFiles Include="$(MSBuildThisFileDirectory)src\bin\managed-publish\**\*.*" />
+      </ItemGroup>
+	  <PropertyGroup>
+	    <WindowsHomeOutput>$(MSBuildThisFileDirectory)src\bin\windows-tracer-home</WindowsHomeOutput>
+	  </PropertyGroup>
+      <Copy 
+        SourceFiles="$(MSBuildThisFileDirectory)integrations.json" 
+        DestinationFolder="$(WindowsHomeOutput)" 
+		SkipUnchangedFiles="true"
+        Retries="3"
+        RetryDelayMilliseconds="300"/>
+      <Copy 
+	    SourceFiles="@(PublishedManagedTracerFiles)"
+        DestinationFiles="@(PublishedManagedTracerFiles->'$(WindowsHomeOutput)\%(RecursiveDir)%(Filename)%(Extension)')"
+		SkipUnchangedFiles="true"
+        Retries="3"
+        RetryDelayMilliseconds="300"/>
+      <Copy 
+        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\Release\x64\Datadog.Trace.ClrProfiler.Native.dll" 
+        DestinationFolder="$(WindowsHomeOutput)\x64" 
+		SkipUnchangedFiles="true"
+        Retries="3"
+        RetryDelayMilliseconds="300"/>
+      <Copy 
+        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\Release\x86\Datadog.Trace.ClrProfiler.Native.dll" 
+        DestinationFolder="$(WindowsHomeOutput)\x86" 
+		SkipUnchangedFiles="true"
+        Retries="3"
+        RetryDelayMilliseconds="300"/>
+	  <Delete Files="$(WindowsHomeOutput).zip" />
+	  <ZipDirectory
+        SourceDirectory="$(WindowsHomeOutput)"
+        DestinationFile="$(WindowsHomeOutput).zip" />
+  </Target>
 </Project>
