@@ -14,7 +14,7 @@ jobs:
 
 #### NuGet packages and Windows msi installer
 
-- job: nuget_and_windows_msi
+- job: nuget_and_windows_msi_and_home
   strategy:
     matrix:
       x64:
@@ -85,12 +85,29 @@ jobs:
       configuration: $(buildConfiguration)
       msbuildArguments: /t:msi /p:RunWixToolsOutOfProc=true
       maximumCpuCount: true
+      
+  - task: MSBuild@1
+    displayName: msbuild tracer-home
+    condition: eq(variables['buildPlatform'], 'x64')
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:CreateHomeDirectory
+      maximumCpuCount: true
 
   - task: PublishPipelineArtifact@0
     displayName: publish msi artifact
     inputs:
       artifactName: windows-msi-$(buildPlatform)
       targetPath: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
+
+  - task: PublishPipelineArtifact@0
+    displayName: publish tracerhome artifact
+    condition: eq(variables['buildPlatform'], 'x64')
+    inputs:
+      artifactName: windows-tracer-home
+      targetPath: src/bin/windows-tracer-home.zip
 
 #### Linux packages
 
