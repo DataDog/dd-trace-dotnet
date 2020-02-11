@@ -225,7 +225,9 @@ jobs:
       projects: |
         reproductions/**/*.csproj
         samples/**/*.csproj
+        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
         !reproductions/**/EntityFramework6x*.csproj
       vstsFeed: $(packageFeed)
@@ -237,7 +239,9 @@ jobs:
       projects: |
         reproductions/**/*.csproj
         samples/**/*.csproj
+        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
         test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
+        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
         !reproductions/**/EntityFramework6x*.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
@@ -268,6 +272,16 @@ jobs:
 #      targetType: filePath
 #      filePath: './ci/install-sqlserver.ps1'
 #    enabled: false
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    inputs:
+      command: test
+      configuration: $(buildConfiguration)
+      projects: |
+        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
+        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
+      arguments: '-p:Platform=$(buildPlatform)'
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test
