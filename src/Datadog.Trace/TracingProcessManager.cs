@@ -27,7 +27,7 @@ namespace Datadog.Trace
             }
         };
 
-        public static void StopSubProcesses()
+        public static void StopProcesses()
         {
             foreach (var subProcessMetadata in Processes)
             {
