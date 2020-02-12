@@ -9,17 +9,17 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    internal class TracerSubProcessManager
+    internal class TracingProcessManager
     {
-        private static readonly List<SubProcessMetadata> SubProcesses = new List<SubProcessMetadata>()
+        private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
         {
-            new SubProcessMetadata()
+            new ProcessMetadata()
             {
                 Name = "datadog-trace-agent",
                 ProcessPathKey = ConfigurationKeys.TraceAgentPath,
                 ProcessArgumentsKey = ConfigurationKeys.TraceAgentArgs,
             },
-            new SubProcessMetadata()
+            new ProcessMetadata()
             {
                 Name = "dogstatsd",
                 ProcessPathKey = ConfigurationKeys.DogStatsDPath,
@@ -29,17 +29,17 @@ namespace Datadog.Trace
 
         public static void StopSubProcesses()
         {
-            foreach (var subProcessMetadata in SubProcesses)
+            foreach (var subProcessMetadata in Processes)
             {
                 SafelyKillProcess(subProcessMetadata);
             }
         }
 
-        public static void StartStandaloneAgentProcessesWhenConfigured()
+        public static void StartProcesses()
         {
             try
             {
-                foreach (var subProcessMetadata in SubProcesses)
+                foreach (var subProcessMetadata in Processes)
                 {
                     var processPath = Environment.GetEnvironmentVariable(subProcessMetadata.ProcessPathKey);
 
@@ -47,11 +47,7 @@ namespace Datadog.Trace
                     {
                         var processArgs = Environment.GetEnvironmentVariable(subProcessMetadata.ProcessArgumentsKey);
                         subProcessMetadata.KeepAliveTask =
-                            StartProcessWithKeepAlive(
-                                processPath,
-                                processArgs,
-                                p => subProcessMetadata.Process = p,
-                                () => subProcessMetadata.Process);
+                            StartProcessWithKeepAlive(processPath, processArgs, subProcessMetadata);
                     }
                     else
                     {
@@ -65,7 +61,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static void SafelyKillProcess(SubProcessMetadata metadata)
+        private static void SafelyKillProcess(ProcessMetadata metadata)
         {
             try
             {
@@ -101,7 +97,7 @@ namespace Datadog.Trace
             return false;
         }
 
-        private static Task StartProcessWithKeepAlive(string path, string args, Action<Process> setProcess, Func<Process> getProcess)
+        private static Task StartProcessWithKeepAlive(string path, string args, ProcessMetadata metadata)
         {
             DatadogLogging.RegisterStartupLog(log => log.Debug("Starting keep alive for {0}.", path));
 
@@ -117,9 +113,7 @@ namespace Datadog.Trace
                         {
                             try
                             {
-                                var activeProcess = getProcess();
-
-                                if (activeProcess != null && activeProcess.HasExited == false)
+                                if (metadata.Process != null && metadata.Process.HasExited == false)
                                 {
                                     DatadogLogging.RegisterStartupLog(log => log.Debug("We already have an active reference to {0}.", path));
                                     continue;
@@ -140,12 +134,11 @@ namespace Datadog.Trace
 
                                 DatadogLogging.RegisterStartupLog(log => log.Debug("Starting {0}.", path));
 
-                                var process = Process.Start(startInfo);
-                                setProcess(process);
+                                metadata.Process = Process.Start(startInfo);
 
-                                Thread.Sleep(150);
+                                Thread.Sleep(200);
 
-                                if (process == null || process.HasExited)
+                                if (metadata.Process == null || metadata.Process.HasExited)
                                 {
                                     DatadogLogging.RegisterStartupLog(log => log.Error("{0} has failed to start.", path));
                                     sequentialFailures++;
@@ -181,7 +174,7 @@ namespace Datadog.Trace
                 });
         }
 
-        private class SubProcessMetadata
+        private class ProcessMetadata
         {
             public string Name { get; set; }
 

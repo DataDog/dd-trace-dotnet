@@ -34,7 +34,7 @@ namespace Datadog.Trace
 
         static Tracer()
         {
-            TracerSubProcessManager.StartStandaloneAgentProcessesWhenConfigured();
+            TracingProcessManager.StartProcesses();
             // create the default global Tracer
             Instance = new Tracer();
         }
@@ -474,7 +474,7 @@ namespace Datadog.Trace
                 DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error flushing traces on shutdown."));
             }
 
-            TracerSubProcessManager.StopSubProcesses();
+            TracingProcessManager.StopSubProcesses();
         }
 
         private void HeartbeatCallback(object state)
