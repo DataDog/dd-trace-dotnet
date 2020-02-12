@@ -34,7 +34,7 @@ namespace Datadog.Trace
 
         static Tracer()
         {
-            TracerSubProcessManager.StartStandaloneAgentProcessesWhenConfigured();
+            TracingProcessManager.StartProcesses();
             // create the default global Tracer
             Instance = new Tracer();
         }
@@ -111,6 +111,7 @@ namespace Datadog.Trace
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
 
@@ -444,17 +445,36 @@ namespace Datadog.Trace
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
-            _agentWriter.FlushAndCloseAsync().Wait();
+            RunShutdownTasks();
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            _agentWriter.FlushAndCloseAsync().Wait();
+            RunShutdownTasks();
         }
 
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
-            _agentWriter.FlushAndCloseAsync().Wait();
+            RunShutdownTasks();
+        }
+
+        private void CurrentDomain_DomainUnload(object sender, EventArgs e)
+        {
+            RunShutdownTasks();
+        }
+
+        private void RunShutdownTasks()
+        {
+            try
+            {
+                _agentWriter.FlushAndCloseAsync().Wait();
+            }
+            catch (Exception ex)
+            {
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error flushing traces on shutdown."));
+            }
+
+            TracingProcessManager.StopProcesses();
         }
 
         private void HeartbeatCallback(object state)

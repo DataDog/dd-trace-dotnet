@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -8,42 +9,72 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
-    internal class TracerSubProcessManager
+    internal class TracingProcessManager
     {
-        private static Task _traceAgentMonitor;
-        private static Task _dogStatsDMonitor;
+        private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
+        {
+            new ProcessMetadata()
+            {
+                Name = "datadog-trace-agent",
+                ProcessPathKey = ConfigurationKeys.TraceAgentPath,
+                ProcessArgumentsKey = ConfigurationKeys.TraceAgentArgs,
+            },
+            new ProcessMetadata()
+            {
+                Name = "dogstatsd",
+                ProcessPathKey = ConfigurationKeys.DogStatsDPath,
+                ProcessArgumentsKey = ConfigurationKeys.DogStatsDArgs,
+            }
+        };
 
-        public static void StartStandaloneAgentProcessesWhenConfigured()
+        public static void StopProcesses()
+        {
+            foreach (var subProcessMetadata in Processes)
+            {
+                SafelyKillProcess(subProcessMetadata);
+            }
+        }
+
+        public static void StartProcesses()
         {
             try
             {
-                var traceAgentPath = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath);
+                foreach (var subProcessMetadata in Processes)
+                {
+                    var processPath = Environment.GetEnvironmentVariable(subProcessMetadata.ProcessPathKey);
 
-                if (!string.IsNullOrWhiteSpace(traceAgentPath))
-                {
-                    var traceProcessArgs = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs);
-                    _traceAgentMonitor = StartProcessWithKeepAlive(traceAgentPath, traceProcessArgs);
-                }
-                else
-                {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("There is no path configured for {0}.", ConfigurationKeys.TraceAgentPath));
-                }
-
-                var dogStatsDPath = Environment.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath);
-
-                if (!string.IsNullOrWhiteSpace(dogStatsDPath))
-                {
-                    var dogStatsDArgs = Environment.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs);
-                    _dogStatsDMonitor = StartProcessWithKeepAlive(dogStatsDPath, dogStatsDArgs);
-                }
-                else
-                {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("There is no path configured for {0}.", ConfigurationKeys.DogStatsDPath));
+                    if (!string.IsNullOrWhiteSpace(processPath))
+                    {
+                        var processArgs = Environment.GetEnvironmentVariable(subProcessMetadata.ProcessArgumentsKey);
+                        subProcessMetadata.KeepAliveTask =
+                            StartProcessWithKeepAlive(processPath, processArgs, subProcessMetadata);
+                    }
+                    else
+                    {
+                        DatadogLogging.RegisterStartupLog(log => log.Debug("There is no path configured for {0}.", subProcessMetadata.Name));
+                    }
                 }
             }
             catch (Exception ex)
             {
                 DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when attempting to start standalone agent processes."));
+            }
+        }
+
+        private static void SafelyKillProcess(ProcessMetadata metadata)
+        {
+            try
+            {
+                if (metadata.Process != null && !metadata.Process.HasExited)
+                {
+                    metadata.Process.Kill();
+                }
+
+                metadata.KeepAliveTask?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Failed to verify halt of the {0} process.", metadata.Name));
             }
         }
 
@@ -66,7 +97,7 @@ namespace Datadog.Trace
             return false;
         }
 
-        private static Task StartProcessWithKeepAlive(string path, string args)
+        private static Task StartProcessWithKeepAlive(string path, string args, ProcessMetadata metadata)
         {
             DatadogLogging.RegisterStartupLog(log => log.Debug("Starting keep alive for {0}.", path));
 
@@ -82,6 +113,12 @@ namespace Datadog.Trace
                         {
                             try
                             {
+                                if (metadata.Process != null && metadata.Process.HasExited == false)
+                                {
+                                    DatadogLogging.RegisterStartupLog(log => log.Debug("We already have an active reference to {0}.", path));
+                                    continue;
+                                }
+
                                 if (ProgramIsRunning(path))
                                 {
                                     DatadogLogging.RegisterStartupLog(log => log.Debug("{0} is already running.", path));
@@ -97,11 +134,11 @@ namespace Datadog.Trace
 
                                 DatadogLogging.RegisterStartupLog(log => log.Debug("Starting {0}.", path));
 
-                                var process = Process.Start(startInfo);
+                                metadata.Process = Process.Start(startInfo);
 
-                                Thread.Sleep(150);
+                                Thread.Sleep(200);
 
-                                if (process == null || process.HasExited)
+                                if (metadata.Process == null || metadata.Process.HasExited)
                                 {
                                     DatadogLogging.RegisterStartupLog(log => log.Error("{0} has failed to start.", path));
                                     sequentialFailures++;
@@ -135,6 +172,19 @@ namespace Datadog.Trace
                         DatadogLogging.RegisterStartupLog(log => log.Debug("Keep alive is dropping for {0}.", path));
                     }
                 });
+        }
+
+        private class ProcessMetadata
+        {
+            public string Name { get; set; }
+
+            public Process Process { get; set; }
+
+            public Task KeepAliveTask { get; set; }
+
+            public string ProcessPathKey { get; set; }
+
+            public string ProcessArgumentsKey { get; set; }
         }
     }
 }
