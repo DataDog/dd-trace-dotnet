@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -10,53 +11,52 @@ namespace Datadog.Trace
 {
     internal class TracerSubProcessManager
     {
-        private static Task _traceAgentMonitor;
-        private static Task _dogStatsDMonitor;
-        private static Process _traceAgentProcess;
-        private static Process _dogStatsProcess;
+        private static readonly List<SubProcessMetadata> SubProcesses = new List<SubProcessMetadata>()
+        {
+            new SubProcessMetadata()
+            {
+                Name = "datadog-trace-agent",
+                ProcessPathKey = ConfigurationKeys.TraceAgentPath,
+                ProcessArgumentsKey = ConfigurationKeys.TraceAgentArgs,
+            },
+            new SubProcessMetadata()
+            {
+                Name = "dogstatsd",
+                ProcessPathKey = ConfigurationKeys.DogStatsDPath,
+                ProcessArgumentsKey = ConfigurationKeys.DogStatsDArgs,
+            }
+        };
 
         public static void StopSubProcesses()
         {
-            SafelyKillProcess(_traceAgentProcess, "Failed to halt the sub-process trace agent");
-            SafelyKillProcess(_dogStatsProcess, "Failed to halt the sub-process stats agent");
+            foreach (var subProcessMetadata in SubProcesses)
+            {
+                SafelyKillProcess(subProcessMetadata);
+            }
         }
 
         public static void StartStandaloneAgentProcessesWhenConfigured()
         {
             try
             {
-                var traceAgentPath = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath);
+                foreach (var subProcessMetadata in SubProcesses)
+                {
+                    var processPath = Environment.GetEnvironmentVariable(subProcessMetadata.ProcessPathKey);
 
-                if (!string.IsNullOrWhiteSpace(traceAgentPath))
-                {
-                    var traceProcessArgs = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs);
-                    _traceAgentMonitor =
-                        StartProcessWithKeepAlive(
-                            traceAgentPath,
-                            traceProcessArgs,
-                            p => _traceAgentProcess = p,
-                            () => _traceAgentProcess);
-                }
-                else
-                {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("There is no path configured for {0}.", ConfigurationKeys.TraceAgentPath));
-                }
-
-                var dogStatsDPath = Environment.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath);
-
-                if (!string.IsNullOrWhiteSpace(dogStatsDPath))
-                {
-                    var dogStatsDArgs = Environment.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs);
-                    _dogStatsDMonitor =
-                        StartProcessWithKeepAlive(
-                            dogStatsDPath,
-                            dogStatsDArgs,
-                            p => _dogStatsProcess = p,
-                            () => _dogStatsProcess);
-                }
-                else
-                {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("There is no path configured for {0}.", ConfigurationKeys.DogStatsDPath));
+                    if (!string.IsNullOrWhiteSpace(processPath))
+                    {
+                        var processArgs = Environment.GetEnvironmentVariable(subProcessMetadata.ProcessArgumentsKey);
+                        subProcessMetadata.KeepAliveTask =
+                            StartProcessWithKeepAlive(
+                                processPath,
+                                processArgs,
+                                p => subProcessMetadata.Process = p,
+                                () => subProcessMetadata.Process);
+                    }
+                    else
+                    {
+                        DatadogLogging.RegisterStartupLog(log => log.Debug("There is no path configured for {0}.", subProcessMetadata.Name));
+                    }
                 }
             }
             catch (Exception ex)
@@ -65,18 +65,20 @@ namespace Datadog.Trace
             }
         }
 
-        private static void SafelyKillProcess(Process processToKill, string failureMessage)
+        private static void SafelyKillProcess(SubProcessMetadata metadata)
         {
             try
             {
-                if (processToKill != null && !processToKill.HasExited)
+                if (metadata.Process != null && !metadata.Process.HasExited)
                 {
-                    processToKill.Kill();
+                    metadata.Process.Kill();
                 }
+
+                metadata.KeepAliveTask?.Dispose();
             }
             catch (Exception ex)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, failureMessage));
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Failed to verify halt of the {0} process.", metadata.Name));
             }
         }
 
@@ -177,6 +179,19 @@ namespace Datadog.Trace
                         DatadogLogging.RegisterStartupLog(log => log.Debug("Keep alive is dropping for {0}.", path));
                     }
                 });
+        }
+
+        private class SubProcessMetadata
+        {
+            public string Name { get; set; }
+
+            public Process Process { get; set; }
+
+            public Task KeepAliveTask { get; set; }
+
+            public string ProcessPathKey { get; set; }
+
+            public string ProcessArgumentsKey { get; set; }
         }
     }
 }

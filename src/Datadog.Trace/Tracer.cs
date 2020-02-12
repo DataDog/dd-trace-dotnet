@@ -111,6 +111,7 @@ namespace Datadog.Trace
 
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Console.CancelKeyPress += Console_CancelKeyPress;
 
@@ -457,9 +458,22 @@ namespace Datadog.Trace
             RunShutdownTasks();
         }
 
+        private void CurrentDomain_DomainUnload(object sender, EventArgs e)
+        {
+            RunShutdownTasks();
+        }
+
         private void RunShutdownTasks()
         {
-            _agentWriter.FlushAndCloseAsync().Wait();
+            try
+            {
+                _agentWriter.FlushAndCloseAsync().Wait();
+            }
+            catch (Exception ex)
+            {
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error flushing traces on shutdown."));
+            }
+
             TracerSubProcessManager.StopSubProcesses();
         }
 
