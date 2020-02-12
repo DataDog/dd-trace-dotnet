@@ -12,6 +12,14 @@ namespace Datadog.Trace
     {
         private static Task _traceAgentMonitor;
         private static Task _dogStatsDMonitor;
+        private static Process _traceAgentProcess;
+        private static Process _dogStatsProcess;
+
+        public static void StopSubProcesses()
+        {
+            SafelyKillProcess(_traceAgentProcess, "Failed to halt the sub-process trace agent");
+            SafelyKillProcess(_dogStatsProcess, "Failed to halt the sub-process stats agent");
+        }
 
         public static void StartStandaloneAgentProcessesWhenConfigured()
         {
@@ -22,7 +30,12 @@ namespace Datadog.Trace
                 if (!string.IsNullOrWhiteSpace(traceAgentPath))
                 {
                     var traceProcessArgs = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs);
-                    _traceAgentMonitor = StartProcessWithKeepAlive(traceAgentPath, traceProcessArgs);
+                    _traceAgentMonitor =
+                        StartProcessWithKeepAlive(
+                            traceAgentPath,
+                            traceProcessArgs,
+                            p => _traceAgentProcess = p,
+                            () => _traceAgentProcess);
                 }
                 else
                 {
@@ -34,7 +47,12 @@ namespace Datadog.Trace
                 if (!string.IsNullOrWhiteSpace(dogStatsDPath))
                 {
                     var dogStatsDArgs = Environment.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs);
-                    _dogStatsDMonitor = StartProcessWithKeepAlive(dogStatsDPath, dogStatsDArgs);
+                    _dogStatsDMonitor =
+                        StartProcessWithKeepAlive(
+                            dogStatsDPath,
+                            dogStatsDArgs,
+                            p => _dogStatsProcess = p,
+                            () => _dogStatsProcess);
                 }
                 else
                 {
@@ -44,6 +62,21 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when attempting to start standalone agent processes."));
+            }
+        }
+
+        private static void SafelyKillProcess(Process processToKill, string failureMessage)
+        {
+            try
+            {
+                if (processToKill != null && !processToKill.HasExited)
+                {
+                    processToKill.Kill();
+                }
+            }
+            catch (Exception ex)
+            {
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, failureMessage));
             }
         }
 
@@ -66,7 +99,7 @@ namespace Datadog.Trace
             return false;
         }
 
-        private static Task StartProcessWithKeepAlive(string path, string args)
+        private static Task StartProcessWithKeepAlive(string path, string args, Action<Process> setProcess, Func<Process> getProcess)
         {
             DatadogLogging.RegisterStartupLog(log => log.Debug("Starting keep alive for {0}.", path));
 
@@ -82,6 +115,14 @@ namespace Datadog.Trace
                         {
                             try
                             {
+                                var activeProcess = getProcess();
+
+                                if (activeProcess != null && activeProcess.HasExited == false)
+                                {
+                                    DatadogLogging.RegisterStartupLog(log => log.Debug("We already have an active reference to {0}.", path));
+                                    continue;
+                                }
+
                                 if (ProgramIsRunning(path))
                                 {
                                     DatadogLogging.RegisterStartupLog(log => log.Debug("{0} is already running.", path));
@@ -98,6 +139,7 @@ namespace Datadog.Trace
                                 DatadogLogging.RegisterStartupLog(log => log.Debug("Starting {0}.", path));
 
                                 var process = Process.Start(startInfo);
+                                setProcess(process);
 
                                 Thread.Sleep(150);
 

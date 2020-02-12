@@ -444,17 +444,23 @@ namespace Datadog.Trace
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
         {
-            _agentWriter.FlushAndCloseAsync().Wait();
+            RunShutdownTasks();
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            _agentWriter.FlushAndCloseAsync().Wait();
+            RunShutdownTasks();
         }
 
         private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
+            RunShutdownTasks();
+        }
+
+        private void RunShutdownTasks()
+        {
             _agentWriter.FlushAndCloseAsync().Wait();
+            TracerSubProcessManager.StopSubProcesses();
         }
 
         private void HeartbeatCallback(object state)
