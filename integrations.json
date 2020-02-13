@@ -1076,6 +1076,225 @@
     ]
   },
   {
+    "name": "NpgsqlCommand",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Npgsql",
+          "type": "Npgsql.NpgsqlCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "Npgsql.NpgsqlDataReader"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
+          "method": "ExecuteReader",
+          "signature": "00 04 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Npgsql",
+          "type": "Npgsql.NpgsqlCommand",
+          "method": "ExecuteReader",
+          "signature_types": [
+            "Npgsql.NpgsqlDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
+          "method": "ExecuteReaderWithBehavior",
+          "signature": "00 05 1C 1C 08 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Npgsql",
+          "type": "Npgsql.NpgsqlCommand",
+          "method": "ExecuteReaderAsync",
+          "signature_types": [
+            "Npgsql.NpgsqlDataReader",
+            "System.Data.CommandBehavior"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
+          "method": "ExecuteReaderAsync",
+          "signature": "00 05 1C 1C 08 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Npgsql",
+          "type": "Npgsql.NpgsqlCommand",
+          "method": "ExecuteReaderAsync",
+          "signature_types": [
+            "Npgsql.NpgsqlDataReader",
+            "System.Data.CommandBehavior",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
+          "method": "ExecuteReaderAsyncTwoParams",
+          "signature": "00 06 1C 1C 08 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Npgsql",
+          "type": "Npgsql.NpgsqlCommand",
+          "method": "ExecuteNonQuery",
+          "signature_types": [
+            "System.Int32"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
+          "method": "ExecuteNonQuery",
+          "signature": "00 04 08 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Npgsql",
+          "type": "Npgsql.NpgsqlCommand",
+          "method": "ExecuteNonQueryAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Int32>",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
+          "method": "ExecuteNonQueryAsync",
+          "signature": "00 05 1C 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Npgsql",
+          "type": "Npgsql.NpgsqlCommand",
+          "method": "ExecuteScalar",
+          "signature_types": [
+            "System.Object"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
+          "method": "ExecuteScalar",
+          "signature": "00 04 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data",
+          "type": "Npgsql.NpgsqlCommand",
+          "method": "ExecuteScalarAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Object>",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
+          "method": "ExecuteScalarAsync",
+          "signature": "00 05 1C 1C 1C 08 08 0A"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Data.SqlClient",
+          "type": "Npgsql.NpgsqlCommand",
+          "method": "ExecuteScalarAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Object>",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
+          "method": "ExecuteScalarAsync",
+          "signature": "00 05 1C 1C 1C 08 08 0A"
+        }
+      }
+    ]
+  },
+  {
     "name": "ServiceStackRedis",
     "method_replacements": [
       {

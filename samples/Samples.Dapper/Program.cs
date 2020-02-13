@@ -6,7 +6,6 @@ using System.Data.Common;
 using System.Threading.Tasks;
 using Dapper;
 using Npgsql;
-using Samples.DatabaseHelper;
 using Datadog.Trace;
 
 namespace Samples.Dapper
@@ -17,24 +16,7 @@ namespace Samples.Dapper
         {
             using (var connection = CreateConnection())
             {
-                var testQueries = new DapperTestHarness<DbConnection, DbCommand, DbDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    command => command.ExecuteScalarAsync(),
-                    command => command.ExecuteReaderAsync(),
-                    (command, behavior) => command.ExecuteReaderAsync(behavior)
-                );
-
-                await testQueries.RunAsync();
-            }
-
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(
+                var testQueries = new DapperTestHarness<IDbConnection, IDbCommand, IDataReader>(
                     connection,
                     command => command.ExecuteNonQuery(),
                     command => command.ExecuteScalar(),
@@ -77,16 +59,6 @@ namespace Samples.Dapper
 
         private readonly TConnection _connection;
 
-        private readonly Func<TCommand, int> _executeNonQuery;
-        private readonly Func<TCommand, object> _executeScalar;
-        private readonly Func<TCommand, TDataReader> _executeReader;
-        private readonly Func<TCommand, CommandBehavior, TDataReader> _executeReaderWithBehavior;
-
-        private readonly Func<TCommand, Task<int>> _executeNonQueryAsync;
-        private readonly Func<TCommand, Task<object>> _executeScalarAsync;
-        private readonly Func<TCommand, Task<TDataReader>> _executeReaderAsync;
-        private readonly Func<TCommand, CommandBehavior, Task<TDataReader>> _executeReaderWithBehaviorAsync;
-
         public DapperTestHarness(
             TConnection connection,
             Func<TCommand, int> executeNonQuery,
@@ -99,34 +71,23 @@ namespace Samples.Dapper
             Func<TCommand, CommandBehavior, Task<TDataReader>> executeReaderWithBehaviorAsync)
         {
             _connection = connection ?? throw new ArgumentNullException(nameof(connection));
-
-            _executeNonQuery = executeNonQuery ?? throw new ArgumentNullException(nameof(executeNonQuery));
-            _executeScalar = executeScalar ?? throw new ArgumentNullException(nameof(executeScalar));
-            _executeReader = executeReader ?? throw new ArgumentNullException(nameof(executeReader));
-            _executeReaderWithBehavior = executeReaderWithBehavior ?? throw new ArgumentNullException(nameof(executeReaderWithBehavior));
-
-            // async methods are not implemented by all ADO.NET providers, so they can be null
-            _executeNonQueryAsync = executeNonQueryAsync;
-            _executeScalarAsync = executeScalarAsync;
-            _executeReaderAsync = executeReaderAsync;
-            _executeReaderWithBehaviorAsync = executeReaderWithBehaviorAsync;
         }
 
         public async Task RunAsync()
         {
-            using (var scopeAll = Tracer.Instance.StartActive("run.all"))
-            {
-                scopeAll.Span.SetTag("command-type", typeof(TCommand).FullName);
+            //using (var scopeAll = Tracer.Instance.StartActive("run.all"))
+            //{
+            //    scopeAll.Span.SetTag("command-type", typeof(TCommand).FullName);
 
-                using (var scopeSync = Tracer.Instance.StartActive("run.sync"))
-                {
-                    scopeSync.Span.SetTag("command-type", typeof(TCommand).FullName);
+            //    using (var scopeSync = Tracer.Instance.StartActive("run.sync"))
+            //    {
+            //        scopeSync.Span.SetTag("command-type", typeof(TCommand).FullName);
 
-                    _connection.Open();
-                    SelectRecords(_connection);
-                    _connection.Close();
-                }
-            }
+            //        _connection.Open();
+            //        SelectRecords(_connection);
+            //        _connection.Close();
+            //    }
+            //}
 
             if (_connection is DbConnection connection)
             {
@@ -149,8 +110,9 @@ namespace Samples.Dapper
         {
             connection.Execute(DropCommandText);
             connection.Execute(InsertCommandText);
-            var r = connection.Query(SelectOneCommandText);
-            Console.WriteLine("result: {0}", r == null ? "null result" : r.ToString());
+
+            // Dapper has its own unique way of passing a query.
+            connection.Query(SelectOneCommandText);
         }
 
         private async Task SelectRecordsAsync(IDbConnection connection)
