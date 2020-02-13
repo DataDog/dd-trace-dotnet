@@ -29,137 +29,63 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
-        public void EnabledLibLogSubscriberAddsTraceData()
+        public void LogsInjectionEnabledAddsParentCorrelationIdentifiers()
         {
             // Assert that the Serilog log provider is correctly being used
             Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.LogInParentSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-
-            var logIndex = 0;
-            LogEvent logEvent;
-
-            // The first log should not have dd.span_id or dd.trace_id
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = _logEvents[logIndex++];
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-
-            // Scope: Parent scope
-            // Custom property: N/A
-            logEvent = _logEvents[logIndex++];
-            logEvent.Contains(parentScope);
-            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-
-            // Scope: Parent scope
-            // Custom property: SET
-            logEvent = _logEvents[logIndex++];
-            logEvent.Contains(parentScope);
-            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
-
-            // Scope: Child scope
-            // Custom property: SET
-            logEvent = _logEvents[logIndex++];
-            logEvent.Contains(childScope);
-            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
-
-            // Scope: Parent scope
-            // Custom property: SET
-            logEvent = _logEvents[logIndex++];
-            logEvent.Contains(parentScope);
-            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
-
-            // Scope: Parent scope
-            // Custom property: N/A
-            logEvent = _logEvents[logIndex++];
-            logEvent.Contains(parentScope);
-            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = _logEvents[logIndex++];
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+            Assert.All(_logEvents, e => e.Contains(parentScope));
         }
 
         [Fact]
-        public void DisabledLibLogSubscriberDoesNotAddTraceData()
+        public void LogsInjectionEnabledAddsChildCorrelationIdentifiers()
+        {
+            // Assert that the Serilog log provider is correctly being used
+            Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInChildSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(_logEvents, e => e.Contains(childScope));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabledDoesNotAddCorrelationIdentifiersOutsideSpans()
+        {
+            // Assert that the Serilog log provider is correctly being used
+            Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogOutsideSpans(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(_logEvents, e => e.DoesNotContainCorrelationIdentifiers());
+        }
+
+        [Fact]
+        public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
         {
             // Assert that the Serilog log provider is correctly being used
             Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-
-            int logIndex = 0;
-            LogEvent logEvent;
-
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = _logEvents[logIndex++];
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = _logEvents[logIndex++];
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-
-            // Scope: N/A
-            // Custom property: SET
-            logEvent = _logEvents[logIndex++];
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
-
-            // Scope: N/A
-            // Custom property: SET
-            logEvent = _logEvents[logIndex++];
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
-
-            // Scope: N/A
-            // Custom property: SET
-            logEvent = _logEvents[logIndex++];
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.True(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
-
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = _logEvents[logIndex++];
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
-
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = _logEvents[logIndex++];
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.False(logEvent.Properties.ContainsKey(LoggingProviderTestHelpers.CustomPropertyName));
+            Assert.All(_logEvents, e => e.DoesNotContainCorrelationIdentifiers());
         }
     }
 }

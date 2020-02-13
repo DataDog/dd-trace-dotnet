@@ -19,6 +19,7 @@ namespace Datadog.Trace.Tests.Logging
         internal static readonly string LogPrefix = "[Datadog.Trace.Tests.Logging]";
 
         private const string Log4NetExpectedStringFormat = "\"{0}\":\"{1}\"";
+        private const string NLogExpectedStringFormat = "\"{0}\": \"{1}\"";
         private const string SerilogExpectedStringFormat = "{0}: \"{1}\"";
 
         internal static Tracer InitializeTracer(bool enableLogsInjection)
@@ -32,26 +33,75 @@ namespace Datadog.Trace.Tests.Logging
             return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
-        internal static void PerformParentChildScopeSequence(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
+        internal static void LogInParentSpan(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
+        {
+            using (parentScope = tracer.StartActive("parent"))
+            {
+                using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
+                {
+                    logger.Log(LogLevel.Info, () => $"Started and activated parent scope.");
+
+                    using (childScope = tracer.StartActive("child"))
+                    {
+                        // Empty
+                    }
+
+                    logger.Log(LogLevel.Info, () => $"{LogPrefix}Closed child scope and reactivated parent scope.");
+                }
+            }
+        }
+
+        internal static void LogInChildSpan(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
+        {
+            using (parentScope = tracer.StartActive("parent"))
+            {
+                using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
+                {
+                    using (childScope = tracer.StartActive("child"))
+                    {
+                        logger.Log(LogLevel.Info, () => $"{LogPrefix}Started and activated child scope.");
+                    }
+                }
+            }
+        }
+
+        internal static void LogOutsideSpans(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
         {
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Logged before starting/activating a scope");
 
-            parentScope = tracer.StartActive("parent");
-            logger.Log(LogLevel.Info, () => $"{LogPrefix}Started and activated parent scope.");
+            using (parentScope = tracer.StartActive("parent"))
+            {
+                using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
+                {
+                    using (childScope = tracer.StartActive("child"))
+                    {
+                        // Empty
+                    }
+                }
+            }
 
-            var customPropertyContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false);
-            logger.Log(LogLevel.Info, () => $"{LogPrefix}Added custom property to MDC");
+            logger.Log(LogLevel.Info, () => $"{LogPrefix}Closed child scope so there is no active scope.");
+        }
 
-            childScope = tracer.StartActive("child");
-            logger.Log(LogLevel.Info, () => $"{LogPrefix}Started and activated child scope.");
+        internal static void LogEverywhere(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
+        {
+            logger.Log(LogLevel.Info, () => $"{LogPrefix}Logged before starting/activating a scope");
 
-            childScope.Close();
-            logger.Log(LogLevel.Info, () => $"{LogPrefix}Closed child scope and reactivated parent scope.");
+            using (parentScope = tracer.StartActive("parent"))
+            {
+                logger.Log(LogLevel.Info, () => $"Started and activated parent scope.");
 
-            customPropertyContext.Dispose();
-            logger.Log(LogLevel.Info, () => $"{LogPrefix}Removed custom property from MDC");
+                using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
+                {
+                    using (childScope = tracer.StartActive("child"))
+                    {
+                        logger.Log(LogLevel.Info, () => $"{LogPrefix}Started and activated child scope.");
+                    }
+                }
 
-            parentScope.Close();
+                logger.Log(LogLevel.Info, () => $"{LogPrefix}Closed child scope and reactivated parent scope.");
+            }
+
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Closed child scope so there is no active scope.");
         }
 
@@ -74,6 +124,20 @@ namespace Datadog.Trace.Tests.Logging
             string formattedMessage = layout.Format(logEvent);
             Assert.Contains(string.Format(Log4NetExpectedStringFormat, CorrelationIdentifier.TraceIdKey, traceId), formattedMessage);
             Assert.Contains(string.Format(Log4NetExpectedStringFormat, CorrelationIdentifier.SpanIdKey, spanId), formattedMessage);
+        }
+
+        internal static void DoesNotContainCorrelationIdentifiers(this log4net.Core.LoggingEvent logEvent)
+        {
+            if (logEvent.Properties.Contains(CorrelationIdentifier.SpanIdKey) &&
+                logEvent.Properties.Contains(CorrelationIdentifier.TraceIdKey))
+            {
+                logEvent.Contains(traceId: 0, spanId: 0);
+            }
+            else
+            {
+                Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
+                Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
+            }
         }
 
         internal static void Contains(this Serilog.Events.LogEvent logEvent, Scope scope)
@@ -103,6 +167,28 @@ namespace Datadog.Trace.Tests.Logging
 
             Assert.Contains(string.Format(SerilogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, traceId), formattedMessage);
             Assert.Contains(string.Format(SerilogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, spanId), formattedMessage);
+        }
+
+        internal static void DoesNotContainCorrelationIdentifiers(this Serilog.Events.LogEvent logEvent)
+        {
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+        }
+
+        internal static void Contains(this string nLogString, Scope scope)
+        {
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, scope.Span.SpanId), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, scope.Span.TraceId), nLogString);
+        }
+
+        internal static void DoesNotContainCorrelationIdentifiers(this string nLogString)
+        {
+            Assert.True(
+                nLogString.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, 0)) ||
+                !nLogString.Contains($"\"{CorrelationIdentifier.SpanIdKey}\""));
+            Assert.True(
+                nLogString.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, 0)) ||
+                !nLogString.Contains($"\"{CorrelationIdentifier.TraceIdKey}\""));
         }
     }
 }
