@@ -27,11 +27,22 @@ namespace Datadog.Trace
             }
         };
 
+        private static CancellationTokenSource _cancellationTokenSource;
+
         public static void StopProcesses()
         {
-            foreach (var subProcessMetadata in Processes)
+            try
             {
-                SafelyKillProcess(subProcessMetadata);
+                _cancellationTokenSource?.Cancel();
+
+                foreach (var subProcessMetadata in Processes)
+                {
+                    SafelyKillProcess(subProcessMetadata);
+                }
+            }
+            catch (Exception ex)
+            {
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when cancelling processes."));
             }
         }
 
@@ -39,6 +50,8 @@ namespace Datadog.Trace
         {
             try
             {
+                _cancellationTokenSource = new CancellationTokenSource();
+
                 foreach (var subProcessMetadata in Processes)
                 {
                     var processPath = Environment.GetEnvironmentVariable(subProcessMetadata.ProcessPathKey);
@@ -69,8 +82,6 @@ namespace Datadog.Trace
                 {
                     metadata.Process.Kill();
                 }
-
-                metadata.KeepAliveTask?.Dispose();
             }
             catch (Exception ex)
             {
@@ -111,6 +122,12 @@ namespace Datadog.Trace
 
                         while (true)
                         {
+                            if (_cancellationTokenSource.IsCancellationRequested)
+                            {
+                                DatadogLogging.RegisterStartupLog(log => log.Debug("Shutdown triggered for keep alive {0}.", path));
+                                return;
+                            }
+
                             try
                             {
                                 if (metadata.Process != null && metadata.Process.HasExited == false)
