@@ -2,15 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {
     internal class TracingProcessManager
     {
+        // private static readonly string PortTemplate = @"{port}";
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
         {
             new ProcessMetadata()
@@ -18,12 +23,31 @@ namespace Datadog.Trace
                 Name = "datadog-trace-agent",
                 ProcessPathKey = ConfigurationKeys.TraceAgentPath,
                 ProcessArgumentsKey = ConfigurationKeys.TraceAgentArgs,
+                PreStartAction = () =>
+                {
+                    var port = FreeTcpPort();
+                    var portString = port.ToString();
+                    // Null ref here is okay, as it will force a retry loop
+                    Api.OverrideTracePort(port.Value);
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, portString);
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.TraceAgentPortKey, portString);
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for the trace agent.", portString));
+                }
             },
             new ProcessMetadata()
             {
                 Name = "dogstatsd",
                 ProcessPathKey = ConfigurationKeys.DogStatsDPath,
                 ProcessArgumentsKey = ConfigurationKeys.DogStatsDArgs,
+                PreStartAction = () =>
+                {
+                    var port = FreeTcpPort();
+                    var portString = port.ToString();
+                    // Null ref here is okay, as it will force a retry loop
+                    StatsdUDP.OverridePort(port.Value);
+                    Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, portString);
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for the stats agent.", portString));
+                }
             }
         };
 
@@ -150,7 +174,7 @@ namespace Datadog.Trace
                                 }
 
                                 DatadogLogging.RegisterStartupLog(log => log.Debug("Starting {0}.", path));
-
+                                metadata.PreStartAction?.Invoke();
                                 metadata.Process = Process.Start(startInfo);
 
                                 Thread.Sleep(200);
@@ -191,6 +215,27 @@ namespace Datadog.Trace
                 });
         }
 
+        private static int? FreeTcpPort()
+        {
+            TcpListener tcpListener = null;
+            try
+            {
+                tcpListener = new TcpListener(IPAddress.Loopback, 0);
+                tcpListener.Start();
+                var port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
+                return port;
+            }
+            catch (Exception ex)
+            {
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error trying to get a free port."));
+                return null;
+            }
+            finally
+            {
+                tcpListener?.Stop();
+            }
+        }
+
         private class ProcessMetadata
         {
             public string Name { get; set; }
@@ -202,6 +247,8 @@ namespace Datadog.Trace
             public string ProcessPathKey { get; set; }
 
             public string ProcessArgumentsKey { get; set; }
+
+            public Action PreStartAction { get; set; }
         }
     }
 }
