@@ -15,7 +15,6 @@ namespace Datadog.Trace
 {
     internal class TracingProcessManager
     {
-        // private static readonly string PortTemplate = @"{port}";
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
         {
             new ProcessMetadata()
