@@ -25,8 +25,12 @@ namespace Datadog.Trace
                 PreStartAction = () =>
                 {
                     var port = FreeTcpPort();
+                    if (port == null)
+                    {
+                        throw new Exception("Unable to secure a port for trace agent");
+                    }
+
                     var portString = port.ToString();
-                    // Null ref here is okay, as it will force a retry loop
                     Api.OverrideTracePort(port.Value);
                     Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, portString);
                     Environment.SetEnvironmentVariable(ConfigurationKeys.TraceAgentPortKey, portString);
@@ -41,11 +45,15 @@ namespace Datadog.Trace
                 PreStartAction = () =>
                 {
                     var port = FreeTcpPort();
+                    if (port == null)
+                    {
+                        throw new Exception("Unable to secure a port for dogstatsd");
+                    }
+
                     var portString = port.ToString();
-                    // Null ref here is okay, as it will force a retry loop
                     StatsdUDP.OverridePort(port.Value);
                     Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, portString);
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for the stats agent.", portString));
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for dogstatsd.", portString));
                 }
             }
         };

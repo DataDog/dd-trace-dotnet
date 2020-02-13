@@ -212,7 +212,7 @@ namespace Datadog.Trace.Agent
 
         private static void SetTracesEndpointUri(int port)
         {
-            var builder = new UriBuilder() { Port = port, Host = _baseEndpoint.Host, Scheme = _baseEndpoint.Scheme };
+            var builder = new UriBuilder(_baseEndpoint) { Port = port };
             var newUri = builder.Uri;
             _tracesEndpoint = new Uri(newUri, TracesPath);
         }
