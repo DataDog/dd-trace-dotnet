@@ -1132,8 +1132,8 @@
           "type": "Npgsql.NpgsqlCommand",
           "method": "ExecuteReaderAsync",
           "signature_types": [
-            "Npgsql.NpgsqlDataReader",
-            "System.Data.CommandBehavior"
+            "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>",
+            "System.Threading.CancellationToken"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -1146,7 +1146,7 @@
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.12.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
           "method": "ExecuteReaderAsync",
-          "signature": "00 05 1C 1C 08 08 08 0A"
+          "signature": "00 05 1C 1C 1C 08 08 0A"
         }
       },
       {
@@ -1156,7 +1156,7 @@
           "type": "Npgsql.NpgsqlCommand",
           "method": "ExecuteReaderAsync",
           "signature_types": [
-            "Npgsql.NpgsqlDataReader",
+            "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>",
             "System.Data.CommandBehavior",
             "System.Threading.CancellationToken"
           ],

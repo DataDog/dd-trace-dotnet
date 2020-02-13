@@ -16,18 +16,7 @@ namespace Samples.Dapper
         {
             using (var connection = CreateConnection())
             {
-                var testQueries = new DapperTestHarness<IDbConnection, IDbCommand, IDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    executeNonQueryAsync: null,
-                    executeScalarAsync: null,
-                    executeReaderAsync: null,
-                    executeReaderWithBehaviorAsync: null
-                );
-
+                var testQueries = new DapperTestHarness<IDbConnection, IDbCommand, IDataReader>(connection);
                 await testQueries.RunAsync();
             }
         }
@@ -60,34 +49,26 @@ namespace Samples.Dapper
         private readonly TConnection _connection;
 
         public DapperTestHarness(
-            TConnection connection,
-            Func<TCommand, int> executeNonQuery,
-            Func<TCommand, object> executeScalar,
-            Func<TCommand, TDataReader> executeReader,
-            Func<TCommand, CommandBehavior, TDataReader> executeReaderWithBehavior,
-            Func<TCommand, Task<int>> executeNonQueryAsync,
-            Func<TCommand, Task<object>> executeScalarAsync,
-            Func<TCommand, Task<TDataReader>> executeReaderAsync,
-            Func<TCommand, CommandBehavior, Task<TDataReader>> executeReaderWithBehaviorAsync)
+            TConnection connection)
         {
             _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         }
 
         public async Task RunAsync()
         {
-            //using (var scopeAll = Tracer.Instance.StartActive("run.all"))
-            //{
-            //    scopeAll.Span.SetTag("command-type", typeof(TCommand).FullName);
+            using (var scopeAll = Tracer.Instance.StartActive("run.all"))
+            {
+                scopeAll.Span.SetTag("command-type", typeof(TCommand).FullName);
 
-            //    using (var scopeSync = Tracer.Instance.StartActive("run.sync"))
-            //    {
-            //        scopeSync.Span.SetTag("command-type", typeof(TCommand).FullName);
+                using (var scopeSync = Tracer.Instance.StartActive("run.sync"))
+                {
+                    scopeSync.Span.SetTag("command-type", typeof(TCommand).FullName);
 
-            //        _connection.Open();
-            //        SelectRecords(_connection);
-            //        _connection.Close();
-            //    }
-            //}
+                    _connection.Open();
+                    SelectRecords(_connection);
+                    _connection.Close();
+                }
+            }
 
             if (_connection is DbConnection connection)
             {

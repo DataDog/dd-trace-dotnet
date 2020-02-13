@@ -1,6 +1,4 @@
 using System;
-using System.Data;
-using System.Data.Common;
 using System.Threading.Tasks;
 using Npgsql;
 using Samples.DatabaseHelper;
@@ -11,7 +9,6 @@ namespace Samples.Npgsql
     {
         private static async Task Main()
         {
-            /* TODO: enable this after adding a Npgsql-specific integration
             using (var connection = CreateConnection())
             {
                 var testQueries = new RelationalDatabaseTestHarness<NpgsqlConnection, NpgsqlCommand, NpgsqlDataReader>(
@@ -26,45 +23,9 @@ namespace Samples.Npgsql
                     executeReaderWithBehaviorAsync: null
                 );
 
-
                 await testQueries.RunAsync();
             }
-            */
-
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    command => command.ExecuteScalarAsync(),
-                    command => command.ExecuteReaderAsync(),
-                    (command, behavior) => command.ExecuteReaderAsync(behavior)
-                );
-
-                await testQueries.RunAsync();
-            }
-
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    executeNonQueryAsync: null,
-                    executeScalarAsync: null,
-                    executeReaderAsync: null,
-                    executeReaderWithBehaviorAsync: null
-                );
-
-                await testQueries.RunAsync();
-            }
-        }
+       }
 
         private static NpgsqlConnection CreateConnection()
         {

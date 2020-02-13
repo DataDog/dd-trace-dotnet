@@ -138,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// Instrumentation wrapper for SqlCommand.ExecuteReaderAsync().
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
-        /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
+        /// <param name="cancellationTokenSource">The <see cref="CancellationToken"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -146,19 +146,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { NpgsqlAssemblyName },
             TargetType = NpgsqlCommandTypeName,
-            TargetSignatureTypes = new[] { NpgsqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteReaderAsync(
             object command,
-            int behavior,
+            object cancellationTokenSource,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
+            var tokenSource = cancellationTokenSource as CancellationTokenSource;
+            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+
             return ExecuteReaderAsyncInternal(
                 (DbCommand)command,
-                (CommandBehavior)behavior,
+                cancellationToken,
                 opCode,
                 mdToken,
                 moduleVersionPtr);
@@ -166,23 +169,23 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
         private static async Task<DbDataReader> ExecuteReaderAsyncInternal(
             DbCommand command,
-            CommandBehavior commandBehavior,
+            CancellationToken cancellationToken,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<DbCommand, CommandBehavior, Task<DbDataReader>> instrumentedMethod;
+            Func<DbCommand, CancellationToken, Task<DbDataReader>> instrumentedMethod;
 
             try
             {
                 var targetType = command.GetInstrumentedType(NpgsqlCommandTypeName);
 
                 instrumentedMethod =
-                    MethodBuilder<Func<DbCommand, CommandBehavior, Task<DbDataReader>>>
+                    MethodBuilder<Func<DbCommand, CancellationToken, Task<DbDataReader>>>
                        .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteReaderAsync))
                        .WithConcreteType(targetType)
-                       .WithParameters(commandBehavior)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior)
+                       .WithParameters(cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
                        .Build();
             }
             catch (Exception ex)
@@ -195,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             {
                 try
                 {
-                    return await instrumentedMethod(command, commandBehavior).ConfigureAwait(false);
+                    return await instrumentedMethod(command, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -219,7 +222,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReaderAsync,
             TargetAssemblies = new[] { NpgsqlAssemblyName },
             TargetType = NpgsqlCommandTypeName,
-            TargetSignatureTypes = new[] { NpgsqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
         public static object ExecuteReaderAsyncTwoParams(
