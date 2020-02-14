@@ -183,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         private static string GetKey<TResult>(string name, Type type)
         {
-            return $"{typeof(TResult).FullName}.{type.FullName}.{name}";
+            return $"{typeof(TResult).AssemblyQualifiedName}:{type.AssemblyQualifiedName}:{name}";
         }
 
         private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
