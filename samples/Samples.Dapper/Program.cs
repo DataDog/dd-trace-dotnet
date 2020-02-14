@@ -41,6 +41,8 @@ namespace Samples.Dapper
         where TDataReader : class, IDataReader
 
     {
+        // These sql strings are passed through a Query object on the connection object (see below)
+        // which is how Dapper shortcuts some of the steps for their users.
         private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY, Name varchar(100));";
         private const string InsertCommandText = "INSERT INTO Employees (Id, Name) VALUES (1, 'nametest');";
         private const string SelectOneCommandText = "SELECT Name FROM Employees WHERE Id=1;";

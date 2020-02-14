@@ -31,11 +31,9 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const auto debug_enabled_value =
       GetEnvironmentValue(environment::debug_enabled);
 
-  //if (debug_enabled_value == "1"_W || debug_enabled_value == "true"_W) {
-  //  debug_logging_enabled = true;
-  //}
-
-  debug_logging_enabled = true;
+  if (debug_enabled_value == "1"_W || debug_enabled_value == "true"_W) {
+    debug_logging_enabled = true;
+  }
 
   CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
