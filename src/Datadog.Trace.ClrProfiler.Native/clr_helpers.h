@@ -329,7 +329,7 @@ mdAssemblyRef FindAssemblyRef(
 // disabled_integration_names
 std::vector<Integration> FilterIntegrationsByName(
     const std::vector<Integration>& integrations,
-    const std::vector<WSTRING>& integration_names);
+    const std::vector<WSTRING>& disabled_integration_names);
 
 // FlattenIntegrations flattens integrations to per method structures
 std::vector<IntegrationMethod> FlattenIntegrations(

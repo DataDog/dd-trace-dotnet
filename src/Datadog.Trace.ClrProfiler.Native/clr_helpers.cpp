@@ -267,16 +267,28 @@ mdAssemblyRef FindAssemblyRef(
 
 std::vector<Integration> FilterIntegrationsByName(
     const std::vector<Integration>& integrations,
-    const std::vector<WSTRING>& integration_names) {
+    const std::vector<WSTRING>& disabled_integration_names) {
   std::vector<Integration> enabled;
 
   for (auto& i : integrations) {
     bool disabled = false;
-    for (auto& disabled_integration : integration_names) {
-      if (i.integration_name == disabled_integration) {
-        // this integration is disabled, skip it
-        disabled = true;
-        break;
+    auto disabled_value =
+        GetEnvironmentValue("DD_"_W + i.integration_name + "_ENABLED"_W);
+
+    if (disabled_value == "false"_W || disabled_value == "1"_W) {
+      // this integration is disabled, skip it
+      Warn("Integration ", i.integration_name, " disabled with ", "DD_",
+            i.integration_name, "_ENABLED");
+      disabled = true;
+    } else {
+      for (auto& disabled_integration : disabled_integration_names) {
+        if (i.integration_name == disabled_integration) {
+          // this integration is disabled, skip it
+          Warn("Integration ", i.integration_name,
+                " disabled with DD_DISABLED_INTEGRATIONS");
+          disabled = true;
+          break;
+        }
       }
     }
 
@@ -721,7 +733,7 @@ HRESULT CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembl
   return hr;
 }
 
-bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,                                        
+bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
                                             const ComPtr<IMetaDataEmit2>& metadata_emit,
                                             const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
                                             mdToken* ret_type_token) {
