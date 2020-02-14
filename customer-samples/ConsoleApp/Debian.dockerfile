@@ -15,7 +15,7 @@ WORKDIR /app
 COPY --from=build /app/out .
 
 # Set up Datadog APM
-ARG TRACER_VERSION=1.12.0
+ARG TRACER_VERSION=1.13.0
 RUN mkdir -p /var/log/datadog
 RUN mkdir -p /opt/datadog
 RUN curl -LO https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm_${TRACER_VERSION}_amd64.deb
