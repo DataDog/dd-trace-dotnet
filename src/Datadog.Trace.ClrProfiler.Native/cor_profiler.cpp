@@ -62,8 +62,9 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   const auto exclude_process_names =
       GetEnvironmentValues(environment::exclude_process_names);
 
-  // attach profiler only if this process's name is NOT on the list
-  if (Contains(exclude_process_names, process_name)) {
+  // attach profiler only if this process's name is NOT on the excluded process
+  // list
+  if (IsCurrentProcessExcluded(process_name, exclude_process_names)) {
     Info("Profiler disabled: ", process_name, " found in ",
          environment::exclude_process_names, ".");
     return E_FAIL;

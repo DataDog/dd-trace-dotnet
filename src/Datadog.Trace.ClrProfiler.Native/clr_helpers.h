@@ -347,6 +347,9 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(
     const std::vector<IntegrationMethod>& integrations,
     const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
+bool IsCurrentProcessExcluded(const WSTRING& process_name,
+                              const std::vector<WSTRING>& excluded_processes);
+
 mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
                               const mdToken& token,
                               const MethodSignature& signature);

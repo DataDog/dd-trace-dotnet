@@ -316,6 +316,28 @@ std::vector<IntegrationMethod> FilterIntegrationsByCaller(
   return enabled;
 }
 
+bool IsCurrentProcessExcluded(const WSTRING& process_name,
+                              const std::vector<WSTRING>& excluded_processes) {
+  for (auto& excluded : excluded_processes) {
+    if (excluded == process_name) {
+      return true;
+    }
+
+    // support simple wildcards: a trailing '*' matches anything
+    if (excluded.substr(excluded.size() - 1, 1) == "*"_W &&
+        process_name.size() > excluded.size() - 1) {
+      auto excluded_prefix = excluded.substr(0, excluded.size() - 1);
+      auto current_prefix = process_name.substr(0, excluded.size() - 1);
+
+      if (excluded_prefix == current_prefix) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 bool AssemblyMeetsIntegrationRequirements(
     const AssemblyMetadata metadata,
     const MethodReplacement method_replacement) {
