@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using Datadog.Trace.Util;
 using Sigil;
 
 namespace Datadog.Trace.ClrProfiler.Emit
@@ -11,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
     internal static class ObjectExtensions
     {
         private static readonly ConcurrentDictionary<string, object> Cache = new ConcurrentDictionary<string, object>();
+        private static readonly ConcurrentDictionary<string, PropertyFetcher> PropertyFetcherCache = new ConcurrentDictionary<string, PropertyFetcher>();
 
         /// <summary>
         /// Tries to call an instance method with the specified name, a single parameter, and a return value.
@@ -111,13 +113,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 var type = source.GetType();
 
-                object cachedItem = Cache.GetOrAdd(
-                    GetKey<TResult>(propertyName, type),
-                    key => CreatePropertyDelegate<TResult>(type, propertyName));
+                PropertyFetcher fetcher = PropertyFetcherCache.GetOrAdd(
+                    GetKey(propertyName, type),
+                    key => new PropertyFetcher(propertyName));
 
-                if (cachedItem is Func<object, TResult> func)
+                if (fetcher != null)
                 {
-                    value = func(source);
+                    value = (TResult)fetcher.Fetch(source);
                     return true;
                 }
             }
@@ -156,7 +158,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var type = source.GetType();
 
             object cachedItem = Cache.GetOrAdd(
-                GetKey<TResult>(fieldName, type),
+                GetKey(fieldName, type),
                 key => CreateFieldDelegate<TResult>(type, fieldName));
 
             if (cachedItem is Func<object, TResult> func)
@@ -181,9 +183,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return GetField<object>(source, fieldName);
         }
 
-        private static string GetKey<TResult>(string name, Type type)
+        private static string GetKey(string name, Type type)
         {
-            return $"{typeof(TResult).AssemblyQualifiedName}:{type.AssemblyQualifiedName}:{name}";
+            return $"{type.AssemblyQualifiedName}:{name}";
         }
 
         private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
