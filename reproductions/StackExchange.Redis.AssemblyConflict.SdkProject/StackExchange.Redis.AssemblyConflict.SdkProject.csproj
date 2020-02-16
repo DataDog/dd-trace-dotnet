@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net45;net461;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\reproduction-dependencies\Datadog.StackExchange.Redis.StrongName\Datadog.StackExchange.Redis.StrongName.csproj" />
+    <ProjectReference Include="..\..\reproduction-dependencies\Datadog.StackExchange.Redis\Datadog.StackExchange.Redis.csproj" />
+  </ItemGroup>
+
+</Project>
