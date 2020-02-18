@@ -72,12 +72,13 @@ namespace Datadog.Trace.Agent
                 _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.ContainerId, containerId);
             }
 
-            // report container id (only Linux containers supported for now)
-            var azureAppServiceResourceId = AzureAppServicesMetadata.GetResourceId();
-
-            if (containerId != null)
+            if (AzureAppServicesMetadata.IsRelevant())
             {
-                _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.AzureAppServicesResourceId, azureAppServiceResourceId);
+                var azureAppServiceResourceId = AzureAppServicesMetadata.GetResourceId();
+                if (containerId != null)
+                {
+                    _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.AzureAppServicesResourceId, azureAppServiceResourceId);
+                }
             }
 
             // don't add automatic instrumentation to requests from this HttpClient
