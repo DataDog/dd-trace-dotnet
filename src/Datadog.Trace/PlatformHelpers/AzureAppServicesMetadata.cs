@@ -10,23 +10,23 @@ namespace Datadog.Trace.PlatformHelpers
         /// <summary>
         /// Configuration key which is used as a flag to tell us whether we are running in the context of Azure App Services.
         /// </summary>
-        public static readonly string AzureAppServicesContextKey = "DD_AZURE_APP_SERVICES";
+        internal static readonly string AzureAppServicesContextKey = "DD_AZURE_APP_SERVICES";
 
         /// <summary>
         /// Example: 8c56d827-5f07-45ce-8f2b-6c5001db5c6f+apm-dotnet-EastUSwebspace
         /// Format: {subscriptionId}+{planResourceGroup}-{hostedInRegion}
         /// </summary>
-        private static readonly string WebsiteOwnerNameKey = "WEBSITE_OWNER_NAME";
+        internal static readonly string WebsiteOwnerNameKey = "WEBSITE_OWNER_NAME";
 
         /// <summary>
         /// This is the name of the resource group the site instance is assigned to.
         /// </summary>
-        private static readonly string ResourceGroupKey = "WEBSITE_RESOURCE_GROUP";
+        internal static readonly string ResourceGroupKey = "WEBSITE_RESOURCE_GROUP";
 
         /// <summary>
         /// This is the unique name of the website instance within azure app services.
         /// </summary>
-        private static readonly string SiteNameKey = "WEBSITE_DEPLOYMENT_ID";
+        internal static readonly string SiteNameKey = "WEBSITE_DEPLOYMENT_ID";
 
         private static readonly Lazy<string> ResourceId = new Lazy<string>(GetResourceIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -42,12 +42,12 @@ namespace Datadog.Trace.PlatformHelpers
             return IsRunningInAzureAppServices.Value;
         }
 
-        private static bool IsRelevantInternal()
+        internal static bool IsRelevantInternal()
         {
             return Environment.GetEnvironmentVariable(AzureAppServicesContextKey) == "1";
         }
 
-        private static string GetResourceIdInternal()
+        internal static string GetResourceIdInternal()
         {
             string resourceId = null;
 
@@ -61,7 +61,7 @@ namespace Datadog.Trace.PlatformHelpers
                 {
                     var websiteOwner = environmentVariables[WebsiteOwnerNameKey].ToString();
                     var plusSplit = websiteOwner.Split('+');
-                    if (plusSplit.Length > 0)
+                    if (plusSplit.Length > 0 && !string.IsNullOrWhiteSpace(plusSplit[0]))
                     {
                         subscriptionId = plusSplit[0];
                     }
