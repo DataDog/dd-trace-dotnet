@@ -2,17 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Containers
+namespace Datadog.Trace.PlatformHelpers
 {
     /// <summary>
     /// Utility class with methods to interact with container hosts.
     /// </summary>
-    internal static class ContainerInfo
+    internal static class ContainerMetadata
     {
         private const string ControlGroupsFilePath = "/proc/self/cgroup";
 
@@ -20,7 +19,7 @@ namespace Datadog.Trace.Containers
 
         private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ContainerInfo));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ContainerMetadata));
 
         /// <summary>
         /// Gets the id of the container executing the code.

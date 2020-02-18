@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Datadog.Trace.Containers;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
 using MsgPack.Serialization;
 using Newtonsoft.Json;
@@ -65,11 +65,19 @@ namespace Datadog.Trace.Agent
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion);
 
             // report container id (only Linux containers supported for now)
-            var containerId = ContainerInfo.GetContainerId();
+            var containerId = ContainerMetadata.GetContainerId();
 
             if (containerId != null)
             {
                 _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.ContainerId, containerId);
+            }
+
+            // report container id (only Linux containers supported for now)
+            var azureAppServiceResourceId = AzureAppServicesMetadata.GetResourceId();
+
+            if (containerId != null)
+            {
+                _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.AzureAppServicesResourceId, azureAppServiceResourceId);
             }
 
             // don't add automatic instrumentation to requests from this HttpClient

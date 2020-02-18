@@ -37,5 +37,10 @@ namespace Datadog.Trace
         /// The id of the container where the traced application is running.
         /// </summary>
         public const string ContainerId = "Datadog-Container-ID";
+
+        /// <summary>
+        /// The resource id of the site instance in azure app services where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesResourceId = "Datadog-AzureAppServices-Resource-ID";
     }
 }

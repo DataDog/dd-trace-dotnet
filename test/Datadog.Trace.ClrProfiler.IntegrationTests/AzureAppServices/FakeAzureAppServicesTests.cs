@@ -1,4 +1,5 @@
 using System.IO;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AzureAppServices
         public FakeAzureAppServicesTests(ITestOutputHelper output)
             : base(SampleName, output)
         {
-            SetEnvironmentVariable("DD_AZURE_APP_SERVICES", "1");
+            SetEnvironmentVariable(AzureAppServicesMetadata.AzureAppServicesContextKey, "1");
         }
 
         [Fact(Skip = "TODO: Traces from the sub process are not coming through")]

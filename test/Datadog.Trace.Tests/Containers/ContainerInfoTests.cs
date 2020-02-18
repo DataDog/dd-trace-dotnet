@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Containers;
+using Datadog.Trace.PlatformHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Containers
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tests.Containers
             var lines = SplitLines(file);
 
             // act
-            string actual = ContainerInfo.ParseCgroupLines(lines);
+            string actual = ContainerMetadata.ParseCgroupLines(lines);
 
             // assert
             Assert.Equal(expected, actual);

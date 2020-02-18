@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Containers;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,7 +21,7 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public async Task Http_Headers_Contain_ContainerId()
         {
-            string expectedContainedId = ContainerInfo.GetContainerId();
+            string expectedContainedId = ContainerMetadata.GetContainerId();
             string actualContainerId = null;
             var agentPort = TcpPortProvider.GetOpenPort();
 
