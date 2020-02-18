@@ -64,6 +64,14 @@ namespace Datadog.Trace.Configuration
         public const string AgentPort = "DD_TRACE_AGENT_PORT";
 
         /// <summary>
+        /// Sibling setting for <see cref="AgentPort"/>.
+        /// Used to force a specific port binding for the Trace Agent.
+        /// Default value is 8126.
+        /// </summary>
+        /// <seealso cref="TracerSettings.AgentUri"/>
+        public const string TraceAgentPortKey = "DD_APM_RECEIVER_PORT";
+
+        /// <summary>
         /// Configuration key for the Agent URL where the Tracer can send traces.
         /// Overrides values in <see cref="AgentHost"/> and <see cref="AgentPort"/> if present.
         /// Default value is "http://localhost:8126".
