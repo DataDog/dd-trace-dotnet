@@ -21,14 +21,10 @@ namespace Datadog.Trace.Agent
 
         private static readonly object EndpointGate = new object();
 
-        private static Action<int> _portOverrideAction = (port) => { _tracePortOverride = port; };
-        private static int? _tracePortOverride;
-
         private readonly HttpClient _client;
         private readonly IStatsd _statsd;
         private readonly Uri _baseEndpoint;
-
-        private Uri _tracesEndpoint;
+        private readonly Uri _tracesEndpoint;
 
         static Api()
         {
@@ -41,28 +37,20 @@ namespace Datadog.Trace.Agent
             };
         }
 
-        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd)
+        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd, int? overridingPort = null)
         {
-            lock (EndpointGate)
+            if (overridingPort != null)
             {
-                _baseEndpoint = baseEndpoint;
-                _portOverrideAction = SetTracesEndpointUri;
-                if (_tracePortOverride != null)
-                {
-                    _portOverrideAction(_tracePortOverride.Value);
-                }
-                else
-                {
-                    _tracesEndpoint = new Uri(_baseEndpoint, TracesPath);
-                }
+                var builder = new UriBuilder(baseEndpoint) { Port = overridingPort.Value };
+                baseEndpoint = builder.Uri;
             }
 
+            _baseEndpoint = baseEndpoint;
+            _tracesEndpoint = new Uri(_baseEndpoint, TracesPath);
             _statsd = statsd;
-
             _client = delegatingHandler == null
                           ? new HttpClient()
                           : new HttpClient(delegatingHandler);
-
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
 
             // report runtime details
@@ -94,15 +82,6 @@ namespace Datadog.Trace.Agent
 
             // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-        }
-
-        public static void OverrideTraceAgentPort(int port)
-        {
-            lock (EndpointGate)
-            {
-                _tracePortOverride = port;
-                _portOverrideAction(port);
-            }
         }
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
@@ -208,15 +187,6 @@ namespace Datadog.Trace.Agent
             }
 
             return uniqueTraceIds;
-        }
-
-        private void SetTracesEndpointUri(int port)
-        {
-            if (_baseEndpoint != null)
-            {
-                var builder = new UriBuilder(_baseEndpoint) { Port = port };
-                _tracesEndpoint = new Uri(builder.Uri, TracesPath);
-            }
         }
 
         internal class ApiResponse

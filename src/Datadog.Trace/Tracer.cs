@@ -75,12 +75,28 @@ namespace Datadog.Trace
             // only set DogStatsdClient if tracer metrics are enabled
             if (Settings.TracerMetricsEnabled)
             {
+                // Run this first in case the port override is ready
+                TracingProcessManager.SubscribeToDogStatsDPortOverride(
+                    port =>
+                    {
+                        Statsd = CreateDogStatsdClient(Settings, DefaultServiceName, portOverride: port);
+                    });
+
                 Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName);
             }
 
+            // Run this first in case the port override is ready
+            TracingProcessManager.SubscribeToTraceAgentPortOverride(
+                port =>
+                {
+                    IApi overridingApiClient = new Api(Settings.AgentUri, delegatingHandler: null, Statsd);
+                    overridingApiClient.OverrideTraceAgentPort(port);
+                    _agentWriter.OverrideApi(overridingApiClient);
+                });
+
             // fall back to default implementations of each dependency if not provided
-            IApi apiClient = new Api(Settings.AgentUri, delegatingHandler: null, Statsd);
-            _agentWriter = agentWriter ?? new AgentWriter(apiClient, Statsd);
+            _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri, delegatingHandler: null, Statsd), Statsd);
+
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
 
@@ -169,7 +185,7 @@ namespace Datadog.Trace
 
         internal ISampler Sampler { get; }
 
-        internal IStatsd Statsd { get; }
+        internal IStatsd Statsd { get; private set; }
 
         /// <summary>
         /// Create a new Tracer with the given parameters
@@ -421,7 +437,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
+        private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int? portOverride = null)
         {
             var frameworkDescription = FrameworkDescription.Create();
 
@@ -434,7 +450,7 @@ namespace Datadog.Trace
                 $"service_name:{serviceName}"
             };
 
-            var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, settings.DogStatsdPort, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
+            var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, portOverride ?? settings.DogStatsdPort, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
             return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags);
         }
 

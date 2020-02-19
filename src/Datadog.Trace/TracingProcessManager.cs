@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,7 +7,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -15,50 +15,72 @@ namespace Datadog.Trace
 {
     internal class TracingProcessManager
     {
-        private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
+        private static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata()
         {
-            new ProcessMetadata()
+            Name = "datadog-trace-agent",
+            ProcessPathKey = ConfigurationKeys.TraceAgentPath,
+            ProcessArgumentsKey = ConfigurationKeys.TraceAgentArgs,
+            PreStartAction = () =>
             {
-                Name = "datadog-trace-agent",
-                ProcessPathKey = ConfigurationKeys.TraceAgentPath,
-                ProcessArgumentsKey = ConfigurationKeys.TraceAgentArgs,
-                PreStartAction = () =>
+                TraceAgentMetadata.Port = FreeTcpPort();
+                if (TraceAgentMetadata.Port == null)
                 {
-                    var port = FreeTcpPort();
-                    if (port == null)
-                    {
-                        throw new Exception("Unable to secure a port for trace agent");
-                    }
-
-                    var portString = port.ToString();
-                    Api.OverrideTraceAgentPort(port.Value);
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, portString);
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.TraceAgentPortKey, portString);
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for the trace agent.", portString));
+                    throw new Exception("Unable to secure a port for dogstatsd");
                 }
-            },
-            new ProcessMetadata()
-            {
-                Name = "dogstatsd",
-                ProcessPathKey = ConfigurationKeys.DogStatsDPath,
-                ProcessArgumentsKey = ConfigurationKeys.DogStatsDArgs,
-                PreStartAction = () =>
-                {
-                    var port = FreeTcpPort();
-                    if (port == null)
-                    {
-                        throw new Exception("Unable to secure a port for dogstatsd");
-                    }
 
-                    var portString = port.ToString();
-                    StatsdUDP.OverridePort(port.Value);
-                    Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, portString);
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for dogstatsd.", portString));
-                }
+                var portString = TraceAgentMetadata.Port.ToString();
+                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, portString);
+                Environment.SetEnvironmentVariable(ConfigurationKeys.TraceAgentPortKey, portString);
+                DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for the trace agent.", portString));
             }
         };
 
+        private static readonly ProcessMetadata DogStatsDMetadata = new ProcessMetadata()
+        {
+            Name = "dogstatsd",
+            ProcessPathKey = ConfigurationKeys.DogStatsDPath,
+            ProcessArgumentsKey = ConfigurationKeys.DogStatsDArgs,
+            PreStartAction = () =>
+            {
+                DogStatsDMetadata.Port = FreeTcpPort();
+                if (DogStatsDMetadata.Port == null)
+                {
+                    throw new Exception("Unable to secure a port for dogstatsd");
+                }
+
+                var portString = DogStatsDMetadata.Port.ToString();
+                Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, portString);
+                DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for dogstatsd.", portString));
+            }
+        };
+
+        private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
+        {
+            TraceAgentMetadata,
+            DogStatsDMetadata
+        };
+
         private static CancellationTokenSource _cancellationTokenSource;
+
+        public static void SubscribeToTraceAgentPortOverride(Action<int> subscriber)
+        {
+            TraceAgentMetadata.PortSubscribers.Add(subscriber);
+
+            if (TraceAgentMetadata.Port != null)
+            {
+                subscriber(TraceAgentMetadata.Port.Value);
+            }
+        }
+
+        public static void SubscribeToDogStatsDPortOverride(Action<int> subscriber)
+        {
+            DogStatsDMetadata.PortSubscribers.Add(subscriber);
+
+            if (DogStatsDMetadata.Port != null)
+            {
+                subscriber(DogStatsDMetadata.Port.Value);
+            }
+        }
 
         public static void StopProcesses()
         {
@@ -195,6 +217,10 @@ namespace Datadog.Trace
                                 {
                                     DatadogLogging.RegisterStartupLog(log => log.Debug("Successfully started {0}.", path));
                                     sequentialFailures = 0;
+                                    foreach (var portSubscriber in metadata.PortSubscribers)
+                                    {
+                                        portSubscriber(metadata.Port.Value);
+                                    }
                                 }
                             }
                             catch (Exception ex)
@@ -256,6 +282,10 @@ namespace Datadog.Trace
             public string ProcessArgumentsKey { get; set; }
 
             public Action PreStartAction { get; set; }
+
+            public int? Port { get; set; }
+
+            public ConcurrentBag<Action<int>> PortSubscribers { get; } = new ConcurrentBag<Action<int>>();
         }
     }
 }

@@ -6,17 +6,15 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
     internal class StatsdUDP : IDisposable, IStatsdUDP
     {
-        private static readonly object EndpointGate = new object();
-        private static int? _portToForce;
-        private static IPEndPoint _ipEndpoint;
-
         private int MaxUDPPacketSize { get; set; } // In bytes; default is MetricsConfig.DefaultStatsdMaxUDPPacketSize.
         // Set to zero for no limit.
+        public IPEndPoint IPEndpoint { get; private set; }
         private Socket UDPSocket { get; set; }
         private string Name { get; set; }
         private int Port { get; set; }
@@ -25,50 +23,26 @@ namespace Datadog.Trace.Vendors.StatsdClient
         : this(GetHostNameFromEnvVar(),GetPortFromEnvVar(StatsdConfig.DefaultStatsdPort),maxUDPPacketSize)
         {
         }
-
         public StatsdUDP(string name = null, int port = 0, int maxUDPPacketSize = StatsdConfig.DefaultStatsdMaxUDPPacketSize)
         {
+            Port = port;
+            if (Port == 0)
+            {
+                Port = GetPortFromEnvVar(StatsdConfig.DefaultStatsdPort);
+            }
             Name = name;
             if (string.IsNullOrEmpty(Name))
             {
                 Name = GetHostNameFromEnvVar();
             }
-            var ipAddress = GetIpv4Address(Name);
-
-            lock (EndpointGate)
-            {
-                if (_portToForce != null)
-                {
-                    Port = _portToForce.Value;
-                }
-                else
-                {
-                    Port = port;
-                    if (Port == 0)
-                    {
-                        Port = GetPortFromEnvVar(StatsdConfig.DefaultStatsdPort);
-                    }
-                }
-
-                _ipEndpoint = new IPEndPoint(ipAddress, Port);
-            }
 
             MaxUDPPacketSize = maxUDPPacketSize;
 
             UDPSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        }
 
-        public static void OverridePort(int port)
-        {
-            lock (EndpointGate)
-            {
-                _portToForce = port;
+            var ipAddress = GetIpv4Address(Name);
 
-                if (_ipEndpoint != null)
-                {
-                    SetEndpoint(port);
-                }
-            }
+            IPEndpoint = new IPEndPoint(ipAddress, Port);
         }
 
         private static string GetHostNameFromEnvVar()
@@ -162,19 +136,12 @@ namespace Datadog.Trace.Vendors.StatsdClient
                     // be sent without issue.
                 }
             }
-            UDPSocket.SendTo(encodedCommand, encodedCommand.Length, SocketFlags.None, _ipEndpoint);
+            UDPSocket.SendTo(encodedCommand, encodedCommand.Length, SocketFlags.None, IPEndpoint);
         }
 
         public void Dispose()
         {
             UDPSocket.Dispose();
         }
-
-        private static void SetEndpoint(int port)
-        {
-            var newEndpoint = new IPEndPoint(_ipEndpoint.Address, port);
-            _ipEndpoint = newEndpoint;
-        }
-
     }
 }

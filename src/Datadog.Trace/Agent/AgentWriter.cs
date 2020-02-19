@@ -15,16 +15,22 @@ namespace Datadog.Trace.Agent
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<AgentWriter>();
 
         private readonly AgentWriterBuffer<List<Span>> _tracesBuffer = new AgentWriterBuffer<List<Span>>(TraceBufferSize);
-        private readonly IApi _api;
         private readonly IStatsd _statsd;
         private readonly Task _flushTask;
         private readonly TaskCompletionSource<bool> _processExit = new TaskCompletionSource<bool>();
+
+        private IApi _api;
 
         public AgentWriter(IApi api, IStatsd statsd)
         {
             _api = api;
             _statsd = statsd;
             _flushTask = Task.Run(FlushTracesTaskLoopAsync);
+        }
+
+        public void OverrideApi(IApi api)
+        {
+            _api = api;
         }
 
         public void WriteTrace(List<Span> trace)
