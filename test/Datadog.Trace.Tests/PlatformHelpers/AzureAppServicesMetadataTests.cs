@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.PlatformHelpers;
 using Xunit;
 
@@ -6,20 +8,21 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 {
     public class AzureAppServicesMetadataTests
     {
+        private static string _subscriptionId = "8c56d827-5f07-45ce-8f2b-6c5001db5c6f";
+        private static string _planResourceGroup = "apm-dotnet";
+        private static string _deploymentId = "AzureExampleSiteName";
+        private static string _siteResourceGroup = "apm-dotnet--site-resource-group";
+        private static string _expectedResourceId =
+            $"/subscriptions/{_subscriptionId}/resourcegroups/{_siteResourceGroup}/providers/microsoft.web/sites/{_deploymentId}".ToLowerInvariant();
+
         [Fact]
         public void ResourceId_Created_WhenAllRequirementsExist()
         {
-            var subscriptionId = "8c56d827-5f07-45ce-8f2b-6c5001db5c6f";
-            var planResourceGroup = "apm-dotnet";
-            var deploymentId = "AzureExampleSiteName";
-            var siteResourceGroup = "apm-dotnet--site-resource-group";
-
-            SetVariables(subscriptionId, deploymentId, planResourceGroup, siteResourceGroup);
+            SetVariables(_subscriptionId, _deploymentId, _planResourceGroup, _siteResourceGroup);
 
             var resourceId = AzureAppServicesMetadata.GetResourceIdInternal();
-            var expectedResourceId = $"/subscriptions/{subscriptionId}/resourcegroups/{siteResourceGroup}/providers/microsoft.web/sites/{deploymentId}".ToLowerInvariant();
 
-            Assert.Equal(expected: expectedResourceId, actual: resourceId);
+            Assert.Equal(expected: _expectedResourceId, actual: resourceId);
 
             ClearVariables();
         }
@@ -39,6 +42,56 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             ClearVariables();
             Assert.False(AzureAppServicesMetadata.IsRelevantInternal());
+        }
+
+        [Fact]
+        public void PopulatesOnlyRootSpans()
+        {
+            SetVariables(_subscriptionId, _deploymentId, _planResourceGroup, _siteResourceGroup);
+
+            var tracer = new Tracer();
+
+            var rootSpans = new List<Span>();
+            var nonRootSpans = new List<Span>();
+            var iterations = 5;
+            var remaining = iterations;
+
+            while (remaining-- > 0)
+            {
+                using (var rootScope = tracer.StartActive("root"))
+                {
+                    rootSpans.Add(rootScope.Span);
+
+                    using (var nestedScope = tracer.StartActive("nest-a"))
+                    {
+                        nonRootSpans.Add(nestedScope.Span);
+                    }
+
+                    using (var nestedScope = tracer.StartActive("nest-b"))
+                    {
+                        nonRootSpans.Add(nestedScope.Span);
+
+                        using (var doublyNestedScope = tracer.StartActive("nest-b-1"))
+                        {
+                            nonRootSpans.Add(doublyNestedScope.Span);
+                        }
+                    }
+                }
+            }
+
+            Assert.Equal(expected: iterations, actual: rootSpans.Count);
+            Assert.NotEmpty(nonRootSpans);
+
+            var rootSpansMissingExpectedTag =
+                rootSpans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) != _expectedResourceId);
+
+            var nonRootSpansWithTag =
+                nonRootSpans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) == _expectedResourceId);
+
+            Assert.True(!rootSpansMissingExpectedTag.Any(), "All root spans should have the resource id.");
+            Assert.True(!nonRootSpansWithTag.Any(), "No non root spans should have the resource id.");
+
+            ClearVariables();
         }
 
         [Theory]
