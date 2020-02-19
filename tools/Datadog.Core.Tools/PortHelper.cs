@@ -37,7 +37,7 @@ namespace Datadog.Core.Tools
 
             public PortClaim Unlock()
             {
-                if (_port != null)
+                if (_port == null)
                 {
                     _port = ((IPEndPoint)_listener.LocalEndpoint).Port;
                     _listener?.Stop();

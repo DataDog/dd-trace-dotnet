@@ -29,7 +29,8 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     portClaim.Unlock();
-                    listener.Prefixes.Add($"http://localhost:{portClaim.Port}/");
+                    Port = portClaim.Port;
+                    listener.Prefixes.Add(Uri.ToString());
                     listener.Start();
                     _listener = listener;
                     _listenerThread = new Thread(HandleHttpRequests);
@@ -106,7 +107,10 @@ namespace Datadog.Trace.TestHelpers
         /// <summary>
         /// Gets the full Uri for accessing this test agent.
         /// </summary>
-        public Uri Uri => new Uri($"http://localhost:{Port}");
+        public Uri Uri
+        {
+            get { return new Uri($"http://localhost:{Port}"); }
+        }
 
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
