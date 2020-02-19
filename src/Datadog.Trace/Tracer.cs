@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -301,6 +302,7 @@ namespace Datadog.Trace
             }
 
             ITraceContext traceContext;
+            var isRootSpan = false;
 
             // try to get the trace context (from local spans) or
             // sampling priority (from propagated spans),
@@ -315,6 +317,7 @@ namespace Datadog.Trace
             }
             else
             {
+                isRootSpan = true;
                 traceContext = new TraceContext(this);
             }
 
@@ -343,6 +346,11 @@ namespace Datadog.Trace
                 }
             }
 
+            if (isRootSpan)
+            {
+                DecorateRootSpan(span);
+            }
+
             traceContext.AddSpan(span);
             return span;
         }
@@ -354,17 +362,6 @@ namespace Datadog.Trace
         void IDatadogTracer.Write(List<Span> trace)
         {
             _agentWriter.WriteTrace(trace);
-        }
-
-        /// <summary>
-        /// Create an Uri to the Agent using host and port from
-        /// the specified <paramref name="settings"/>.
-        /// </summary>
-        /// <param name="settings">A <see cref="TracerSettings"/> object </param>
-        /// <returns>An Uri that can be used to send traces to the Agent.</returns>
-        internal static Uri GetAgentUri(TracerSettings settings)
-        {
-            return settings.AgentUri;
         }
 
         internal async Task FlushAsync()
@@ -502,6 +499,18 @@ namespace Datadog.Trace
             }
 
             TracingProcessManager.StopProcesses();
+        }
+
+        private void DecorateRootSpan(Span span)
+        {
+            if (AzureAppServicesMetadata.IsRelevant())
+            {
+                var azureAppServiceResourceId = AzureAppServicesMetadata.GetResourceId();
+                if (azureAppServiceResourceId != null)
+                {
+                    span.SetTag(Tags.AzureAppServicesResourceId, azureAppServiceResourceId);
+                }
+            }
         }
 
         private void HeartbeatCallback(object state)
