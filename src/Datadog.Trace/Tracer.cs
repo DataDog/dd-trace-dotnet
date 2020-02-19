@@ -89,8 +89,7 @@ namespace Datadog.Trace
             TracingProcessManager.SubscribeToTraceAgentPortOverride(
                 port =>
                 {
-                    IApi overridingApiClient = new Api(Settings.AgentUri, delegatingHandler: null, Statsd);
-                    overridingApiClient.OverrideTraceAgentPort(port);
+                    IApi overridingApiClient = new Api(Settings.AgentUri, delegatingHandler: null, Statsd, overridingPort: port);
                     _agentWriter.OverrideApi(overridingApiClient);
                 });
 
