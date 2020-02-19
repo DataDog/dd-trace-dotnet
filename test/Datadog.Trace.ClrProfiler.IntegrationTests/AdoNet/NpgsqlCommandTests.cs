@@ -15,9 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            // In .NET Framework, the Npgsql client injects
-            // a few extra queries the first time it connects to a database
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 33 : 34;
+            var expectedSpanCount = 34;
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.Npgsql-" + dbType;
