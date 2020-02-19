@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <FrameworkReproduction Include="reproductions\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
+    <FrameworkReproduction Include="reproductions\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
   </ItemGroup>
 
   <Import Condition="'$(PerformComprehensiveTesting)'=='true'" Project="PackageVersionsComprehensive.g.props" />

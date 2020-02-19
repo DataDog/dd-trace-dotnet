@@ -38,7 +38,7 @@ for sample in Samples.Elasticsearch Samples.Elasticsearch.V5 Samples.ServiceStac
     dotnet publish -f $publishTargetFramework -c $buildConfiguration samples/$sample/$sample.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 done
 
-for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance AssemblyLoad.FileNotFoundException TraceContext.InvalidOperationException AssemblyResolveMscorlibResources.InfiniteRecursionCrash ; do
+for sample in OrleansCrash DataDogThreadTest HttpMessageHandler.StackOverflowException StackExchange.Redis.StackOverflowException AspNetMvcCorePerformance AssemblyLoad.FileNotFoundException TraceContext.InvalidOperationException AssemblyResolveMscorlibResources.InfiniteRecursionCrash StackExchange.Redis.AssemblyConflict.SdkProject ; do
     dotnet publish -f $publishTargetFramework -c $buildConfiguration reproductions/$sample/$sample.csproj -p:Configuration=$buildConfiguration -p:ManagedProfilerOutputDirectory="$PUBLISH_OUTPUT"
 done
 
