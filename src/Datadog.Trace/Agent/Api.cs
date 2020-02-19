@@ -37,13 +37,9 @@ namespace Datadog.Trace.Agent
             };
         }
 
-        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd, int? overridingPort = null)
+        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd)
         {
-            if (overridingPort != null)
-            {
-                var builder = new UriBuilder(baseEndpoint) { Port = overridingPort.Value };
-                baseEndpoint = builder.Uri;
-            }
+            DatadogLogging.RegisterStartupLog(log => log.Debug("Creating new Api"));
 
             _baseEndpoint = baseEndpoint;
             _tracesEndpoint = new Uri(_baseEndpoint, TracesPath);

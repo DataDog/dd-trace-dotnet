@@ -29,8 +29,9 @@ namespace Datadog.Trace
         private static int _liveTracerCount;
 
         private readonly IScopeManager _scopeManager;
-        private readonly IAgentWriter _agentWriter;
         private readonly Timer _heartbeatTimer;
+
+        private IAgentWriter _agentWriter;
 
         static Tracer()
         {
@@ -79,6 +80,7 @@ namespace Datadog.Trace
                 TracingProcessManager.SubscribeToDogStatsDPortOverride(
                     port =>
                     {
+                        DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to override dogstatsd port with {0}", port));
                         Statsd = CreateDogStatsdClient(Settings, DefaultServiceName, portOverride: port);
                     });
 
@@ -89,8 +91,18 @@ namespace Datadog.Trace
             TracingProcessManager.SubscribeToTraceAgentPortOverride(
                 port =>
                 {
-                    IApi overridingApiClient = new Api(Settings.AgentUri, delegatingHandler: null, Statsd, overridingPort: port);
-                    _agentWriter.OverrideApi(overridingApiClient);
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to override trace agent port with {0}", port));
+                    var builder = new UriBuilder(Settings.AgentUri) { Port = port };
+                    var baseEndpoint = builder.Uri;
+                    IApi overridingApiClient = new Api(baseEndpoint, delegatingHandler: null, Statsd);
+                    if (_agentWriter == null)
+                    {
+                        _agentWriter = _agentWriter ?? new AgentWriter(overridingApiClient, Statsd);
+                    }
+                    else
+                    {
+                        _agentWriter.OverrideApi(overridingApiClient);
+                    }
                 });
 
             // fall back to default implementations of each dependency if not provided

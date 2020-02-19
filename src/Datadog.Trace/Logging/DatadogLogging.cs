@@ -31,7 +31,8 @@ namespace Datadog.Trace.Logging
             try
             {
                 // We use environment variables and not the tracer settings to avoid a startup race condition between the logger and the tracer.
-                if (Environment.GetEnvironmentVariable(ConfigurationKeys.DebugEnabled) == "1")
+                var ddTraceDebugValue = Environment.GetEnvironmentVariable(ConfigurationKeys.DebugEnabled)?.ToLowerInvariant();
+                if (ddTraceDebugValue == "1" || ddTraceDebugValue == "true")
                 {
                     MinimumLogEventLevel = LogEventLevel.Verbose;
                 }
@@ -111,10 +112,19 @@ namespace Datadog.Trace.Logging
 
                 // Use to immediately execute any startup logs
                 Initialized = true;
-
+            }
+            catch
+            {
+                // If for some reason the logger initialization fails, don't let the queue fill
+                Initialized = true;
+                // nothing else to do here
+            }
+            finally
+            {
                 // Log some information to correspond with the app domain
                 SharedLogger.Information(FrameworkDescription.Create().ToString());
 
+                // Clear the queue out regardless of exception
                 while (ActionsToRunWhenLoggerReady.TryDequeue(out var logAction))
                 {
                     try
@@ -126,12 +136,6 @@ namespace Datadog.Trace.Logging
                         SharedLogger.Error(ex, "Failure on logger startup subscriber");
                     }
                 }
-            }
-            catch
-            {
-                // If for some reason the logger initialization fails, don't let the queue fill
-                Initialized = true;
-                // nothing else to do here
             }
         }
 

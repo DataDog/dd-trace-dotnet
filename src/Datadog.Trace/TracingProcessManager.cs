@@ -221,6 +221,7 @@ namespace Datadog.Trace
                                     {
                                         portSubscriber(metadata.Port.Value);
                                     }
+                                    DatadogLogging.RegisterStartupLog(log => log.Debug("Finished calling port subscribers for {0}.", metadata.Name));
                                 }
                             }
                             catch (Exception ex)
