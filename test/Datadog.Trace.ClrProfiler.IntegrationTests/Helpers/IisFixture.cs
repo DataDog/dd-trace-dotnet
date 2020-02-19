@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
@@ -18,11 +19,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 if (_iisExpress == null)
                 {
-                    var initialAgentPort = TcpPortProvider.GetOpenPort();
-                    Agent = new MockTracerAgent(initialAgentPort);
-
-                    HttpPort = TcpPortProvider.GetOpenPort();
-
+                    Agent = new MockTracerAgent(PortHelper.GetTcpPortClaim());
+                    HttpPort = PortHelper.GetTcpPortClaim().Unlock().Port;
                     _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort);
                 }
             }

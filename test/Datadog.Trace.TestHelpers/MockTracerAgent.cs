@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.ExtensionMethods;
 using MessagePack;
 
@@ -17,6 +18,38 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly HttpListener _listener;
         private readonly Thread _listenerThread;
+
+        public MockTracerAgent(PortHelper.PortClaim portClaim)
+        {
+            using (portClaim)
+            {
+                var listener = new HttpListener();
+                var closeListener = false;
+
+                try
+                {
+                    portClaim.Unlock();
+                    listener.Prefixes.Add($"http://localhost:{portClaim.Port}/");
+                    listener.Start();
+                    _listener = listener;
+                    _listenerThread = new Thread(HandleHttpRequests);
+                    _listenerThread.Start();
+                }
+                catch
+                {
+                    closeListener = true;
+                }
+                finally
+                {
+                    if (closeListener)
+                    {
+                        // always close listener if exception is thrown
+                        // whether it was caught or not
+                        listener.Close();
+                    }
+                }
+            }
+        }
 
         public MockTracerAgent(int port = 8126, int retries = 5)
         {
@@ -69,6 +102,11 @@ namespace Datadog.Trace.TestHelpers
         /// parameter if listening on that port fails.
         /// </summary>
         public int Port { get; }
+
+        /// <summary>
+        /// Gets the full Uri for accessing this test agent.
+        /// </summary>
+        public Uri Uri => new Uri($"http://localhost:{Port}");
 
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.

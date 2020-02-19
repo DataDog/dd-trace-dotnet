@@ -1,3 +1,4 @@
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -22,9 +23,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.MySql-" + dbType;
 
-            int agentPort = TcpPortProvider.GetOpenPort();
+            var agentPortClaim = PortHelper.GetTcpPortClaim();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = new MockTracerAgent(agentPortClaim))
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");

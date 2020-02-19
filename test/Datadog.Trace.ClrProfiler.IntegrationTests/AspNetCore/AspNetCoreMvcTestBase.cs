@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 
@@ -57,11 +58,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         public void RunTraceTestOnSelfHosted(string packageVersion)
         {
-            var agentPort = TcpPortProvider.GetOpenPort();
-            var aspNetCorePort = TcpPortProvider.GetOpenPort();
+            var agentPortClaim = PortHelper.GetTcpPortClaim();
+            var aspNetCorePortClaim = PortHelper.GetTcpPortClaim();
 
-            using (var agent = new MockTracerAgent(agentPort))
-            using (var process = StartSample(agent.Port, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
+            using (var agent = new MockTracerAgent(agentPortClaim))
+            using (var process = StartSample(agent.Port, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePortClaim.Unlock().Port))
             {
                 agent.SpanFilters.Add(IsNotServerLifeCheck);
 
@@ -103,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     try
                     {
-                        serverReady = SubmitRequest(aspNetCorePort, "/alive-check") == HttpStatusCode.OK;
+                        serverReady = SubmitRequest(aspNetCorePortClaim.Port, "/alive-check") == HttpStatusCode.OK;
                     }
                     catch
                     {
@@ -126,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 var testStart = DateTime.Now;
 
                 var paths = Expectations.Select(e => e.OriginalUri).ToArray();
-                SubmitRequests(aspNetCorePort, paths);
+                SubmitRequests(aspNetCorePortClaim.Port, paths);
 
                 var spans =
                     agent.WaitForSpans(

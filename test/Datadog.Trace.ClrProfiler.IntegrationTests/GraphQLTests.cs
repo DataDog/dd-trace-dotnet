@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -63,11 +64,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
-            int aspNetCorePort = TcpPortProvider.GetOpenPort();
+            var agentPortClaim = PortHelper.GetTcpPortClaim();
+            var aspNetCorePortClaim = PortHelper.GetTcpPortClaim();
 
-            using (var agent = new MockTracerAgent(agentPort))
-            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: aspNetCorePort))
+            using (var agent = new MockTracerAgent(agentPortClaim))
+            using (Process process = StartSample(agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: aspNetCorePortClaim.Unlock().Port))
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -97,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // wait for server to start
                 wh.WaitOne(5000);
 
-                SubmitRequests(aspNetCorePort);
+                SubmitRequests(aspNetCorePortClaim.Port);
                 var graphQLValidateSpans = agent.WaitForSpans(_expectedGraphQLValidateSpanCount, operationName: _graphQLValidateOperationName, returnAllOperations: false)
                                  .GroupBy(s => s.SpanId)
                                  .Select(grp => grp.First())

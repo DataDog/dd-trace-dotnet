@@ -1,4 +1,5 @@
 using System.IO;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -24,8 +25,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AzureAppServices
 
             SetEnvironmentVariable("DD_TRACE_AGENT_PATH", fakeTraceAgentPath);
 
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
+            var agentPortClaim = PortHelper.GetTcpPortClaim();
+            using (var agent = new MockTracerAgent(agentPortClaim))
             using (var processResult = RunSampleAndWaitForExit(agent.Port))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");

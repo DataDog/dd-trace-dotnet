@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -58,10 +59,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
             ProcessStartInfo startInfo;
 
-            int agentPort = TcpPortProvider.GetOpenPort();
-            int aspNetCorePort = TcpPortProvider.GetOpenPort(); // unused for now
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-            Output.WriteLine($"Assigning port {aspNetCorePort} for the aspNetCorePort.");
+            var agentPortClaim = PortHelper.GetTcpPortClaim();
+            var aspNetCorePortClaim = PortHelper.GetTcpPortClaim(); // unused for now
 
             if (EnvironmentHelper.IsCoreClr())
             {
@@ -74,8 +73,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 startInfo = new ProcessStartInfo(executable);
             }
 
-            EnvironmentHelper.SetEnvironmentVariables(agentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
-
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
             startInfo.RedirectStandardOutput = true;
@@ -84,8 +81,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
             ProcessResult result;
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = new MockTracerAgent(agentPortClaim))
             {
+                Output.WriteLine($"Assigning port {agentPortClaim.Port} for the agentPort.");
+                Output.WriteLine($"Assigning port {aspNetCorePortClaim} for the aspNetCorePort.");
+
+                EnvironmentHelper.SetEnvironmentVariables(agentPortClaim.Port, aspNetCorePortClaim.Unlock().Port, executable, startInfo.EnvironmentVariables);
+
                 agent.ShouldDeserializeTraces = shouldDeserializeTraces;
                 using (var process = Process.Start(startInfo))
                 {
@@ -108,8 +110,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                         throw new TimeoutException("The smoke test is running for too long or was lost.");
                     }
 
-                    string standardOutput = process.StandardOutput.ReadToEnd();
-                    string standardError = process.StandardError.ReadToEnd();
+                    var standardOutput = process.StandardOutput.ReadToEnd();
+                    var standardError = process.StandardError.ReadToEnd();
                     int exitCode = process.ExitCode;
 
                     if (!string.IsNullOrWhiteSpace(standardOutput))

@@ -1,4 +1,5 @@
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,8 +19,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AzureAppServices
         [Trait("Category", "EndToEnd")]
         public void DoesNotSubmitTraces()
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
+            var agentPortClaim = PortHelper.GetTcpPortClaim();
+            using (var agent = new MockTracerAgent(agentPortClaim))
             using (var processResult = RunSampleAndWaitForExit(agent.Port))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");

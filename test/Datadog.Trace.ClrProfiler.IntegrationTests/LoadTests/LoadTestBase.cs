@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -62,8 +63,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
             if (requiresAgent)
             {
                 // Use different ports for every agent, to mimic individual instances IRL
-                int agentPort = TcpPortProvider.GetOpenPort();
-                loadTestPart.Agent = new MockTracerAgent(agentPort);
+                var agentPortClaim = PortHelper.GetTcpPortClaim();
+                loadTestPart.Agent = new MockTracerAgent(agentPortClaim);
             }
 
             if (loadTestPart.IsAnchor)

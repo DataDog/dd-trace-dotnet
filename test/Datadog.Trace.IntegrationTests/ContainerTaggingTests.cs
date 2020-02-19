@@ -23,16 +23,16 @@ namespace Datadog.Trace.IntegrationTests
         {
             string expectedContainedId = ContainerInfo.GetContainerId();
             string actualContainerId = null;
-            var agentPort = TcpPortProvider.GetOpenPort();
+            var agentPortClaim = PortHelper.GetTcpPortClaim();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = new MockTracerAgent(agentPortClaim))
             {
                 agent.RequestReceived += (sender, args) =>
                 {
                     actualContainerId = args.Value.Request.Headers[AgentHttpHeaderNames.ContainerId];
                 };
 
-                var settings = new TracerSettings { AgentUri = new Uri($"http://localhost:{agentPort}") };
+                var settings = new TracerSettings { AgentUri = agent.Uri };
                 var tracer = new Tracer(settings);
 
                 using (var scope = tracer.StartActive("operationName"))

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Core.Tools;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -20,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
+            var agentPortClaim = PortHelper.GetTcpPortClaim();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = new MockTracerAgent(agentPortClaim))
             using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");

@@ -1,4 +1,5 @@
 using System.Linq;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,9 +19,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
         public AspNetCoreMvc21LoadTests(ITestOutputHelper output)
             : base(output)
         {
-            var aspNetCoreMvc2Port = TcpPortProvider.GetOpenPort();
-            var aspNetCoreMvc2Url = GetUrl(aspNetCoreMvc2Port);
-            RegisterPart(applicationName: CoreMvc, directory: "samples", requiresAgent: true, port: aspNetCoreMvc2Port);
+            var coreMvcPortClaim = PortHelper.GetTcpPortClaim();
+            RegisterPart(applicationName: CoreMvc, directory: "samples", requiresAgent: true, port: coreMvcPortClaim.Unlock().Port);
+
+            var aspNetCoreMvc2Url = GetUrl(coreMvcPortClaim.Port);
             RegisterPart(
                 applicationName: LoadTestConsole,
                 directory: "reproductions",

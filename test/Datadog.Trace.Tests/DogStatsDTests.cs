@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Immutable;
 using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
@@ -21,22 +23,22 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void Do_not_send_metrics_when_disabled()
+        public async Task Do_not_send_metrics_when_disabled()
         {
             var statsd = new Mock<IStatsd>();
-            var spans = SendSpan(tracerMetricsEnabled: false, statsd);
+            var spans = await SendSpan(tracerMetricsEnabled: false, statsd);
 
-            Assert.True(spans.Count == 1, "Expected one span");
+            Assert.True(spans.Count == 1, $"Expected one span, received {spans.Count}, can not verify IStatsd calls without knowing a span was sent.");
 
             // no methods should be called on the IStatsd
             statsd.VerifyNoOtherCalls();
         }
 
         [Fact]
-        public void Send_metrics_when_enabled()
+        public async Task Send_metrics_when_enabled()
         {
             var statsd = new Mock<IStatsd>();
-            var spans = SendSpan(tracerMetricsEnabled: true, statsd);
+            var spans = await SendSpan(tracerMetricsEnabled: true, statsd);
 
             Assert.True(spans.Count == 1, "Expected one span");
 
@@ -95,16 +97,16 @@ namespace Datadog.Trace.Tests
             statsd.VerifyNoOtherCalls();
         }
 
-        private static IImmutableList<MockTracerAgent.Span> SendSpan(bool tracerMetricsEnabled, Mock<IStatsd> statsd)
+        private static async Task<IImmutableList<MockTracerAgent.Span>> SendSpan(bool tracerMetricsEnabled, Mock<IStatsd> statsd)
         {
             IImmutableList<MockTracerAgent.Span> spans;
-            var agentPort = TcpPortProvider.GetOpenPort();
+            var agentPortClaim = PortHelper.GetTcpPortClaim();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = new MockTracerAgent(agentPortClaim))
             {
                 var settings = new TracerSettings
                                {
-                                   AgentUri = new Uri($"http://localhost:{agentPort}"),
+                                   AgentUri = agent.Uri,
                                    TracerMetricsEnabled = tracerMetricsEnabled
                                };
 
@@ -115,6 +117,8 @@ namespace Datadog.Trace.Tests
                     scope.Span.ResourceName = "resource";
                     Thread.Sleep(5);
                 }
+
+                await tracer.FlushAsync();
 
                 spans = agent.WaitForSpans(1);
             }
