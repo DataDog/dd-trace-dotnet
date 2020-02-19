@@ -31,7 +31,7 @@ namespace Datadog.Trace
                     }
 
                     var portString = port.ToString();
-                    Api.OverrideTracePort(port.Value);
+                    Api.OverrideTraceAgentPort(port.Value);
                     Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, portString);
                     Environment.SetEnvironmentVariable(ConfigurationKeys.TraceAgentPortKey, portString);
                     DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for the trace agent.", portString));

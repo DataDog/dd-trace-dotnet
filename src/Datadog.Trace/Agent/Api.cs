@@ -20,12 +20,15 @@ namespace Datadog.Trace.Agent
         private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(SerializationContext);
 
         private static readonly object EndpointGate = new object();
+
+        private static Action<int> _portOverrideAction = (port) => { _tracePortOverride = port; };
         private static int? _tracePortOverride;
-        private static Uri _baseEndpoint;
-        private static Uri _tracesEndpoint;
 
         private readonly HttpClient _client;
         private readonly IStatsd _statsd;
+        private readonly Uri _baseEndpoint;
+
+        private Uri _tracesEndpoint;
 
         static Api()
         {
@@ -43,9 +46,10 @@ namespace Datadog.Trace.Agent
             lock (EndpointGate)
             {
                 _baseEndpoint = baseEndpoint;
+                _portOverrideAction = SetTracesEndpointUri;
                 if (_tracePortOverride != null)
                 {
-                    SetTracesEndpointUri(_tracePortOverride.Value);
+                    _portOverrideAction(_tracePortOverride.Value);
                 }
                 else
                 {
@@ -92,16 +96,12 @@ namespace Datadog.Trace.Agent
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 
-        public static void OverrideTracePort(int port)
+        public static void OverrideTraceAgentPort(int port)
         {
             lock (EndpointGate)
             {
                 _tracePortOverride = port;
-
-                if (_baseEndpoint != null)
-                {
-                    SetTracesEndpointUri(port);
-                }
+                _portOverrideAction(port);
             }
         }
 
@@ -210,11 +210,16 @@ namespace Datadog.Trace.Agent
             return uniqueTraceIds;
         }
 
-        private static void SetTracesEndpointUri(int port)
+        private void SetTracesEndpointUri(int port)
         {
-            var builder = new UriBuilder(_baseEndpoint) { Port = port };
-            var newUri = builder.Uri;
-            _tracesEndpoint = new Uri(newUri, TracesPath);
+            lock (EndpointGate)
+            {
+                if (_baseEndpoint != null)
+                {
+                    var builder = new UriBuilder(_baseEndpoint) { Port = port };
+                    _tracesEndpoint = new Uri(builder.Uri, TracesPath);
+                }
+            }
         }
 
         internal class ApiResponse
