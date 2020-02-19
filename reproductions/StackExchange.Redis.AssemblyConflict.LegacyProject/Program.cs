@@ -33,7 +33,8 @@ namespace StackExchange.Redis.AssemblyConflict.LegacyProject
 
         private static void RunTest()
         {
-            const string configuration = "127.0.0.1:6389";
+            // note: STACKEXCHANGE_REDIS_HOST includes a port, despite its name
+            var configuration = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
 
             ICache redis = new RedisClient(configuration);
             RunTest(redis);
