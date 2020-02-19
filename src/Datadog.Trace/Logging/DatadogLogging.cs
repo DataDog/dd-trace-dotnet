@@ -76,8 +76,11 @@ namespace Datadog.Trace.Logging
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 if (logDirectory == null)
                 {
+                    Log.Warning("DatadogLogging ctor: LOG DIRECTORY IS NULL");
                     return;
                 }
+
+                Log.Warning("DatadogLogging ctor: logDirectory = {0}", logDirectory);
 
                 var currentProcess = Process.GetCurrentProcess();
                 // Ends in a dash because of the date postfix
