@@ -28,8 +28,7 @@ namespace Datadog.Trace.Logging
                 new LoggerConfiguration()
                    .WriteTo.Sink<NullSink>()
                    .CreateLogger();
-            try
-            {
+
                 // We use environment variables and not the tracer settings to avoid a startup race condition between the logger and the tracer.
                 if (Environment.GetEnvironmentVariable(ConfigurationKeys.DebugEnabled) == "1")
                 {
@@ -44,6 +43,7 @@ namespace Datadog.Trace.Logging
                 }
 
                 var nativeLogFile = Environment.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
+
                 string logDirectory = null;
 
                 if (!string.IsNullOrEmpty(nativeLogFile))
@@ -76,11 +76,8 @@ namespace Datadog.Trace.Logging
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 if (logDirectory == null)
                 {
-                    Log.Warning("DatadogLogging ctor: LOG DIRECTORY IS NULL");
                     return;
                 }
-
-                Log.Warning("DatadogLogging ctor: logDirectory = {0}", logDirectory);
 
                 var currentProcess = Process.GetCurrentProcess();
                 // Ends in a dash because of the date postfix
@@ -97,18 +94,11 @@ namespace Datadog.Trace.Logging
                             rollOnFileSizeLimit: true,
                             fileSizeLimitBytes: MaxLogFileSize);
 
-                try
-                {
                     var currentAppDomain = AppDomain.CurrentDomain;
                     loggerConfiguration.Enrich.WithProperty("MachineName", currentProcess.MachineName);
                     loggerConfiguration.Enrich.WithProperty("ProcessName", currentProcess.ProcessName);
                     loggerConfiguration.Enrich.WithProperty("PID", currentProcess.Id);
                     loggerConfiguration.Enrich.WithProperty("AppDomainName", currentAppDomain.FriendlyName);
-                }
-                catch
-                {
-                    // At all costs, make sure the logger works when possible.
-                }
 
                 SharedLogger = loggerConfiguration.CreateLogger();
 
@@ -129,13 +119,6 @@ namespace Datadog.Trace.Logging
                         SharedLogger.Error(ex, "Failure on logger startup subscriber");
                     }
                 }
-            }
-            catch
-            {
-                // If for some reason the logger initialization fails, don't let the queue fill
-                Initialized = true;
-                // nothing else to do here
-            }
         }
 
         public static void RegisterStartupLog(Action<ILogger> logAction)
