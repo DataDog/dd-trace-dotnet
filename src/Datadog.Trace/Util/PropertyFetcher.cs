@@ -32,7 +32,7 @@ namespace Datadog.Trace.Util
 
             if (objType != _expectedType)
             {
-                var propertyInfo = objType.GetProperty(_propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                var propertyInfo = objType.GetProperty(_propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.IgnoreCase);
                 _fetchForExpectedType = PropertyFetch.FetcherForProperty(propertyInfo);
                 _expectedType = objType;
             }

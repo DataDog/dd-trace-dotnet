@@ -34,8 +34,8 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly PropertyFetcher HttpRequestInStopHttpContextFetcher = new PropertyFetcher("HttpContext");
         private static readonly PropertyFetcher UnhandledExceptionHttpContextFetcher = new PropertyFetcher("HttpContext");
         private static readonly PropertyFetcher UnhandledExceptionExceptionFetcher = new PropertyFetcher("Exception");
-        private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("HttpContext");
-        private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("ActionDescriptor");
+        private static readonly PropertyFetcher BeforeActionHttpContextFetcher = new PropertyFetcher("httpContext");
+        private static readonly PropertyFetcher BeforeActionActionDescriptorFetcher = new PropertyFetcher("actionDescriptor");
 
         private readonly IDatadogTracer _tracer;
         private readonly AspNetCoreDiagnosticOptions _options;
