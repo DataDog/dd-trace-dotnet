@@ -10,9 +10,8 @@ Package|Download
 Windows and Linux Installers|[See releases](https://github.com/DataDog/dd-trace-dotnet/releases)
 `Datadog.Trace`|[![Datadog.Trace](https://img.shields.io/nuget/vpre/Datadog.Trace.svg)](https://www.nuget.org/packages/Datadog.Trace)
 `Datadog.Trace.OpenTracing`|[![Datadog.Trace.OpenTracing](https://img.shields.io/nuget/vpre/Datadog.Trace.OpenTracing.svg)](https://www.nuget.org/packages/Datadog.Trace.OpenTracing)
-`Datadog.Trace.AspNet`|[![Datadog.Trace.AspNet](https://img.shields.io/nuget/vpre/Datadog.Trace.AspNet.svg)](https://www.nuget.org/packages/Datadog.Trace.AspNet)
 
-## Build Status
+## Build Status on `master`
 
 Pipeline          | Build Status
 ------------------|-------------
@@ -41,8 +40,8 @@ Integration tests | [![Build Status](https://dev.azure.com/datadog-apm/dd-trace-
     - .NET Framework 4.7 targeting pack
 - [.NET Core 3.1 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.1)
 - Optional: [.NET Core 2.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/2.1) to test in .NET Core 2.1 locally.
-- Optional: [.NET Core 2.2 Runtime](https://dotnet.microsoft.com/download/dotnet-core/2.2) to test in .NET Core 2.2 locally.
-- Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v3.4.4 or newer
+- Optional: [.NET Core 3.0 Runtime](https://dotnet.microsoft.com/download/dotnet-core/3.0) to test in .NET Core 3.0 locally.
+- Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v5.3 or newer
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
   - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
   - [WiX Toolset Visual Studio Extension](https://wixtoolset.org/releases/) to build installer from Visual Studio
@@ -67,7 +66,6 @@ msbuild Datadog.Trace.proj /t:BuildCsharp /p:Configuration=Release
 rem Build NuGet packages
 dotnet pack src\Datadog.Trace\Datadog.Trace.csproj
 dotnet pack src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj
-dotnet pack src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj
 
 rem Build C++ projects
 rem The native profiler depends on the Datadog.Trace.ClrProfiler.Managed.Loader C# project so be sure that is built first
