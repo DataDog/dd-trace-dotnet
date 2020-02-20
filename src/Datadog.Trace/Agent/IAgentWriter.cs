@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
@@ -8,5 +8,7 @@ namespace Datadog.Trace.Agent
         void WriteTrace(List<Span> trace);
 
         Task FlushAndCloseAsync();
+
+        void OverrideApi(IApi api);
     }
 }

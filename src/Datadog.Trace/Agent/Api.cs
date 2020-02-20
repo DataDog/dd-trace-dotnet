@@ -19,13 +19,9 @@ namespace Datadog.Trace.Agent
         private static readonly SerializationContext SerializationContext = new SerializationContext();
         private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(SerializationContext);
 
-        private static readonly object EndpointGate = new object();
-        private static int? _tracePortOverride;
-        private static Uri _baseEndpoint;
-        private static Uri _tracesEndpoint;
-
         private readonly HttpClient _client;
         private readonly IStatsd _statsd;
+        private readonly Uri _tracesEndpoint;
 
         static Api()
         {
@@ -40,25 +36,13 @@ namespace Datadog.Trace.Agent
 
         public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd)
         {
-            lock (EndpointGate)
-            {
-                _baseEndpoint = baseEndpoint;
-                if (_tracePortOverride != null)
-                {
-                    SetTracesEndpointUri(_tracePortOverride.Value);
-                }
-                else
-                {
-                    _tracesEndpoint = new Uri(_baseEndpoint, TracesPath);
-                }
-            }
+            DatadogLogging.RegisterStartupLog(log => log.Debug("Creating new Api"));
 
+            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
-
             _client = delegatingHandler == null
                           ? new HttpClient()
                           : new HttpClient(delegatingHandler);
-
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
 
             // report runtime details
@@ -90,19 +74,6 @@ namespace Datadog.Trace.Agent
 
             // don't add automatic instrumentation to requests from this HttpClient
             _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-        }
-
-        public static void OverrideTracePort(int port)
-        {
-            lock (EndpointGate)
-            {
-                _tracePortOverride = port;
-
-                if (_baseEndpoint != null)
-                {
-                    SetTracesEndpointUri(port);
-                }
-            }
         }
 
         public async Task SendTracesAsync(IList<List<Span>> traces)
@@ -208,13 +179,6 @@ namespace Datadog.Trace.Agent
             }
 
             return uniqueTraceIds;
-        }
-
-        private static void SetTracesEndpointUri(int port)
-        {
-            var builder = new UriBuilder(_baseEndpoint) { Port = port };
-            var newUri = builder.Uri;
-            _tracesEndpoint = new Uri(newUri, TracesPath);
         }
 
         internal class ApiResponse

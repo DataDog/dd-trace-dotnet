@@ -29,8 +29,9 @@ namespace Datadog.Trace
         private static int _liveTracerCount;
 
         private readonly IScopeManager _scopeManager;
-        private readonly IAgentWriter _agentWriter;
         private readonly Timer _heartbeatTimer;
+
+        private IAgentWriter _agentWriter;
 
         static Tracer()
         {
@@ -75,12 +76,38 @@ namespace Datadog.Trace
             // only set DogStatsdClient if tracer metrics are enabled
             if (Settings.TracerMetricsEnabled)
             {
-                Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName);
+                // Run this first in case the port override is ready
+                TracingProcessManager.SubscribeToDogStatsDPortOverride(
+                    port =>
+                    {
+                        DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to override dogstatsd port with {0}", port));
+                        Statsd = CreateDogStatsdClient(Settings, DefaultServiceName, port);
+                    });
+
+                Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort);
             }
 
+            // Run this first in case the port override is ready
+            TracingProcessManager.SubscribeToTraceAgentPortOverride(
+                port =>
+                {
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to override trace agent port with {0}", port));
+                    var builder = new UriBuilder(Settings.AgentUri) { Port = port };
+                    var baseEndpoint = builder.Uri;
+                    IApi overridingApiClient = new Api(baseEndpoint, delegatingHandler: null, Statsd);
+                    if (_agentWriter == null)
+                    {
+                        _agentWriter = _agentWriter ?? new AgentWriter(overridingApiClient, Statsd);
+                    }
+                    else
+                    {
+                        _agentWriter.OverrideApi(overridingApiClient);
+                    }
+                });
+
             // fall back to default implementations of each dependency if not provided
-            IApi apiClient = new Api(Settings.AgentUri, delegatingHandler: null, Statsd);
-            _agentWriter = agentWriter ?? new AgentWriter(apiClient, Statsd);
+            _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri, delegatingHandler: null, Statsd), Statsd);
+
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
 
@@ -169,7 +196,7 @@ namespace Datadog.Trace
 
         internal ISampler Sampler { get; }
 
-        internal IStatsd Statsd { get; }
+        internal IStatsd Statsd { get; private set; }
 
         /// <summary>
         /// Create a new Tracer with the given parameters
@@ -421,7 +448,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
+        private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
         {
             var frameworkDescription = FrameworkDescription.Create();
 
@@ -434,7 +461,7 @@ namespace Datadog.Trace
                 $"service_name:{serviceName}"
             };
 
-            var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, settings.DogStatsdPort, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
+            var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
             return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags);
         }
 
