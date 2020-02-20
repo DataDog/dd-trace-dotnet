@@ -19,11 +19,8 @@ namespace Datadog.Trace.Agent
         private static readonly SerializationContext SerializationContext = new SerializationContext();
         private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(SerializationContext);
 
-        private static readonly object EndpointGate = new object();
-
         private readonly HttpClient _client;
         private readonly IStatsd _statsd;
-        private readonly Uri _baseEndpoint;
         private readonly Uri _tracesEndpoint;
 
         static Api()
@@ -41,8 +38,7 @@ namespace Datadog.Trace.Agent
         {
             DatadogLogging.RegisterStartupLog(log => log.Debug("Creating new Api"));
 
-            _baseEndpoint = baseEndpoint;
-            _tracesEndpoint = new Uri(_baseEndpoint, TracesPath);
+            _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
             _client = delegatingHandler == null
                           ? new HttpClient()

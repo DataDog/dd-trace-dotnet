@@ -22,7 +22,7 @@ namespace Datadog.Trace
             ProcessArgumentsKey = ConfigurationKeys.TraceAgentArgs,
             PreStartAction = () =>
             {
-                TraceAgentMetadata.Port = FreeTcpPort();
+                TraceAgentMetadata.Port = GetFreeTcpPort();
                 if (TraceAgentMetadata.Port == null)
                 {
                     throw new Exception("Unable to secure a port for dogstatsd");
@@ -42,7 +42,7 @@ namespace Datadog.Trace
             ProcessArgumentsKey = ConfigurationKeys.DogStatsDArgs,
             PreStartAction = () =>
             {
-                DogStatsDMetadata.Port = FreeTcpPort();
+                DogStatsDMetadata.Port = GetFreeTcpPort();
                 if (DogStatsDMetadata.Port == null)
                 {
                     throw new Exception("Unable to secure a port for dogstatsd");
@@ -249,7 +249,7 @@ namespace Datadog.Trace
                 });
         }
 
-        private static int? FreeTcpPort()
+        private static int? GetFreeTcpPort()
         {
             TcpListener tcpListener = null;
             try

@@ -81,10 +81,10 @@ namespace Datadog.Trace
                     port =>
                     {
                         DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to override dogstatsd port with {0}", port));
-                        Statsd = CreateDogStatsdClient(Settings, DefaultServiceName, portOverride: port);
+                        Statsd = CreateDogStatsdClient(Settings, DefaultServiceName, port);
                     });
 
-                Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName);
+                Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort);
             }
 
             // Run this first in case the port override is ready
@@ -448,7 +448,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int? portOverride = null)
+        private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
         {
             var frameworkDescription = FrameworkDescription.Create();
 
@@ -461,7 +461,7 @@ namespace Datadog.Trace
                 $"service_name:{serviceName}"
             };
 
-            var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, portOverride ?? settings.DogStatsdPort, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
+            var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
             return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags);
         }
 
