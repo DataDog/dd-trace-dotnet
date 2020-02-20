@@ -16,8 +16,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var objectResult = someCast.GetProperty<object>("SomeIntProperty");
             var actualResult = someCast.GetProperty<int>("SomeIntProperty");
 
-            Assert.Equal(actual: expected, expected: (int)objectResult.GetValueOrDefault());
-            Assert.Equal(actual: expected, expected: actualResult.GetValueOrDefault());
+            Assert.Equal(expected, (int)objectResult.GetValueOrDefault());
+            Assert.Equal(expected, actualResult.GetValueOrDefault());
         }
 
         [Fact]
@@ -31,8 +31,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var objectResult = someCast.GetField<object>("someIntField");
             var actualResult = someCast.GetField<int>("someIntField");
 
-            Assert.Equal(actual: expected, expected: (int)objectResult.GetValueOrDefault());
-            Assert.Equal(actual: expected, expected: actualResult.GetValueOrDefault());
+            Assert.Equal(expected, (int)objectResult.GetValueOrDefault());
+            Assert.Equal(expected, actualResult.GetValueOrDefault());
         }
 
         private class SomeClass : SomeBaseClass
