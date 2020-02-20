@@ -147,13 +147,15 @@ jobs:
       packageType: sdk
       version: 3.1.x
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build src/**/*.csproj
+  - task: NuGetToolInstaller@1
+    displayName: install nuget
+
+  - task: NuGetCommand@2
+    displayName: nuget restore
     inputs:
-      command: build
-      projects: |
-        src/**/*.csproj
-      arguments: --configuration $(buildConfiguration)
+      restoreSolution: Datadog.Trace.sln
+      vstsFeed: $(packageFeed)
+      verbosityRestore: Normal
 
   - task: DotNetCoreCLI@2
     displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework net45
@@ -185,12 +187,12 @@ jobs:
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
       arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
 
-  - task: NuGetCommand@2
-    displayName: nuget restore native
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
     inputs:
-      restoreSolution: Datadog.Trace.Native.sln
-      vstsFeed: $(packageFeed)
-      verbosityRestore: Normal
+      command: build
+      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+      arguments: --configuration $(buildConfiguration)
 
   - task: MSBuild@1
     displayName: msbuild native
@@ -201,14 +203,6 @@ jobs:
       msbuildArguments: /t:BuildCpp
       maximumCpuCount: true
 
-  - task: NuGetCommand@2
-    displayName: 'nuget restore reproductions/**/packages.config'
-    inputs:
-      restoreSolution: reproductions/**/packages.config
-      restoreDirectory: $(Build.SourcesDirectory)/packages
-      vstsFeed: $(packageFeed)
-      verbosityRestore: Normal
-
   - task: MSBuild@1
     displayName: 'Build .NET Framework projects (not SDK-based projects)'
     inputs:
@@ -217,20 +211,6 @@ jobs:
       configuration: '$(buildConfiguration)'
       msbuildArguments: '/t:BuildFrameworkReproductions'
       maximumCpuCount: true
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet restore
-    inputs:
-      command: restore
-      projects: |
-        reproductions/**/*.csproj
-        samples/**/*.csproj
-        test/Datadog.Trace.IntegrationTests/Datadog.Trace.IntegrationTests.csproj
-        test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
-        test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
-        !reproductions/**/ExpenseItDemo*.csproj
-        !reproductions/**/EntityFramework6x*.csproj
-      vstsFeed: $(packageFeed)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build integration tests
@@ -244,34 +224,8 @@ jobs:
         test/Datadog.Trace.OpenTracing.IntegrationTests/Datadog.Trace.OpenTracing.IntegrationTests.csproj
         !reproductions/**/ExpenseItDemo*.csproj
         !reproductions/**/EntityFramework6x*.csproj
+        !reproductions/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
-
-#  - task: MSBuild@1
-#    displayName: 'Build sample apps (x64 or x86)'
-#    inputs:
-#      solution: Datadog.Trace.proj
-#      platform: '$(buildPlatform)'
-#      configuration: '$(buildConfiguration)'
-#      msbuildArguments: '/t:BuildSamples'
-#      maximumCpuCount: true
-
-#  - script: |
-#    choco install redis-64
-#    redis-server --service-install
-#    redis-server --service-start
-#    displayName: 'Install Redis'
-
-#  - script: |
-#    choco install elasticsearch
-#    net start elasticsearch-service-x64
-#    displayName: 'Install Elasticsearch'
-
-#  - task: PowerShell@2
-#    displayName: 'PowerShell Script'
-#    inputs:
-#      targetType: filePath
-#      filePath: './ci/install-sqlserver.ps1'
-#    enabled: false
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test

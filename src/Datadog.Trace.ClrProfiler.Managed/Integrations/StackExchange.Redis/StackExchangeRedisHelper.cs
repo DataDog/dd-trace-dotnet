@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Reflection;
 using Datadog.Trace.ClrProfiler.Emit;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
@@ -72,17 +71,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
         /// <returns>The multiplexer</returns>
         public static object GetMultiplexer(object obj)
         {
-            object multiplexer = null;
-            try
-            {
-                var fi = obj.GetType().GetField("multiplexer", BindingFlags.NonPublic | BindingFlags.Instance);
-                multiplexer = fi.GetValue(obj);
-            }
-            catch
-            {
-            }
-
-            return multiplexer;
+            return obj.GetField("multiplexer").GetValueOrDefault();
         }
     }
 }

@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\reproduction-dependencies\Datadog.StackExchange.Redis.StrongName\Datadog.StackExchange.Redis.StrongName.csproj" />
+    <ProjectReference Include="..\..\reproduction-dependencies\Datadog.StackExchange.Redis\Datadog.StackExchange.Redis.csproj" />
+  </ItemGroup>
+
+</Project>

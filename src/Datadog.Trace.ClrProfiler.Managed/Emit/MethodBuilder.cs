@@ -682,7 +682,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 {
                     for (var i = 0; i < methodGenerics.Length; i++)
                     {
-                        GenericSpec = string.Concat(GenericSpec, $"_{methodGenerics[i]?.FullName ?? "NULL"}_");
+                        GenericSpec = string.Concat(GenericSpec, $"_{methodGenerics[i]?.AssemblyQualifiedName ?? "NULL"}_");
                     }
                 }
 
@@ -692,7 +692,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 {
                     for (var i = 0; i < declaringTypeGenerics.Length; i++)
                     {
-                        GenericSpec = string.Concat(GenericSpec, $"_{declaringTypeGenerics[i]?.FullName ?? "NULL"}_");
+                        GenericSpec = string.Concat(GenericSpec, $"_{declaringTypeGenerics[i]?.AssemblyQualifiedName ?? "NULL"}_");
                     }
                 }
 
@@ -700,7 +700,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
                 if (explicitParameterTypes != null)
                 {
-                    ExplicitParams = string.Join("_", explicitParameterTypes.Select(ept => ept?.FullName ?? "NULL"));
+                    ExplicitParams = string.Join("_", explicitParameterTypes.Select(ept => ept?.AssemblyQualifiedName ?? "NULL"));
                 }
             }
         }
