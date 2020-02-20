@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
@@ -31,8 +32,8 @@ namespace Datadog.Trace.Logging
             try
             {
                 // We use environment variables and not the tracer settings to avoid a startup race condition between the logger and the tracer.
-                var ddTraceDebugValue = Environment.GetEnvironmentVariable(ConfigurationKeys.DebugEnabled)?.ToLowerInvariant();
-                if (ddTraceDebugValue == "1" || ddTraceDebugValue == "true")
+                var ddTraceDebugValue = Environment.GetEnvironmentVariable(ConfigurationKeys.DebugEnabled);
+                if (ddTraceDebugValue?.ToBoolean() == true)
                 {
                     MinimumLogEventLevel = LogEventLevel.Verbose;
                 }
