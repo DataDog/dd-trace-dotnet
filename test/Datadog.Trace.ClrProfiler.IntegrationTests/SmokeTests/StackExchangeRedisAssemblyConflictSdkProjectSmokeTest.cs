@@ -13,10 +13,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [TargetFrameworkVersionsFact("net452;net461;netcoreapp2.1;netcoreapp3.1")]
+        [Fact]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
+            if (EnvironmentTools.IsWindows())
+            {
+                Output.WriteLine("Ignored for Windows");
+                return;
+            }
+
             CheckForSmoke(shouldDeserializeTraces: false);
         }
     }

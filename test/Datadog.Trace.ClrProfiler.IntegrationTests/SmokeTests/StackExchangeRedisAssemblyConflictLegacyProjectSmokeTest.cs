@@ -13,16 +13,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [TargetFrameworkVersionsFact("net452;net461")]
+        [Fact(Skip = ".NET Framework test, but cannot run on Windows because it requires Redis")]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {
-            if (!EnvironmentTools.IsWindows())
-            {
-                Output.WriteLine("Ignored for Linux");
-                return;
-            }
-
             CheckForSmoke(shouldDeserializeTraces: false);
         }
     }
