@@ -11,7 +11,6 @@ namespace Samples.Npgsql
     {
         private static async Task Main()
         {
-            /* TODO: enable this after adding a Npgsql-specific integration
             using (var connection = CreateConnection())
             {
                 var testQueries = new RelationalDatabaseTestHarness<NpgsqlConnection, NpgsqlCommand, NpgsqlDataReader>(
@@ -26,10 +25,8 @@ namespace Samples.Npgsql
                     executeReaderWithBehaviorAsync: null
                 );
 
-
                 await testQueries.RunAsync();
             }
-            */
 
             using (var connection = CreateConnection())
             {

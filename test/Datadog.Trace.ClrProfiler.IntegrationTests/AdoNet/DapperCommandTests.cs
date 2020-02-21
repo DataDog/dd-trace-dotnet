@@ -1,13 +1,14 @@
+#if !NET452
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class NpgsqlCommandTests : TestHelper
+    public class DapperCommandTests : TestHelper
     {
-        public NpgsqlCommandTests(ITestOutputHelper output)
-            : base("Npgsql", output)
+        public DapperCommandTests(ITestOutputHelper output)
+            : base("Dapper", output)
         {
         }
 
@@ -15,10 +16,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            var expectedSpanCount = 34;
+            var expectedSpanCount = 2;
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.Npgsql-" + dbType;
+            const string expectedServiceName = "Samples.Dapper-" + dbType;
 
             int agentPort = TcpPortProvider.GetOpenPort();
 
@@ -41,3 +42,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
     }
 }
+#endif
