@@ -138,16 +138,7 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
-        public bool DebugEnabled
-        {
-            get => GlobalSettings.Source.DebugEnabled;
-            // [Obsolete("Use GlobalSettings.SetDebugEnabled(value).")] // TODO: this doesn't work on setters and getters until c#8
-            // ReSharper disable once ValueParameterNotUsed
-            set
-            {
-                // no-op to prevent signature change for this major version
-            }
-        }
+        public bool DebugEnabled => GlobalSettings.Source.DebugEnabled;
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.
