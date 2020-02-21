@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Web;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
