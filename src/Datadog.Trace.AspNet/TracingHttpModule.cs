@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Web;
 using Datadog.Trace.ExtensionMethods;
@@ -19,7 +20,7 @@ namespace Datadog.Trace.AspNet
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
-        private static HashSet<HttpApplication> registeredEventHandlers = new HashSet<HttpApplication>();
+        private static ConcurrentDictionary<HttpApplication, byte> registeredEventHandlers = new ConcurrentDictionary<HttpApplication, byte>();
 
         private readonly string _httpContextScopeKey;
         private readonly string _requestOperationName;
@@ -56,7 +57,7 @@ namespace Datadog.Trace.AspNet
             //         I've discovered that not letting each of these unique application objects be added, and thus
             //         the event handlers be registered within each HttpApplication object, leads to the runtime
             //         weirdness: at one point it crashed consistently for me, and later, I saw no spans at all.
-            if (registeredEventHandlers.Add(httpApplication))
+            if (registeredEventHandlers.TryAdd(httpApplication, 1))
             {
                 _httpApplication = httpApplication;
                 httpApplication.BeginRequest += OnBeginRequest;
@@ -69,7 +70,7 @@ namespace Datadog.Trace.AspNet
         public void Dispose()
         {
             // Remove the HttpApplication mapping so we don't keep the object alive
-            registeredEventHandlers.Remove(_httpApplication);
+            registeredEventHandlers.TryRemove(_httpApplication, out var _);
             _httpApplication = null;
         }
 
