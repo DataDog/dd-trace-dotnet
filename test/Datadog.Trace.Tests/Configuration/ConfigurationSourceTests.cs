@@ -118,6 +118,9 @@ namespace Datadog.Trace.Tests.Configuration
             IConfigurationSource source = new EnvironmentConfigurationSource();
             var settings = new TracerSettings(source);
 
+            // Needed because we cache global settings like DebugEnabled
+            GlobalSettings.Reload();
+
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
 

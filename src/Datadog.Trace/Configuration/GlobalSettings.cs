@@ -27,31 +27,20 @@ namespace Datadog.Trace.Configuration
             DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
                            // default value
                            false;
-
-            LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled) ??
-                                   // default value
-                                   false;
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether debug mode is enabled.
+        /// Gets a value indicating whether debug mode is enabled.
         /// Default is <c>false</c>.
+        /// Set in code via <see cref="SetDebugEnabled"/>
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
-        public bool DebugEnabled { get; set; }
+        public bool DebugEnabled { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether correlation identifiers are
-        /// automatically injected into the logging context.
-        /// Default is <c>false</c>.
+        /// Gets or sets the global settings instance.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled { get; set; }
-
-        /// <summary>
-        /// Gets the global settings instance.
-        /// </summary>
-        internal static GlobalSettings Source { get; } = FromDefaultSources();
+        internal static GlobalSettings Source { get; set; } = FromDefaultSources();
 
         /// <summary>
         /// Set whether debug mode is enabled.
@@ -70,6 +59,15 @@ namespace Datadog.Trace.Configuration
             {
                 DatadogLogging.UseDefaultLevel();
             }
+        }
+
+        /// <summary>
+        /// Used to refresh global settings when environment variables or config sources change.
+        /// This is not necessary if changes are set via code, only environment.
+        /// </summary>
+        public static void Reload()
+        {
+            Source = FromDefaultSources();
         }
 
         /// <summary>

@@ -73,6 +73,10 @@ namespace Datadog.Trace.Configuration
                                // default value
                                false;
 
+            LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled) ??
+                                   // default value
+                                   false;
+
             var maxTracesPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond);
 
             if (maxTracesPerSecond != null)
@@ -130,14 +134,19 @@ namespace Datadog.Trace.Configuration
         public bool TraceEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether debug mode is enabled.
+        /// Gets a value indicating whether debug mode is enabled.
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
         public bool DebugEnabled
         {
-            get { return GlobalSettings.Source.DebugEnabled; }
-            set { GlobalSettings.Source.DebugEnabled = value; }
+            get => GlobalSettings.Source.DebugEnabled;
+            // [Obsolete("Use GlobalSettings.SetDebugEnabled(value).")] // TODO: this doesn't work on setters and getters until c#8
+            // ReSharper disable once ValueParameterNotUsed
+            set
+            {
+                // no-op to prevent signature change for this major version
+            }
         }
 
         /// <summary>
@@ -170,11 +179,7 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled
-        {
-            get { return GlobalSettings.Source.LogsInjectionEnabled; }
-            set { GlobalSettings.Source.LogsInjectionEnabled = value; }
-        }
+        public bool LogsInjectionEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the maximum number of traces set to AutoKeep (p1) per second.

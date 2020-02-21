@@ -212,7 +212,7 @@ namespace Datadog.Trace
             // Keep supporting this older public method by creating a TracerConfiguration
             // from default sources, overwriting the specified settings, and passing that to the constructor.
             var configuration = TracerSettings.FromDefaultSources();
-            configuration.DebugEnabled = isDebugEnabled;
+            GlobalSettings.SetDebugEnabled(isDebugEnabled);
 
             if (agentEndpoint != null)
             {
