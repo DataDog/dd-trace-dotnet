@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Serilog;
@@ -45,35 +46,7 @@ namespace Datadog.Trace.Logging
                     MaxLogFileSize = maxLogSize;
                 }
 
-                var nativeLogFile = Environment.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
-                string logDirectory = null;
-
-                if (!string.IsNullOrEmpty(nativeLogFile))
-                {
-                    logDirectory = Path.GetDirectoryName(nativeLogFile);
-                }
-
-                // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission because of the following API calls
-                //   - Directory.Exists
-                //   - Environment.GetFolderPath
-                //   - Path.GetTempPath
-                if (logDirectory == null)
-                {
-                    var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
-                    if (Directory.Exists(windowsDefaultDirectory))
-                    {
-                        logDirectory = windowsDefaultDirectory;
-                    }
-                    else if (Directory.Exists(NixDefaultDirectory))
-                    {
-                        logDirectory = NixDefaultDirectory;
-                    }
-                    else
-                    {
-                        // Last effort at writing logs
-                        logDirectory = Path.GetTempPath();
-                    }
-                }
+                var logDirectory = GetLogDirectory();
 
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 if (logDirectory == null)
@@ -169,6 +142,50 @@ namespace Datadog.Trace.Logging
         public static ILogger For<T>()
         {
             return GetLogger(typeof(T));
+        }
+
+        private static string GetLogDirectory()
+        {
+            var nativeLogFile = Environment.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
+            string logDirectory = null;
+
+            if (!string.IsNullOrEmpty(nativeLogFile))
+            {
+                logDirectory = Path.GetDirectoryName(nativeLogFile);
+            }
+
+            // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
+            // because of the following API calls
+            //   - Directory.Exists
+            //   - Environment.GetFolderPath
+            //   - Path.GetTempPath
+            if (logDirectory == null)
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
+                    if (Directory.Exists(windowsDefaultDirectory))
+                    {
+                        logDirectory = windowsDefaultDirectory;
+                    }
+                }
+                else
+                {
+                    // either Linux or OS X
+                    if (Directory.Exists(NixDefaultDirectory))
+                    {
+                        logDirectory = NixDefaultDirectory;
+                    }
+                }
+            }
+
+            if (logDirectory == null)
+            {
+                // Last effort at writing logs
+                logDirectory = Path.GetTempPath();
+            }
+
+            return logDirectory;
         }
     }
 }
