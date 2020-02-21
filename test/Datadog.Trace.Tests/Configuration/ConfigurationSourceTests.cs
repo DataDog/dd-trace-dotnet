@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Configuration
             var collection = new NameValueCollection { { key, value } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
-
+            GlobalSettings.Reload();
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
         }
@@ -140,7 +140,7 @@ namespace Datadog.Trace.Tests.Configuration
             string json = JsonConvert.SerializeObject(config);
             IConfigurationSource source = new JsonConfigurationSource(json);
             var settings = new TracerSettings(source);
-
+            GlobalSettings.Reload();
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
         }
