@@ -71,9 +71,13 @@ namespace Datadog.Trace.AspNet
         /// <inheritdoc />
         public void Dispose()
         {
-            // Remove the HttpApplication mapping so we don't keep the object alive
-            registeredEventHandlers.TryRemove(_httpApplication, out var _);
-            _httpApplication = null;
+            // defend against multiple calls to Dispose()
+            if (_httpApplication != null)
+            {
+                // Remove the HttpApplication mapping so we don't keep the object alive
+                registeredEventHandlers.TryRemove(_httpApplication, out var _);
+                _httpApplication = null;
+            }
         }
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
