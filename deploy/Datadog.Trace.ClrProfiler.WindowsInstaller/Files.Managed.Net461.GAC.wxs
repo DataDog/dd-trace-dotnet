@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Fragment>
+    <ComponentGroup Id="Files.Managed.Net461.GAC" Directory="net461.GAC">
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_GAC_Sigil.dll"
+              Source="$(var.ManagedDllPath)\net461\Sigil.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
