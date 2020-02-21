@@ -20,6 +20,8 @@ namespace Datadog.Trace.AspNet
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(TracingHttpModule));
 
+        // there is no ConcurrentHashSet, so use a ConcurrentDictionary
+        // where we only care about the key, not the value
         private static ConcurrentDictionary<HttpApplication, byte> registeredEventHandlers = new ConcurrentDictionary<HttpApplication, byte>();
 
         private readonly string _httpContextScopeKey;
