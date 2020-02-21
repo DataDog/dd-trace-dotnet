@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>1.13.1-prerelease</Version>
+    <Version>1.13.2</Version>
     <Title>Datadog APM</Title>
     <Description>Manual instrumentation library for Datadog APM</Description>
   </PropertyGroup>
