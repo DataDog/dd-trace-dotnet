@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Configuration
 {
@@ -47,10 +44,6 @@ namespace Datadog.Trace.Configuration
                            // default value
                            true;
 
-            DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
-                           // default value
-                           false;
-
             var disabledIntegrationNames = source?.GetString(ConfigurationKeys.DisabledIntegrations)
                                                  ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                            Enumerable.Empty<string>();
@@ -79,10 +72,6 @@ namespace Datadog.Trace.Configuration
             AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
                                // default value
                                false;
-
-            LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled) ??
-                                   // default value
-                                   false;
 
             var maxTracesPerSecond = source?.GetInt32(ConfigurationKeys.MaxTracesSubmittedPerSecond);
 
@@ -145,7 +134,11 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
-        public bool DebugEnabled { get; set; }
+        public bool DebugEnabled
+        {
+            get { return GlobalSettings.Source.DebugEnabled; }
+            set { GlobalSettings.Source.DebugEnabled = value; }
+        }
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.
@@ -177,7 +170,11 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-        public bool LogsInjectionEnabled { get; set; }
+        public bool LogsInjectionEnabled
+        {
+            get { return GlobalSettings.Source.LogsInjectionEnabled; }
+            set { GlobalSettings.Source.LogsInjectionEnabled = value; }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
@@ -228,29 +225,6 @@ namespace Datadog.Trace.Configuration
         public bool DiagnosticSourceEnabled { get; set; }
 
         /// <summary>
-        /// Gets the global settings instance.
-        /// </summary>
-        internal static TracerSettings GlobalSettings { get; } = FromDefaultSources();
-
-        /// <summary>
-        /// Set whether debug mode is enabled in the tracing library.
-        /// </summary>
-        /// <param name="enabled">Whether debug is enabled.</param>
-        public static void SetDebugEnabled(bool enabled)
-        {
-            GlobalSettings.DebugEnabled = enabled;
-
-            if (enabled)
-            {
-                DatadogLogging.SetLogLevel(LogEventLevel.Verbose);
-            }
-            else
-            {
-                DatadogLogging.UseDefaultLevel();
-            }
-        }
-
-        /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.
         /// </summary>
@@ -268,39 +242,7 @@ namespace Datadog.Trace.Configuration
         /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
         public static CompositeConfigurationSource CreateDefaultConfigurationSource()
         {
-            // env > AppSettings > datadog.json
-            var configurationSource = new CompositeConfigurationSource
-            {
-                new EnvironmentConfigurationSource(),
-
-#if !NETSTANDARD2_0
-                // on .NET Framework only, also read from app.config/web.config
-                new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
-#endif
-            };
-
-            string currentDirectory = System.Environment.CurrentDirectory;
-
-#if !NETSTANDARD2_0
-            // on .NET Framework only, use application's root folder
-            // as default path when looking for datadog.json
-            if (System.Web.Hosting.HostingEnvironment.IsHosted)
-            {
-                currentDirectory = System.Web.Hosting.HostingEnvironment.MapPath("~");
-            }
-#endif
-
-            // if environment variable is not set, look for default file name in the current directory
-            var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
-                                        Path.Combine(currentDirectory, "datadog.json");
-
-            if (Path.GetExtension(configurationFileName).ToUpperInvariant() == ".JSON" &&
-                File.Exists(configurationFileName))
-            {
-                configurationSource.Add(JsonConfigurationSource.FromFile(configurationFileName));
-            }
-
-            return configurationSource;
+            return GlobalSettings.CreateDefaultConfigurationSource();
         }
 
         internal bool IsIntegrationEnabled(string name)
