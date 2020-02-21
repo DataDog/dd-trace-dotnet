@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -85,7 +86,7 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or null if not found.</returns>
         bool? IConfigurationSource.GetBool(string key)
         {
-            return GetValue<bool?>(key);
+            return GetValue<bool>(key);
         }
 
         /// <summary>

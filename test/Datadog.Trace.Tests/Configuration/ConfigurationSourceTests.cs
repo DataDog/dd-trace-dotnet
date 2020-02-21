@@ -9,10 +9,28 @@ namespace Datadog.Trace.Tests.Configuration
 {
     public class ConfigurationSourceTests
     {
+        public static IEnumerable<object[]> GetGlobalDefaultTestData()
+        {
+            yield return new object[] { CreateGlobalFunc(s => s.DebugEnabled), false };
+        }
+
+        public static IEnumerable<object[]> GetGlobalTestData()
+        {
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "true", CreateGlobalFunc(s => s.DebugEnabled), true };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "false", CreateGlobalFunc(s => s.DebugEnabled), false };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "tRUe", CreateGlobalFunc(s => s.DebugEnabled), true };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "fALse", CreateGlobalFunc(s => s.DebugEnabled), false };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "1", CreateGlobalFunc(s => s.DebugEnabled), true };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "0", CreateGlobalFunc(s => s.DebugEnabled), false };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "yes", CreateGlobalFunc(s => s.DebugEnabled), true };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "no", CreateGlobalFunc(s => s.DebugEnabled), false };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "T", CreateGlobalFunc(s => s.DebugEnabled), true };
+            yield return new object[] { ConfigurationKeys.DebugEnabled, "F", CreateGlobalFunc(s => s.DebugEnabled), false };
+        }
+
         public static IEnumerable<object[]> GetDefaultTestData()
         {
             yield return new object[] { CreateFunc(s => s.TraceEnabled), true };
-            yield return new object[] { CreateFunc(s => s.DebugEnabled), false };
             yield return new object[] { CreateFunc(s => s.AgentUri), new Uri("http://localhost:8126/") };
             yield return new object[] { CreateFunc(s => s.Environment), null };
             yield return new object[] { CreateFunc(s => s.ServiceName), null };
@@ -30,9 +48,6 @@ namespace Datadog.Trace.Tests.Configuration
         {
             yield return new object[] { ConfigurationKeys.TraceEnabled, "true", CreateFunc(s => s.TraceEnabled), true };
             yield return new object[] { ConfigurationKeys.TraceEnabled, "false", CreateFunc(s => s.TraceEnabled), false };
-
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "true", CreateFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "false", CreateFunc(s => s.DebugEnabled), false };
 
             yield return new object[] { ConfigurationKeys.AgentHost, "test-host", CreateFunc(s => s.AgentUri), new Uri("http://test-host:8126/") };
             yield return new object[] { ConfigurationKeys.AgentPort, "9000", CreateFunc(s => s.AgentUri), new Uri("http://localhost:9000/") };
@@ -78,6 +93,11 @@ namespace Datadog.Trace.Tests.Configuration
             return settingGetter;
         }
 
+        public static Func<GlobalSettings, object> CreateGlobalFunc(Func<GlobalSettings, object> settingGetter)
+        {
+            return settingGetter;
+        }
+
         [Theory]
         [MemberData(nameof(GetDefaultTestData))]
         public void DefaultSetting(Func<TracerSettings, object> settingGetter, object expectedValue)
@@ -98,7 +118,6 @@ namespace Datadog.Trace.Tests.Configuration
             var collection = new NameValueCollection { { key, value } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
-            GlobalSettings.Reload();
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
         }
@@ -117,9 +136,6 @@ namespace Datadog.Trace.Tests.Configuration
             Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
             IConfigurationSource source = new EnvironmentConfigurationSource();
             var settings = new TracerSettings(source);
-
-            // Needed because we cache global settings like DebugEnabled
-            GlobalSettings.Reload();
 
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
@@ -140,9 +156,51 @@ namespace Datadog.Trace.Tests.Configuration
             string json = JsonConvert.SerializeObject(config);
             IConfigurationSource source = new JsonConfigurationSource(json);
             var settings = new TracerSettings(source);
-            GlobalSettings.Reload();
+
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetGlobalDefaultTestData))]
+        public void GlobalDefaultSetting(Func<GlobalSettings, object> settingGetter, object expectedValue)
+        {
+            var settings = new GlobalSettings();
+            object actualValue = settingGetter(settings);
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetGlobalTestData))]
+        public void GlobalNameValueConfigurationSource(
+            string key,
+            string value,
+            Func<GlobalSettings, object> settingGetter,
+            object expectedValue)
+        {
+            var collection = new NameValueCollection { { key, value } };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var settings = new GlobalSettings(source);
+            object actualValue = settingGetter(settings);
+            Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetGlobalTestData))]
+        public void GlobalEnvironmentConfigurationSource(
+            string key,
+            string value,
+            Func<GlobalSettings, object> settingGetter,
+            object expectedValue)
+        {
+            // save original value so we can restore later
+            var originalValue = Environment.GetEnvironmentVariable(key);
+            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+            IConfigurationSource source = new EnvironmentConfigurationSource();
+            var settings = new GlobalSettings(source);
+            object actualValue = settingGetter(settings);
+            Assert.Equal(expectedValue, actualValue);
+            Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
         }
 
         // Special case for dictionary-typed settings in JSON

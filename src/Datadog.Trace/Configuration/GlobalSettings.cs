@@ -12,7 +12,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Initializes a new instance of the <see cref="GlobalSettings"/> class with default values.
         /// </summary>
-        public GlobalSettings()
+        internal GlobalSettings()
             : this(null)
         {
         }
@@ -22,7 +22,7 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public GlobalSettings(IConfigurationSource source)
+        internal GlobalSettings(IConfigurationSource source)
         {
             DebugEnabled = source?.GetBool(ConfigurationKeys.DebugEnabled) ??
                            // default value
