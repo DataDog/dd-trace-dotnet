@@ -3,7 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Configuration
 {
@@ -224,6 +226,29 @@ namespace Datadog.Trace.Configuration
         /// of <see cref="System.Diagnostics.DiagnosticSource"/> is enabled.
         /// </summary>
         public bool DiagnosticSourceEnabled { get; set; }
+
+        /// <summary>
+        /// Gets the global settings instance.
+        /// </summary>
+        internal static TracerSettings GlobalSettings { get; } = FromDefaultSources();
+
+        /// <summary>
+        /// Set whether debug mode is enabled in the tracing library.
+        /// </summary>
+        /// <param name="enabled">Whether debug is enabled.</param>
+        public static void SetDebugEnabled(bool enabled)
+        {
+            GlobalSettings.DebugEnabled = enabled;
+
+            if (enabled)
+            {
+                DatadogLogging.SetLogLevel(LogEventLevel.Verbose);
+            }
+            else
+            {
+                DatadogLogging.UseDefaultLevel();
+            }
+        }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
