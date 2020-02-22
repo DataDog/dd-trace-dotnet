@@ -34,7 +34,6 @@
 
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
       <ComponentGroupRef Id="Files"/>
-      <ComponentGroupRef Id="Files.Native"/>
       <ComponentGroupRef Id="Files.Managed.Net45.GAC"/>
       <ComponentGroupRef Id="Files.Managed.Net461.GAC"/>
       <ComponentGroupRef Id="Files.Managed.Net45"/>
@@ -45,10 +44,12 @@
       <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
 
-      <!-- For the 64-bit installer, also install the 32-bit profiler -->
       <?if $(var.Win64) = yes ?>
-      <ComponentGroupRef Id="Files.Native.32"/>
+      <ComponentGroupRef Id="Files.Native.64"/>
       <?endif ?>
+
+      <!-- The 32-bit profiler is always included, even in 64-bit builds -->
+      <ComponentGroupRef Id="Files.Native.32"/>
     </Feature>
   </Product>
 
@@ -107,14 +108,15 @@
   <Fragment>
     <ComponentGroup Id="Files" Directory="INSTALLFOLDER">
       <Component Win64="$(var.Win64)">
-        <File Id="integrations.json" Source="..\..\integrations.json" />
+        <File Id="integrations.json" Source="$(var.TracerHomeDirectory)\integrations.json" />
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="Files.Native" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.Win64)">
+    <?if $(var.Win64) = yes ?>
+    <ComponentGroup Id="Files.Native.64" Directory="INSTALLFOLDER">
+      <Component Win64="yes">
         <File Id="Datadog.Trace.ClrProfiler.Native"
-              Source="$(var.NativeDllPath)\Datadog.Trace.ClrProfiler.Native.dll"
+              Source="$(var.TracerHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
@@ -122,16 +124,29 @@
     </ComponentGroup>
 
     <!-- For the 64-bit installer, also install the 32-bit profiler -->
-    <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="Files.Native.32" Directory="INSTALLFOLDER.32">
       <Component Win64="no" Id="Datadog.Trace.ClrProfiler.Native.32">
         <File Id="Datadog.Trace.ClrProfiler.Native.32"
-              Source="$(var.NativeDll32Path)\Datadog.Trace.ClrProfiler.Native.dll"
+              Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
       </Component>
     </ComponentGroup>
+
+    <?else ?>
+
+    <!-- note that for the 32-bit build, we need to install into INSTALLFOLDER instead of INSTALLFOLDER.32 -->
+    <ComponentGroup Id="Files.Native.32" Directory="INSTALLFOLDER">
+      <Component Win64="no" Id="Datadog.Trace.ClrProfiler.Native.32">
+        <File Id="Datadog.Trace.ClrProfiler.Native.32"
+              Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+      </Component>
+    </ComponentGroup>
+
     <?endif ?>
 
     <ComponentGroup Id="EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">

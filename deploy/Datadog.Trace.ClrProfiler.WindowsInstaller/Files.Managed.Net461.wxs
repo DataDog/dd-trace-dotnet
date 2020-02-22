@@ -7,42 +7,42 @@
     <ComponentGroup Id="Files.Managed.Net461" Directory="net461">
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.AspNet.dll"
-              Source="$(var.ManagedDllPath)\net461\Datadog.Trace.AspNet.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.AspNet.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.ClrProfiler.Managed.dll"
-              Source="$(var.ManagedDllPath)\net461\Datadog.Trace.ClrProfiler.Managed.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.ClrProfiler.Managed.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.dll"
-              Source="$(var.ManagedDllPath)\net461\Datadog.Trace.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_MsgPack.dll"
-              Source="$(var.ManagedDllPath)\net461\MsgPack.dll"
+              Source="$(var.TracerHomeDirectory)\net461\MsgPack.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_Newtonsoft.Json.dll"
-              Source="$(var.ManagedDllPath)\net461\Newtonsoft.Json.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Newtonsoft.Json.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_Sigil.dll"
-              Source="$(var.ManagedDllPath)\net461\Sigil.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Sigil.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_System.Diagnostics.DiagnosticSource.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.DiagnosticSource.dll"
+              Source="$(var.TracerHomeDirectory)\net461\System.Diagnostics.DiagnosticSource.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_System.Runtime.InteropServices.RuntimeInformation.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Runtime.InteropServices.RuntimeInformation.dll"
+              Source="$(var.TracerHomeDirectory)\net461\System.Runtime.InteropServices.RuntimeInformation.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>
