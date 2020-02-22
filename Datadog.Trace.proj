@@ -1,6 +1,8 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <BuildInParallel Condition="'$(BuildInParallel)' == ''">true</BuildInParallel>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)src\bin\tracer-home</TracerHomeDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -55,11 +57,11 @@
   </Target>
 
   <Target Name="BuildCpp">
-    <MSBuild Targets="Build" Projects="@(CppProject)">
+    <MSBuild Targets="Build" Projects="@(CppProject)" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'" Properties="Platform=x64">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
 
-    <MSBuild Targets="Build" Projects="@(CppProject)" Condition="'$(BuildAdditionalx86Profiler)' == 'true'" Properties="Platform=x86">
+    <MSBuild Targets="Build" Projects="@(CppProject)" Condition="'$(Platform)' == 'x86' OR '$(Platform)' == 'All' OR '$(Buildx86Profiler)' == 'true'" Properties="Platform=x86">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -109,24 +111,18 @@
     </MSBuild>
   </Target>
 
-  <Target Name="SetMsiProperties">
-    <PropertyGroup>
-      <BuildAdditionalx86Profiler Condition="'$(Platform)' == 'x64'">true</BuildAdditionalx86Profiler>
-    </PropertyGroup>
-  </Target>
-
   <Target Name="PublishManagedProfilerOnDisk">
     <ItemGroup>
       <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-        <Properties>TargetFramework=net45;PublishDir=$(MSBuildThisFileDirectory)\src\bin\managed-publish\net45</Properties>
+        <Properties>TargetFramework=net45;PublishDir=$(TracerHomeDirectory)\net45</Properties>
       </ManagedProfilerPublishProject>
 
       <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-        <Properties>TargetFramework=net461;PublishDir=$(MSBuildThisFileDirectory)\src\bin\managed-publish\net461</Properties>
+        <Properties>TargetFramework=net461;PublishDir=$(TracerHomeDirectory)\net461</Properties>
       </ManagedProfilerPublishProject>
 
       <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
-        <Properties>TargetFramework=netstandard2.0;PublishDir=$(MSBuildThisFileDirectory)\src\bin\managed-publish\netstandard2.0</Properties>
+        <Properties>TargetFramework=netstandard2.0;PublishDir=$(TracerHomeDirectory)\netstandard2.0</Properties>
       </ManagedProfilerPublishProject>
     </ItemGroup>
 
@@ -135,46 +131,69 @@
     </MSBuild>
   </Target>
 
-  <Target Name="Msi" DependsOnTargets="SetMsiProperties;BuildCsharp;BuildCpp;PublishManagedProfilerOnDisk">
-    <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)">
+  <Target Name="BuildLoader">
+    <ItemGroup>
+      <ManagedLoaderProject Include="src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj"/>
+    </ItemGroup>
+
+    <MSBuild Targets="Build" Projects="@(ManagedLoaderProject)" RemoveProperties="Platform">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
-  
-  <Target Name="CreateHomeDirectory" DependsOnTargets="BuildCsharp;BuildCpp;PublishManagedProfilerOnDisk">
-      <ItemGroup>
-	    <PublishedManagedTracerFiles Include="$(MSBuildThisFileDirectory)src\bin\managed-publish\**\*.*" />
-      </ItemGroup>
-	  <PropertyGroup>
-	    <WindowsHomeOutput>$(MSBuildThisFileDirectory)src\bin\windows-tracer-home</WindowsHomeOutput>
-	  </PropertyGroup>
-      <Copy 
-        SourceFiles="$(MSBuildThisFileDirectory)integrations.json" 
-        DestinationFolder="$(WindowsHomeOutput)" 
-		SkipUnchangedFiles="true"
+
+  <Target Name="PublishNativeProfilerOnDisk" DependsOnTargets="BuildLoader;BuildCpp">
+    <Copy Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'"
+        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x64\Datadog.Trace.ClrProfiler.Native.dll"
+        DestinationFolder="$(TracerHomeDirectory)\win-x64"
+        SkipUnchangedFiles="true"
         Retries="3"
         RetryDelayMilliseconds="300"/>
-      <Copy 
-	    SourceFiles="@(PublishedManagedTracerFiles)"
-        DestinationFiles="@(PublishedManagedTracerFiles->'$(WindowsHomeOutput)\%(RecursiveDir)%(Filename)%(Extension)')"
-		SkipUnchangedFiles="true"
+    <Copy Condition="'$(Platform)' == 'x86' OR '$(Platform)' == 'All' OR '$(Buildx86Profiler)' == 'true'"
+        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x86\Datadog.Trace.ClrProfiler.Native.dll"
+        DestinationFolder="$(TracerHomeDirectory)\win-x86"
+        SkipUnchangedFiles="true"
         Retries="3"
         RetryDelayMilliseconds="300"/>
-      <Copy 
-        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\Release\x64\Datadog.Trace.ClrProfiler.Native.dll" 
-        DestinationFolder="$(WindowsHomeOutput)\x64" 
-		SkipUnchangedFiles="true"
-        Retries="3"
-        RetryDelayMilliseconds="300"/>
-      <Copy 
-        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\Release\x86\Datadog.Trace.ClrProfiler.Native.dll" 
-        DestinationFolder="$(WindowsHomeOutput)\x86" 
-		SkipUnchangedFiles="true"
-        Retries="3"
-        RetryDelayMilliseconds="300"/>
-	  <Delete Files="$(WindowsHomeOutput).zip" />
-	  <ZipDirectory
-        SourceDirectory="$(WindowsHomeOutput)"
-        DestinationFile="$(WindowsHomeOutput).zip" />
+  </Target>
+
+  <Target Name="SetMsiProperties">
+    <PropertyGroup>
+      <!-- we need to build both x64 and x86 profilers to build the x64 msi -->
+      <Buildx86Profiler Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'">true</Buildx86Profiler>
+
+      <!-- disable zip by default when building msi, unless explicitly enabled -->
+      <ZipHomeDirectory Condition="'$(ZipHomeDirectory)' == ''">false</ZipHomeDirectory>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="Msi" DependsOnTargets="SetMsiProperties;CreateHomeDirectory">
+    <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'" Properties="Platform=x64">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+
+    <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)" Condition="'$(Platform)' == 'x86' OR '$(Platform)' == 'All'" Properties="Platform=x86">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <Target Name="CreateHomeDirectory" DependsOnTargets="PublishNativeProfilerOnDisk;PublishManagedProfilerOnDisk">
+    <PropertyGroup>
+      <!-- enable zip by default to keep current behavior-->
+      <ZipHomeDirectory Condition="'$(ZipHomeDirectory)' == ''">true</ZipHomeDirectory>
+    </PropertyGroup>
+
+    <Copy
+      SourceFiles="$(MSBuildThisFileDirectory)integrations.json"
+      DestinationFolder="$(TracerHomeDirectory)"
+      SkipUnchangedFiles="true"
+      Retries="3"
+      RetryDelayMilliseconds="300"/>
+
+    <Delete Condition="'$(ZipHomeDirectory)' == 'true'" Files="$(TracerHomeDirectory).zip" />
+
+    <ZipDirectory
+        Condition="'$(ZipHomeDirectory)' == 'true'"
+        SourceDirectory="$(TracerHomeDirectory)"
+        DestinationFile="$(TracerHomeDirectory).zip" />
   </Target>
 </Project>
