@@ -7,32 +7,30 @@ pr: none
 variables:
   buildConfiguration: release
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
+  #NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
   dotnetCoreSdkVersion: 3.1.x
-  publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
 jobs:
 
-#### NuGet packages and Windows msi installer
-
-- job: nuget_and_windows_msi_and_home
-  strategy:
-    matrix:
-      x64:
-        buildPlatform: x64
-        nugetPack: true
-      x86:
-        buildPlatform: x86
-        nugetPack: false
-
+#### Windows msi and NuGet
+- job: windows_packages_and_nuget
   pool:
     vmImage: windows-2019
+  variables:
+    tracerHomeName: windows-tracer-home
+    tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
+    msiHome: $(System.DefaultWorkingDirectory)/src/bin/msi
+    nuget_packages: $(Pipeline.Workspace)/.nuget/packages
 
   steps:
-
-  - task: gittools.gitversion.gitversion-task.GitVersion@4
-    displayName: GitVersion
-    inputs:
-      preferBundledVersion: false
+  #- task: Cache@2
+  #  displayName: Cache NuGet packages
+  #  inputs:
+  #    key: 'nuget | "$(Agent.OS)" | **/packages.lock.json'
+  #    restoreKeys: |
+  #       nuget | "$(Agent.OS)"
+  #       nuget
+  #    path: $(NUGET_PACKAGES)
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk
@@ -40,6 +38,17 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
 
+  - task: NuGetToolInstaller@1
+    displayName: install nuget
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet restore
+    inputs:
+      command: restore
+      vstsFeed: $(packageFeed)
+      projects: src/**/*.csproj
+
+  # native projects must be restored with nuget.exe
   - task: NuGetCommand@2
     displayName: nuget restore native
     inputs:
@@ -47,74 +56,39 @@ jobs:
       vstsFeed: $(packageFeed)
       verbosityRestore: Normal
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet restore
+  # this triggers a dependency chain that builds all the managed, x64, and x86 dlls, and the zip and msi files
+  - task: MSBuild@1
+    displayName: build both msi
     inputs:
-      command: restore
-      projects: src/**/*.csproj
-      vstsFeed: $(packageFeed)
+      solution: Datadog.Trace.proj
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;TracerHomeDirectory=$(tracerHome);RunWixToolsOutOfProc=true;MsiOutputPath=$(msiHome)
+      maximumCpuCount: true
+
+  - publish: $(msiHome)/en-us
+    artifact: windows-msi
+
+  - publish: $(tracerHome).zip
+    artifact: $(tracerHomeName)
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet build
-    inputs:
-      command: build
-      projects: src/**/*.csproj
-      arguments: --configuration $(buildConfiguration)
-
-  - task: DotNetCoreCLI@2
-    displayName: dotnet pack
-    condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
+    displayName: build nugets
     inputs:
       command: pack
-      packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj;src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
-      packDirectory: nuget-output
+      packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
+      packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
       configuration: $(buildConfiguration)
 
-  - task: PublishPipelineArtifact@0
-    displayName: publish nuget artifacts
-    condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
-    inputs:
-      artifactName: nuget-packages
-      targetPath: nuget-output
-
-  - task: MSBuild@1
-    displayName: msbuild msi
-    inputs:
-      solution: Datadog.Trace.proj
-      platform: $(buildPlatform)
-      configuration: $(buildConfiguration)
-      msbuildArguments: /t:msi /p:RunWixToolsOutOfProc=true
-      maximumCpuCount: true
-      
-  - task: MSBuild@1
-    displayName: msbuild tracer-home
-    condition: eq(variables['buildPlatform'], 'x64')
-    inputs:
-      solution: Datadog.Trace.proj
-      platform: $(buildPlatform)
-      configuration: $(buildConfiguration)
-      msbuildArguments: /t:CreateHomeDirectory
-      maximumCpuCount: true
-
-  - task: PublishPipelineArtifact@0
-    displayName: publish msi artifact
-    inputs:
-      artifactName: windows-msi-$(buildPlatform)
-      targetPath: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
-
-  - task: PublishPipelineArtifact@0
-    displayName: publish tracerhome artifact
-    condition: eq(variables['buildPlatform'], 'x64')
-    inputs:
-      artifactName: windows-tracer-home
-      targetPath: src/bin/windows-tracer-home.zip
+  - publish: $(System.DefaultWorkingDirectory)/nuget-output
+    artifact: nuget-packages
 
 #### Linux packages
 
 - job: linux_packages
-
   pool:
     vmImage: ubuntu-16.04
+  variables:
+    tracerHome: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
 
   steps:
   - task: UseDotNet@2
@@ -122,29 +96,31 @@ jobs:
     inputs:
       version: $(dotnetCoreSdkVersion)
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet restore
-    inputs:
-      command: restore
-      projects: src/**/*.csproj
-      vstsFeed: $(packageFeed)
+  #- task: Cache@2
+  #  displayName: Cache NuGet packages
+  #  inputs:
+  #    key: 'nuget | "$(Agent.OS)" | **/packages.lock.json'
+  #    restoreKeys: |
+  #       nuget | "$(Agent.OS)"
+  #       nuget
+  #    path: $(NUGET_PACKAGES)
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet build
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
     inputs:
       command: build
-      projects: src/**/*.csproj
+      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
       arguments: --configuration $(buildConfiguration)
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework netstandard2.0
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
     inputs:
       command: publish
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(tracerHome)/netstandard2.0
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler
@@ -158,16 +134,14 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run package
 
-  - task: PublishPipelineArtifact@0
-    displayName: publish artifacts
-    inputs:
-      artifactName: linux-packages
-      targetPath: deploy/linux
+  - publish: deploy/linux
+    artifact: linux-packages
 
 - job: linux_alpine_packages
-
   pool:
     vmImage: ubuntu-16.04
+  variables:
+    tracerHome: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
 
   steps:
   - task: UseDotNet@2
@@ -175,29 +149,31 @@ jobs:
     inputs:
       version: $(dotnetCoreSdkVersion)
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet restore
-    inputs:
-      command: restore
-      projects: src/**/*.csproj
-      vstsFeed: $(packageFeed)
+  #- task: Cache@2
+  #  displayName: Cache NuGet packages
+  #  inputs:
+  #    key: 'nuget | "$(Agent.OS)" | **/packages.lock.json'
+  #    restoreKeys: |
+  #       nuget | "$(Agent.OS)"
+  #       nuget
+  #    path: $(NUGET_PACKAGES)
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet build
+    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
     inputs:
       command: build
-      projects: src/**/*.csproj
+      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
       arguments: --configuration $(buildConfiguration)
 
   - task: DotNetCoreCLI@2
-    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed --framework netstandard2.0
+    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
     inputs:
       command: publish
       publishWebProjects: false
       modifyOutputPath: false
       zipAfterPublish: false
       projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(publishOutput)/netstandard2.0
+      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(tracerHome)/netstandard2.0
 
   - task: DockerCompose@0
     displayName: docker-compose run Profiler.Alpine
@@ -211,8 +187,5 @@ jobs:
       containerregistrytype: Container Registry
       dockerComposeCommand: run package.alpine
 
-  - task: PublishPipelineArtifact@0
-    displayName: publish artifacts
-    inputs:
-      artifactName: linux-alpine-packages
-      targetPath: deploy/linux
+  - publish: deploy/linux
+    artifact: linux-alpine-packages
