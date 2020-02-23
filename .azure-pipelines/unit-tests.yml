@@ -22,7 +22,7 @@ jobs:
       windows:
         imageName: windows-2019
       linux:
-        imageName: ubuntu-16.04
+        imageName: ubuntu-18.04
   pool:
     vmImage: $(imageName)
 

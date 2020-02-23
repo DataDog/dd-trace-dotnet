@@ -15,20 +15,18 @@ pr:
       - docs/*
       - .github/*
 
+pool:
+  vmImage: ubuntu-18.04
 variables:
   buildConfiguration: Debug
   packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
   #NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
-  publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
+  publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
   dotnetCoreSdkVersion: 3.1.x
 
 jobs:
 
 - job: build_linux_profiler
-  pool:
-    vmImage: ubuntu-16.04
-  variables:
-    publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
 
   steps:
   - task: UseDotNet@2
@@ -76,10 +74,7 @@ jobs:
       netcoreapp3_1:
         dotnetCoreSdkVersion: 3.1.x
         publishTargetFramework: netcoreapp3.1
-
-  pool:
-    vmImage: ubuntu-16.04
-  
+ 
   variables:
     TestAllPackageVersions: true
 
@@ -112,10 +107,6 @@ jobs:
     condition: succeededOrFailed()
 
 - job: build_alpine_linux_profiler
-  pool:
-    vmImage: ubuntu-16.04
-  variables:
-    publishOutput: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
 
   steps:
   - task: UseDotNet@2
@@ -163,9 +154,6 @@ jobs:
       netcoreapp3_1:
         dotnetCoreSdkVersion: 3.1.x
         publishTargetFramework: netcoreapp3.1
-
-  pool:
-    vmImage: ubuntu-16.04
   
   variables:
     TestAllPackageVersions: true
