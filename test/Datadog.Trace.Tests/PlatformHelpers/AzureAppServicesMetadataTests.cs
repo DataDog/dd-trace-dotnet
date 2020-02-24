@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.PlatformHelpers;
@@ -8,46 +9,67 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 {
     public class AzureAppServicesMetadataTests
     {
-        private static string _subscriptionId = "8c56d827-5f07-45ce-8f2b-6c5001db5c6f";
-        private static string _planResourceGroup = "apm-dotnet";
-        private static string _deploymentId = "AzureExampleSiteName";
-        private static string _siteResourceGroup = "apm-dotnet--site-resource-group";
-        private static string _expectedResourceId =
-            $"/subscriptions/{_subscriptionId}/resourcegroups/{_siteResourceGroup}/providers/microsoft.web/sites/{_deploymentId}".ToLowerInvariant();
+        private static readonly List<string> EnvVars = new List<string>()
+        {
+            AzureAppServices.AzureAppServicesContextKey,
+            AzureAppServices.WebsiteOwnerNameKey,
+            AzureAppServices.ResourceGroupKey,
+            AzureAppServices.SiteNameKey
+        };
+
+        private static readonly string SubscriptionId = "8c500027-5f00-400e-8f00-60000000000f";
+        private static readonly string PlanResourceGroup = "apm-dotnet";
+        private static readonly string DeploymentId = "AzureExampleSiteName";
+        private static readonly string SiteResourceGroup = "apm-dotnet-site-resource-group";
+        private static readonly string ExpectedResourceId =
+            $"/subscriptions/{SubscriptionId}/resourcegroups/{SiteResourceGroup}/providers/microsoft.web/sites/{DeploymentId}".ToLowerInvariant();
 
         [Fact]
         public void ResourceId_Created_WhenAllRequirementsExist()
         {
-            SetVariables(_subscriptionId, _deploymentId, _planResourceGroup, _siteResourceGroup);
-
-            var resourceId = AzureAppServicesMetadata.GetResourceIdInternal();
-
-            Assert.Equal(expected: _expectedResourceId, actual: resourceId);
-
-            ClearVariables();
+            var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
+            var metadata = new AzureAppServices(vars);
+            var resourceId = metadata.ResourceId;
+            Assert.Equal(expected: ExpectedResourceId, actual: resourceId);
         }
 
         [Fact]
-        public void IsRelevant_True_WhenVariableExists()
+        public void IsRelevant_True_WhenVariableSetTrue()
         {
-            SetVariables(null, null, null, null);
-
-            Assert.True(AzureAppServicesMetadata.IsRelevantInternal());
-
-            ClearVariables();
+            var vars = GetMockVariables(null, null, null, null);
+            var metadata = new AzureAppServices(vars);
+            Assert.True(metadata.IsRelevant);
         }
 
         [Fact]
         public void IsRelevant_False_WhenVariableDoesNotExist()
         {
-            ClearVariables();
-            Assert.False(AzureAppServicesMetadata.IsRelevantInternal());
+            var vars = GetMockVariables(null, null, null, null);
+            vars.Remove(AzureAppServices.AzureAppServicesContextKey);
+            var metadata = new AzureAppServices(vars);
+            Assert.False(metadata.IsRelevant);
+        }
+
+        [Theory]
+        [InlineData(null, "deploymentId", "siteResourceGroup")]
+        [InlineData("123", null, "siteResourceGroup")]
+        [InlineData("123", "deploymentId", null)]
+        [InlineData(null, null, "siteResourceGroup")]
+        [InlineData(null, "deploymentId", null)]
+        [InlineData("123", null, null)]
+        [InlineData(null, null, null)]
+        public void ResourceId_IsNull_WhenAnyRequirementsMissing(string subscriptionId, string deploymentId, string siteResourceGroup)
+        {
+            // plan resource group actually doesn't matter for the resource id we build
+            var vars = GetMockVariables(subscriptionId, deploymentId, "some-resource-group", siteResourceGroup);
+            var metadata = new AzureAppServices(vars);
+            Assert.False(metadata.IsRelevant);
         }
 
         [Fact]
         public void PopulatesOnlyRootSpans()
         {
-            SetVariables(_subscriptionId, _deploymentId, _planResourceGroup, _siteResourceGroup);
+            SetFromMock(GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup));
 
             var tracer = new Tracer();
 
@@ -83,48 +105,50 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             Assert.NotEmpty(nonRootSpans);
 
             var rootSpansMissingExpectedTag =
-                rootSpans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) != _expectedResourceId);
+                rootSpans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) != ExpectedResourceId).ToList();
 
             var nonRootSpansWithTag =
-                nonRootSpans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) == _expectedResourceId);
+                nonRootSpans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) == ExpectedResourceId);
 
-            Assert.True(!rootSpansMissingExpectedTag.Any(), "All root spans should have the resource id.");
+            var newLine = Environment.NewLine;
+            var detailedMessage =
+                string.Join(
+                    Environment.NewLine,
+                    rootSpansMissingExpectedTag.Select(
+                        r => $"Expected {ExpectedResourceId} {newLine}but received {r.GetTag(Tags.AzureAppServicesResourceId) ?? "NULL"} {newLine}{newLine}({r}) {newLine}"));
+
+            var envVarValues = string.Join(", ", EnvVars.Select(e => $"{e}: {Environment.GetEnvironmentVariable(e)}"));
+
+            Assert.True(!rootSpansMissingExpectedTag.Any(), $"All root spans should have the resource id: {newLine}{envVarValues}{newLine}{detailedMessage}");
             Assert.True(!nonRootSpansWithTag.Any(), "No non root spans should have the resource id.");
 
             ClearVariables();
         }
 
-        [Theory]
-        [InlineData(null, "deploymentId", "siteResourceGroup")]
-        [InlineData("123", null, "siteResourceGroup")]
-        [InlineData("123", "deploymentId", null)]
-        [InlineData(null, null, "siteResourceGroup")]
-        [InlineData(null, "deploymentId", null)]
-        [InlineData("123", null, null)]
-        [InlineData(null, null, null)]
-        public void ResourceId_IsNull_WhenAnyRequirementsMissing(string subscriptionId, string deploymentId, string siteResourceGroup)
+        private IDictionary GetMockVariables(string subscriptionId, string deploymentId, string planResourceGroup, string siteResourceGroup)
         {
-            // plan resource group actually doesn't matter for the resource id we build
-            SetVariables(subscriptionId, deploymentId, "some-resource-group", siteResourceGroup);
-            Assert.Null(AzureAppServicesMetadata.GetResourceIdInternal());
-            ClearVariables();
+            var vars = Environment.GetEnvironmentVariables();
+            vars.Add(AzureAppServices.AzureAppServicesContextKey, "1");
+            vars.Add(AzureAppServices.WebsiteOwnerNameKey, $"{subscriptionId}+{planResourceGroup}-EastUSwebspace");
+            vars.Add(AzureAppServices.ResourceGroupKey, siteResourceGroup);
+            vars.Add(AzureAppServices.SiteNameKey, deploymentId);
+            return vars;
         }
 
-        private void SetVariables(string subscriptionId, string deploymentId, string planResourceGroup, string siteResourceGroup)
+        private void SetFromMock(IDictionary variables)
         {
-            Environment.SetEnvironmentVariable(AzureAppServicesMetadata.AzureAppServicesContextKey, "1");
-
-            Environment.SetEnvironmentVariable(AzureAppServicesMetadata.WebsiteOwnerNameKey, $"{subscriptionId}+{planResourceGroup}-EastUSwebspace");
-            Environment.SetEnvironmentVariable(AzureAppServicesMetadata.ResourceGroupKey, siteResourceGroup);
-            Environment.SetEnvironmentVariable(AzureAppServicesMetadata.SiteNameKey, deploymentId);
+            foreach (var envVar in EnvVars)
+            {
+                Environment.SetEnvironmentVariable(envVar, variables[envVar]?.ToString());
+            }
         }
 
         private void ClearVariables()
         {
-            Environment.SetEnvironmentVariable(AzureAppServicesMetadata.AzureAppServicesContextKey, null);
-            Environment.SetEnvironmentVariable(AzureAppServicesMetadata.WebsiteOwnerNameKey, null);
-            Environment.SetEnvironmentVariable(AzureAppServicesMetadata.ResourceGroupKey, null);
-            Environment.SetEnvironmentVariable(AzureAppServicesMetadata.SiteNameKey, null);
+            foreach (var envVar in EnvVars)
+            {
+                Environment.SetEnvironmentVariable(envVar, null);
+            }
         }
     }
 }

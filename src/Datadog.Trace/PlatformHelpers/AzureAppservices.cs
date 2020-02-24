@@ -1,12 +1,14 @@
 using System;
 using System.Collections;
-using System.Threading;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.PlatformHelpers
 {
-    internal static class AzureAppServicesMetadata
+    internal class AzureAppServices
     {
+        public static readonly AzureAppServices Metadata;
+
         /// <summary>
         /// Configuration key which is used as a flag to tell us whether we are running in the context of Azure App Services.
         /// </summary>
@@ -28,62 +30,53 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal static readonly string SiteNameKey = "WEBSITE_DEPLOYMENT_ID";
 
-        private static readonly Lazy<string> ResourceId = new Lazy<string>(GetResourceIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-
-        private static readonly Lazy<bool> IsRunningInAzureAppServices = new Lazy<bool>(IsRelevantInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-
-        public static string GetResourceId()
+        static AzureAppServices()
         {
-            return ResourceId.Value;
+            Metadata = new AzureAppServices(Environment.GetEnvironmentVariables());
         }
 
-        public static bool IsRelevant()
+        public AzureAppServices(IDictionary environmentVariables)
         {
-            return IsRunningInAzureAppServices.Value;
+            IsRelevant = GetVariableIfExists(AzureAppServicesContextKey, environmentVariables)?.ToBoolean() ?? false;
+            if (IsRelevant)
+            {
+                SubscriptionId = GetSubscriptionId(environmentVariables);
+                ResourceGroup = GetVariableIfExists(ResourceGroupKey, environmentVariables);
+                SiteName = GetVariableIfExists(SiteNameKey, environmentVariables);
+                ResourceId = CompileResourceId();
+            }
         }
 
-        internal static bool IsRelevantInternal()
-        {
-            return Environment.GetEnvironmentVariable(AzureAppServicesContextKey) == "1";
-        }
+        public bool IsRelevant { get; }
 
-        internal static string GetResourceIdInternal()
+        public string SubscriptionId { get; }
+
+        public string ResourceGroup { get; }
+
+        public string SiteName { get; }
+
+        public string ResourceId { get; }
+
+        private string CompileResourceId()
         {
             string resourceId = null;
 
             try
             {
-                var environmentVariables = Environment.GetEnvironmentVariables();
-
-                string subscriptionId = null;
-
-                if (environmentVariables.Contains(WebsiteOwnerNameKey))
-                {
-                    var websiteOwner = environmentVariables[WebsiteOwnerNameKey].ToString();
-                    var plusSplit = websiteOwner.Split('+');
-                    if (plusSplit.Length > 0 && !string.IsNullOrWhiteSpace(plusSplit[0]))
-                    {
-                        subscriptionId = plusSplit[0];
-                    }
-                }
-
-                var siteName = GetVariableIfExists(environmentVariables, SiteNameKey);
-                var siteResourceGroup = GetVariableIfExists(environmentVariables, ResourceGroupKey);
                 var success = true;
-
-                if (subscriptionId == null)
+                if (SubscriptionId == null)
                 {
                     success = false;
                     DatadogLogging.RegisterStartupLog(log => log.Warning("Could not successfully retrieve the subscription ID from variable: {0}", WebsiteOwnerNameKey));
                 }
 
-                if (siteName == null)
+                if (SiteName == null)
                 {
                     success = false;
                     DatadogLogging.RegisterStartupLog(log => log.Warning("Could not successfully retrieve the deployment ID from variable: {0}", SiteNameKey));
                 }
 
-                if (siteResourceGroup == null)
+                if (ResourceGroup == null)
                 {
                     success = false;
                     DatadogLogging.RegisterStartupLog(log => log.Warning("Could not successfully retrieve the resource group name from variable: {0}", ResourceGroupKey));
@@ -91,7 +84,7 @@ namespace Datadog.Trace.PlatformHelpers
 
                 if (success)
                 {
-                    resourceId = $"/subscriptions/{subscriptionId}/resourcegroups/{siteResourceGroup}/providers/microsoft.web/sites/{siteName}".ToLowerInvariant();
+                    resourceId = $"/subscriptions/{SubscriptionId}/resourcegroups/{ResourceGroup}/providers/microsoft.web/sites/{SiteName}".ToLowerInvariant();
                 }
             }
             catch (Exception ex)
@@ -102,11 +95,33 @@ namespace Datadog.Trace.PlatformHelpers
             return resourceId;
         }
 
-        private static string GetVariableIfExists(IDictionary environmentVariables, string key)
+        private string GetSubscriptionId(IDictionary environmentVariables)
         {
-            if (environmentVariables.Contains(key))
+            try
             {
-                return environmentVariables[key].ToString();
+                var websiteOwner = GetVariableIfExists(WebsiteOwnerNameKey, environmentVariables);
+                if (!string.IsNullOrWhiteSpace(websiteOwner))
+                {
+                    var plusSplit = websiteOwner.Split('+');
+                    if (plusSplit.Length > 0 && !string.IsNullOrWhiteSpace(plusSplit[0]))
+                    {
+                        return plusSplit[0];
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Could not successfully retrieve the subscription id for azure app services."));
+            }
+
+            return null;
+        }
+
+        private string GetVariableIfExists(string key, IDictionary environmentVariables)
+        {
+            if (environmentVariables.Contains(ResourceGroupKey))
+            {
+                return environmentVariables[ResourceGroupKey].ToString();
             }
 
             return null;
