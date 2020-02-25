@@ -195,24 +195,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
   }
 
-  if (debug_logging_enabled) {
-    Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
-  }
-
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
   const auto assembly_info = GetAssemblyInfo(this->info_, assembly_id);
   if (!assembly_info.IsValid()) {
-    return S_OK;
-  }
-
-  if (debug_logging_enabled) {
-    Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name);
-  }
-
-  if (assembly_info.name != "Datadog.Trace.ClrProfiler.Managed"_W) {
     return S_OK;
   }
 
@@ -240,19 +228,33 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
       << '.'_W
       << ToWSTRING(assembly_metadata.version.build);
 
-  // Check that Major.Minor.Build match the profiler version
-  if (ws.str() == ToWSTRING(PROFILER_VERSION)) {
-    Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " matched profiler version v", PROFILER_VERSION);
-    managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
-
-    if (runtime_information_.is_desktop() && corlib_module_loaded &&
-          assembly_info.app_domain_id == corlib_app_domain_id) {
-      Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
-      managed_profiler_loaded_domain_neutral = true;
-    }
+  if (debug_logging_enabled) {
+    Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name, " AssemblyVersion=", ws.str(), ".", assembly_metadata.version.revision);
   }
-  else {
-    Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " did not match profiler version v", PROFILER_VERSION);
+
+  if (assembly_info.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+    // Check that Major.Minor.Build match the profiler version
+    if (ws.str() == ToWSTRING(PROFILER_VERSION)) {
+      Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " matched profiler version v", PROFILER_VERSION);
+      managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
+
+      if (runtime_information_.is_desktop() && corlib_module_loaded) {
+        // Set the managed_profiler_loaded_domain_neutral flag whenever the managed profiler is loaded shared
+        if (assembly_info.app_domain_id == corlib_app_domain_id) {
+          Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
+          managed_profiler_loaded_domain_neutral = true;
+        }
+        // Set the managed_profiler_unsafe_to_instrument_domain_neutral flag whenever the profiler has already been loaded shared but this time it isn't
+        else if (managed_profiler_loaded_domain_neutral) {
+          Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was NOT loaded domain-neutral. The CLR determined that one of the dependencies of Datadog.Trace.ClrProfiler.Managed was unable to load in the AppDomain \"EE Shared Assembly Repository\". Enable DD_TRACE_DEBUG to see this debug-level info.");
+          Warn("WARNING: The profiler in this process (in IIS this means the Application Pool) will stop instrumenting Framework assemblies such as System.Data, System.Net.Http, etc. To fix this issue, ensure that all BindingRedirects for System.Net.Http and dependencies of Datadog.Trace.ClrProfiler.Managed result in assemblies found in the GAC.");
+          managed_profiler_unsafe_to_instrument_domain_neutral = true;
+        }
+      }
+    }
+    else {
+      Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " did not match profiler version v", PROFILER_VERSION);
+    }
   }
 
   return S_OK;
@@ -514,7 +516,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   }
 
   if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
-      first_jit_compilation_app_domains.end()) {
+        first_jit_compilation_app_domains.end()) {
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                           function_token);
@@ -530,15 +532,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   // Do not perform any modification if the owning module has been
   // loaded domain-neutral and the profiler either
-  // 1) Has not also been loaded domain-neutral, or
-  // 2) Has not been loaded in general
+  // 1) Was never loaded domain-neutral, or
+  // 2) Was at some point loaded domain-neutral but subsequently was not
   if (runtime_information_.is_desktop() && corlib_module_loaded &&
       module_metadata->app_domain_id == corlib_app_domain_id &&
-      !managed_profiler_loaded_domain_neutral) {
+      (!managed_profiler_loaded_domain_neutral || managed_profiler_unsafe_to_instrument_domain_neutral)) {
     if (ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
-      Info(
-          "JITCompilationStarted: skipping modifying assembly because it is "
-          "domain-neutral but the managed profiler is not. function_id=",
+      Debug(
+          "JITCompilationStarted: skipping modifying method because its assembly is "
+          "domain-neutral but the managed profiler assembly may not be. function_id=",
           function_id, " token=", function_token, " name=", caller.type.name,
           ".", caller.name, "()");
     }
