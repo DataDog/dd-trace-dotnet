@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            var expectedSpanCount = 2;
+            var expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 4 : 7;
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.Dapper-" + dbType;

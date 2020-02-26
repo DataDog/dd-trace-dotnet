@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Threading.Tasks;
 using Datadog.Trace;
 using Dapper;
+using System.Collections.Generic;
 
 namespace Samples.DatabaseHelper
 {
@@ -60,6 +61,12 @@ namespace Samples.DatabaseHelper
                 }
             }
 
+            var t1 = CallQueryAsync(_connection, SelectOneCommandText);
+
+            // To avoid "Npgsql.NpgsqlOperationInProgressException: A command is already in progress" error
+            await Task.Delay(TimeSpan.FromSeconds(0.3));
+
+            t1 = CallQueryAsync(_connection, SelectManyCommandText);
         }
 
         private void SelectRecords(IDbConnection connection)
@@ -76,6 +83,10 @@ namespace Samples.DatabaseHelper
             await connection.ExecuteAsync(SelectManyCommandText);
         }
 
+        private async Task<IEnumerable<dynamic>> CallQueryAsync(IDbConnection connection, string sql)
+        {
+            return await connection.QueryAsync<dynamic>(sql);
+        }
     }
 }
 #endif
