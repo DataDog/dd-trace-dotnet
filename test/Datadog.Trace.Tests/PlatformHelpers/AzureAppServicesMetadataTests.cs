@@ -63,16 +63,15 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             // plan resource group actually doesn't matter for the resource id we build
             var vars = GetMockVariables(subscriptionId, deploymentId, "some-resource-group", siteResourceGroup);
             var metadata = new AzureAppServices(vars);
-            Assert.False(metadata.IsRelevant);
+            Assert.Null(metadata.ResourceId);
         }
 
         [Fact]
         public void PopulatesOnlyRootSpans()
         {
-            SetFromMock(GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup));
-
+            var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
+            AzureAppServices.Set(new AzureAppServices(vars));
             var tracer = new Tracer();
-
             var rootSpans = new List<Span>();
             var nonRootSpans = new List<Span>();
             var iterations = 5;

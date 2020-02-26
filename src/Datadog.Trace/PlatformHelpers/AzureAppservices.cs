@@ -7,8 +7,6 @@ namespace Datadog.Trace.PlatformHelpers
 {
     internal class AzureAppServices
     {
-        public static readonly AzureAppServices Metadata;
-
         /// <summary>
         /// Configuration key which is used as a flag to tell us whether we are running in the context of Azure App Services.
         /// </summary>
@@ -30,9 +28,11 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal static readonly string SiteNameKey = "WEBSITE_DEPLOYMENT_ID";
 
+        private static AzureAppServices _metadata;
+
         static AzureAppServices()
         {
-            Metadata = new AzureAppServices(Environment.GetEnvironmentVariables());
+            _metadata = new AzureAppServices(Environment.GetEnvironmentVariables());
         }
 
         public AzureAppServices(IDictionary environmentVariables)
@@ -56,6 +56,16 @@ namespace Datadog.Trace.PlatformHelpers
         public string SiteName { get; }
 
         public string ResourceId { get; }
+
+        public static AzureAppServices Metadata()
+        {
+            return _metadata;
+        }
+
+        public static void Set(AzureAppServices metadata)
+        {
+            _metadata = metadata;
+        }
 
         private string CompileResourceId()
         {
@@ -119,9 +129,9 @@ namespace Datadog.Trace.PlatformHelpers
 
         private string GetVariableIfExists(string key, IDictionary environmentVariables)
         {
-            if (environmentVariables.Contains(ResourceGroupKey))
+            if (environmentVariables.Contains(key))
             {
-                return environmentVariables[ResourceGroupKey].ToString();
+                return environmentVariables[key]?.ToString();
             }
 
             return null;

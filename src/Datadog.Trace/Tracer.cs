@@ -503,12 +503,12 @@ namespace Datadog.Trace
 
         private void DecorateRootSpan(Span span)
         {
-            if (AzureAppServices.Metadata.IsRelevant)
+            if (AzureAppServices.Metadata().IsRelevant)
             {
-                span.SetTag(Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
-                span.SetTag(Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata.ResourceGroup);
-                span.SetTag(Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
-                span.SetTag(Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
+                span.SetTag(Tags.AzureAppServicesSiteName, AzureAppServices.Metadata().SiteName);
+                span.SetTag(Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata().ResourceGroup);
+                span.SetTag(Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata().SubscriptionId);
+                span.SetTag(Tags.AzureAppServicesResourceId, AzureAppServices.Metadata().ResourceId);
             }
         }
 
