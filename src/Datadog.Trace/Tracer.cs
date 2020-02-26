@@ -302,7 +302,6 @@ namespace Datadog.Trace
             }
 
             ITraceContext traceContext;
-            var isRootSpan = false;
 
             // try to get the trace context (from local spans) or
             // sampling priority (from propagated spans),
@@ -317,7 +316,6 @@ namespace Datadog.Trace
             }
             else
             {
-                isRootSpan = true;
                 traceContext = new TraceContext(this);
             }
 
@@ -346,7 +344,7 @@ namespace Datadog.Trace
                 }
             }
 
-            if (isRootSpan)
+            if (span.IsRootSpan)
             {
                 DecorateRootSpan(span);
             }
