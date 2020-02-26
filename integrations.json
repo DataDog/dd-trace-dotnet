@@ -9,10 +9,11 @@
         "target": {
           "assembly": "System.Web",
           "type": "System.Web.Compilation.BuildManager",
-          "method": "InvokePreStartInitMethods",
+          "method": "InvokePreStartInitMethodsCore",
           "signature_types": [
             "System.Void",
-            "System.Collections.Generic.ICollection`1<System.Reflection.MethodInfo>"
+            "System.Collections.Generic.ICollection`1<System.Reflection.MethodInfo>",
+            "System.Func`1<System.IDisposable>"
           ],
           "minimum_major": 4,
           "minimum_minor": 0,
@@ -24,8 +25,8 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.14.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetIntegration",
-          "method": "InvokePreStartInitMethods",
-          "signature": "00 04 01 1C 08 08 0A"
+          "method": "InvokePreStartInitMethodsCore",
+          "signature": "00 05 01 1C 1C 08 08 0A"
         }
       }
     ]

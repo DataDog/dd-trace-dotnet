@@ -25,7 +25,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
         /// <summary>
         /// Wrapper method used to instrument System.Web.Compilation.BuildManager.InvokePreStartInitMethods
         /// </summary>
-        /// <param name="methodInfoCollection">A collection of <see cref="System.Reflection.MethodInfo"> objects.</see>/></param>
+        /// <param name="methodInfoCollection">A collection of <see cref="System.Reflection.MethodInfo">objects.</see>/></param>
+        /// <param name="func">A parameter-less function that returns an <see cref="System.IDisposable">IDisposable</see>/> object.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -33,11 +34,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
             CallerAssembly = AssemblyName,
             TargetAssembly = AssemblyName,
             TargetType = BuildManagerTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Void, "System.Collections.Generic.ICollection`1<System.Reflection.MethodInfo>" },
+            TargetSignatureTypes = new[] { ClrNames.Void, "System.Collections.Generic.ICollection`1<System.Reflection.MethodInfo>", "System.Func`1<System.IDisposable>" },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]
-        public static void InvokePreStartInitMethods(
+        public static void InvokePreStartInitMethodsCore(
             object methodInfoCollection,
+            object func,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
@@ -46,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
             // is to register our HttpModule.
             HttpApplication.RegisterModule(typeof(TracingHttpModule));
 
-            Action<object> instrumentedMethod;
+            Action<object, object> instrumentedMethod;
             Type concreteType = null;
 
             try
@@ -62,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: BuildManagerTypeName,
-                    methodName: nameof(InvokePreStartInitMethods),
+                    methodName: nameof(InvokePreStartInitMethodsCore),
                     instanceType: null,
                     relevantArguments: new[] { concreteType?.AssemblyQualifiedName });
                 throw;
@@ -71,9 +73,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Action<object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, nameof(InvokePreStartInitMethods))
-                       .WithParameters(methodInfoCollection)
+                    MethodBuilder<Action<object, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, nameof(InvokePreStartInitMethodsCore))
+                       .WithParameters(methodInfoCollection, func)
                        .WithConcreteType(concreteType)
                        .Build();
             }
@@ -85,11 +87,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
                     mdToken: mdToken,
                     opCode: opCode,
                     null,
-                    methodName: nameof(InvokePreStartInitMethods));
+                    methodName: nameof(InvokePreStartInitMethodsCore));
                 throw;
             }
 
-            instrumentedMethod(methodInfoCollection);
+            instrumentedMethod(methodInfoCollection, func);
         }
     }
 }
