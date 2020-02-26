@@ -345,12 +345,6 @@ namespace Datadog.Trace
             }
 
             traceContext.AddSpan(span);
-            // This span exist inside the trace context before IsRootSpan is accurate
-            if (span.IsRootSpan)
-            {
-                DecorateRootSpan(span);
-            }
-
             return span;
         }
 
@@ -498,17 +492,6 @@ namespace Datadog.Trace
             }
 
             TracingProcessManager.StopProcesses();
-        }
-
-        private void DecorateRootSpan(Span span)
-        {
-            if (AzureAppServices.Metadata()?.IsRelevant ?? false)
-            {
-                span.SetTag(Tags.AzureAppServicesSiteName, AzureAppServices.Metadata().SiteName);
-                span.SetTag(Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata().ResourceGroup);
-                span.SetTag(Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata().SubscriptionId);
-                span.SetTag(Tags.AzureAppServicesResourceId, AzureAppServices.Metadata().ResourceId);
-            }
         }
 
         private void HeartbeatCallback(object state)
