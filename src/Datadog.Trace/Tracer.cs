@@ -344,12 +344,13 @@ namespace Datadog.Trace
                 }
             }
 
+            traceContext.AddSpan(span);
+            // This span exist inside the trace context before IsRootSpan is accurate
             if (span.IsRootSpan)
             {
                 DecorateRootSpan(span);
             }
 
-            traceContext.AddSpan(span);
             return span;
         }
 
