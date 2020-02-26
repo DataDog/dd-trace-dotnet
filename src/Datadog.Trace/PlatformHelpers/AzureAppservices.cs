@@ -28,11 +28,9 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal static readonly string SiteNameKey = "WEBSITE_DEPLOYMENT_ID";
 
-        private static AzureAppServices _metadata;
-
         static AzureAppServices()
         {
-            _metadata = new AzureAppServices(Environment.GetEnvironmentVariables());
+            Metadata = new AzureAppServices(Environment.GetEnvironmentVariables());
         }
 
         public AzureAppServices(IDictionary environmentVariables)
@@ -47,6 +45,8 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
+        public static AzureAppServices Metadata { get; set; }
+
         public bool IsRelevant { get; }
 
         public string SubscriptionId { get; }
@@ -56,16 +56,6 @@ namespace Datadog.Trace.PlatformHelpers
         public string SiteName { get; }
 
         public string ResourceId { get; }
-
-        public static AzureAppServices Metadata()
-        {
-            return _metadata;
-        }
-
-        public static void Set(AzureAppServices metadata)
-        {
-            _metadata = metadata;
-        }
 
         private string CompileResourceId()
         {

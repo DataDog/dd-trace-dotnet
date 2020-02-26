@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void PopulatesOnlyRootSpans()
         {
             var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
-            AzureAppServices.Set(new AzureAppServices(vars));
+            AzureAppServices.Metadata = new AzureAppServices(vars);
             var tracer = new Tracer();
             var rootSpans = new List<Span>();
             var nonRootSpans = new List<Span>();
@@ -132,14 +132,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             vars.Add(AzureAppServices.ResourceGroupKey, siteResourceGroup);
             vars.Add(AzureAppServices.SiteNameKey, deploymentId);
             return vars;
-        }
-
-        private void SetFromMock(IDictionary variables)
-        {
-            foreach (var envVar in EnvVars)
-            {
-                Environment.SetEnvironmentVariable(envVar, variables[envVar]?.ToString());
-            }
         }
 
         private void ClearVariables()
