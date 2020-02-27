@@ -36,6 +36,7 @@
       <ComponentGroupRef Id="Files"/>
       <ComponentGroupRef Id="Files.Native"/>
       <ComponentGroupRef Id="Files.Managed.Net45.GAC"/>
+      <ComponentGroupRef Id="Files.Managed.Net461.GAC"/>
       <ComponentGroupRef Id="Files.Managed.Net45"/>
       <ComponentGroupRef Id="Files.Managed.Net461"/>
       <ComponentGroupRef Id="Files.Managed.NetStandard20"/>
@@ -69,6 +70,9 @@
                 <!-- ".\netstandard2.0" -->
               </Directory>
               <Directory Id="net45.GAC" Name="net45.GAC">
+                <!-- Ignored as all of its components will be installed in the GAC -->
+              </Directory>
+              <Directory Id="net461.GAC" Name="net461.GAC">
                 <!-- Ignored as all of its components will be installed in the GAC -->
               </Directory>
           </Directory>
