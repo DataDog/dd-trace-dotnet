@@ -36,7 +36,7 @@ namespace Datadog.Trace
 
         static Tracer()
         {
-            TracingProcessManager.StartProcesses();
+            TracingProcessManager.Initialize();
             // create the default global Tracer
             Instance = new Tracer();
         }
