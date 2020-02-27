@@ -1,10 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
-using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler;
 using Newtonsoft.Json;
 
@@ -16,11 +16,13 @@ namespace PrepareRelease
         {
             Console.WriteLine("Updating the integrations definitions");
 
-            var integrationsAssembly = typeof(Instrumentation).Assembly;
+            var assemblies = new List<Assembly>();
+            assemblies.Add(typeof(Instrumentation).Assembly);
 
             // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
             // and create objects that will generate correct JSON schema
-            var integrations = from wrapperType in integrationsAssembly.GetTypes()
+            var integrations = from assembly in assemblies
+                               from wrapperType in assembly.GetTypes()
                                from wrapperMethod in wrapperType.GetRuntimeMethods()
                                let attributes = wrapperMethod.GetCustomAttributes<InterceptMethodAttribute>(inherit: false)
                                where attributes.Any()
@@ -29,6 +31,7 @@ namespace PrepareRelease
                                orderby integrationName
                                group new
                                    {
+                                       assembly,
                                        wrapperType,
                                        wrapperMethod,
                                        attribute
@@ -63,7 +66,7 @@ namespace PrepareRelease
                                                              },
                                                              wrapper = new
                                                              {
-                                                                 assembly = integrationsAssembly.FullName,
+                                                                 assembly = item.assembly.FullName,
                                                                  type = item.wrapperType.FullName,
                                                                  method = item.wrapperMethod.Name,
                                                                  signature = GetMethodSignature(item.wrapperMethod)
