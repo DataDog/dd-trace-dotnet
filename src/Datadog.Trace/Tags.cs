@@ -180,5 +180,25 @@ namespace Datadog.Trace
         /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
         /// </summary>
         public const string Language = "language";
+
+        /// <summary>
+        /// The resource id of the site instance in azure app services where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesResourceId = "aas.resource.id";
+
+        /// <summary>
+        /// The resource group of the site instance in azure app services where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesResourceGroup = "aas.resource.group";
+
+        /// <summary>
+        /// The site name of the site instance in azure app services where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesSiteName = "aas.site.name";
+
+        /// <summary>
+        /// The subscription id of the site instance in azure app services where the traced application is running.
+        /// </summary>
+        public const string AzureAppServicesSubscriptionId = "aas.subscription.id";
     }
 }

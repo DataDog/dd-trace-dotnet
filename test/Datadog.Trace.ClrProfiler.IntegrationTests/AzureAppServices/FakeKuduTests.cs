@@ -1,4 +1,5 @@
 using System.Threading;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -10,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AzureAppServices
         public FakeKuduTests(ITestOutputHelper output)
             : base("FakeKudu", output)
         {
-            SetEnvironmentVariable("DD_AZURE_APP_SERVICES", "1");
+            SetEnvironmentVariable(PlatformHelpers.AzureAppServices.AzureAppServicesContextKey, "1");
             SetEnvironmentVariable("APP_POOL_ID", "~1KuduScmProcessIsFilteredByTilde");
         }
 

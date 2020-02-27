@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace
 {
@@ -54,6 +55,7 @@ namespace Datadog.Trace
                 {
                     // first span added is the root span
                     RootSpan = span;
+                    DecorateRootSpan(span);
 
                     if (_samplingPriority == null)
                     {
@@ -124,6 +126,17 @@ namespace Datadog.Trace
             else
             {
                 _samplingPriorityLocked = true;
+            }
+        }
+
+        private void DecorateRootSpan(Span span)
+        {
+            if (AzureAppServices.Metadata?.IsRelevant ?? false)
+            {
+                span.SetTag(Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
+                span.SetTag(Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata.ResourceGroup);
+                span.SetTag(Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
+                span.SetTag(Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
             }
         }
     }

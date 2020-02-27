@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -354,17 +355,6 @@ namespace Datadog.Trace
         void IDatadogTracer.Write(List<Span> trace)
         {
             _agentWriter.WriteTrace(trace);
-        }
-
-        /// <summary>
-        /// Create an Uri to the Agent using host and port from
-        /// the specified <paramref name="settings"/>.
-        /// </summary>
-        /// <param name="settings">A <see cref="TracerSettings"/> object </param>
-        /// <returns>An Uri that can be used to send traces to the Agent.</returns>
-        internal static Uri GetAgentUri(TracerSettings settings)
-        {
-            return settings.AgentUri;
         }
 
         internal async Task FlushAsync()

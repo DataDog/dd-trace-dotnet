@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Containers;
+using Datadog.Trace.PlatformHelpers;
 using Xunit;
 
-namespace Datadog.Trace.Tests.Containers
+namespace Datadog.Trace.Tests.PlatformHelpers
 {
-    public class ContainerInfoTests
+    public class ContainerMetadataTests
     {
         public const string Docker = @"
 13:name=systemd:/docker/3726184226f5d3147c25fdeab5b60097e378e8a720503a5e19ecfdf29f869860
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tests.Containers
             var lines = SplitLines(file);
 
             // act
-            string actual = ContainerInfo.ParseCgroupLines(lines);
+            string actual = ContainerMetadata.ParseCgroupLines(lines);
 
             // assert
             Assert.Equal(expected, actual);
