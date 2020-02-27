@@ -106,6 +106,13 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     Info("Profiler is operating within Azure App Services context.");
     in_azure_app_services = true;
 
+    std::vector<WSTRING> app_insights_processes{"SnapshotUploader.exe"_W};
+
+    if (Contains(app_insights_processes, process_name)) {
+      Info("Profiler disabled: Skipping instrumenting an Application Insights process.");
+      return E_FAIL;
+    }
+
     const auto app_pool_id_value =
         GetEnvironmentValue(environment::azure_app_services_app_pool_id);
 
