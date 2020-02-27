@@ -107,7 +107,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when attempting to start standalone agent processes."));
+                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when attempting to initialize process manager."));
             }
         }
 
