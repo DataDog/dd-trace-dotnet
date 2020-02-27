@@ -530,24 +530,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     return S_OK;
   }
 
-  // Do not perform any modification if the owning module has been
-  // loaded domain-neutral and the profiler either
-  // 1) Was never loaded domain-neutral, or
-  // 2) Was at some point loaded domain-neutral but subsequently was not
-  if (runtime_information_.is_desktop() && corlib_module_loaded &&
-      module_metadata->app_domain_id == corlib_app_domain_id &&
-      (!managed_profiler_loaded_domain_neutral || managed_profiler_unsafe_to_instrument_domain_neutral)) {
-    if (ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
-      Debug(
-          "JITCompilationStarted: skipping modifying method because its assembly is "
-          "domain-neutral but the managed profiler assembly may not be. function_id=",
-          function_id, " token=", function_token, " name=", caller.type.name,
-          ".", caller.name, "()");
-    }
-
-    return S_OK;
-  }
-
   auto method_replacements =
       module_metadata->GetMethodReplacementsForCaller(caller);
   if (method_replacements.empty()) {
@@ -561,6 +543,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   RETURN_OK_IF_FAILED(hr);
 
   for (auto& method_replacement : method_replacements) {
+    // Exit early if the method replacement isn't actually doing a replacement
+    if (method_replacement.wrapper_method.action != "ReplaceTargetMethod"_W) {
+      continue;
+    }
     const auto& wrapper_method_key =
         method_replacement.wrapper_method.get_method_cache_key();
     mdMemberRef wrapper_method_ref = mdMemberRefNil;
@@ -779,6 +765,27 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       if (!is_match) {
         // signatures don't match
+        continue;
+      }
+
+      // At this point we know we've hit a match. Error out if
+      //   1) The target assembly is Datadog.Trace.ClrProfiler.Managed
+      //   2) The calling assembly is domain-neutral
+      //   3) Datadog.Trace.ClrProfiler.Managed was never loaded domain-neutral
+      //        or it more recently has been loaded in a named AppDomain
+      // is domain-neutral but Datadog.Trace.ClrProfiler.Managed is
+      if (method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W &&
+          runtime_information_.is_desktop() && corlib_module_loaded &&
+          module_metadata->app_domain_id == corlib_app_domain_id &&
+          (!managed_profiler_loaded_domain_neutral || managed_profiler_unsafe_to_instrument_domain_neutral)) {
+        if (ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
+          Debug(
+              "JITCompilationStarted: skipping modifying method because its assembly is "
+              "domain-neutral but the managed profiler assembly may not be. function_id=",
+              function_id, " token=", function_token, " name=", caller.type.name,
+              ".", caller.name, "()");
+        }
+
         continue;
       }
 
