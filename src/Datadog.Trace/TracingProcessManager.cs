@@ -336,6 +336,11 @@ namespace Datadog.Trace
 
             public void InitializePortFileWatcher()
             {
+                if (File.Exists(PortFilePath))
+                {
+                    ReadPortAndAlertSubscribers();
+                }
+
                 _portFileWatcher = new FileSystemWatcher
                 {
                     NotifyFilter = NotifyFilters.LastAccess
@@ -350,6 +355,11 @@ namespace Datadog.Trace
             }
 
             private void OnPortFileChanged(object source, FileSystemEventArgs e)
+            {
+                ReadPortAndAlertSubscribers();
+            }
+
+            private void ReadPortAndAlertSubscribers()
             {
                 var portFile = PortFilePath;
                 var portText = File.ReadAllText(portFile);
