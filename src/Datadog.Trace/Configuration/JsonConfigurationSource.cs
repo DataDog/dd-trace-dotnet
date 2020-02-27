@@ -86,7 +86,7 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or null if not found.</returns>
         bool? IConfigurationSource.GetBool(string key)
         {
-            return GetValue<bool>(key);
+            return GetValue<bool?>(key);
         }
 
         /// <summary>
