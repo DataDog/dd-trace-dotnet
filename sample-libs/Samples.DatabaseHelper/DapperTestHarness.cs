@@ -61,12 +61,8 @@ namespace Samples.DatabaseHelper
                 }
             }
 
-            var t1 = CallQueryAsync(_connection, SelectOneCommandText);
-
-            // To avoid "Npgsql.NpgsqlOperationInProgressException: A command is already in progress" error
-            await Task.Delay(TimeSpan.FromSeconds(0.3));
-
-            t1 = CallQueryAsync(_connection, SelectManyCommandText);
+            var t1 = await CallQueryAsync(_connection, SelectOneCommandText);
+            t1 = await CallQueryAsync(_connection, SelectManyCommandText);
         }
 
         private void SelectRecords(IDbConnection connection)
