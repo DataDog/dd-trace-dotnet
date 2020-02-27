@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -24,7 +25,7 @@ namespace Datadog.Trace
             ProcessArguments = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
             RefreshPortVars = () =>
             {
-                var portString = TraceAgentMetadata.Port?.ToString();
+                var portString = TraceAgentMetadata.Port?.ToString(CultureInfo.InvariantCulture);
                 Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, portString);
                 Environment.SetEnvironmentVariable(ConfigurationKeys.TraceAgentPortKey, portString);
             }
@@ -37,7 +38,7 @@ namespace Datadog.Trace
             ProcessArguments = Environment.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
             RefreshPortVars = () =>
             {
-                var portString = DogStatsDMetadata.Port?.ToString();
+                var portString = DogStatsDMetadata.Port?.ToString(CultureInfo.InvariantCulture);
                 Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, portString);
             }
         };
@@ -72,18 +73,19 @@ namespace Datadog.Trace
 
         public static void StopProcesses()
         {
-            try
-            {
-                _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Cancel();
 
-                foreach (var subProcessMetadata in Processes)
-                {
-                    SafelyKillProcess(subProcessMetadata);
-                }
-            }
-            catch (Exception ex)
+            foreach (var metadata in Processes)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when cancelling processes."));
+                try
+                {
+                    SafelyKillProcess(metadata);
+                    metadata.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when cancelling process {0}.", metadata.Name));
+                }
             }
         }
 
@@ -130,8 +132,6 @@ namespace Datadog.Trace
         {
             try
             {
-                metadata.Dispose();
-
                 if (metadata.Process != null && !metadata.Process.HasExited)
                 {
                     metadata.Process.Kill();
@@ -164,7 +164,8 @@ namespace Datadog.Trace
 
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata)
         {
-            DatadogLogging.RegisterStartupLog(log => log.Debug("Starting keep alive for {0}.", metadata.ProcessPath));
+            var path = metadata.ProcessPath;
+            DatadogLogging.RegisterStartupLog(log => log.Debug("Starting keep alive for {0}.", path));
 
             return Task.Run(
                 () =>
@@ -178,7 +179,7 @@ namespace Datadog.Trace
                         {
                             if (_cancellationTokenSource.IsCancellationRequested)
                             {
-                                DatadogLogging.RegisterStartupLog(log => log.Debug("Shutdown triggered for keep alive {0}.", metadata.ProcessPath));
+                                DatadogLogging.RegisterStartupLog(log => log.Debug("Shutdown triggered for keep alive {0}.", path));
                                 return;
                             }
 
@@ -186,24 +187,24 @@ namespace Datadog.Trace
                             {
                                 if (metadata.Process != null && metadata.Process.HasExited == false)
                                 {
-                                    DatadogLogging.RegisterStartupLog(log => log.Debug("We already have an active reference to {0}.", metadata.ProcessPath));
+                                    DatadogLogging.RegisterStartupLog(log => log.Debug("We already have an active reference to {0}.", path));
                                     continue;
                                 }
 
-                                if (ProgramIsRunning(metadata.ProcessPath))
+                                if (ProgramIsRunning(path))
                                 {
-                                    DatadogLogging.RegisterStartupLog(log => log.Debug("{0} is already running.", metadata.ProcessPath));
+                                    DatadogLogging.RegisterStartupLog(log => log.Debug("{0} is already running.", path));
                                     continue;
                                 }
 
-                                var startInfo = new ProcessStartInfo { FileName = metadata.ProcessPath };
+                                var startInfo = new ProcessStartInfo { FileName = path };
 
                                 if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
                                 {
                                     startInfo.Arguments = metadata.ProcessArguments;
                                 }
 
-                                DatadogLogging.RegisterStartupLog(log => log.Debug("Starting {0}.", metadata.ProcessPath));
+                                DatadogLogging.RegisterStartupLog(log => log.Debug("Starting {0}.", path));
                                 GrabFreePortForInstance(metadata);
                                 metadata.Process = Process.Start(startInfo);
 
@@ -211,12 +212,12 @@ namespace Datadog.Trace
 
                                 if (metadata.Process == null || metadata.Process.HasExited)
                                 {
-                                    DatadogLogging.RegisterStartupLog(log => log.Error("{0} has failed to start.", metadata.ProcessPath));
+                                    DatadogLogging.RegisterStartupLog(log => log.Error("{0} has failed to start.", path));
                                     sequentialFailures++;
                                 }
                                 else
                                 {
-                                    DatadogLogging.RegisterStartupLog(log => log.Debug("Successfully started {0}.", metadata.ProcessPath));
+                                    DatadogLogging.RegisterStartupLog(log => log.Debug("Successfully started {0}.", path));
                                     sequentialFailures = 0;
                                     metadata.AlertSubscribers();
                                     DatadogLogging.RegisterStartupLog(log => log.Debug("Finished calling port subscribers for {0}.", metadata.Name));
@@ -224,7 +225,7 @@ namespace Datadog.Trace
                             }
                             catch (Exception ex)
                             {
-                                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Exception when trying to start an instance of {0}.", metadata.ProcessPath));
+                                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Exception when trying to start an instance of {0}.", path));
                                 sequentialFailures++;
                             }
                             finally
@@ -242,7 +243,7 @@ namespace Datadog.Trace
                     }
                     finally
                     {
-                        DatadogLogging.RegisterStartupLog(log => log.Debug("Keep alive is dropping for {0}.", metadata.ProcessPath));
+                        DatadogLogging.RegisterStartupLog(log => log.Debug("Keep alive is dropping for {0}.", path));
                     }
                 });
         }
@@ -281,7 +282,7 @@ namespace Datadog.Trace
 
             if (instance.PortFilePath != null)
             {
-                File.WriteAllText(instance.PortFilePath, instance.Port.Value.ToString());
+                File.WriteAllText(instance.PortFilePath, instance.Port.Value.ToString(CultureInfo.InvariantCulture));
             }
         }
 
@@ -363,7 +364,7 @@ namespace Datadog.Trace
             {
                 var portFile = PortFilePath;
                 var portText = File.ReadAllText(portFile);
-                if (int.TryParse(portText, out var portValue))
+                if (int.TryParse(portText, NumberStyles.Any, CultureInfo.InvariantCulture, out var portValue))
                 {
                     Port = portValue;
                     RefreshPortVars();
