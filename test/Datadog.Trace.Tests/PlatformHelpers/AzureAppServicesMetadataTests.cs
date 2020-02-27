@@ -120,8 +120,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 
             Assert.True(!rootSpansMissingExpectedTag.Any(), $"All root spans should have the resource id: {newLine}{envVarValues}{newLine}{detailedMessage}");
             Assert.True(!nonRootSpansWithTag.Any(), "No non root spans should have the resource id.");
-
-            ClearVariables();
         }
 
         private IDictionary GetMockVariables(string subscriptionId, string deploymentId, string planResourceGroup, string siteResourceGroup)
@@ -132,14 +130,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             vars.Add(AzureAppServices.ResourceGroupKey, siteResourceGroup);
             vars.Add(AzureAppServices.SiteNameKey, deploymentId);
             return vars;
-        }
-
-        private void ClearVariables()
-        {
-            foreach (var envVar in EnvVars)
-            {
-                Environment.SetEnvironmentVariable(envVar, null);
-            }
         }
     }
 }
