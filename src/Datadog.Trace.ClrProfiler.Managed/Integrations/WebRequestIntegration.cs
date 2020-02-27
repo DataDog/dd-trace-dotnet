@@ -27,14 +27,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-            TargetAssembly = "System", // .NET Framework
+            TargetAssemblies = new[] { "System", "System.Net.Requests" },
             TargetType = WebRequestTypeName,
-            TargetSignatureTypes = new[] { "System.Net.WebResponse" },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
-        [InterceptMethod(
-            TargetAssembly = "System.Net.Requests", // .NET Core
-            TargetType = WebRequestTypeName,
+            TargetMethod = "GetResponse",
             TargetSignatureTypes = new[] { "System.Net.WebResponse" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -115,14 +110,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-            TargetAssembly = "System", // .NET Framework
+            TargetAssemblies = new[] { "System", "System.Net.Requests" },
             TargetType = WebRequestTypeName,
-            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.WebResponse>" },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
-        [InterceptMethod(
-            TargetAssembly = "System.Net.Requests", // .NET Core
-            TargetType = WebRequestTypeName,
+            TargetMethod = "GetResponseAsync",
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.WebResponse>" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]

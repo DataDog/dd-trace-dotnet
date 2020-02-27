@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
+            TargetMethod = "Execute",
             TargetSignatureTypes = new[] { ClrNames.Void, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
             TargetMinimumVersion = Major2Minor2,
             TargetMaximumVersion = Major2)]
@@ -110,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocolGeneric,
             TargetSignatureTypes = new[] { "T", "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
-            TargetMethod = nameof(Execute),
+            TargetMethod = "Execute",
             TargetMinimumVersion = Major2Minor2,
             TargetMaximumVersion = Major2)]
         public static object ExecuteGeneric(
@@ -178,9 +179,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
-            TargetMethod = nameof(ExecuteAsync),
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocol,
+            TargetMethod = "ExecuteAsync",
             TargetSignatureTypes = new[] { ClrNames.Task, "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
             TargetMinimumVersion = Major2Minor1,
             TargetMaximumVersion = Major2)]
@@ -241,9 +242,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The original method's return value.</returns>
         [InterceptMethod(
-            TargetMethod = nameof(ExecuteAsync),
             TargetAssembly = MongoDbClientAssembly,
             TargetType = IWireProtocolGeneric,
+            TargetMethod = "ExecuteAsync",
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
             TargetMinimumVersion = Major2Minor1,
             TargetMaximumVersion = Major2)]

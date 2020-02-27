@@ -30,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon, AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = DbCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { DataReaderTypeName },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -155,6 +156,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon, AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = DbCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -208,6 +210,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon, AdoNetConstants.AssemblyNames.NetStandard },
             TargetType = DbCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]

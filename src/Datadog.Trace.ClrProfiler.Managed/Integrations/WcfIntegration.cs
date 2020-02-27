@@ -33,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = "System.ServiceModel",
             TargetType = ChannelHandlerTypeName,
+            TargetMethod = "HandleRequest",
             TargetSignatureTypes = new[] { ClrNames.Bool, "System.ServiceModel.Channels.RequestContext", "System.ServiceModel.OperationContext" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]

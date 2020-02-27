@@ -52,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = GraphQLAssemblyName,
             TargetType = GraphQLDocumentValidatorInterfaceName,
+            TargetMethod = "Validate",
             TargetSignatureTypes = new[] { GraphQLValidationResultInterfaceName, ClrNames.String, "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1<GraphQL.Validation.IValidationRule>", ClrNames.Ignore, "GraphQL.Inputs" },
             TargetMinimumVersion = Major2Minor3,
             TargetMaximumVersion = Major2)]
@@ -148,6 +149,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssembly = GraphQLAssemblyName,
             TargetType = GraphQLExecutionStrategyInterfaceName,
+            TargetMethod = "ExecuteAsync",
             TargetSignatureTypes = new[] { TaskOfGraphQLExecutionResult, "GraphQL.Execution.ExecutionContext" },
             TargetMinimumVersion = Major2Minor3,
             TargetMaximumVersion = Major2)]

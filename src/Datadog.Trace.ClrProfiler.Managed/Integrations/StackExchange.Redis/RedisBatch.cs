@@ -41,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = RedisAssembly,
             TargetAssembly = RedisAssembly,
             TargetType = RedisBaseTypeName,
+            TargetMethod = "ExecuteAsync",
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
@@ -49,6 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = StrongNameRedisAssembly,
             TargetAssembly = StrongNameRedisAssembly,
             TargetType = RedisBaseTypeName,
+            TargetMethod = "ExecuteAsync",
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1<T>", "StackExchange.Redis.ServerEndPoint" },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]

@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = "ServiceStack.Redis",
             TargetAssembly = "ServiceStack.Redis",
             TargetType = RedisNativeClient,
+            TargetMethod = "SendReceive",
             TargetSignatureTypes = new[] { "T", "System.Byte[][]", "System.Func`1<T>", "System.Action`1<System.Func`1<T>>", ClrNames.Bool },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major5)]

@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = RedisAssembly,
             TargetAssembly = RedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
+            TargetMethod = "ExecuteSyncImpl",
             TargetSignatureTypes = new[] { "T", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
@@ -50,6 +51,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = StrongNameRedisAssembly,
             TargetAssembly = StrongNameRedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
+            TargetMethod = "ExecuteSyncImpl",
             TargetSignatureTypes = new[] { "T", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
@@ -131,6 +133,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = RedisAssembly,
             TargetAssembly = RedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
+            TargetMethod = "ExecuteAsyncImpl",
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, ClrNames.Object, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]
@@ -139,6 +142,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             CallerAssembly = StrongNameRedisAssembly,
             TargetAssembly = StrongNameRedisAssembly,
             TargetType = ConnectionMultiplexerTypeName,
+            TargetMethod = "ExecuteAsyncImpl",
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", StackExchangeRedisMessage, StackExchangeRedisResultProcessorGeneric, ClrNames.Object, StackExchangeRedisServerEndPoint },
             TargetMinimumVersion = Major1,
             TargetMaximumVersion = Major2)]

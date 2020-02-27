@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
             CallerAssembly = AssemblyName,
             TargetAssembly = AssemblyName,
             TargetType = BuildManagerTypeName,
+            TargetMethod = "InvokePreStartInitMethodsCore",
             TargetSignatureTypes = new[] { ClrNames.Void, "System.Collections.Generic.ICollection`1<System.Reflection.MethodInfo>", "System.Func`1<System.IDisposable>" },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]

@@ -146,6 +146,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { NpgsqlAssemblyName },
             TargetType = NpgsqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReaderAsync,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -219,9 +220,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
-            TargetMethod = AdoNetConstants.MethodNames.ExecuteReaderAsync,
             TargetAssemblies = new[] { NpgsqlAssemblyName },
             TargetType = NpgsqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteReaderAsync,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -298,6 +299,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { NpgsqlAssemblyName },
             TargetType = NpgsqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -354,6 +356,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { NpgsqlAssemblyName },
             TargetType = NpgsqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -427,6 +430,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { NpgsqlAssemblyName },
             TargetType = NpgsqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -483,6 +487,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
             TargetType = NpgsqlCommandTypeName,
+            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalarAsync,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
