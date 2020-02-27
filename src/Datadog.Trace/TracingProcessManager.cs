@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -94,13 +95,15 @@ namespace Datadog.Trace
             try
             {
                 _cancellationTokenSource = new CancellationTokenSource();
-                var currentProcess = Process.GetCurrentProcess();
-                if (AzureTopLevelProcesses.Contains(currentProcess.ProcessName.ToLowerInvariant()))
+                var currentProcessName = Process.GetCurrentProcess().ProcessName.ToLowerInvariant();
+                if (AzureTopLevelProcesses.Any(name => name.Contains(currentProcessName)))
                 {
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Starting sub processes from top level process."));
                     StartProcesses();
                 }
                 else
                 {
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Initializing sub process port file watchers."));
                     foreach (var instance in Processes)
                     {
                         instance.InitializePortFileWatcher();
