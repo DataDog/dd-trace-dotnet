@@ -308,7 +308,7 @@ namespace Datadog.Trace
                 set
                 {
                     _processPath = value;
-                    PortFilePath = !string.IsNullOrWhiteSpace(_processPath) ? $"{_processPath}-port" : null;
+                    PortFilePath = !string.IsNullOrWhiteSpace(_processPath) ? $"{_processPath}.sync-port" : null;
                 }
             }
 
@@ -355,12 +355,19 @@ namespace Datadog.Trace
 
                 _portFileWatcher.Created += OnPortFileChanged;
                 _portFileWatcher.Changed += OnPortFileChanged;
+                _portFileWatcher.Deleted += OnPortFileDeleted;
                 _portFileWatcher.EnableRaisingEvents = true;
             }
 
             private void OnPortFileChanged(object source, FileSystemEventArgs e)
             {
                 ReadPortAndAlertSubscribers();
+            }
+
+            private void OnPortFileDeleted(object source, FileSystemEventArgs e)
+            {
+                // For if some process or user decides to delete the port file, we have some evidence of what happened
+                DatadogLogging.RegisterStartupLog(log => log.Error("The port file ({0}) has been deleted."));
             }
 
             private void ReadPortAndAlertSubscribers()
@@ -371,6 +378,10 @@ namespace Datadog.Trace
                 {
                     Port = portValue;
                     RefreshPortVars();
+                }
+                else
+                {
+                    DatadogLogging.RegisterStartupLog(log => log.Error("The port file ({0}) is malformed: {1}", PortFilePath, portText));
                 }
 
                 AlertSubscribers();
