@@ -20,7 +20,7 @@ for pkgtype in $PKGTYPES ; do
         netstandard2.0/ \
         Datadog.Trace.ClrProfiler.Native.so \
         integrations.json \
-        createLogPath.sh
+        $DIR/../createLogPath.sh
 done
 
 gzip -f datadog-dotnet-apm.tar
