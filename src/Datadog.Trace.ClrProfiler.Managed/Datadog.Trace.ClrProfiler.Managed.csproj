@@ -30,6 +30,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed.Utilities\Datadog.Trace.ClrProfiler.Managed.Utilities.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
