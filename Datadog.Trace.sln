@@ -305,7 +305,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StackExchange.Redis.Assembl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.AssemblyConflict.SdkProject", "reproductions\StackExchange.Redis.AssemblyConflict.SdkProject\StackExchange.Redis.AssemblyConflict.SdkProject.csproj", "{C41023C9-65C3-4FB3-9053-4DE963A81500}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Dapper", "samples\Samples.Dapper\Samples.Dapper.csproj", "{7E563BF6-47F2-4531-A1CE-FB9445DF3253}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "linux", "linux", "{7DB68365-AA9E-4C3E-A553-31BFB5704B01}"
+	ProjectSection(SolutionItems) = preProject
+		createLogPath.sh = createLogPath.sh
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1184,7 +1187,6 @@ Global
 		{4E83BFB5-F225-4C3B-B96E-0AD1951A5630} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
 		{7B0822F6-80DE-4B49-8125-93975678D0D5} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
 		{C41023C9-65C3-4FB3-9053-4DE963A81500} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{7E563BF6-47F2-4531-A1CE-FB9445DF3253} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

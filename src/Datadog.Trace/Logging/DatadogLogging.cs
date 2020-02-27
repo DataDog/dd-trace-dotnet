@@ -13,7 +13,7 @@ namespace Datadog.Trace.Logging
 {
     internal static class DatadogLogging
     {
-        private const string NixDefaultDirectory = "/var/log/datadog/datadog-dotnet";
+        private const string NixDefaultDirectory = "/var/log/datadog/dotnet";
 
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
         private static readonly LogEventLevel MinimumLogEventLevel = LogEventLevel.Information;

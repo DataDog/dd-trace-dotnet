@@ -42,7 +42,7 @@ inline WSTRING DatadogLogFilePath() {
   return ToWSTRING(program_data +
                    R"(\Datadog .NET Tracer\logs\dotnet-profiler.log)");
 #else
-  return "/var/log/datadog/dotnet-profiler.log"_W;
+  return "/var/log/datadog/dotnet/dotnet-profiler.log"_W;
 #endif
 }
 
