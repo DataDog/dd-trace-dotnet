@@ -1,3 +1,4 @@
+
 #include "clr_helpers.h"
 
 #include <cstring>
@@ -378,6 +379,76 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
   return spec;
 }
 
+HRESULT GetProfilerInterface(IUnknown* cor_profiler_info_unknown,
+                             ICorProfilerInfo4** profiler_info) {
+  HRESULT hr;
+
+  // ICorProfilerInfo10 added in .NET Core 3.0
+  ICorProfilerInfo10* info10;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo10>(&info10);
+  if (SUCCEEDED(hr)) {
+    Info("Detected .NET Core 3.0 or higher");
+    *profiler_info = info10;
+    return hr;
+  }
+
+  // ICorProfilerInfo9  added in .NET Core 2.2
+  ICorProfilerInfo9* info9;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo9>(&info9);
+  if (SUCCEEDED(hr)) {
+    Info("Detected .NET Core 2.2");
+    *profiler_info = info9;
+    return hr;
+  }
+
+  // ICorProfilerInfo8 added in .NET Framework 4.7.2
+  ICorProfilerInfo8* info8;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo8>(&info8);
+  if (SUCCEEDED(hr)) {
+    Info("Detected .NET Framework 4.7.2 - 4.8, or .NET Core 1.0 - 2.1");
+    *profiler_info = info8;
+    return hr;
+  }
+
+  // ICorProfilerInfo7  added in .NET Framework 4.6.1
+  ICorProfilerInfo7* info7;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo7>(&info7);
+  if (SUCCEEDED(hr)) {
+    Info("Detected .NET Framework 4.6.1 or 4.6.2");
+    *profiler_info = info7;
+    return hr;
+  }
+
+  // ICorProfilerInfo6  added in .NET Framework 4.6
+  ICorProfilerInfo6* info6;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo6>(&info6);
+  if (SUCCEEDED(hr)) {
+    Info("Detected .NET Framework 4.6");
+    *profiler_info = info6;
+    return hr;
+  }
+
+  // ICorProfilerInfo5  added in .NET Framework 4.5.2
+  ICorProfilerInfo5* info5;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo5>(&info5);
+  if (SUCCEEDED(hr)) {
+    Info("Detected .NET Framework 4.5.2");
+    *profiler_info = info5;
+    return hr;
+  }
+
+  // ICorProfilerInfo4  added in .NET Framework 4.5
+  ICorProfilerInfo4* info4;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo4>(&info4);
+  if (SUCCEEDED(hr)) {
+    Info("Detected .NET Framework 4.5 or 4.5.1");
+    *profiler_info = info4;
+    return hr;
+  }
+
+  return hr;
+}
+
 bool DisableOptimizations() {
   const auto clr_optimizations_enabled =
       GetEnvironmentValue(environment::clr_disable_optimizations);
@@ -699,7 +770,7 @@ HRESULT CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembl
   return hr;
 }
 
-bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,                                        
+bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
                                             const ComPtr<IMetaDataEmit2>& metadata_emit,
                                             const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
                                             mdToken* ret_type_token) {

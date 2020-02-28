@@ -70,8 +70,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // get Profiler interface
-  HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo4>(
-      &this->info_);
+  HRESULT hr = GetProfilerInterface(cor_profiler_info_unknown, &this->info_);
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: interface ICorProfilerInfo4 not found.");
     return E_FAIL;

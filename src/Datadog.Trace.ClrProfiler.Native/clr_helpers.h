@@ -351,6 +351,9 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
                               const mdToken& token,
                               const MethodSignature& signature);
 
+HRESULT GetProfilerInterface(IUnknown* cor_profiler_info_unknown,
+                             ICorProfilerInfo4** profiler_info);
+
 bool DisableOptimizations();
 
 bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import,
