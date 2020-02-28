@@ -96,9 +96,10 @@ namespace Datadog.Trace
             {
                 _cancellationTokenSource = new CancellationTokenSource();
                 var currentProcessName = Process.GetCurrentProcess().ProcessName.ToLowerInvariant();
+                var currentAppDomainName = AppDomain.CurrentDomain.FriendlyName.ToLowerInvariant();
                 if (AzureTopLevelProcesses.Any(name => name.Contains(currentProcessName)))
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Starting sub processes from top level process."));
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Starting sub-processes from top level process {0}, app domain {1}.", currentProcessName, currentAppDomainName));
                     StartProcesses();
                 }
                 else
@@ -173,6 +174,8 @@ namespace Datadog.Trace
             return Task.Run(
                 () =>
                 {
+                    Thread.Sleep(10_000);
+
                     try
                     {
                         var circuitBreakerMax = 3;
@@ -308,7 +311,7 @@ namespace Datadog.Trace
                 set
                 {
                     _processPath = value;
-                    PortFilePath = !string.IsNullOrWhiteSpace(_processPath) ? $"{_processPath}.sync-port" : null;
+                    PortFilePath = !string.IsNullOrWhiteSpace(_processPath) ? $"{_processPath}.port" : null;
                 }
             }
 
@@ -348,7 +351,10 @@ namespace Datadog.Trace
                 _portFileWatcher = new FileSystemWatcher
                 {
                     NotifyFilter = NotifyFilters.LastAccess
-                                 | NotifyFilters.LastWrite,
+                                 | NotifyFilters.LastWrite
+                                 | NotifyFilters.FileName
+                                 | NotifyFilters.CreationTime
+                                 | NotifyFilters.Size,
                     Path = Path.GetDirectoryName(PortFilePath),
                     Filter = Path.GetFileName(PortFilePath)
                 };
@@ -359,8 +365,20 @@ namespace Datadog.Trace
                 _portFileWatcher.EnableRaisingEvents = true;
             }
 
+            private static string ReadSingleLineNoLock(string file)
+            {
+                using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    using (var sr = new StreamReader(fs))
+                    {
+                        return sr.ReadLine();
+                    }
+                }
+            }
+
             private void OnPortFileChanged(object source, FileSystemEventArgs e)
             {
+                DatadogLogging.RegisterStartupLog(log => log.Debug("Port file has changed."));
                 ReadPortAndAlertSubscribers();
             }
 
@@ -372,19 +390,33 @@ namespace Datadog.Trace
 
             private void ReadPortAndAlertSubscribers()
             {
-                var portFile = PortFilePath;
-                var portText = File.ReadAllText(portFile);
-                if (int.TryParse(portText, NumberStyles.Any, CultureInfo.InvariantCulture, out var portValue))
+                try
                 {
-                    Port = portValue;
-                    RefreshPortVars();
-                }
-                else
-                {
-                    DatadogLogging.RegisterStartupLog(log => log.Error("The port file ({0}) is malformed: {1}", PortFilePath, portText));
-                }
+                    var portFile = PortFilePath;
+                    var portText = ReadSingleLineNoLock(portFile);
+                    if (int.TryParse(portText, NumberStyles.Any, CultureInfo.InvariantCulture, out var portValue))
+                    {
+                        if (Port == portValue)
+                        {
+                            // nothing to do, let's not cause churn
+                            return;
+                        }
 
-                AlertSubscribers();
+                        Port = portValue;
+                        DatadogLogging.RegisterStartupLog(log => log.Debug("Retrieved port {0} from {1}.", portValue, PortFilePath));
+                        RefreshPortVars();
+                    }
+                    else
+                    {
+                        DatadogLogging.RegisterStartupLog(log => log.Error("The port file ({0}) is malformed: {1}", PortFilePath, portText));
+                    }
+
+                    AlertSubscribers();
+                }
+                catch (Exception ex)
+                {
+                    DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when alerting subcribers for {0}", Name));
+                }
             }
         }
     }
