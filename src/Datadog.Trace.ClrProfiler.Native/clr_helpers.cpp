@@ -387,18 +387,8 @@ bool DisableOptimizations() {
     return true;
   }
 
-  if (disable_optimizations == "0"_W ||
-      disable_optimizations == "false"_W) {
-    return false;
-  }
-
-#ifdef _WIN32
-  // default to false on Windows
+  // default to false: don't disable JIT optimizations
   return false;
-#else
-  // default to true on Linux
-  return true;
-#endif
 }
 
 TypeInfo RetrieveTypeForSignature(
