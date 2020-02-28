@@ -122,6 +122,7 @@ namespace Datadog.Trace.Logging
             }
             finally
             {
+                Initialized = true;
                 // Log some information to correspond with the app domain
                 SharedLogger.Information(FrameworkDescription.Create().ToString());
 
@@ -153,9 +154,10 @@ namespace Datadog.Trace.Logging
                     ActionsToRunWhenLoggerReady.Enqueue(logAction);
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // ignored
+                SharedLogger.Error(ex, "Register startup log failed");
             }
         }
 
