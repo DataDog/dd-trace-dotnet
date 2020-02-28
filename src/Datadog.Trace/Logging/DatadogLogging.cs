@@ -176,6 +176,19 @@ namespace Datadog.Trace.Logging
                     {
                         logDirectory = NixDefaultDirectory;
                     }
+                    else
+                    {
+                        try
+                        {
+                            var di = Directory.CreateDirectory(NixDefaultDirectory);
+                            logDirectory = NixDefaultDirectory;
+                        }
+                        catch
+                        {
+                            // Unable to create the directory meaning that the user
+                            // will have to create it on their own.
+                        }
+                    }
                 }
             }
 
