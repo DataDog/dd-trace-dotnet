@@ -17,9 +17,7 @@ namespace Datadog.Trace
 {
     internal class TracingProcessManager
     {
-        private static readonly HashSet<string> AzureTopLevelProcesses = new HashSet<string>() { "w3wp.exe" };
-
-        private static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
+        internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
             Name = "datadog-trace-agent",
             ProcessPath = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
@@ -32,7 +30,7 @@ namespace Datadog.Trace
             }
         };
 
-        private static readonly ProcessMetadata DogStatsDMetadata = new ProcessMetadata
+        internal static readonly ProcessMetadata DogStatsDMetadata = new ProcessMetadata
         {
             Name = "dogstatsd",
             ProcessPath = Environment.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
@@ -43,6 +41,8 @@ namespace Datadog.Trace
                 Environment.SetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR, portString);
             }
         };
+
+        private static readonly HashSet<string> AzureTopLevelProcesses = new HashSet<string>() { "w3wp.exe" };
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
         {
@@ -174,8 +174,6 @@ namespace Datadog.Trace
             return Task.Run(
                 () =>
                 {
-                    Thread.Sleep(10_000);
-
                     try
                     {
                         var circuitBreakerMax = 3;
@@ -292,7 +290,7 @@ namespace Datadog.Trace
             }
         }
 
-        private class ProcessMetadata : IDisposable
+        internal class ProcessMetadata : IDisposable
         {
             private string _processPath;
             private FileSystemWatcher _portFileWatcher;
@@ -345,6 +343,7 @@ namespace Datadog.Trace
             {
                 if (File.Exists(PortFilePath))
                 {
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Port file already exists."));
                     ReadPortAndAlertSubscribers();
                 }
 
@@ -363,6 +362,17 @@ namespace Datadog.Trace
                 _portFileWatcher.Changed += OnPortFileChanged;
                 _portFileWatcher.Deleted += OnPortFileDeleted;
                 _portFileWatcher.EnableRaisingEvents = true;
+            }
+
+            public void ForcePortFileRead()
+            {
+                if (KeepAliveTask == null)
+                {
+                    // There is nothing to accomplish, ports are not dynamic
+                    return;
+                }
+
+                ReadPortAndAlertSubscribers();
             }
 
             private static string ReadSingleLineNoLock(string file)
@@ -390,32 +400,38 @@ namespace Datadog.Trace
 
             private void ReadPortAndAlertSubscribers()
             {
-                try
+                var retries = 3;
+
+                while (retries-- > 0)
                 {
-                    var portFile = PortFilePath;
-                    var portText = ReadSingleLineNoLock(portFile);
-                    if (int.TryParse(portText, NumberStyles.Any, CultureInfo.InvariantCulture, out var portValue))
+                    try
                     {
-                        if (Port == portValue)
+                        var portFile = PortFilePath;
+                        var portText = ReadSingleLineNoLock(portFile);
+                        if (int.TryParse(portText, NumberStyles.Any, CultureInfo.InvariantCulture, out var portValue))
                         {
-                            // nothing to do, let's not cause churn
-                            return;
+                            if (Port == portValue)
+                            {
+                                // nothing to do, let's not cause churn
+                                return;
+                            }
+
+                            Port = portValue;
+                            DatadogLogging.RegisterStartupLog(log => log.Debug("Retrieved port {0} from {1}.", portValue, PortFilePath));
+                            RefreshPortVars();
+                        }
+                        else
+                        {
+                            DatadogLogging.RegisterStartupLog(log => log.Error("The port file ({0}) is malformed: {1}", PortFilePath, portText));
                         }
 
-                        Port = portValue;
-                        DatadogLogging.RegisterStartupLog(log => log.Debug("Retrieved port {0} from {1}.", portValue, PortFilePath));
-                        RefreshPortVars();
+                        AlertSubscribers();
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        DatadogLogging.RegisterStartupLog(log => log.Error("The port file ({0}) is malformed: {1}", PortFilePath, portText));
+                        DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when alerting subscribers for {0}", Name));
+                        Thread.Sleep(5); // Wait just a tiny bit just to let the file come unlocked
                     }
-
-                    AlertSubscribers();
-                }
-                catch (Exception ex)
-                {
-                    DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when alerting subcribers for {0}", Name));
                 }
             }
         }
