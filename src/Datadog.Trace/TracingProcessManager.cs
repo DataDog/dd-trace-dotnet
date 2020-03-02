@@ -106,7 +106,7 @@ namespace Datadog.Trace
 
                 if (!Directory.Exists(traceAgentDirectory))
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Directory for trace agent does not exist: {0}", traceAgentDirectory));
+                    DatadogLogging.RegisterStartupLog(log => log.Warning("Directory for trace agent does not exist: {0}", traceAgentDirectory));
                     return;
                 }
 
