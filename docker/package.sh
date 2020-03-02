@@ -6,6 +6,7 @@ VERSION=1.13.3
 
 mkdir -p $DIR/../deploy/linux
 cp $DIR/../integrations.json $DIR/../src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/
+cp $DIR/../createLogPath.sh $DIR/../src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/
 
 cd $DIR/../deploy/linux
 for pkgtype in $PKGTYPES ; do
@@ -19,7 +20,8 @@ for pkgtype in $PKGTYPES ; do
         --chdir $DIR/../src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64 \
         netstandard2.0/ \
         Datadog.Trace.ClrProfiler.Native.so \
-        integrations.json
+        integrations.json \
+        createLogPath.sh
 done
 
 gzip -f datadog-dotnet-apm.tar
