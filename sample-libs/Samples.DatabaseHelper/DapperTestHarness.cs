@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Threading.Tasks;
 using Datadog.Trace;
 using Dapper;
+using System.Collections.Generic;
 
 namespace Samples.DatabaseHelper
 {
@@ -60,6 +61,8 @@ namespace Samples.DatabaseHelper
                 }
             }
 
+            var t1 = await CallQueryAsync(_connection, SelectOneCommandText);
+            t1 = await CallQueryAsync(_connection, SelectManyCommandText);
         }
 
         private void SelectRecords(IDbConnection connection)
@@ -76,6 +79,10 @@ namespace Samples.DatabaseHelper
             await connection.ExecuteAsync(SelectManyCommandText);
         }
 
+        private async Task<IEnumerable<dynamic>> CallQueryAsync(IDbConnection connection, string sql)
+        {
+            return await connection.QueryAsync<dynamic>(sql);
+        }
     }
 }
 #endif
