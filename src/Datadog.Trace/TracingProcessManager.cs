@@ -17,6 +17,8 @@ namespace Datadog.Trace
 {
     internal class TracingProcessManager
     {
+        internal static readonly int KeepAliveInterval = 20_000;
+
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
             Name = "datadog-trace-agent",
@@ -42,8 +44,6 @@ namespace Datadog.Trace
             }
         };
 
-        private static readonly HashSet<string> AzureTopLevelProcesses = new HashSet<string>() { "w3wp.exe" };
-
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>()
         {
             TraceAgentMetadata,
@@ -51,6 +51,9 @@ namespace Datadog.Trace
         };
 
         private static CancellationTokenSource _cancellationTokenSource;
+        private static string _processName;
+        private static int _processId;
+        private static bool _isProcessManager;
 
         public static void SubscribeToTraceAgentPortOverride(Action<int> subscriber)
         {
@@ -94,12 +97,26 @@ namespace Datadog.Trace
         {
             try
             {
-                _cancellationTokenSource = new CancellationTokenSource();
-                var currentProcessName = Process.GetCurrentProcess().ProcessName.ToLowerInvariant();
-                var currentAppDomainName = AppDomain.CurrentDomain.FriendlyName.ToLowerInvariant();
-                if (AzureTopLevelProcesses.Any(name => name.Contains(currentProcessName)))
+                if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Starting sub-processes from top level process {0}, app domain {1}.", currentProcessName, currentAppDomainName));
+                    return;
+                }
+
+                var traceAgentDirectory = Path.GetDirectoryName(TraceAgentMetadata.ProcessPath);
+
+                if (!Directory.Exists(traceAgentDirectory))
+                {
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Directory for trace agent does not exist: {0}", traceAgentDirectory));
+                    return;
+                }
+
+                InitializePortManagerClaimFiles(traceAgentDirectory);
+                _cancellationTokenSource = new CancellationTokenSource();
+
+                if (_isProcessManager)
+                {
+                    var currentAppDomainName = AppDomain.CurrentDomain.FriendlyName.ToLowerInvariant();
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Starting sub-processes from top level process {0}, app domain {1}.", _processName, currentAppDomainName));
                     StartProcesses();
                 }
                 else
@@ -114,6 +131,50 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when attempting to initialize process manager."));
+            }
+        }
+
+        private static void InitializePortManagerClaimFiles(string traceAgentDirectory)
+        {
+            var portManagerDirectory = Path.Combine(traceAgentDirectory, "port-manager");
+
+            if (!Directory.Exists(portManagerDirectory))
+            {
+                Directory.CreateDirectory(portManagerDirectory);
+            }
+
+            var currentProcess = Process.GetCurrentProcess();
+            _processName = currentProcess.ProcessName.ToLowerInvariant();
+            _processId = currentProcess.Id;
+            var fileClaim = Path.Combine(portManagerDirectory, _processId.ToString());
+
+            var portManagerFiles = Directory.GetFiles(portManagerDirectory);
+            var deleted = 0;
+            if (portManagerFiles.Length > 0)
+            {
+                var activePids = Process.GetProcesses().Select(p => p.Id.ToString()).ToList();
+                foreach (var portManagerFileName in portManagerFiles)
+                {
+                    try
+                    {
+                        var claimPid = Path.GetFileName(portManagerFileName);
+                        if (!activePids.Contains(claimPid))
+                        {
+                            File.Delete(portManagerFileName);
+                            deleted++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when cleaning port claims."));
+                    }
+                }
+            }
+
+            if (deleted == portManagerFiles.Length)
+            {
+                File.WriteAllText(fileClaim, DateTime.Now.ToString(CultureInfo.InvariantCulture));
+                _isProcessManager = true;
             }
         }
 
@@ -172,7 +233,7 @@ namespace Datadog.Trace
             DatadogLogging.RegisterStartupLog(log => log.Debug("Starting keep alive for {0}.", path));
 
             return Task.Run(
-                () =>
+                async () =>
                 {
                     try
                     {
@@ -212,7 +273,7 @@ namespace Datadog.Trace
                                 GrabFreePortForInstance(metadata);
                                 metadata.Process = Process.Start(startInfo);
 
-                                Thread.Sleep(200);
+                                await Task.Delay(200);
 
                                 if (metadata.Process == null || metadata.Process.HasExited)
                                 {
@@ -235,7 +296,7 @@ namespace Datadog.Trace
                             finally
                             {
                                 // Delay for a reasonable amount of time before we check to see if the process is alive again.
-                                Thread.Sleep(20_000);
+                                await Task.Delay(KeepAliveInterval);
                             }
 
                             if (sequentialFailures >= circuitBreakerMax)
@@ -250,6 +311,17 @@ namespace Datadog.Trace
                         DatadogLogging.RegisterStartupLog(log => log.Debug("Keep alive is dropping for {0}.", path));
                     }
                 });
+        }
+
+        private static string ReadSingleLineNoLock(string file)
+        {
+            using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var sr = new StreamReader(fs))
+                {
+                    return sr.ReadLine();
+                }
+            }
         }
 
         private static int? GetFreeTcpPort()
@@ -373,17 +445,6 @@ namespace Datadog.Trace
                 }
 
                 ReadPortAndAlertSubscribers();
-            }
-
-            private static string ReadSingleLineNoLock(string file)
-            {
-                using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    using (var sr = new StreamReader(fs))
-                    {
-                        return sr.ReadLine();
-                    }
-                }
             }
 
             private void OnPortFileChanged(object source, FileSystemEventArgs e)
