@@ -134,11 +134,12 @@ namespace Datadog.Trace.Configuration
         public bool TraceEnabled { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether debug mode is enabled.
-        /// Default is <c>false</c>.
+        /// Gets or sets a value indicating whether debug is enabled for a tracer.
+        /// This property is obsolete. Manage the debug setting through GlobalSettings.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.DebugEnabled"/>
-        public bool DebugEnabled => GlobalSettings.Source.DebugEnabled;
+        /// <seealso cref="GlobalSettings.DebugEnabled"/>
+        [Obsolete]
+        public bool DebugEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.
