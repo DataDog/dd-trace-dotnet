@@ -116,7 +116,7 @@ namespace Datadog.Trace
                 if (_isProcessManager)
                 {
                     var currentAppDomainName = AppDomain.CurrentDomain.FriendlyName.ToLowerInvariant();
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Starting sub-processes from top level process {0}, app domain {1}.", _processName, currentAppDomainName));
+                    DatadogLogging.RegisterStartupLog(log => log.Debug("Starting sub-processes from process {0}, app domain {1}.", _processName, currentAppDomainName));
                     StartProcesses();
                 }
                 else
