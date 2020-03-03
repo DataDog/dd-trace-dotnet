@@ -142,6 +142,7 @@ namespace Datadog.Trace.Agent
                     await Task.Delay(sleepDuration).ConfigureAwait(false);
                     retryCount++;
                     sleepDuration *= 2;
+                    TracingProcessManager.TraceAgentMetadata.ForcePortFileRead();
                     continue;
                 }
 
