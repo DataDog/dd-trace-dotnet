@@ -83,46 +83,8 @@ namespace Datadog.Trace.Logging
             }
             finally
             {
-                Initialized = true;
                 // Log some information to correspond with the app domain
-<<<<<<< HEAD
                 SharedLogger.Information(FrameworkDescription.Create().ToString());
-
-                // Clear the queue out regardless of exception
-                while (ActionsToRunWhenLoggerReady.TryDequeue(out var logAction))
-                {
-                    try
-                    {
-                        logAction(SharedLogger);
-                    }
-                    catch (Exception ex)
-                    {
-                        SharedLogger.Error(ex, "Failure on logger startup subscriber");
-                    }
-                }
-            }
-        }
-
-        public static void RegisterStartupLog(Action<ILogger> logAction)
-        {
-            try
-            {
-                if (Initialized)
-                {
-                    logAction(SharedLogger);
-                }
-                else
-                {
-                    ActionsToRunWhenLoggerReady.Enqueue(logAction);
-                }
-            }
-            catch (Exception ex)
-            {
-                // ignored
-                SharedLogger.Error(ex, "Register startup log failed");
-=======
-                SharedLogger.Information("New global logger instance created with {0}", FrameworkDescription.Create().ToString());
->>>>>>> Use global settings instance for configuring log level
             }
         }
 
@@ -138,7 +100,16 @@ namespace Datadog.Trace.Logging
             return GetLogger(typeof(T));
         }
 
-<<<<<<< HEAD
+        internal static void SetLogLevel(LogEventLevel logLevel)
+        {
+            LoggingLevelSwitch.MinimumLevel = logLevel;
+        }
+
+        internal static void UseDefaultLevel()
+        {
+            SetLogLevel(LogEventLevel.Information);
+        }
+
         private static string GetLogDirectory()
         {
             var nativeLogFile = Environment.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
@@ -194,16 +165,6 @@ namespace Datadog.Trace.Logging
             }
 
             return logDirectory;
-=======
-        internal static void SetLogLevel(LogEventLevel logLevel)
-        {
-            LoggingLevelSwitch.MinimumLevel = logLevel;
-        }
-
-        internal static void UseDefaultLevel()
-        {
-            SetLogLevel(LogEventLevel.Information);
->>>>>>> Use global settings instance for configuring log level
         }
     }
 }

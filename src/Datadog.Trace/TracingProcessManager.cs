@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -50,6 +51,8 @@ namespace Datadog.Trace
             DogStatsDMetadata
         };
 
+        private static readonly ILogger Log = DatadogLogging.For<TracingProcessManager>();
+
         private static CancellationTokenSource _cancellationTokenSource;
         private static string _processName;
         private static int _processId;
@@ -88,7 +91,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception ex)
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when cancelling process {0}.", metadata.Name));
+                    Log.Error(ex, "Error when cancelling process {0}.", metadata.Name);
                 }
             }
         }
@@ -106,7 +109,7 @@ namespace Datadog.Trace
 
                 if (!Directory.Exists(traceAgentDirectory))
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Warning("Directory for trace agent does not exist: {0}", traceAgentDirectory));
+                    Log.Warning("Directory for trace agent does not exist: {0}", traceAgentDirectory);
                     return;
                 }
 
@@ -116,12 +119,12 @@ namespace Datadog.Trace
                 if (_isProcessManager)
                 {
                     var currentAppDomainName = AppDomain.CurrentDomain.FriendlyName.ToLowerInvariant();
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Starting sub-processes from process {0}, app domain {1}.", _processName, currentAppDomainName));
+                    Log.Debug("Starting sub-processes from process {0}, app domain {1}.", _processName, currentAppDomainName);
                     StartProcesses();
                 }
                 else
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Initializing sub process port file watchers."));
+                    Log.Debug("Initializing sub process port file watchers.");
                     foreach (var instance in Processes)
                     {
                         instance.InitializePortFileWatcher();
@@ -130,7 +133,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when attempting to initialize process manager."));
+                Log.Error(ex, "Error when attempting to initialize process manager.");
             }
         }
 
@@ -166,7 +169,7 @@ namespace Datadog.Trace
                     }
                     catch (Exception ex)
                     {
-                        DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when cleaning port claims."));
+                        Log.Error(ex, "Error when cleaning port claims.");
                     }
                 }
             }
@@ -188,7 +191,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("There is no path configured for {0}.", metadata.Name));
+                    Log.Debug("There is no path configured for {0}.", metadata.Name);
                 }
             }
         }
@@ -204,7 +207,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Failed to verify halt of the {0} process.", metadata.Name));
+                Log.Error(ex, "Failed to verify halt of the {0} process.", metadata.Name);
             }
         }
 
@@ -230,7 +233,7 @@ namespace Datadog.Trace
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata)
         {
             var path = metadata.ProcessPath;
-            DatadogLogging.RegisterStartupLog(log => log.Debug("Starting keep alive for {0}.", path));
+            Log.Debug("Starting keep alive for {0}.", path);
 
             return Task.Run(
                 async () =>
@@ -244,7 +247,7 @@ namespace Datadog.Trace
                         {
                             if (_cancellationTokenSource.IsCancellationRequested)
                             {
-                                DatadogLogging.RegisterStartupLog(log => log.Debug("Shutdown triggered for keep alive {0}.", path));
+                                Log.Debug("Shutdown triggered for keep alive {0}.", path);
                                 return;
                             }
 
@@ -252,13 +255,13 @@ namespace Datadog.Trace
                             {
                                 if (metadata.Process != null && metadata.Process.HasExited == false)
                                 {
-                                    DatadogLogging.RegisterStartupLog(log => log.Debug("We already have an active reference to {0}.", path));
+                                    Log.Debug("We already have an active reference to {0}.", path);
                                     continue;
                                 }
 
                                 if (ProgramIsRunning(path))
                                 {
-                                    DatadogLogging.RegisterStartupLog(log => log.Debug("{0} is already running.", path));
+                                    Log.Debug("{0} is already running.", path);
                                     continue;
                                 }
 
@@ -269,7 +272,7 @@ namespace Datadog.Trace
                                     startInfo.Arguments = metadata.ProcessArguments;
                                 }
 
-                                DatadogLogging.RegisterStartupLog(log => log.Debug("Starting {0}.", path));
+                                Log.Debug("Starting {0}.", path);
                                 GrabFreePortForInstance(metadata);
                                 metadata.Process = Process.Start(startInfo);
 
@@ -277,20 +280,20 @@ namespace Datadog.Trace
 
                                 if (metadata.Process == null || metadata.Process.HasExited)
                                 {
-                                    DatadogLogging.RegisterStartupLog(log => log.Error("{0} has failed to start.", path));
+                                    Log.Error("{0} has failed to start.", path);
                                     sequentialFailures++;
                                 }
                                 else
                                 {
-                                    DatadogLogging.RegisterStartupLog(log => log.Debug("Successfully started {0}.", path));
+                                    Log.Debug("Successfully started {0}.", path);
                                     sequentialFailures = 0;
                                     metadata.AlertSubscribers();
-                                    DatadogLogging.RegisterStartupLog(log => log.Debug("Finished calling port subscribers for {0}.", metadata.Name));
+                                    Log.Debug("Finished calling port subscribers for {0}.", metadata.Name);
                                 }
                             }
                             catch (Exception ex)
                             {
-                                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Exception when trying to start an instance of {0}.", path));
+                                Log.Error(ex, "Exception when trying to start an instance of {0}.", path);
                                 sequentialFailures++;
                             }
                             finally
@@ -301,14 +304,14 @@ namespace Datadog.Trace
 
                             if (sequentialFailures >= circuitBreakerMax)
                             {
-                                DatadogLogging.RegisterStartupLog(log => log.Error("Circuit breaker triggered for {0}. Max failed retries reached ({1}).", path, sequentialFailures));
+                                Log.Error("Circuit breaker triggered for {0}. Max failed retries reached ({1}).", path, sequentialFailures);
                                 break;
                             }
                         }
                     }
                     finally
                     {
-                        DatadogLogging.RegisterStartupLog(log => log.Debug("Keep alive is dropping for {0}.", path));
+                        Log.Debug("Keep alive is dropping for {0}.", path);
                     }
                 });
         }
@@ -336,7 +339,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error trying to get a free port."));
+                Log.Error(ex, "Error trying to get a free port.");
                 return null;
             }
             finally
@@ -354,7 +357,7 @@ namespace Datadog.Trace
             }
 
             instance.RefreshPortVars();
-            DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to use port {0} for the {1}.", instance.Port, instance.Name));
+            Log.Debug("Attempting to use port {0} for the {1}.", instance.Port, instance.Name);
 
             if (instance.PortFilePath != null)
             {
@@ -415,7 +418,7 @@ namespace Datadog.Trace
             {
                 if (File.Exists(PortFilePath))
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Port file already exists."));
+                    Log.Debug("Port file already exists.");
                     ReadPortAndAlertSubscribers();
                 }
 
@@ -449,14 +452,14 @@ namespace Datadog.Trace
 
             private void OnPortFileChanged(object source, FileSystemEventArgs e)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Debug("Port file has changed."));
+                Log.Debug("Port file has changed.");
                 ReadPortAndAlertSubscribers();
             }
 
             private void OnPortFileDeleted(object source, FileSystemEventArgs e)
             {
                 // For if some process or user decides to delete the port file, we have some evidence of what happened
-                DatadogLogging.RegisterStartupLog(log => log.Error("The port file ({0}) has been deleted."));
+                Log.Error("The port file ({0}) has been deleted.");
             }
 
             private void ReadPortAndAlertSubscribers()
@@ -478,19 +481,19 @@ namespace Datadog.Trace
                             }
 
                             Port = portValue;
-                            DatadogLogging.RegisterStartupLog(log => log.Debug("Retrieved port {0} from {1}.", portValue, PortFilePath));
+                            Log.Debug("Retrieved port {0} from {1}.", portValue, PortFilePath);
                             RefreshPortVars();
                         }
                         else
                         {
-                            DatadogLogging.RegisterStartupLog(log => log.Error("The port file ({0}) is malformed: {1}", PortFilePath, portText));
+                            Log.Error("The port file ({0}) is malformed: {1}", PortFilePath, portText);
                         }
 
                         AlertSubscribers();
                     }
                     catch (Exception ex)
                     {
-                        DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error when alerting subscribers for {0}", Name));
+                        Log.Error(ex, "Error when alerting subscribers for {0}", Name);
                         Thread.Sleep(5); // Wait just a tiny bit just to let the file come unlocked
                     }
                 }
