@@ -1001,18 +1001,6 @@ HRESULT CorProfiler::InsertMethodCalls(
         method_replacement.wrapper_method.method_name, "() ", wrapper_method_ref,
         " to the beginning of method",
         caller_type_name,".", caller_name, "()");
-    } else if (method_replacement.wrapper_method.action == "InsertLast"_W) {
-      // Fow now, we do not have any tests for calling at the end
-      // rewriter_wrapper.SetILPosition(lastInstr);
-      // rewriter_wrapper.CallMember(wrapper_method_ref, false);
-      // lastInstr = lastInstr->m_pPrev;
-      // modified = true;
-
-      Info("*** JITCompilationStarted() : InsertLast inserted call to ",
-        method_replacement.wrapper_method.type_name, ".",
-        method_replacement.wrapper_method.method_name, "() ", wrapper_method_ref,
-        " to the end of method",
-        caller_type_name,".", caller_name, "()");
     }
   }
 

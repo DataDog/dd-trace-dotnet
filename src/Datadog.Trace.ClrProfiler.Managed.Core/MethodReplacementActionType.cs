@@ -16,10 +16,5 @@ namespace Datadog.Trace.ClrProfiler
         /// The new method call should be placed at the beginning of the caller's body.
         /// </summary>
         InsertFirst,
-
-        /// <summary>
-        /// The new method call should be placed at the end of the caller's body.
-        /// </summary>
-        InsertLast
     }
 }
