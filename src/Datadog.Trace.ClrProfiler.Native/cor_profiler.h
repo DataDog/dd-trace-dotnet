@@ -43,6 +43,13 @@ class CorProfiler : public CorProfilerBase {
   // Startup methods
   //
   bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
+  HRESULT InsertMethodCalls(ModuleMetadata* module_metadata,
+                                         const FunctionID function_id,
+                                         const ModuleID module_id,
+                                         const mdToken function_token,
+                                         const WSTRING caller_type_name,
+                                         const WSTRING caller_name,
+                                         const std::vector<MethodReplacement> method_replacements);
   HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&,
                              const ModuleID module_id,
                              const mdToken function_token);

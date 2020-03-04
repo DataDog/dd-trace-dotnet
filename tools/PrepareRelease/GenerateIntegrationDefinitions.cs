@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.Managed.Utilities;
 using Newtonsoft.Json;
 
 namespace PrepareRelease
@@ -18,6 +19,7 @@ namespace PrepareRelease
 
             var assemblies = new List<Assembly>();
             assemblies.Add(typeof(Instrumentation).Assembly);
+            assemblies.Add(typeof(Startup).Assembly);
 
             // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
             // and create objects that will generate correct JSON schema
@@ -52,7 +54,7 @@ namespace PrepareRelease
                                                              },
                                                              target = new
                                                              {
-                                                                 assembly = targetAssembly,
+                                                                 assembly = string.IsNullOrEmpty(targetAssembly) ? null : targetAssembly,
                                                                  type = item.attribute.TargetType,
                                                                  method = item.attribute.TargetMethod,
                                                                  signature = item.attribute.TargetSignature,
@@ -69,7 +71,8 @@ namespace PrepareRelease
                                                                  assembly = item.assembly.FullName,
                                                                  type = item.wrapperType.FullName,
                                                                  method = item.wrapperMethod.Name,
-                                                                 signature = GetMethodSignature(item.wrapperMethod)
+                                                                 signature = GetMethodSignature(item.wrapperMethod, item.attribute.MethodReplacementAction),
+                                                                 action = item.attribute.MethodReplacementAction.ToString()
                                                              }
                                                          }
                                };
@@ -104,7 +107,7 @@ namespace PrepareRelease
             return typeName;
         }
 
-        private static string GetMethodSignature(MethodInfo method)
+        private static string GetMethodSignature(MethodInfo method, MethodReplacementActionType methodReplacementActionType)
         {
             var returnType = method.ReturnType;
             var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
@@ -112,11 +115,19 @@ namespace PrepareRelease
             var requiredParameterTypes = new[] { typeof(int), typeof(int), typeof(long) };
             var lastParameterTypes = parameters.Skip(parameters.Length - requiredParameterTypes.Length);
 
-            if (!lastParameterTypes.SequenceEqual(requiredParameterTypes))
+            if (methodReplacementActionType == MethodReplacementActionType.ReplaceTargetMethod &&
+                !lastParameterTypes.SequenceEqual(requiredParameterTypes))
             {
                 throw new Exception(
                     $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
                     "Wrapper methods must have at least 3 parameters and the last 3 must be of types Int32 (opCode), Int32 (mdToken), and Int64 (moduleVersionPtr).");
+            }
+            else if (methodReplacementActionType != MethodReplacementActionType.ReplaceTargetMethod &&
+                parameters.Any())
+            {
+                throw new Exception(
+                    $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
+                    "Currently, methods that are not doing replacements must have zero parameters.");
             }
 
             var signatureHelper = SignatureHelper.GetMethodSigHelper(method.CallingConvention, returnType);

@@ -4,30 +4,27 @@
     "method_replacements": [
       {
         "caller": {
-          "assembly": "System.Web"
+          "assembly": "System.Web",
+          "type": "System.Web.Compilation.BuildManager",
+          "method": "InvokePreStartInitMethodsCore"
         },
         "target": {
           "assembly": "System.Web",
           "type": "System.Web.Compilation.BuildManager",
           "method": "InvokePreStartInitMethodsCore",
-          "signature_types": [
-            "System.Void",
-            "System.Collections.Generic.ICollection`1<System.Reflection.MethodInfo>",
-            "System.Func`1<System.IDisposable>"
-          ],
-          "minimum_major": 4,
+          "minimum_major": 0,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 4,
+          "maximum_major": 65535,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.14.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetIntegration",
-          "method": "InvokePreStartInitMethodsCore",
-          "signature": "00 05 01 1C 1C 08 08 0A",
-          "action": "ReplaceTargetMethod"
+          "assembly": "Datadog.Trace.ClrProfiler.Managed.Utilities, Version=1.13.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Managed.Utilities.Startup",
+          "method": "TryLoadAspNetModule",
+          "signature": "00 00 01",
+          "action": "InsertFirst"
         }
       }
     ]
