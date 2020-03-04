@@ -128,6 +128,13 @@ namespace PrepareRelease
                     $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
                     "Currently, methods that are not doing replacements must have zero parameters.");
             }
+            else if (methodReplacementActionType != MethodReplacementActionType.ReplaceTargetMethod &&
+                returnType != typeof(void))
+            {
+                throw new Exception(
+                    $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet return type requirements. " +
+                    "Currently, methods that are not doing replacements must have a void return type.");
+            }
 
             var signatureHelper = SignatureHelper.GetMethodSigHelper(method.CallingConvention, returnType);
             signatureHelper.AddArguments(parameters, requiredCustomModifiers: null, optionalCustomModifiers: null);
