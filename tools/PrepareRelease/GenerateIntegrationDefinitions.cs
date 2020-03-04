@@ -56,7 +56,7 @@ namespace PrepareRelease
                                                              {
                                                                  assembly = string.IsNullOrEmpty(targetAssembly) ? null : targetAssembly,
                                                                  type = item.attribute.TargetType,
-                                                                 method = item.attribute.TargetMethod,
+                                                                 method = item.attribute.TargetMethod ?? item.wrapperMethod.Name,
                                                                  signature = item.attribute.TargetSignature,
                                                                  signature_types = item.attribute.TargetSignatureTypes,
                                                                  minimum_major = item.attribute.TargetVersionRange.MinimumMajor,

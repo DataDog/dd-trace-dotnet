@@ -29,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssemblies = new[] { "System", "System.Net.Requests" },
             TargetType = WebRequestTypeName,
-            TargetMethod = "GetResponse",
             TargetSignatureTypes = new[] { "System.Net.WebResponse" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -112,7 +111,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         [InterceptMethod(
             TargetAssemblies = new[] { "System", "System.Net.Requests" },
             TargetType = WebRequestTypeName,
-            TargetMethod = "GetResponseAsync",
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Net.WebResponse>" },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]

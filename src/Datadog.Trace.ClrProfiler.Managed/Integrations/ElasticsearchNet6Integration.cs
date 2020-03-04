@@ -33,7 +33,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = ElasticsearchAssemblyName,
             TargetAssembly = ElasticsearchAssemblyName,
             TargetType = RequestPipelineInterfaceTypeName,
-            TargetMethod = "CallElasticsearch",
             TargetSignatureTypes = new[] { "T", "Elasticsearch.Net.RequestData" },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]
@@ -108,7 +107,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = ElasticsearchAssemblyName,
             TargetAssembly = ElasticsearchAssemblyName,
             TargetType = RequestPipelineInterfaceTypeName,
-            TargetMethod = "CallElasticsearchAsync",
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<T>", "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
             TargetMinimumVersion = Version6,
             TargetMaximumVersion = Version6)]

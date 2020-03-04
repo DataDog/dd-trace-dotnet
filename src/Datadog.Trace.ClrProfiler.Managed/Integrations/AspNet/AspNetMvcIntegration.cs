@@ -169,7 +169,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = AssemblyName,
             TargetAssembly = AssemblyName,
             TargetType = AsyncActionInvokerTypeName,
-            TargetMethod = "BeginInvokeAction",
             TargetSignatureTypes = new[] { ClrNames.IAsyncResult, ControllerContextTypeName, ClrNames.String, ClrNames.AsyncCallback, ClrNames.Object },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]
@@ -259,7 +258,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             CallerAssembly = AssemblyName,
             TargetAssembly = AssemblyName,
             TargetType = AsyncActionInvokerTypeName,
-            TargetMethod = "EndInvokeAction",
             TargetSignatureTypes = new[] { ClrNames.Bool, ClrNames.IAsyncResult },
             TargetMinimumVersion = MinimumVersion,
             TargetMaximumVersion = MaximumVersion)]
