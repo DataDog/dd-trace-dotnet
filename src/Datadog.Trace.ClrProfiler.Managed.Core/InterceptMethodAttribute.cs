@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets or sets the name of the assemblies that contain the target method to be intercepted.
         /// Required if <see cref="TargetAssembly"/> is not set.
         /// </summary>
-        public string[] TargetAssemblies { get; set; } = new[] { string.Empty };
+        public string[] TargetAssemblies { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the type that contains the target method to be intercepted.

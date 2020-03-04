@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
-using Datadog.Trace.AspNet.Loader;
 using Datadog.Trace.ClrProfiler;
 using Newtonsoft.Json;
 
@@ -19,7 +18,7 @@ namespace PrepareRelease
 
             var assemblies = new List<Assembly>();
             assemblies.Add(typeof(Instrumentation).Assembly);
-            assemblies.Add(typeof(Startup).Assembly);
+            assemblies.Add(typeof(Datadog.Trace.AspNet.Loader.Startup).Assembly);
 
             // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
             // and create objects that will generate correct JSON schema
@@ -54,7 +53,7 @@ namespace PrepareRelease
                                                              },
                                                              target = new
                                                              {
-                                                                 assembly = string.IsNullOrEmpty(targetAssembly) ? null : targetAssembly,
+                                                                 assembly = targetAssembly,
                                                                  type = item.attribute.TargetType,
                                                                  method = item.attribute.TargetMethod ?? item.wrapperMethod.Name,
                                                                  signature = item.attribute.TargetSignature,

@@ -195,6 +195,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
   }
 
+  if (debug_logging_enabled) {
+    Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
+  }
+
   // keep this lock until we are done using the module,
   // to prevent it from unloading while in use
   std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
