@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
