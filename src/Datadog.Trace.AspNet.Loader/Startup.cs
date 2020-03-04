@@ -4,20 +4,17 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-#if NETFRAMEWORK
 using System.Web;
-#endif
+using Datadog.Trace.ClrProfiler;
 
-namespace Datadog.Trace.ClrProfiler.Managed.Utilities
+namespace Datadog.Trace.AspNet.Loader
 {
     /// <summary>
     /// Temporary startup class to launch something from the GAC
     /// </summary>
     public static class Startup
     {
-#if NETFRAMEWORK
         private static bool httpModuleRegistered = false;
-#endif
 
         /// <summary>
         /// Injects a call to load the AspNetModule
@@ -33,8 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Utilities
             MethodReplacementAction = MethodReplacementActionType.InsertFirst)]
         public static void TryLoadAspNetModule()
         {
-#if NETFRAMEWORK
-            // Do nothing. We don't expect to be running ASP.NET on .NET Core
+            // Only load the HttpModule once per AppDomain
             if (httpModuleRegistered)
             {
                 return;
@@ -55,9 +51,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Utilities
             {
                 // Do nothing I guess
             }
-#else
-            // Do nothing
-#endif
         }
     }
 }

@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net461;netstandard2.0</TargetFrameworks>
-    <RootNamespace>Datadog.Trace.ClrProfiler.Managed.Utilities</RootNamespace>
+    <TargetFrameworks>net45;net461</TargetFrameworks>
+    <RootNamespace>Datadog.Trace.AspNet.Loader</RootNamespace>
 
     <!-- NuGet -->
     <Version>1.13.3-prerelease</Version>
@@ -12,7 +12,11 @@
     <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net461'">
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="System.Web" />
   </ItemGroup>
 

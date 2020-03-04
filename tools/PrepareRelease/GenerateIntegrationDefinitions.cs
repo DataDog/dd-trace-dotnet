@@ -5,8 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using Datadog.Trace.AspNet.Loader;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.Managed.Utilities;
 using Newtonsoft.Json;
 
 namespace PrepareRelease
