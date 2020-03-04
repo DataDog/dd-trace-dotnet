@@ -28,6 +28,8 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal static readonly string SiteNameKey = "WEBSITE_DEPLOYMENT_ID";
 
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AzureAppServices));
+
         static AzureAppServices()
         {
             Metadata = new AzureAppServices(Environment.GetEnvironmentVariables());
@@ -67,19 +69,19 @@ namespace Datadog.Trace.PlatformHelpers
                 if (SubscriptionId == null)
                 {
                     success = false;
-                    DatadogLogging.RegisterStartupLog(log => log.Warning("Could not successfully retrieve the subscription ID from variable: {0}", WebsiteOwnerNameKey));
+                    Log.Warning("Could not successfully retrieve the subscription ID from variable: {0}", WebsiteOwnerNameKey);
                 }
 
                 if (SiteName == null)
                 {
                     success = false;
-                    DatadogLogging.RegisterStartupLog(log => log.Warning("Could not successfully retrieve the deployment ID from variable: {0}", SiteNameKey));
+                    Log.Warning("Could not successfully retrieve the deployment ID from variable: {0}", SiteNameKey);
                 }
 
                 if (ResourceGroup == null)
                 {
                     success = false;
-                    DatadogLogging.RegisterStartupLog(log => log.Warning("Could not successfully retrieve the resource group name from variable: {0}", ResourceGroupKey));
+                    Log.Warning("Could not successfully retrieve the resource group name from variable: {0}", ResourceGroupKey);
                 }
 
                 if (success)
@@ -89,7 +91,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Could not successfully setup the resource id for azure app services."));
+                Log.Error(ex, "Could not successfully setup the resource id for azure app services.");
             }
 
             return resourceId;
@@ -111,7 +113,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Could not successfully retrieve the subscription id for azure app services."));
+                Log.Error(ex, "Could not successfully retrieve the subscription id for azure app services.");
             }
 
             return null;

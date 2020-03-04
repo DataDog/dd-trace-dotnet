@@ -36,7 +36,7 @@ namespace Datadog.Trace.Agent
 
         public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd)
         {
-            DatadogLogging.RegisterStartupLog(log => log.Debug("Creating new Api"));
+            Log.Debug("Creating new Api");
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;

@@ -21,6 +21,7 @@ namespace Datadog.Trace
     public class Tracer : IDatadogTracer
     {
         private const string UnknownServiceName = "UnknownService";
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Tracer>();
 
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
@@ -81,7 +82,7 @@ namespace Datadog.Trace
                 TracingProcessManager.SubscribeToDogStatsDPortOverride(
                     port =>
                     {
-                        DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to override dogstatsd port with {0}", port));
+                        Log.Debug("Attempting to override dogstatsd port with {0}", port);
                         Statsd = CreateDogStatsdClient(Settings, DefaultServiceName, port);
                     });
 
@@ -92,7 +93,7 @@ namespace Datadog.Trace
             TracingProcessManager.SubscribeToTraceAgentPortOverride(
                 port =>
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Debug("Attempting to override trace agent port with {0}", port));
+                    Log.Debug("Attempting to override trace agent port with {0}", port);
                     var builder = new UriBuilder(Settings.AgentUri) { Port = port };
                     var baseEndpoint = builder.Uri;
                     IApi overridingApiClient = new Api(baseEndpoint, delegatingHandler: null, Statsd);
@@ -129,7 +130,7 @@ namespace Datadog.Trace
 
                 if (globalRate < 0f || globalRate > 1f)
                 {
-                    DatadogLogging.RegisterStartupLog(log => log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate));
+                    Log.Warning("{0} configuration of {1} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
                 }
                 else
                 {
@@ -211,7 +212,7 @@ namespace Datadog.Trace
             // Keep supporting this older public method by creating a TracerConfiguration
             // from default sources, overwriting the specified settings, and passing that to the constructor.
             var configuration = TracerSettings.FromDefaultSources();
-            configuration.DebugEnabled = isDebugEnabled;
+            GlobalSettings.SetDebugEnabled(isDebugEnabled);
 
             if (agentEndpoint != null)
             {
@@ -370,7 +371,7 @@ namespace Datadog.Trace
 
             if (type == null)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers."));
+                Log.Warning("DiagnosticSource type could not be loaded. Disabling diagnostic observers.");
             }
             else
             {
@@ -388,7 +389,7 @@ namespace Datadog.Trace
 #if NETSTANDARD
             if (Settings.IsIntegrationEnabled(AspNetCoreDiagnosticObserver.IntegrationName))
             {
-                DatadogLogging.RegisterStartupLog(log => log.Debug("Adding AspNetCoreDiagnosticObserver"));
+                Log.Debug("Adding AspNetCoreDiagnosticObserver");
 
                 var aspNetCoreDiagnosticOptions = new AspNetCoreDiagnosticOptions();
                 observers.Add(new AspNetCoreDiagnosticObserver(this, aspNetCoreDiagnosticOptions));
@@ -397,11 +398,11 @@ namespace Datadog.Trace
 
             if (observers.Count == 0)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Debug("DiagnosticManager not started, zero observers added."));
+                Log.Debug("DiagnosticManager not started, zero observers added.");
             }
             else
             {
-                DatadogLogging.RegisterStartupLog(log => log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count));
+                Log.Debug("Starting DiagnosticManager with {0} observers.", observers.Count);
 
                 var diagnosticManager = new DiagnosticManager(observers);
                 diagnosticManager.Start();
@@ -433,7 +434,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error creating default service name."));
+                Log.Error(ex, "Error creating default service name.");
                 return null;
             }
         }
@@ -488,7 +489,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                DatadogLogging.RegisterStartupLog(log => log.Error(ex, "Error flushing traces on shutdown."));
+                Log.Error(ex, "Error flushing traces on shutdown.");
             }
 
             TracingProcessManager.StopProcesses();

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Configuration
 {
@@ -76,11 +77,8 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public virtual bool? GetBool(string key)
         {
-            string value = GetString(key);
-
-            return bool.TryParse(value, out bool result)
-                       ? result
-                       : (bool?)null;
+            var value = GetString(key);
+            return value?.ToBoolean();
         }
 
         /// <summary>
