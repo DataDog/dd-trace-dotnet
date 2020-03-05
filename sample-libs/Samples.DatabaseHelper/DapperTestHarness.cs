@@ -42,6 +42,7 @@ namespace Samples.DatabaseHelper
                     CreateNewTable(_connection);
                     InsertRow(_connection);
                     SelectScalar(_connection);
+                    Query(_connection);
                     UpdateRow(_connection);
                     SelectRecords(_connection);
                     DeleteRecord(_connection);
@@ -61,6 +62,7 @@ namespace Samples.DatabaseHelper
                         await CreateNewTableAsync(_connection);
                         await InsertRowAsync(_connection);
                         await SelectScalarAsync(_connection);
+                        await QueryAsync(_connection);
                         await UpdateRowAsync(_connection);
                         await SelectRecordsAsync(_connection);
                         await DeleteRecordAsync(_connection);
@@ -99,6 +101,12 @@ namespace Samples.DatabaseHelper
 
                 Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
             }
+        }
+
+        private void Query(IDbConnection connection)
+        {
+            var employees = connection.Query(SelectManyCommandText).ToList();
+            Console.WriteLine($"Selected {employees.Count} record(s) with Query().");
         }
 
         private void UpdateRow(IDbConnection connection)
@@ -154,6 +162,12 @@ namespace Samples.DatabaseHelper
 
                 Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
             }
+        }
+
+        private async Task QueryAsync(IDbConnection connection)
+        {
+            var employees = (await connection.QueryAsync(SelectManyCommandText)).ToList();
+            Console.WriteLine($"Selected {employees.Count} record(s) with Query().");
         }
 
         private async Task UpdateRowAsync(IDbConnection connection)
