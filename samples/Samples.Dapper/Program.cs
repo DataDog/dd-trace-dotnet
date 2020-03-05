@@ -12,7 +12,7 @@ namespace Samples.Dapper
         {
             using (var connection = CreateConnection())
             {
-                var testQueries = new DapperTestHarness<IDbConnection, IDbCommand, IDataReader>(connection);
+                var testQueries = new DapperTestHarness<IDbConnection>(connection);
                 await testQueries.RunAsync();
             }
         }
