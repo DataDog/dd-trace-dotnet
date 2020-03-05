@@ -1,5 +1,4 @@
 using System;
-using System.Data;
 using System.Threading.Tasks;
 using Npgsql;
 using Samples.DatabaseHelper;
@@ -12,8 +11,8 @@ namespace Samples.Dapper
         {
             using (var connection = CreateConnection())
             {
-                var testQueries = new DapperTestHarness<IDbConnection>(connection);
-                await testQueries.RunAsync();
+                var testQueries = new DapperTestHarness();
+                await testQueries.RunAsync(connection);
             }
         }
 

@@ -9,8 +9,7 @@ using Datadog.Trace;
 
 namespace Samples.DatabaseHelper
 {
-    public class DapperTestHarness<TConnection>
-        where TConnection :  DbConnection
+    public class DapperTestHarness
     {
         private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY, Name varchar(100));";
         private const string InsertCommandText = "INSERT INTO Employees (Id, Name) VALUES (@Id, @Name);";
@@ -19,7 +18,7 @@ namespace Samples.DatabaseHelper
         private const string SelectManyCommandText = "SELECT * FROM Employees WHERE Id=@Id;";
         private const string DeleteCommandText = "DELETE FROM Employees WHERE Id=@Id;";
 
-        public async Task RunAsync(TConnection connection)
+        public async Task RunAsync(DbConnection connection)
         {
             if (connection == null)
             {
