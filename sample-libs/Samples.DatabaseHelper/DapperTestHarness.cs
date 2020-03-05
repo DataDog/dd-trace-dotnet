@@ -10,7 +10,7 @@ using Datadog.Trace;
 namespace Samples.DatabaseHelper
 {
     public class DapperTestHarness<TConnection>
-        where TConnection : class, IDbConnection
+        where TConnection :  DbConnection
     {
         private const string DropCommandText = "DROP TABLE IF EXISTS Employees; CREATE TABLE Employees (Id int PRIMARY KEY, Name varchar(100));";
         private const string InsertCommandText = "INSERT INTO Employees (Id, Name) VALUES (@Id, @Name);";
@@ -19,55 +19,50 @@ namespace Samples.DatabaseHelper
         private const string SelectManyCommandText = "SELECT * FROM Employees WHERE Id=@Id;";
         private const string DeleteCommandText = "DELETE FROM Employees WHERE Id=@Id;";
 
-        private readonly TConnection _connection;
-        private readonly string _connectionTypeName;
-
-        public DapperTestHarness(TConnection connection)
+        public async Task RunAsync(TConnection connection)
         {
-            _connection = connection ?? throw new ArgumentNullException(nameof(connection));
-            _connectionTypeName = _connection.GetType().FullName;
-        }
+            if (connection == null)
+            {
+                throw new ArgumentNullException(nameof(connection));
+            }
 
-        public async Task RunAsync()
-        {
+            string connectionTypeName = connection.GetType().FullName;
+
             using (var scopeAll = Tracer.Instance.StartActive("run.all"))
             {
-                scopeAll.Span.SetTag("connection-type", _connectionTypeName);
+                scopeAll.Span.SetTag("connection-type", connectionTypeName);
 
                 using (var scopeSync = Tracer.Instance.StartActive("run.sync"))
                 {
-                    scopeSync.Span.SetTag("connection-type", _connectionTypeName);
+                    scopeSync.Span.SetTag("connection-type", connectionTypeName);
 
-                    _connection.Open();
-                    CreateNewTable(_connection);
-                    InsertRow(_connection);
-                    SelectScalar(_connection);
-                    Query(_connection);
-                    UpdateRow(_connection);
-                    SelectRecords(_connection);
-                    DeleteRecord(_connection);
-                    _connection.Close();
+                    connection.Open();
+                    CreateNewTable(connection);
+                    InsertRow(connection);
+                    SelectScalar(connection);
+                    Query(connection);
+                    UpdateRow(connection);
+                    SelectRecords(connection);
+                    DeleteRecord(connection);
+                    connection.Close();
                 }
 
-                if (_connection is DbConnection connection)
+                // leave a small space between spans, for better visibility in the UI
+                await Task.Delay(TimeSpan.FromSeconds(0.1));
+
+                using (var scopeAsync = Tracer.Instance.StartActive("run.async"))
                 {
-                    // leave a small space between spans, for better visibility in the UI
-                    await Task.Delay(TimeSpan.FromSeconds(0.1));
+                    scopeAsync.Span.SetTag("connection-type", connectionTypeName);
 
-                    using (var scopeAsync = Tracer.Instance.StartActive("run.async"))
-                    {
-                        scopeAsync.Span.SetTag("connection-type", _connectionTypeName);
-
-                        await connection.OpenAsync();
-                        await CreateNewTableAsync(_connection);
-                        await InsertRowAsync(_connection);
-                        await SelectScalarAsync(_connection);
-                        await QueryAsync(_connection);
-                        await UpdateRowAsync(_connection);
-                        await SelectRecordsAsync(_connection);
-                        await DeleteRecordAsync(_connection);
-                        _connection.Close();
-                    }
+                    await connection.OpenAsync();
+                    await CreateNewTableAsync(connection);
+                    await InsertRowAsync(connection);
+                    await SelectScalarAsync(connection);
+                    await QueryAsync(connection);
+                    await UpdateRowAsync(connection);
+                    await SelectRecordsAsync(connection);
+                    await DeleteRecordAsync(connection);
+                    connection.Close();
                 }
             }
         }
