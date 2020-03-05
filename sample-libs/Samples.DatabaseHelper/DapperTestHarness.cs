@@ -99,7 +99,7 @@ namespace Samples.DatabaseHelper
 
         private void Query(IDbConnection connection)
         {
-            var employees = connection.Query(SelectManyCommandText).ToList();
+            var employees = connection.Query(SelectManyCommandText, new { Id = 1 }).ToList();
             Console.WriteLine($"Selected {employees.Count} record(s) with Query().");
         }
 
@@ -160,7 +160,7 @@ namespace Samples.DatabaseHelper
 
         private async Task QueryAsync(IDbConnection connection)
         {
-            var employees = (await connection.QueryAsync(SelectManyCommandText)).ToList();
+            var employees = (await connection.QueryAsync(SelectManyCommandText, new { Id = 1 })).ToList();
             Console.WriteLine($"Selected {employees.Count} record(s) with Query().");
         }
 
