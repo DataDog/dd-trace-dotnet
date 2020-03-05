@@ -248,11 +248,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
           Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
           managed_profiler_loaded_domain_neutral = true;
         }
-        // Set the managed_profiler_unsafe_to_instrument_domain_neutral flag whenever the profiler has already been loaded shared but this time it isn't
-        else if (managed_profiler_loaded_domain_neutral) {
-          Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was NOT loaded domain-neutral. The CLR determined that one of the dependencies of Datadog.Trace.ClrProfiler.Managed was unable to load in the AppDomain \"EE Shared Assembly Repository\". Enable DD_TRACE_DEBUG to see this debug-level info.");
-          Warn("WARNING: The profiler in this process (in IIS this means the Application Pool) will stop instrumenting Framework assemblies such as System.Data, System.Net.Http, etc. To fix this issue, ensure that all BindingRedirects for System.Net.Http and dependencies of Datadog.Trace.ClrProfiler.Managed result in assemblies found in the GAC.");
+        // Set the managed_profiler_unsafe_to_instrument_domain_neutral flag whenever the profiler is not loaded shared
+        else {
+          Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was not loaded domain-neutral");
           managed_profiler_unsafe_to_instrument_domain_neutral = true;
+
+          // If the profiler was previously loaded domain-neutral, emit a warning pointing out this problematic failure mode
+          if (managed_profiler_loaded_domain_neutral) {
+            Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was NOT loaded domain-neutral. The CLR determined that one of the dependencies of Datadog.Trace.ClrProfiler.Managed was unable to load in the AppDomain \"EE Shared Assembly Repository\". Enable DD_TRACE_DEBUG to see this debug-level info.");
+            Warn("WARNING: The profiler in this process (in IIS this means the Application Pool) will stop instrumenting Framework assemblies in the GAC such as System.Data, System.Net.Http, etc. To fix this issue, ensure that all BindingRedirects for System.Net.Http and dependencies of Datadog.Trace.ClrProfiler.Managed result in assemblies found in the GAC.");
+          }
         }
       }
     }
