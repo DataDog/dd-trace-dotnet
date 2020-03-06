@@ -2,7 +2,7 @@
 set -euxo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-VERSION=1.13.4
+VERSION=1.14.0
 
 mkdir -p $DIR/../deploy/linux
 cp $DIR/../integrations.json $DIR/../src/Datadog.Trace.ClrProfiler.Native/bin/Debug/x64/
