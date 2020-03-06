@@ -28,7 +28,6 @@ class CorProfiler : public CorProfilerBase {
   bool corlib_module_loaded = false;
   AppDomainID corlib_app_domain_id;
   bool managed_profiler_loaded_domain_neutral = false;
-  bool managed_profiler_unsafe_to_instrument_domain_neutral = false;
   std::unordered_set<AppDomainID> managed_profiler_loaded_app_domains;
   std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
   bool in_azure_app_services = false;
