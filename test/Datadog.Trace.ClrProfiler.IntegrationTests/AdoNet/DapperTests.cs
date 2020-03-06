@@ -6,9 +6,9 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class DapperCommandTests : TestHelper
+    public class DapperTests : TestHelper
     {
-        public DapperCommandTests(ITestOutputHelper output)
+        public DapperTests(ITestOutputHelper output)
             : base("Dapper", output)
         {
             SetServiceVersion("1.0.0");
@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            var expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 4 : 7;
+            var expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 7 : 17;
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.Dapper-" + dbType;
