@@ -566,84 +566,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 bool CorProfiler::IsAttached() const { return is_attached_; }
 
 //
-// Startup methods
+// Helper methods
 //
-bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id) {
-  return managed_profiler_loaded_domain_neutral ||
-         managed_profiler_loaded_app_domains.find(app_domain_id) !=
-             managed_profiler_loaded_app_domains.end();
-}
-
-HRESULT CorProfiler::ProcessInsertionCalls(
-    ModuleMetadata* module_metadata,
-    const FunctionID function_id,
-    const ModuleID module_id,
-    const mdToken function_token,
-    const FunctionInfo& caller,
-    const std::vector<MethodReplacement> method_replacements) {
-
-  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
-  bool modified = false;
-
-  auto hr = rewriter.Import();
-  RETURN_OK_IF_FAILED(hr);
-
-  ILRewriterWrapper rewriter_wrapper(&rewriter);
-  ILInstr* firstInstr = rewriter.GetILList()->m_pNext;
-  ILInstr* lastInstr = rewriter.GetILList()->m_pPrev; // Should be a 'ret' instruction
-
-  for (auto& method_replacement : method_replacements) {
-    if (method_replacement.wrapper_method.action == "ReplaceTargetMethod"_W) {
-      continue;
-    }
-
-    const auto& wrapper_method_key =
-        method_replacement.wrapper_method.get_method_cache_key();
-
-    // Exit early if we previously failed to store the method ref for this wrapper_method
-    if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
-      continue;
-    }
-
-    // Generate a method ref token for the wrapper method
-    mdMemberRef wrapper_method_ref = mdMemberRefNil;
-    auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
-                                                            module_id,
-                                                            method_replacement,
-                                                            wrapper_method_ref);
-    if (!generated_wrapper_method_ref) {
-      Warn(
-        "JITCompilationStarted failed to obtain wrapper method ref for ",
-        method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "().",
-        " function_id=", function_id, " function_token=", function_token,
-        " name=", caller.type.name, ".", caller.name, "()");
-      continue;
-    }
-
-// After successfully getting the method reference, insert a call to it
-    if (method_replacement.wrapper_method.action == "InsertFirst"_W) {
-      // Get first instruction and set the rewriter to that location
-      rewriter_wrapper.SetILPosition(firstInstr);
-      rewriter_wrapper.CallMember(wrapper_method_ref, false);
-      firstInstr = firstInstr->m_pPrev;
-      modified = true;
-
-      Info("*** JITCompilationStarted() : InsertFirst inserted call to ",
-        method_replacement.wrapper_method.type_name, ".",
-        method_replacement.wrapper_method.method_name, "() ", wrapper_method_ref,
-        " to the beginning of method",
-        caller.type.name,".", caller.name, "()");
-    }
-  }
-
-  if (modified) {
-    hr = rewriter.Export();
-    RETURN_IF_FAILED(hr);
-  }
-
-  return S_OK;
-}
-
 HRESULT CorProfiler::ProcessReplacementCalls(
     ModuleMetadata* module_metadata,
     const FunctionID function_id,
@@ -938,6 +862,76 @@ HRESULT CorProfiler::ProcessReplacementCalls(
   return S_OK;
 }
 
+HRESULT CorProfiler::ProcessInsertionCalls(
+    ModuleMetadata* module_metadata,
+    const FunctionID function_id,
+    const ModuleID module_id,
+    const mdToken function_token,
+    const FunctionInfo& caller,
+    const std::vector<MethodReplacement> method_replacements) {
+
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  bool modified = false;
+
+  auto hr = rewriter.Import();
+  RETURN_OK_IF_FAILED(hr);
+
+  ILRewriterWrapper rewriter_wrapper(&rewriter);
+  ILInstr* firstInstr = rewriter.GetILList()->m_pNext;
+  ILInstr* lastInstr = rewriter.GetILList()->m_pPrev; // Should be a 'ret' instruction
+
+  for (auto& method_replacement : method_replacements) {
+    if (method_replacement.wrapper_method.action == "ReplaceTargetMethod"_W) {
+      continue;
+    }
+
+    const auto& wrapper_method_key =
+        method_replacement.wrapper_method.get_method_cache_key();
+
+    // Exit early if we previously failed to store the method ref for this wrapper_method
+    if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
+      continue;
+    }
+
+    // Generate a method ref token for the wrapper method
+    mdMemberRef wrapper_method_ref = mdMemberRefNil;
+    auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
+                                                            module_id,
+                                                            method_replacement,
+                                                            wrapper_method_ref);
+    if (!generated_wrapper_method_ref) {
+      Warn(
+        "JITCompilationStarted failed to obtain wrapper method ref for ",
+        method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "().",
+        " function_id=", function_id, " function_token=", function_token,
+        " name=", caller.type.name, ".", caller.name, "()");
+      continue;
+    }
+
+    // After successfully getting the method reference, insert a call to it
+    if (method_replacement.wrapper_method.action == "InsertFirst"_W) {
+      // Get first instruction and set the rewriter to that location
+      rewriter_wrapper.SetILPosition(firstInstr);
+      rewriter_wrapper.CallMember(wrapper_method_ref, false);
+      firstInstr = firstInstr->m_pPrev;
+      modified = true;
+
+      Info("*** JITCompilationStarted() : InsertFirst inserted call to ",
+        method_replacement.wrapper_method.type_name, ".",
+        method_replacement.wrapper_method.method_name, "() ", wrapper_method_ref,
+        " to the beginning of method",
+        caller.type.name,".", caller.name, "()");
+    }
+  }
+
+  if (modified) {
+    hr = rewriter.Export();
+    RETURN_IF_FAILED(hr);
+  }
+
+  return S_OK;
+}
+
 bool CorProfiler::GetWrapperMethodRef(
     ModuleMetadata* module_metadata,
     ModuleID module_id,
@@ -999,6 +993,15 @@ bool CorProfiler::GetWrapperMethodRef(
   return true;
 }
 
+bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id) {
+  return managed_profiler_loaded_domain_neutral ||
+         managed_profiler_loaded_app_domains.find(app_domain_id) !=
+             managed_profiler_loaded_app_domains.end();
+}
+
+//
+// Startup methods
+//
 HRESULT CorProfiler::RunILStartupHook(
     const ComPtr<IMetaDataEmit2>& metadata_emit, const ModuleID module_id,
     const mdToken function_token) {
