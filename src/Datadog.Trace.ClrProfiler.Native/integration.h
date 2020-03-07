@@ -202,8 +202,8 @@ struct MethodReference {
                   const std::vector<WSTRING>& signature_types)
       : assembly(assembly_name),
         type_name(type_name),
-        action(action),
         method_name(method_name),
+        action(action),
         method_signature(method_signature),
         min_version(min_version),
         max_version(max_version),

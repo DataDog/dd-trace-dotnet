@@ -70,7 +70,7 @@ namespace PrepareRelease
                                                                  assembly = item.assembly.FullName,
                                                                  type = item.wrapperType.FullName,
                                                                  method = item.wrapperMethod.Name,
-                                                                 signature = GetMethodSignature(item.wrapperMethod, item.attribute.MethodReplacementAction),
+                                                                 signature = GetMethodSignature(item.wrapperMethod, item.attribute),
                                                                  action = item.attribute.MethodReplacementAction.ToString()
                                                              }
                                                          }
@@ -106,7 +106,7 @@ namespace PrepareRelease
             return typeName;
         }
 
-        private static string GetMethodSignature(MethodInfo method, MethodReplacementActionType methodReplacementActionType)
+        private static string GetMethodSignature(MethodInfo method, InterceptMethodAttribute attribute)
         {
             var returnType = method.ReturnType;
             var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
@@ -114,26 +114,36 @@ namespace PrepareRelease
             var requiredParameterTypes = new[] { typeof(int), typeof(int), typeof(long) };
             var lastParameterTypes = parameters.Skip(parameters.Length - requiredParameterTypes.Length);
 
-            if (methodReplacementActionType == MethodReplacementActionType.ReplaceTargetMethod &&
-                !lastParameterTypes.SequenceEqual(requiredParameterTypes))
+            if (attribute.MethodReplacementAction == MethodReplacementActionType.ReplaceTargetMethod)
             {
-                throw new Exception(
-                    $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
-                    "Wrapper methods must have at least 3 parameters and the last 3 must be of types Int32 (opCode), Int32 (mdToken), and Int64 (moduleVersionPtr).");
+                if (!lastParameterTypes.SequenceEqual(requiredParameterTypes))
+                {
+                    throw new Exception(
+                        $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
+                        "Wrapper methods must have at least 3 parameters and the last 3 must be of types Int32 (opCode), Int32 (mdToken), and Int64 (moduleVersionPtr).");
+                }
             }
-            else if (methodReplacementActionType != MethodReplacementActionType.ReplaceTargetMethod &&
-                parameters.Any())
+            else if (attribute.MethodReplacementAction == MethodReplacementActionType.InsertFirst)
             {
-                throw new Exception(
-                    $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
-                    "Currently, methods that are not doing replacements must have zero parameters.");
-            }
-            else if (methodReplacementActionType != MethodReplacementActionType.ReplaceTargetMethod &&
-                returnType != typeof(void))
-            {
-                throw new Exception(
-                    $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet return type requirements. " +
-                    "Currently, methods that are not doing replacements must have a void return type.");
+                if (attribute.CallerAssembly == null || attribute.CallerType == null || attribute.CallerMethod == null)
+                {
+                    throw new Exception(
+                        $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet InterceptMethodAttribute requirements. " +
+                        "Currently, InsertFirst methods must have CallerAssembly, CallerType, and CallerMethod defined. " +
+                        $"Current values: CallerAssembly=\"{attribute.CallerAssembly}\", CallerType=\"{attribute.CallerType}\", CallerMethod=\"{attribute.CallerMethod}\"");
+                }
+                else if (parameters.Any())
+                {
+                    throw new Exception(
+                        $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
+                        "Currently, InsertFirst methods must have zero parameters.");
+                }
+                else if (returnType != typeof(void))
+                {
+                    throw new Exception(
+                        $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet return type requirements. " +
+                        "Currently, InsertFirst methods must have a void return type.");
+                }
             }
 
             var signatureHelper = SignatureHelper.GetMethodSigHelper(method.CallingConvention, returnType);

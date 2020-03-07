@@ -39,16 +39,25 @@ class CorProfiler : public CorProfilerBase {
   std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
 
   //
-  // Startup methods
+  // Helper methods
   //
-  bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
-  HRESULT InsertMethodCalls(ModuleMetadata* module_metadata,
+  HRESULT ProcessInsertionCalls(ModuleMetadata* module_metadata,
                                          const FunctionID function_id,
                                          const ModuleID module_id,
                                          const mdToken function_token,
                                          const WSTRING caller_type_name,
                                          const WSTRING caller_name,
                                          const std::vector<MethodReplacement> method_replacements);
+  HRESULT ProcessReplacementCalls(ModuleMetadata* module_metadata,
+                                         const FunctionID function_id,
+                                         const ModuleID module_id,
+                                         const mdToken function_token,
+                                         const trace::FunctionInfo& caller,
+                                         const std::vector<MethodReplacement> method_replacements);
+  //
+  // Startup methods
+  //
+  bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
   HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&,
                              const ModuleID module_id,
                              const mdToken function_token);
