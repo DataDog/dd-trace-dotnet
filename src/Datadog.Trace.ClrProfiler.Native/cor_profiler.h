@@ -41,18 +41,21 @@ class CorProfiler : public CorProfilerBase {
   //
   // Helper methods
   //
+  bool GetWrapperMethodRef(ModuleMetadata* module_metadata,
+                           ModuleID module_id,
+                           const MethodReplacement& method_replacement,
+                           mdMemberRef& wrapper_method_ref);
   HRESULT ProcessInsertionCalls(ModuleMetadata* module_metadata,
                                          const FunctionID function_id,
                                          const ModuleID module_id,
                                          const mdToken function_token,
-                                         const WSTRING caller_type_name,
-                                         const WSTRING caller_name,
+                                         const FunctionInfo& caller,
                                          const std::vector<MethodReplacement> method_replacements);
   HRESULT ProcessReplacementCalls(ModuleMetadata* module_metadata,
                                          const FunctionID function_id,
                                          const ModuleID module_id,
                                          const mdToken function_token,
-                                         const trace::FunctionInfo& caller,
+                                         const FunctionInfo& caller,
                                          const std::vector<MethodReplacement> method_replacements);
   //
   // Startup methods

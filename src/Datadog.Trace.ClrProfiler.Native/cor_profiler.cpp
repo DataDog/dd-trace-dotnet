@@ -547,8 +547,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
                              function_id,
                              module_id,
                              function_token,
-                             caller.type.name,
-                             caller.name,
+                             caller,
                              method_replacements);
   RETURN_OK_IF_FAILED(hr);
 
@@ -580,8 +579,7 @@ HRESULT CorProfiler::ProcessInsertionCalls(
     const FunctionID function_id,
     const ModuleID module_id,
     const mdToken function_token,
-    const WSTRING caller_type_name,
-    const WSTRING caller_name,
+    const FunctionInfo& caller,
     const std::vector<MethodReplacement> method_replacements) {
 
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
@@ -599,77 +597,30 @@ HRESULT CorProfiler::ProcessInsertionCalls(
       continue;
     }
 
-    Info("Processing wrapper_method ", method_replacement.wrapper_method.method_name, " with action ", method_replacement.wrapper_method.action);
-
     const auto& wrapper_method_key =
         method_replacement.wrapper_method.get_method_cache_key();
-    mdMemberRef wrapper_method_ref = mdMemberRefNil;
 
     // Exit early if we previously failed to store the method ref for this wrapper_method
     if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
-      Info("Processing wrapper_method ", method_replacement.wrapper_method.method_name, ": It is a failed wrapper member key");
       continue;
     }
 
-    // Resolve the MethodRef now. If the method is generic, we'll need to use it
-    // to define a MethodSpec
-    if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                  wrapper_method_ref)) {
-      const auto module_info = GetModuleInfo(this->info_, module_id);
-      if (!module_info.IsValid()) {
-        Info("Processing wrapper_method ", method_replacement.wrapper_method.method_name, ": Its module is invalid");
-        continue;
-      }
-
-      mdModule module;
-      hr = module_metadata->metadata_import->GetModuleFromScope(&module);
-      if (FAILED(hr)) {
-        Warn(
-            "JITCompilationStarted failed to get module metadata token for "
-            "module_id=",
-            module_id, " module_name=", module_info.assembly.name,
-            " function_id=", function_id, " token=", function_token,
-            " name=", caller_type_name, ".", caller_name, "()");
-        continue;
-      }
-
-      const MetadataBuilder metadata_builder(
-          *module_metadata, module, module_metadata->metadata_import,
-          module_metadata->metadata_emit, module_metadata->assembly_import,
-          module_metadata->assembly_emit);
-
-      // for each wrapper assembly, emit an assembly reference
-      hr = metadata_builder.EmitAssemblyRef(
-          method_replacement.wrapper_method.assembly);
-      if (FAILED(hr)) {
-        Warn(
-            "JITCompilationStarted failed to emit wrapper assembly ref for "
-            "module_id=",
-            module_id, " module_name=", module_info.assembly.name,
-            " function_id=", function_id, " token=", function_token,
-            " name=", caller_type_name, ".", caller_name, "()");
-        continue;
-      }
-
-      // for each method replacement in each enabled integration,
-      // emit a reference to the instrumentation wrapper methods
-      hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
-      if (FAILED(hr)) {
-        Warn(
-            "JITCompilationStarted failed to emit or store wrapper method "
-            "ref for module_id=",
-            module_id, " module_name=", module_info.assembly.name,
-            " function_id=", function_id, " token=", function_token,
-            " name=", caller_type_name, ".", caller_name, "()");
-        continue;
-      } else {
-        module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                wrapper_method_ref);
-      }
+    // Generate a method ref token for the wrapper method
+    mdMemberRef wrapper_method_ref = mdMemberRefNil;
+    auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
+                                                            module_id,
+                                                            method_replacement,
+                                                            wrapper_method_ref);
+    if (!generated_wrapper_method_ref) {
+      Warn(
+        "JITCompilationStarted failed to obtain wrapper method ref for ",
+        method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "().",
+        " function_id=", function_id, " function_token=", function_token,
+        " name=", caller.type.name, ".", caller.name, "()");
+      continue;
     }
 
-    // After successfully getting the method reference, insert a call to it
-    Info("Processing wrapper_method ", method_replacement.wrapper_method.method_name, ": Again, method.action = ", method_replacement.wrapper_method.action);
+// After successfully getting the method reference, insert a call to it
     if (method_replacement.wrapper_method.action == "InsertFirst"_W) {
       // Get first instruction and set the rewriter to that location
       rewriter_wrapper.SetILPosition(firstInstr);
@@ -681,13 +632,13 @@ HRESULT CorProfiler::ProcessInsertionCalls(
         method_replacement.wrapper_method.type_name, ".",
         method_replacement.wrapper_method.method_name, "() ", wrapper_method_ref,
         " to the beginning of method",
-        caller_type_name,".", caller_name, "()");
+        caller.type.name,".", caller.name, "()");
     }
   }
 
   if (modified) {
     hr = rewriter.Export();
-    RETURN_OK_IF_FAILED(hr);
+    RETURN_IF_FAILED(hr);
   }
 
   return S_OK;
@@ -715,8 +666,6 @@ HRESULT CorProfiler::ProcessReplacementCalls(
 
     const auto& wrapper_method_key =
         method_replacement.wrapper_method.get_method_cache_key();
-    mdMemberRef wrapper_method_ref = mdMemberRefNil;
-
     // Exit early if we previously failed to store the method ref for this wrapper_method
     if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
       continue;
@@ -797,59 +746,21 @@ HRESULT CorProfiler::ProcessReplacementCalls(
 
       // Resolve the MethodRef now. If the method is generic, we'll need to use it
       // to define a MethodSpec
-      if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                   wrapper_method_ref)) {
-        const auto module_info = GetModuleInfo(this->info_, module_id);
-        if (!module_info.IsValid()) {
-          continue;
-        }
-
-        mdModule module;
-        hr = module_metadata->metadata_import->GetModuleFromScope(&module);
-        if (FAILED(hr)) {
-          Warn(
-              "JITCompilationStarted failed to get module metadata token for "
-              "module_id=",
-              module_id, " module_name=", module_info.assembly.name,
-              " function_id=", function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()");
-          continue;
-        }
-
-        const MetadataBuilder metadata_builder(
-            *module_metadata, module, module_metadata->metadata_import,
-            module_metadata->metadata_emit, module_metadata->assembly_import,
-            module_metadata->assembly_emit);
-
-        // for each wrapper assembly, emit an assembly reference
-        hr = metadata_builder.EmitAssemblyRef(
-            method_replacement.wrapper_method.assembly);
-        if (FAILED(hr)) {
-          Warn(
-              "JITCompilationStarted failed to emit wrapper assembly ref for "
-              "module_id=",
-              module_id, " module_name=", module_info.assembly.name,
-              " function_id=", function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()");
-          continue;
-        }
-
-        // for each method replacement in each enabled integration,
-        // emit a reference to the instrumentation wrapper methods
-        hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
-        if (FAILED(hr)) {
-          Warn(
-              "JITCompilationStarted failed to emit or store wrapper method "
-              "ref for module_id=",
-              module_id, " module_name=", module_info.assembly.name,
-              " function_id=", function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()");
-          continue;
-        } else {
-          module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                  wrapper_method_ref);
-        }
+      // Generate a method ref token for the wrapper method
+      mdMemberRef wrapper_method_ref = mdMemberRefNil;
+      auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
+                                                              module_id,
+                                                              method_replacement,
+                                                              wrapper_method_ref);
+      if (!generated_wrapper_method_ref) {
+        Warn(
+          "JITCompilationStarted failed to obtain wrapper method ref for ",
+          method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "().",
+          " function_id=", function_id, " function_token=", function_token,
+          " name=", caller.type.name, ".", caller.name, "()");
+        continue;
       }
+      
 
       auto method_def_md_token = target.id;
 
@@ -1025,6 +936,67 @@ HRESULT CorProfiler::ProcessReplacementCalls(
   }
 
   return S_OK;
+}
+
+bool CorProfiler::GetWrapperMethodRef(
+    ModuleMetadata* module_metadata,
+    ModuleID module_id,
+    const MethodReplacement& method_replacement,
+    mdMemberRef& wrapper_method_ref) {
+  const auto& wrapper_method_key =
+      method_replacement.wrapper_method.get_method_cache_key();
+
+  // Resolve the MethodRef now. If the method is generic, we'll need to use it
+  // later to define a MethodSpec
+  if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
+                                                   wrapper_method_ref)) {
+    const auto module_info = GetModuleInfo(this->info_, module_id);
+    if (!module_info.IsValid()) {
+      return false;
+    }
+
+    mdModule module;
+    auto hr = module_metadata->metadata_import->GetModuleFromScope(&module);
+    if (FAILED(hr)) {
+      Warn(
+          "JITCompilationStarted failed to get module metadata token for "
+          "module_id=", module_id, " module_name=", module_info.assembly.name);
+      return false;
+    }
+
+    const MetadataBuilder metadata_builder(
+        *module_metadata, module, module_metadata->metadata_import,
+        module_metadata->metadata_emit, module_metadata->assembly_import,
+        module_metadata->assembly_emit);
+
+    // for each wrapper assembly, emit an assembly reference
+    hr = metadata_builder.EmitAssemblyRef(
+        method_replacement.wrapper_method.assembly);
+    if (FAILED(hr)) {
+      Warn(
+          "JITCompilationStarted failed to emit wrapper assembly ref for assembly=",
+          method_replacement.wrapper_method.assembly.name,
+          ", Version=", method_replacement.wrapper_method.assembly.version.str(),
+          ", Culture=", method_replacement.wrapper_method.assembly.locale,
+          " PublicKeyToken=", method_replacement.wrapper_method.assembly.public_key.str());
+      return false;
+    }
+
+    // for each method replacement in each enabled integration,
+    // emit a reference to the instrumentation wrapper methods
+    hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
+    if (FAILED(hr)) {
+      Warn(
+        "JITCompilationStarted failed to obtain wrapper method ref for ",
+        method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "().");
+      return false;
+    } else {
+      module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
+                                              wrapper_method_ref);
+    }
+  }
+
+  return true;
 }
 
 HRESULT CorProfiler::RunILStartupHook(
