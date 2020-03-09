@@ -20,7 +20,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace.AspNet.Loader, Version=1.13.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace.AspNet.Loader, Version=1.14.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.AspNet.Loader.Startup",
           "method": "TryLoadAspNetModule",
           "signature": "00 00 01",
