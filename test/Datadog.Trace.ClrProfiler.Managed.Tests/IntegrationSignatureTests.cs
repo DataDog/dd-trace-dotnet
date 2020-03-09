@@ -1,9 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-#if !NETCOREAPP
-using Datadog.Trace.ClrProfiler.Integrations.AspNet;
-#endif
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
@@ -13,9 +10,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         // This is a list of instrumented methods that are static, i.e., the target method is static.
         private static readonly List<MethodInfo> StaticInstrumentations = new List<MethodInfo>()
         {
-#if !NETCOREAPP
-             typeof(AspNetIntegration).GetMethod(nameof(AspNetIntegration.InvokePreStartInitMethods)),
-#endif
+            // This list is currently empty
         };
 
         public static IEnumerable<object[]> GetWrapperMethodWithInterceptionAttributes()
