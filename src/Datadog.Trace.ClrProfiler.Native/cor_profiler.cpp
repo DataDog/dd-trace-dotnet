@@ -771,26 +771,32 @@ HRESULT CorProfiler::ProcessReplacementCalls(
 
       // At this point we know we've hit a match. Error out if
       //   1) The target assembly is Datadog.Trace.ClrProfiler.Managed
-      //   2) The calling assembly is domain-neutral
-      if (method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W &&
-          runtime_information_.is_desktop() && corlib_module_loaded &&
-          module_metadata->app_domain_id == corlib_app_domain_id) {
-        Debug(
-            "JITCompilationStarted: skipping modifying method because its assembly is "
-            "domain-neutral but the managed profiler assembly may not be. function_id=",
-            function_id, " token=", function_token, " name=", caller.type.name,
-            ".", caller.name, "()");
+      //   2) The managed profiler has not been loaded yet
+      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
+          method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+        Warn(
+            "JITCompilationStarted skipping method: Method replacement "
+            "found but the managed profiler has not yet been loaded. "
+            "function_id=", function_id, " token=", function_token,
+            " caller_name=", caller.type.name, ".", caller.name, "()",
+            " target_name=", target.type.name, ".", target.name, "()");
         continue;
       }
 
-      if (method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W &&
-          !ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
-        Info(
-            "JITCompilationStarted skipping method: Method replacement "
-            "found but the managed profiler has not yet been loaded. "
-            "function_id=",
-            function_id, " token=", function_token, " target_name=", target.type.name,
-            ".", target.name, "()");
+      // At this point we know we've hit a match. Error out if
+      //   1) The target assembly is Datadog.Trace.ClrProfiler.Managed
+      //   2) The calling assembly is domain-neutral
+      if (runtime_information_.is_desktop() && corlib_module_loaded &&
+          module_metadata->app_domain_id == corlib_app_domain_id &&
+          method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+        Warn(
+            "JITCompilationStarted skipping method: Method replacement",
+            " found but the calling assembly ", module_metadata->assemblyName,
+            " has been loaded domain-neutral so its code is being shared across AppDomains,"
+            " making it unsafe for automatic instrumentation.",
+            " function_id=", function_id, " token=", function_token,
+            " caller_name=", caller.type.name, ".", caller.name, "()",
+            " target_name=", target.type.name, ".", target.name, "()");
         continue;
       }
 

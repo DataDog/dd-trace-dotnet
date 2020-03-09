@@ -1,19 +1,26 @@
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
-    /// Enum that instructs the CLR profiler where to insert the method call
-    /// in the caller's method body.
+    /// Enum that instructs the CLR profiler, during JIT compilation of a method,
+    /// where to insert a method call to the intercept method.
     /// </summary>
     public enum MethodReplacementActionType
     {
         /// <summary>
-        /// The new method call should replace the original method call in the
-        /// caller's body.
+        /// All method calls to the target method should be replaced with method
+        /// calls to the intercept method.
+        /// This is the historical behavior of the CLR profiler and it requires
+        /// that the method body of the intercept method invokes the original
+        /// target method.
         /// </summary>
         ReplaceTargetMethod,
 
         /// <summary>
-        /// The new method call should be placed at the beginning of the caller's body.
+        /// The method call to the intercept method should be inserted at the
+        /// beginning of the caller's method body.
+        /// This action is not intended for generating spans. This should only
+        /// be used for inserting profiler-initialization logic such as
+        /// adding ASP.NET middleware.
         /// </summary>
         InsertFirst,
     }

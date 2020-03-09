@@ -49,6 +49,10 @@ namespace PrepareRelease
                 NugetVersionReplace);
 
             SynchronizeVersion(
+                "src/Datadog.Trace.ClrProfiler.Managed.Core/Datadog.Trace.ClrProfiler.Managed.Core.csproj",
+                NugetVersionReplace);
+
+            SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
                 text => FullVersionReplace(text, "."));
 
@@ -80,6 +84,10 @@ namespace PrepareRelease
             SynchronizeVersion(
                 "src/Datadog.Trace.AspNet/AssemblyInfo.cs",
                 text => MajorAssemblyVersionReplace(text, "."));
+
+            SynchronizeVersion(
+                "src/Datadog.Trace.AspNet.Loader/Datadog.Trace.AspNet.Loader.csproj",
+                NugetVersionReplace);
 
             SynchronizeVersion(
                 "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
