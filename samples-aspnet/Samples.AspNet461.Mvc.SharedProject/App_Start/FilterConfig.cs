@@ -1,7 +1,7 @@
 ﻿using System.Web;
 using System.Web.Mvc;
 
-namespace Samples.AspNet461.Mvc.AppWithSigilRedirects
+namespace Samples.AspNet461.Mvc
 {
     public class FilterConfig
     {

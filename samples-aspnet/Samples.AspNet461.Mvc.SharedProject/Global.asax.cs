@@ -6,7 +6,7 @@ using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
 
-namespace Samples.AspNet461.Mvc.AppWithSigilRedirects
+namespace Samples.AspNet461.Mvc
 {
     public class MvcApplication : System.Web.HttpApplication
     {

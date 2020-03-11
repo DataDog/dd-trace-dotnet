@@ -1,7 +1,7 @@
 using System.Web;
 using System.Web.Optimization;
 
-namespace Samples.AspNet461.Mvc.AppWithoutRedirects
+namespace Samples.AspNet461.Mvc
 {
     public class BundleConfig
     {

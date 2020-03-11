@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Web;
 using System.Web.Mvc;
 
-namespace Samples.AspNet461.Mvc.AppWithoutRedirects.Controllers
+namespace Samples.AspNet461.Mvc.Controllers
 {
     public class HomeController : Controller
     {

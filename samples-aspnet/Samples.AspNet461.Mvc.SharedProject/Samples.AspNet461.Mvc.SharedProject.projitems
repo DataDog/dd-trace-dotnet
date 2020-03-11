@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>24478802-4fab-4e3b-aff4-46d06354e062</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Samples.AspNet461.Mvc.SharedProject</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)App_Data\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Models\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)App_Start\BundleConfig.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)App_Start\FilterConfig.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)App_Start\RouteConfig.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Controllers\HomeController.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Global.asax.cs">
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)Content\Site.css" />
+    <Content Include="$(MSBuildThisFileDirectory)favicon.ico" />
+    <Content Include="$(MSBuildThisFileDirectory)Global.asax" />
+    <Content Include="$(MSBuildThisFileDirectory)Views\Home\About.cshtml" />
+    <Content Include="$(MSBuildThisFileDirectory)Views\Home\Contact.cshtml" />
+    <Content Include="$(MSBuildThisFileDirectory)Views\Home\Index.cshtml" />
+    <Content Include="$(MSBuildThisFileDirectory)Views\Shared\Error.cshtml" />
+    <Content Include="$(MSBuildThisFileDirectory)Views\Shared\_Layout.cshtml" />
+    <Content Include="$(MSBuildThisFileDirectory)Views\Web.config" />
+    <Content Include="$(MSBuildThisFileDirectory)Views\_ViewStart.cshtml" />
+  </ItemGroup>
+</Project>
