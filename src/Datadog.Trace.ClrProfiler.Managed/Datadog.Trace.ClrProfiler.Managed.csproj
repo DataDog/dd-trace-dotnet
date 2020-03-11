@@ -29,6 +29,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
@@ -43,6 +44,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
     <Reference Include="System.ServiceModel" />
 
     <ProjectReference Include="..\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\Datadog.Trace.AspNet.Loader\Datadog.Trace.AspNet.Loader.csproj" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

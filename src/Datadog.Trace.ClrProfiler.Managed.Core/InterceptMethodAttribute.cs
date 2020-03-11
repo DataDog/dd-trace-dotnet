@@ -103,5 +103,10 @@ namespace Datadog.Trace.ClrProfiler
             get => TargetVersionRange.MaximumVersion;
             set => TargetVersionRange.MaximumVersion = value;
         }
+
+        /// <summary>
+        /// Gets or sets the <see cref="MethodReplacementActionType">MethodReplacementActionType</see> for this method.
+        /// </summary>
+        public MethodReplacementActionType MethodReplacementAction { get; set; } = MethodReplacementActionType.ReplaceTargetMethod;
     }
 }

@@ -208,14 +208,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
   }
 
-  if (debug_logging_enabled) {
-    Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name);
-  }
-
-  if (assembly_info.name != "Datadog.Trace.ClrProfiler.Managed"_W) {
-    return S_OK;
-  }
-
   ComPtr<IUnknown> metadata_interfaces;
   auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead | ofWrite,
                                            IID_IMetaDataImport2,
@@ -240,19 +232,30 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
       << '.'_W
       << ToWSTRING(assembly_metadata.version.build);
 
-  // Check that Major.Minor.Build match the profiler version
-  if (ws.str() == ToWSTRING(PROFILER_VERSION)) {
-    Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " matched profiler version v", PROFILER_VERSION);
-    managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
-
-    if (runtime_information_.is_desktop() && corlib_module_loaded &&
-          assembly_info.app_domain_id == corlib_app_domain_id) {
-      Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
-      managed_profiler_loaded_domain_neutral = true;
-    }
+  if (debug_logging_enabled) {
+    Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name, " AssemblyVersion=", ws.str(), ".", assembly_metadata.version.revision);
   }
-  else {
-    Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " did not match profiler version v", PROFILER_VERSION);
+
+  if (assembly_info.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+    // Check that Major.Minor.Build match the profiler version
+    if (ws.str() == ToWSTRING(PROFILER_VERSION)) {
+      Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " matched profiler version v", PROFILER_VERSION);
+      managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
+
+      if (runtime_information_.is_desktop() && corlib_module_loaded) {
+        // Set the managed_profiler_loaded_domain_neutral flag whenever the managed profiler is loaded shared
+        if (assembly_info.app_domain_id == corlib_app_domain_id) {
+          Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
+          managed_profiler_loaded_domain_neutral = true;
+        }
+        else {
+          Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was not loaded domain-neutral");
+        }
+      }
+    }
+    else {
+      Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", ws.str(), " did not match profiler version v", PROFILER_VERSION);
+    }
   }
 
   return S_OK;
@@ -488,8 +491,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
                                             &function_token);
   RETURN_OK_IF_FAILED(hr);
 
+  // Verify that we have the metadata for this module
   ModuleMetadata* module_metadata = nullptr;
-
   if (module_id_to_info_map_.count(module_id) > 0) {
     module_metadata = module_id_to_info_map_[module_id];
   }
@@ -513,6 +516,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
+  // The first time a method is JIT compiled in an AppDomain, insert our startup
+  // hook which, at a minimum, must add an AssemblyResolve event so we can find
+  // Datadog.Trace.ClrProfiler.Managed.dll and its dependencies on-disk since it
+  // is no longer provided in a NuGet package
   if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
       first_jit_compilation_app_domains.end()) {
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
@@ -523,46 +530,66 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   // we don't actually need to instrument anything in
   // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
-  // hook is called
+  // hook is called for AspNetCore applications
   if (module_metadata->assemblyName == "Microsoft.AspNetCore.Hosting"_W) {
     return S_OK;
   }
 
-  // Do not perform any modification if the owning module has been
-  // loaded domain-neutral and the profiler either
-  // 1) Has not also been loaded domain-neutral, or
-  // 2) Has not been loaded in general
-  if (runtime_information_.is_desktop() && corlib_module_loaded &&
-      module_metadata->app_domain_id == corlib_app_domain_id &&
-      !managed_profiler_loaded_domain_neutral) {
-    if (ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
-      Info(
-          "JITCompilationStarted: skipping modifying assembly because it is "
-          "domain-neutral but the managed profiler is not. function_id=",
-          function_id, " token=", function_token, " name=", caller.type.name,
-          ".", caller.name, "()");
-    }
-
-    return S_OK;
-  }
-
+  // Get valid method replacements for this caller method
   auto method_replacements =
       module_metadata->GetMethodReplacementsForCaller(caller);
   if (method_replacements.empty()) {
     return S_OK;
   }
 
+  // Perform method insertion calls
+  hr = ProcessInsertionCalls(module_metadata,
+                             function_id,
+                             module_id,
+                             function_token,
+                             caller,
+                             method_replacements);
+  RETURN_OK_IF_FAILED(hr);
+
+  // Perform method replacement calls
+  hr = ProcessReplacementCalls(module_metadata,
+                             function_id,
+                             module_id,
+                             function_token,
+                             caller,
+                             method_replacements);
+  RETURN_OK_IF_FAILED(hr);
+
+  return S_OK;
+}
+
+bool CorProfiler::IsAttached() const { return is_attached_; }
+
+//
+// Helper methods
+//
+HRESULT CorProfiler::ProcessReplacementCalls(
+    ModuleMetadata* module_metadata,
+    const FunctionID function_id,
+    const ModuleID module_id,
+    const mdToken function_token,
+    const trace::FunctionInfo& caller,
+    const std::vector<MethodReplacement> method_replacements) {
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
 
-  hr = rewriter.Import();
+  auto hr = rewriter.Import();
   RETURN_OK_IF_FAILED(hr);
 
+  // Perform method call replacements
   for (auto& method_replacement : method_replacements) {
+    // Exit early if the method replacement isn't actually doing a replacement
+    if (method_replacement.wrapper_method.action != "ReplaceTargetMethod"_W) {
+      continue;
+    }
+
     const auto& wrapper_method_key =
         method_replacement.wrapper_method.get_method_cache_key();
-    mdMemberRef wrapper_method_ref = mdMemberRefNil;
-
     // Exit early if we previously failed to store the method ref for this wrapper_method
     if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
       continue;
@@ -643,59 +670,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
       // Resolve the MethodRef now. If the method is generic, we'll need to use it
       // to define a MethodSpec
-      if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                   wrapper_method_ref)) {
-        const auto module_info = GetModuleInfo(this->info_, module_id);
-        if (!module_info.IsValid()) {
-          continue;
-        }
-
-        mdModule module;
-        hr = module_metadata->metadata_import->GetModuleFromScope(&module);
-        if (FAILED(hr)) {
-          Warn(
-              "JITCompilationStarted failed to get module metadata token for "
-              "module_id=",
-              module_id, " module_name=", module_info.assembly.name,
-              " function_id=", function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()");
-          continue;
-        }
-
-        const MetadataBuilder metadata_builder(
-            *module_metadata, module, module_metadata->metadata_import,
-            module_metadata->metadata_emit, module_metadata->assembly_import,
-            module_metadata->assembly_emit);
-
-        // for each wrapper assembly, emit an assembly reference
-        hr = metadata_builder.EmitAssemblyRef(
-            method_replacement.wrapper_method.assembly);
-        if (FAILED(hr)) {
-          Warn(
-              "JITCompilationStarted failed to emit wrapper assembly ref for "
-              "module_id=",
-              module_id, " module_name=", module_info.assembly.name,
-              " function_id=", function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()");
-          continue;
-        }
-
-        // for each method replacement in each enabled integration,
-        // emit a reference to the instrumentation wrapper methods
-        hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
-        if (FAILED(hr)) {
-          Warn(
-              "JITCompilationStarted failed to emit or store wrapper method "
-              "ref for module_id=",
-              module_id, " module_name=", module_info.assembly.name,
-              " function_id=", function_id, " token=", function_token,
-              " name=", caller.type.name, ".", caller.name, "()");
-          continue;
-        } else {
-          module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
-                                                  wrapper_method_ref);
-        }
+      // Generate a method ref token for the wrapper method
+      mdMemberRef wrapper_method_ref = mdMemberRefNil;
+      auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
+                                                              module_id,
+                                                              method_replacement,
+                                                              wrapper_method_ref);
+      if (!generated_wrapper_method_ref) {
+        Warn(
+          "JITCompilationStarted failed to obtain wrapper method ref for ",
+          method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "().",
+          " function_id=", function_id, " function_token=", function_token,
+          " name=", caller.type.name, ".", caller.name, "()");
+        continue;
       }
+      
 
       auto method_def_md_token = target.id;
 
@@ -780,13 +769,34 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
         continue;
       }
 
-      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
-        Info(
+      // At this point we know we've hit a match. Error out if
+      //   1) The target assembly is Datadog.Trace.ClrProfiler.Managed
+      //   2) The managed profiler has not been loaded yet
+      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
+          method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+        Warn(
             "JITCompilationStarted skipping method: Method replacement "
             "found but the managed profiler has not yet been loaded. "
-            "function_id=",
-            function_id, " token=", function_token, " target_name=", target.type.name,
-            ".", target.name, "()");
+            "function_id=", function_id, " token=", function_token,
+            " caller_name=", caller.type.name, ".", caller.name, "()",
+            " target_name=", target.type.name, ".", target.name, "()");
+        continue;
+      }
+
+      // At this point we know we've hit a match. Error out if
+      //   1) The target assembly is Datadog.Trace.ClrProfiler.Managed
+      //   2) The calling assembly is domain-neutral
+      if (runtime_information_.is_desktop() && corlib_module_loaded &&
+          module_metadata->app_domain_id == corlib_app_domain_id &&
+          method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+        Warn(
+            "JITCompilationStarted skipping method: Method replacement",
+            " found but the calling assembly ", module_metadata->assemblyName,
+            " has been loaded domain-neutral so its code is being shared across AppDomains,"
+            " making it unsafe for automatic instrumentation.",
+            " function_id=", function_id, " token=", function_token,
+            " caller_name=", caller.type.name, ".", caller.name, "()",
+            " target_name=", target.type.name, ".", target.name, "()");
         continue;
       }
 
@@ -858,17 +868,146 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   return S_OK;
 }
 
-bool CorProfiler::IsAttached() const { return is_attached_; }
+HRESULT CorProfiler::ProcessInsertionCalls(
+    ModuleMetadata* module_metadata,
+    const FunctionID function_id,
+    const ModuleID module_id,
+    const mdToken function_token,
+    const FunctionInfo& caller,
+    const std::vector<MethodReplacement> method_replacements) {
 
-//
-// Startup methods
-//
+  ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+  bool modified = false;
+
+  auto hr = rewriter.Import();
+  RETURN_OK_IF_FAILED(hr);
+
+  ILRewriterWrapper rewriter_wrapper(&rewriter);
+  ILInstr* firstInstr = rewriter.GetILList()->m_pNext;
+  ILInstr* lastInstr = rewriter.GetILList()->m_pPrev; // Should be a 'ret' instruction
+
+  for (auto& method_replacement : method_replacements) {
+    if (method_replacement.wrapper_method.action == "ReplaceTargetMethod"_W) {
+      continue;
+    }
+
+    const auto& wrapper_method_key =
+        method_replacement.wrapper_method.get_method_cache_key();
+
+    // Exit early if we previously failed to store the method ref for this wrapper_method
+    if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key)) {
+      continue;
+    }
+
+    // Generate a method ref token for the wrapper method
+    mdMemberRef wrapper_method_ref = mdMemberRefNil;
+    auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata,
+                                                            module_id,
+                                                            method_replacement,
+                                                            wrapper_method_ref);
+    if (!generated_wrapper_method_ref) {
+      Warn(
+        "JITCompilationStarted failed to obtain wrapper method ref for ",
+        method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "().",
+        " function_id=", function_id, " function_token=", function_token,
+        " name=", caller.type.name, ".", caller.name, "()");
+      continue;
+    }
+
+    // After successfully getting the method reference, insert a call to it
+    if (method_replacement.wrapper_method.action == "InsertFirst"_W) {
+      // Get first instruction and set the rewriter to that location
+      rewriter_wrapper.SetILPosition(firstInstr);
+      rewriter_wrapper.CallMember(wrapper_method_ref, false);
+      firstInstr = firstInstr->m_pPrev;
+      modified = true;
+
+      Info("*** JITCompilationStarted() : InsertFirst inserted call to ",
+        method_replacement.wrapper_method.type_name, ".",
+        method_replacement.wrapper_method.method_name, "() ", wrapper_method_ref,
+        " to the beginning of method",
+        caller.type.name,".", caller.name, "()");
+    }
+  }
+
+  if (modified) {
+    hr = rewriter.Export();
+    RETURN_IF_FAILED(hr);
+  }
+
+  return S_OK;
+}
+
+bool CorProfiler::GetWrapperMethodRef(
+    ModuleMetadata* module_metadata,
+    ModuleID module_id,
+    const MethodReplacement& method_replacement,
+    mdMemberRef& wrapper_method_ref) {
+  const auto& wrapper_method_key =
+      method_replacement.wrapper_method.get_method_cache_key();
+
+  // Resolve the MethodRef now. If the method is generic, we'll need to use it
+  // later to define a MethodSpec
+  if (!module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
+                                                   wrapper_method_ref)) {
+    const auto module_info = GetModuleInfo(this->info_, module_id);
+    if (!module_info.IsValid()) {
+      return false;
+    }
+
+    mdModule module;
+    auto hr = module_metadata->metadata_import->GetModuleFromScope(&module);
+    if (FAILED(hr)) {
+      Warn(
+          "JITCompilationStarted failed to get module metadata token for "
+          "module_id=", module_id, " module_name=", module_info.assembly.name);
+      return false;
+    }
+
+    const MetadataBuilder metadata_builder(
+        *module_metadata, module, module_metadata->metadata_import,
+        module_metadata->metadata_emit, module_metadata->assembly_import,
+        module_metadata->assembly_emit);
+
+    // for each wrapper assembly, emit an assembly reference
+    hr = metadata_builder.EmitAssemblyRef(
+        method_replacement.wrapper_method.assembly);
+    if (FAILED(hr)) {
+      Warn(
+          "JITCompilationStarted failed to emit wrapper assembly ref for assembly=",
+          method_replacement.wrapper_method.assembly.name,
+          ", Version=", method_replacement.wrapper_method.assembly.version.str(),
+          ", Culture=", method_replacement.wrapper_method.assembly.locale,
+          " PublicKeyToken=", method_replacement.wrapper_method.assembly.public_key.str());
+      return false;
+    }
+
+    // for each method replacement in each enabled integration,
+    // emit a reference to the instrumentation wrapper methods
+    hr = metadata_builder.StoreWrapperMethodRef(method_replacement);
+    if (FAILED(hr)) {
+      Warn(
+        "JITCompilationStarted failed to obtain wrapper method ref for ",
+        method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "().");
+      return false;
+    } else {
+      module_metadata->TryGetWrapperMemberRef(wrapper_method_key,
+                                              wrapper_method_ref);
+    }
+  }
+
+  return true;
+}
+
 bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id) {
   return managed_profiler_loaded_domain_neutral ||
          managed_profiler_loaded_app_domains.find(app_domain_id) !=
              managed_profiler_loaded_app_domains.end();
 }
 
+//
+// Startup methods
+//
 HRESULT CorProfiler::RunILStartupHook(
     const ComPtr<IMetaDataEmit2>& metadata_emit, const ModuleID module_id,
     const mdToken function_token) {

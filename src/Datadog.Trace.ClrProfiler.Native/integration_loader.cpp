@@ -119,17 +119,18 @@ std::pair<MethodReplacement, bool> MethodReplacementFromJson(
   }
 
   const auto caller =
-      MethodReferenceFromJson(src.value("caller", json::object()), false);
+      MethodReferenceFromJson(src.value("caller", json::object()), false, false);
   const auto target =
-      MethodReferenceFromJson(src.value("target", json::object()), true);
+      MethodReferenceFromJson(src.value("target", json::object()), true, false);
   const auto wrapper =
-      MethodReferenceFromJson(src.value("wrapper", json::object()), false);
+      MethodReferenceFromJson(src.value("wrapper", json::object()), false, true);
   return std::make_pair<MethodReplacement, bool>({caller, target, wrapper},
                                                  true);
 }
 
 MethodReference MethodReferenceFromJson(const json::value_type& src,
-                                        const bool is_target_method) {
+                                        const bool is_target_method,
+                                        const bool is_wrapper_method) {
   if (!src.is_object()) {
     return {};
   }
@@ -147,6 +148,7 @@ MethodReference MethodReferenceFromJson(const json::value_type& src,
   USHORT max_minor = USHRT_MAX;
   USHORT max_patch = USHRT_MAX;
   std::vector<WSTRING> signature_type_array;
+  WSTRING action = ""_W;
 
   if (is_target_method) {
     // these fields only exist in the target definition
@@ -179,6 +181,8 @@ MethodReference MethodReferenceFromJson(const json::value_type& src,
         signature_type_array[i] = ToWSTRING(sig_types[i]);
       }
     }
+  } else if (is_wrapper_method) {
+    action = ToWSTRING(src.value("action", ""));
   }
 
   std::vector<BYTE> signature;
@@ -212,7 +216,7 @@ MethodReference MethodReferenceFromJson(const json::value_type& src,
       prev = b;
     }
   }
-  return MethodReference(assembly, type, method,
+  return MethodReference(assembly, type, method, action,
                          Version(min_major, min_minor, min_patch, 0),
                          Version(max_major, max_minor, max_patch, USHRT_MAX),
                          signature, signature_type_array);

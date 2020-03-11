@@ -11,6 +11,16 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.AspNet.Loader.dll"
+              Source="$(var.ManagedDllPath)\net461\Datadog.Trace.AspNet.Loader.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.ClrProfiler.Managed.Core.dll"
+              Source="$(var.ManagedDllPath)\net461\Datadog.Trace.ClrProfiler.Managed.Core.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.ClrProfiler.Managed.dll"
               Source="$(var.ManagedDllPath)\net461\Datadog.Trace.ClrProfiler.Managed.dll"
               KeyPath="yes" Checksum="yes"/>

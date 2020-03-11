@@ -11,6 +11,16 @@
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net45_GAC_Datadog.Trace.AspNet.Loader.dll"
+              Source="$(var.ManagedDllPath)\net45\Datadog.Trace.AspNet.Loader.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net45_GAC_Datadog.Trace.ClrProfiler.Managed.Core.dll"
+              Source="$(var.ManagedDllPath)\net45\Datadog.Trace.ClrProfiler.Managed.Core.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net45_GAC_Datadog.Trace.ClrProfiler.Managed.dll"
               Source="$(var.ManagedDllPath)\net45\Datadog.Trace.ClrProfiler.Managed.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
