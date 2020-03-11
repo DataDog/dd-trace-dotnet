@@ -12,14 +12,7 @@ namespace PrepareRelease
         {
             Console.WriteLine($"Updating version instances to {VersionString()}");
 
-            SynchronizeVersion(
-                "integrations.json",
-                FullAssemblyNameReplace);
-
-            SynchronizeVersion(
-                "docker/package.sh",
-                text => Regex.Replace(text, $"VERSION={VersionPattern()}", $"VERSION={VersionString()}"));
-
+            // Dockerfile updates
             SynchronizeVersion(
                 "customer-samples/ConsoleApp/Alpine3.9.dockerfile",
                 text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
@@ -36,13 +29,18 @@ namespace PrepareRelease
                 "reproductions/AutomapperTest/Dockerfile",
                 text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
+            // Managed project / NuGet package updates
             SynchronizeVersion(
-                "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+                "src/Datadog.Trace/Datadog.Trace.csproj",
                 NugetVersionReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
-                FullAssemblyNameReplace);
+                "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                NugetVersionReplace);
+
+            SynchronizeVersion(
+                "src/Datadog.Trace.AspNet.Loader/Datadog.Trace.AspNet.Loader.csproj",
+                NugetVersionReplace);
 
             SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj",
@@ -52,6 +50,33 @@ namespace PrepareRelease
                 "src/Datadog.Trace.ClrProfiler.Managed.Core/Datadog.Trace.ClrProfiler.Managed.Core.csproj",
                 NugetVersionReplace);
 
+            SynchronizeVersion(
+                "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+                NugetVersionReplace);
+
+            SynchronizeVersion(
+                "src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
+                NugetVersionReplace);
+
+            // Fully qualified name updates
+            SynchronizeVersion(
+                "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
+                FullAssemblyNameReplace);
+
+            // Locked AssemblyVersion #.0.0.0 updates
+            SynchronizeVersion(
+                "src/Datadog.Trace.AspNet/AssemblyInfo.cs",
+                text => MajorAssemblyVersionReplace(text, "."));
+
+            SynchronizeVersion(
+                "src/Datadog.Trace.AspNet.Loader/AssemblyInfo.cs",
+                text => MajorAssemblyVersionReplace(text, "."));
+
+            SynchronizeVersion(
+                "src/Datadog.Trace.ClrProfiler.Managed.Core/AssemblyInfo.cs",
+                text => MajorAssemblyVersionReplace(text, "."));
+
+            // Native profiler updates
             SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
                 text => FullVersionReplace(text, "."));
@@ -69,25 +94,14 @@ namespace PrepareRelease
                 "src/Datadog.Trace.ClrProfiler.Native/version.h",
                 text => FullVersionReplace(text, "."));
 
+            // Deployment updates
             SynchronizeVersion(
-                "src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
-                NugetVersionReplace);
+                "integrations.json",
+                FullAssemblyNameReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace/Datadog.Trace.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.AspNet/AssemblyInfo.cs",
-                text => MajorAssemblyVersionReplace(text, "."));
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.AspNet.Loader/Datadog.Trace.AspNet.Loader.csproj",
-                NugetVersionReplace);
+                "docker/package.sh",
+                text => Regex.Replace(text, $"VERSION={VersionPattern()}", $"VERSION={VersionString()}"));
 
             SynchronizeVersion(
                 "deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/Datadog.Trace.ClrProfiler.WindowsInstaller.wixproj",
