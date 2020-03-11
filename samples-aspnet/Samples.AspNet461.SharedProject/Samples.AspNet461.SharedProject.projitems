@@ -16,7 +16,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)About.aspx.designer.cs">
       <DependentUpon>About.aspx</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)App_Start\BundleConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)App_Start\RouteConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Contact.aspx.cs">
       <SubType>ASPXCodeBehind</SubType>
@@ -36,83 +35,26 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Site.Master.cs">
-      <SubType>ASPXCodeBehind</SubType>
       <DependentUpon>Site.Master</DependentUpon>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Site.Master.designer.cs">
       <DependentUpon>Site.Master</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Site.Mobile.Master.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>Site.Mobile.Master</DependentUpon>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Site.Mobile.Master.designer.cs">
-      <DependentUpon>Site.Mobile.Master</DependentUpon>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)ViewSwitcher.ascx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>ViewSwitcher.ascx</DependentUpon>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)ViewSwitcher.ascx.designer.cs">
-      <DependentUpon>ViewSwitcher.ascx</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(MSBuildThisFileDirectory)About.aspx" />
+    <Content Include="$(MSBuildThisFileDirectory)About.aspx">
+      <SubType>ASPXCodeBehind</SubType>
+    </Content>
     <Content Include="$(MSBuildThisFileDirectory)Bundle.config" />
     <Content Include="$(MSBuildThisFileDirectory)Contact.aspx" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\bootstrap-theme.css" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\bootstrap-theme.css.map" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\bootstrap-theme.min.css" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\bootstrap-theme.min.css.map" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\bootstrap.css" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\bootstrap.css.map" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\bootstrap.min.css" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\bootstrap.min.css.map" />
     <Content Include="$(MSBuildThisFileDirectory)Content\Site.css" />
-    <Content Include="$(MSBuildThisFileDirectory)Default.aspx" />
+    <Content Include="$(MSBuildThisFileDirectory)Default.aspx">
+      <SubType>ASPXCodeBehind</SubType>
+    </Content>
     <Content Include="$(MSBuildThisFileDirectory)favicon.ico" />
-    <Content Include="$(MSBuildThisFileDirectory)fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="$(MSBuildThisFileDirectory)fonts\glyphicons-halflings-regular.svg" />
-    <Content Include="$(MSBuildThisFileDirectory)fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="$(MSBuildThisFileDirectory)fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="$(MSBuildThisFileDirectory)fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="$(MSBuildThisFileDirectory)Global.asax" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\bootstrap.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\bootstrap.min.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\jquery-3.4.1.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\jquery-3.4.1.min.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\jquery-3.4.1.min.map" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\jquery-3.4.1.slim.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\jquery-3.4.1.slim.min.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\jquery-3.4.1.slim.min.map" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\modernizr-2.8.3.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\DetailsView.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\Focus.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\GridView.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\Menu.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MenuStandards.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjax.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxApplicationServices.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxComponentModel.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxCore.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxGlobalization.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxHistory.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxNetwork.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxSerialization.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxTimer.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxWebForms.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\MSAjax\MicrosoftAjaxWebServices.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\SmartNav.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\TreeView.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\WebForms.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\WebParts.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Scripts\WebForms\WebUIValidation.js" />
-    <Content Include="$(MSBuildThisFileDirectory)Site.Master" />
-    <Content Include="$(MSBuildThisFileDirectory)Site.Mobile.Master" />
-    <Content Include="$(MSBuildThisFileDirectory)ViewSwitcher.ascx" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)Scripts\jquery-3.4.1.intellisense.js" />
+    <Content Include="$(MSBuildThisFileDirectory)Site.Master">
+      <SubType>ASPXCodeBehind</SubType>
+    </Content>
   </ItemGroup>
 </Project>
