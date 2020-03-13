@@ -161,6 +161,16 @@ namespace Datadog.Trace.OpenTracing.Tests
         }
 
         [Fact]
+        public void Inject_UnknownFormat_Throws()
+        {
+            var span = (OpenTracingSpan)_tracer.BuildSpan("Span").Start();
+            var headers = new MockTextMap();
+            var mockFormat = new Mock<IFormat<ITextMap>>();
+
+            Assert.Throws<NotSupportedException>(() => _tracer.Inject(span.Context, mockFormat.Object, headers));
+        }
+
+        [Fact]
         public void Extract_HttpHeadersFormat_HeadersProperlySet_SpanContext()
         {
             const ulong parentId = 10;
@@ -188,6 +198,19 @@ namespace Datadog.Trace.OpenTracing.Tests
 
             Assert.Equal(parentId, otSpanContext.Context.SpanId);
             Assert.Equal(traceId, otSpanContext.Context.TraceId);
+        }
+
+        [Fact]
+        public void Extract_UnknownFormat_Throws()
+        {
+            const ulong parentId = 10;
+            const ulong traceId = 42;
+            var headers = new MockTextMap();
+            headers.Set(HttpHeaderNames.ParentId, parentId.ToString());
+            headers.Set(HttpHeaderNames.TraceId, traceId.ToString());
+            var mockFormat = new Mock<IFormat<ITextMap>>();
+
+            Assert.Throws<NotSupportedException>(() => _tracer.Extract(mockFormat.Object, headers));
         }
 
         [Fact]
