@@ -22,7 +22,11 @@ namespace Datadog.Trace.OpenTracing
             DatadogTracer = datadogTracer;
             DefaultServiceName = datadogTracer.DefaultServiceName;
             ScopeManager = scopeManager;
-            _codecs = new Dictionary<string, ICodec> { { BuiltinFormats.HttpHeaders.ToString(), new HttpHeadersCodec() } };
+            _codecs = new Dictionary<string, ICodec>
+            {
+                { BuiltinFormats.HttpHeaders.ToString(), new HttpHeadersCodec() },
+                { BuiltinFormats.TextMap.ToString(), new HttpHeadersCodec() } // the HttpHeadersCodec can support an unconstrained ITextMap
+            };
         }
 
         public IDatadogTracer DatadogTracer { get; }
