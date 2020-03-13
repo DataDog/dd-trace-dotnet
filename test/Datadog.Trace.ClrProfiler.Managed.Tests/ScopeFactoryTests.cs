@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("users", "users")]
         [InlineData("123/", Id + "/")]
         [InlineData("123", Id)]
+        [InlineData("4294967294/", Id + "/")]
+        [InlineData("4294967294", Id)]
         [InlineData("E653C852-227B-4F0C-9E48-D30D83C68BF3/", Id + "/")]
         [InlineData("E653C852-227B-4F0C-9E48-D30D83C68BF3", Id)]
         [InlineData("E653C852227B4F0C9E48D30D83C68BF3/", Id + "/")]
