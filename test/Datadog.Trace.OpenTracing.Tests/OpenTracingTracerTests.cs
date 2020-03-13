@@ -149,7 +149,19 @@ namespace Datadog.Trace.OpenTracing.Tests
         }
 
         [Fact]
-        public void Extract_HeadersProperlySet_SpanContext()
+        public void Inject_TextMapFormat_CorrectHeaders()
+        {
+            var span = (OpenTracingSpan)_tracer.BuildSpan("Span").Start();
+            var headers = new MockTextMap();
+
+            _tracer.Inject(span.Context, BuiltinFormats.TextMap, headers);
+
+            Assert.Equal(span.DDSpan.Context.TraceId.ToString(), headers.Get(HttpHeaderNames.TraceId));
+            Assert.Equal(span.DDSpan.Context.SpanId.ToString(), headers.Get(HttpHeaderNames.ParentId));
+        }
+
+        [Fact]
+        public void Extract_HttpHeadersFormat_HeadersProperlySet_SpanContext()
         {
             const ulong parentId = 10;
             const ulong traceId = 42;
@@ -158,6 +170,21 @@ namespace Datadog.Trace.OpenTracing.Tests
             headers.Set(HttpHeaderNames.TraceId, traceId.ToString());
 
             var otSpanContext = (OpenTracingSpanContext)_tracer.Extract(BuiltinFormats.HttpHeaders, headers);
+
+            Assert.Equal(parentId, otSpanContext.Context.SpanId);
+            Assert.Equal(traceId, otSpanContext.Context.TraceId);
+        }
+
+        [Fact]
+        public void Extract_TextMapFormat_HeadersProperlySet_SpanContext()
+        {
+            const ulong parentId = 10;
+            const ulong traceId = 42;
+            var headers = new MockTextMap();
+            headers.Set(HttpHeaderNames.ParentId, parentId.ToString());
+            headers.Set(HttpHeaderNames.TraceId, traceId.ToString());
+
+            var otSpanContext = (OpenTracingSpanContext)_tracer.Extract(BuiltinFormats.TextMap, headers);
 
             Assert.Equal(parentId, otSpanContext.Context.SpanId);
             Assert.Equal(traceId, otSpanContext.Context.TraceId);
