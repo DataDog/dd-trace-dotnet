@@ -21,6 +21,8 @@ namespace Datadog.Trace
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private readonly object _lock = new object();
+        private ConcurrentDictionary<string, string> _tags;
+        private ConcurrentDictionary<string, double> _metrics;
 
         internal Span(SpanContext context, DateTimeOffset? start)
         {
@@ -82,9 +84,9 @@ namespace Datadog.Trace
 
         internal TimeSpan Duration { get; private set; }
 
-        internal ConcurrentDictionary<string, string> Tags { get; } = new ConcurrentDictionary<string, string>();
+        internal ConcurrentDictionary<string, string> Tags => _tags;
 
-        internal ConcurrentDictionary<string, double> Metrics { get; } = new ConcurrentDictionary<string, double>();
+        internal ConcurrentDictionary<string, double> Metrics => _metrics;
 
         internal bool IsFinished { get; private set; }
 
@@ -111,9 +113,9 @@ namespace Datadog.Trace
             sb.AppendLine($"Error: {Error}");
             sb.AppendLine("Meta:");
 
-            if (Tags != null)
+            if (_tags != null)
             {
-                foreach (var kv in Tags)
+                foreach (var kv in _tags)
                 {
                     sb.Append($"\t{kv.Key}:{kv.Value}");
                 }
@@ -121,9 +123,9 @@ namespace Datadog.Trace
 
             sb.AppendLine("Metrics:");
 
-            if (Metrics != null && Metrics.Count > 0)
+            if (_metrics != null && _metrics.Count > 0)
             {
-                foreach (var kv in Metrics)
+                foreach (var kv in _metrics)
                 {
                     sb.Append($"\t{kv.Key}:{kv.Value}");
                 }
@@ -146,11 +148,11 @@ namespace Datadog.Trace
                 return this;
             }
 
-            if (value == null)
+            if (value == null && _tags != null)
             {
                 // Agent doesn't accept null tag values,
                 // remove them instead
-                Tags.TryRemove(key, out _);
+                _tags.TryRemove(key, out _);
                 return this;
             }
 
@@ -220,7 +222,12 @@ namespace Datadog.Trace
                     break;
                 default:
                     // if not a special tag, just add it to the tag bag
-                    Tags[key] = value;
+                    if (_tags == null)
+                    {
+                        _tags = new ConcurrentDictionary<string, string>();
+                    }
+
+                    _tags[key] = value;
                     break;
             }
 
@@ -255,7 +262,8 @@ namespace Datadog.Trace
             var shouldCloseSpan = false;
             lock (_lock)
             {
-                ResourceName = ResourceName ?? OperationName;
+                ResourceName ??= OperationName;
+
                 if (!IsFinished)
                 {
                     Duration = finishTimestamp - StartTime;
@@ -283,7 +291,7 @@ namespace Datadog.Trace
                         ServiceName,
                         ResourceName,
                         OperationName,
-                        string.Join(",", Tags.Keys));
+                        _tags == null ? string.Empty : string.Join(",", _tags.Keys));
                 }
             }
         }
@@ -327,7 +335,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
         public string GetTag(string key)
-            => Tags.TryGetValue(key, out var value)
+            => _tags != null && _tags.TryGetValue(key, out var value)
                    ? value
                    : null;
 
@@ -339,7 +347,7 @@ namespace Datadog.Trace
 
         internal double? GetMetric(string key)
         {
-            return Metrics.TryGetValue(key, out double value)
+            return _metrics != null && _metrics.TryGetValue(key, out double value)
                        ? value
                        : default;
         }
@@ -348,11 +356,19 @@ namespace Datadog.Trace
         {
             if (value == null)
             {
-                Metrics.TryRemove(key, out _);
+                if (_metrics != null)
+                {
+                    _metrics.TryRemove(key, out _);
+                }
             }
             else
             {
-                Metrics[key] = value.Value;
+                if (_metrics == null)
+                {
+                    _metrics = new ConcurrentDictionary<string, double>();
+                }
+
+                _metrics[key] = value.Value;
             }
 
             return this;
