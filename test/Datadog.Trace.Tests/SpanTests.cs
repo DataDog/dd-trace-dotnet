@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +38,7 @@ namespace Datadog.Trace.Tests
 
             span.SetTag(key, value);
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<List<Span>>()), Times.Never);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
             Assert.Equal(span.GetTag(key), value);
         }
 
@@ -62,7 +61,7 @@ namespace Datadog.Trace.Tests
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<List<Span>>()), Times.Once);
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Once);
             Assert.True(span.Duration > TimeSpan.Zero);
         }
 

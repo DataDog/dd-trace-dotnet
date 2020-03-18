@@ -98,7 +98,7 @@ namespace Datadog.Trace
                 }
             }
 
-            List<Span> spansToWrite = null;
+            Span[] spansToWrite = null;
 
             lock (_lock)
             {
@@ -106,8 +106,8 @@ namespace Datadog.Trace
 
                 if (_openSpans == 0)
                 {
-                    spansToWrite = _spans;
-                    _spans = new List<Span>();
+                    spansToWrite = _spans.ToArray();
+                    _spans.Clear();
                 }
             }
 

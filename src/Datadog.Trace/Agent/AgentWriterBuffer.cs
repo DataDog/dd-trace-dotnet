@@ -1,45 +1,51 @@
 using System;
-using System.Collections.Generic;
 
 namespace Datadog.Trace.Agent
 {
     internal class AgentWriterBuffer<T>
     {
         private readonly object _lock = new object();
-        private readonly int _maxSize;
         private readonly Random _random = new Random();
-        private List<T> _items;
+        private readonly T[] _items;
+
+        private int _count;
 
         public AgentWriterBuffer(int maxSize)
         {
-            _maxSize = maxSize;
-            _items = new List<T>();
+            _items = new T[maxSize];
         }
 
         public bool Push(T item)
         {
             lock (_lock)
             {
-                if (_items.Count < _maxSize)
+                if (_count < _items.Length)
                 {
-                    _items.Add(item);
+                    _items[_count++] = item;
                     return true;
                 }
                 else
                 {
-                    _items[_random.Next(_items.Count)] = item;
+                    // drop a random trace
+                    _items[_random.Next(_items.Length)] = item;
                     return false;
                 }
             }
         }
 
-        public List<T> Pop()
+        public T[] Pop()
         {
             lock (_lock)
             {
-                var ret = _items;
-                _items = new List<T>();
-                return ret;
+                // copy items from buffer into new array
+                var result = new T[_count];
+                Array.Copy(_items, result, _count);
+
+                // clear buffer
+                Array.Clear(_items, 0, _items.Length);
+                _count = 0;
+
+                return result;
             }
         }
     }
