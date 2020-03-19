@@ -7,13 +7,15 @@ If there is a logging layout that you would like to see documented here, please 
 ### Log4Net
 Layouts configured in the sample:
 - JSON format: `SerializedLayout` (from the `log4net.Ext.Json` NuGet package)
+- Raw format: `PatternLayout` (requires a custom Datadog Log Pipeline for processing)
 
 ### NLog
 Layouts configured in the sample:
-- JSON format: `JsonLayout` (built-in)
+- JSON format: `JsonLayout`
+- Raw format: Custom layout (requires a custom Datadog Log Pipeline for processing)
 
 ### Serilog
 Layouts configured in the sample:
-- Raw format: output template (built-in, requires a conversion formatter)
-- JSON format: `JsonFormatter` (built-in)
+- JSON format: `JsonFormatter`
 - JSON format: `CompactJsonFormatter` (from the `Serilog.Formatting.Compact` NuGet package)
+- Raw format: output template (requires a custom Datadog Log Pipeline for processing)

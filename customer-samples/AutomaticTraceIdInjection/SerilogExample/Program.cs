@@ -26,7 +26,7 @@ namespace SerilogExample
             // Additionally, Datadog will only parse log properties if they are in a JSON-like map, and the values for dd.trace_id and dd.span_id must be surrounded by quotes
             //
             // Additions to layout:
-            // - outputTemplate begins with '{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Properties}'
+            // - {Properties}
             //
             loggerConfiguration = loggerConfiguration
                                       .WriteTo.File(
