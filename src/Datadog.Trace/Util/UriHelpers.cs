@@ -48,7 +48,7 @@ namespace Datadog.Trace.Util
             }
 
             // remove path segments that look like int or guid (with or without dashes)
-            segment = int.TryParse(segment, out _) ||
+            segment = long.TryParse(segment, out _) ||
                       Guid.TryParseExact(segment, "N", out _) ||
                       Guid.TryParseExact(segment, "D", out _)
                           ? UrlIdPlaceholder
