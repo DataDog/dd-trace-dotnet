@@ -379,26 +379,16 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit,
 }
 
 bool DisableOptimizations() {
-  const auto clr_optimizations_enabled =
+  const auto disable_optimizations =
       GetEnvironmentValue(environment::clr_disable_optimizations);
 
-  if (clr_optimizations_enabled == "1"_W ||
-      clr_optimizations_enabled == "true"_W) {
+  if (disable_optimizations == "1"_W ||
+      disable_optimizations == "true"_W) {
     return true;
   }
 
-  if (clr_optimizations_enabled == "0"_W ||
-      clr_optimizations_enabled == "false"_W) {
-    return false;
-  }
-
-#ifdef _WIN32
-  // default to false on Windows
+  // default to false: don't disable JIT optimizations
   return false;
-#else
-  // default to true on Linux
-  return true;
-#endif
 }
 
 TypeInfo RetrieveTypeForSignature(
@@ -699,7 +689,7 @@ HRESULT CreateAssemblyRefToMscorlib(const ComPtr<IMetaDataAssemblyEmit>& assembl
   return hr;
 }
 
-bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,                                        
+bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig,
                                             const ComPtr<IMetaDataEmit2>& metadata_emit,
                                             const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
                                             mdToken* ret_type_token) {

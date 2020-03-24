@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "SerilogExample": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_LOGS_INJECTION": "true"
+      },
+      "nativeDebugging": true
+    }
+  }
+}

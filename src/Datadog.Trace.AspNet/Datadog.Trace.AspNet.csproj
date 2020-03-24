@@ -4,7 +4,7 @@
     <TargetFrameworks>net45</TargetFrameworks>
 
     <!-- NuGet -->
-    <Version>1.14.2</Version>
+    <Version>1.15.0</Version>
     <Title>Datadog APM Tracing for ASP.NET</Title>
     <Description>
 DEPRECATED. This package exists only for backwards compatibility. If your project references this package ("Datadog.Trace.AspNet") or "Datadog.Trace.ClrProfiler.Managed", you can remove them both.

@@ -10,7 +10,6 @@ pr:
 
 variables:
   buildConfiguration: Debug
-  packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
 jobs:
@@ -154,7 +153,6 @@ jobs:
     displayName: nuget restore
     inputs:
       restoreSolution: Datadog.Trace.sln
-      vstsFeed: $(packageFeed)
       verbosityRestore: Normal
 
   - task: DotNetCoreCLI@2

@@ -6,7 +6,6 @@ pr: none
 
 variables:
   buildConfiguration: release
-  packageFeed: /ffc32c57-3e0e-4e8f-8633-a7ad01df2e45
   dotnetCoreSdkVersion: 3.1.x
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
@@ -44,7 +43,6 @@ jobs:
     displayName: nuget restore native
     inputs:
       restoreSolution: Datadog.Trace.Native.sln
-      vstsFeed: $(packageFeed)
       verbosityRestore: Normal
 
   - task: DotNetCoreCLI@2
@@ -52,7 +50,6 @@ jobs:
     inputs:
       command: restore
       projects: src/**/*.csproj
-      vstsFeed: $(packageFeed)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
@@ -127,7 +124,6 @@ jobs:
     inputs:
       command: restore
       projects: src/**/*.csproj
-      vstsFeed: $(packageFeed)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
@@ -180,7 +176,6 @@ jobs:
     inputs:
       command: restore
       projects: src/**/*.csproj
-      vstsFeed: $(packageFeed)
 
   - task: DotNetCoreCLI@2
     displayName: dotnet build
