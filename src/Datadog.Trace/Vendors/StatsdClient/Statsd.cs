@@ -15,6 +15,8 @@ namespace Datadog.Trace.Vendors.StatsdClient
         private const string ENTITY_ID_INTERNAL_TAG_KEY = "dd.internal.entity_id";
         private static readonly string[] EmptyStringArray = new string[0];
 
+        private object SendLock = new object();
+
         private IStopWatchFactory StopwatchFactory { get; set; }
         private IStatsdUDP Udp { get; set; }
         private IRandomGenerator RandomGenerator { get; set; }
@@ -321,10 +323,13 @@ namespace Datadog.Trace.Vendors.StatsdClient
 
         public void Send()
         {
-            int count = Commands.Count;
-            if (count < 1) return;
+            lock (SendLock)
+            {
+                int count = Commands.Count;
+                if (count < 1) return;
 
-            Send(1 == count ? Commands[0] : string.Join("\n", Commands.ToArray()));
+                Send(1 == count ? Commands[0] : string.Join("\n", Commands.ToArray()));
+            }
         }
 
         public void Add(Action actionToTime, string statName, double sampleRate = 1.0, string[] tags = null)
