@@ -39,10 +39,6 @@ namespace PrepareRelease
                 NugetVersionReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace.AspNet.Loader/Datadog.Trace.AspNet.Loader.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj",
                 NugetVersionReplace);
 
@@ -66,10 +62,6 @@ namespace PrepareRelease
             // Locked AssemblyVersion #.0.0.0 updates
             SynchronizeVersion(
                 "src/Datadog.Trace.AspNet/AssemblyInfo.cs",
-                text => MajorAssemblyVersionReplace(text, "."));
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.AspNet.Loader/AssemblyInfo.cs",
                 text => MajorAssemblyVersionReplace(text, "."));
 
             SynchronizeVersion(

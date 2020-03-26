@@ -1,35 +1,5 @@
 [
   {
-    "name": "AspNet",
-    "method_replacements": [
-      {
-        "caller": {
-          "assembly": "System.Web",
-          "type": "System.Web.Compilation.BuildManager",
-          "method": "InvokePreStartInitMethodsCore"
-        },
-        "target": {
-          "assembly": "System.Web",
-          "type": "System.Web.Compilation.BuildManager",
-          "method": "InvokePreStartInitMethodsCore",
-          "minimum_major": 0,
-          "minimum_minor": 0,
-          "minimum_patch": 0,
-          "maximum_major": 65535,
-          "maximum_minor": 65535,
-          "maximum_patch": 65535
-        },
-        "wrapper": {
-          "assembly": "Datadog.Trace.AspNet.Loader, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.AspNet.Loader.Startup",
-          "method": "TryLoadAspNetModule",
-          "signature": "00 00 01",
-          "action": "InsertFirst"
-        }
-      }
-    ]
-  },
-  {
     "name": "AspNetMvc",
     "method_replacements": [
       {
