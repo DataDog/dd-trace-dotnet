@@ -113,7 +113,7 @@ namespace Datadog.Trace
             sb.AppendLine($"Error: {Error}");
             sb.AppendLine("Meta:");
 
-            if (_tags != null)
+            if (_tags?.Count > 0)
             {
                 foreach (var kv in _tags)
                 {
@@ -123,7 +123,7 @@ namespace Datadog.Trace
 
             sb.AppendLine("Metrics:");
 
-            if (_metrics != null && _metrics.Count > 0)
+            if (_metrics?.Count > 0)
             {
                 foreach (var kv in _metrics)
                 {
@@ -356,10 +356,7 @@ namespace Datadog.Trace
         {
             if (value == null)
             {
-                if (_metrics != null)
-                {
-                    _metrics.TryRemove(key, out _);
-                }
+                _metrics?.TryRemove(key, out _);
             }
             else
             {
