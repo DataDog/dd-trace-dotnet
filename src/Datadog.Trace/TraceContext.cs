@@ -10,11 +10,10 @@ namespace Datadog.Trace
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<TraceContext>();
 
-        private readonly object _lock = new object();
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+        private readonly List<Span> _spans = new List<Span>();
 
-        private List<Span> _spans = new List<Span>();
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
         private bool _samplingPriorityLocked;
@@ -49,7 +48,7 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (_lock)
+            lock (_spans)
             {
                 if (RootSpan == null)
                 {
@@ -100,7 +99,7 @@ namespace Datadog.Trace
 
             Span[] spansToWrite = null;
 
-            lock (_lock)
+            lock (_spans)
             {
                 _openSpans--;
 
