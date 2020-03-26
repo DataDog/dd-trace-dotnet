@@ -50,6 +50,17 @@
       <ComponentGroupRef Id="Files.Native.32"/>
       <?endif ?>
     </Feature>
+
+    <CustomAction Id="CA_AddDatadogHttpModule"
+                  ExeCommand="[INSTALLFOLDER]install.cmd"
+                  Directory="INSTALLFOLDER" Execute="deferred"  Impersonate="no" Return="check" />
+    <CustomAction Id="CA_RemoveDatadogHttpModule"
+                  ExeCommand="[INSTALLFOLDER]uninstall.cmd"
+                  Directory="INSTALLFOLDER" Execute="deferred" Impersonate="no" Return="check" />
+    <InstallExecuteSequence>
+      <Custom Action="CA_AddDatadogHttpModule" After="InstallFiles">NOT Installed AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="CA_RemoveDatadogHttpModule" Before="RemoveFiles">Installed AND REMOVE="ALL"</Custom>
+    </InstallExecuteSequence>
   </Product>
 
   <Fragment>
@@ -106,6 +117,14 @@
 
   <Fragment>
     <ComponentGroup Id="Files" Directory="INSTALLFOLDER">
+      <Component Win64="$(var.Win64)">
+        <File Id="install.cmd" Source="install.cmd" />
+      </Component>
+
+      <Component Win64="$(var.Win64)">
+        <File Id="uninstall.cmd" Source="uninstall.cmd" />
+      </Component>
+
       <Component Win64="$(var.Win64)">
         <File Id="integrations.json" Source="..\..\integrations.json" />
       </Component>

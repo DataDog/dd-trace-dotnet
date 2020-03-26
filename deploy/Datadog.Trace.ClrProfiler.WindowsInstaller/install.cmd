@@ -1,0 +1,1 @@
+%systemroot%\system32\inetsrv\APPCMD set config /section:system.webServer/modules /+[name='DatadogTracingModule',type='Datadog.Trace.AspNet.TracingHttpModule,Datadog.Trace.AspNet,Version=1.0.0.0,Culture=neutral,PublicKeyToken=def86d061d0d2eeb',preCondition='managedHandler']
