@@ -1,14 +1,15 @@
 @echo off
-setlocal EnableDelayedExpansion
+setlocal
+
+echo Executing uninstall.cmd at %date% %time%
 
 set DATADOG_APPCMD_CMDLINE=%systemroot%\system32\inetsrv\appcmd.exe set config /section:system.webServer/modules /-[name='DatadogTracingModule']
 
-echo Executing uninstall.cmd at %date% %time%
 IF EXIST %systemroot%\system32\inetsrv\appcmd.exe (
-    echo Running: %DATADOG_APPCMD_CMDLINE%
+    echo Attempting to uninstall the Datadog ASP.NET HttpModule with %systemroot%\system32\inetsrv\appcmd.exe
     %DATADOG_APPCMD_CMDLINE% 2>&1
 ) ELSE (
-    echo "%systemroot%\system32\inetsrv\appcmd.exe" doesn't exist
+    echo "%systemroot%\system32\inetsrv\appcmd.exe" doesn't exist. The Datadog ASP.NET HttpModule will not be uninstalled by this installer.
 )
 
 REM Always report success
