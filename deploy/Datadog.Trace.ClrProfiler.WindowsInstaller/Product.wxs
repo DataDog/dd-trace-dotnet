@@ -51,15 +51,28 @@
       <?endif ?>
     </Feature>
 
-    <CustomAction Id="CA_AddDatadogHttpModule"
-                  ExeCommand="[INSTALLFOLDER]install.cmd"
-                  Directory="INSTALLFOLDER" Execute="deferred"  Impersonate="no" Return="check" />
-    <CustomAction Id="CA_RemoveDatadogHttpModule"
-                  ExeCommand="[INSTALLFOLDER]uninstall.cmd"
-                  Directory="INSTALLFOLDER" Execute="deferred" Impersonate="no" Return="check" />
+    <!-- Use Quiet Execution Custom Action which will redirect stanard out to the MSI log (see: https://wixtoolset.org/documentation/manual/v3/customactions/qtexec.html) -->
+    <!-- Use SetProperty immediately before calling the script so we can inject the INSTALLFOLDER path -->
+    <SetProperty Id="CA_QtExec_AddDatadogHttpModule"
+                 Before="CA_QtExec_AddDatadogHttpModule"
+                 Sequence="execute"
+                 Value="&quot;cmd&quot; /c &quot;[INSTALLFOLDER]install.cmd&quot;" />
+    <CustomAction Id="CA_QtExec_AddDatadogHttpModule" BinaryKey="WixCA" DllEntry="WixQuietExec"
+                  Execute="deferred" Return="check" Impersonate="no" />
+
+    <!-- Use SetProperty immediately before calling the script so we can inject the INSTALLFOLDER path -->
+    <SetProperty Id="CA_QtExec_RemoveDatadogHttpModule"
+                 Before="CA_QtExec_RemoveDatadogHttpModule"
+                 Sequence="execute"
+                 Value="&quot;cmd&quot; /c &quot;[INSTALLFOLDER]uninstall.cmd&quot;" />
+    <CustomAction Id="CA_QtExec_RemoveDatadogHttpModule" BinaryKey="WixCA" DllEntry="WixQuietExec"
+                  Execute="deferred" Return="check" Impersonate="no" />
+
+    <!-- Call above Custom Actions at the appropriate times during installation (see: https://stackoverflow.com/a/17608049)-->
+    <!-- The idea is to run the install CA only on new installs and the uninstall CA only on uninstalls and upgrades -->
     <InstallExecuteSequence>
-      <Custom Action="CA_AddDatadogHttpModule" After="InstallFiles">NOT Installed AND NOT UPGRADINGPRODUCTCODE</Custom>
-      <Custom Action="CA_RemoveDatadogHttpModule" Before="RemoveFiles">Installed AND REMOVE="ALL"</Custom>
+      <Custom Action="CA_QtExec_AddDatadogHttpModule" After="InstallFiles">NOT Installed AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="CA_QtExec_RemoveDatadogHttpModule" Before="RemoveFiles">Installed AND REMOVE="ALL"</Custom>
     </InstallExecuteSequence>
   </Product>
 
