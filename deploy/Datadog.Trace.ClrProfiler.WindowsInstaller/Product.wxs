@@ -51,7 +51,7 @@
       <?endif ?>
     </Feature>
 
-    <!-- Use Quiet Execution Custom Action which will redirect stanard out to the MSI log (see: https://wixtoolset.org/documentation/manual/v3/customactions/qtexec.html) -->
+    <!-- Use Quiet Execution Custom Action which will redirect standard out to the MSI log (see: https://wixtoolset.org/documentation/manual/v3/customactions/qtexec.html) -->
     <!-- Use SetProperty immediately before calling the script so we can inject the INSTALLFOLDER path -->
     <SetProperty Id="CA_QtExec_AddDatadogHttpModule"
                  Before="CA_QtExec_AddDatadogHttpModule"
