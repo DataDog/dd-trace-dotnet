@@ -18,7 +18,6 @@ namespace PrepareRelease
 
             var assemblies = new List<Assembly>();
             assemblies.Add(typeof(Instrumentation).Assembly);
-            assemblies.Add(typeof(Datadog.Trace.AspNet.Loader.Startup).Assembly);
 
             // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
             // and create objects that will generate correct JSON schema
