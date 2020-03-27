@@ -29,11 +29,6 @@ jobs:
 
   steps:
 
-  - task: gittools.gitversion.gitversion-task.GitVersion@4
-    displayName: GitVersion
-    inputs:
-      preferBundledVersion: false
-
   - task: UseDotNet@2
     displayName: install dotnet core sdk
     inputs:
@@ -223,6 +218,11 @@ jobs:
     vmImage: ubuntu-16.04
 
   steps:
+  - task: GitVersion@5
+    displayName: GitVersion
+    inputs:
+      preferBundledVersion: false
+
   - download: current
     artifact: windows-msi-x64
     patterns: '**/*x64.msi'
