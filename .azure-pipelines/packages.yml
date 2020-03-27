@@ -232,6 +232,10 @@ jobs:
     patterns: '**/*amd64.deb'
 
   - script: |
+      rename 's/_/-/g' $(Pipeline.Workspace)/linux-packages/*.deb -v
+    displayName: Rename deb package to use dashes
+
+  - script: |
       echo $(GitVersion.BranchName) >> index.txt
       echo $(GitVersion.Sha) >> index.txt;
       echo datadog-dotnet-apm-$(GitVersion.MajorMinorPatch)* >> index.txt
