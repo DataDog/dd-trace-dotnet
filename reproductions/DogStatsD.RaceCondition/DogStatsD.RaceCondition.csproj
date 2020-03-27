@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('netcoreapp'))">
+    <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+</Project>

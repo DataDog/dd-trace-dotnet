@@ -325,7 +325,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
             int count = Commands.Count;
             if (count < 1) return;
 
-            Send(1 == count ? Commands.Single(): string.Join("\n", Commands.ToArray()));
+            Send(1 == count ? Commands.Single() : string.Join("\n", Commands.ToArray()));
         }
 
         public void Add(Action actionToTime, string statName, double sampleRate = 1.0, string[] tags = null)
