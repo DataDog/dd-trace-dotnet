@@ -1,6 +1,7 @@
 trigger:
   branches:
     include:
+      - master
       - refs/tags/*
 pr: none
 
@@ -211,3 +212,46 @@ jobs:
     inputs:
       artifactName: linux-alpine-packages
       targetPath: deploy/linux
+
+- job: s3_upload
+
+  dependsOn:
+    - nuget_and_windows_msi_and_home
+    - linux_packages
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  steps:
+  - download: current
+    artifact: windows-msi-x64
+    patterns: '**/*x64.msi'
+
+  - download: current
+    artifact: linux-packages
+    patterns: '**/*amd64.deb'
+
+  - script: sudo apt-get install -y awscli
+    displayName: Install AWS CLI
+
+  - script: aws configure set aws_access_key_id $SECRET
+    displayName: Authenticate aws_access_key_id
+    env:
+      SECRET: $(AWS_ACCESS_KEY_ID)
+
+  - script: aws configure set aws_secret_access_key $SECRET
+    displayName: Authenticate aws_secret_access_key
+    env:
+      SECRET: $(AWS_SECRET_ACCESS_KEY)
+
+  - script: aws s3 cp linux-packages s3://datadog-reliability-env/dotnet/ --recursive
+    displayName: Upload deb package to s3
+    env:
+      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+  - script: aws s3 cp windows-msi-x64 s3://datadog-reliability-env/dotnet/ --recursive
+    displayName: Upload MSI to s3
+    env:
+      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
