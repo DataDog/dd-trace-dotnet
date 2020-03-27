@@ -236,10 +236,11 @@ jobs:
     displayName: Rename deb package to use dashes
 
   - script: |
-      echo $(GitVersion.BranchName) >> index.txt
-      echo $(GitVersion.Sha) >> index.txt
-      pushd $(Pipeline.Workspace)/linux-packages && name=$(ls *.deb) && echo "${name::-9}*" >> index.txt && popd
-      git show -s --format='%ae' $(GitVersion.Sha) >> index.txt
+      INDEX_FILE=$(pwd)/index.txt
+      echo $(GitVersion.BranchName) >> $INDEX_FILE
+      echo $(GitVersion.Sha) >> $INDEX_FILE
+      pushd $(Pipeline.Workspace)/linux-packages && name=$(ls *.deb) && echo "${name::-9}*" >> $INDEX_FILE && popd
+      git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
     displayName: Write index.txt
 
   - script: cat index.txt
