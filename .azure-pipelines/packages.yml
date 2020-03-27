@@ -243,9 +243,6 @@ jobs:
       git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
     displayName: Write index.txt
 
-  - script: cat index.txt
-    displayName: cat index.txt
-
   - script: sudo apt-get install -y awscli
     displayName: Install AWS CLI
 
@@ -261,18 +258,9 @@ jobs:
 
   - script: aws s3 cp index.txt s3://datadog-reliability-env/dotnet/index.txt
     displayName: Upload index.txt to s3
-    env:
-      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
   - script: aws s3 cp $(Pipeline.Workspace)/linux-packages s3://datadog-reliability-env/dotnet/ --recursive
     displayName: Upload deb package to s3
-    env:
-      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
   - script: aws s3 cp $(Pipeline.Workspace)/windows-msi-x64 s3://datadog-reliability-env/dotnet/ --recursive
     displayName: Upload MSI to s3
-    env:
-      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
