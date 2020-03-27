@@ -237,8 +237,8 @@ jobs:
 
   - script: |
       echo $(GitVersion.BranchName) >> index.txt
-      echo $(GitVersion.Sha) >> index.txt;
-      echo datadog-dotnet-apm-$(GitVersion.MajorMinorPatch)* >> index.txt
+      echo $(GitVersion.Sha) >> index.txt
+      pushd $(Pipeline.Workspace)/linux-packages && name=$(ls *.deb) && echo "${name::-9}*" >> index.txt && popd
       git show -s --format='%ae' $(GitVersion.Sha) >> index.txt
     displayName: Write index.txt
 
