@@ -4,7 +4,6 @@ namespace Datadog.Trace.Agent
 {
     internal class AgentWriterBuffer<T>
     {
-        private readonly object _lock = new object();
         private readonly Random _random = new Random();
         private readonly T[] _items;
 
@@ -17,7 +16,7 @@ namespace Datadog.Trace.Agent
 
         public bool Push(T item)
         {
-            lock (_lock)
+            lock (_items)
             {
                 if (_count < _items.Length)
                 {
@@ -26,7 +25,9 @@ namespace Datadog.Trace.Agent
                 }
                 else
                 {
-                    // drop a random trace
+                    // drop a random trace.
+                    // note that Random.Next() is NOT thread-safe,
+                    // but we are running this inside a lock
                     _items[_random.Next(_items.Length)] = item;
                     return false;
                 }
@@ -35,7 +36,7 @@ namespace Datadog.Trace.Agent
 
         public T[] Pop()
         {
-            lock (_lock)
+            lock (_items)
             {
                 // copy items from buffer into new array
                 var result = new T[_count];
