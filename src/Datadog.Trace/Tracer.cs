@@ -9,7 +9,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -353,7 +352,7 @@ namespace Datadog.Trace
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(List<Span> trace)
+        void IDatadogTracer.Write(Span[] trace)
         {
             _agentWriter.WriteTrace(trace);
         }

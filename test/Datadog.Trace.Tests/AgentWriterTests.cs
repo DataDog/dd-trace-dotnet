@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -31,15 +30,15 @@ namespace Datadog.Trace.Tests
         public async Task WriteTrace_2Traces_SendToApi()
         {
             // TODO:bertrand it is too complicated to setup such a simple test
-            var trace = new List<Span> { new Span(_spanContext, start: null) };
+            var trace = new[] { new Span(_spanContext, start: null) };
             _agentWriter.WriteTrace(trace);
             await Task.Delay(TimeSpan.FromSeconds(2));
-            _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
+            _api.Verify(x => x.SendTracesAsync(It.Is<Span[][]>(y => y.Single().Equals(trace))), Times.Once);
 
-            trace = new List<Span> { new Span(_spanContext, start: null) };
+            trace = new[] { new Span(_spanContext, start: null) };
             _agentWriter.WriteTrace(trace);
             await Task.Delay(TimeSpan.FromSeconds(2));
-            _api.Verify(x => x.SendTracesAsync(It.Is<List<List<Span>>>(y => y.Single().Equals(trace))), Times.Once);
+            _api.Verify(x => x.SendTracesAsync(It.Is<Span[][]>(y => y.Single().Equals(trace))), Times.Once);
         }
 
         [Fact]
