@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using Datadog.Trace.Abstractions;
@@ -21,8 +21,8 @@ namespace Datadog.Trace
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private readonly object _lock = new object();
-        private ConcurrentDictionary<string, string> _tags;
-        private ConcurrentDictionary<string, double> _metrics;
+        private readonly object _tagsLock = new object();
+        private readonly object _metricLock = new object();
 
         internal Span(SpanContext context, DateTimeOffset? start)
         {
@@ -84,9 +84,9 @@ namespace Datadog.Trace
 
         internal TimeSpan Duration { get; private set; }
 
-        internal ConcurrentDictionary<string, string> Tags => _tags;
+        internal Dictionary<string, string> Tags { get; private set; }
 
-        internal ConcurrentDictionary<string, double> Metrics => _metrics;
+        internal Dictionary<string, double> Metrics { get; private set; }
 
         internal bool IsFinished { get; private set; }
 
@@ -113,21 +113,29 @@ namespace Datadog.Trace
             sb.AppendLine($"Error: {Error}");
             sb.AppendLine("Meta:");
 
-            if (_tags?.Count > 0)
+            if (Tags?.Count > 0)
             {
-                foreach (var kv in _tags)
+                // lock because we're iterating the collection, not reading a single value
+                lock (_tagsLock)
                 {
-                    sb.Append($"\t{kv.Key}:{kv.Value}");
+                    foreach (var kv in Tags)
+                    {
+                        sb.Append($"\t{kv.Key}:{kv.Value}");
+                    }
                 }
             }
 
             sb.AppendLine("Metrics:");
 
-            if (_metrics?.Count > 0)
+            if (Metrics?.Count > 0)
             {
-                foreach (var kv in _metrics)
+                // lock because we're iterating the collection, not reading a single value
+                lock (_metricLock)
                 {
-                    sb.Append($"\t{kv.Key}:{kv.Value}");
+                    foreach (var kv in Metrics)
+                    {
+                        sb.Append($"\t{kv.Key}:{kv.Value}");
+                    }
                 }
             }
 
@@ -145,14 +153,6 @@ namespace Datadog.Trace
             if (IsFinished)
             {
                 Log.Debug("SetTag should not be called after the span was closed");
-                return this;
-            }
-
-            if (value == null && _tags != null)
-            {
-                // Agent doesn't accept null tag values,
-                // remove them instead
-                _tags.TryRemove(key, out _);
                 return this;
             }
 
@@ -221,13 +221,36 @@ namespace Datadog.Trace
 
                     break;
                 default:
-                    // if not a special tag, just add it to the tag bag
-                    if (_tags == null)
+                    if (value == null)
                     {
-                        _tags = new ConcurrentDictionary<string, string>();
+                        if (Tags != null)
+                        {
+                            // lock when modifying the collection
+                            lock (_tagsLock)
+                            {
+                                // Agent doesn't accept null tag values,
+                                // remove them instead
+                                Tags.Remove(key);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // lock when modifying the collection
+                        lock (_tagsLock)
+                        {
+                            if (Tags == null)
+                            {
+                                // defer instantiation until needed to
+                                // avoid unnecessary allocations per span
+                                Tags = new Dictionary<string, string>();
+                            }
+
+                            // if not a special tag, just add it to the tag bag
+                            Tags[key] = value;
+                        }
                     }
 
-                    _tags[key] = value;
                     break;
             }
 
@@ -291,7 +314,7 @@ namespace Datadog.Trace
                         ServiceName,
                         ResourceName,
                         OperationName,
-                        _tags == null ? string.Empty : string.Join(",", _tags.Keys));
+                        Tags == null ? string.Empty : string.Join(",", Tags.Keys));
                 }
             }
         }
@@ -335,9 +358,10 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
         public string GetTag(string key)
-            => _tags != null && _tags.TryGetValue(key, out var value)
-                   ? value
-                   : null;
+        {
+            // no need to lock on single reads
+            return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
+        }
 
         internal bool SetExceptionForFilter(Exception exception)
         {
@@ -347,25 +371,37 @@ namespace Datadog.Trace
 
         internal double? GetMetric(string key)
         {
-            return _metrics != null && _metrics.TryGetValue(key, out double value)
-                       ? value
-                       : default;
+            // no need to lock on single reads
+            return Metrics != null && Metrics.TryGetValue(key, out double value) ? value : default;
         }
 
         internal Span SetMetric(string key, double? value)
         {
             if (value == null)
             {
-                _metrics?.TryRemove(key, out _);
+                if (Metrics != null)
+                {
+                    // lock when modifying the collection
+                    lock (_metricLock)
+                    {
+                        Metrics.Remove(key);
+                    }
+                }
             }
             else
             {
-                if (_metrics == null)
+                // lock when modifying the collection
+                lock (_metricLock)
                 {
-                    _metrics = new ConcurrentDictionary<string, double>();
-                }
+                    if (Metrics == null)
+                    {
+                        // defer instantiation until needed to
+                        // avoid unnecessary allocations per span
+                        Metrics = new Dictionary<string, double>();
+                    }
 
-                _metrics[key] = value.Value;
+                    Metrics[key] = value.Value;
+                }
             }
 
             return this;
