@@ -16,7 +16,7 @@ COPY --from=build /app/out .
 
 # Set up Datadog APM
 RUN apk --no-cache update && apk add curl
-ARG TRACER_VERSION=1.15.0
+ARG TRACER_VERSION=1.15.1
 RUN mkdir -p /var/log/datadog
 RUN mkdir -p /opt/datadog
 RUN curl -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm-${TRACER_VERSION}-musl.tar.gz \
