@@ -18,6 +18,9 @@ namespace Samples.HttpMessageHandler
 
         private static string Url;
 
+#if NETFRAMEWORK
+        [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
+#endif
         public static void Main(string[] args)
         {
             bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
