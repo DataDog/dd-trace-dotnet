@@ -3,6 +3,7 @@ namespace Datadog.Trace
 #if NET45
     using System;
     using System.Runtime.Remoting;
+    using System.Runtime.Remoting.Lifetime;
     using System.Runtime.Remoting.Messaging;
 
     internal class AsyncLocalCompat<T>
@@ -20,7 +21,32 @@ namespace Datadog.Trace
 
         public void Set(T value)
         {
-            CallContext.LogicalSetData(_name, new ObjectHandle(value));
+            CallContext.LogicalSetData(_name, new DisposableObjectHandle(value));
+        }
+
+        internal sealed class DisposableObjectHandle : ObjectHandle, IDisposable
+        {
+            private static readonly ISponsor LifeTimeSponsor = new ClientSponsor();
+
+            public DisposableObjectHandle(object o)
+                : base(o)
+            {
+            }
+
+            public override object InitializeLifetimeService()
+            {
+                var lease = base.InitializeLifetimeService() as ILease;
+                lease?.Register(LifeTimeSponsor);
+                return lease;
+            }
+
+            public void Dispose()
+            {
+                if (GetLifetimeService() is ILease lease)
+                {
+                    lease.Unregister(LifeTimeSponsor);
+                }
+            }
         }
     }
 
