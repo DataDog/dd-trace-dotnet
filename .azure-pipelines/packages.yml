@@ -1,6 +1,7 @@
 trigger:
   branches:
     include:
+      - master
       - refs/tags/*
 pr: none
 
@@ -27,11 +28,6 @@ jobs:
     vmImage: windows-2019
 
   steps:
-
-  - task: gittools.gitversion.gitversion-task.GitVersion@4
-    displayName: GitVersion
-    inputs:
-      preferBundledVersion: false
 
   - task: UseDotNet@2
     displayName: install dotnet core sdk
@@ -211,3 +207,61 @@ jobs:
     inputs:
       artifactName: linux-alpine-packages
       targetPath: deploy/linux
+
+- job: s3_upload
+  condition: and(succeeded(), not(startsWith(variables['Build.SourceBranch'], 'refs/tags/')))
+
+  dependsOn:
+    - nuget_and_windows_msi_and_home
+    - linux_packages
+
+  pool:
+    vmImage: ubuntu-16.04
+
+  steps:
+  - task: GitVersion@5
+    displayName: GitVersion
+    inputs:
+      preferBundledVersion: false
+
+  - download: current
+    artifact: windows-msi-x64
+    patterns: '**/*x64.msi'
+
+  - download: current
+    artifact: linux-packages
+    patterns: '**/*amd64.deb'
+
+  - script: |
+      rename 's/_/-/g' $(Pipeline.Workspace)/linux-packages/*.deb -v
+    displayName: Rename deb package to use dashes
+
+  - script: |
+      INDEX_FILE=$(pwd)/index.txt
+      echo $(GitVersion.BranchName) >> $INDEX_FILE
+      echo $(GitVersion.Sha) >> $INDEX_FILE
+      pushd $(Pipeline.Workspace)/linux-packages && name=$(ls *.deb) && echo "${name::-9}*" >> $INDEX_FILE && popd
+      git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
+    displayName: Write index.txt
+
+  - script: sudo apt-get install -y awscli
+    displayName: Install AWS CLI
+
+  - script: aws configure set aws_access_key_id $SECRET
+    displayName: Authenticate aws_access_key_id
+    env:
+      SECRET: $(AWS_ACCESS_KEY_ID)
+
+  - script: aws configure set aws_secret_access_key $SECRET
+    displayName: Authenticate aws_secret_access_key
+    env:
+      SECRET: $(AWS_SECRET_ACCESS_KEY)
+
+  - script: aws s3 cp $(Pipeline.Workspace)/linux-packages s3://datadog-reliability-env/dotnet/ --recursive
+    displayName: Upload deb package to s3
+
+  - script: aws s3 cp $(Pipeline.Workspace)/windows-msi-x64 s3://datadog-reliability-env/dotnet/ --recursive
+    displayName: Upload MSI to s3
+
+  - script: aws s3 cp index.txt s3://datadog-reliability-env/dotnet/index.txt
+    displayName: Upload index.txt to s3
