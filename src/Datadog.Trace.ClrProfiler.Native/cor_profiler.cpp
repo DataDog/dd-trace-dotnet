@@ -790,8 +790,9 @@ HRESULT CorProfiler::ProcessReplacementCalls(
           method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
         Warn(
             "JITCompilationStarted skipping method: Method replacement "
-            "found but the managed profiler has not yet been loaded. "
-            "function_id=", function_id, " token=", function_token,
+            "found but the managed profiler has not yet been loaded "
+            "into AppDomain with id=", module_metadata->app_domain_id,
+            " function_id=", function_id, " token=", function_token,
             " caller_name=", caller.type.name, ".", caller.name, "()",
             " target_name=", target.type.name, ".", target.name, "()");
         continue;
