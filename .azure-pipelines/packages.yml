@@ -242,7 +242,7 @@ jobs:
       INDEX_FILE=$(pwd)/index.txt
       echo $(GitVersion.BranchName) >> $INDEX_FILE
       echo $(GitVersion.Sha) >> $INDEX_FILE
-      echo "${PACKAGE_NAME}*" >> $INDEX_FILE
+      pushd $(Pipeline.Workspace)/linux-packages && name=$(ls *.deb) && echo "${name::-3}*" >> $INDEX_FILE && popd
       git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
       cat $INDEX_FILE
       ls -l $(Pipeline.Workspace)/linux-packages/
