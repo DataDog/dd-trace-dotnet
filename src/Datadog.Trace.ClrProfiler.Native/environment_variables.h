@@ -67,13 +67,13 @@ const WSTRING log_path = "DD_TRACE_LOG_PATH"_W;
 // https://github.com/dotnet/coreclr/issues/12468
 const WSTRING clr_disable_optimizations = "DD_CLR_DISABLE_OPTIMIZATIONS"_W;
 
-// Sets whether to intercept method calls when the caller metohd is inside a
+// Sets whether to intercept method calls when the caller method is inside a
 // domain-neutral assembly. This is dangerous because the integration assembly
 // Datadog.Trace.ClrProfiler.Managed.dll must also be loaded domain-neutral,
-// otherwise a FileNotFound exception will occur. This setting should only be
+// otherwise a sharing violation (HRESULT 0x80131401) may occur. This setting should only be
 // enabled when there is only one AppDomain or, when hosting applications in IIS,
-// the user can guarantee that all Application Pools on the system only have one
-// application.
+// the user can guarantee that all Application Pools on the system have at most
+// one application.
 // Default is false.
 // https://github.com/DataDog/dd-trace-dotnet/pull/671
 const WSTRING domain_neutral_instrumentation = "DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION"_W;

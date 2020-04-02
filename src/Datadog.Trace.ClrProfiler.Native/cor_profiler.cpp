@@ -174,8 +174,8 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
          "=", domain_neutral_instrumentation);
     Info("Enabling automatic instrumentation of methods called from domain-neutral assemblies. ",
          "Please ensure that there is only one AppDomain or, if applications are being hosted in IIS, ",
-         "ensure that all Application Pools only have one application. ",
-         "Otherwise, a FileNotFound exception may occur.");
+         "ensure that all Application Pools have at most one application each. ",
+         "Otherwise, a sharing violation (HRESULT 0x80131401) may occur.");
     instrument_domain_neutral_assemblies = true;
   }
 
