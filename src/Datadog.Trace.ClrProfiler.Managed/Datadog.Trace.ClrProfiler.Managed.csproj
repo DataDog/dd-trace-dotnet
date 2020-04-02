@@ -15,7 +15,6 @@ Automatic instrumentation for both ASP.NET and ASP.NET Core is now automatically
 
 Users who need manual instrumentation should reference the "Datadog.Trace" package.
     </PackageDescription>
-    <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd</Authors>
 
     <!-- Remove the Datadog.Trace.ClrProfiler.Managed.dll assembly from the output and hide inapplicable warning (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128) -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
