@@ -250,8 +250,6 @@ jobs:
       echo $(GitVersion.Sha) >> $INDEX_FILE
       pushd s3_upload && name=$(ls *.deb) && echo "${name::-7}*" >> $INDEX_FILE && popd
       git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
-      cat $INDEX_FILE
-      ls -l s3_upload
     displayName: Write index.txt
 
   - script: sudo apt-get install -y awscli
