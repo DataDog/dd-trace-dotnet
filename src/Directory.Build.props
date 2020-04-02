@@ -16,7 +16,7 @@
     <PackageTags>Datadog;APM;tracing;profiling;instrumentation</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/DataDog/dd-trace-dotnet.git</RepositoryUrl>
-    <Copyright>Datadog, Inc. 2017-2019</Copyright>
+    <Copyright>Datadog, Inc. 2017-2020</Copyright>
     <Company>Datadog</Company>
     <Authors>lucas.pimentel.datadog;colinhigginsdatadog;zachmontoyadd;bobuva</Authors>
   </PropertyGroup>
