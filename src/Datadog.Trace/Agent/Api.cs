@@ -6,7 +6,6 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
-using MsgPack.Serialization;
 using Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent
@@ -16,33 +15,29 @@ namespace Datadog.Trace.Agent
         private const string TracesPath = "/v0.4/traces";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Api>();
-        private static readonly SerializationContext SerializationContext = new SerializationContext();
-        private static readonly SpanMessagePackSerializer Serializer = new SpanMessagePackSerializer(SerializationContext);
+
+#if NET45
+        private readonly MsgPack.Serialization.SerializationContext _serializationContext;
+        private readonly SpanMessagePackSerializer _serializer;
+#endif
 
         private readonly HttpClient _client;
         private readonly IStatsd _statsd;
         private readonly Uri _tracesEndpoint;
 
-        static Api()
-        {
-            SerializationContext.ResolveSerializer += (sender, eventArgs) =>
-            {
-                if (eventArgs.TargetType == typeof(Span))
-                {
-                    eventArgs.SetSerializer(Serializer);
-                }
-            };
-        }
-
         public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd)
         {
             Log.Debug("Creating new Api");
 
+#if NET45
+            _serializationContext = new MsgPack.Serialization.SerializationContext();
+            _serializer = new SpanMessagePackSerializer(_serializationContext);
+            _serializationContext.ResolveSerializer += OnResolveSerializer;
+#endif
+
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
-            _client = delegatingHandler == null
-                          ? new HttpClient()
-                          : new HttpClient(delegatingHandler);
+            _client = delegatingHandler == null ? new HttpClient() : new HttpClient(delegatingHandler);
             _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
 
             // report runtime details
@@ -82,6 +77,14 @@ namespace Datadog.Trace.Agent
             var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
+            var traceIds = GetUniqueTraceIds(traces);
+
+#if NET45
+            Span[][] msgPackContentValue = traces;
+#else
+            // do this conversion only once, even if we create multiple HttpContent instances
+            SerializableSpan[][] msgPackContentValue = SerializableSpan.ConvertTraces(traces);
+#endif
 
             while (true)
             {
@@ -89,10 +92,8 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    var traceIds = GetUniqueTraceIds(traces);
-
-                    // re-create content on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-                    using (var content = new MsgPackContent<Span[][]>(traces, SerializationContext))
+                    // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
+                    using (var content = CreateHttpContent(msgPackContentValue))
                     {
                         content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
 
@@ -113,7 +114,10 @@ namespace Datadog.Trace.Agent
                         if (_statsd != null)
                         {
                             // don't bother creating the tags array if trace metrics are disabled
-                            string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
+                            string[] tags =
+                            {
+                                $"status:{(int)responseMessage.StatusCode}"
+                            };
 
                             // count every response, grouped by status code
                             _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
@@ -181,6 +185,26 @@ namespace Datadog.Trace.Agent
 
             return uniqueTraceIds;
         }
+
+#if NET45
+        private void OnResolveSerializer(object sender, MsgPack.Serialization.ResolveSerializerEventArgs eventArgs)
+        {
+            if (eventArgs.TargetType == typeof(Span))
+            {
+                eventArgs.SetSerializer(_serializer);
+            }
+        }
+
+        private HttpContent CreateHttpContent<T>(T[][] traces)
+        {
+            return new MsgPackContent<T[][]>(traces, _serializationContext);
+        }
+#else
+        private HttpContent CreateHttpContent<T>(T[][] traces)
+        {
+            return new MsgPackContent<T[][]>(traces);
+        }
+#endif
 
         internal class ApiResponse
         {

@@ -1,3 +1,4 @@
+#if NET45
 using System;
 using Datadog.Trace.ExtensionMethods;
 using MsgPack;
@@ -86,3 +87,4 @@ namespace Datadog.Trace.Agent
         }
     }
 }
+#endif
