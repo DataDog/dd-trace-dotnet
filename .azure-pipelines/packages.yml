@@ -266,3 +266,6 @@ jobs:
     displayName: Authenticate aws_secret_access_key
     env:
       SECRET: $(AWS_SECRET_ACCESS_KEY)
+
+  - script: aws s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive
+    displayName: Upload deb, MSI, index.txt to s3
