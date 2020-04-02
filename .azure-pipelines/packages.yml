@@ -239,9 +239,9 @@ jobs:
     displayName: Move deb package and MSI to s3_upload folder
 
   - script: |
-      MSI_NAME=$(ls s3_upload/windows-msi-x64/*.msi)
+      MSI_NAME=$(ls s3_upload/*.msi)
       PACKAGE_NAME=${MSI_NAME::-4}
-      mv $(Pipeline.Workspace)/linux-packages/*.deb $PACKAGE_NAME.deb
+      mv s3_upload/*.deb $PACKAGE_NAME.deb
     displayName: Rename deb package name to match MSI name
 
   - script: |
