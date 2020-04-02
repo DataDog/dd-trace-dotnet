@@ -250,6 +250,7 @@ jobs:
       echo $(GitVersion.Sha) >> $INDEX_FILE
       pushd s3_upload && name=$(ls *.deb) && echo "${name::-7}*" >> $INDEX_FILE && popd
       git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
+      cat $INDEX_FILE
     displayName: Write index.txt
 
   - script: sudo apt-get install -y awscli
@@ -265,5 +266,5 @@ jobs:
     env:
       SECRET: $(AWS_SECRET_ACCESS_KEY)
 
-  - script: aws s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive
+  - script: aws s3 cp --dryrun s3_upload s3://datadog-reliability-env/dotnet/ --recursive
     displayName: Upload deb, MSI, index.txt to s3
