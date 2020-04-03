@@ -210,6 +210,12 @@ jobs:
       msbuildArguments: '/t:BuildFrameworkReproductions'
       maximumCpuCount: true
 
+  - powershell: |
+      [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
+      $publish = New-Object System.EnterpriseServices.Internal.Publish
+      Get-ChildItem $(publishOutput)/net45 -Filter *.dll | Foreach-Object { $publish.GacInstall($_.FullName) }
+    displayName: Add net45 Datadog.Trace.ClrProfiler.Managed assets to the GAC
+
   - task: DotNetCoreCLI@2
     displayName: dotnet build integration tests
     inputs:

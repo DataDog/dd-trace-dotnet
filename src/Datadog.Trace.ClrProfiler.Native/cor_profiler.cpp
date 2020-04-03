@@ -91,6 +91,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      environment::service_name,
                      environment::disabled_integrations,
                      environment::clr_disable_optimizations,
+                     environment::domain_neutral_instrumentation,
                      environment::azure_app_services,
                      environment::azure_app_services_app_pool_id,
                      environment::azure_app_services_cli_telemetry_profile_value};
@@ -163,6 +164,19 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   if (DisableOptimizations()) {
     Info("Disabling all code optimizations.");
     event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
+  }
+
+  const WSTRING domain_neutral_instrumentation =
+      GetEnvironmentValue(environment::domain_neutral_instrumentation);
+
+  if (domain_neutral_instrumentation == "1"_W || domain_neutral_instrumentation == "true"_W) {
+    Info("Detected environment variable ", environment::domain_neutral_instrumentation,
+         "=", domain_neutral_instrumentation);
+    Info("Enabling automatic instrumentation of methods called from domain-neutral assemblies. ",
+         "Please ensure that there is only one AppDomain or, if applications are being hosted in IIS, ",
+         "ensure that all Application Pools have at most one application each. ",
+         "Otherwise, a sharing violation (HRESULT 0x80131401) may occur.");
+    instrument_domain_neutral_assemblies = true;
   }
 
   // set event mask to subscribe to events and disable NGEN images
@@ -776,18 +790,21 @@ HRESULT CorProfiler::ProcessReplacementCalls(
           method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
         Warn(
             "JITCompilationStarted skipping method: Method replacement "
-            "found but the managed profiler has not yet been loaded. "
-            "function_id=", function_id, " token=", function_token,
+            "found but the managed profiler has not yet been loaded "
+            "into AppDomain with id=", module_metadata->app_domain_id,
+            " function_id=", function_id, " token=", function_token,
             " caller_name=", caller.type.name, ".", caller.name, "()",
             " target_name=", target.type.name, ".", target.name, "()");
         continue;
       }
 
       // At this point we know we've hit a match. Error out if
-      //   1) The target assembly is Datadog.Trace.ClrProfiler.Managed
-      //   2) The calling assembly is domain-neutral
+      //   1) The calling assembly is domain-neutral
+      //   2) The profiler is not configured to instrument domain-neutral assemblies
+      //   3) The target assembly is Datadog.Trace.ClrProfiler.Managed
       if (runtime_information_.is_desktop() && corlib_module_loaded &&
           module_metadata->app_domain_id == corlib_app_domain_id &&
+          !instrument_domain_neutral_assemblies &&
           method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
         Warn(
             "JITCompilationStarted skipping method: Method replacement",

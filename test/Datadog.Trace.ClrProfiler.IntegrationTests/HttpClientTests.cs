@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public HttpClientTests(ITestOutputHelper output)
             : base("HttpMessageHandler", output)
         {
+            SetEnvironmentVariable("DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION", "true");
         }
 
         [Fact]
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(1);
-                Assert.True(spans.Count > 0, "expected at least one span");
+                Assert.True(spans.Count > 0, "expected at least one span." + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
 
                 var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
@@ -90,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(1);
-                Assert.True(spans.Count > 0, "expected at least one span");
+                Assert.True(spans.Count > 0, "expected at least one span." + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
 
                 var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
