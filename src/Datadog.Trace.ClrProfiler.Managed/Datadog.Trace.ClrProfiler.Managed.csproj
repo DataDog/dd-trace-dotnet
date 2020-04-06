@@ -41,8 +41,6 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Web" />
     <Reference Include="System.ServiceModel" />
-
-    <ProjectReference Include="..\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
