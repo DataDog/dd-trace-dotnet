@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tests
             {
                 var settings = new TracerSettings
                                {
-                                   AgentUri = new Uri($"http://localhost:{agentPort}"),
+                                   AgentUri = new Uri($"http://localhost:{agent.Port}"),
                                    TracerMetricsEnabled = tracerMetricsEnabled
                                };
 
