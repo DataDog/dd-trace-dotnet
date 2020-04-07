@@ -35,6 +35,9 @@ jobs:
       packageType: sdk
       version: $(dotnetCoreSdkVersion)
 
+  - task: NuGetToolInstaller@1
+    displayName: install nuget
+
   - task: NuGetCommand@2
     displayName: nuget restore native
     inputs:
