@@ -171,7 +171,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            if (!(handler is HttpClientHandler) || !IsTracingEnabled(request))
+            if (!(handler is HttpClientHandler || reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase)) ||
+                !IsTracingEnabled(request))
             {
                 // skip instrumentation
                 return await sendAsync(handler, request, cancellationToken).ConfigureAwait(false);
