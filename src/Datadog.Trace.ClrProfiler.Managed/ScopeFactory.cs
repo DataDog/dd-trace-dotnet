@@ -37,6 +37,19 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                Span parent = tracer.ActiveScope?.Span;
+
+                if (parent != null &&
+                    parent.Type == SpanTypes.Http &&
+                    parent.GetTag(Tags.HttpMethod).Equals(httpMethod, StringComparison.OrdinalIgnoreCase) &&
+                    parent.GetTag(Tags.HttpUrl).Equals(UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false), StringComparison.OrdinalIgnoreCase))
+                {
+                    // we are already instrumenting this,
+                    // don't instrument nested methods that belong to the same stacktrace
+                    // e.g. HttpClientHandler.SendAsync() -> SocketsHttpHandler.SendAsync()
+                    return null;
+                }
+
                 scope = tracer.StartActive(OperationName);
                 var span = scope.Span;
 

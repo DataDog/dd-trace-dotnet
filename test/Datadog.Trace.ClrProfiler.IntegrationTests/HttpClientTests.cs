@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void HttpClient()
         {
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 3 : 1;
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 2 : 1;
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
 
@@ -49,12 +49,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 var firstSpan = spans.First();
-                var lastSpanInFirstTrace = spans.Where(s => s.TraceId == firstSpan.TraceId).Last();
                 var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
 
-                Assert.Equal(lastSpanInFirstTrace.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(lastSpanInFirstTrace.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
+                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
             }
         }
 
