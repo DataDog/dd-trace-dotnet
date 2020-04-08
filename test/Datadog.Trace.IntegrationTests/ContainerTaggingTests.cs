@@ -32,7 +32,7 @@ namespace Datadog.Trace.IntegrationTests
                     actualContainerId = args.Value.Request.Headers[AgentHttpHeaderNames.ContainerId];
                 };
 
-                var settings = new TracerSettings { AgentUri = new Uri($"http://localhost:{agentPort}") };
+                var settings = new TracerSettings { AgentUri = new Uri($"http://localhost:{agent.Port}") };
                 var tracer = new Tracer(settings);
 
                 using (var scope = tracer.StartActive("operationName"))
