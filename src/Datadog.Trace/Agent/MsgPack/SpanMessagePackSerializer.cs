@@ -4,7 +4,7 @@ using Datadog.Trace.ExtensionMethods;
 using MsgPack;
 using MsgPack.Serialization;
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent.MsgPack
 {
     internal class SpanMessagePackSerializer : MessagePackSerializer<Span>
     {
