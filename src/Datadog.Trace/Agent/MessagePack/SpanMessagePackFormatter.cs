@@ -1,4 +1,3 @@
-#if NETFRAMEWORK
 using System;
 using Datadog.Trace.ExtensionMethods;
 using MessagePack;
@@ -105,4 +104,3 @@ namespace Datadog.Trace.Agent.MessagePack
         }
     }
 }
-#endif
