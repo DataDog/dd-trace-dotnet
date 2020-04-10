@@ -67,6 +67,7 @@ namespace Datadog.Trace.TestHelpers
             unchecked
             {
                 hash = (hash * 23) + Process.GetCurrentProcess().Id.GetHashCode();
+                hash = (hash * 23) + AppDomain.CurrentDomain.Id.GetHashCode();
                 hash = (hash * 23) + Thread.CurrentThread.ManagedThreadId.GetHashCode();
             }
 
