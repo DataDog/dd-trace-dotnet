@@ -21,18 +21,8 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_MessagePack.Annotations.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\MessagePack.Annotations.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_MessagePack.dll"
               Source="$(var.ManagedDllPath)\netstandard2.0\MessagePack.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_Microsoft.Bcl.AsyncInterfaces.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -48,11 +38,6 @@
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Sigil.dll"
               Source="$(var.ManagedDllPath)\netstandard2.0\Sigil.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Buffers.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Buffers.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -83,16 +68,6 @@
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Linq.dll"
               Source="$(var.ManagedDllPath)\netstandard2.0\System.Linq.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Memory.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Memory.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.Numerics.Vectors.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Numerics.Vectors.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -133,6 +108,11 @@
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Runtime.Numerics.dll"
               Source="$(var.ManagedDllPath)\netstandard2.0\System.Runtime.Numerics.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_System.Runtime.Serialization.Primitives.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\System.Runtime.Serialization.Primitives.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
