@@ -26,18 +26,8 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net461_MessagePack.Annotations.dll"
-              Source="$(var.ManagedDllPath)\net461\MessagePack.Annotations.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="net461_MessagePack.dll"
               Source="$(var.ManagedDllPath)\net461\MessagePack.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_Microsoft.Bcl.AsyncInterfaces.dll"
-              Source="$(var.ManagedDllPath)\net461\Microsoft.Bcl.AsyncInterfaces.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -63,11 +53,6 @@
       <Component Win64="$(var.Win64)">
         <File Id="net461_System.AppContext.dll"
               Source="$(var.ManagedDllPath)\net461\System.AppContext.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_System.Buffers.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Buffers.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -271,11 +256,6 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net461_System.Memory.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Memory.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="net461_System.Net.Http.dll"
               Source="$(var.ManagedDllPath)\net461\System.Net.Http.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -328,11 +308,6 @@
       <Component Win64="$(var.Win64)">
         <File Id="net461_System.Net.WebSockets.dll"
               Source="$(var.ManagedDllPath)\net461\System.Net.WebSockets.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_System.Numerics.Vectors.dll"
-              Source="$(var.ManagedDllPath)\net461\System.Numerics.Vectors.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
