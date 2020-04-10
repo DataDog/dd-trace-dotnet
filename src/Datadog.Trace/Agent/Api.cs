@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -67,6 +68,7 @@ namespace Datadog.Trace.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
             var traceIds = GetUniqueTraceIds(traces);
+            var resolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
 
             while (true)
             {
@@ -75,7 +77,7 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-                    using (var content = CreateHttpContent(traces))
+                    using (var content = new TracesMessagePackContent(traces, resolver))
                     {
                         content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
 
@@ -167,50 +169,6 @@ namespace Datadog.Trace.Agent
 
             return uniqueTraceIds;
         }
-
-#pragma warning disable SA1201 // Elements must appear in the correct order
-#if NET45
-        private global::MsgPack.Serialization.SerializationContext _serializationContext;
-        private MsgPack.SpanMessagePackSerializer _serializer;
-
-        private HttpContent CreateHttpContent(Span[][] traces)
-        {
-            if (_serializationContext == null)
-            {
-                var context = new global::MsgPack.Serialization.SerializationContext();
-                context.ResolveSerializer += ContextOnResolveSerializer;
-                _serializer = new MsgPack.SpanMessagePackSerializer(context);
-                _serializationContext = context;
-            }
-
-            return new MsgPack.MsgPackContent<Span[][]>(traces, _serializationContext);
-        }
-
-        private void ContextOnResolveSerializer(object sender, global::MsgPack.Serialization.ResolveSerializerEventArgs args)
-        {
-            if (args.TargetType == typeof(Span))
-            {
-                args.SetSerializer(_serializer);
-            }
-        }
-#else
-        private global::MessagePack.MessagePackSerializerOptions _serializerOptions;
-
-        private HttpContent CreateHttpContent(Span[][] traces)
-        {
-            if (_serializerOptions == null)
-            {
-                var resolver = global::MessagePack.Resolvers.CompositeResolver.Create(
-                    MessagePack.SpanFormatterResolver.Instance,
-                    global::MessagePack.Resolvers.StandardResolver.Instance);
-
-                _serializerOptions = global::MessagePack.MessagePackSerializerOptions.Standard.WithResolver(resolver);
-            }
-
-            return new MessagePack.MessagePackContent<Span[][]>(traces, _serializerOptions);
-        }
-#endif
-#pragma warning restore SA1201 // Elements must appear in the correct order
 
         internal class ApiResponse
         {

@@ -4,28 +4,28 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using MsgPack.Serialization;
+using MessagePack;
 
-namespace Datadog.Trace.Agent.MsgPack
+namespace Datadog.Trace.Agent.MessagePack
 {
-    internal class MsgPackContent<T> : HttpContent
+    internal class TracesMessagePackContent : HttpContent
     {
-        private readonly SerializationContext _serializationContext;
+        private readonly IFormatterResolver _resolver;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MsgPackContent{T}"/> class.
+        /// Initializes a new instance of the <see cref="TracesMessagePackContent"/> class.
         /// </summary>
-        /// <param name="value">The value to serialize into the content stream as MessagePack.</param>
-        /// <param name="serializationContext">The serialization context.</param>
-        public MsgPackContent(T value, SerializationContext serializationContext)
+        /// <param name="traces">The traces to serialize into the content stream as MessagePack.</param>
+        /// <param name="resolver">The <see cref="IFormatterResolver"/> to use when serializing <paramref name="traces"/>.</param>
+        public TracesMessagePackContent(Span[][] traces, IFormatterResolver resolver)
         {
-            Value = value;
-            _serializationContext = serializationContext;
+            Traces = traces;
+            _resolver = resolver;
 
             Headers.ContentType = new MediaTypeHeaderValue("application/msgpack");
         }
 
-        public T Value { get; }
+        public Span[][] Traces { get; }
 
         /// <summary>Serialize the HTTP content to a stream as an asynchronous operation.</summary>
         /// <param name="stream">The target stream.</param>
@@ -33,8 +33,7 @@ namespace Datadog.Trace.Agent.MsgPack
         /// <returns>The task object representing the asynchronous operation.</returns>
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
-            return _serializationContext.GetSerializer<T>()
-                                        .PackAsync(stream, Value);
+            return MessagePackSerializer.SerializeAsync(stream, Traces, _resolver);
         }
 
         protected override bool TryComputeLength(out long length)

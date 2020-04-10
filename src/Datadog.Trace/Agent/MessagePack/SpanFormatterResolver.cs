@@ -1,6 +1,6 @@
-#if !NET45
 using MessagePack;
 using MessagePack.Formatters;
+using MessagePack.Resolvers;
 
 namespace Datadog.Trace.Agent.MessagePack
 {
@@ -21,8 +21,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 return (IMessagePackFormatter<T>)Formatter;
             }
 
-            return null;
+            return StandardResolver.Instance.GetFormatter<T>();
         }
     }
 }
-#endif

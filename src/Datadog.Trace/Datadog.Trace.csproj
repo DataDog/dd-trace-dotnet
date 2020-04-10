@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
-    <PackageReference Include="MsgPack.Cli" Version="1.0.1" />
+    <PackageReference Include="MessagePack" Version="1.9.11" />
   </ItemGroup>
 
   <ItemGroup>

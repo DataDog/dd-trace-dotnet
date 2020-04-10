@@ -8,24 +8,24 @@ using MessagePack;
 
 namespace Datadog.Trace.Agent.MessagePack
 {
-    internal class MessagePackContent<T> : HttpContent
+    internal class TracesMessagePackContent : HttpContent
     {
-        private readonly MessagePackSerializerOptions _options;
+        private readonly FormatterResolverWrapper _resolver;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagePackContent{T}"/> class.
+        /// Initializes a new instance of the <see cref="TracesMessagePackContent"/> class.
         /// </summary>
-        /// <param name="value">The value to serialize into the content stream as MessagePack.</param>
-        /// <param name="options">The options to pass down to the <see cref="MessagePackSerializer"/>.</param>
-        public MessagePackContent(T value, MessagePackSerializerOptions options)
+        /// <param name="traces">The value to serialize into the content stream as MessagePack.</param>
+        /// <param name="resolver">The <see cref="IFormatterResolver"/> to use when serializing <paramref name="traces"/>.</param>
+        public TracesMessagePackContent(Span[][] traces, FormatterResolverWrapper resolver)
         {
-            Value = value;
-            _options = options;
+            Traces = traces;
+            _resolver = resolver;
 
             Headers.ContentType = new MediaTypeHeaderValue("application/msgpack");
         }
 
-        public T Value { get; }
+        public Span[][] Traces { get; }
 
         /// <summary>Serialize the HTTP content to a stream as an asynchronous operation.</summary>
         /// <param name="stream">The target stream.</param>
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Agent.MessagePack
         /// <returns>The task object representing the asynchronous operation.</returns>
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
-            return MessagePackSerializer.SerializeAsync(stream, Value, _options);
+            return MessagePackSerializer.SerializeAsync(stream, Traces, _resolver.Options);
         }
 
         protected override bool TryComputeLength(out long length)
