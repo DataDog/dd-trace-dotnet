@@ -58,6 +58,7 @@ namespace Samples.GraphQL
             // We do this roundabout mechanism to keep using the GraphQL.StarWars NuGet package
             starWarsSchema.Subscription = starWarsSubscription;
             app.UseDeveloperExceptionPage();
+            app.UseWelcomePage("/alive-check");
 
             // add http for Schema at default url /graphql
             app.UseGraphQL<ISchema>("/graphql");
