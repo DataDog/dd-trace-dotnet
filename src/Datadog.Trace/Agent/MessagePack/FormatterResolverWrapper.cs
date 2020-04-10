@@ -11,12 +11,12 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             _resolver = resolver;
 
-#if !NET45
+#if NETSTANDARD2_0
             Options = MessagePackSerializerOptions.Standard.WithResolver(resolver);
 #endif
         }
 
-#if !NET45
+#if NETSTANDARD2_0
         public MessagePackSerializerOptions Options { get; }
 #endif
 

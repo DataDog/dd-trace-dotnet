@@ -1,4 +1,4 @@
-#if NET45
+#if NETFRAMEWORK
 using System.IO;
 using System.Net;
 using System.Net.Http;
