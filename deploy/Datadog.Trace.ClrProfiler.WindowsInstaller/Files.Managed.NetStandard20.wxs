@@ -21,13 +21,23 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_Microsoft.CSharp.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\Microsoft.CSharp.dll"
+        <File Id="netstandard20_MessagePack.Annotations.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\MessagePack.Annotations.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_MsgPack.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\MsgPack.dll"
+        <File Id="netstandard20_MessagePack.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\MessagePack.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Microsoft.Bcl.AsyncInterfaces.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Microsoft.CSharp.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\Microsoft.CSharp.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -41,8 +51,8 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="netstandard20_System.CodeDom.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.CodeDom.dll"
+        <File Id="netstandard20_System.Buffers.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\System.Buffers.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -76,6 +86,11 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_System.Memory.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\System.Memory.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Numerics.Vectors.dll"
               Source="$(var.ManagedDllPath)\netstandard2.0\System.Numerics.Vectors.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -106,6 +121,11 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_System.Runtime.CompilerServices.Unsafe.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Runtime.InteropServices.RuntimeInformation.dll"
               Source="$(var.ManagedDllPath)\netstandard2.0\System.Runtime.InteropServices.RuntimeInformation.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -128,6 +148,11 @@
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Threading.dll"
               Source="$(var.ManagedDllPath)\netstandard2.0\System.Threading.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_System.Threading.Tasks.Extensions.dll"
+              Source="$(var.ManagedDllPath)\netstandard2.0\System.Threading.Tasks.Extensions.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>
