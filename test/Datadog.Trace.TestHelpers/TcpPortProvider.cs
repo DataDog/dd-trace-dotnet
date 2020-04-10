@@ -17,7 +17,8 @@ namespace Datadog.Trace.TestHelpers
     {
         private static readonly object PortLock = new { };
         private static readonly ConcurrentBag<int> ReturnedPorts = new ConcurrentBag<int>();
-        [ThreadStatic] private static readonly int MinPort = GetStartingPort();
+        [ThreadStatic]
+        private static readonly int MinPort = GetStartingPort();
 
         public static int GetOpenPort()
         {
