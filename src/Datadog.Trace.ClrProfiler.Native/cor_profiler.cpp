@@ -15,6 +15,7 @@
 #include "metadata_builder.h"
 #include "module_metadata.h"
 #include "pal.h"
+#include "sig_helpers.h"
 #include "resource.h"
 #include "util.h"
 
@@ -831,6 +832,60 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       // loading after this instruction.
       ILRewriterWrapper rewriter_wrapper(&rewriter);
       rewriter_wrapper.SetILPosition(pInstr);
+
+      // If the last argument in the method signature is of the type
+      // System.Threading.CancellationToken (a struct) then box it before calling our
+      // integration method. This resolves https://github.com/DataDog/dd-trace-dotnet/issues/662
+      // which reproduces when the CLR automatically boxes System.Threading.CancellationToken
+      // when the original target method was in System.Data and we're using the 32-bit compiler
+      // for .NET Framework.
+      //
+      // Currently, all integrations that use System.Threading.CancellationToken (a struct)
+      // have the argument as the last argument in the signature (lucky us!).
+      // For now, we'll parse the method signature of the original target method and
+      // if the type represents a System.Threading.CancellationToken, we will add a
+      // 'Box System.Threading.CancellationToken' operation to the IL instructions
+      // before calling our wrapper method.
+
+      // Get original method signature
+      // Find the location of the last argument in the method signature
+      // If the type is ELEMENT_TYPE_VALUETYPE <compressed_token>, uncompress the token
+      // Get the type info with GetTypeInfo(module_metadata->metadata_import, type_ref)
+      // See if the name matches "System.Threading.CancellationToken"_W
+      // If it does, rewriter_wrapper.Box(type_ref)
+      auto original_method_def = target.id;
+      size_t argument_count = target.signature.NumberOfArguments();
+      size_t return_type_index = target.signature.IndexOfReturnType();
+      PCCOR_SIGNATURE pSigCurrent = PCCOR_SIGNATURE(&target.signature.data[return_type_index]); // index to the location of the return type
+      bool signature_read_success = true;
+
+      // iterate until the pointer is pointing at the last argument
+      for (size_t signature_types_index = 0; signature_types_index < argument_count; signature_types_index++) {
+        if (!ParseType(&pSigCurrent)) {
+          signature_read_success = false;
+          break;
+        }
+      }
+
+      // read the last argument type
+      if (signature_read_success && *pSigCurrent == ELEMENT_TYPE_VALUETYPE) {
+        pSigCurrent++;
+        mdToken valuetype_type_token = CorSigUncompressToken(pSigCurrent);
+
+        if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name == "System.Threading.CancellationToken"_W) {
+          rewriter_wrapper.Box(valuetype_type_token);
+        }
+      }
+
+      /*
+      for (mdTypeRef type_ref : EnumTypeRefs(module_metadata->metadata_import)) {
+        if (GetTypeInfo(module_metadata->metadata_import, type_ref).name == "System.Threading.CancellationToken"_W) {
+          rewriter_wrapper.Box(type_ref);
+          break;
+        }
+      }
+      */
+
       auto original_methodcall_opcode = pInstr->m_opcode;
       pInstr->m_opcode = CEE_NOP;
 
