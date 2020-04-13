@@ -503,7 +503,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   HRESULT hr = this->info_->GetFunctionInfo(function_id, nullptr, &module_id,
                                             &function_token);
-  RETURN_OK_IF_FAILED(hr);
+
+  if (FAILED(hr)) {
+    Warn("JITCompilationStarted: Call to ICorProfilerInfo3.GetFunctionInfo() failed for ", function_id);
+    return S_OK;
+  }
 
   // Verify that we have the metadata for this module
   ModuleMetadata* module_metadata = nullptr;
@@ -539,7 +543,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                           function_token);
-    RETURN_OK_IF_FAILED(hr);
+
+    if (FAILED(hr)) {
+      Warn("JITCompilationStarted: Call to RunILStartupHook() failed for ", module_id, " ", function_token);
+      return S_OK;
+    }
   }
 
   // we don't actually need to instrument anything in
@@ -563,16 +571,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
                              function_token,
                              caller,
                              method_replacements);
-  RETURN_OK_IF_FAILED(hr);
+
+  if (FAILED(hr)) {
+    Warn("JITCompilationStarted: Call to ProcessInsertionCalls() failed for ", function_id, " ", module_id, " ", function_token);
+    return S_OK;
+  }
 
   // Perform method replacement calls
   hr = ProcessReplacementCalls(module_metadata,
-                             function_id,
-                             module_id,
-                             function_token,
-                             caller,
-                             method_replacements);
-  RETURN_OK_IF_FAILED(hr);
+                               function_id,
+                               module_id,
+                               function_token,
+                               caller,
+                               method_replacements);
+
+  if (FAILED(hr)) {
+    Warn("JITCompilationStarted: Call to ProcessReplacementCalls() failed for ", function_id, " ", module_id, " ", function_token);
+    return S_OK;
+  }
 
   return S_OK;
 }
@@ -591,9 +607,12 @@ HRESULT CorProfiler::ProcessReplacementCalls(
     const std::vector<MethodReplacement> method_replacements) {
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   bool modified = false;
-
   auto hr = rewriter.Import();
-  RETURN_OK_IF_FAILED(hr);
+
+  if (FAILED(hr)) {
+    Warn("ProcessReplacementCalls: Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
+    return hr;
+  }
 
   // Perform method call replacements
   for (auto& method_replacement : method_replacements) {
@@ -879,7 +898,11 @@ HRESULT CorProfiler::ProcessReplacementCalls(
 
   if (modified) {
     hr = rewriter.Export();
-    RETURN_OK_IF_FAILED(hr);
+
+    if (FAILED(hr)) {
+      Warn("ProcessReplacementCalls: Call to ILRewriter.Export() failed for ", module_id, " ", function_token);
+      return hr;
+    }
   }
 
   return S_OK;
@@ -897,7 +920,11 @@ HRESULT CorProfiler::ProcessInsertionCalls(
   bool modified = false;
 
   auto hr = rewriter.Import();
-  RETURN_OK_IF_FAILED(hr);
+
+  if (FAILED(hr)) {
+    Warn("ProcessInsertionCalls: Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
+    return hr;
+  }
 
   ILRewriterWrapper rewriter_wrapper(&rewriter);
   ILInstr* firstInstr = rewriter.GetILList()->m_pNext;
@@ -949,7 +976,11 @@ HRESULT CorProfiler::ProcessInsertionCalls(
 
   if (modified) {
     hr = rewriter.Export();
-    RETURN_IF_FAILED(hr);
+
+    if (FAILED(hr)) {
+      Warn("ProcessInsertionCalls: Call to ILRewriter.Export() failed for ", module_id, " ", function_token);
+      return hr;
+    }
   }
 
   return S_OK;
@@ -1030,14 +1061,19 @@ HRESULT CorProfiler::RunILStartupHook(
     const mdToken function_token) {
   mdMethodDef ret_method_token;
   auto hr = GenerateVoidILStartupMethod(module_id, &ret_method_token);
+
   if (FAILED(hr)) {
     Warn("RunILStartupHook: Call to GenerateVoidILStartupMethod failed for ", module_id);
-    return S_OK;
+    return hr;
   }
 
   ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
   hr = rewriter.Import();
-  RETURN_OK_IF_FAILED(hr);
+
+  if (FAILED(hr)) {
+    Warn("RunILStartupHook: Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
+    return hr;
+  }
 
   ILRewriterWrapper rewriter_wrapper(&rewriter);
 
@@ -1046,7 +1082,11 @@ HRESULT CorProfiler::RunILStartupHook(
   rewriter_wrapper.SetILPosition(pInstr);
   rewriter_wrapper.CallMember(ret_method_token, false);
   hr = rewriter.Export();
-  RETURN_OK_IF_FAILED(hr);
+
+  if (FAILED(hr)) {
+    Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ", module_id, " ", function_token);
+    return hr;
+  }
 
   return S_OK;
 }
