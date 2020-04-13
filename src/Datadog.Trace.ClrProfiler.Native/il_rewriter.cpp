@@ -192,7 +192,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 
     if (opcode == CEE_PREFIX1) {
       if (offset >= m_CodeSize) {
-        assert(false);
         return COR_E_INVALIDPROGRAM;
       }
       opcode = 0x100 + pIL[offset++];
@@ -200,12 +199,10 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 
     if ((CEE_PREFIX7 <= opcode) && (opcode <= CEE_PREFIX2)) {
       // NOTE: CEE_PREFIX2-7 are currently not supported
-      assert(false);
       return COR_E_INVALIDPROGRAM;
     }
 
     if (opcode >= CEE_COUNT) {
-      assert(false);
       return COR_E_INVALIDPROGRAM;
     }
 
@@ -213,7 +210,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 
     int size = (flags & OPCODEFLAGS_SizeMask);
     if (offset + size > m_CodeSize) {
-      assert(false);
       return COR_E_INVALIDPROGRAM;
     }
 
@@ -251,7 +247,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
         break;
       case 0 | OPCODEFLAGS_Switch: {
         if (offset + sizeof(INT32) > m_CodeSize) {
-          assert(false);
           return COR_E_INVALIDPROGRAM;
         }
 
@@ -263,7 +258,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 
         for (unsigned iTarget = 0; iTarget < nTargets; iTarget++) {
           if (offset + sizeof(INT32) > m_CodeSize) {
-            assert(false);
             return COR_E_INVALIDPROGRAM;
           }
 
