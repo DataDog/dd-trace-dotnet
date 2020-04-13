@@ -10,6 +10,11 @@ namespace Samples.Wcf
         private const string WcfPort = "8585";
         private const string WcfNamespace = "WcfSample";
 
+#if NETFRAMEWORK
+        // On .NET Framework, tell the runtime to load assemblies from the GAC domain-neutral.
+        // In this sample, this will affect System.ServiceModel
+        [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
+#endif
         private static void Main(string[] args)
         {
             // This sample is a work in progress
