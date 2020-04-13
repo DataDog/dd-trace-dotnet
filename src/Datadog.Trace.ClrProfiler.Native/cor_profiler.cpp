@@ -835,7 +835,8 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       // the rest of our IL modifications AFTER this instruction.
       auto original_methodcall_opcode = pInstr->m_opcode;
       pInstr->m_opcode = CEE_NOP;
-      rewriter_wrapper.SetILPosition(pInstr->m_pNext);
+      pInstr = pInstr->m_pNext;
+      rewriter_wrapper.SetILPosition(pInstr);
 
       // IL Modification #2: Conditionally box System.Threading.CancellationToken
       //                     if it is the last argument in the target method.
