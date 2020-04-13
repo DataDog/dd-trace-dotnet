@@ -821,38 +821,39 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       const auto original_argument = pInstr->m_Arg32;
       const void* module_version_id_ptr = &module_metadata->module_version_id;
 
-      // insert the opcode and signature token as
-      // additional arguments for the wrapper method
-      //
-      // IMPORTANT: Conditional branches may jump to this call instruction, so
-      // we cannot add the argument-loading instructions BEFORE this instruction,
-      // otherwise this will surface in an InvalidProgramException.
-      // Either begin loading the additional arguments starting with this ILInstr
-      // structure or make the current ILInstr a no-op and do all of the argument
-      // loading after this instruction.
+      // Begin IL Modification
       ILRewriterWrapper rewriter_wrapper(&rewriter);
       rewriter_wrapper.SetILPosition(pInstr);
 
+      // IL Modification #1: Replace original method call with a NOP, so that all original
+      //                     jump targets resolve correctly and we correctly populate the
+      //                     stack with additional arguments
+      //
+      // IMPORTANT: Conditional branches may jump to the original call instruction which
+      // resulted in the InvalidProgramException seen in
+      // https://github.com/DataDog/dd-trace-dotnet/pull/542. To avoid this, we'll do
+      // the rest of our IL modifications AFTER this instruction.
+      auto original_methodcall_opcode = pInstr->m_opcode;
+      pInstr->m_opcode = CEE_NOP;
+      rewriter_wrapper.SetILPosition(pInstr->m_pNext);
+
+      // IL Modification #2: Conditionally box System.Threading.CancellationToken
+      //                     if it is the last argument in the target method.
+      //
       // If the last argument in the method signature is of the type
       // System.Threading.CancellationToken (a struct) then box it before calling our
       // integration method. This resolves https://github.com/DataDog/dd-trace-dotnet/issues/662
       // which reproduces when the CLR automatically boxes System.Threading.CancellationToken
-      // when the original target method was in System.Data and we're using the 32-bit compiler
-      // for .NET Framework.
+      // when the original target method was in System.Data and we're using the 32-bit profiler
+      // on .NET Framework.
       //
       // Currently, all integrations that use System.Threading.CancellationToken (a struct)
       // have the argument as the last argument in the signature (lucky us!).
-      // For now, we'll parse the method signature of the original target method and
-      // if the type represents a System.Threading.CancellationToken, we will add a
-      // 'Box System.Threading.CancellationToken' operation to the IL instructions
-      // before calling our wrapper method.
-
-      // Get original method signature
-      // Find the location of the last argument in the method signature
-      // If the type is ELEMENT_TYPE_VALUETYPE <compressed_token>, uncompress the token
-      // Get the type info with GetTypeInfo(module_metadata->metadata_import, type_ref)
-      // See if the name matches "System.Threading.CancellationToken"_W
-      // If it does, rewriter_wrapper.Box(type_ref)
+      // For now, we'll do the following:
+      //   1) Get the method signature of the original target method
+      //   2) Read the signature until the final argument type
+      //   3) If the type begins with `ELEMENT_TYPE_VALUETYPE`, uncompress the compressed type token that follows
+      //   4) If the type token represents System.Threading.CancellationToken, emit a 'box <type_token>' IL instruction before calling our wrapper method
       auto original_method_def = target.id;
       size_t argument_count = target.signature.NumberOfArguments();
       size_t return_type_index = target.signature.IndexOfReturnType();
@@ -872,34 +873,38 @@ HRESULT CorProfiler::ProcessReplacementCalls(
         pSigCurrent++;
         mdToken valuetype_type_token = CorSigUncompressToken(pSigCurrent);
 
+        // Currently, we only expect to see `System.Threading.CancellationToken` as a valuetype in this position
+        // If we expand this to a general case, we would always perform the boxing regardless of type
         if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name == "System.Threading.CancellationToken"_W) {
           rewriter_wrapper.Box(valuetype_type_token);
         }
       }
 
-      /*
-      for (mdTypeRef type_ref : EnumTypeRefs(module_metadata->metadata_import)) {
-        if (GetTypeInfo(module_metadata->metadata_import, type_ref).name == "System.Threading.CancellationToken"_W) {
-          rewriter_wrapper.Box(type_ref);
-          break;
-        }
-      }
-      */
+      // IL Modification #3: Insert a non-virtual call (CALL) to the instrumentation wrapper.
+      //                     Always use CALL because the wrapper methods are all static.
+      rewriter_wrapper.CallMember(wrapper_method_ref, false);
+      rewriter_wrapper.SetILPosition(pInstr->m_pPrev); // Set ILPosition to method call
 
-      auto original_methodcall_opcode = pInstr->m_opcode;
-      pInstr->m_opcode = CEE_NOP;
-
-      // replace with a non-virtual call (CALL) to the instrumentation wrapper
-      // always use CALL because the wrappers methods are all static
-      rewriter_wrapper.CallMemberAfter(wrapper_method_ref, false);
-      rewriter_wrapper.SetILPosition(pInstr->m_pNext);
-
-      // add the additional arguments before calling the wrapper method, in order
+      // IL Modification #4: Push the following additional arguments on the evaluation stack in the
+      //                     following order, which all integration wrapper methods expect:
+      //                       1) [int32] original CALL/CALLVIRT opCode
+      //                       2) [int32] mdToken for original method call target
+      //                       3) [int64] pointer to MVID
       rewriter_wrapper.LoadInt32(original_methodcall_opcode);
       rewriter_wrapper.LoadInt32(method_def_md_token);
       rewriter_wrapper.LoadInt64(reinterpret_cast<INT64>(module_version_id_ptr));
 
-      // after the call is made, unbox any valuetypes
+      // IL Modification #5: Conditionally emit an unbox.any instruction on the return value
+      //                     of the wrapper method if we return an object but the original
+      //                     method call returned a valuetype or a generic type.
+      //
+      // This resolves https://github.com/DataDog/dd-trace-dotnet/pull/566, which raised a
+      // System.EntryPointNotFoundException. This occurred because the return type of the
+      // generic method was a generic type that evaluated to a value type at runtime. As a
+      // result, this caller method expected an unboxed representation of the return value,
+      // even though we can only return values of type object. So if we detect that the
+      // expected return type is a valuetype or a generic type, issue an unbox.any
+      // instruction that will unbox it.
       mdToken typeToken;
       if (method_replacement.wrapper_method.method_signature.ReturnTypeIsObject()
           && ReturnTypeIsValueTypeOrGeneric(module_metadata->metadata_import,
@@ -919,8 +924,8 @@ HRESULT CorProfiler::ProcessReplacementCalls(
         rewriter_wrapper.UnboxAnyAfter(typeToken);
       }
 
+      // End IL Modification
       modified = true;
-
       Info("*** JITCompilationStarted() replaced calls from ", caller.type.name,
            ".", caller.name, "() to ",
            method_replacement.target_method.type_name, ".",
