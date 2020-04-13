@@ -71,7 +71,7 @@ namespace Samples.SqlServer
         private static SqlConnection CreateConnection()
         {
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-                                   @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;";
+                                   @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=30";
 
             return new SqlConnection(connectionString);
         }
