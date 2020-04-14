@@ -34,6 +34,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 len++;
             }
 
+            int originalOffset = offset;
+
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
             offset += MessagePackBinary.WriteString(ref bytes, offset, "trace_id");
@@ -96,7 +98,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            return offset;
+            return offset - originalOffset;
         }
 
         public Span Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
