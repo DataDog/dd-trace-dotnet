@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading;
 
-namespace Datadog.Trace.TestHelpers
+namespace Datadog.Core.Tools
 {
     /// <summary>
     /// Helper class that tries to provide unique ports numbers across processes and threads in the same machine.
