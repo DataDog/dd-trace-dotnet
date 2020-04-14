@@ -20,6 +20,7 @@ namespace Datadog.Trace.Agent
         private readonly HttpClient _client;
         private readonly IStatsd _statsd;
         private readonly Uri _tracesEndpoint;
+        private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
 
         public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd)
         {
@@ -68,7 +69,6 @@ namespace Datadog.Trace.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
             var traceIds = GetUniqueTraceIds(traces);
-            var resolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
 
             while (true)
             {
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-                    using (var content = new TracesMessagePackContent(traces, resolver))
+                    using (var content = new TracesMessagePackContent(traces, _formatterResolver))
                     {
                         content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
 
