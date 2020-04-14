@@ -7,7 +7,7 @@
     <Description>Manual instrumentation library for Datadog APM</Description>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0' ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Web" />
