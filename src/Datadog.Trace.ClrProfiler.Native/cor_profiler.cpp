@@ -843,10 +843,15 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       //
       // If the last argument in the method signature is of the type
       // System.Threading.CancellationToken (a struct) then box it before calling our
-      // integration method. This resolves https://github.com/DataDog/dd-trace-dotnet/issues/662
-      // which reproduces when the CLR automatically boxes System.Threading.CancellationToken
-      // when the original target method was in System.Data and we're using the 32-bit profiler
-      // on .NET Framework.
+      // integration method. This resolves https://github.com/DataDog/dd-trace-dotnet/issues/662,
+      // in which we did not box the System.Threading.CancellationToken object, even though the
+      // wrapper method expects an object. In that issue we observed some strange CLR behavior
+      // when the target method was in System.Data and the environment was 32-bit .NET Framework:
+      // the CLR swapped the values of the CancellationToken argument and the opCode argument.
+      // For example, the VIRTCALL opCode is '0x6F' and this value would be placed at the memory
+      // location assigned to the CancellationToken variable. Since we treat the CancellationToken
+      // variable as an object, this '0x6F' would be dereference to access the underlying object,
+      // and an invalid memory read would occur and crash the application.
       //
       // Currently, all integrations that use System.Threading.CancellationToken (a struct)
       // have the argument as the last argument in the signature (lucky us!).
