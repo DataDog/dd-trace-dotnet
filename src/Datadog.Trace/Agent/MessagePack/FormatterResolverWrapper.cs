@@ -10,7 +10,15 @@ namespace Datadog.Trace.Agent.MessagePack
         public FormatterResolverWrapper(IFormatterResolver resolver)
         {
             _resolver = resolver;
+
+#if MESSAGEPACK_2_1
+            Options = MessagePackSerializerOptions.Standard.WithResolver(resolver);
+#endif
         }
+
+#if MESSAGEPACK_2_1
+        public MessagePackSerializerOptions Options { get; }
+#endif
 
         public IMessagePackFormatter<T> GetFormatter<T>()
         {
