@@ -75,7 +75,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (value.Tags != null)
             {
                 offset += MessagePackBinary.WriteString(ref bytes, offset, "meta");
-                offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.Tags.Count);
+                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, value.Tags.Count);
 
                 foreach (var pair in value.Tags)
                 {
