@@ -55,8 +55,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentNullException(nameof(handler));
             }
 
-            // original signature:
-            // Task<HttpResponseMessage> HttpMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             var compOption = (HttpCompletionOption)completionOption;
             var tokenSource = cancellationTokenSource as CancellationTokenSource;
             var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
