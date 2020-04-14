@@ -1,4 +1,5 @@
 using System.Linq;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;

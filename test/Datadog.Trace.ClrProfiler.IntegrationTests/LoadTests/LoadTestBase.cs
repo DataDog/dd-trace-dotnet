@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 using Xunit.Sdk;

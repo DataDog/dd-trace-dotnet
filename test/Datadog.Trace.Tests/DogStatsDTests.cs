@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
