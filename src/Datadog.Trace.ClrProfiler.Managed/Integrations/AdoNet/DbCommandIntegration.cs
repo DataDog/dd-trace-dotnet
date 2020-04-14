@@ -153,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
         /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
-        /// <param name="cancellationTokenSource">The <see cref="CancellationToken"/> value used in the original method call.</param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -167,13 +167,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         public static object ExecuteReaderAsync(
             object command,
             int behavior,
-            object cancellationTokenSource,
+            object boxedCancellationToken,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
-            var tokenSource = cancellationTokenSource as CancellationTokenSource;
-            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
 
             return ExecuteReaderAsyncInternal(
                 command as DbCommand,
@@ -288,7 +287,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// Instrumentation wrapper for <see cref="DbCommand.ExecuteNonQueryAsync(CancellationToken)"/>
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
-        /// <param name="cancellationTokenSource">The <see cref="CancellationToken"/> value used in the original method call.</param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -301,13 +300,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMaximumVersion = Major4)]
         public static object ExecuteNonQueryAsync(
             object command,
-            object cancellationTokenSource,
+            object boxedCancellationToken,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
-            var tokenSource = cancellationTokenSource as CancellationTokenSource;
-            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
 
             return ExecuteNonQueryAsyncInternal(
                 command as DbCommand,
@@ -413,7 +411,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// Instrumentation wrapper for <see cref="DbCommand.ExecuteScalarAsync(CancellationToken)"/>
         /// </summary>
         /// <param name="command">The object referenced by this in the instrumented method.</param>
-        /// <param name="cancellationTokenSource">The <see cref="CancellationToken"/> value used in the original method call.</param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -426,13 +424,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMaximumVersion = Major4)]
         public static object ExecuteScalarAsync(
             object command,
-            object cancellationTokenSource,
+            object boxedCancellationToken,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
-            var tokenSource = cancellationTokenSource as CancellationTokenSource;
-            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
 
             return ExecuteScalarAsyncInternal(
                 command as DbCommand,

@@ -120,12 +120,14 @@ jobs:
     condition: succeededOrFailed()
 
 - job: Windows
-
+  strategy:
+    matrix:
+      x64:
+        buildPlatform: x64
+      x86:
+        buildPlatform: x86
   pool:
     vmImage: windows-2019
-
-  variables:
-    buildPlatform: 'x64'
 
   steps:
   - task: UseDotNet@2

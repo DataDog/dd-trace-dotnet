@@ -169,6 +169,17 @@ struct MethodSignature {
     return false;
   }
 
+  size_t IndexOfReturnType() const {
+    if (data.size() > 2 &&
+        (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+      return 3;
+    }
+    if (data.size() > 1) {
+      return 2;
+    }
+    return 0;
+  }
+
   WSTRING str() const {
     WSTRINGSTREAM ss;
     for (auto& b : data) {

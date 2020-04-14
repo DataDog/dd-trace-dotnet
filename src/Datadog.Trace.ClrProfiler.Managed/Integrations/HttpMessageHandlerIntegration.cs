@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="handler">The <see cref="HttpMessageHandler"/> instance to instrument.</param>
         /// <param name="request">The <see cref="HttpRequestMessage"/> that represents the current HTTP request.</param>
-        /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object HttpMessageHandler_SendAsync(
             object handler,
             object request,
-            object cancellationTokenSource,
+            object boxedCancellationToken,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
@@ -56,8 +56,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             // original signature:
             // Task<HttpResponseMessage> HttpMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            var tokenSource = cancellationTokenSource as CancellationTokenSource;
-            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
             var callOpCode = (OpCodeValue)opCode;
             var httpMessageHandler = handler.GetInstrumentedType(HttpMessageHandler);
 
@@ -99,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="handler">The <see cref="HttpClientHandler"/> instance to instrument.</param>
         /// <param name="request">The <see cref="HttpRequestMessage"/> that represents the current HTTP request.</param>
-        /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -114,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object HttpClientHandler_SendAsync(
             object handler,
             object request,
-            object cancellationTokenSource,
+            object boxedCancellationToken,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
@@ -126,8 +125,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             // original signature:
             // Task<HttpResponseMessage> HttpClientHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            var tokenSource = cancellationTokenSource as CancellationTokenSource;
-            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
             var callOpCode = (OpCodeValue)opCode;
             var httpClientHandler = handler.GetInstrumentedType(HttpClientHandler);
 
