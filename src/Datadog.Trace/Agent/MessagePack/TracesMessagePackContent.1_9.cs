@@ -1,3 +1,4 @@
+#if MESSAGEPACK_1_9
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -43,3 +44,4 @@ namespace Datadog.Trace.Agent.MessagePack
         }
     }
 }
+#endif

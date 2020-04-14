@@ -5,6 +5,8 @@
     <Version>1.16.0</Version>
     <Title>Datadog APM</Title>
     <Description>Manual instrumentation library for Datadog APM</Description>
+
+    <DefineConstants>$(DefineConstants);MESSAGEPACK_1_9</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
