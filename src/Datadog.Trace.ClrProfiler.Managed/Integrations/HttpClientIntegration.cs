@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="handler">The <see cref="HttpClient"/> instance to instrument.</param>
         /// <param name="request">The <see cref="HttpRequestMessage"/> that represents the current HTTP request.</param>
         /// <param name="completionOption">The <see cref="HttpCompletionOption"/> that is passed in the current request.</param>
-        /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/> that can be used to cancel this <c>async</c> operation.</param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object handler,
             object request,
             object completionOption,
-            object cancellationTokenSource,
+            object boxedCancellationToken,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
@@ -56,8 +56,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             var compOption = (HttpCompletionOption)completionOption;
-            var tokenSource = cancellationTokenSource as CancellationTokenSource;
-            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
             var callOpCode = (OpCodeValue)opCode;
             var httpClient = handler.GetInstrumentedType(HttpClientTarget);
 
