@@ -1,4 +1,3 @@
-#if MESSAGEPACK_1_9
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -10,14 +9,14 @@ namespace Datadog.Trace.Agent.MessagePack
 {
     internal class TracesMessagePackContent : HttpContent
     {
-        private readonly IFormatterResolver _resolver;
+        private readonly FormatterResolverWrapper _resolver;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TracesMessagePackContent"/> class.
         /// </summary>
-        /// <param name="traces">The traces to serialize into the content stream as MessagePack.</param>
+        /// <param name="traces">The value to serialize into the content stream as MessagePack.</param>
         /// <param name="resolver">The <see cref="IFormatterResolver"/> to use when serializing <paramref name="traces"/>.</param>
-        public TracesMessagePackContent(Span[][] traces, IFormatterResolver resolver)
+        public TracesMessagePackContent(Span[][] traces, FormatterResolverWrapper resolver)
         {
             Traces = traces;
             _resolver = resolver;
@@ -33,7 +32,11 @@ namespace Datadog.Trace.Agent.MessagePack
         /// <returns>The task object representing the asynchronous operation.</returns>
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
+#if MESSAGEPACK_1_9
             return MessagePackSerializer.SerializeAsync(stream, Traces, _resolver);
+#elif MESSAGEPACK_2_1
+            return MessagePackSerializer.SerializeAsync(stream, Traces, _resolver.Options);
+#endif
         }
 
         protected override bool TryComputeLength(out long length)
@@ -44,4 +47,3 @@ namespace Datadog.Trace.Agent.MessagePack
         }
     }
 }
-#endif
