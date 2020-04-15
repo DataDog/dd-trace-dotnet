@@ -98,10 +98,7 @@ namespace Datadog.Trace.Agent
                         if (_statsd != null)
                         {
                             // don't bother creating the tags array if trace metrics are disabled
-                            string[] tags =
-                            {
-                                $"status:{(int)responseMessage.StatusCode}"
-                            };
+                            string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
 
                             // count every response, grouped by status code
                             _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
