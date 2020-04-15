@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
-using Datadog.Trace;
 
 namespace Samples.HttpMessageHandler
 {
@@ -105,9 +104,6 @@ namespace Samples.HttpMessageHandler
 
         private static async Task SendHttpClientRequestAsync(bool tracingDisabled)
         {
-            // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
-            var ins = Tracer.Instance;
-
             Console.WriteLine($"[HttpClient] sending request to {Url}");
             var clientRequestContent = new StringContent(RequestContent, Utf8);
 
@@ -115,7 +111,7 @@ namespace Samples.HttpMessageHandler
             {
                 if (tracingDisabled)
                 {
-                    client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                    client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
                 }
 
                 using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
@@ -138,7 +134,7 @@ namespace Samples.HttpMessageHandler
             {
                 if (tracingDisabled)
                 {
-                    client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                    client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
                 }
 
                 using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
@@ -168,7 +164,7 @@ namespace Samples.HttpMessageHandler
 
                 if (tracingDisabled)
                 {
-                    webClient.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                    webClient.Headers.Add("x-datadog-tracing-enabled", "false");
                 }
 
                 var responseContent = webClient.DownloadString(Url);

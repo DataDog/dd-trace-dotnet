@@ -26,8 +26,18 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net461_MsgPack.dll"
-              Source="$(var.ManagedDllPath)\net461\MsgPack.dll"
+        <File Id="net461_MessagePack.dll"
+              Source="$(var.ManagedDllPath)\net461\MessagePack.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Microsoft.Win32.Primitives.dll"
+              Source="$(var.ManagedDllPath)\net461\Microsoft.Win32.Primitives.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_netstandard.dll"
+              Source="$(var.ManagedDllPath)\net461\netstandard.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
@@ -41,13 +51,488 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net461_System.AppContext.dll"
+              Source="$(var.ManagedDllPath)\net461\System.AppContext.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Collections.Concurrent.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Collections.Concurrent.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Collections.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Collections.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Collections.NonGeneric.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Collections.NonGeneric.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Collections.Specialized.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Collections.Specialized.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.ComponentModel.dll"
+              Source="$(var.ManagedDllPath)\net461\System.ComponentModel.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.ComponentModel.EventBasedAsync.dll"
+              Source="$(var.ManagedDllPath)\net461\System.ComponentModel.EventBasedAsync.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.ComponentModel.Primitives.dll"
+              Source="$(var.ManagedDllPath)\net461\System.ComponentModel.Primitives.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.ComponentModel.TypeConverter.dll"
+              Source="$(var.ManagedDllPath)\net461\System.ComponentModel.TypeConverter.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Console.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Console.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Data.Common.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Data.Common.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Diagnostics.Contracts.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.Contracts.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Diagnostics.Debug.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.Debug.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_System.Diagnostics.DiagnosticSource.dll"
               Source="$(var.ManagedDllPath)\net461\System.Diagnostics.DiagnosticSource.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Diagnostics.FileVersionInfo.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.FileVersionInfo.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Diagnostics.Process.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.Process.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Diagnostics.StackTrace.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.StackTrace.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Diagnostics.TextWriterTraceListener.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.TextWriterTraceListener.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Diagnostics.Tools.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.Tools.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Diagnostics.TraceSource.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.TraceSource.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Diagnostics.Tracing.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Diagnostics.Tracing.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Drawing.Primitives.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Drawing.Primitives.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Dynamic.Runtime.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Dynamic.Runtime.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Globalization.Calendars.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Globalization.Calendars.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Globalization.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Globalization.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Globalization.Extensions.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Globalization.Extensions.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.Compression.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.Compression.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.Compression.ZipFile.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.Compression.ZipFile.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.FileSystem.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.FileSystem.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.FileSystem.DriveInfo.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.FileSystem.DriveInfo.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.FileSystem.Primitives.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.FileSystem.Primitives.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.FileSystem.Watcher.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.FileSystem.Watcher.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.IsolatedStorage.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.IsolatedStorage.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.MemoryMappedFiles.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.MemoryMappedFiles.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.Pipes.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.Pipes.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.IO.UnmanagedMemoryStream.dll"
+              Source="$(var.ManagedDllPath)\net461\System.IO.UnmanagedMemoryStream.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Linq.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Linq.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Linq.Expressions.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Linq.Expressions.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Linq.Parallel.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Linq.Parallel.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Linq.Queryable.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Linq.Queryable.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.Http.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.Http.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.NameResolution.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.NameResolution.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.NetworkInformation.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.NetworkInformation.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.Ping.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.Ping.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.Primitives.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.Primitives.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.Requests.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.Requests.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.Security.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.Security.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.Sockets.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.Sockets.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.WebHeaderCollection.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.WebHeaderCollection.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.WebSockets.Client.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.WebSockets.Client.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Net.WebSockets.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Net.WebSockets.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.ObjectModel.dll"
+              Source="$(var.ManagedDllPath)\net461\System.ObjectModel.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Reflection.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Reflection.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Reflection.Extensions.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Reflection.Extensions.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Reflection.Primitives.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Reflection.Primitives.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Resources.Reader.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Resources.Reader.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Resources.ResourceManager.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Resources.ResourceManager.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Resources.Writer.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Resources.Writer.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.CompilerServices.Unsafe.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.CompilerServices.Unsafe.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.CompilerServices.VisualC.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.CompilerServices.VisualC.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.Extensions.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.Extensions.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.Handles.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.Handles.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.InteropServices.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.InteropServices.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_System.Runtime.InteropServices.RuntimeInformation.dll"
               Source="$(var.ManagedDllPath)\net461\System.Runtime.InteropServices.RuntimeInformation.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.Numerics.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.Numerics.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.Serialization.Formatters.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.Serialization.Formatters.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.Serialization.Json.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.Serialization.Json.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.Serialization.Primitives.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.Serialization.Primitives.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Runtime.Serialization.Xml.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Runtime.Serialization.Xml.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Claims.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Claims.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Cryptography.Algorithms.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Algorithms.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Cryptography.Csp.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Csp.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Cryptography.Encoding.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Encoding.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Cryptography.Primitives.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.Primitives.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Cryptography.X509Certificates.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Cryptography.X509Certificates.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.Principal.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.Principal.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Security.SecureString.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Security.SecureString.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Text.Encoding.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Text.Encoding.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Text.Encoding.Extensions.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Text.Encoding.Extensions.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Text.RegularExpressions.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Text.RegularExpressions.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Threading.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Threading.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Threading.Overlapped.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Threading.Overlapped.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Threading.Tasks.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Threading.Tasks.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Threading.Tasks.Extensions.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Threading.Tasks.Extensions.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Threading.Tasks.Parallel.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Threading.Tasks.Parallel.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Threading.Thread.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Threading.Thread.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Threading.ThreadPool.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Threading.ThreadPool.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Threading.Timer.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Threading.Timer.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.ValueTuple.dll"
+              Source="$(var.ManagedDllPath)\net461\System.ValueTuple.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Xml.ReaderWriter.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Xml.ReaderWriter.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Xml.XDocument.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Xml.XDocument.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Xml.XmlDocument.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Xml.XmlDocument.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Xml.XmlSerializer.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Xml.XmlSerializer.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Xml.XPath.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Xml.XPath.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_System.Xml.XPath.XDocument.dll"
+              Source="$(var.ManagedDllPath)\net461\System.Xml.XPath.XDocument.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>

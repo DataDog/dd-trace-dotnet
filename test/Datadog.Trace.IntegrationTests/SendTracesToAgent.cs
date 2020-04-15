@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -27,7 +28,7 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact(Skip = "Run manually")]
-        public async void MinimalSpan()
+        public async Task MinimalSpan()
         {
             var scope = _tracer.StartActive("Operation");
             scope.Dispose();
@@ -43,7 +44,7 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact(Skip = "Run manually")]
-        public async void CustomServiceName()
+        public async Task CustomServiceName()
         {
             const string ServiceName = "MyService";
 
@@ -62,7 +63,7 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact(Skip = "Run manually")]
-        public async void Utf8Everywhere()
+        public async Task Utf8Everywhere()
         {
             var scope = _tracer.StartActive("Aᛗᚪᚾᚾᚪ", serviceName: "На берегу пустынных волн");
             scope.Span.ResourceName = "η γλώσσα μου έδωσαν ελληνική";
@@ -80,7 +81,7 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact(Skip = "Run manually")]
-        public async void SubmitsOutOfOrderSpans()
+        public async Task SubmitsOutOfOrderSpans()
         {
             var scope1 = _tracer.StartActive("op1");
             var scope2 = _tracer.StartActive("op2");

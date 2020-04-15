@@ -4,7 +4,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\..\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
   </ItemGroup>
 
