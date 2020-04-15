@@ -134,7 +134,7 @@ namespace Samples.HttpMessageHandler
             {
                 if (tracingDisabled)
                 {
-                    client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                    client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
                 }
 
                 using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
