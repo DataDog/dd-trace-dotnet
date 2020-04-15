@@ -1,4 +1,5 @@
 using System.IO;
+using Datadog.Core.Tools;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;

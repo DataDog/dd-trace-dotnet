@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 

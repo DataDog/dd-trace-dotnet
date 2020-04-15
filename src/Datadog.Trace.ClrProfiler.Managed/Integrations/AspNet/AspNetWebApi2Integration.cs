@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// </summary>
         /// <param name="apiController">The Api Controller</param>
         /// <param name="controllerContext">The controller context for the call</param>
-        /// <param name="cancellationTokenSource">The cancellation token source</param>
+        /// <param name="boxedCancellationToken">The cancellation token</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -46,15 +46,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object ExecuteAsync(
             object apiController,
             object controllerContext,
-            object cancellationTokenSource,
+            object boxedCancellationToken,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
             if (apiController == null) { throw new ArgumentNullException(nameof(apiController)); }
 
-            var tokenSource = cancellationTokenSource as CancellationTokenSource;
-            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
             return ExecuteAsyncInternal(apiController, controllerContext, cancellationToken, opCode, mdToken, moduleVersionPtr);
         }
 

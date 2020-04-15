@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -94,8 +95,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
                 process.BeginErrorReadLine();
 
-                // wait for server to start
                 wh.WaitOne(5000);
+
+                var maxMillisecondsToWait = 15_000;
+                var intervalMilliseconds = 500;
+                var intervals = maxMillisecondsToWait / intervalMilliseconds;
+                var serverReady = false;
+
+                // wait for server to be ready to receive requests
+                while (intervals-- > 0)
+                {
+                    var aliveCheckRequest = new RequestInfo() { HttpMethod = "GET", Url = "/alive-check" };
+                    try
+                    {
+                        serverReady = SubmitRequest(aspNetCorePort, aliveCheckRequest, false) == HttpStatusCode.OK;
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+
+                    if (serverReady)
+                    {
+                        Output.WriteLine("The server is ready.");
+                        break;
+                    }
+
+                    Thread.Sleep(intervalMilliseconds);
+                }
+
+                if (!serverReady)
+                {
+                    throw new Exception("Couldn't verify the application is ready to receive requests.");
+                }
+
+                var testStart = DateTime.Now;
 
                 SubmitRequests(aspNetCorePort);
                 var graphQLValidateSpans = agent.WaitForSpans(_expectedGraphQLValidateSpanCount, operationName: _graphQLValidateOperationName, returnAllOperations: false)
@@ -168,55 +202,69 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (RequestInfo requestInfo in _requests)
             {
-                try
+                SubmitRequest(aspNetCorePort, requestInfo);
+            }
+        }
+
+        private HttpStatusCode SubmitRequest(int aspNetCorePort, RequestInfo requestInfo, bool printResponseText = true)
+        {
+            try
+            {
+                var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
+                request.Method = requestInfo.HttpMethod;
+
+                if (requestInfo.RequestBody != null)
                 {
-                    var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
-                    request.Method = requestInfo.HttpMethod;
+                    byte[] requestBytes = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
 
-                    if (requestInfo.RequestBody != null)
+                    request.ContentType = "application/json";
+                    request.ContentLength = requestBytes.Length;
+
+                    using (var dataStream = request.GetRequestStream())
                     {
-                        byte[] requestBytes = System.Text.Encoding.UTF8.GetBytes(requestInfo.RequestBody);
+                        dataStream.Write(requestBytes, 0, requestBytes.Length);
+                    }
+                }
 
-                        request.ContentType = "application/json";
-                        request.ContentLength = requestBytes.Length;
-
-                        using (var dataStream = request.GetRequestStream())
-                        {
-                            dataStream.Write(requestBytes, 0, requestBytes.Length);
-                        }
+                using (var response = (HttpWebResponse)request.GetResponse())
+                using (var stream = response.GetResponseStream())
+                using (var reader = new StreamReader(stream))
+                {
+                    string responseText;
+                    try
+                    {
+                        responseText = reader.ReadToEnd();
+                    }
+                    catch (Exception ex)
+                    {
+                        responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
+                        Output.WriteLine(ex.ToString());
                     }
 
-                    using (var response = (HttpWebResponse)request.GetResponse())
+                    if (printResponseText)
+                    {
+                        Output.WriteLine($"[http] {response.StatusCode} {responseText}");
+                    }
+
+                    return response.StatusCode;
+                }
+            }
+            catch (WebException wex)
+            {
+                Output.WriteLine($"[http] exception: {wex}");
+                if (wex.Response is HttpWebResponse response)
+                {
                     using (var stream = response.GetResponseStream())
                     using (var reader = new StreamReader(stream))
                     {
-                        string responseText;
-                        try
-                        {
-                            responseText = reader.ReadToEnd();
-                        }
-                        catch (Exception ex)
-                        {
-                            responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
-                            Output.WriteLine(ex.ToString());
-                        }
+                        Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
+                    }
 
-                        Output.WriteLine($"[http] {response.StatusCode} {responseText}");
-                    }
-                }
-                catch (WebException wex)
-                {
-                    Output.WriteLine($"[http] exception: {wex}");
-                    if (wex.Response is HttpWebResponse response)
-                    {
-                        using (var stream = response.GetResponseStream())
-                        using (var reader = new StreamReader(stream))
-                        {
-                            Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
-                        }
-                    }
+                    return response.StatusCode;
                 }
             }
+
+            return HttpStatusCode.BadRequest;
         }
 
         private class RequestInfo

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public HttpClientTests(ITestOutputHelper output)
             : base("HttpMessageHandler", output)
         {
+            SetEnvironmentVariable("DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION", "true");
         }
 
         [Fact]
@@ -21,6 +23,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void HttpClient()
         {
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 2 : 1;
+            const string expectedOperationName = "http.request";
+            const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
+
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
@@ -32,21 +38,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(1);
-                Assert.True(spans.Count > 0, "expected at least one span");
+                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                Assert.True(spans.Count >= expectedSpanCount, $"Expected at least {expectedSpanCount} span, only received {spans.Count}" + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
 
+                foreach (var span in spans)
+                {
+                    Assert.Equal(expectedOperationName, span.Name);
+                    Assert.Equal(expectedServiceName, span.Service);
+                    Assert.Equal(SpanTypes.Http, span.Type);
+                    Assert.Equal(nameof(HttpMessageHandler), span.Tags[Tags.InstrumentationName]);
+                }
+
+                var firstSpan = spans.First();
                 var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
 
-                var firstSpan = spans.First();
-                Assert.Equal("http.request", firstSpan.Name);
-                Assert.Equal("Samples.HttpMessageHandler-http-client", firstSpan.Service);
-                Assert.Equal(SpanTypes.Http, firstSpan.Type);
-                Assert.Equal(nameof(HttpMessageHandler), firstSpan.Tags[Tags.InstrumentationName]);
-
-                var lastSpan = spans.Last();
-                Assert.Equal(lastSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(lastSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
+                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
             }
         }
 
@@ -90,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(1);
-                Assert.True(spans.Count > 0, "expected at least one span");
+                Assert.True(spans.Count > 0, "expected at least one span." + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
 
                 var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);

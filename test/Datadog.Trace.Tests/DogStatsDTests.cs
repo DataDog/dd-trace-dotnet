@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
@@ -104,7 +105,7 @@ namespace Datadog.Trace.Tests
             {
                 var settings = new TracerSettings
                                {
-                                   AgentUri = new Uri($"http://localhost:{agentPort}"),
+                                   AgentUri = new Uri($"http://localhost:{agent.Port}"),
                                    TracerMetricsEnabled = tracerMetricsEnabled
                                };
 

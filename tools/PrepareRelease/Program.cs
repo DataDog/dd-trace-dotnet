@@ -14,11 +14,9 @@ namespace PrepareRelease
 
         public static void Main(string[] args)
         {
-            if (JobShouldRun(Versions, args))
+            if (args.Length == 0)
             {
-                Console.WriteLine("--------------- Versions Job Started ---------------");
-                SetAllVersions.Run();
-                Console.WriteLine("--------------- Versions Job Complete ---------------");
+                throw new ArgumentException("You must specify at least one job name");
             }
 
             var solutionDir = EnvironmentTools.GetSolutionDirectory();
@@ -28,6 +26,13 @@ namespace PrepareRelease
                 Console.WriteLine("--------------- Integrations Job Started ---------------");
                 GenerateIntegrationDefinitions.Run(solutionDir);
                 Console.WriteLine("--------------- Integrations Job Complete ---------------");
+            }
+
+            if (JobShouldRun(Versions, args))
+            {
+                Console.WriteLine("--------------- Versions Job Started ---------------");
+                SetAllVersions.Run();
+                Console.WriteLine("--------------- Versions Job Complete ---------------");
             }
 
             if (JobShouldRun(Msi, args))
@@ -44,7 +49,7 @@ namespace PrepareRelease
 
         private static bool JobShouldRun(string jobName, string[] args)
         {
-            return args.Length == 0 || args.Any(a => string.Equals(a, jobName, StringComparison.OrdinalIgnoreCase));
+            return args.Any(a => string.Equals(a, jobName, StringComparison.OrdinalIgnoreCase));
         }
 
         private static void ExecuteCommand(string command)

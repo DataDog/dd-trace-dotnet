@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using Datadog.Core.Tools;
 using Datadog.Trace.ExtensionMethods;
 using MessagePack;
 
@@ -44,7 +45,7 @@ namespace Datadog.Trace.TestHelpers
                 catch (HttpListenerException) when (retries > 0)
                 {
                     // only catch the exception if there are retries left
-                    port++;
+                    port = TcpPortProvider.GetOpenPort();
                     retries--;
                 }
 

@@ -362,6 +362,11 @@ namespace Samples.Elasticsearch.V5
             task.GetAwaiter().GetResult();
             var taskType = task.GetType();
 
+            while (!taskType.Name.StartsWith("Task"))
+            {
+                taskType = taskType.BaseType;
+            }
+
             bool isTaskOfT = taskType.IsGenericType &&
                              taskType.GetGenericTypeDefinition() == typeof(Task<>);
 

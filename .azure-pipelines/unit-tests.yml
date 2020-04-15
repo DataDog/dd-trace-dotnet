@@ -96,6 +96,9 @@ jobs:
         src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
         sample-libs/**/Samples.ExampleLibrary*.csproj
 
+  - task: NuGetToolInstaller@1
+    displayName: install nuget
+
   - task: NuGetCommand@2
     displayName: nuget restore
     inputs:

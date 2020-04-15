@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <typeparam name="TResponse">Type type of the response</typeparam>
         /// <param name="pipeline">The pipeline for the original method</param>
         /// <param name="requestData">The request data</param>
-        /// <param name="cancellationTokenSource">A cancellation token</param>
+        /// <param name="boxedCancellationToken">A cancellation token</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -113,13 +113,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object CallElasticsearchAsync<TResponse>(
             object pipeline,
             object requestData,
-            object cancellationTokenSource,
+            object boxedCancellationToken,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
         {
-            var tokenSource = cancellationTokenSource as CancellationTokenSource;
-            var cancellationToken = tokenSource?.Token ?? CancellationToken.None;
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
             return CallElasticsearchAsyncInternal<TResponse>(pipeline, requestData, cancellationToken, opCode, mdToken, moduleVersionPtr);
         }
 

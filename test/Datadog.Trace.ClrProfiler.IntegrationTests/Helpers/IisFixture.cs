@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
