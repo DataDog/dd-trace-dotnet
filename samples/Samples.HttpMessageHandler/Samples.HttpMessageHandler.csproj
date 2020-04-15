@@ -3,10 +3,6 @@
     <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-  </ItemGroup>
-
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Net.Http" />
   </ItemGroup>
