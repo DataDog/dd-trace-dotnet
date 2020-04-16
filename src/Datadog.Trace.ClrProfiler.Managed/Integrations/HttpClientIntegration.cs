@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         public static object HttpClient_SendAsync(
             object handler,
             object request,
-            object completionOption,
+            int completionOption,
             object boxedCancellationToken,
             int opCode,
             int mdToken,
@@ -87,6 +87,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             return SendAsyncInternal(
                 instrumentedMethod,
+                reportedType: callOpCode == OpCodeValue.Call ? httpClient : handler.GetType(),
                 (HttpClient)handler,
                 (HttpRequestMessage)request,
                 compOption,
@@ -95,6 +96,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static async Task<HttpResponseMessage> SendAsyncInternal(
             Func<HttpClient, HttpRequestMessage, HttpCompletionOption, CancellationToken, Task<HttpResponseMessage>> sendAsync,
+            Type reportedType,
             HttpClient handler,
             HttpRequestMessage request,
             HttpCompletionOption completionOption,
@@ -114,6 +116,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     if (scope != null)
                     {
+                        scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
+
                         // add distributed tracing headers to the HTTP request
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
