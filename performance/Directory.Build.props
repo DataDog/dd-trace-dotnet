@@ -1,3 +1,6 @@
 <Project>
-  <Import Project="..\Test.Common.props" />
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 </Project>
