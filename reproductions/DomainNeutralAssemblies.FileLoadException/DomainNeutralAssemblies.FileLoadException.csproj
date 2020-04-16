@@ -8,6 +8,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+    <!--
+    <ProjectReference Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\DomainNeutralAssemblies.App.HttpBindingRedirects.csproj" />
+    <ProjectReference Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\DomainNeutralAssemblies.App.NoBindingRedirects.csproj" />
+    -->
   </ItemGroup>
 
   <ItemGroup>
@@ -23,7 +27,7 @@
     <ConvertToAbsolutePath Paths="$(OutputPath)">
       <Output TaskParameter="AbsolutePaths" PropertyName="AbsoluteOutputPath" />
     </ConvertToAbsolutePath>
-    <MSBuild Projects="@(SubApplications)" Properties="OutputPath=$(AbsoluteOutputPath)\%(Name)\;ExcludeNativeProfiler=true;ExcludeManagedProfiler=true;LoadManagedProfilerFromProfilerDirectory=false" />
+    <MSBuild Projects="@(SubApplications)" Targets="Restore;Build" Properties="OutputPath=$(AbsoluteOutputPath)\%(Name)\;ExcludeNativeProfiler=true;ExcludeManagedProfiler=true;LoadManagedProfilerFromProfilerDirectory=false" />
   </Target>
 
 </Project>
