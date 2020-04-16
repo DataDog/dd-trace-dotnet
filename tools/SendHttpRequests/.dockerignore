@@ -1,9 +1,0 @@
-# directories
-.vs
-.vscode
-**/bin/
-**/obj/
-**/out/
-
-# files
-Dockerfile*
