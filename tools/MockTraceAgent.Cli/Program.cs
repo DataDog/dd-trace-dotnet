@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace MockTraceAgent
+namespace MockTraceAgent.Cli
 {
     public class Program
     {
