@@ -19,8 +19,19 @@ namespace DomainNeutralAssemblies.FileLoadException
             try
             {
                 CheckGAC();
+
+                // First load the application that does not have bindingRedirect policies
+                // This will instrument at least one domain-neutral assembly with a
+                // domain-neutral version of Datadog.Trace.ClrProfiler.Managed.dll
                 CreateAndRunAppDomain("DomainNeutralAssemblies.App.NoBindingRedirects");
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.BindingRedirects");
+
+                // Next load the application that has a bindingRedirect policy on System.Net.Http.
+                // This will cause a sharing violation when the domain-neutral assembly attempts
+                // to call into Datadog.Trace.ClrProfiler.Managed.dll because Datadog.Trace.ClrProfiler.Managed.dll
+                // can no longer be loaded shared with the bindingRedirect policy in place. This breaks
+                // the consistency check of all domain-neutral assemblies only depending on other
+                // domain-neutral assemblies
+                CreateAndRunAppDomain("DomainNeutralAssemblies.App.HttpBindingRedirects");
             }
             catch (Exception ex)
             {

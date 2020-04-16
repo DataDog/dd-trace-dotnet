@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.BindingRedirects\DomainNeutralAssemblies.App.BindingRedirects.csproj">
-      <Name>DomainNeutralAssemblies.App.BindingRedirects</Name>
+    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\DomainNeutralAssemblies.App.HttpBindingRedirects.csproj">
+      <Name>DomainNeutralAssemblies.App.HttpBindingRedirects</Name>
     </SubApplications>
     <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\DomainNeutralAssemblies.App.NoBindingRedirects.csproj">
       <Name>DomainNeutralAssemblies.App.NoBindingRedirects</Name>

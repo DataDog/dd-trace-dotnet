@@ -318,7 +318,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DogStatsD.RaceCondition", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.App.NoBindingRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\DomainNeutralAssemblies.App.NoBindingRedirects.csproj", "{4BB17962-8146-462F-8657-0DD4C2FFFFB7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.App.BindingRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.BindingRedirects\DomainNeutralAssemblies.App.BindingRedirects.csproj", "{5717623C-56D3-4B15-BF59-1594A44C4BE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.App.HttpBindingRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\DomainNeutralAssemblies.App.HttpBindingRedirects.csproj", "{5717623C-56D3-4B15-BF59-1594A44C4BE6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.FileLoadException", "reproductions\DomainNeutralAssemblies.FileLoadException\DomainNeutralAssemblies.FileLoadException.csproj", "{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}"
 EndProject
