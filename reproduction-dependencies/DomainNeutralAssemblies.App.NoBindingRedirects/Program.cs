@@ -10,7 +10,7 @@ namespace DomainNeutralAssemblies.App.NoBindingRedirects
         [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
         static void Main(string[] args)
         {
-            Console.WriteLine("Executing DomainNeutralAssemblies.App.NoBindingRedirects.Program.Main");
+            Console.WriteLine($"Executing {typeof(DomainNeutralAssemblies.App.NoBindingRedirects.Program).FullName}.Main");
             InnerMethodToAllowProfilerInjection();
         }
 
