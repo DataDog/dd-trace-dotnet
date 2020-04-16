@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class HttpClientTests : TestHelper
     {
         public HttpClientTests(ITestOutputHelper output)
-            : base("HttpMessageHandler", output)
+            : base("HttpClientDriver", output)
         {
             SetEnvironmentVariable("DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION", "true");
             SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 2 : 1;
             const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
+            const string expectedServiceName = "Samples.HttpClientDriver-http-client";
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
@@ -104,10 +104,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
 
-                // inspect the top-level span, underlying spans can be HttpMessageHandler in .NET Core
+                // inspect the top-level span, underlying spans can be HttpClient in .NET Core
                 var firstSpan = spans.First();
                 Assert.Equal("http.request", firstSpan.Name);
-                Assert.Equal("Samples.HttpMessageHandler-http-client", firstSpan.Service);
+                Assert.Equal("Samples.HttpClientDriver-http-client", firstSpan.Service);
                 Assert.Equal(SpanTypes.Http, firstSpan.Type);
                 Assert.Equal(nameof(WebRequest), firstSpan.Tags[Tags.InstrumentationName]);
 
