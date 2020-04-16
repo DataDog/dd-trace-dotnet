@@ -22,7 +22,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         /// <summary>
         /// Converts a <see cref="string"/> into a <see cref="bool"/> by comparing it to commonly used values
-        /// such as "True", "yes", or "1". Case-insensitive. Defaults to <c>false</c> if string is not recognized.
+        /// such as "True", "yes", or "1". Case-insensitive. Defaults to <c>null</c> if string is not recognized.
         /// </summary>
         /// <param name="value">The string to convert.</param>
         /// <returns><c>true</c> if <paramref name="value"/> is one of the accepted values for <c>true</c>; <c>false</c> otherwise.</returns>
