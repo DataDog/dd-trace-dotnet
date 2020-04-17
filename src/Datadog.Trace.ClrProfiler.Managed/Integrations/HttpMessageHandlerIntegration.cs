@@ -169,7 +169,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            if (!(handler is HttpClientHandler || reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase)) ||
+            if (!(handler is HttpClientHandler || IsSocketsHttpHandlerEnabled(reportedType)) ||
                 !IsTracingEnabled(request))
             {
                 // skip instrumentation
@@ -203,6 +203,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     throw;
                 }
             }
+        }
+
+        private static bool IsSocketsHttpHandlerEnabled(Type reportedType)
+        {
+            return Tracer.Instance.Settings.IsOptInIntegrationEnabled("HttpSocketsHandler") && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsTracingEnabled(HttpRequestMessage request)
