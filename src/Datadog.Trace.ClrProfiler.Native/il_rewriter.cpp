@@ -289,8 +289,7 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
     for (ILInstr* pInstr = m_IL.m_pNext; pInstr != &m_IL;
          pInstr = pInstr->m_pNext) {
       if (s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget) {
-        HRESULT hr = GetInstrFromOffset(pInstr->m_Arg32, &pInstr->m_pTarget);
-        IfFailRet(hr);
+        IfFailRet(GetInstrFromOffset(pInstr->m_Arg32, &pInstr->m_pTarget));
       }
     }
   }
@@ -321,30 +320,23 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
     EHClause* clause = &(m_pEH[iEH]);
     clause->m_Flags = ehInfo->GetFlags();
 
-    HRESULT hr;
+    IfFailRet(GetInstrFromOffset(ehInfo->GetTryOffset(), &clause->m_pTryBegin));
 
-    hr = GetInstrFromOffset(ehInfo->GetTryOffset(), &clause->m_pTryBegin);
-    IfFailRet(hr);
+    IfFailRet(GetInstrFromOffset(ehInfo->GetTryOffset() + ehInfo->GetTryLength(),
+                            &clause->m_pTryEnd));
 
-    hr = GetInstrFromOffset(ehInfo->GetTryOffset() + ehInfo->GetTryLength(),
-                            &clause->m_pTryEnd);
-    IfFailRet(hr);
-
-    hr = GetInstrFromOffset(ehInfo->GetHandlerOffset(),
-                            &clause->m_pHandlerBegin);
-    IfFailRet(hr);
+    IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset(),
+                            &clause->m_pHandlerBegin));
 
     ILInstr* temp;
-    hr = GetInstrFromOffset(ehInfo->GetHandlerOffset() +
-                            ehInfo->GetHandlerLength(), &temp);
-    IfFailRet(hr);
+    IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset() +
+                            ehInfo->GetHandlerLength(), &temp));
     clause->m_pHandlerEnd = temp->m_pPrev;
 
     if ((clause->m_Flags & COR_ILEXCEPTION_CLAUSE_FILTER) == 0) {
       clause->m_ClassToken = ehInfo->GetClassToken();
     } else {
-      hr = GetInstrFromOffset(ehInfo->GetFilterOffset(), &clause->m_pFilter);
-      IfFailRet(hr);
+      IfFailRet(GetInstrFromOffset(ehInfo->GetFilterOffset(), &clause->m_pFilter));
     }
   }
 
