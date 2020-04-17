@@ -275,12 +275,15 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
         break;
       }
       default:
-        assert(false);
+        return COR_E_INVALIDPROGRAM;
         break;
     }
     offset += size;
   }
-  assert(offset == m_CodeSize);
+
+  if (offset != m_CodeSize) {
+    return COR_E_INVALIDPROGRAM;
+  }
 
   if (fBranch) {
     // Go over all control flow instructions and resolve the targets
@@ -295,7 +298,10 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 }
 
 HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
-  assert(m_pEH == NULL);
+  if(m_pEH != nullptr)
+  {
+    return COR_E_ARGUMENT;
+  }
 
   m_nEH = nEH;
 
@@ -387,7 +393,12 @@ again:
   // Go over all instructions and produce code for them
   for (ILInstr* pInstr = m_IL.m_pNext; pInstr != &m_IL;
        pInstr = pInstr->m_pNext) {
-    assert(offset < maxSize);
+
+    if(offset >= maxSize)
+    {
+      return COR_E_INDEXOUTOFRANGE;
+    }
+
     pInstr->m_offset = offset;
 
     unsigned opcode = pInstr->m_opcode;
@@ -403,7 +414,11 @@ again:
       m_pOutputBuffer[offset++] = (opcode & 0xFF);
     }
 
-    assert(pInstr->m_opcode < (sizeof(s_OpCodeFlags)/sizeof(BYTE)));
+    if (pInstr->m_opcode >= (sizeof(s_OpCodeFlags) / sizeof(BYTE)))
+    {
+      return COR_E_INVALIDPROGRAM;
+    }
+
     BYTE flags = s_OpCodeFlags[pInstr->m_opcode];
     switch (flags) {
       case 0:
@@ -431,8 +446,7 @@ again:
         offset += sizeof(INT32);
         break;
       default:
-        assert(false);
-        break;
+        return COR_E_INVALIDPROGRAM;
     }
     offset += (flags & OPCODEFLAGS_SizeMask);
   }
@@ -473,10 +487,17 @@ again:
               if (opcode == CEE_LEAVE_S) {
                 pInstr->m_opcode = CEE_LEAVE;
               } else {
-                assert(opcode >= CEE_BR_S && opcode <= CEE_BLT_UN_S);
+                if(!(opcode >= CEE_BR_S && opcode <= CEE_BLT_UN_S))
+                {
+                  return COR_E_INVALIDPROGRAM;
+                }
+
                 pInstr->m_opcode = opcode - CEE_BR_S + CEE_BR;
-                assert(pInstr->m_opcode >= CEE_BR &&
-                       pInstr->m_opcode <= CEE_BLT_UN);
+
+                if(!(pInstr->m_opcode >= CEE_BR && pInstr->m_opcode <= CEE_BLT_UN))
+                {
+                  return COR_E_INVALIDPROGRAM;
+                }
               }
               fTryAgain = true;
               continue;
@@ -489,7 +510,7 @@ again:
                 pIL[pInstr->m_pNext->m_offset - sizeof(INT32)]) = delta;
             break;
           default:
-            assert(false);
+            return COR_E_INVALIDPROGRAM;
             break;
         }
       }
