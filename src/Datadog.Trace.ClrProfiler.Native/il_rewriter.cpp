@@ -289,8 +289,10 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
     // Go over all control flow instructions and resolve the targets
     for (ILInstr* pInstr = m_IL.m_pNext; pInstr != &m_IL;
          pInstr = pInstr->m_pNext) {
-      if (s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget)
-        pInstr->m_pTarget = GetInstrFromOffset(pInstr->m_Arg32);
+      if (s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget) {
+        HRESULT hr = GetInstrFromOffset(pInstr->m_Arg32, &pInstr->m_pTarget);
+        IfFailRet(hr);
+      }
     }
   }
 
@@ -320,17 +322,31 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
     EHClause* clause = &(m_pEH[iEH]);
     clause->m_Flags = ehInfo->GetFlags();
 
-    clause->m_pTryBegin = GetInstrFromOffset(ehInfo->GetTryOffset());
-    clause->m_pTryEnd =
-        GetInstrFromOffset(ehInfo->GetTryOffset() + ehInfo->GetTryLength());
-    clause->m_pHandlerBegin = GetInstrFromOffset(ehInfo->GetHandlerOffset());
-    clause->m_pHandlerEnd = GetInstrFromOffset(ehInfo->GetHandlerOffset() +
-                                               ehInfo->GetHandlerLength())
-                                ->m_pPrev;
-    if ((clause->m_Flags & COR_ILEXCEPTION_CLAUSE_FILTER) == 0)
+    HRESULT hr;
+
+    hr = GetInstrFromOffset(ehInfo->GetTryOffset(), &clause->m_pTryBegin);
+    IfFailRet(hr);
+
+    hr = GetInstrFromOffset(ehInfo->GetTryOffset() + ehInfo->GetTryLength(),
+                            &clause->m_pTryEnd);
+    IfFailRet(hr);
+
+    hr = GetInstrFromOffset(ehInfo->GetHandlerOffset(),
+                            &clause->m_pHandlerBegin);
+    IfFailRet(hr);
+
+    ILInstr* temp;
+    hr = GetInstrFromOffset(ehInfo->GetHandlerOffset() +
+                            ehInfo->GetHandlerLength(), &temp);
+    IfFailRet(hr);
+    clause->m_pHandlerEnd = temp->m_pPrev;
+
+    if ((clause->m_Flags & COR_ILEXCEPTION_CLAUSE_FILTER) == 0) {
       clause->m_ClassToken = ehInfo->GetClassToken();
-    else
-      clause->m_pFilter = GetInstrFromOffset(ehInfo->GetFilterOffset());
+    } else {
+      hr = GetInstrFromOffset(ehInfo->GetFilterOffset(), &clause->m_pFilter);
+      IfFailRet(hr);
+    }
   }
 
   return S_OK;
@@ -341,13 +357,14 @@ ILInstr* ILRewriter::NewILInstr() {
   return new ILInstr();
 }
 
-ILInstr* ILRewriter::GetInstrFromOffset(unsigned offset) {
-  ILInstr* pInstr = NULL;
+HRESULT ILRewriter::GetInstrFromOffset(unsigned offset, ILInstr** pInstr) {
+  pInstr = nullptr;
 
-  if (offset <= m_CodeSize) pInstr = m_pOffsetToInstr[offset];
+  if (offset <= m_CodeSize) {
+    pInstr = &m_pOffsetToInstr[offset];
+  }
 
-  assert(pInstr != NULL);
-  return pInstr;
+  return (pInstr == nullptr) ? COR_E_INVALIDPROGRAM : S_OK;
 }
 
 void ILRewriter::InsertBefore(ILInstr* pWhere, ILInstr* pWhat) {
