@@ -248,6 +248,12 @@ namespace Datadog.Trace.Configuration
             return TraceEnabled && !disabled;
         }
 
+        internal bool IsOptInIntegrationEnabled(string name)
+        {
+            bool disabled = Integrations[name].Enabled != true || DisabledIntegrationNames.Contains(name);
+            return TraceEnabled && !disabled;
+        }
+
         internal double? GetIntegrationAnalyticsSampleRate(string name, bool enabledWithGlobalSetting)
         {
             var integrationSettings = Integrations[name];
