@@ -900,7 +900,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
     hr = rewriter.Export();
 
     if (FAILED(hr)) {
-      Warn("ProcessReplacementCalls: Call to ILRewriter.Export() failed for ", module_id, " ", function_token);
+      Warn("ProcessReplacementCalls: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ", function_token);
       return hr;
     }
   }
@@ -978,7 +978,7 @@ HRESULT CorProfiler::ProcessInsertionCalls(
     hr = rewriter.Export();
 
     if (FAILED(hr)) {
-      Warn("ProcessInsertionCalls: Call to ILRewriter.Export() failed for ", module_id, " ", function_token);
+      Warn("ProcessInsertionCalls: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ", function_token);
       return hr;
     }
   }
@@ -1084,7 +1084,7 @@ HRESULT CorProfiler::RunILStartupHook(
   hr = rewriter.Export();
 
   if (FAILED(hr)) {
-    Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ", module_id, " ", function_token);
+    Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ModuleID=",module_id, " ", function_token);
     return hr;
   }
 
@@ -1657,7 +1657,7 @@ Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler l
 
   hr = rewriter_void.Export();
   if (FAILED(hr)) {
-    Warn("GenerateVoidILStartupMethod: Unable to save the IL body. ModuleID=", module_id);
+    Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
     return hr;
   }
 
