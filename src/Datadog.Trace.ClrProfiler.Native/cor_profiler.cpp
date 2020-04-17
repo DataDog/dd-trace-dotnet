@@ -522,7 +522,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   }
 
   // get function info
-  auto caller =
+  const auto caller =
       GetFunctionInfo(module_metadata->metadata_import, function_token);
   if (!caller.IsValid()) {
     return S_OK;
@@ -558,7 +558,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   }
 
   // Get valid method replacements for this caller method
-  auto method_replacements =
+  const auto method_replacements =
       module_metadata->GetMethodReplacementsForCaller(caller);
   if (method_replacements.empty()) {
     return S_OK;

@@ -155,7 +155,7 @@ HRESULT ILRewriter::Import() {
   LPCBYTE pMethodBytes;
 
   IfFailRet(m_pICorProfilerInfo->GetILFunctionBody(m_moduleId, m_tkMethod,
-                                                   &pMethodBytes, NULL));
+                                                   &pMethodBytes, nullptr));
 
   COR_ILMETHOD_DECODER decoder((COR_ILMETHOD*)pMethodBytes);
 
@@ -275,7 +275,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
       }
       default:
         return COR_E_INVALIDPROGRAM;
-        break;
     }
     offset += size;
   }
@@ -300,7 +299,7 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
   if(m_pEH != nullptr)
   {
-    return COR_E_ARGUMENT;
+    return COR_E_INVALIDOPERATION;
   }
 
   m_nEH = nEH;
@@ -328,7 +327,7 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
     IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset(),
                             &clause->m_pHandlerBegin));
 
-    ILInstr* temp;
+    ILInstr* temp = nullptr;
     IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset() +
                             ehInfo->GetHandlerLength(), &temp));
     clause->m_pHandlerEnd = temp->m_pPrev;
