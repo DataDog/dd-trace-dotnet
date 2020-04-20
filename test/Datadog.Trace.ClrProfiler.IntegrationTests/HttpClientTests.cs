@@ -106,9 +106,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // inspect the top-level span, underlying spans can be HttpClient in .NET Core
                 var firstSpan = spans.First();
-                Assert.Equal("http.request", firstSpan.Name);
-                Assert.Equal("Samples.HttpClientDriver-http-client", firstSpan.Service);
-                Assert.Equal(SpanTypes.Http, firstSpan.Type);
+                Assert.Equal("WebClientRequest", firstSpan.Name);
+                Assert.Equal("Samples.HttpClientDriver", firstSpan.Service);
+                Assert.Equal(SpanTypes.Web, firstSpan.Type);
                 Assert.Equal(nameof(WebRequest), firstSpan.Tags[Tags.InstrumentationName]);
 
                 var lastSpan = spans.Last();
