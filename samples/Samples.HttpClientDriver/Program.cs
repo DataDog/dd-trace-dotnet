@@ -19,6 +19,9 @@ namespace Samples.HttpClientDriver
 
         private static string Url;
 
+#if NETFRAMEWORK
+        [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
+#endif
         static void Main(string[] args)
         {
             bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
