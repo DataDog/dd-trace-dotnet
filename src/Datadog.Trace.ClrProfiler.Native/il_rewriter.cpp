@@ -518,7 +518,6 @@ again:
             break;
           default:
             return COR_E_INVALIDPROGRAM;
-            break;
         }
       }
     }

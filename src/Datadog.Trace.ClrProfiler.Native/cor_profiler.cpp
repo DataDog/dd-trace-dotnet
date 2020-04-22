@@ -541,6 +541,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
       first_jit_compilation_app_domains.end()) {
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
+
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                           function_token);
 
@@ -717,7 +718,6 @@ HRESULT CorProfiler::ProcessReplacementCalls(
           " name=", caller.type.name, ".", caller.name, "()");
         continue;
       }
-      
 
       auto method_def_md_token = target.id;
 
@@ -1084,7 +1084,7 @@ HRESULT CorProfiler::RunILStartupHook(
   hr = rewriter.Export();
 
   if (FAILED(hr)) {
-    Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ModuleID=",module_id, " ", function_token);
+    Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ", function_token);
     return hr;
   }
 
