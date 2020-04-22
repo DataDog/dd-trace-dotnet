@@ -49,13 +49,13 @@ namespace Samples.HttpClientDriver
                     HttpClientHelpers.SendHttpClientRequestsAsync(tracingDisabled, Url, RequestContent).GetAwaiter().GetResult();
                 }
 
-                if (args.Length == 0 || args.Any(arg => arg.Equals("WebClient", StringComparison.OrdinalIgnoreCase)))
-                {
-                    // send an http request using WebClient
-                    Console.WriteLine();
-                    Console.WriteLine("Sending request with WebClient.");
-                    WebClientHelpers.SendWebClientsRequest(tracingDisabled, Url, RequestContent);
-                }
+                //if (args.Length == 0 || args.Any(arg => arg.Equals("WebClient", StringComparison.OrdinalIgnoreCase)))
+                //{
+                //    // send an http request using WebClient
+                //    Console.WriteLine();
+                //    Console.WriteLine("Sending request with WebClient.");
+                //    WebClientHelpers.SendWebClientsRequest(tracingDisabled, Url, RequestContent);
+                //}
 
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
@@ -99,82 +99,6 @@ namespace Samples.HttpClientDriver
                 // always close listener if exception is thrown,
                 // whether it was caught or not
                 listener.Close();
-            }
-        }
-
-        private static async Task SendHttpClientRequestAsync(bool tracingDisabled)
-        {
-            Console.WriteLine($"[HttpClient] sending request to {Url}");
-            var clientRequestContent = new StringContent(RequestContent, Utf8);
-
-            using (var client = new HttpClient())
-            {
-                if (tracingDisabled)
-                {
-                    client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
-                }
-
-                using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
-                {
-                    // read response content and headers
-                    var responseContent = await responseMessage.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[HttpClient] response content: {responseContent}");
-
-                    foreach (var header in responseMessage.Headers)
-                    {
-                        var name = header.Key;
-                        var values = string.Join(",", header.Value);
-                        Console.WriteLine($"[HttpClient] response header: {name}={values}");
-                    }
-                }
-            }
-
-#if NETCOREAPP
-            using (var client = new HttpClient(new SocketsHttpHandler()))
-            {
-                if (tracingDisabled)
-                {
-                    client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
-                }
-
-                using (var responseMessage = await client.PostAsync(Url, clientRequestContent))
-                {
-                    // read response content and headers
-                    var responseContent = await responseMessage.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[HttpClient] response content: {responseContent}");
-
-                    foreach (var header in responseMessage.Headers)
-                    {
-                        var name = header.Key;
-                        var values = string.Join(",", header.Value);
-                        Console.WriteLine($"[HttpClient] response header: {name}={values}");
-                    }
-                }
-            }
-#endif
-        }
-
-        private static void SendWebClientRequest(bool tracingDisabled)
-        {
-            Console.WriteLine($"[WebClient] sending request to {Url}");
-
-            using (var webClient = new WebClient())
-            {
-                webClient.Encoding = Utf8;
-
-                if (tracingDisabled)
-                {
-                    webClient.Headers.Add("x-datadog-tracing-enabled", "false");
-                }
-
-                var responseContent = webClient.DownloadString(Url);
-                Console.WriteLine($"[WebClient] response content: {responseContent}");
-
-                foreach (string headerName in webClient.ResponseHeaders)
-                {
-                    string headerValue = webClient.ResponseHeaders[headerName];
-                    Console.WriteLine($"[WebClient] response header: {headerName}={headerValue}");
-                }
             }
         }
 

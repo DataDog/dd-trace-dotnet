@@ -7,6 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace;
+using Datadog.Trace.Configuration;
 
 namespace Samples.HttpClientDriver
 {
@@ -26,6 +27,8 @@ namespace Samples.HttpClientDriver
                 {
                     webClient.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
                 }
+
+                GlobalSettings.SetDebugEnabled(true);
 
                 using (Tracer.Instance.StartActive("WebClientRequest"))
                 {
