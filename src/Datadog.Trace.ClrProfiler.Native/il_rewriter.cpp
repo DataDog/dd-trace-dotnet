@@ -332,7 +332,6 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
     IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset() + ehInfo->GetHandlerLength(), &pInstr));
     clause->m_pHandlerEnd = pInstr->m_pPrev;
 
-
     if ((clause->m_Flags & COR_ILEXCEPTION_CLAUSE_FILTER) == 0) {
       clause->m_ClassToken = ehInfo->GetClassToken();
     } else {
