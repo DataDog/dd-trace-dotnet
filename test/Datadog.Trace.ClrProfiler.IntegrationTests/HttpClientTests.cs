@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Until WebClient instrumentation put in place")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public void WebClient()
@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Until WebClient instrumentation put in place")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public void WebClient_TracingDisabled()
