@@ -347,14 +347,14 @@ ILInstr* ILRewriter::NewILInstr() {
   return new ILInstr();
 }
 
-HRESULT ILRewriter::GetInstrFromOffset(unsigned offset, ILInstr** pInstr) {
-  pInstr = nullptr;
+HRESULT ILRewriter::GetInstrFromOffset(unsigned offset, ILInstr** ppInstr) {
+  *ppInstr = nullptr;
 
   if (offset <= m_CodeSize) {
-    pInstr = &m_pOffsetToInstr[offset];
+    *ppInstr = m_pOffsetToInstr[offset];
   }
 
-  return (pInstr == nullptr) ? COR_E_INVALIDPROGRAM : S_OK;
+  return (*ppInstr == nullptr) ? COR_E_INVALIDPROGRAM : S_OK;
 }
 
 void ILRewriter::InsertBefore(ILInstr* pWhere, ILInstr* pWhat) {

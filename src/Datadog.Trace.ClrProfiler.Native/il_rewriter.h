@@ -102,7 +102,7 @@ class ILRewriter {
 
   ILInstr* NewILInstr();
 
-  HRESULT GetInstrFromOffset(unsigned offset, ILInstr** pInstr);
+  HRESULT GetInstrFromOffset(unsigned offset, ILInstr** ppInstr);
 
   void InsertBefore(ILInstr* pWhere, ILInstr* pWhat);
 
