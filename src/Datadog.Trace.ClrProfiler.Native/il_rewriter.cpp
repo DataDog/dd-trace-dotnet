@@ -318,24 +318,26 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
 
     EHClause* clause = &(m_pEH[iEH]);
     clause->m_Flags = ehInfo->GetFlags();
+    ILInstr* pInstr = nullptr;
 
-    IfFailRet(GetInstrFromOffset(ehInfo->GetTryOffset(), &clause->m_pTryBegin));
+    IfFailRet(GetInstrFromOffset(ehInfo->GetTryOffset(), &pInstr));
+    clause->m_pTryBegin = pInstr;
 
-    IfFailRet(GetInstrFromOffset(ehInfo->GetTryOffset() + ehInfo->GetTryLength(),
-                            &clause->m_pTryEnd));
+    IfFailRet(GetInstrFromOffset(ehInfo->GetTryOffset() + ehInfo->GetTryLength(), &pInstr));
+    clause->m_pTryEnd = pInstr;
 
-    IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset(),
-                            &clause->m_pHandlerBegin));
+    IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset(), &pInstr));
+    clause->m_pHandlerBegin = pInstr;
 
-    ILInstr* temp = nullptr;
-    IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset() +
-                            ehInfo->GetHandlerLength(), &temp));
-    clause->m_pHandlerEnd = temp->m_pPrev;
+    IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset() + ehInfo->GetHandlerLength(), &pInstr));
+    clause->m_pHandlerEnd = pInstr->m_pPrev;
+
 
     if ((clause->m_Flags & COR_ILEXCEPTION_CLAUSE_FILTER) == 0) {
       clause->m_ClassToken = ehInfo->GetClassToken();
     } else {
-      IfFailRet(GetInstrFromOffset(ehInfo->GetFilterOffset(), &clause->m_pFilter));
+      IfFailRet(GetInstrFromOffset(ehInfo->GetFilterOffset(), &pInstr));
+      clause->m_pFilter = pInstr;
     }
   }
 
