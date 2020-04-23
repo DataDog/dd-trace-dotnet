@@ -1,6 +1,4 @@
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace
 {
@@ -9,10 +7,6 @@ namespace Datadog.Trace
         string DefaultServiceName { get; }
 
         IScopeManager ScopeManager { get; }
-
-        ISampler Sampler { get; }
-
-        TracerSettings Settings { get; }
 
         Span StartSpan(string operationName);
 
@@ -36,5 +30,7 @@ namespace Datadog.Trace
         /// <param name="finishOnClose">Determines whether closing the returned scope will also finish the span.</param>
         /// <returns>A Scope object wrapping this span.</returns>
         Scope ActivateSpan(Span span, bool finishOnClose);
+
+        double? GetIntegrationAnalyticsSampleRate(string name, bool enabledWithGlobalSetting);
     }
 }

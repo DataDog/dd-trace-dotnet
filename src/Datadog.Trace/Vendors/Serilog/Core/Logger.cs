@@ -33,7 +33,7 @@ namespace Datadog.Trace.Vendors.Serilog.Core
     /// be disposed to flush any events buffered within it. Most application
     /// code should depend on <see cref="ILogger"/>, not this class.
     /// </summary>
-    internal sealed class Logger : ILogger, ILogEventSink, IDisposable
+    internal sealed class Logger : ILogger, ILogEventSink, IDisposable, ICoreLogger
     {
         static readonly object[] NoPropertyValues = new object[0];
 

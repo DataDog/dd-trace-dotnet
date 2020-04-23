@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace
 {
@@ -15,7 +13,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public class Span : IDisposable, ISpan
+    public class SpanImplementation : Span
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
@@ -24,73 +22,15 @@ namespace Datadog.Trace
         private readonly object _tagsLock = new object();
         private readonly object _metricLock = new object();
 
-        internal Span(SpanContext context, DateTimeOffset? start)
+        internal SpanImplementation(SpanContext context, DateTimeOffset? start)
+        : base(context, start)
         {
-            Context = context;
-            ServiceName = context.ServiceName;
-            StartTime = start ?? Context.TraceContext.UtcNow;
-
             Log.Debug(
                 "Span started: [s_id: {0}, p_id: {1}, t_id: {2}]",
                 SpanId,
                 Context.ParentId,
                 TraceId);
         }
-
-        /// <summary>
-        /// Gets or sets operation name
-        /// </summary>
-        public string OperationName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the resource name
-        /// </summary>
-        public string ResourceName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type of request this span represents (ex: web, db).
-        /// Not to be confused with span kind.
-        /// </summary>
-        /// <seealso cref="SpanTypes"/>
-        public string Type { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this span represents an error
-        /// </summary>
-        public bool Error { get; set; }
-
-        /// <summary>
-        /// Gets or sets the service name.
-        /// </summary>
-        public string ServiceName
-        {
-            get => Context.ServiceName;
-            set => Context.ServiceName = value;
-        }
-
-        /// <summary>
-        /// Gets the trace's unique identifier.
-        /// </summary>
-        public ulong TraceId => Context.TraceId;
-
-        /// <summary>
-        /// Gets the span's unique identifier.
-        /// </summary>
-        public ulong SpanId => Context.SpanId;
-
-        internal SpanContext Context { get; }
-
-        internal DateTimeOffset StartTime { get; }
-
-        internal TimeSpan Duration { get; private set; }
-
-        internal Dictionary<string, string> Tags { get; private set; }
-
-        internal Dictionary<string, double> Metrics { get; private set; }
-
-        internal bool IsFinished { get; private set; }
-
-        internal bool IsRootSpan => Context?.TraceContext?.RootSpan == this;
 
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
@@ -148,7 +88,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        public Span SetTag(string key, string value)
+        public override Span SetTag(string key, string value)
         {
             if (IsFinished)
             {
@@ -169,7 +109,7 @@ namespace Datadog.Trace
 
                     break;
 #pragma warning disable CS0618 // Type or member is obsolete
-                case Trace.Tags.ForceKeep:
+                case Trace.CoreTags.ForceKeep:
                 case Trace.Tags.ManualKeep:
                     if (value.ToBoolean() ?? false)
                     {
@@ -178,7 +118,7 @@ namespace Datadog.Trace
                     }
 
                     break;
-                case Trace.Tags.ForceDrop:
+                case Trace.CoreTags.ForceDrop:
                 case Trace.Tags.ManualDrop:
                     if (value.ToBoolean() ?? false)
                     {
@@ -258,29 +198,11 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Add a the specified tag to this span.
-        /// </summary>
-        /// <param name="key">The tag's key.</param>
-        /// <param name="value">The tag's value.</param>
-        /// <returns>This span to allow method chaining.</returns>
-        ISpan ISpan.SetTag(string key, string value)
-            => SetTag(key, value);
-
-        /// <summary>
-        /// Record the end time of the span and flushes it to the backend.
-        /// After the span has been finished all modifications will be ignored.
-        /// </summary>
-        public void Finish()
-        {
-            Finish(Context.TraceContext.UtcNow);
-        }
-
-        /// <summary>
         /// Explicitly set the end time of the span and flushes it to the backend.
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
         /// <param name="finishTimestamp">Explicit value for the end time of the Span</param>
-        public void Finish(DateTimeOffset finishTimestamp)
+        public override void Finish(DateTimeOffset finishTimestamp)
         {
             var shouldCloseSpan = false;
             lock (_lock)
@@ -323,7 +245,7 @@ namespace Datadog.Trace
         /// Record the end time of the span and flushes it to the backend.
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
             Finish();
         }
@@ -332,7 +254,7 @@ namespace Datadog.Trace
         /// Add the StackTrace and other exception metadata to the span
         /// </summary>
         /// <param name="exception">The exception.</param>
-        public void SetException(Exception exception)
+        public override void SetException(Exception exception)
         {
             Error = true;
 
@@ -357,7 +279,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
-        public string GetTag(string key)
+        public override string GetTag(string key)
         {
             // no need to lock on single reads
             return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
@@ -369,7 +291,7 @@ namespace Datadog.Trace
             return Metrics != null && Metrics.TryGetValue(key, out double value) ? value : default;
         }
 
-        internal Span SetMetric(string key, double? value)
+        internal override Span SetMetric(string key, double? value)
         {
             if (value == null)
             {

@@ -1,26 +1,29 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace
 {
     internal class TraceContext : ITraceContext
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<TraceContext>();
+        private static readonly ICoreLogger Log = CoreLogging.For<TraceContext>();
+        private static Action<Span> _decorateRootSpan = null;
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
         private readonly List<Span> _spans = new List<Span>();
 
+        private readonly Action<Span[]> _submit = null;
+        private readonly Func<Span, SamplingPriority> _getSamplingPriority;
+
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
         private bool _samplingPriorityLocked;
 
-        public TraceContext(IDatadogTracer tracer)
+        public TraceContext(Action<Span[]> submit, Func<Span, SamplingPriority> getSamplingPriority)
         {
-            Tracer = tracer;
+            _submit = submit;
+            _getSamplingPriority = getSamplingPriority;
         }
 
         public Span RootSpan { get; private set; }
@@ -46,6 +49,11 @@ namespace Datadog.Trace
             }
         }
 
+        public static void SetRootSpanDecorator(Action<Span> spanDecorator)
+        {
+            _decorateRootSpan = _decorateRootSpan ?? spanDecorator;
+        }
+
         public void AddSpan(Span span)
         {
             lock (_spans)
@@ -69,8 +77,7 @@ namespace Datadog.Trace
                         {
                             // this is a local root span (i.e. not propagated).
                             // determine an initial sampling priority for this trace, but don't lock it yet
-                            _samplingPriority =
-                                Tracer.Sampler?.GetSamplingPriority(RootSpan);
+                            _samplingPriority = _getSamplingPriority(RootSpan);
                         }
                     }
                 }
@@ -112,7 +119,7 @@ namespace Datadog.Trace
 
             if (spansToWrite != null)
             {
-                Tracer.Write(spansToWrite);
+                _submit(spansToWrite);
             }
         }
 
@@ -128,15 +135,9 @@ namespace Datadog.Trace
             }
         }
 
-        private void DecorateRootSpan(Span span)
+        private static void DecorateRootSpan(Span span)
         {
-            if (AzureAppServices.Metadata?.IsRelevant ?? false)
-            {
-                span.SetTag(Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
-                span.SetTag(Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata.ResourceGroup);
-                span.SetTag(Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
-                span.SetTag(Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
-            }
+            _decorateRootSpan?.Invoke(span);
         }
     }
 }

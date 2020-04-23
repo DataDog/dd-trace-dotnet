@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -54,7 +53,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Fact]
         public void Lookup_DatadogTrace_Succeeds()
         {
-            var expectedModule = typeof(Span).Assembly.ManifestModule;
+            var expectedModule = typeof(Tracer).Assembly.ManifestModule;
+            var lookup = ModuleLookup.Get(expectedModule.ModuleVersionId);
+            Assert.Equal(expectedModule, lookup);
+        }
+
+        [Fact]
+        public void Lookup_DatadogTraceCore_Succeeds()
+        {
+            var expectedModule = typeof(CoreLogging).Assembly.ManifestModule;
             var lookup = ModuleLookup.Get(expectedModule.ModuleVersionId);
             Assert.Equal(expectedModule, lookup);
         }

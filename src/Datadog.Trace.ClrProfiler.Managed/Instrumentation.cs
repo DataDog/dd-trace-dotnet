@@ -1,6 +1,5 @@
 using System;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -44,16 +43,21 @@ namespace Datadog.Trace.ClrProfiler
         {
             try
             {
+                Log.Debug("Starting load of managed assemblies.");
                 var tracer = Tracer.Instance;
 
                 if (tracer.Settings.DiagnosticSourceEnabled)
                 {
+                    Log.Debug("Starting diagnostic observers.");
                     tracer.StartDiagnosticObservers();
                 }
+
+                Log.Debug("Finished Instrumentation.Initialize call.");
             }
-            catch
+            catch (Exception ex)
             {
                 // ignore
+                Log.Error(ex, "Failure loading datadog managed assemblies.");
             }
         }
     }

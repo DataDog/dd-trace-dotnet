@@ -1,6 +1,3 @@
-using System;
-using Datadog.Trace.Logging;
-
 namespace Datadog.Trace
 {
     internal class AsyncLocalScopeManager : ScopeManagerBase

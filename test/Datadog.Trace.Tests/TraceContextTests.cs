@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void UtcNow_GivesLegitTime()
         {
-            var traceContext = new TraceContext(_tracerMock.Object);
+            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
 
             var now = traceContext.UtcNow;
             var expectedNow = DateTimeOffset.UtcNow;
@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void UtcNow_IsMonotonic()
         {
-            var traceContext = new TraceContext(_tracerMock.Object);
+            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
 
             var t1 = traceContext.UtcNow;
             var t2 = traceContext.UtcNow;

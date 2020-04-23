@@ -1,12 +1,9 @@
 using System;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
 {
     internal abstract class ScopeManagerBase : IScopeManager
     {
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(ScopeManagerBase));
-
         public event EventHandler<SpanEventArgs> SpanOpened;
 
         public event EventHandler<SpanEventArgs> SpanActivated;

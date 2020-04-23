@@ -1,12 +1,10 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
 namespace Datadog.Trace.Logging
@@ -17,7 +15,7 @@ namespace Datadog.Trace.Logging
 
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
         private static readonly LoggingLevelSwitch LoggingLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
-        private static readonly ILogger SharedLogger = null;
+        private static readonly Datadog.Trace.Vendors.Serilog.Core.Logger SharedLogger = null;
 
         static DatadogLogging()
         {
@@ -82,14 +80,14 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        public static ILogger GetLogger(Type classType)
+        public static Datadog.Trace.Vendors.Serilog.Core.Logger GetLogger(Type classType)
         {
             // Tells us which types are loaded, when, and how often.
             SharedLogger.Debug($"Logger retrieved for: {classType.AssemblyQualifiedName}");
             return SharedLogger;
         }
 
-        public static ILogger For<T>()
+        public static Datadog.Trace.Vendors.Serilog.Core.Logger For<T>()
         {
             return GetLogger(typeof(T));
         }

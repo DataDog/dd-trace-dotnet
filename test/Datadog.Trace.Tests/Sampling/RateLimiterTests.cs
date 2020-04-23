@@ -16,9 +16,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void One_Is_Allowed()
         {
-            var traceContext = new TraceContext(Tracer.Instance);
+            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
-            var span = new Span(spanContext, null);
+            var span = new SpanImplementation(spanContext, null);
             var rateLimiter = new RateLimiter(maxTracesPerInterval: null);
             var allowed = rateLimiter.Allowed(span);
             Assert.True(allowed);
@@ -106,9 +106,9 @@ namespace Datadog.Trace.Tests.Sampling
 
         private static int AskTheRateLimiterABunchOfTimes(RateLimiter rateLimiter, int howManyTimes)
         {
-            var traceContext = new TraceContext(Tracer.Instance);
+            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
-            var span = new Span(spanContext, null);
+            var span = new SpanImplementation(spanContext, null);
 
             var remaining = howManyTimes;
             var allowedCount = 0;
@@ -146,7 +146,7 @@ namespace Datadog.Trace.Tests.Sampling
             var end = DateTime.Now;
             var endLock = new object();
 
-            var traceContext = new TraceContext(Tracer.Instance);
+            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
 
             for (var i = 0; i < test.NumberOfBursts; i++)
             {
@@ -163,7 +163,7 @@ namespace Datadog.Trace.Tests.Sampling
                                            Interlocked.Decrement(ref remaining);
 
                                            var spanContext = new SpanContext(null, traceContext, "Weeeee");
-                                           var span = new Span(spanContext, null);
+                                           var span = new SpanImplementation(spanContext, null);
 
                                            if (limiter.Allowed(span))
                                            {
