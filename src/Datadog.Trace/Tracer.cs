@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
@@ -188,11 +189,6 @@ namespace Datadog.Trace
         /// </summary>
         IScopeManager IDatadogTracer.ScopeManager => _scopeManager;
 
-        /// <summary>
-        /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
-        /// </summary>
-        ISampler IDatadogTracer.Sampler => Sampler;
-
         internal IDiagnosticManager DiagnosticManager { get; set; }
 
         internal ISampler Sampler { get; }
@@ -309,20 +305,20 @@ namespace Datadog.Trace
             if (parent is SpanContext parentSpanContext)
             {
                 traceContext = parentSpanContext.TraceContext ??
-                               new TraceContext(this)
+                               new TraceContext(_agentWriter.WriteTrace, Sampler.GetSamplingPriority)
                                {
                                    SamplingPriority = parentSpanContext.SamplingPriority
                                };
             }
             else
             {
-                traceContext = new TraceContext(this);
+                traceContext = new TraceContext(_agentWriter.WriteTrace, Sampler.GetSamplingPriority);
             }
 
             var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;
             var spanContext = new SpanContext(parent, traceContext, finalServiceName);
 
-            var span = new Span(spanContext, startTime)
+            var span = new SpanImplementation(spanContext, startTime)
             {
                 OperationName = operationName,
             };
@@ -362,6 +358,14 @@ namespace Datadog.Trace
         {
             _agentWriter.WriteTrace(trace);
         }
+
+        /// <summary>
+        /// Get the sample rate for a given integration.
+        /// </summary>
+        /// <param name="name">The name of the integration.</param>
+        /// <param name="enabledWithGlobalSetting">Whether the integration is globally enabled.</param>
+        /// <returns>The sample rate.</returns>
+        double? IDatadogTracer.GetIntegrationAnalyticsSampleRate(string name, bool enabledWithGlobalSetting) => Settings.GetIntegrationAnalyticsSampleRate(name, enabledWithGlobalSetting);
 
         internal async Task FlushAsync()
         {

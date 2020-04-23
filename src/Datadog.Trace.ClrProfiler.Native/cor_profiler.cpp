@@ -312,6 +312,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   if (!corlib_module_loaded &&
       (module_info.assembly.name == "mscorlib"_W ||
        module_info.assembly.name == "System.Private.CoreLib"_W)) {
+    Debug("ModuleLoadFinished skipping known module: ", module_id, " ",
+          module_info.assembly.name);
     corlib_module_loaded = true;
     corlib_app_domain_id = app_domain_id;
     return S_OK;
@@ -341,6 +343,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
   WSTRING skip_assemblies[]{
       "mscorlib"_W,
       "netstandard"_W,
+      "Datadog.Trace.Core"_W,
       "Datadog.Trace"_W,
       "Datadog.Trace.AspNet"_W,
       "Datadog.Trace.ClrProfiler.Managed"_W,

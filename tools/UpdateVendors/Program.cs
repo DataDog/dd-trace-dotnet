@@ -17,6 +17,11 @@ namespace UpdateVendors
 //------------------------------------------------------------------------------
 ";
 
+        private static readonly List<string> FilesToSkip = new List<string>()
+        {
+            @"\Serilog\Events\LogEventLevel.cs",
+        };
+
         private static readonly string DownloadDirectory = Path.Combine(Environment.CurrentDirectory, "downloads");
         private static string _vendorProjectDirectory;
 
@@ -31,7 +36,7 @@ namespace UpdateVendors
                 libraryName: "Serilog",
                 branchDownload: "https://github.com/serilog/serilog/archive/v2.8.0.zip",
                 pathToSrc: new[] { "serilog-2.8.0", "src", "Serilog" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog", SerilogTransform));
 
             UpdateVendor(
                 libraryName: "Serilog.Sinks.File",
@@ -65,12 +70,32 @@ namespace UpdateVendors
 
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"
-                        return Regex.Replace(
+                        var result = Regex.Replace(
                             builder.ToString(),
                             @"public(\s+((abstract|sealed|static)\s+)?(partial\s+)?(class|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
+
+                        if (extraTransform != null)
+                        {
+                            result = extraTransform(filePath, result);
+                        }
+
+                        return result;
                     });
             }
+        }
+
+        private static string SerilogTransform(string filePath, string originalContent)
+        {
+            if (filePath.Contains("Logger.cs", StringComparison.OrdinalIgnoreCase))
+            {
+                // Required for using the logging in the core library
+                return originalContent.Replace(
+                    @"Logger : ILogger, ILogEventSink, IDisposable",
+                    @"Logger : ILogger, ILogEventSink, IDisposable, ICoreLogger");
+            }
+
+            return originalContent;
         }
 
         private static void UpdateVendor(

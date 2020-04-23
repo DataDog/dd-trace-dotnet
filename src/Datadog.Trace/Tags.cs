@@ -10,7 +10,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The environment of the profiled service.
         /// </summary>
-        public const string Env = "env";
+        public const string Env = CoreTags.Env;
 
         /// <summary>
         /// The version of the profiled service.
@@ -21,18 +21,18 @@ namespace Datadog.Trace
         /// The name of the integration that generated the span.
         /// Use OpenTracing tag "component"
         /// </summary>
-        public const string InstrumentationName = "component";
+        public const string InstrumentationName = CoreTags.InstrumentationName;
 
         /// <summary>
         /// The name of the method that was instrumented to generate the span.
         /// </summary>
-        public const string InstrumentedMethod = "instrumented.method";
+        public const string InstrumentedMethod = CoreTags.InstrumentedMethod;
 
         /// <summary>
         /// The kind of span (e.g. client, server). Not to be confused with <see cref="Span.Type"/>.
         /// </summary>
         /// <seealso cref="SpanKinds"/>
-        public const string SpanKind = "span.kind";
+        public const string SpanKind = CoreTags.SpanKind;
 
         /// <summary>
         /// The URL of an HTTP request
@@ -57,17 +57,17 @@ namespace Datadog.Trace
         /// <summary>
         /// The error message of an exception
         /// </summary>
-        public const string ErrorMsg = "error.msg";
+        public const string ErrorMsg = CoreTags.ErrorMsg;
 
         /// <summary>
         /// The type of an exception
         /// </summary>
-        public const string ErrorType = "error.type";
+        public const string ErrorType = CoreTags.ErrorType;
 
         /// <summary>
         /// The stack trace of an exception
         /// </summary>
-        public const string ErrorStack = "error.stack";
+        public const string ErrorStack = CoreTags.ErrorStack;
 
         /// <summary>
         /// The type of database (e.g. mssql, mysql)
@@ -152,19 +152,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The sampling priority for the entire trace.
         /// </summary>
-        public const string SamplingPriority = "sampling.priority";
-
-        /// <summary>
-        /// Obsolete. Use <see cref="ManualKeep"/>.
-        /// </summary>
-        [Obsolete("This field will be removed in futures versions of this library. Use ManualKeep instead.")]
-        public const string ForceKeep = "force.keep";
-
-        /// <summary>
-        /// Obsolete. Use <see cref="ManualDrop"/>.
-        /// </summary>
-        [Obsolete("This field will be removed in futures versions of this library. Use ManualDrop instead.")]
-        public const string ForceDrop = "force.drop";
+        public const string SamplingPriority = CoreTags.SamplingPriority;
 
         /// <summary>
         /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserKeep"/>.
@@ -179,12 +167,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Configures Trace Analytics.
         /// </summary>
-        public const string Analytics = "_dd1.sr.eausr";
+        public const string Analytics = CoreTags.Analytics;
 
         /// <summary>
         /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
         /// </summary>
-        public const string Language = "language";
+        public const string Language = CoreTags.Language;
 
         /// <summary>
         /// The resource id of the site instance in azure app services where the traced application is running.

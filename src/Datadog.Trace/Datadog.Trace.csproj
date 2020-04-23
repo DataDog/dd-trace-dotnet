@@ -55,6 +55,10 @@
     <PackageReference Include="System.Collections.NonGeneric" Version="4.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.Core\Datadog.Trace.Core.csproj" />
+  </ItemGroup>
+
   <!--Serilog.Sinks.File-->
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <DefineConstants>$(DefineConstants);ATOMIC_APPEND;HRESULTS</DefineConstants>
