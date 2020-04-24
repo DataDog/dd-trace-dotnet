@@ -29,6 +29,7 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
   <ItemGroup>
     <Compile Remove="Integrations\HttpMessageHandlerIntegration.cs" />
     <Compile Remove="Integrations\HttpWebRequestIntegration.cs" />
+    <Compile Remove="Integrations\WebClientIntegration.cs" />
   </ItemGroup>
 
   <ItemGroup>
