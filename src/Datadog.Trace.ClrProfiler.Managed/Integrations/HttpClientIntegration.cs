@@ -50,6 +50,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
+            Log.Information("IN HTTPCLIENT INTEGRATION - SendAsync.");
+
             if (handler == null)
             {
                 throw new ArgumentNullException(nameof(handler));
@@ -114,14 +116,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
-                    if (scope != null)
-                    {
-                        scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
-
-                        // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
-                    }
-
                     HttpResponseMessage response = await sendAsync(handler, request, completionOption, cancellationToken).ConfigureAwait(false);
 
                     // this tag can only be set after the response is returned
