@@ -11,7 +11,6 @@ namespace Datadog.Trace.ClrProfiler
 
         public const string SByte = "System.SByte";
         public const string Byte = "System.Byte";
-        public const string ByteArray = "System.Byte[]";
 
         public const string Int16 = "System.Int16";
         public const string Int32 = "System.Int32";
@@ -34,10 +33,5 @@ namespace Datadog.Trace.ClrProfiler
         public const string GenericTask = "System.Threading.Tasks.Task`1";
 
         public const string HttpCompletionOption = "System.Net.Http.HttpCompletionOption";
-
-        public const string WebRequest = "System.Net.WebRequest";
-        public const string WebResponse = "System.Net.WebResponse";
-
-        public const string Uri = "System.Uri";
     }
 }
