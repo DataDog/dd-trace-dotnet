@@ -168,7 +168,7 @@ jobs:
   condition: and(succeeded(), not(startsWith(variables['Build.SourceBranch'], 'refs/tags/')))
 
   dependsOn:
-    - nuget_and_windows_msi_and_home
+    - windows_packages_and_nuget
     - linux_packages
 
   pool:
