@@ -63,7 +63,6 @@ jobs:
 
   - task: DotNetCoreCLI@2
     displayName: dotnet pack
-    condition: and(succeeded(), eq(variables['nugetPack'], 'true'))
     inputs:
       command: pack
       packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
