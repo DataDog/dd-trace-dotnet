@@ -2,7 +2,6 @@ trigger:
   branches:
     include:
       - master
-      - refs/tags/*
 pr: none
 
 variables:
@@ -165,7 +164,7 @@ jobs:
     artifact: linux-alpine-packages
 
 - job: s3_upload
-  condition: and(succeeded(), not(startsWith(variables['Build.SourceBranch'], 'refs/tags/')))
+  condition: and(succeeded(), eq(variables['push_to_s3'], 'true'))
 
   dependsOn:
     - windows_packages_and_nuget
