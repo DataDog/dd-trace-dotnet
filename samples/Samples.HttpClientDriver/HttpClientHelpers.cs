@@ -16,7 +16,6 @@ namespace Samples.HttpClientDriver
         internal static async Task SendHttpClientRequestsAsync(bool tracingDisabled, string url, string requestContent)
         {
             // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
-            var ins = Tracer.Instance;
             Console.WriteLine($"[HttpClient] sending requests to {url}");
 
             using (var client = new HttpClient())
