@@ -129,7 +129,7 @@ jobs:
   pool:
     vmImage: windows-2019
   variables:
-    msiOutputDirectory: $(System.DefaultWorkingDirectory)/deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us/
+    msiOutputDirectory: $(System.DefaultWorkingDirectory)\deploy\Datadog.Trace.ClrProfiler.WindowsInstaller\bin\$(buildConfiguration)\$(buildPlatform)\en-us
 
   steps:
   - task: UseDotNet@2
@@ -262,7 +262,7 @@ jobs:
     displayName: docker-compose build IntegrationTests.Windows.IIS
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: build --build-arg DOTNET_TRACER_MSI=$(msiOutputDirectory)/*.msi IntegrationTests.Windows.IIS
+      dockerComposeCommand: build --build-arg DOTNET_TRACER_MSI=$(msiOutputDirectory)\*.msi IntegrationTests.Windows.IIS
 
   - task: DockerCompose@0
     displayName: docker-compose up IntegrationTests.Windows.IIS
