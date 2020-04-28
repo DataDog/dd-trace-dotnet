@@ -295,3 +295,4 @@ jobs:
     inputs:
       containerregistrytype: Container Registry
       dockerComposeCommand: down
+    condition: succeededOrFailed()
