@@ -33,5 +33,11 @@ namespace Datadog.Trace.ClrProfiler
         public const string GenericTask = "System.Threading.Tasks.Task`1";
 
         public const string HttpCompletionOption = "System.Net.Http.HttpCompletionOption";
+
+        public const string Uri = "System.Uri";
+
+        public const string ByteArrayTask = "System.Threading.Tasks.Task`1<System.Byte>";
+        public const string StreamTask = "System.Threading.Tasks.Task`1<System.IO.Stream>";
+        public const string StringTask = "System.Threading.Tasks.Task`1<System.String>";
     }
 }
