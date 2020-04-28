@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.HttpResponseMessageTask, "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>" }; // Generic full names have square brackets
             yield return new object[] { ClrNames.GenericTask, typeof(Task<>) };
             yield return new object[] { ClrNames.HttpCompletionOption, typeof(System.Net.Http.HttpCompletionOption) };
+            yield return new object[] { ClrNames.Uri, typeof(System.Uri) };
         }
 
         [Fact]
