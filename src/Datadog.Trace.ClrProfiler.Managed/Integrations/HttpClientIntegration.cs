@@ -24,6 +24,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string GetByteArrayAsync = "GetByteArrayAsync";
         private const string GetStreamAsync = "GetStreamAsync";
         private const string GetStringAsync = "GetStringAsync";
+        private const string PostAsync = "PostAsync";
+        private const string PutAsync = "PutAsync";
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpClientIntegration));
 
         /// <summary>
@@ -476,6 +478,150 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
 #pragma warning disable CS0419 // Ambiguous reference in cref attribute
         /// <summary>
+        /// Instrumentation wrapper for <see cref="HttpClient.PostAsync"/>.
+        /// </summary>
+        /// <param name="handler">The <see cref="HttpClient"/> instance to instrument.</param>
+        /// <param name="uri">The <see cref="Uri"/> that represents the current request uri.</param>
+        /// <param name="content">An <see cref="HttpContent"> object.</see>/></param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>Returns the value returned by the inner method call.</returns>
+        [InterceptMethod(
+#pragma warning restore CS0419 // Ambiguous reference in cref attribute
+        TargetAssembly = SystemNetHttp,
+        TargetType = HttpClientTarget,
+        TargetMethod = PostAsync,
+        TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.Uri, ClrNames.HttpContent, ClrNames.CancellationToken },
+        TargetMinimumVersion = Major4,
+        TargetMaximumVersion = Major4)]
+        public static object HttpClient_PostAsync(
+            object handler,
+            object uri,
+            object content,
+            object boxedCancellationToken,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
+            var callOpCode = (OpCodeValue)opCode;
+            var httpClient = handler.GetInstrumentedType(HttpClientTarget);
+
+            Func<HttpClient, Uri, HttpContent, CancellationToken, Task<HttpResponseMessage>> instrumentedMethod = null;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<HttpClient, Uri, HttpContent, CancellationToken, Task<HttpResponseMessage>>>
+                       .Start(moduleVersionPtr, mdToken, opCode, PostAsync)
+                       .WithConcreteType(httpClient)
+                       .WithParameters(uri, content, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.Uri, ClrNames.HttpContent, ClrNames.CancellationToken)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: HttpClientTarget,
+                    methodName: PostAsync,
+                    instanceType: handler.GetType().AssemblyQualifiedName);
+                throw;
+            }
+
+            return AsyncInternal_PostOrPush(
+                instrumentedMethod,
+                "POST",
+                (HttpClient)handler,
+                (Uri)uri,
+                (HttpContent)content,
+                cancellationToken);
+        }
+
+#pragma warning disable CS0419 // Ambiguous reference in cref attribute
+        /// <summary>
+        /// Instrumentation wrapper for <see cref="HttpClient.PutAsync"/>.
+        /// </summary>
+        /// <param name="handler">The <see cref="HttpClient"/> instance to instrument.</param>
+        /// <param name="uri">The <see cref="Uri"/> that represents the current request uri.</param>
+        /// <param name="content">An <see cref="HttpContent"> object.</see>/></param>
+        /// <param name="boxedCancellationToken">The <see cref="CancellationToken"/> value used in the original method call.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>Returns the value returned by the inner method call.</returns>
+        [InterceptMethod(
+#pragma warning restore CS0419 // Ambiguous reference in cref attribute
+        TargetAssembly = SystemNetHttp,
+        TargetType = HttpClientTarget,
+        TargetMethod = PutAsync,
+        TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.Uri, ClrNames.HttpContent, ClrNames.CancellationToken },
+        TargetMinimumVersion = Major4,
+        TargetMaximumVersion = Major4)]
+        public static object HttpClient_PutAsync(
+            object handler,
+            object uri,
+            object content,
+            object boxedCancellationToken,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
+            var callOpCode = (OpCodeValue)opCode;
+            var httpClient = handler.GetInstrumentedType(HttpClientTarget);
+
+            Func<HttpClient, Uri, HttpContent, CancellationToken, Task<HttpResponseMessage>> instrumentedMethod = null;
+
+            try
+            {
+                instrumentedMethod =
+                    MethodBuilder<Func<HttpClient, Uri, HttpContent, CancellationToken, Task<HttpResponseMessage>>>
+                       .Start(moduleVersionPtr, mdToken, opCode, PutAsync)
+                       .WithConcreteType(httpClient)
+                       .WithParameters(uri, content, cancellationToken)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.Uri, ClrNames.HttpContent, ClrNames.CancellationToken)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: HttpClientTarget,
+                    methodName: PutAsync,
+                    instanceType: handler.GetType().AssemblyQualifiedName);
+                throw;
+            }
+
+            return AsyncInternal_PostOrPush(
+                instrumentedMethod,
+                "PUT",
+                (HttpClient)handler,
+                (Uri)uri,
+                (HttpContent)content,
+                cancellationToken);
+        }
+
+#pragma warning disable CS0419 // Ambiguous reference in cref attribute
+        /// <summary>
         /// Instrumentation wrapper for <see cref="HttpClient.SendAsync"/>.
         /// </summary>
         /// <param name="handler">The <see cref="HttpClient"/> instance to instrument.</param>
@@ -568,6 +714,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 try
                 {
                     HttpResponseMessage response = await sendAsync(handler, request, completionOption, cancellationToken).ConfigureAwait(false);
+
+                    // this tag can only be set after the response is returned
+                    scope?.Span.SetTag(Tags.HttpStatusCode, ((int)response.StatusCode).ToString());
+
+                    return response;
+                }
+                catch (Exception ex)
+                {
+                    scope?.Span.SetException(ex);
+                    throw;
+                }
+            }
+        }
+
+        private static async Task<HttpResponseMessage> AsyncInternal_PostOrPush(
+            Func<HttpClient, Uri, HttpContent, CancellationToken, Task<HttpResponseMessage>> fncAsync,
+            string httpVerb,
+            HttpClient handler,
+            Uri uri,
+            HttpContent content,
+            CancellationToken cancellationToken)
+        {
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpVerb, uri, IntegrationName))
+            {
+                try
+                {
+                    HttpResponseMessage response = await fncAsync(handler, uri, content, cancellationToken).ConfigureAwait(false);
 
                     // this tag can only be set after the response is returned
                     scope?.Span.SetTag(Tags.HttpStatusCode, ((int)response.StatusCode).ToString());

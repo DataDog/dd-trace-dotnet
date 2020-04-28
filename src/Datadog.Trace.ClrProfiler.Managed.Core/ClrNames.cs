@@ -39,5 +39,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string ByteArrayTask = "System.Threading.Tasks.Task`1<System.Byte>";
         public const string StreamTask = "System.Threading.Tasks.Task`1<System.IO.Stream>";
         public const string StringTask = "System.Threading.Tasks.Task`1<System.String>";
+
+        public const string HttpContent = "System.Net.Http.HttpContent";
     }
 }
