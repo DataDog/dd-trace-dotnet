@@ -26,11 +26,6 @@ Users who need manual instrumentation should reference the "Datadog.Trace" packa
   <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' and '$(TargetFramework)' == 'netstandard2.0'">
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="Integrations\HttpMessageHandlerIntegration.cs" />
-    <Compile Remove="Integrations\HttpWebRequestIntegration.cs" />
-    <Compile Remove="Integrations\WebClientIntegration.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj" />
