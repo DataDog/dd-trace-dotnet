@@ -11,3 +11,4 @@ packages/
 **/obj/
 
 !samples-iis/*/bin/
+!deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/
