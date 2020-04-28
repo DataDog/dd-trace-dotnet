@@ -50,8 +50,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
-            Log.Information("IN HTTPCLIENT INTEGRATION - SendAsync.");
-
             if (handler == null)
             {
                 throw new ArgumentNullException(nameof(handler));
