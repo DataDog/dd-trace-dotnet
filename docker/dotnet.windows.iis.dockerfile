@@ -18,10 +18,10 @@ RUN c:\Windows\System32\inetsrv\appcmd set apppool /apppool.name:DefaultAppPool 
 RUN New-ItemProperty -Path "HKLM:\Software\Microsoft\.NETFramework" -Name "LoaderOptimization" -Value 1
 RUN New-ItemProperty -Path "HKLM:\Software\WOW6432Node\Microsoft\.NETFramework" -Name "LoaderOptimization" -Value 1
 
-# Install datadog-apm-x64.msi
+# Install the .NET Tracer MSI
 ARG DOTNET_TRACER_MSI
-ADD $DOTNET_TRACER_MSI ./datadog-apm-x64.msi
-RUN Start-Process -Wait msiexec -ArgumentList '/qn /i datadog-apm-x64.msi'
+ADD $DOTNET_TRACER_MSI ./datadog-apm.msi
+RUN Start-Process -Wait msiexec -ArgumentList '/qn /i datadog-apm.msi'
 
 # Restart IIS
 RUN net stop /y was; \
