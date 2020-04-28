@@ -128,6 +128,8 @@ jobs:
         buildPlatform: x86
   pool:
     vmImage: windows-2019
+  variables:
+    msiOutputDirectory: $(System.DefaultWorkingDirectory)/deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us/
 
   steps:
   - task: UseDotNet@2
@@ -233,6 +235,41 @@ jobs:
         !reproductions/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
 
+  - task: NuGetCommand@2
+    displayName: nuget restore IIS samples
+    inputs:
+      restoreSolution: samples-iis/samples-iis.sln
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: Publish IIS samples
+    inputs:
+      solution: samples-iis/samples-iis.sln
+      configuration: '$(buildConfiguration)'
+      msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml'
+      maximumCpuCount: true
+
+  - task: MSBuild@1
+    displayName: msbuild msi
+    inputs:
+      solution: Datadog.Trace.proj
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: /t:msi /p:RunWixToolsOutOfProc=true
+      maximumCpuCount: true
+
+  - task: DockerCompose@0
+    displayName: docker-compose build IntegrationTests.Windows.IIS
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: build --build-arg DOTNET_TRACER_MSI=$(msiOutputDirectory)/*.msi IntegrationTests.Windows.IIS
+
+  - task: DockerCompose@0
+    displayName: docker-compose up IntegrationTests.Windows.IIS
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: up -d IntegrationTests.Windows.IIS
+
   - task: DotNetCoreCLI@2
     displayName: dotnet test
     inputs:
@@ -250,3 +287,9 @@ jobs:
       configuration: $(buildConfiguration)
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: '--filter "RunOnWindows=True|Category=Smoke" -p:Platform=$(buildPlatform)'
+
+  - task: DockerCompose@0
+    displayName: docker-compose stop services
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: down
