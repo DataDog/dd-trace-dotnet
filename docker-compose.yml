@@ -223,6 +223,16 @@ services:
     depends_on:
     - mongo
 
+  IntegrationTests.Windows.IIS:
+    build:
+      context: ./
+      dockerfile: ./docker/dotnet.windows.iis.dockerfile
+      args:
+        - DOTNET_TRACER_MSI=src/bin/
+    image: datadog-dotnet-windows-iis
+    ports:
+    - "8080:80"
+
   # .NET Core does not have apk packages for .NET Core runtimes, they only have base images
   # Until it's resolved, have a separate Dockerfile for each runtime
   # (see: https://github.com/dotnet/runtime/issues/3406)

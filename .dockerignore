@@ -4,8 +4,10 @@ deploy/
 .circleci/
 .git/
 .github/
-.vs/
+**/.vs/
 .vscode/
 packages/
 **/bin/
 **/obj/
+
+!samples-iis/*/bin/
