@@ -2,10 +2,6 @@
   <PropertyGroup>
     <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="HttpClientHelpers.cs" />
-    <Compile Remove="WebClientHelpers.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
