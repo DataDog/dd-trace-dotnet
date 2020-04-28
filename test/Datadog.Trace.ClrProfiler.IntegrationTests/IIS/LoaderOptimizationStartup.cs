@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
         private ITestOutputHelper Output { get; }
 
         [Fact]
+        [Trait("RunOnWindows", "True")]
         public void ApplicationDoesNotReturnErrors()
         {
             var intervalMilliseconds = 500;
