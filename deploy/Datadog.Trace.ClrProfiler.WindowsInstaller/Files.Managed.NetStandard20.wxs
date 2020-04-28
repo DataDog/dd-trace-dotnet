@@ -7,132 +7,132 @@
     <ComponentGroup Id="Files.Managed.NetStandard20" Directory="netstandard2.0">
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.ClrProfiler.Managed.Core.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\Datadog.Trace.ClrProfiler.Managed.Core.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.ClrProfiler.Managed.Core.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.ClrProfiler.Managed.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\Datadog.Trace.ClrProfiler.Managed.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.ClrProfiler.Managed.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\Datadog.Trace.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_MessagePack.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\MessagePack.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\MessagePack.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Microsoft.CSharp.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\Microsoft.CSharp.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Microsoft.CSharp.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Newtonsoft.Json.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\Newtonsoft.Json.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Newtonsoft.Json.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Sigil.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\Sigil.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\Sigil.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Collections.Concurrent.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Collections.Concurrent.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Collections.Concurrent.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Collections.Immutable.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Collections.Immutable.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Collections.Immutable.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Collections.NonGeneric.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Collections.NonGeneric.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Collections.NonGeneric.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Diagnostics.DiagnosticSource.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Diagnostics.DiagnosticSource.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Diagnostics.DiagnosticSource.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.IO.FileSystem.Primitives.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.IO.FileSystem.Primitives.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.IO.FileSystem.Primitives.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Linq.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Linq.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Linq.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Reflection.Emit.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Reflection.Emit.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.Emit.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Reflection.Emit.ILGeneration.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Reflection.Emit.ILGeneration.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.Emit.ILGeneration.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Reflection.Emit.Lightweight.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Reflection.Emit.Lightweight.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.Emit.Lightweight.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Reflection.Metadata.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Reflection.Metadata.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.Metadata.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Reflection.TypeExtensions.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Reflection.TypeExtensions.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.TypeExtensions.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Runtime.CompilerServices.Unsafe.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Runtime.InteropServices.RuntimeInformation.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Runtime.InteropServices.RuntimeInformation.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Runtime.InteropServices.RuntimeInformation.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Runtime.Numerics.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Runtime.Numerics.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Runtime.Numerics.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Runtime.Serialization.Primitives.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Runtime.Serialization.Primitives.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Runtime.Serialization.Primitives.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Security.Cryptography.OpenSsl.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Security.Cryptography.OpenSsl.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Security.Cryptography.OpenSsl.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Security.Cryptography.Primitives.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Security.Cryptography.Primitives.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Security.Cryptography.Primitives.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Threading.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Threading.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Threading.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Threading.Tasks.Extensions.dll"
-              Source="$(var.ManagedDllPath)\netstandard2.0\System.Threading.Tasks.Extensions.dll"
+              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Threading.Tasks.Extensions.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>
