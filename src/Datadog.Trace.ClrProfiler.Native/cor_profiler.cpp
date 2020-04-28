@@ -330,11 +330,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "mscorlib"_W,
       "netstandard"_W,
       "Datadog.Trace"_W,
+      "Datadog.Trace.AspNet"_W,
       "Datadog.Trace.ClrProfiler.Managed"_W,
-      "MsgPack"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
-      "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers2"_W,
+      "Datadog.Trace.ClrProfiler.Managed.Loader"_W,
+      "MessagePack"_W,
+      "MessagePack.Resolvers.DynamicEnumResolver"_W,
+      "MessagePack.Resolvers.DynamicObjectResolver"_W,
+      "MessagePack.Resolvers.DynamicUnionResolver"_W,
       "Sigil"_W,
       "Sigil.Emit.DynamicAssembly"_W,
       "System.Core"_W,
@@ -351,6 +353,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "Microsoft.Extensions.Options"_W,
       "Microsoft.Extensions.ObjectPool"_W,
       "System.Configuration"_W,
+      "System.Web"_W,
       "System.Xml.Linq"_W,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
@@ -537,6 +540,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // is no longer provided in a NuGet package
   if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
       first_jit_compilation_app_domains.end()) {
+    bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded && module_metadata->app_domain_id == corlib_app_domain_id;
+    Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
+          " token=", function_token, " name=", caller.type.name, ".",
+          caller.name, "(), assembly_name=", module_metadata->assemblyName,
+          " app_domain_id=", module_metadata->app_domain_id,
+          " domain_neutral=", domain_neutral_assembly);
+
     first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
     hr = RunILStartupHook(module_metadata->metadata_emit, module_id,
                           function_token);
