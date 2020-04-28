@@ -121,9 +121,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     return response;
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
