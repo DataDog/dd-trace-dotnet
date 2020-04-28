@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019 as final
+FROM mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 # Install .NET Framework, and ASP.NET features
