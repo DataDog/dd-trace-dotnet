@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include <cassert>
 #include <corhlpr.cpp>
 
 #include "il_rewriter.h"
@@ -156,7 +155,7 @@ HRESULT ILRewriter::Import() {
   LPCBYTE pMethodBytes;
 
   IfFailRet(m_pICorProfilerInfo->GetILFunctionBody(m_moduleId, m_tkMethod,
-                                                   &pMethodBytes, NULL));
+                                                   &pMethodBytes, nullptr));
 
   COR_ILMETHOD_DECODER decoder((COR_ILMETHOD*)pMethodBytes);
 
@@ -192,7 +191,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 
     if (opcode == CEE_PREFIX1) {
       if (offset >= m_CodeSize) {
-        assert(false);
         return COR_E_INVALIDPROGRAM;
       }
       opcode = 0x100 + pIL[offset++];
@@ -200,12 +198,10 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 
     if ((CEE_PREFIX7 <= opcode) && (opcode <= CEE_PREFIX2)) {
       // NOTE: CEE_PREFIX2-7 are currently not supported
-      assert(false);
       return COR_E_INVALIDPROGRAM;
     }
 
     if (opcode >= CEE_COUNT) {
-      assert(false);
       return COR_E_INVALIDPROGRAM;
     }
 
@@ -213,7 +209,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 
     int size = (flags & OPCODEFLAGS_SizeMask);
     if (offset + size > m_CodeSize) {
-      assert(false);
       return COR_E_INVALIDPROGRAM;
     }
 
@@ -251,7 +246,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
         break;
       case 0 | OPCODEFLAGS_Switch: {
         if (offset + sizeof(INT32) > m_CodeSize) {
-          assert(false);
           return COR_E_INVALIDPROGRAM;
         }
 
@@ -263,7 +257,6 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 
         for (unsigned iTarget = 0; iTarget < nTargets; iTarget++) {
           if (offset + sizeof(INT32) > m_CodeSize) {
-            assert(false);
             return COR_E_INVALIDPROGRAM;
           }
 
@@ -281,19 +274,22 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
         break;
       }
       default:
-        assert(false);
-        break;
+        return COR_E_INVALIDPROGRAM;
     }
     offset += size;
   }
-  assert(offset == m_CodeSize);
+
+  if (offset != m_CodeSize) {
+    return COR_E_INVALIDPROGRAM;
+  }
 
   if (fBranch) {
     // Go over all control flow instructions and resolve the targets
     for (ILInstr* pInstr = m_IL.m_pNext; pInstr != &m_IL;
          pInstr = pInstr->m_pNext) {
-      if (s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget)
-        pInstr->m_pTarget = GetInstrFromOffset(pInstr->m_Arg32);
+      if (s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget) {
+        IfFailRet(GetInstrFromOffset(pInstr->m_Arg32, &pInstr->m_pTarget));
+      }
     }
   }
 
@@ -301,7 +297,10 @@ HRESULT ILRewriter::ImportIL(LPCBYTE pIL) {
 }
 
 HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
-  assert(m_pEH == NULL);
+  if(m_pEH != nullptr)
+  {
+    return COR_E_INVALIDOPERATION;
+  }
 
   m_nEH = nEH;
 
@@ -319,18 +318,26 @@ HRESULT ILRewriter::ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH) {
 
     EHClause* clause = &(m_pEH[iEH]);
     clause->m_Flags = ehInfo->GetFlags();
+    ILInstr* pInstr = nullptr;
 
-    clause->m_pTryBegin = GetInstrFromOffset(ehInfo->GetTryOffset());
-    clause->m_pTryEnd =
-        GetInstrFromOffset(ehInfo->GetTryOffset() + ehInfo->GetTryLength());
-    clause->m_pHandlerBegin = GetInstrFromOffset(ehInfo->GetHandlerOffset());
-    clause->m_pHandlerEnd = GetInstrFromOffset(ehInfo->GetHandlerOffset() +
-                                               ehInfo->GetHandlerLength())
-                                ->m_pPrev;
-    if ((clause->m_Flags & COR_ILEXCEPTION_CLAUSE_FILTER) == 0)
+    IfFailRet(GetInstrFromOffset(ehInfo->GetTryOffset(), &pInstr));
+    clause->m_pTryBegin = pInstr;
+
+    IfFailRet(GetInstrFromOffset(ehInfo->GetTryOffset() + ehInfo->GetTryLength(), &pInstr));
+    clause->m_pTryEnd = pInstr;
+
+    IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset(), &pInstr));
+    clause->m_pHandlerBegin = pInstr;
+
+    IfFailRet(GetInstrFromOffset(ehInfo->GetHandlerOffset() + ehInfo->GetHandlerLength(), &pInstr));
+    clause->m_pHandlerEnd = pInstr->m_pPrev;
+
+    if ((clause->m_Flags & COR_ILEXCEPTION_CLAUSE_FILTER) == 0) {
       clause->m_ClassToken = ehInfo->GetClassToken();
-    else
-      clause->m_pFilter = GetInstrFromOffset(ehInfo->GetFilterOffset());
+    } else {
+      IfFailRet(GetInstrFromOffset(ehInfo->GetFilterOffset(), &pInstr));
+      clause->m_pFilter = pInstr;
+    }
   }
 
   return S_OK;
@@ -341,13 +348,17 @@ ILInstr* ILRewriter::NewILInstr() {
   return new ILInstr();
 }
 
-ILInstr* ILRewriter::GetInstrFromOffset(unsigned offset) {
-  ILInstr* pInstr = NULL;
+HRESULT ILRewriter::GetInstrFromOffset(unsigned offset, ILInstr** ppInstr) {
+  if (offset <= m_CodeSize) {
+    ILInstr* result = m_pOffsetToInstr[offset];
 
-  if (offset <= m_CodeSize) pInstr = m_pOffsetToInstr[offset];
+    if(result != nullptr) {
+      *ppInstr = result;
+      return S_OK;
+    }
+  }
 
-  assert(pInstr != NULL);
-  return pInstr;
+  return COR_E_INVALIDPROGRAM;
 }
 
 void ILRewriter::InsertBefore(ILInstr* pWhere, ILInstr* pWhat) {
@@ -393,7 +404,12 @@ again:
   // Go over all instructions and produce code for them
   for (ILInstr* pInstr = m_IL.m_pNext; pInstr != &m_IL;
        pInstr = pInstr->m_pNext) {
-    assert(offset < maxSize);
+
+    if(offset >= maxSize)
+    {
+      return COR_E_INDEXOUTOFRANGE;
+    }
+
     pInstr->m_offset = offset;
 
     unsigned opcode = pInstr->m_opcode;
@@ -409,7 +425,11 @@ again:
       m_pOutputBuffer[offset++] = (opcode & 0xFF);
     }
 
-    assert(pInstr->m_opcode < (sizeof(s_OpCodeFlags)/sizeof(BYTE)));
+    if (pInstr->m_opcode >= (sizeof(s_OpCodeFlags) / sizeof(BYTE)))
+    {
+      return COR_E_INVALIDPROGRAM;
+    }
+
     BYTE flags = s_OpCodeFlags[pInstr->m_opcode];
     switch (flags) {
       case 0:
@@ -437,8 +457,7 @@ again:
         offset += sizeof(INT32);
         break;
       default:
-        assert(false);
-        break;
+        return COR_E_INVALIDPROGRAM;
     }
     offset += (flags & OPCODEFLAGS_SizeMask);
   }
@@ -479,10 +498,17 @@ again:
               if (opcode == CEE_LEAVE_S) {
                 pInstr->m_opcode = CEE_LEAVE;
               } else {
-                assert(opcode >= CEE_BR_S && opcode <= CEE_BLT_UN_S);
+                if(!(opcode >= CEE_BR_S && opcode <= CEE_BLT_UN_S))
+                {
+                  return COR_E_INVALIDPROGRAM;
+                }
+
                 pInstr->m_opcode = opcode - CEE_BR_S + CEE_BR;
-                assert(pInstr->m_opcode >= CEE_BR &&
-                       pInstr->m_opcode <= CEE_BLT_UN);
+
+                if(!(pInstr->m_opcode >= CEE_BR && pInstr->m_opcode <= CEE_BLT_UN))
+                {
+                  return COR_E_INVALIDPROGRAM;
+                }
               }
               fTryAgain = true;
               continue;
@@ -495,8 +521,7 @@ again:
                 pIL[pInstr->m_pNext->m_offset - sizeof(INT32)]) = delta;
             break;
           default:
-            assert(false);
-            break;
+            return COR_E_INVALIDPROGRAM;
         }
       }
     }

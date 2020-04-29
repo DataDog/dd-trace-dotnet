@@ -18,7 +18,7 @@ namespace PrepareRelease
         private static readonly string Gac45ItemTemplate = $@"
       <Component Win64=""$(var.Win64)"">
         <File Id=""{FileIdPrefixTemplate}{FileNameTemplate}""
-              Source=""$(var.ManagedDllPath)\{FrameworkMonikerTemplate}\{FileNameTemplate}""
+              Source=""$(var.TracerHomeDirectory)\{FrameworkMonikerTemplate}\{FileNameTemplate}""
               KeyPath=""yes"" Checksum=""yes"" Assembly="".net""/>
       </Component>";
 

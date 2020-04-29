@@ -7,7 +7,7 @@
     <ComponentGroup Id="Files.Managed.Net461.GAC" Directory="net461.GAC">
       <Component Win64="$(var.Win64)">
         <File Id="net461_GAC_Sigil.dll"
-              Source="$(var.ManagedDllPath)\net461\Sigil.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Sigil.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
     </ComponentGroup>
