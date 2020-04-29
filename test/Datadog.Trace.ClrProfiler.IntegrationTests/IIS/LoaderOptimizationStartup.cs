@@ -13,14 +13,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
 
         public LoaderOptimizationStartup(ITestOutputHelper output)
         {
-            this.Output = output;
+            Output = output;
         }
 
         private ITestOutputHelper Output { get; }
 
         [Fact]
         [Trait("RunOnWindows", "True")]
-        public void ApplicationDoesNotReturnErrors()
+        public async void ApplicationDoesNotReturnErrors()
         {
             var intervalMilliseconds = 500;
             var intervals = 5;
@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
             {
                 try
                 {
-                    var serverReadyResponse = client.GetAsync(Url).GetAwaiter().GetResult();
+                    var serverReadyResponse = await client.GetAsync(Url);
                     serverReady = serverReadyResponse.StatusCode == HttpStatusCode.OK;
                 }
                 catch
@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
             }
 
             // Server is ready to recieve requests
-            var responseMessage = client.GetAsync(Url).GetAwaiter().GetResult();
+            var responseMessage = await client.GetAsync(Url);
             Assert.Equal(HttpStatusCode.OK, responseMessage.StatusCode);
         }
     }

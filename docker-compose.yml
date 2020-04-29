@@ -223,6 +223,8 @@ services:
     depends_on:
     - mongo
 
+  # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
+  # and only after switching to run Windows containers
   IntegrationTests.IIS.LoaderOptimizationRegKey:
     build:
       context: ./

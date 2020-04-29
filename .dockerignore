@@ -5,7 +5,7 @@ deploy/
 .git/
 .github/
 **/.vs/
-.vscode/
+**/.vscode/
 packages/
 **/bin/
 **/obj/
