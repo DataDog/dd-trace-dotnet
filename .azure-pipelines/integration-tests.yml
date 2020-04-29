@@ -261,16 +261,16 @@ jobs:
       maximumCpuCount: true
 
   - task: DockerCompose@0
-    displayName: docker-compose build IntegrationTests.Windows.IIS
+    displayName: docker-compose build IIS containers
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: build --build-arg DOTNET_TRACER_MSI=$(msiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.Windows.IIS
+      dockerComposeCommand: build --build-arg DOTNET_TRACER_MSI=$(msiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationRegKey
 
   - task: DockerCompose@0
-    displayName: docker-compose up IntegrationTests.Windows.IIS
+    displayName: docker-compose start IIS containers
     inputs:
       containerregistrytype: Container Registry
-      dockerComposeCommand: up -d IntegrationTests.Windows.IIS
+      dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
 
   - task: DotNetCoreCLI@2
     displayName: dotnet test

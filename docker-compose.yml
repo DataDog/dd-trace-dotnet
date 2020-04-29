@@ -223,11 +223,11 @@ services:
     depends_on:
     - mongo
 
-  IntegrationTests.Windows.IIS:
+  IntegrationTests.IIS.LoaderOptimizationRegKey:
     build:
       context: ./
-      dockerfile: ./docker/dotnet.windows.iis.dockerfile
-    image: datadog-dotnet-windows-iis
+      dockerfile: ./docker/iis/LoaderOptimizationRegKey.dockerfile
+    image: datadog-iis-loaderoptimizationregkey
     ports:
     - "8080:80"
 
