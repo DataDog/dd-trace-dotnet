@@ -248,7 +248,7 @@ jobs:
       solution: Datadog.Trace.proj
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
-      msbuildArguments: /t:CreateHomeDirectory /p:TracerHomeDirectory=$(publishOutput)
+      msbuildArguments: /t:msi /p:RunWixToolsOutOfProc=true /p:TracerHomeDirectory=$(publishOutput)
       maximumCpuCount: true
 
   - task: MSBuild@1
@@ -291,15 +291,6 @@ jobs:
       solution: samples-iis/samples-iis.sln
       configuration: '$(buildConfiguration)'
       msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml'
-      maximumCpuCount: true
-
-  - task: MSBuild@1
-    displayName: msbuild msi
-    inputs:
-      solution: Datadog.Trace.proj
-      platform: $(buildPlatform)
-      configuration: $(buildConfiguration)
-      msbuildArguments: /t:msi /p:RunWixToolsOutOfProc=true
       maximumCpuCount: true
 
   - task: DockerCompose@0
