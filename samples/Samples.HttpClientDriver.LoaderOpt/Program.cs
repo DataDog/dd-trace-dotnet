@@ -7,7 +7,7 @@ using System.Threading;
 using Datadog.Core.Tools;
 using Samples.Shared;
 
-namespace Samples.HttpClientDriver
+namespace Samples.HttpClientDriver.LoaderOpt
 {
     public static class Program
     {
@@ -18,6 +18,9 @@ namespace Samples.HttpClientDriver
 
         private static string Url;
 
+#if NETFRAMEWORK
+        [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
+#endif
         static void Main(string[] args)
         {
             bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
@@ -69,7 +72,7 @@ namespace Samples.HttpClientDriver
             // try up to 5 consecutive ports before giving up
             while (true)
             {
-                Url = $"http://localhost:{port}/Samples.HttpClientDriver/";
+                Url = $"http://localhost:{port}/Samples.HttpClientDriver.LoaderOpt/";
 
                 // seems like we can't reuse a listener if it fails to start,
                 // so create a new listener each time we retry
