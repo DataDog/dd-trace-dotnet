@@ -4,8 +4,11 @@ deploy/
 .circleci/
 .git/
 .github/
-.vs/
-.vscode/
+**/.vs/
+**/.vscode/
 packages/
 **/bin/
 **/obj/
+
+!samples-iis/*/bin/
+!deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/

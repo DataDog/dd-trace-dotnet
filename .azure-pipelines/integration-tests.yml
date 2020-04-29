@@ -204,10 +204,14 @@ jobs:
     matrix:
       x64:
         buildPlatform: x64
+        enable32bit: false
       x86:
         buildPlatform: x86
+        enable32bit: true
   pool:
     vmImage: windows-2019
+  variables:
+    msiOutputDirectory: deploy/Datadog.Trace.ClrProfiler.WindowsInstaller/bin/$(buildConfiguration)/$(buildPlatform)/en-us
 
   steps:
   - task: UseDotNet@2
@@ -244,7 +248,7 @@ jobs:
       solution: Datadog.Trace.proj
       platform: $(buildPlatform)
       configuration: $(buildConfiguration)
-      msbuildArguments: /t:CreateHomeDirectory /p:TracerHomeDirectory=$(publishOutput)
+      msbuildArguments: /t:msi /p:RunWixToolsOutOfProc=true /p:TracerHomeDirectory=$(publishOutput)
       maximumCpuCount: true
 
   - task: MSBuild@1
@@ -275,6 +279,32 @@ jobs:
         !reproductions/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj
       arguments: --configuration $(buildConfiguration) -p:Platform=$(buildPlatform) -p:ManagedProfilerOutputDirectory=$(publishOutput)
 
+  - task: NuGetCommand@2
+    displayName: nuget restore IIS samples
+    inputs:
+      restoreSolution: samples-iis/samples-iis.sln
+      verbosityRestore: Normal
+
+  - task: MSBuild@1
+    displayName: Publish IIS samples
+    inputs:
+      solution: samples-iis/samples-iis.sln
+      configuration: '$(buildConfiguration)'
+      msbuildArguments: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile.pubxml'
+      maximumCpuCount: true
+
+  - task: DockerCompose@0
+    displayName: docker-compose build IIS containers
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: build --build-arg DOTNET_TRACER_MSI=$(msiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationRegKey
+
+  - task: DockerCompose@0
+    displayName: docker-compose start IIS containers
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
+
   - task: DotNetCoreCLI@2
     displayName: dotnet test
     inputs:
@@ -292,3 +322,10 @@ jobs:
       configuration: $(buildConfiguration)
       projects: test/Datadog.Trace.ClrProfiler.IntegrationTests/Datadog.Trace.ClrProfiler.IntegrationTests.csproj
       arguments: --filter "RunOnWindows=True|Category=Smoke" -p:Platform=$(buildPlatform)
+
+  - task: DockerCompose@0
+    displayName: docker-compose stop services
+    inputs:
+      containerregistrytype: Container Registry
+      dockerComposeCommand: down
+    condition: succeededOrFailed()

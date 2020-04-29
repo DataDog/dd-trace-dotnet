@@ -223,6 +223,16 @@ services:
     depends_on:
     - mongo
 
+  # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
+  # and only after switching to run Windows containers
+  IntegrationTests.IIS.LoaderOptimizationRegKey:
+    build:
+      context: ./
+      dockerfile: ./docker/iis/LoaderOptimizationRegKey.dockerfile
+    image: datadog-iis-loaderoptimizationregkey
+    ports:
+    - "8080:80"
+
   # .NET Core does not have apk packages for .NET Core runtimes, they only have base images
   # Until it's resolved, have a separate Dockerfile for each runtime
   # (see: https://github.com/dotnet/runtime/issues/3406)

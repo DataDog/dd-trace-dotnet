@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,10 +15,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [TargetFrameworkVersionsFact("netcoreapp2.1")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void MeetsAllAspNetCoreMvcExpectations()
+        public async Task MeetsAllAspNetCoreMvcExpectations()
         {
             // No package versions are relevant because this is built-in
-            RunTraceTestOnSelfHosted(string.Empty);
+            await RunTraceTestOnSelfHosted(string.Empty);
         }
     }
 }
