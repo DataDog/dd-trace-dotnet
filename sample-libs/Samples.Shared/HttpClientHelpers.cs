@@ -1,19 +1,17 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 
-namespace Samples.HttpClientDriver
+namespace Samples.Shared
 {
-    internal static class HttpClientHelpers
+    public static class HttpClientHelpers
     {
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
-        internal static async Task SendHttpClientRequestsAsync(bool tracingDisabled, string url, string requestContent)
+        public static async Task SendHttpClientRequestsAsync(bool tracingDisabled, string url, string requestContent)
         {
             // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
             Console.WriteLine($"[HttpClient] sending requests to {url}");

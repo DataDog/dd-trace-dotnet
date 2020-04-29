@@ -18,14 +18,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string SystemNetHttp = "System.Net.Http";
         private const string Major4 = "4";
         private const string HttpClientTarget = "System.Net.Http.HttpClient";
-        private const string DeleteAsync = "DeleteAsync";
-        private const string SendAsync = "SendAsync";
-        private const string GetAsync = "GetAsync";
-        private const string GetByteArrayAsync = "GetByteArrayAsync";
-        private const string GetStreamAsync = "GetStreamAsync";
-        private const string GetStringAsync = "GetStringAsync";
-        private const string PostAsync = "PostAsync";
-        private const string PutAsync = "PutAsync";
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpClientIntegration));
 
         /// <summary>
@@ -38,14 +30,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-#pragma warning restore CS0419 // Ambiguous reference in cref attribute
         TargetAssembly = SystemNetHttp,
         TargetType = HttpClientTarget,
-        TargetMethod = GetStringAsync,
         TargetSignatureTypes = new[] { ClrNames.StringTask, ClrNames.Uri },
         TargetMinimumVersion = Major4,
         TargetMaximumVersion = Major4)]
-        public static object HttpClient_GetStringAsync(
+        public static object GetStringAsync(
             object handler,
             object uri,
             int opCode,
@@ -57,6 +47,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentNullException(nameof(handler));
             }
 
+            const string methodName = nameof(GetStringAsync);
+
             var callOpCode = (OpCodeValue)opCode;
             var httpClient = handler.GetInstrumentedType(HttpClientTarget);
 
@@ -66,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpClient, Uri, Task<string>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, GetStringAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(httpClient)
                        .WithParameters(uri)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.Uri)
@@ -80,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: HttpClientTarget,
-                    methodName: GetStringAsync,
+                    methodName: methodName,
                     instanceType: handler.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -123,14 +115,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-#pragma warning restore CS0419 // Ambiguous reference in cref attribute
         TargetAssembly = SystemNetHttp,
         TargetType = HttpClientTarget,
-        TargetMethod = GetStreamAsync,
         TargetSignatureTypes = new[] { ClrNames.StreamTask, ClrNames.Uri },
         TargetMinimumVersion = Major4,
         TargetMaximumVersion = Major4)]
-        public static object HttpClient_GetStreamAsync(
+        public static object GetStreamAsync(
             object handler,
             object uri,
             int opCode,
@@ -142,6 +132,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentNullException(nameof(handler));
             }
 
+            const string methodName = nameof(GetStreamAsync);
+
             var callOpCode = (OpCodeValue)opCode;
             var httpClient = handler.GetInstrumentedType(HttpClientTarget);
 
@@ -151,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpClient, Uri, Task<Stream>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, GetStreamAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(httpClient)
                        .WithParameters(uri)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.Uri)
@@ -165,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: HttpClientTarget,
-                    methodName: GetStreamAsync,
+                    methodName: methodName,
                     instanceType: handler.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -208,14 +200,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-#pragma warning restore CS0419 // Ambiguous reference in cref attribute
         TargetAssembly = SystemNetHttp,
         TargetType = HttpClientTarget,
-        TargetMethod = GetByteArrayAsync,
         TargetSignatureTypes = new[] { ClrNames.ByteArrayTask, ClrNames.Uri },
         TargetMinimumVersion = Major4,
         TargetMaximumVersion = Major4)]
-        public static object HttpClient_GetByteArrayAsync(
+        public static object GetByteArrayAsync(
             object handler,
             object uri,
             int opCode,
@@ -227,6 +217,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentNullException(nameof(handler));
             }
 
+            const string methodName = nameof(GetByteArrayAsync);
+
             var callOpCode = (OpCodeValue)opCode;
             var httpClient = handler.GetInstrumentedType(HttpClientTarget);
 
@@ -236,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpClient, Uri, Task<byte[]>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, GetByteArrayAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(httpClient)
                        .WithParameters(uri)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.Uri)
@@ -250,7 +242,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: HttpClientTarget,
-                    methodName: GetByteArrayAsync,
+                    methodName: methodName,
                     instanceType: handler.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -295,14 +287,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-#pragma warning restore CS0419 // Ambiguous reference in cref attribute
         TargetAssembly = SystemNetHttp,
         TargetType = HttpClientTarget,
-        TargetMethod = GetAsync,
         TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.Uri, ClrNames.HttpCompletionOption, ClrNames.CancellationToken },
         TargetMinimumVersion = Major4,
         TargetMaximumVersion = Major4)]
-        public static object HttpClient_GetAsync(
+        public static object GetAsync(
             object handler,
             object uri,
             int completionOption,
@@ -316,6 +306,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentNullException(nameof(handler));
             }
 
+            const string methodName = nameof(GetAsync);
+
             var callOpCode = (OpCodeValue)opCode;
             var httpClient = handler.GetInstrumentedType(HttpClientTarget);
             var cancellationToken = (CancellationToken)boxedCancellationToken;
@@ -327,7 +319,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpClient, Uri, HttpCompletionOption, CancellationToken, Task<HttpResponseMessage>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, GetAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(httpClient)
                        .WithParameters(uri, compOption, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.Uri, ClrNames.HttpCompletionOption, ClrNames.CancellationToken)
@@ -341,7 +333,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: HttpClientTarget,
-                    methodName: GetAsync,
+                    methodName: methodName,
                     instanceType: handler.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -393,14 +385,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-#pragma warning restore CS0419 // Ambiguous reference in cref attribute
         TargetAssembly = SystemNetHttp,
         TargetType = HttpClientTarget,
-        TargetMethod = DeleteAsync,
         TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.Uri, ClrNames.CancellationToken },
         TargetMinimumVersion = Major4,
         TargetMaximumVersion = Major4)]
-        public static object HttpClient_DeleteAsync(
+        public static object DeleteAsync(
             object handler,
             object uri,
             object boxedCancellationToken,
@@ -413,6 +403,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentNullException(nameof(handler));
             }
 
+            const string methodName = nameof(DeleteAsync);
+
             var callOpCode = (OpCodeValue)opCode;
             var httpClient = handler.GetInstrumentedType(HttpClientTarget);
             var cancellationToken = (CancellationToken)boxedCancellationToken;
@@ -423,7 +415,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpClient, Uri, CancellationToken, Task<HttpResponseMessage>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, DeleteAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(httpClient)
                        .WithParameters(uri, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.Uri, ClrNames.CancellationToken)
@@ -437,7 +429,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: HttpClientTarget,
-                    methodName: DeleteAsync,
+                    methodName: methodName,
                     instanceType: handler.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -476,9 +468,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-#pragma warning disable CS0419 // Ambiguous reference in cref attribute
         /// <summary>
-        /// Instrumentation wrapper for <see cref="HttpClient.PostAsync"/>.
+        /// Instrumentation wrapper for <see cref="HttpClient.PostAsync(Uri, HttpContent, CancellationToken)"/>.
         /// </summary>
         /// <param name="handler">The <see cref="HttpClient"/> instance to instrument.</param>
         /// <param name="uri">The <see cref="Uri"/> that represents the current request uri.</param>
@@ -489,14 +480,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-#pragma warning restore CS0419 // Ambiguous reference in cref attribute
         TargetAssembly = SystemNetHttp,
         TargetType = HttpClientTarget,
-        TargetMethod = PostAsync,
         TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.Uri, ClrNames.HttpContent, ClrNames.CancellationToken },
         TargetMinimumVersion = Major4,
         TargetMaximumVersion = Major4)]
-        public static object HttpClient_PostAsync(
+        public static object PostAsync(
             object handler,
             object uri,
             object content,
@@ -510,6 +499,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentNullException(nameof(handler));
             }
 
+            const string methodName = nameof(PostAsync);
+
             var cancellationToken = (CancellationToken)boxedCancellationToken;
             var callOpCode = (OpCodeValue)opCode;
             var httpClient = handler.GetInstrumentedType(HttpClientTarget);
@@ -520,7 +511,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpClient, Uri, HttpContent, CancellationToken, Task<HttpResponseMessage>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, PostAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(httpClient)
                        .WithParameters(uri, content, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.Uri, ClrNames.HttpContent, ClrNames.CancellationToken)
@@ -534,7 +525,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: HttpClientTarget,
-                    methodName: PostAsync,
+                    methodName: methodName,
                     instanceType: handler.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -548,9 +539,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 cancellationToken);
         }
 
-#pragma warning disable CS0419 // Ambiguous reference in cref attribute
         /// <summary>
-        /// Instrumentation wrapper for <see cref="HttpClient.PutAsync"/>.
+        /// Instrumentation wrapper for <see cref="HttpClient.PutAsync(Uri, HttpContent, CancellationToken)"/>.
         /// </summary>
         /// <param name="handler">The <see cref="HttpClient"/> instance to instrument.</param>
         /// <param name="uri">The <see cref="Uri"/> that represents the current request uri.</param>
@@ -561,14 +551,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>Returns the value returned by the inner method call.</returns>
         [InterceptMethod(
-#pragma warning restore CS0419 // Ambiguous reference in cref attribute
         TargetAssembly = SystemNetHttp,
         TargetType = HttpClientTarget,
-        TargetMethod = PutAsync,
         TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.Uri, ClrNames.HttpContent, ClrNames.CancellationToken },
         TargetMinimumVersion = Major4,
         TargetMaximumVersion = Major4)]
-        public static object HttpClient_PutAsync(
+        public static object PutAsync(
             object handler,
             object uri,
             object content,
@@ -582,6 +570,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentNullException(nameof(handler));
             }
 
+            const string methodName = nameof(PutAsync);
+
             var cancellationToken = (CancellationToken)boxedCancellationToken;
             var callOpCode = (OpCodeValue)opCode;
             var httpClient = handler.GetInstrumentedType(HttpClientTarget);
@@ -592,7 +582,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpClient, Uri, HttpContent, CancellationToken, Task<HttpResponseMessage>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, PutAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(httpClient)
                        .WithParameters(uri, content, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.Uri, ClrNames.HttpContent, ClrNames.CancellationToken)
@@ -606,7 +596,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: HttpClientTarget,
-                    methodName: PutAsync,
+                    methodName: methodName,
                     instanceType: handler.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -620,9 +610,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 cancellationToken);
         }
 
-#pragma warning disable CS0419 // Ambiguous reference in cref attribute
         /// <summary>
-        /// Instrumentation wrapper for <see cref="HttpClient.SendAsync"/>.
+        /// Instrumentation wrapper for <see cref="HttpClient.SendAsync(HttpRequestMessage)"/>.
         /// </summary>
         /// <param name="handler">The <see cref="HttpClient"/> instance to instrument.</param>
         /// <param name="request">The <see cref="HttpRequestMessage"/> that represents the current HTTP request.</param>
@@ -636,11 +625,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 #pragma warning restore CS0419 // Ambiguous reference in cref attribute
         TargetAssembly = SystemNetHttp,
         TargetType = HttpClientTarget,
-        TargetMethod = SendAsync,
         TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, ClrNames.HttpRequestMessage, ClrNames.HttpCompletionOption, ClrNames.CancellationToken },
         TargetMinimumVersion = Major4,
         TargetMaximumVersion = Major4)]
-        public static object HttpClient_SendAsync(
+        public static object SendAsync(
             object handler,
             object request,
             int completionOption,
@@ -654,6 +642,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw new ArgumentNullException(nameof(handler));
             }
 
+            const string methodName = nameof(SendAsync);
+
             var compOption = (HttpCompletionOption)completionOption;
             var cancellationToken = (CancellationToken)boxedCancellationToken;
             var callOpCode = (OpCodeValue)opCode;
@@ -665,7 +655,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 instrumentedMethod =
                     MethodBuilder<Func<HttpClient, HttpRequestMessage, HttpCompletionOption, CancellationToken, Task<HttpResponseMessage>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(httpClient)
                        .WithParameters(request, compOption, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.HttpRequestMessage, ClrNames.HttpCompletionOption, ClrNames.CancellationToken)
@@ -679,7 +669,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: HttpClientTarget,
-                    methodName: SendAsync,
+                    methodName: methodName,
                     instanceType: handler.GetType().AssemblyQualifiedName);
                 throw;
             }

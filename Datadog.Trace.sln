@@ -324,6 +324,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.App
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.FileLoadException", "reproductions\DomainNeutralAssemblies.FileLoadException\DomainNeutralAssemblies.FileLoadException.csproj", "{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.HttpClientDriver.LoaderOpt", "samples\Samples.HttpClientDriver.LoaderOpt\Samples.HttpClientDriver.LoaderOpt.csproj", "{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1182,6 +1184,16 @@ Global
 		{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}.Release|x64.Build.0 = Release|x64
 		{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}.Release|x86.ActiveCfg = Release|x86
 		{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}.Release|x86.Build.0 = Release|x86
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Debug|x64.ActiveCfg = Debug|x64
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Debug|x64.Build.0 = Debug|x64
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Debug|x86.ActiveCfg = Debug|x86
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Debug|x86.Build.0 = Debug|x86
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Release|Any CPU.ActiveCfg = Release|x86
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Release|x64.ActiveCfg = Release|x64
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Release|x64.Build.0 = Release|x64
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Release|x86.ActiveCfg = Release|x86
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1268,6 +1280,7 @@ Global
 		{4BB17962-8146-462F-8657-0DD4C2FFFFB7} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
 		{5717623C-56D3-4B15-BF59-1594A44C4BE6} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
 		{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{8F7C60F3-013F-438A-BB4C-8161EBA2B7D4} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
