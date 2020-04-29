@@ -11,7 +11,7 @@ ADD samples-iis samples-iis
 # Set up IIS websites
 ARG ENABLE_32_BIT
 RUN Remove-WebSite -Name 'Default Web Site'; \
-    New-Website -Name 'loaderoptimization-startup' -Port 80 -PhysicalPath 'c:\samples-iis\Samples.AspNet472.LoaderOptimizationRegKey\bin\Release\Publish'
+    New-Website -Name 'LoaderOptimizationRegKey' -Port 80 -PhysicalPath 'c:\samples-iis\Samples.AspNet472.LoaderOptimizationRegKey\bin\Release\Publish'
 RUN c:\Windows\System32\inetsrv\appcmd set apppool /apppool.name:DefaultAppPool /enable32bitapponwin64:$env:ENABLE_32_BIT
 
 # Set LoaderOptimization flag to recreate crash condition (both 64-bit and 32-bit)
