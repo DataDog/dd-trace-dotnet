@@ -1,21 +1,18 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace;
 using Datadog.Trace.Configuration;
 
-namespace Samples.HttpClientDriver
+namespace Samples.Shared
 {
-    internal static class WebClientHelpers
+    public static class WebClientHelpers
     {
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
-        internal static void SendWebClientsRequest(bool tracingDisabled, string url, string requestContent)
+        public static void SendWebClientsRequest(bool tracingDisabled, string url, string requestContent)
         {
             Console.WriteLine($"[WebClient] sending requests to {url}");
 
