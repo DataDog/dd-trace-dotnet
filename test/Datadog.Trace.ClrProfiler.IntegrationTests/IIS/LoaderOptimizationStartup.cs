@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
 
         [Fact]
         [Trait("RunOnWindows", "True")]
-        public async void ApplicationDoesNotReturnErrors()
+        public async Task ApplicationDoesNotReturnErrors()
         {
             var intervalMilliseconds = 500;
             var intervals = 5;
