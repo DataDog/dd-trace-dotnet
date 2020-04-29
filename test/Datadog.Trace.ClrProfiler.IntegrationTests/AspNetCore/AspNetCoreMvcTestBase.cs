@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
@@ -56,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         protected List<AspNetCoreMvcSpanExpectation> Expectations { get; set; } = new List<AspNetCoreMvcSpanExpectation>();
 
-        public void RunTraceTestOnSelfHosted(string packageVersion)
+        public async Task RunTraceTestOnSelfHosted(string packageVersion)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             var aspNetCorePort = TcpPortProvider.GetOpenPort();
@@ -104,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     try
                     {
-                        serverReady = SubmitRequest(aspNetCorePort, "/alive-check") == HttpStatusCode.OK;
+                        serverReady = await SubmitRequest(aspNetCorePort, "/alive-check") == HttpStatusCode.OK;
                     }
                     catch
                     {
@@ -127,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 var testStart = DateTime.Now;
 
                 var paths = Expectations.Select(e => e.OriginalUri).ToArray();
-                SubmitRequests(aspNetCorePort, paths);
+                await SubmitRequests(aspNetCorePort, paths);
 
                 var spans =
                     agent.WaitForSpans(
@@ -164,18 +165,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             Expectations.Add(expectation);
         }
 
-        protected void SubmitRequests(int aspNetCorePort, string[] paths)
+        protected async Task SubmitRequests(int aspNetCorePort, string[] paths)
         {
             foreach (var path in paths)
             {
-                SubmitRequest(aspNetCorePort, path);
+                await SubmitRequest(aspNetCorePort, path);
             }
         }
 
-        protected HttpStatusCode SubmitRequest(int aspNetCorePort, string path)
+        protected async Task<HttpStatusCode> SubmitRequest(int aspNetCorePort, string path)
         {
-            HttpResponseMessage response = HttpClient.GetAsync($"http://localhost:{aspNetCorePort}{path}").Result;
-            string responseText = response.Content.ReadAsStringAsync().Result;
+            HttpResponseMessage response = await HttpClient.GetAsync($"http://localhost:{aspNetCorePort}{path}");
+            string responseText = await response.Content.ReadAsStringAsync();
             Output.WriteLine($"[http] {response.StatusCode} {responseText}");
             return response.StatusCode;
         }
