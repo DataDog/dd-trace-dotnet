@@ -180,7 +180,7 @@ jobs:
       preferBundledVersion: false
 
   - download: current
-    artifact: windows-msi-x64
+    artifact: windows-msi
     patterns: '**/*x64.msi'
 
   - download: current
@@ -189,7 +189,7 @@ jobs:
 
   - script: |
       mkdir s3_upload
-      mv $(Pipeline.Workspace)/windows-msi-x64/*.msi s3_upload/
+      mv $(Pipeline.Workspace)/windows-msi/*.msi s3_upload/
       mv $(Pipeline.Workspace)/linux-packages/*.deb s3_upload/
     displayName: Move deb package and MSI to s3_upload folder
 
