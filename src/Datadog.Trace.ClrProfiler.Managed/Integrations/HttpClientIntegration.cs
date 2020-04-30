@@ -453,6 +453,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 try
                 {
+                    if (scope != null)
+                    {
+                        // add distributed tracing headers to the HTTP request
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, handler.DefaultRequestHeaders);
+                    }
+
                     HttpResponseMessage response = await deleteAsync(handler, uri, cancellationToken).ConfigureAwait(false);
 
                     // this tag can only be set after the response is returned

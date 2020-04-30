@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class HttpClientTests : TestHelper
     {
         public HttpClientTests(ITestOutputHelper output)
-            : base("HttpClientDriver", output)
+            : base("HttpClientDriver.LoaderOpt", output)
         {
             SetEnvironmentVariable("DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION", "true");
             SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 2 : 1;
             const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.HttpClientDriver-http-client";
+            const string expectedServiceName = "Samples.HttpClientDriver.LoaderOpt-http-client";
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
@@ -54,8 +54,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 var firstSpan = spans.First();
-                var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
 
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
@@ -79,86 +79,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1, 500);
                 Assert.Equal(0, spans.Count);
 
-                var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                var tracingEnabled = GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
+                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
 
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
                 Assert.Equal("false", tracingEnabled);
             }
-        }
-
-        [Fact(Skip = "Until WebClient instrumentation put in place")]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
-        public void WebClient()
-        {
-            int agentPort = TcpPortProvider.GetOpenPort();
-            int httpPort = TcpPortProvider.GetOpenPort();
-
-            using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"WebClient Port={httpPort}"))
-            {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
-
-                var spans = agent.WaitForSpans(1);
-                Assert.True(spans.Count > 0, "expected at least one span." + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
-
-                var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-
-                // inspect the top-level span, underlying spans can be HttpClient in .NET Core
-                var firstSpan = spans.First();
-                Assert.Equal("http.request", firstSpan.Name);
-                Assert.Equal("Samples.HttpClientDriver-http-client", firstSpan.Service);
-                Assert.Equal(SpanTypes.Http, firstSpan.Type);
-                Assert.Equal(nameof(WebRequest), firstSpan.Tags?[Tags.InstrumentationName]);
-                Assert.False(firstSpan.Tags?.ContainsKey(Tags.Version), "Http client span should not have service version tag.");
-
-                var lastSpan = spans.Last();
-                Assert.Equal(lastSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(lastSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
-                Assert.False(lastSpan.Tags?.ContainsKey(Tags.Version), "Http client span should not have service version tag.");
-            }
-        }
-
-        [Fact(Skip = "Until WebClient instrumentation put in place")]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
-        public void WebClient_TracingDisabled()
-        {
-            int agentPort = TcpPortProvider.GetOpenPort();
-            int httpPort = TcpPortProvider.GetOpenPort();
-
-            using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"WebClient TracingDisabled Port={httpPort}"))
-            {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
-
-                var spans = agent.WaitForSpans(1, 500);
-                Assert.Equal(0, spans.Count);
-
-                var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                var tracingEnabled = GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
-
-                Assert.Null(traceId);
-                Assert.Null(parentSpanId);
-                Assert.Equal("false", tracingEnabled);
-            }
-        }
-
-        private string GetHeader(string stdout, string name)
-        {
-            var pattern = $@"^\[HttpListener\] request header: {name}=(\w+)\r?$";
-            var match = Regex.Match(stdout, pattern, RegexOptions.Multiline);
-
-            return match.Success
-                       ? match.Groups[1].Value
-                       : null;
         }
     }
 }
