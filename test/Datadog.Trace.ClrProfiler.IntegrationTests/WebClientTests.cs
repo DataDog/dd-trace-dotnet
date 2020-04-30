@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
@@ -8,10 +9,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class HttpClientTests : TestHelper
+    public class WebClientTests : TestHelper
     {
-        public HttpClientTests(ITestOutputHelper output)
-            : base("HttpClientDriver.LoaderOpt", output)
+        public WebClientTests(ITestOutputHelper output)
+            : base("HttpClientDriver", output)
         {
             SetEnvironmentVariable("DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION", "true");
             SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
@@ -20,53 +21,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void HttpClient()
+        public void WebClient()
         {
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 2 : 1;
-            const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.HttpClientDriver.LoaderOpt-http-client";
-
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"HttpClient Port={httpPort}"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"WebClient Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.True(spans.Count >= expectedSpanCount, $"Expected at least {expectedSpanCount} span, only received {spans.Count}" + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
+                var spans = agent.WaitForSpans(1);
+                Assert.True(spans.Count > 0, "expected at least one span." + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
 
-                foreach (var span in spans)
-                {
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal(SpanTypes.Http, span.Type);
-                    Assert.Equal(nameof(HttpClient), span.Tags[Tags.InstrumentationName]);
-                }
-
-                var firstSpan = spans.First();
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
 
-                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+                // inspect the top-level span, underlying spans can be HttpClient in .NET Core
+                var firstSpan = spans.First();
+                Assert.Equal("WebClientRequest", firstSpan.Name);
+                Assert.Equal("Samples.HttpClientDriver", firstSpan.Service);
+                Assert.Equal(SpanTypes.Web, firstSpan.Type);
+                Assert.Equal(nameof(WebRequest), firstSpan.Tags[Tags.InstrumentationName]);
+
+                var lastSpan = spans.Last();
+                Assert.Equal(lastSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
+                Assert.Equal(lastSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Until WebClient instrumentation is available")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void HttpClient_TracingDisabled()
+        public void WebClient_TracingDisabled()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"HttpClient TracingDisabled Port={httpPort}"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"WebClient TracingDisabled Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
