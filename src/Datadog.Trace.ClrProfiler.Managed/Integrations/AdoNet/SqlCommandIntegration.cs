@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string SqlCommandTypeName = "System.Data.SqlClient.SqlCommand";
         private const string SqlDataReaderTypeName = "System.Data.SqlClient.SqlDataReader";
 
-        private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(SqlCommandIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for SqlCommand.ExecuteReader().
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)", ex);
+                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)");
                 throw;
             }
 
@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)", ex);
+                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)");
                 throw;
             }
 
@@ -192,7 +192,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReaderAsync}(...)", ex);
+                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReaderAsync}(...)");
                 throw;
             }
 
@@ -245,7 +245,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)", ex);
+                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
                 throw;
             }
 
@@ -320,7 +320,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)", ex);
+                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)");
                 throw;
             }
 
@@ -373,7 +373,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)", ex);
+                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
                 throw;
             }
 
@@ -448,7 +448,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)", ex);
+                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)");
                 throw;
             }
 

@@ -11,6 +11,7 @@ namespace Datadog.Trace.Logging
     /// </summary>
     internal class LibLogScopeEventSubscriber : IDisposable
     {
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(LibLogScopeEventSubscriber));
         private readonly IScopeManager _scopeManager;
         private readonly ILogProvider _logProvider;
 
@@ -43,18 +44,25 @@ namespace Datadog.Trace.Logging
         {
             _scopeManager = scopeManager;
 
-            _logProvider = LogProvider.CurrentLogProvider ?? LogProvider.ResolveLogProvider();
-            if (_logProvider is SerilogLogProvider)
+            try
             {
-                // Do not set default values for Serilog because it is unsafe to set
-                // except at the application startup, but this would require auto-instrumentation
-                _scopeManager.SpanOpened += StackOnSpanOpened;
-                _scopeManager.SpanClosed += StackOnSpanClosed;
+                _logProvider = LogProvider.CurrentLogProvider ?? LogProvider.ResolveLogProvider();
+                if (_logProvider is SerilogLogProvider)
+                {
+                    // Do not set default values for Serilog because it is unsafe to set
+                    // except at the application startup, but this would require auto-instrumentation
+                    _scopeManager.SpanOpened += StackOnSpanOpened;
+                    _scopeManager.SpanClosed += StackOnSpanClosed;
+                }
+                else
+                {
+                    _scopeManager.SpanActivated += MapOnSpanActivated;
+                    _scopeManager.TraceEnded += MapOnTraceEnded;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _scopeManager.SpanActivated += MapOnSpanActivated;
-                _scopeManager.TraceEnded += MapOnTraceEnded;
+                Log.Error(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
             }
         }
 
