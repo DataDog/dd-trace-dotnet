@@ -38,6 +38,7 @@ namespace Datadog.Trace.Agent
 
                 if (frameworkDescription != null)
                 {
+                    Log.Information(frameworkDescription.ToString());
                     _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, frameworkDescription.Name);
                     _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, frameworkDescription.ProductVersion);
                 }

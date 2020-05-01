@@ -81,11 +81,6 @@ namespace Datadog.Trace.Logging
             {
                 // Don't let this exception bubble up as this logger is for debugging and is non-critical
             }
-            finally
-            {
-                // Log some information to correspond with the app domain
-                SharedLogger.Information(FrameworkDescription.Create().ToString());
-            }
         }
 
         public static ILogger GetLogger(Type classType)
