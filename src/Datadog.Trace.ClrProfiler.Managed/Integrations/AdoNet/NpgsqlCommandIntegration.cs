@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private const string NpgsqlCommandTypeName = "Npgsql.NpgsqlCommand";
         private const string NpgsqlDataReaderTypeName = "Npgsql.NpgsqlDataReader";
 
-        private static readonly ILog Log = LogProvider.GetCurrentClassLogger();
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(NpgsqlCommandIntegration));
 
         /// <summary>
         /// Instrumentation wrapper for NpgsqlCommand />
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)", ex);
+                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)");
                 throw;
             }
 
@@ -116,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)", ex);
+                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)");
                 throw;
             }
 
@@ -189,7 +189,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReaderAsync}(...)", ex);
+                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReaderAsync}(...)");
                 throw;
             }
 
@@ -267,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReaderAsync}(...)", ex);
+                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReaderAsync}(...)");
                 throw;
             }
 
@@ -320,7 +320,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)", ex);
+                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
                 throw;
             }
 
@@ -395,7 +395,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)", ex);
+                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)");
                 throw;
             }
 
@@ -448,7 +448,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)", ex);
+                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
                 throw;
             }
 
@@ -523,7 +523,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.ErrorException($"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)", ex);
+                Log.Error(ex, $"Error resolving {NpgsqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)");
                 throw;
             }
 
