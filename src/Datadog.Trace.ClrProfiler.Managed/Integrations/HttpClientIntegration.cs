@@ -106,9 +106,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Instrumentation wrapper for HttpClient.GetAsync.
+        /// Instrumentation wrapper for HttpClient.GetStreamAsync.
         /// </summary>
-        /// <param name="handler">The HttpClient.GetAsync instance to instrument.</param>
+        /// <param name="handler">The HttpClient instance to instrument.</param>
         /// <param name="uri">The <see cref="Uri"/> that represents the current request uri.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
@@ -191,9 +191,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
-        /// Instrumentation wrapper for HttpClient.GetAsync.
+        /// Instrumentation wrapper for HttpClient.GetByteArrayAsync.
         /// </summary>
-        /// <param name="handler">The HttpClient.GetAsync instance to instrument.</param>
+        /// <param name="handler">The HttpClient instance to instrument.</param>
         /// <param name="uri">The <see cref="Uri"/> that represents the current request uri.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
