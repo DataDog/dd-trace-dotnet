@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"HttpClient Port={httpPort}"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"HttpClient TracingDisabled Port={httpPort}"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"TracingDisabled Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
