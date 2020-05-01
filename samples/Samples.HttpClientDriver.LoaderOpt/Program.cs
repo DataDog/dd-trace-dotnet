@@ -26,12 +26,6 @@ namespace Samples.HttpClientDriver.LoaderOpt
             bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
             Console.WriteLine($"TracingDisabled {tracingDisabled}");
 
-            bool useHttpClient = args.Any(arg => arg.Equals("HttpClient", StringComparison.OrdinalIgnoreCase));
-            Console.WriteLine($"HttpClient {useHttpClient}");
-
-            bool useWebClient = args.Any(arg => arg.Equals("WebClient", StringComparison.OrdinalIgnoreCase));
-            Console.WriteLine($"WebClient {useWebClient}");
-
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
             Console.WriteLine($"Port {port}");
 
@@ -40,21 +34,10 @@ namespace Samples.HttpClientDriver.LoaderOpt
                 Console.WriteLine();
                 Console.WriteLine($"Starting HTTP listener at {Url}");
 
-                if (args.Length == 0 || args.Any(arg => arg.Equals("HttpClient", StringComparison.OrdinalIgnoreCase)))
-                {
-                    // send an http request using HttpClient
-                    Console.WriteLine();
-                    Console.WriteLine("Sending request with HttpClient.");
-                    HttpClientHelpers.SendHttpClientRequestsAsync(tracingDisabled, Url, RequestContent).GetAwaiter().GetResult();
-                }
-
-                if (args.Length == 0 || args.Any(arg => arg.Equals("WebClient", StringComparison.OrdinalIgnoreCase)))
-                {
-                    // send an http request using WebClient
-                    Console.WriteLine();
-                    Console.WriteLine("Sending request with WebClient.");
-                    WebClientHelpers.SendWebClientsRequest(tracingDisabled, Url, RequestContent);
-                }
+                // send http requests using HttpClient
+                Console.WriteLine();
+                Console.WriteLine("Sending request with HttpClient.");
+                HttpClientHelpers.SendHttpClientRequestsAsync(tracingDisabled, Url, RequestContent).GetAwaiter().GetResult();
 
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
