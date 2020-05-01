@@ -581,6 +581,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             var cancellationToken = (CancellationToken)boxedCancellationToken;
             var callOpCode = (OpCodeValue)opCode;
             var httpClient = handler.GetInstrumentedType(HttpClientTarget);
+            var httpContent = content as HttpContent;
 
             Func<HttpClient, Uri, HttpContent, CancellationToken, Task<HttpResponseMessage>> instrumentedMethod = null;
 
@@ -732,6 +733,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             HttpContent content,
             CancellationToken cancellationToken)
         {
+            if (content != null && !IsTracingEnabled(content))
+            {
+                // skip instrumentation
+                return await fncAsync(handler, uri, content, cancellationToken).ConfigureAwait(false);
+            }
+
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpVerb, uri, IntegrationName))
             {
                 try
@@ -754,6 +761,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static bool IsTracingEnabled(HttpRequestMessage request)
         {
             if (request.Headers.TryGetValues(HttpHeaderNames.TracingEnabled, out var headerValues))
+            {
+                if (headerValues.Any(s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
+                {
+                    // tracing is disabled for this request via http header
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsTracingEnabled(HttpContent content)
+        {
+            if (content.Headers.TryGetValues(HttpHeaderNames.TracingEnabled, out var headerValues))
             {
                 if (headerValues.Any(s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
                 {
