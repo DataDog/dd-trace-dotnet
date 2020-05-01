@@ -7,7 +7,7 @@ using System.Threading;
 using Datadog.Core.Tools;
 using Samples.Shared;
 
-namespace Samples.HttpClientDriver
+namespace Samples.WebClientDriver.LoaderOpt
 {
     public static class Program
     {
@@ -18,6 +18,9 @@ namespace Samples.HttpClientDriver
 
         private static string Url;
 
+#if NETFRAMEWORK
+        [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
+#endif
         static void Main(string[] args)
         {
             bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
@@ -31,10 +34,10 @@ namespace Samples.HttpClientDriver
                 Console.WriteLine();
                 Console.WriteLine($"Starting HTTP listener at {Url}");
 
-                // send http requests using HttpClient
+                // send http requests using WebClient
                 Console.WriteLine();
-                Console.WriteLine("Sending request with HttpClient.");
-                HttpClientHelpers.SendHttpClientRequestsAsync(tracingDisabled, Url, RequestContent).GetAwaiter().GetResult();
+                Console.WriteLine("Sending request with WebClient.");
+                WebClientHelpers.SendWebClientsRequest(tracingDisabled, Url, RequestContent);
 
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
@@ -52,7 +55,7 @@ namespace Samples.HttpClientDriver
             // try up to 5 consecutive ports before giving up
             while (true)
             {
-                Url = $"http://localhost:{port}/Samples.HttpClientDriver/";
+                Url = $"http://localhost:{port}/Samples.WebClientDriver/";
 
                 // seems like we can't reuse a listener if it fails to start,
                 // so create a new listener each time we retry
