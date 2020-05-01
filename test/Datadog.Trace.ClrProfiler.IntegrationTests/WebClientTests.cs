@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -35,22 +36,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count > 0, "expected at least one span." + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
 
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+
+                int nHttpTypeSpans = 0;
+                StringCollection others = new StringCollection();
+
+                foreach (var s in spans)
+                {
+                    if (s.Type != null)
+                    {
+                       if (s.Type.Equals("http"))
+                       {
+                            nHttpTypeSpans++;
+                       }
+                       else
+                        {
+                            others.Add(s.Type);
+                        }
+                    }
+
+                    if (s.Tags != null && s.Tags.Count > 0)
+                    {
+                        Assert.True(s.Tags[Tags.InstrumentationName].Equals("WebRequest") ||
+                                    s.Tags[Tags.InstrumentationName].Equals("WebClient"));
+                    }
+                }
+
+                Assert.Equal(24, nHttpTypeSpans);
 
                 // inspect the top-level span, underlying spans can be HttpClient in .NET Core
                 var firstSpan = spans.First();
                 Assert.Equal("WebClientRequest", firstSpan.Name);
                 Assert.Equal("Samples.HttpClientDriver", firstSpan.Service);
-                Assert.Equal(SpanTypes.Web, firstSpan.Type);
-                Assert.Equal(nameof(WebRequest), firstSpan.Tags[Tags.InstrumentationName]);
 
                 var lastSpan = spans.Last();
                 Assert.Equal(lastSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(lastSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
             }
         }
 
-        [Fact(Skip = "Until WebClient instrumentation is available")]
+        [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public void WebClient_TracingDisabled()
