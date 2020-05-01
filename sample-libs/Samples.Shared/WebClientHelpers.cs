@@ -25,8 +25,6 @@ namespace Samples.Shared
                     webClient.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
                 }
 
-                GlobalSettings.SetDebugEnabled(true);
-
                 using (Tracer.Instance.StartActive("WebClientRequest"))
                 {
                     using (Tracer.Instance.StartActive("DownloadData"))
