@@ -24,6 +24,14 @@ namespace Datadog.Trace.Configuration
         /// and used to determine service name of some child spans.
         /// </summary>
         /// <seealso cref="TracerSettings.ServiceName"/>
+        public const string Service = "DD_SERVICE";
+
+        /// <summary>
+        /// Configuration key for the application's default service name.
+        /// Used as the service name for top-level spans,
+        /// and used to determine service name of some child spans.
+        /// </summary>
+        /// <seealso cref="TracerSettings.ServiceName"/>
         public const string ServiceName = "DD_SERVICE_NAME";
 
         /// <summary>

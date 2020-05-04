@@ -38,7 +38,9 @@ namespace Datadog.Trace.Configuration
         {
             Environment = source?.GetString(ConfigurationKeys.Environment);
 
-            ServiceName = source?.GetString(ConfigurationKeys.ServiceName);
+            ServiceName = source?.GetString(ConfigurationKeys.Service) ??
+                          // backwards compatibility for names used in the past
+                          source?.GetString(ConfigurationKeys.ServiceName);
 
             TraceEnabled = source?.GetBool(ConfigurationKeys.TraceEnabled) ??
                            // default value
