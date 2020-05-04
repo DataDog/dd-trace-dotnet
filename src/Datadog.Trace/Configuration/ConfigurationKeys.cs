@@ -96,6 +96,11 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for a list of tags to be applied globally to spans.
         /// </summary>
+        public const string Tags = "DD_TAGS";
+
+        /// <summary>
+        /// Configuration key for a list of tags to be applied globally to spans.
+        /// </summary>
         public const string GlobalTags = "DD_TRACE_GLOBAL_TAGS";
 
         /// <summary>
