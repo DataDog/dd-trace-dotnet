@@ -1,10 +1,11 @@
 #include "cor_profiler.h"
 
 #include <corprof.h>
+
 #include <string>
-#include "corhlpr.h"
 
 #include "clr_helpers.h"
+#include "corhlpr.h"
 #include "environment_variables.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
@@ -164,12 +165,12 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // set event mask to subscribe to events and disable NGEN images
-  // get ICorProfilerInfo5 for net452+
-  ICorProfilerInfo5* info5;
-  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo5>(&info5);
+  // get ICorProfilerInfo6 for net452+
+  ICorProfilerInfo6* info6;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo6>(&info6);
   if (SUCCEEDED(hr)) {
-    Debug("Interface ICorProfilerInfo5 found.");
-    hr = info5->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+    Info("Interface ICorProfilerInfo6 found.");
+    hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
   } else {
     hr = this->info_->SetEventMask(event_mask);
   }

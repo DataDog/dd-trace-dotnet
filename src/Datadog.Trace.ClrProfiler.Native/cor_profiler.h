@@ -42,12 +42,10 @@ class CorProfiler : public CorProfilerBase {
 
   HRESULT STDMETHODCALLTYPE Shutdown() override;
 
-  //
-  // ICorProfilerCallback6 methods
-  //
   HRESULT STDMETHODCALLTYPE GetAssemblyReferences(
       const WCHAR* wszAssemblyPath,
       ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) override;
+
 };
 
 // Note: Generally you should not have a single, global callback implementation,
