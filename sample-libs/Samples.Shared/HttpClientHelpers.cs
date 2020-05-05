@@ -28,16 +28,16 @@ namespace Samples.Shared
                     using (Tracer.Instance.StartActive("DeleteAsync"))
                     {
                         await client.DeleteAsync(url);
-                        Console.WriteLine("Received response for client.GetAsync(String)");
+                        Console.WriteLine("Received response for client.DeleteAsync(String)");
 
                         await client.DeleteAsync(new Uri(url));
-                        Console.WriteLine("Received response for client.GetAsync(Uri)");
+                        Console.WriteLine("Received response for client.DeleteAsync(Uri)");
 
                         await client.DeleteAsync(url, CancellationToken.None);
-                        Console.WriteLine("Received response for client.GetAsync(String, CancellationToken)");
+                        Console.WriteLine("Received response for client.DeleteAsync(String, CancellationToken)");
 
                         await client.DeleteAsync(new Uri(url), CancellationToken.None);
-                        Console.WriteLine("Received response for client.GetAsync(Uri, CancellationToken)");
+                        Console.WriteLine("Received response for client.DeleteAsync(Uri, CancellationToken)");
                     }
 
                     using (Tracer.Instance.StartActive("GetAsync"))
