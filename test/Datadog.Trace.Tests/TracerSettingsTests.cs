@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests
         [InlineData(ConfigurationKeys.Environment, Tags.Env, "custom-env")]
         [InlineData(ConfigurationKeys.Version, Tags.Version, null)]
         [InlineData(ConfigurationKeys.Version, Tags.Version, "custom-version")]
-        public void ConfiguredTracerSettings_DefaultTagsSet(string environmentVariableKey, string tagKey, string value)
+        public void ConfiguredTracerSettings_DefaultTagsSetFromEnvironmentVariable(string environmentVariableKey, string tagKey, string value)
         {
             // save original value so we can restore later
             var originalValue = Environment.GetEnvironmentVariable(environmentVariableKey);
