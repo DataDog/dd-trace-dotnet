@@ -10,24 +10,17 @@ using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.IntegrationTests
+namespace Datadog.Trace.Tests
 {
-    public class ServiceUnificationTests
+    public class TracerSettingsTests
     {
-        private readonly ITestOutputHelper _output;
         private readonly Mock<IAgentWriter> _writerMock;
         private readonly Mock<ISampler> _samplerMock;
-        private readonly Tracer _tracer;
 
-        public ServiceUnificationTests(ITestOutputHelper output)
+        public TracerSettingsTests()
         {
-            _output = output;
-
-            var settings = new TracerSettings();
             _writerMock = new Mock<IAgentWriter>();
             _samplerMock = new Mock<ISampler>();
-
-            _tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Theory]
@@ -63,20 +56,21 @@ namespace Datadog.Trace.IntegrationTests
 
             // save original values so we can restore later
             var originalEnvValue = Environment.GetEnvironmentVariable(envKey);
-            var originalTagsValue = Environment.GetEnvironmentVariable(ConfigurationKeys.GlobalTags);
+            var originalTagsValue = Environment.GetEnvironmentVariable(ConfigurationKeys.Tags);
 
             Environment.SetEnvironmentVariable(envKey, envValue, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GlobalTags, tagsLine, EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Tags, tagsLine, EnvironmentVariableTarget.Process);
 
             IConfigurationSource source = new EnvironmentConfigurationSource();
             var settings = new TracerSettings(source);
+            Assert.True(settings.GlobalTags.Any());
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             // restore original value
             Environment.SetEnvironmentVariable(envKey, originalEnvValue, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GlobalTags, originalTagsValue, EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Tags, originalTagsValue, EnvironmentVariableTarget.Process);
 
             Assert.Equal(span.GetTag(tagKey), envValue);
         }
