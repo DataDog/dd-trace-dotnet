@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, parentScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, parentScope));
         }
 
         [Fact]
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, childScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, childScope));
         }
 
         [Fact]
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, scope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, scope));
         }
 
         [Fact]
@@ -122,9 +122,10 @@ namespace Datadog.Trace.Tests.Logging
             Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
-        internal static void LogEventContains(string nLogString, Scope scope)
+        internal static void LogEventContains(string nLogString, string version, Scope scope)
         {
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceKey, scope.Span.ServiceName), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.VersionKey, version), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, scope.Span.SpanId), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, scope.Span.TraceId), nLogString);
         }

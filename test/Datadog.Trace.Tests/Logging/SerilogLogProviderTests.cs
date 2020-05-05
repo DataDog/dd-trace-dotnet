@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, parentScope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, parentScope));
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, childScope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, childScope));
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, scope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, scope));
         }
 
         [Fact]
@@ -103,15 +103,18 @@ namespace Datadog.Trace.Tests.Logging
             Assert.All(_logEvents, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
-        internal static void LogEventContains(Serilog.Events.LogEvent logEvent, Scope scope)
+        internal static void LogEventContains(Serilog.Events.LogEvent logEvent, string version, Scope scope)
         {
-            Contains(logEvent, scope.Span.ServiceName, scope.Span.TraceId, scope.Span.SpanId);
+            Contains(logEvent, scope.Span.ServiceName, version, scope.Span.TraceId, scope.Span.SpanId);
         }
 
-        internal static void Contains(Serilog.Events.LogEvent logEvent, string service, ulong traceId, ulong spanId)
+        internal static void Contains(Serilog.Events.LogEvent logEvent, string service, string version, ulong traceId, ulong spanId)
         {
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.ServiceKey));
             Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.VersionKey));
+            Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.VersionKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
 
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
             Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString().Trim(new[] { '\"' })));
@@ -122,6 +125,7 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void LogEventDoesNotContainCorrelationIdentifiers(Serilog.Events.LogEvent logEvent)
         {
+            // Do not assert on the version property
             // Do not assert on the service property
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
