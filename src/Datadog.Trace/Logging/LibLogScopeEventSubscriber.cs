@@ -74,7 +74,13 @@ namespace Datadog.Trace.Logging
 
         public void StackOnSpanOpened(object sender, SpanEventArgs spanEventArgs)
         {
-            SetCorrelationIdentifierContext(spanEventArgs.Span.ServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            var span = spanEventArgs.Span;
+            SetCorrelationIdentifierContext(
+                span.ServiceName,
+                span.GetTag(Tags.Version) ?? string.Empty,
+                span.GetTag(Tags.Env) ?? string.Empty,
+                span.TraceId,
+                span.SpanId);
         }
 
         public void StackOnSpanClosed(object sender, SpanEventArgs spanEventArgs)
@@ -84,8 +90,14 @@ namespace Datadog.Trace.Logging
 
         public void MapOnSpanActivated(object sender, SpanEventArgs spanEventArgs)
         {
+            var span = spanEventArgs.Span;
             RemoveAllCorrelationIdentifierContexts();
-            SetCorrelationIdentifierContext(spanEventArgs.Span.ServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            SetCorrelationIdentifierContext(
+                span.ServiceName,
+                span.GetTag(Tags.Version) ?? string.Empty,
+                span.GetTag(Tags.Env) ?? string.Empty,
+                span.TraceId,
+                span.SpanId);
         }
 
         public void MapOnTraceEnded(object sender, SpanEventArgs spanEventArgs)
@@ -112,7 +124,12 @@ namespace Datadog.Trace.Logging
 
         private void SetDefaultValues()
         {
-            SetCorrelationIdentifierContext(_defaultServiceName, _version, _env, 0, 0);
+            SetCorrelationIdentifierContext(
+                _defaultServiceName,
+                _version,
+                _env,
+                0,
+                0);
         }
 
         private void RemoveLastCorrelationIdentifierContext()
