@@ -11,6 +11,7 @@ namespace Datadog.Trace.Logging
     /// </summary>
     internal class LibLogScopeEventSubscriber : IDisposable
     {
+        private const int _numPropertiesSetOnSpanEvent = 5;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(LibLogScopeEventSubscriber));
         private readonly IScopeManager _scopeManager;
         private readonly string _defaultServiceName;
@@ -118,7 +119,7 @@ namespace Datadog.Trace.Logging
         private void RemoveLastCorrelationIdentifierContext()
         {
             // TODO: Debug logs
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < _numPropertiesSetOnSpanEvent; i++)
             {
                 if (_contextDisposalStack.TryPop(out var ctxDisposable))
                 {
