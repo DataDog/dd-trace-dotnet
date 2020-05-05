@@ -155,10 +155,10 @@ namespace Datadog.Trace.Logging
                 // TODO: Debug logs
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.ServiceKey, service, destructure: false));
+                        CorrelationIdentifier.ServiceNameKey, service, destructure: false));
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.VersionKey, version, destructure: false));
+                        CorrelationIdentifier.ServiceVersionKey, version, destructure: false));
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
                         CorrelationIdentifier.EnvKey, env, destructure: false));

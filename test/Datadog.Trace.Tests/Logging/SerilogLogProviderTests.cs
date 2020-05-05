@@ -110,11 +110,11 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void Contains(Serilog.Events.LogEvent logEvent, string service, string version, string env, ulong traceId, ulong spanId)
         {
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.ServiceKey));
-            Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.ServiceNameKey));
+            Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceNameKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
 
-            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.VersionKey));
-            Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.VersionKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.ServiceVersionKey));
+            Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.ServiceVersionKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
 
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.EnvKey));
             Assert.Equal(env, logEvent.Properties[CorrelationIdentifier.EnvKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
