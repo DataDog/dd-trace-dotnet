@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tests.Logging
     [TestCaseOrderer("Datadog.Trace.TestHelpers.AlphabeticalOrderer", "Datadog.Trace.TestHelpers")]
     public class NLogLogProviderTests
     {
-        private const string ExpectedStringFormat = "\"{0}\": \"{1}\"";
+        private const string NLogExpectedStringFormat = "\"{0}\": \"{1}\"";
 
         private readonly ILogProvider _logProvider;
         private readonly ILog _logger;
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => e.Contains(parentScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, parentScope));
         }
 
         [Fact]
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => e.Contains(childScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, childScope));
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => e.DoesNotContainCorrelationIdentifiers());
+            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
         [Fact]
@@ -103,7 +103,23 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => e.DoesNotContainCorrelationIdentifiers());
+            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+        }
+
+        internal static void LogEventContains(string nLogString, Scope scope)
+        {
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, scope.Span.SpanId), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, scope.Span.TraceId), nLogString);
+        }
+
+        internal static void LogEventDoesNotContainCorrelationIdentifiers(string nLogString)
+        {
+            Assert.True(
+                nLogString.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, 0)) ||
+                !nLogString.Contains($"\"{CorrelationIdentifier.SpanIdKey}\""));
+            Assert.True(
+                nLogString.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, 0)) ||
+                !nLogString.Contains($"\"{CorrelationIdentifier.TraceIdKey}\""));
         }
     }
 }

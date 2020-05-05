@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => e.Contains(parentScope));
+            Assert.All(_logEvents, e => LogEventContains(e, parentScope));
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => e.Contains(childScope));
+            Assert.All(_logEvents, e => LogEventContains(e, childScope));
         }
 
         [Fact]
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => e.DoesNotContainCorrelationIdentifiers());
+            Assert.All(_logEvents, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
         [Fact]
@@ -85,7 +85,27 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => e.DoesNotContainCorrelationIdentifiers());
+            Assert.All(_logEvents, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+        }
+
+        internal static void LogEventContains(Serilog.Events.LogEvent logEvent, Scope scope)
+        {
+            Contains(logEvent, scope.Span.TraceId, scope.Span.SpanId);
+        }
+
+        internal static void Contains(Serilog.Events.LogEvent logEvent, ulong traceId, ulong spanId)
+        {
+            // First, verify that the properties are attached to the LogEvent
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
+            Assert.Equal<ulong>(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString().Trim(new[] { '\"' })));
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.Equal<ulong>(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString().Trim(new[] { '\"' })));
+        }
+
+        internal static void LogEventDoesNotContainCorrelationIdentifiers(Serilog.Events.LogEvent logEvent)
+        {
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
+            Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
         }
     }
 }

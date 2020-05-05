@@ -15,6 +15,7 @@ namespace Datadog.Trace.Tests.Logging
     [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class Log4NetLogProviderTests
     {
+        private const string Log4NetExpectedStringFormat = "\"{0}\":\"{1}\"";
         private readonly ILogProvider _logProvider;
         private readonly ILog _logger;
         private readonly MemoryAppender _memoryAppender;
@@ -43,7 +44,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => e.Contains(parentScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, parentScope));
         }
 
         [Fact]
@@ -59,7 +60,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => e.Contains(childScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, childScope));
         }
 
         [Fact]
@@ -75,7 +76,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => e.DoesNotContainCorrelationIdentifiers());
+            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
         [Fact]
@@ -91,7 +92,35 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => e.DoesNotContainCorrelationIdentifiers());
+            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+        }
+
+        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, Scope scope)
+        {
+            LogEventContains(logEvent, scope.Span.TraceId, scope.Span.SpanId);
+        }
+
+        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, ulong traceId, ulong spanId)
+        {
+            // First, verify that the properties are attached to the LogEvent
+            Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+        }
+
+        internal static void LogEventDoesNotContainCorrelationIdentifiers(log4net.Core.LoggingEvent logEvent)
+        {
+            if (logEvent.Properties.Contains(CorrelationIdentifier.SpanIdKey) &&
+                logEvent.Properties.Contains(CorrelationIdentifier.TraceIdKey))
+            {
+                LogEventContains(logEvent, traceId: 0, spanId: 0);
+            }
+            else
+            {
+                Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
+                Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
+            }
         }
 
         /// <summary>
