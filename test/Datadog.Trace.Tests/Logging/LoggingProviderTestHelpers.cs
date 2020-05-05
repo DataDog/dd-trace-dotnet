@@ -29,6 +29,17 @@ namespace Datadog.Trace.Tests.Logging
             return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
+        internal static void LogInSpanWithServiceName(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, string service, out Scope scope)
+        {
+            using (scope = tracer.StartActive("span", serviceName: service))
+            {
+                using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
+                {
+                    logger.Log(LogLevel.Info, () => $"{LogPrefix}Entered single scope with a different service name.");
+                }
+            }
+        }
+
         internal static void LogInParentSpan(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
         {
             using (parentScope = tracer.StartActive("parent"))

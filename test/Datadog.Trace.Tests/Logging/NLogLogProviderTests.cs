@@ -91,6 +91,22 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
+        public void LogsInjectionEnabledUsesSpanServiceName()
+        {
+            // Assert that the NLog log provider is correctly being used
+            Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInSpanWithServiceName(tracer, _logger, _logProvider.OpenMappedContext, "custom-service", out var scope);
+
+            // Filter the logs
+            List<string> filteredLogs = new List<string>(_target.Logs);
+            filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventContains(e, scope));
+        }
+
+        [Fact]
         public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
         {
             // Assert that the NLog log provider is correctly being used

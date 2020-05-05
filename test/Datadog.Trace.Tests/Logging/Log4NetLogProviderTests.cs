@@ -80,6 +80,22 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
+        public void LogsInjectionEnabledUsesSpanServiceName()
+        {
+            // Assert that the Log4Net log provider is correctly being used
+            Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInSpanWithServiceName(tracer, _logger, _logProvider.OpenMappedContext, "custom-service", out var scope);
+
+            // Filter the logs
+            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
+            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventContains(e, scope));
+        }
+
+        [Fact]
         public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
         {
             // Assert that the Log4Net log provider is correctly being used
