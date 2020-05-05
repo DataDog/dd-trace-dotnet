@@ -150,7 +150,7 @@ namespace Datadog.Trace
             // LibLog logging context when a scope is activated/closed
             if (Settings.LogsInjectionEnabled)
             {
-                InitializeLibLogScopeEventSubscriber(_scopeManager);
+                InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName);
             }
         }
 
@@ -461,9 +461,9 @@ namespace Datadog.Trace
             return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags);
         }
 
-        private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager)
+        private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName)
         {
-            new LibLogScopeEventSubscriber(scopeManager);
+            new LibLogScopeEventSubscriber(scopeManager, defaultServiceName);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)

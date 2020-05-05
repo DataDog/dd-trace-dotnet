@@ -9,6 +9,7 @@ namespace Datadog.Trace
     {
         internal static readonly string TraceIdKey = "dd.trace_id";
         internal static readonly string SpanIdKey = "dd.span_id";
+        internal static readonly string ServiceKey = "dd.version";
 
         /// <summary>
         /// Gets the trace id

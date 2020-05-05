@@ -97,12 +97,21 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, Scope scope)
         {
-            LogEventContains(logEvent, scope.Span.TraceId, scope.Span.SpanId);
+            LogEventContains(logEvent, scope.Span.ServiceName, scope.Span.TraceId, scope.Span.SpanId);
+        }
+
+        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string service, ulong traceId, ulong spanId)
+        {
+            Assert.Contains(CorrelationIdentifier.ServiceKey, logEvent.Properties.GetKeys());
+            Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceKey].ToString());
+            Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
         }
 
         internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, ulong traceId, ulong spanId)
         {
-            // First, verify that the properties are attached to the LogEvent
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
             Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());

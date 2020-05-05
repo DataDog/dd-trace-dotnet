@@ -108,12 +108,14 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void LogEventContains(string nLogString, Scope scope)
         {
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceKey, scope.Span.ServiceName), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, scope.Span.SpanId), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, scope.Span.TraceId), nLogString);
         }
 
         internal static void LogEventDoesNotContainCorrelationIdentifiers(string nLogString)
         {
+            // Do not assert on the service property
             Assert.True(
                 nLogString.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, 0)) ||
                 !nLogString.Contains($"\"{CorrelationIdentifier.SpanIdKey}\""));

@@ -90,20 +90,24 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void LogEventContains(Serilog.Events.LogEvent logEvent, Scope scope)
         {
-            Contains(logEvent, scope.Span.TraceId, scope.Span.SpanId);
+            Contains(logEvent, scope.Span.ServiceName, scope.Span.TraceId, scope.Span.SpanId);
         }
 
-        internal static void Contains(Serilog.Events.LogEvent logEvent, ulong traceId, ulong spanId)
+        internal static void Contains(Serilog.Events.LogEvent logEvent, string service, ulong traceId, ulong spanId)
         {
-            // First, verify that the properties are attached to the LogEvent
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.ServiceKey));
+            Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
-            Assert.Equal<ulong>(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString().Trim(new[] { '\"' })));
+            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString().Trim(new[] { '\"' })));
+
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
-            Assert.Equal<ulong>(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString().Trim(new[] { '\"' })));
+            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString().Trim(new[] { '\"' })));
         }
 
         internal static void LogEventDoesNotContainCorrelationIdentifiers(Serilog.Events.LogEvent logEvent)
         {
+            // Do not assert on the service property
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SpanIdKey));
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
         }
