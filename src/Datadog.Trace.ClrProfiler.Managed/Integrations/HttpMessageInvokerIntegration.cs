@@ -99,6 +99,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
+            if (!IsTracingEnabled(request))
+            {
+                // skip instrumentation
+                return await sendAsync(handler, request, cancellationToken).ConfigureAwait(false);
+            }
+
             string httpMethod = request.Method?.Method;
 
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, request.RequestUri, IntegrationName))
