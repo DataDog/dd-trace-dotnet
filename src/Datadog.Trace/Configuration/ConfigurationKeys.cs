@@ -19,26 +19,18 @@ namespace Datadog.Trace.Configuration
         public const string Environment = "DD_ENV";
 
         /// <summary>
+        /// Configuration key for the application's default service name.
+        /// Used as the service name for top-level spans,
+        /// and used to determine service name of some child spans.
+        /// </summary>
+        /// <seealso cref="TracerSettings.ServiceName"/>
+        public const string ServiceName = "DD_SERVICE";
+
+        /// <summary>
         /// Configuration key for the application's version. Sets the "version" tag on every <see cref="Span"/>.
         /// </summary>
-        /// <seealso cref="TracerSettings.Version"/>
-        public const string Version = "DD_VERSION";
-
-        /// <summary>
-        /// Configuration key for the application's default service name.
-        /// Used as the service name for top-level spans,
-        /// and used to determine service name of some child spans.
-        /// </summary>
-        /// <seealso cref="TracerSettings.ServiceName"/>
-        public const string Service = "DD_SERVICE";
-
-        /// <summary>
-        /// Configuration key for the application's default service name.
-        /// Used as the service name for top-level spans,
-        /// and used to determine service name of some child spans.
-        /// </summary>
-        /// <seealso cref="TracerSettings.ServiceName"/>
-        public const string ServiceName = "DD_SERVICE_NAME";
+        /// <seealso cref="TracerSettings.ServiceVersion"/>
+        public const string ServiceVersion = "DD_VERSION";
 
         /// <summary>
         /// Configuration key for enabling or disabling the Tracer.
@@ -102,12 +94,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for a list of tags to be applied globally to spans.
         /// </summary>
-        public const string Tags = "DD_TAGS";
-
-        /// <summary>
-        /// Configuration key for a list of tags to be applied globally to spans.
-        /// </summary>
-        public const string GlobalTags = "DD_TRACE_GLOBAL_TAGS";
+        public const string GlobalTags = "DD_TAGS";
 
         /// <summary>
         /// Configuration key for enabling or disabling the automatic injection

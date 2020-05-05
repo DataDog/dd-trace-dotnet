@@ -38,11 +38,11 @@ namespace Datadog.Trace.Configuration
         {
             Environment = source?.GetString(ConfigurationKeys.Environment);
 
-            Version = source?.GetString(ConfigurationKeys.Version);
-
-            ServiceName = source?.GetString(ConfigurationKeys.Service) ??
+            ServiceName = source?.GetString(ConfigurationKeys.ServiceName) ??
                           // backwards compatibility for names used in the past
-                          source?.GetString(ConfigurationKeys.ServiceName);
+                          source?.GetString("DD_SERVICE_NAME");
+
+            ServiceVersion = source?.GetString(ConfigurationKeys.ServiceVersion);
 
             TraceEnabled = source?.GetBool(ConfigurationKeys.TraceEnabled) ??
                            // default value
@@ -97,9 +97,9 @@ namespace Datadog.Trace.Configuration
 
             Integrations = new IntegrationSettingsCollection(source);
 
-            GlobalTags = source?.GetDictionary(ConfigurationKeys.Tags) ??
+            GlobalTags = source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
                          // backwards compatibility for names used in the past
-                         source?.GetDictionary(ConfigurationKeys.GlobalTags) ??
+                         source?.GetDictionary("DD_TRACE_GLOBAL_TAGS") ??
                          // default value (empty)
                          new ConcurrentDictionary<string, string>();
 
@@ -127,16 +127,16 @@ namespace Datadog.Trace.Configuration
         public string Environment { get; set; }
 
         /// <summary>
-        /// Gets or sets the version tag applied to all spans.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.Version"/>
-        public string Version { get; set; }
-
-        /// <summary>
         /// Gets or sets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceName"/>
         public string ServiceName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version tag applied to all spans.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
+        public string ServiceVersion { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether tracing is enabled.

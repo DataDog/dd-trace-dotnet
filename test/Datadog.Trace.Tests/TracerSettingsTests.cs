@@ -26,8 +26,8 @@ namespace Datadog.Trace.Tests
         [Theory]
         [InlineData(ConfigurationKeys.Environment, Tags.Env, null)]
         [InlineData(ConfigurationKeys.Environment, Tags.Env, "custom-env")]
-        [InlineData(ConfigurationKeys.Version, Tags.Version, null)]
-        [InlineData(ConfigurationKeys.Version, Tags.Version, "custom-version")]
+        [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, null)]
+        [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, "custom-version")]
         public void ConfiguredTracerSettings_DefaultTagsSetFromEnvironmentVariable(string environmentVariableKey, string tagKey, string value)
         {
             // save original value so we can restore later
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [InlineData(ConfigurationKeys.Environment, Tags.Env)]
-        [InlineData(ConfigurationKeys.Version, Tags.Version)]
+        [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version)]
         public void DDVarTakesPrecedenceOverDDTags(string envKey, string tagKey)
         {
             string envValue = $"ddenv-custom-{tagKey}";
@@ -56,10 +56,10 @@ namespace Datadog.Trace.Tests
 
             // save original values so we can restore later
             var originalEnvValue = Environment.GetEnvironmentVariable(envKey);
-            var originalTagsValue = Environment.GetEnvironmentVariable(ConfigurationKeys.Tags);
+            var originalTagsValue = Environment.GetEnvironmentVariable(ConfigurationKeys.GlobalTags);
 
             Environment.SetEnvironmentVariable(envKey, envValue, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.Tags, tagsLine, EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.GlobalTags, tagsLine, EnvironmentVariableTarget.Process);
 
             IConfigurationSource source = new EnvironmentConfigurationSource();
             var settings = new TracerSettings(source);
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests
 
             // restore original value
             Environment.SetEnvironmentVariable(envKey, originalEnvValue, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.Tags, originalTagsValue, EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.GlobalTags, originalTagsValue, EnvironmentVariableTarget.Process);
 
             Assert.Equal(span.GetTag(tagKey), envValue);
         }

@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, parentScope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, parentScope));
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, childScope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, childScope));
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, scope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, scope));
         }
 
         [Fact]

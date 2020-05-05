@@ -150,7 +150,7 @@ namespace Datadog.Trace
             // LibLog logging context when a scope is activated/closed
             if (Settings.LogsInjectionEnabled)
             {
-                InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.Version, Settings.Environment);
+                InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
             }
         }
 
@@ -344,7 +344,7 @@ namespace Datadog.Trace
             }
 
             // automatically add the "version" tag if defined, taking precdence over an "env" tag set from a global tag
-            var version = Settings.Version;
+            var version = Settings.ServiceVersion;
             if (!string.IsNullOrWhiteSpace(version))
             {
                 span.SetTag(Tags.Version, version);
@@ -464,7 +464,7 @@ namespace Datadog.Trace
 
             if (settings.Environment != null)
             {
-                constantTags.Add($"version:{settings.Version}");
+                constantTags.Add($"version:{settings.ServiceVersion}");
             }
 
             var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
