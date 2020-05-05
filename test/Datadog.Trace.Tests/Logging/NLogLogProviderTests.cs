@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, parentScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, parentScope));
         }
 
         [Fact]
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, childScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, childScope));
         }
 
         [Fact]
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
-        public void LogsInjectionEnabledUsesSpanServiceName()
+        public void LogsInjectionEnabledUsesTracerServiceName()
         {
             // Assert that the NLog log provider is correctly being used
             Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, scope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, scope));
         }
 
         [Fact]
@@ -122,9 +122,9 @@ namespace Datadog.Trace.Tests.Logging
             Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
-        internal static void LogEventContains(string nLogString, string version, string env, Scope scope)
+        internal static void LogEventContains(string nLogString, string service, string version, string env, Scope scope)
         {
-            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceKey, scope.Span.ServiceName), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceKey, service), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.EnvKey, env), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.VersionKey, version), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, scope.Span.SpanId), nLogString);

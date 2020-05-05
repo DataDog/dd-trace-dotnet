@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, parentScope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, parentScope));
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, childScope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, childScope));
         }
 
         [Fact]
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
-        public void LogsInjectionEnabledUsesSpanServiceName()
+        public void LogsInjectionEnabledUsesTracerServiceName()
         {
             // Assert that the Serilog log provider is correctly being used
             Assert.IsType<SerilogLogProvider>(LogProvider.CurrentLogProvider);
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, scope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, scope));
         }
 
         [Fact]
@@ -103,9 +103,9 @@ namespace Datadog.Trace.Tests.Logging
             Assert.All(_logEvents, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
-        internal static void LogEventContains(Serilog.Events.LogEvent logEvent, string version, string env, Scope scope)
+        internal static void LogEventContains(Serilog.Events.LogEvent logEvent, string service, string version, string env, Scope scope)
         {
-            Contains(logEvent, scope.Span.ServiceName, version, env, scope.Span.TraceId, scope.Span.SpanId);
+            Contains(logEvent, service, version, env, scope.Span.TraceId, scope.Span.SpanId);
         }
 
         internal static void Contains(Serilog.Events.LogEvent logEvent, string service, string version, string env, ulong traceId, ulong spanId)

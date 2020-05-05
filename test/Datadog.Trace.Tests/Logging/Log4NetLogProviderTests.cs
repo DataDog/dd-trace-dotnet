@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, parentScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, parentScope));
         }
 
         [Fact]
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, childScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, childScope));
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
-        public void LogsInjectionEnabledUsesSpanServiceName()
+        public void LogsInjectionEnabledUsesTracerServiceName()
         {
             // Assert that the Log4Net log provider is correctly being used
             Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, scope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.Version, tracer.Settings.Environment, scope));
         }
 
         [Fact]
@@ -111,9 +111,9 @@ namespace Datadog.Trace.Tests.Logging
             Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
-        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string version, string env, Scope scope)
+        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string service, string version, string env, Scope scope)
         {
-            LogEventContains(logEvent, scope.Span.ServiceName, version, env, scope.Span.TraceId, scope.Span.SpanId);
+            LogEventContains(logEvent, service, version, env, scope.Span.TraceId, scope.Span.SpanId);
         }
 
         internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string service, string version, string env, ulong traceId, ulong spanId)
