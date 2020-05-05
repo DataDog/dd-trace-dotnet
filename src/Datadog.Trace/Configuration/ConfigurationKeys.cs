@@ -19,6 +19,12 @@ namespace Datadog.Trace.Configuration
         public const string Environment = "DD_ENV";
 
         /// <summary>
+        /// Configuration key for the application's version. Sets the "version" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="TracerSettings.Version"/>
+        public const string Version = "DD_VERSION";
+
+        /// <summary>
         /// Configuration key for the application's default service name.
         /// Used as the service name for top-level spans,
         /// and used to determine service name of some child spans.

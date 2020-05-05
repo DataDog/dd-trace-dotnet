@@ -38,6 +38,8 @@ namespace Datadog.Trace.Configuration
         {
             Environment = source?.GetString(ConfigurationKeys.Environment);
 
+            Version = source?.GetString(ConfigurationKeys.Version);
+
             ServiceName = source?.GetString(ConfigurationKeys.Service) ??
                           // backwards compatibility for names used in the past
                           source?.GetString(ConfigurationKeys.ServiceName);
@@ -121,6 +123,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.Environment"/>
         public string Environment { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version tag applied to all spans.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.Version"/>
+        public string Version { get; set; }
 
         /// <summary>
         /// Gets or sets the service name applied to top-level spans and used to build derived service names.

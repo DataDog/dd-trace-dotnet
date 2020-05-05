@@ -63,6 +63,8 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return new object[] { ConfigurationKeys.Environment, "staging", CreateFunc(s => s.Environment), "staging" };
 
+            yield return new object[] { ConfigurationKeys.Version, "1.0.0", CreateFunc(s => s.Version), "1.0.0" };
+
             yield return new object[] { ConfigurationKeys.Service, "web-service", CreateFunc(s => s.ServiceName), "web-service" };
             yield return new object[] { ConfigurationKeys.ServiceName, "web-service", CreateFunc(s => s.ServiceName), "web-service" };
 

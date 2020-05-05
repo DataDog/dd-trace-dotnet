@@ -327,14 +327,6 @@ namespace Datadog.Trace
                 OperationName = operationName,
             };
 
-            var env = Settings.Environment;
-
-            // automatically add the "env" tag if defined
-            if (!string.IsNullOrWhiteSpace(env))
-            {
-                span.SetTag(Tags.Env, env);
-            }
-
             // Apply any global tags
             if (Settings.GlobalTags.Count > 0)
             {
@@ -342,6 +334,20 @@ namespace Datadog.Trace
                 {
                     span.SetTag(entry.Key, entry.Value);
                 }
+            }
+
+            // automatically add the "env" tag if defined, taking precedence over an "env" tag set from a global tag
+            var env = Settings.Environment;
+            if (!string.IsNullOrWhiteSpace(env))
+            {
+                span.SetTag(Tags.Env, env);
+            }
+
+            // automatically add the "version" tag if defined, taking precdence over an "env" tag set from a global tag
+            var version = Settings.Version;
+            if (!string.IsNullOrWhiteSpace(version))
+            {
+                span.SetTag(Tags.Version, version);
             }
 
             traceContext.AddSpan(span);

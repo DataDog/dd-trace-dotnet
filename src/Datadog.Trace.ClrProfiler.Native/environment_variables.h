@@ -43,6 +43,9 @@ const WSTRING agent_port = "DD_TRACE_AGENT_PORT"_W;
 // Sets the "env" tag for every span.
 const WSTRING env = "DD_ENV"_W;
 
+// Sets the "version" tag for every span.
+const WSTRING version = "DD_VERSION"_W;
+
 // Sets the default service name for every span.
 // If not set, Tracer will try to determine service name automatically
 // from application name (e.g. entry assembly or IIS application name).

@@ -13,6 +13,11 @@ namespace Datadog.Trace
         public const string Env = "env";
 
         /// <summary>
+        /// The version of the profiled service.
+        /// </summary>
+        public const string Version = "version";
+
+        /// <summary>
         /// The name of the integration that generated the span.
         /// Use OpenTracing tag "component"
         /// </summary>
