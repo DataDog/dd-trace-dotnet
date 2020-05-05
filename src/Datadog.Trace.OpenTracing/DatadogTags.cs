@@ -1,4 +1,4 @@
-﻿namespace Datadog.Trace.OpenTracing
+namespace Datadog.Trace.OpenTracing
 {
     /// <summary>
     /// This set of tags is used by the OpenTracing compatible tracer to set DataDog specific fields.
@@ -9,6 +9,11 @@
         /// This tag sets the service name
         /// </summary>
         public const string ServiceName = "service.name";
+
+        /// <summary>
+        /// This tag sets the service version
+        /// </summary>
+        public const string ServiceVersion = "service.version";
 
         /// <summary>
         /// This tag sets resource name

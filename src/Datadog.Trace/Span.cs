@@ -220,10 +220,6 @@ namespace Datadog.Trace
                     }
 
                     break;
-                // When users set this OpenTracing version, also set the Datadog version
-                case Trace.Tags.OpenTracingVersion:
-                    SetTag(Trace.Tags.Version, value);
-                    goto default; // Intentionally continue to default case to not duplicate code
                 default:
                     if (value == null)
                     {

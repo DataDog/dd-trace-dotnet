@@ -101,6 +101,9 @@ namespace Datadog.Trace.OpenTracing
                 case DatadogTags.ServiceName:
                     Span.ServiceName = value;
                     return this;
+                case DatadogTags.ServiceVersion:
+                    Span.SetTag(Tags.Version, value);
+                    return this;
             }
 
             if (key == global::OpenTracing.Tag.Tags.Error.Key)

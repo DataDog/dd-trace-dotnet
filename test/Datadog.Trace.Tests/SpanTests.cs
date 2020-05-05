@@ -43,22 +43,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetTag_OpenTracing_ServiceVersionAlsoSetsVersion()
-        {
-            const string key = "service.version";
-            const string versionKey = "version";
-            const string value = "value";
-            var span = _tracer.StartSpan("Operation");
-            Assert.Null(span.GetTag(key));
-
-            span.SetTag(key, value);
-
-            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
-            Assert.Equal(span.GetTag(key), value);
-            Assert.Equal(span.GetTag(versionKey), value);
-        }
-
-        [Fact]
         public void Finish_StartTimeInThePastWithNoEndTime_DurationProperlyComputed()
         {
             // The 100 additional milliseconds account for the clock precision
