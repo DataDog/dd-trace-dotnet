@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class HttpClientTests : TestHelper
     {
         public HttpClientTests(ITestOutputHelper output)
-            : base("HttpClientDriver.LoaderOpt", output)
+            : base("HttpClientDriver", output)
         {
             SetEnvironmentVariable("DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION", "true");
             SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
@@ -26,9 +26,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("LoadFromGAC", "True")]
         public void HttpClient()
         {
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 2 : 1;
+            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 31 : 30;
             const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.HttpClientDriver.LoaderOpt-http-client";
+            const string expectedServiceName = "Samples.HttpClientDriver-http-client";
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
