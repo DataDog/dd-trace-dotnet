@@ -18,6 +18,11 @@ namespace Datadog.Trace
         public const string Version = "version";
 
         /// <summary>
+        /// The version of the profiled service, specified in the OpenTracing style.
+        /// </summary>
+        public const string OpenTracingVersion = "service.version";
+
+        /// <summary>
         /// The name of the integration that generated the span.
         /// Use OpenTracing tag "component"
         /// </summary>
