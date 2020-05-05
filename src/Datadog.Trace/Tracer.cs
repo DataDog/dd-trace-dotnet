@@ -448,7 +448,7 @@ namespace Datadog.Trace
         {
             var frameworkDescription = FrameworkDescription.Create();
 
-            string[] constantTags =
+            List<string> constantTags = new List<string>
             {
                 "lang:.NET",
                 $"lang_interpreter:{frameworkDescription.Name}",
@@ -457,8 +457,18 @@ namespace Datadog.Trace
                 $"service_name:{serviceName}"
             };
 
+            if (settings.Environment != null)
+            {
+                constantTags.Add($"env:{settings.Environment}");
+            }
+
+            if (settings.Environment != null)
+            {
+                constantTags.Add($"version:{settings.Version}");
+            }
+
             var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
-            return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags);
+            return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags.ToArray());
         }
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
