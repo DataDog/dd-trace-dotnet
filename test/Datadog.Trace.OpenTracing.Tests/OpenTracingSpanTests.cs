@@ -40,7 +40,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         }
 
         [Fact]
-        public void SetTag_SpecialTags_ServiceNameAlsoSetsService()
+        public void SetTag_SpecialTags_ServiceNameSetsService()
         {
             ISpan span = GetScope("Op1").Span;
             const string value = "value";
@@ -48,7 +48,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             span.SetTag(DatadogTags.ServiceName, value);
 
             var otSpan = (OpenTracingSpan)span;
-            Assert.Equal(value, otSpan.DDSpan.ServiceName);
+            Assert.Equal(value, otSpan.Span.ServiceName);
         }
 
         [Fact]
@@ -60,7 +60,8 @@ namespace Datadog.Trace.OpenTracing.Tests
             span.SetTag(DatadogTags.ServiceVersion, value);
 
             var otSpan = (OpenTracingSpan)span;
-            Assert.Equal(otSpan.GetTag(Tags.Version), value);
+            Assert.Equal(value, otSpan.GetTag(Tags.Version));
+            Assert.Equal(value, otSpan.GetTag(DatadogTags.ServiceVersion));
         }
 
         [Fact]

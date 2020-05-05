@@ -103,7 +103,7 @@ namespace Datadog.Trace.OpenTracing
                     return this;
                 case DatadogTags.ServiceVersion:
                     Span.SetTag(Tags.Version, value);
-                    return this;
+                    break; // Continue to set the requested tag
             }
 
             if (key == global::OpenTracing.Tag.Tags.Error.Key)
