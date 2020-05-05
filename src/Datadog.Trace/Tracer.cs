@@ -343,7 +343,7 @@ namespace Datadog.Trace
                 span.SetTag(Tags.Env, env);
             }
 
-            // automatically add the "version" tag if defined, taking precdence over an "env" tag set from a global tag
+            // automatically add the "version" tag if defined, taking precedence over an "version" tag set from a global tag
             var version = Settings.ServiceVersion;
             if (!string.IsNullOrWhiteSpace(version))
             {
