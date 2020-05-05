@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, parentScope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, parentScope));
         }
 
         [Fact]
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, childScope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, childScope));
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, scope));
+            Assert.All(_logEvents, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, scope));
         }
 
         [Fact]
@@ -103,18 +103,21 @@ namespace Datadog.Trace.Tests.Logging
             Assert.All(_logEvents, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
-        internal static void LogEventContains(Serilog.Events.LogEvent logEvent, string version, Scope scope)
+        internal static void LogEventContains(Serilog.Events.LogEvent logEvent, string version, string env, Scope scope)
         {
-            Contains(logEvent, scope.Span.ServiceName, version, scope.Span.TraceId, scope.Span.SpanId);
+            Contains(logEvent, scope.Span.ServiceName, version, env, scope.Span.TraceId, scope.Span.SpanId);
         }
 
-        internal static void Contains(Serilog.Events.LogEvent logEvent, string service, string version, ulong traceId, ulong spanId)
+        internal static void Contains(Serilog.Events.LogEvent logEvent, string service, string version, string env, ulong traceId, ulong spanId)
         {
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.ServiceKey));
             Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
 
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.VersionKey));
             Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.VersionKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+
+            Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.EnvKey));
+            Assert.Equal(env, logEvent.Properties[CorrelationIdentifier.EnvKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
 
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.TraceIdKey));
             Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString().Trim(new[] { '\"' })));

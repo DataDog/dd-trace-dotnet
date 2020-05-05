@@ -26,6 +26,7 @@ namespace Datadog.Trace.Tests.Logging
 
             settings.LogsInjectionEnabled = enableLogsInjection;
             settings.Version = "custom-version";
+            settings.Environment = "custom-env";
 
             return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }

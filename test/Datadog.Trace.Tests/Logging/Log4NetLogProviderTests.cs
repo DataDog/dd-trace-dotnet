@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, parentScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, parentScope));
         }
 
         [Fact]
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, childScope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, childScope));
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, scope));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.Settings.Version, tracer.Settings.Environment, scope));
         }
 
         [Fact]
@@ -111,18 +111,21 @@ namespace Datadog.Trace.Tests.Logging
             Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
-        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string version, Scope scope)
+        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string version, string env, Scope scope)
         {
-            LogEventContains(logEvent, scope.Span.ServiceName, version, scope.Span.TraceId, scope.Span.SpanId);
+            LogEventContains(logEvent, scope.Span.ServiceName, version, env, scope.Span.TraceId, scope.Span.SpanId);
         }
 
-        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string service, string version, ulong traceId, ulong spanId)
+        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string service, string version, string env, ulong traceId, ulong spanId)
         {
             Assert.Contains(CorrelationIdentifier.ServiceKey, logEvent.Properties.GetKeys());
             Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceKey].ToString());
 
             Assert.Contains(CorrelationIdentifier.VersionKey, logEvent.Properties.GetKeys());
             Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.VersionKey].ToString());
+
+            Assert.Contains(CorrelationIdentifier.EnvKey, logEvent.Properties.GetKeys());
+            Assert.Equal(env, logEvent.Properties[CorrelationIdentifier.EnvKey].ToString());
 
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
             Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
