@@ -454,7 +454,7 @@ namespace Datadog.Trace
                 $"lang_interpreter:{frameworkDescription.Name}",
                 $"lang_version:{frameworkDescription.ProductVersion}",
                 $"tracer_version:{TracerConstants.AssemblyVersion}",
-                $"service_name:{serviceName}"
+                $"service:{serviceName}"
             };
 
             if (settings.Environment != null)
