@@ -46,31 +46,6 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Propagates the specified context by adding new  headers to a <see cref="HttpRequestHeaders"/>.
-        /// This locks the sampling priority for <paramref name="context"/>.
-        /// </summary>
-        /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="headers"/>.</param>
-        /// <param name="headers">A <see cref="HttpRequestHeaders"/> to add new headers to.</param>
-        public void Inject(SpanContext context, HttpRequestHeaders headers)
-        {
-            if (context == null) { throw new ArgumentNullException(nameof(context)); }
-
-            if (headers == null) { throw new ArgumentNullException(nameof(headers)); }
-
-            // lock sampling priority when span propagates.
-            context.TraceContext?.LockSamplingPriority();
-
-            headers.Add(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
-            headers.Add(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
-
-            var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
-
-            headers.Add(
-                HttpHeaderNames.SamplingPriority,
-                samplingPriority?.ToString(InvariantCulture));
-        }
-
-        /// <summary>
         /// Extracts a <see cref="SpanContext"/> from the values found in the specified headers.
         /// </summary>
         /// <param name="headers">The headers that contain the values to be extracted.</param>
