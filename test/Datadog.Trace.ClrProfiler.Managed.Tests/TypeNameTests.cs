@@ -33,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.GenericTask, typeof(Task<>) };
             yield return new object[] { ClrNames.HttpCompletionOption, typeof(System.Net.Http.HttpCompletionOption) };
             yield return new object[] { ClrNames.Uri, typeof(System.Uri) };
+            yield return new object[] { ClrNames.HttpContent, typeof(System.Net.Http.HttpContent) };
         }
 
         [Fact]
