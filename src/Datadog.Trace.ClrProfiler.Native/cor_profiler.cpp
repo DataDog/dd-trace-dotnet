@@ -23,6 +23,41 @@ namespace trace {
 
 CorProfiler* profiler = nullptr;
 
+ WSTRING skip_assemblies[] {
+    "mscorlib"_W,
+    "netstandard"_W,
+    "Datadog.Trace"_W,
+    "Datadog.Trace.ClrProfiler.Managed"_W,
+    "Datadog.Trace.ClrProfiler.Managed.Core"_W,
+    "MsgPack"_W,
+    "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
+    "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
+    "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers2"_W,
+    "Sigil"_W,
+    "Sigil.Emit.DynamicAssembly"_W,
+    "System.Core"_W,
+    "System.Runtime"_W,
+    "System.IO.FileSystem"_W,
+    "System.Collections"_W,
+    "System.Runtime.Extensions"_W,
+    "System.Threading.Tasks"_W,
+    "System.Runtime.InteropServices"_W,
+    "System.Runtime.InteropServices.RuntimeInformation"_W,
+    "System.ComponentModel"_W,
+    "System.Console"_W,
+    "System.Diagnostics.DiagnosticSource"_W,
+    "Microsoft.Extensions.Options"_W,
+    "Microsoft.Extensions.ObjectPool"_W,
+    "System.Configuration"_W,
+    "System.Xml.Linq"_W,
+    "Microsoft.AspNetCore.Razor.Language"_W,
+    "Microsoft.AspNetCore.Mvc.RazorPages"_W,
+    "Microsoft.CSharp"_W,
+    "Newtonsoft.Json"_W,
+    "Anonymously Hosted DynamicMethods Assembly"_W,
+    "ISymWrapper"_W
+};
+
 //
 // ICorProfilerCallback methods
 //
@@ -182,7 +217,16 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // set event mask to subscribe to events and disable NGEN images
-  hr = this->info_->SetEventMask(event_mask);
+  // get ICorProfilerInfo6 for net452+
+  ICorProfilerInfo6* info6;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo6>(&info6);
+
+  if (SUCCEEDED(hr)) {
+    Debug("Interface ICorProfilerInfo6 found.");
+    hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+  } else {
+    hr = this->info_->SetEventMask(event_mask);
+  }
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
     return E_FAIL;
@@ -608,6 +652,94 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   return S_OK;
 }
 
+//
+// ICorProfilerCallback6 methods
+//
+HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
+    const WCHAR* wszAssemblyPath,
+    ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) {
+  auto assemblyPathString = ToString(wszAssemblyPath);
+  auto filename =
+      assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
+  auto lastNiDllPeriodIndex = filename.rfind(".ni.dll");
+  auto lastDllPeriodIndex = filename.rfind(".dll");
+  if (lastNiDllPeriodIndex != std::string::npos) {
+    filename.erase(lastNiDllPeriodIndex, 7);
+  } else if (lastDllPeriodIndex != std::string::npos) {
+    filename.erase(lastDllPeriodIndex, 4);
+  }
+
+  // Get assembly name
+  const WSTRING assembly_name = ToWSTRING(filename);
+
+  // We must never try to add assembly references to
+  // mscorlib or netstandard. Skip other known assemblies.
+  for (auto&& skip_assembly : skip_assemblies) {
+    if (assembly_name == skip_assembly) {
+      Debug("GetAssemblyReferences skipping known assembly: ", wszAssemblyPath);
+      return S_OK;
+    }
+  }
+
+  std::vector<IntegrationMethod> filtered_integrations =
+      FlattenIntegrations(integrations_);
+
+  // TODO: Make this assembly reference dynamic vs hard-coded
+  const AssemblyReference assemblyReference = trace::AssemblyReference(
+      L"Datadog.Trace.ClrProfiler.Managed, Version=1.16.1.0, Culture="
+      L"neutral, PublicKeyToken=def86d061d0d2eeb");
+
+  ASSEMBLYMETADATA assembly_metadata{};
+
+  // Consider doing ZeroMemory(&assembly_metadata, sizeof(assembly_metadata));
+
+  assembly_metadata.usMajorVersion = assemblyReference.version.major;
+  assembly_metadata.usMinorVersion = assemblyReference.version.minor;
+  assembly_metadata.usBuildNumber = assemblyReference.version.build;
+  assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
+  if (assemblyReference.locale == "neutral"_W) {
+    wchar_t nulltermEmptyStr[2] = L"\0";
+    assembly_metadata.szLocale = nulltermEmptyStr;
+    assembly_metadata.cbLocale = 0;
+  } else {
+    assembly_metadata.szLocale =
+        const_cast<WCHAR*>(assemblyReference.locale.c_str());
+    assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
+  }
+
+  DWORD public_key_size = 8;
+  if (assemblyReference.public_key == trace::PublicKey()) {
+    public_key_size = 0;
+  }
+
+  for (auto& i : filtered_integrations) {
+    if (true) {
+      COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
+      asmRefInfo.pbPublicKeyOrToken =
+          (void*)&assemblyReference.public_key.data[0];
+      asmRefInfo.cbPublicKeyOrToken = public_key_size;
+      asmRefInfo.szName = assemblyReference.name.c_str();
+      asmRefInfo.pMetaData = &assembly_metadata;
+      asmRefInfo.pbHashValue = nullptr;
+      asmRefInfo.cbHashValue = 0;
+      asmRefInfo.dwAssemblyRefFlags = 0;
+
+      auto hr = pAsmRefProvider->AddAssemblyReference(&asmRefInfo);
+
+      if (FAILED(hr)) {
+        Warn("GetAssemblyReferences failed for call from ", wszAssemblyPath);
+        return S_OK;
+      }
+
+      Debug("GetAssemblyReferences extending assembly closure for ",
+            assembly_name, " to include", asmRefInfo.szName);
+      return S_OK;
+    }
+  }
+
+  return S_OK;
+}
+
 bool CorProfiler::IsAttached() const { return is_attached_; }
 
 //
@@ -825,25 +957,6 @@ HRESULT CorProfiler::ProcessReplacementCalls(
             "JITCompilationStarted skipping method: Method replacement "
             "found but the managed profiler has not yet been loaded "
             "into AppDomain with id=", module_metadata->app_domain_id,
-            " function_id=", function_id, " token=", function_token,
-            " caller_name=", caller.type.name, ".", caller.name, "()",
-            " target_name=", target.type.name, ".", target.name, "()");
-        continue;
-      }
-
-      // At this point we know we've hit a match. Error out if
-      //   1) The calling assembly is domain-neutral
-      //   2) The profiler is not configured to instrument domain-neutral assemblies
-      //   3) The target assembly is Datadog.Trace.ClrProfiler.Managed
-      if (runtime_information_.is_desktop() && corlib_module_loaded &&
-          module_metadata->app_domain_id == corlib_app_domain_id &&
-          !instrument_domain_neutral_assemblies &&
-          method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
-        Warn(
-            "JITCompilationStarted skipping method: Method replacement",
-            " found but the calling assembly ", module_metadata->assemblyName,
-            " has been loaded domain-neutral so its code is being shared across AppDomains,"
-            " making it unsafe for automatic instrumentation.",
             " function_id=", function_id, " token=", function_token,
             " caller_name=", caller.type.name, ".", caller.name, "()",
             " target_name=", target.type.name, ".", target.name, "()");
