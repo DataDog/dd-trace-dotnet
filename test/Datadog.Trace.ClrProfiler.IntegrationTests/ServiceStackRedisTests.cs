@@ -44,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, span.Tags.GetValueOrDefault("out.host"));
                     Assert.Equal(port, span.Tags.GetValueOrDefault("out.port"));
+                    Assert.False(span.Tags.ContainsKey(Tags.Version));
                 }
 
                 var expected = new TupleList<string, string>

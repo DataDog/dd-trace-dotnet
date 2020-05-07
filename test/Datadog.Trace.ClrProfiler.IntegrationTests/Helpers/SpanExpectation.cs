@@ -10,9 +10,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     /// </summary>
     public class SpanExpectation
     {
-        public SpanExpectation(string serviceName, string operationName, string resourceName, string type)
+        public SpanExpectation(string serviceName, string serviceVersion, string operationName, string resourceName, string type)
         {
             ServiceName = serviceName;
+            ServiceVersion = serviceVersion;
             OperationName = operationName;
             ResourceName = resourceName;
             Type = type;
@@ -29,6 +30,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 key: Tags.Language,
                 expected: TracerConstants.Language,
                 when: s => GetTag(s, Tags.SpanKind) != SpanKinds.Client);
+
+            RegisterTagExpectation(
+                key: Tags.Version,
+                expected: ServiceVersion);
         }
 
         public Func<MockTracerAgent.Span, bool> Always => s => true;
@@ -44,6 +49,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public string OperationName { get; set; }
 
         public string ServiceName { get; set; }
+
+        public string ServiceVersion { get; set; }
 
         public static string GetTag(MockTracerAgent.Span span, string tag)
         {

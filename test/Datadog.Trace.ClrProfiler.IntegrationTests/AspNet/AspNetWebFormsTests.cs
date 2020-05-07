@@ -31,14 +31,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string path,
             string expectedResourceName)
         {
-            await AssertHttpSpan(
+            await AssertWebServerSpan(
                 path,
                 _iisFixture.Agent,
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
                 SpanTypes.Web,
                 "aspnet.request",
-                expectedResourceName);
+                expectedResourceName,
+                "1.0.0");
         }
 
         [Fact]

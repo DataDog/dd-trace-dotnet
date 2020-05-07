@@ -30,14 +30,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string expectedVerb,
             string expectedResourceSuffix)
         {
-            await AssertHttpSpan(
+            await AssertWebServerSpan(
                 path,
                 _iisFixture.Agent,
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
                 "web",
                 "aspnet-mvc.request",
-                $"{expectedVerb} {expectedResourceSuffix}");
+                $"{expectedVerb} {expectedResourceSuffix}",
+                "1.0.0");
         }
     }
 }

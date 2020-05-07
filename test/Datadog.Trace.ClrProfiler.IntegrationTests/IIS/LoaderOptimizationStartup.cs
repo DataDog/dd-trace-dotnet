@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
                 Thread.Sleep(intervalMilliseconds);
             }
 
-            // Server is ready to recieve requests
+            // Server is ready to receive requests
             var responseMessage = await client.GetAsync(Url);
             Assert.Equal(HttpStatusCode.OK, responseMessage.StatusCode);
         }

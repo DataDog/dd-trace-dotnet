@@ -6,7 +6,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class GraphQLSpanExpectation : WebServerSpanExpectation
     {
         public GraphQLSpanExpectation(string serviceName, string operationName, string resourceName)
-            : base(serviceName, operationName, resourceName, SpanTypes.GraphQL)
+            : base(serviceName, serviceVersion: null, operationName, resourceName, SpanTypes.GraphQL)
         {
             RegisterDelegateExpectation(ExpectErrorMatch);
             RegisterTagExpectation(nameof(Tags.GraphQLSource), expected: GraphQLSource);

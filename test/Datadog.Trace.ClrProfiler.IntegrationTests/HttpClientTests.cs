@@ -48,6 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(expectedServiceName, span.Service);
                     Assert.Equal(SpanTypes.Http, span.Type);
                     Assert.Equal(nameof(HttpMessageHandler), span.Tags[Tags.InstrumentationName]);
+                    Assert.False(span.Tags.ContainsKey(Tags.Version));
                 }
 
                 var firstSpan = spans.First();
@@ -110,10 +111,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal("Samples.HttpMessageHandler-http-client", firstSpan.Service);
                 Assert.Equal(SpanTypes.Http, firstSpan.Type);
                 Assert.Equal(nameof(WebRequest), firstSpan.Tags[Tags.InstrumentationName]);
+                Assert.False(firstSpan.Tags.ContainsKey(Tags.Version));
 
                 var lastSpan = spans.Last();
                 Assert.Equal(lastSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(lastSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+                Assert.False(lastSpan.Tags.ContainsKey(Tags.Version));
             }
         }
 

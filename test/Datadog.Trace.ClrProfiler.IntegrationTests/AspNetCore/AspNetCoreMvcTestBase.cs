@@ -18,16 +18,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
-            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index");
-            CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}");
-            CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}");
-            CreateTopLevelExpectation(url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "/not-found");
-            CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}");
+            const string expectedServiceVersion = "1.0.0";
+
+            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index", version: expectedServiceVersion);
+            CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}", version: expectedServiceVersion);
+            CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}", version: expectedServiceVersion);
+            CreateTopLevelExpectation(url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "/not-found", version: expectedServiceVersion);
+            CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}", version: expectedServiceVersion);
+
             CreateTopLevelExpectation(
                 url: "/bad-request",
                 httpMethod: "GET",
                 httpStatus: "500",
                 resourceUrl: "bad-request",
+                version: expectedServiceVersion,
                 additionalCheck: span =>
                 {
                     var failures = new List<string>();
@@ -152,13 +156,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             string httpMethod,
             string httpStatus,
             string resourceUrl,
+            string version,
             Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
         {
             var resourceName = $"{httpMethod.ToUpper()} {resourceUrl}";
-            var expectation = new AspNetCoreMvcSpanExpectation(EnvironmentHelper.FullSampleName, TopLevelOperationName, resourceName, httpStatus, httpMethod)
-            {
-                OriginalUri = url,
-            };
+
+            var expectation = new AspNetCoreMvcSpanExpectation(
+                                  EnvironmentHelper.FullSampleName,
+                                  version,
+                                  TopLevelOperationName,
+                                  resourceName,
+                                  httpStatus,
+                                  httpMethod)
+                              {
+                                  OriginalUri = url,
+                              };
 
             expectation.RegisterDelegateExpectation(additionalCheck);
 
