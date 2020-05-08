@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -54,8 +55,6 @@ namespace Datadog.Trace
         private static readonly ILogger Log = DatadogLogging.For<TracingProcessManager>();
 
         private static CancellationTokenSource _cancellationTokenSource;
-        private static string _processName;
-        private static int _processId;
         private static bool _isProcessManager;
 
         public static void SubscribeToTraceAgentPortOverride(Action<int> subscriber)
@@ -105,6 +104,12 @@ namespace Datadog.Trace
                     return;
                 }
 
+                if (DomainMetadata.ShouldAvoidAppDomain())
+                {
+                    Log.Information("Skipping process manager initialization for: {0}", DomainMetadata.AppDomainName);
+                    return;
+                }
+
                 var traceAgentDirectory = Path.GetDirectoryName(TraceAgentMetadata.ProcessPath);
 
                 if (!Directory.Exists(traceAgentDirectory))
@@ -118,8 +123,7 @@ namespace Datadog.Trace
 
                 if (_isProcessManager)
                 {
-                    var currentAppDomainName = AppDomain.CurrentDomain.FriendlyName.ToLowerInvariant();
-                    Log.Debug("Starting sub-processes from process {0}, app domain {1}.", _processName, currentAppDomainName);
+                    Log.Debug("Starting sub-processes from process {0}, app domain {1}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
                     StartProcesses();
                 }
                 else
@@ -146,13 +150,9 @@ namespace Datadog.Trace
                 Directory.CreateDirectory(portManagerDirectory);
             }
 
-            var currentProcess = Process.GetCurrentProcess();
-            _processName = currentProcess.ProcessName.ToLowerInvariant();
-            _processId = currentProcess.Id;
-            var fileClaim = Path.Combine(portManagerDirectory, _processId.ToString());
+            var fileClaim = Path.Combine(portManagerDirectory, ClaimFileName());
 
             var portManagerFiles = Directory.GetFiles(portManagerDirectory);
-            var deleted = 0;
             if (portManagerFiles.Length > 0)
             {
                 var activePids = Process.GetProcesses().Select(p => p.Id.ToString()).ToList();
@@ -160,11 +160,10 @@ namespace Datadog.Trace
                 {
                     try
                     {
-                        var claimPid = Path.GetFileName(portManagerFileName);
+                        var claimPid = GetProcessIdFromFileName(portManagerFileName);
                         if (!activePids.Contains(claimPid))
                         {
                             File.Delete(portManagerFileName);
-                            deleted++;
                         }
                     }
                     catch (Exception ex)
@@ -174,11 +173,18 @@ namespace Datadog.Trace
                 }
             }
 
-            if (deleted == portManagerFiles.Length)
+            var remainingFiles = Directory.GetFiles(portManagerDirectory);
+            if (remainingFiles.Length == 0)
             {
                 File.WriteAllText(fileClaim, DateTime.Now.ToString(CultureInfo.InvariantCulture));
                 _isProcessManager = true;
             }
+        }
+
+        private static string ClaimFileName()
+        {
+            var fileClaimName = $"{DomainMetadata.ProcessId}_{DomainMetadata.AppDomainId}";
+            return fileClaimName;
         }
 
         private static void StartProcesses()
@@ -218,8 +224,8 @@ namespace Datadog.Trace
                 return false;
             }
 
-            var fileName = Path.GetFileNameWithoutExtension(fullPath);
-            var processesByName = Process.GetProcessesByName(fileName);
+            var processId = GetProcessIdFromFileName(fullPath);
+            var processesByName = Process.GetProcessesByName(processId);
 
             if (processesByName?.Length > 0)
             {
@@ -228,6 +234,20 @@ namespace Datadog.Trace
             }
 
             return false;
+        }
+
+        private static string GetProcessIdFromFileName(string fullPath)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(fullPath);
+
+            if (fileName == null)
+            {
+                return "-1";
+            }
+
+            var parts = fileName.Split('_');
+
+            return parts[0];
         }
 
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata)
