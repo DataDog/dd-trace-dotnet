@@ -440,19 +440,19 @@ namespace Datadog.Trace
 
         private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
         {
-            var frameworkDescription = FrameworkDescription.Create();
-
-            string[] constantTags =
+            try
             {
-                "lang:.NET",
-                $"lang_interpreter:{frameworkDescription.Name}",
-                $"lang_version:{frameworkDescription.ProductVersion}",
-                $"tracer_version:{TracerConstants.AssemblyVersion}",
-                $"service_name:{serviceName}"
-            };
+                var frameworkDescription = FrameworkDescription.Create();
+                string[] constantTags = { "lang:.NET", $"lang_interpreter:{frameworkDescription.Name}", $"lang_version:{frameworkDescription.ProductVersion}", $"tracer_version:{TracerConstants.AssemblyVersion}", $"service_name:{serviceName}" };
+                var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
+                return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Unable to instantiate {nameof(Statsd)} client.");
+            }
 
-            var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
-            return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags);
+            return new NoOpStatsd();
         }
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager)
