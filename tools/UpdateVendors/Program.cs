@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -122,7 +123,14 @@ namespace UpdateVendors
 
                 foreach (var file in files)
                 {
-                    transform(file);
+                    if (ShouldDropFile(file))
+                    {
+                        File.Delete(file);
+                    }
+                    else
+                    {
+                        transform(file);
+                    }
                 }
 
                 Console.WriteLine($"Finished transforms on files for {libraryName}.");
@@ -134,6 +142,29 @@ namespace UpdateVendors
             SafeDeleteDirectory(vendorFinalPath);
             Directory.Move(sourceLocation, vendorFinalPath);
             Console.WriteLine($"Finished {libraryName} upgrade.");
+        }
+
+        private static bool ShouldDropFile(string filePath)
+        {
+            var lowerCasePath = filePath.ToLowerInvariant();
+
+            var drops = new List<string>()
+            {
+                "StatsdClient\\DogStatsdService.cs",
+                "StatsdClient\\MetricsTimer.cs",
+                "StatsdClient\\IDogStatsD.cs",
+                "StatsdClient\\DogStatsD.cs",
+            };
+
+            foreach (var drop in drops)
+            {
+                if (lowerCasePath.Contains(drop.ToLowerInvariant()))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void RewriteFileWithTransform(string filePath, Func<string, string> transform)
