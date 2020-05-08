@@ -265,7 +265,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, span.Tags.GetValueOrDefault("out.host"));
                     Assert.Equal(port, span.Tags.GetValueOrDefault("out.port"));
-                    Assert.False(span.Tags.ContainsKey(Tags.Version));
+                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
                 var spanLookup = new Dictionary<Tuple<string, string>, int>();

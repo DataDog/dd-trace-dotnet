@@ -40,13 +40,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         Assert.Equal("mongodb.query", spans[i].Name);
                         Assert.Equal(SpanTypes.MongoDb, spans[i].Type);
-                        Assert.False(spans[i].Tags.ContainsKey(Tags.Version));
+                        Assert.False(spans[i].Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                     }
                     else
                     {
                         // These are manual traces
                         Assert.Equal("Samples.MongoDB", spans[i].Service);
-                        Assert.Equal("1.0.0", spans[i].Tags.GetValueOrDefault(Tags.Version));
+                        Assert.Equal("1.0.0", spans[i].Tags?.GetValueOrDefault(Tags.Version));
                     }
                 }
             }
