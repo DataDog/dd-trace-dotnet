@@ -158,7 +158,7 @@ namespace UpdateVendors
 
             foreach (var drop in drops)
             {
-                if (lowerCasePath.Contains(drop.ToLowerInvariant()))
+                if (filePath.Contains(drop, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

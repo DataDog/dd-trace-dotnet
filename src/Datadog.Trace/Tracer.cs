@@ -443,7 +443,14 @@ namespace Datadog.Trace
             try
             {
                 var frameworkDescription = FrameworkDescription.Create();
-                string[] constantTags = { "lang:.NET", $"lang_interpreter:{frameworkDescription.Name}", $"lang_version:{frameworkDescription.ProductVersion}", $"tracer_version:{TracerConstants.AssemblyVersion}", $"service_name:{serviceName}" };
+                string[] constantTags =
+                {
+                    "lang:.NET", $"lang_interpreter:{frameworkDescription.Name}", 
+                    $"lang_version:{frameworkDescription.ProductVersion}", 
+                    $"tracer_version:{TracerConstants.AssemblyVersion}",
+                    $"service_name:{serviceName}"
+                };
+
                 var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
                 return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags);
             }
