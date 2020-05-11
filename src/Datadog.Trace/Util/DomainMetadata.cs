@@ -8,8 +8,10 @@ namespace Datadog.Trace.Util
     /// </summary>
     internal static class DomainMetadata
     {
+        private const string UnknownName = "unknown";
         private static Process _currentProcess = null;
-        private static bool _poisoned = false;
+        private static bool _processDataPoisoned = false;
+        private static bool _domainDataPoisoned = false;
 
         static DomainMetadata()
         {
@@ -20,7 +22,15 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                return !_poisoned ? _currentProcess.ProcessName : "unknown";
+                try
+                {
+                    return !_processDataPoisoned ? _currentProcess.ProcessName : UnknownName;
+                }
+                catch
+                {
+                    _processDataPoisoned = true;
+                    return UnknownName;
+                }
             }
         }
 
@@ -28,7 +38,15 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                return !_poisoned ? _currentProcess.MachineName : "unknown";
+                try
+                {
+                    return !_processDataPoisoned ? _currentProcess.MachineName : UnknownName;
+                }
+                catch
+                {
+                    _processDataPoisoned = true;
+                    return UnknownName;
+                }
             }
         }
 
@@ -36,7 +54,15 @@ namespace Datadog.Trace.Util
         {
             get
             {
-                return _poisoned ? _currentProcess.Id : -1;
+                try
+                {
+                    return !_processDataPoisoned ? _currentProcess.Id : -1;
+                }
+                catch
+                {
+                    _processDataPoisoned = true;
+                    return -1;
+                }
             }
         }
 
@@ -46,11 +72,12 @@ namespace Datadog.Trace.Util
             {
                 try
                 {
-                    return AppDomain.CurrentDomain.FriendlyName;
+                    return !_domainDataPoisoned ? AppDomain.CurrentDomain.FriendlyName : UnknownName;
                 }
                 catch
                 {
-                    return "unknown";
+                    _domainDataPoisoned = true;
+                    return UnknownName;
                 }
             }
         }
@@ -61,10 +88,11 @@ namespace Datadog.Trace.Util
             {
                 try
                 {
-                    return AppDomain.CurrentDomain.Id;
+                    return !_domainDataPoisoned ? AppDomain.CurrentDomain.Id : -1;
                 }
                 catch
                 {
+                    _domainDataPoisoned = true;
                     return -1;
                 }
             }
@@ -85,14 +113,14 @@ namespace Datadog.Trace.Util
         {
             try
             {
-                if (!_poisoned && _currentProcess == null)
+                if (!_processDataPoisoned && _currentProcess == null)
                 {
                     _currentProcess = Process.GetCurrentProcess();
                 }
             }
             catch
             {
-                _poisoned = true;
+                _processDataPoisoned = true;
             }
         }
     }
