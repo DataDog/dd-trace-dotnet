@@ -1,14 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace UpdateVendors
 {
@@ -122,7 +119,14 @@ namespace UpdateVendors
 
                 foreach (var file in files)
                 {
-                    transform(file);
+                    if (ShouldDropFile(file))
+                    {
+                        File.Delete(file);
+                    }
+                    else
+                    {
+                        transform(file);
+                    }
                 }
 
                 Console.WriteLine($"Finished transforms on files for {libraryName}.");
@@ -134,6 +138,27 @@ namespace UpdateVendors
             SafeDeleteDirectory(vendorFinalPath);
             Directory.Move(sourceLocation, vendorFinalPath);
             Console.WriteLine($"Finished {libraryName} upgrade.");
+        }
+
+        private static bool ShouldDropFile(string filePath)
+        {
+            var drops = new List<string>()
+            {
+                "StatsdClient\\DogStatsdService.cs",
+                "StatsdClient\\MetricsTimer.cs",
+                "StatsdClient\\IDogStatsD.cs",
+                "StatsdClient\\DogStatsD.cs",
+            };
+
+            foreach (var drop in drops)
+            {
+                if (filePath.Contains(drop, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void RewriteFileWithTransform(string filePath, Func<string, string> transform)

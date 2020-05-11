@@ -446,29 +446,37 @@ namespace Datadog.Trace
 
         private static IStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
         {
-            var frameworkDescription = FrameworkDescription.Create();
-
-            List<string> constantTags = new List<string>
+            try
             {
-                "lang:.NET",
-                $"lang_interpreter:{frameworkDescription.Name}",
-                $"lang_version:{frameworkDescription.ProductVersion}",
-                $"tracer_version:{TracerConstants.AssemblyVersion}",
-                $"service:{serviceName}"
-            };
+                var frameworkDescription = FrameworkDescription.Create();
 
-            if (settings.Environment != null)
-            {
-                constantTags.Add($"env:{settings.Environment}");
+                var constantTags = new List<string>
+                                   {
+                                       "lang:.NET",
+                                       $"lang_interpreter:{frameworkDescription.Name}",
+                                       $"lang_version:{frameworkDescription.ProductVersion}",
+                                       $"tracer_version:{TracerConstants.AssemblyVersion}",
+                                       $"service:{serviceName}"
+                                   };
+
+                if (settings.Environment != null)
+                {
+                    constantTags.Add($"env:{settings.Environment}");
+                }
+
+                if (settings.Environment != null)
+                {
+                    constantTags.Add($"version:{settings.ServiceVersion}");
+                }
+
+                var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
+                return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags.ToArray());
             }
-
-            if (settings.Environment != null)
+            catch (Exception ex)
             {
-                constantTags.Add($"version:{settings.ServiceVersion}");
+                Log.Error(ex, $"Unable to instantiate {nameof(Statsd)} client.");
+                return new NoOpStatsd();
             }
-
-            var statsdUdp = new StatsdUDP(settings.AgentUri.DnsSafeHost, port, StatsdConfig.DefaultStatsdMaxUDPPacketSize);
-            return new Statsd(statsdUdp, new RandomGenerator(), new StopWatchFactory(), prefix: string.Empty, constantTags.ToArray());
         }
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
