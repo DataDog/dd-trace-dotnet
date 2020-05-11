@@ -247,7 +247,8 @@ namespace Datadog.Trace.Configuration
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
             {
-                return Integrations[name].Enabled == false || DisabledIntegrationNames.Contains(name);
+                bool disabled = Integrations[name].Enabled == false || DisabledIntegrationNames.Contains(name);
+                return !disabled;
             }
 
             return false;

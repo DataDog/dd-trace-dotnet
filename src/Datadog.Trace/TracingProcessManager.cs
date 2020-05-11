@@ -106,7 +106,7 @@ namespace Datadog.Trace
 
                 if (DomainMetadata.ShouldAvoidAppDomain())
                 {
-                    Log.Information("Skipping process manager initialization for: {0}", DomainMetadata.AppDomainName);
+                    Log.Information("Skipping process manager initialization for AppDomain: {0}", DomainMetadata.AppDomainName);
                     return;
                 }
 
@@ -123,7 +123,7 @@ namespace Datadog.Trace
 
                 if (_isProcessManager)
                 {
-                    Log.Debug("Starting sub-processes from process {0}, app domain {1}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
+                    Log.Debug("Starting child processes from process {0}, AppDomain {1}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
                     StartProcesses();
                 }
                 else
