@@ -4,12 +4,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace UpdateVendors
 {
@@ -146,8 +142,6 @@ namespace UpdateVendors
 
         private static bool ShouldDropFile(string filePath)
         {
-            var lowerCasePath = filePath.ToLowerInvariant();
-
             var drops = new List<string>()
             {
                 "StatsdClient\\DogStatsdService.cs",

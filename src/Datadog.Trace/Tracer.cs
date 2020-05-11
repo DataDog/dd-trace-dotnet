@@ -445,7 +445,8 @@ namespace Datadog.Trace
                 var frameworkDescription = FrameworkDescription.Create();
                 string[] constantTags =
                 {
-                    "lang:.NET", $"lang_interpreter:{frameworkDescription.Name}",
+                    "lang:.NET",
+                    $"lang_interpreter:{frameworkDescription.Name}",
                     $"lang_version:{frameworkDescription.ProductVersion}",
                     $"tracer_version:{TracerConstants.AssemblyVersion}",
                     $"service_name:{serviceName}"
@@ -457,9 +458,8 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 Log.Error(ex, $"Unable to instantiate {nameof(Statsd)} client.");
+                return new NoOpStatsd();
             }
-
-            return new NoOpStatsd();
         }
 
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager)
