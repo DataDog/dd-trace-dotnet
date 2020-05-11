@@ -445,8 +445,8 @@ namespace Datadog.Trace
                 var frameworkDescription = FrameworkDescription.Create();
                 string[] constantTags =
                 {
-                    "lang:.NET", $"lang_interpreter:{frameworkDescription.Name}", 
-                    $"lang_version:{frameworkDescription.ProductVersion}", 
+                    "lang:.NET", $"lang_interpreter:{frameworkDescription.Name}",
+                    $"lang_version:{frameworkDescription.ProductVersion}",
                     $"tracer_version:{TracerConstants.AssemblyVersion}",
                     $"service_name:{serviceName}"
                 };
