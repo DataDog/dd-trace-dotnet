@@ -106,7 +106,7 @@ namespace Datadog.Trace
 
                 if (DomainMetadata.ShouldAvoidAppDomain())
                 {
-                    Log.Information("Skipping process manager initialization for: {0}", DomainMetadata.AppDomainName);
+                    Log.Information("Skipping process manager initialization for AppDomain: {0}", DomainMetadata.AppDomainName);
                     return;
                 }
 
