@@ -161,7 +161,7 @@ namespace Datadog.Trace
                     try
                     {
                         var claimPid = GetProcessIdFromFileName(portManagerFileName);
-                        if (!activePids.Contains(claimPid))
+                        if (claimPid == null || !activePids.Contains(claimPid))
                         {
                             File.Delete(portManagerFileName);
                         }
@@ -239,15 +239,7 @@ namespace Datadog.Trace
         private static string GetProcessIdFromFileName(string fullPath)
         {
             var fileName = Path.GetFileNameWithoutExtension(fullPath);
-
-            if (fileName == null)
-            {
-                return "-1";
-            }
-
-            var parts = fileName.Split('_');
-
-            return parts[0];
+            return fileName?.Split('_')[0];
         }
 
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata)
