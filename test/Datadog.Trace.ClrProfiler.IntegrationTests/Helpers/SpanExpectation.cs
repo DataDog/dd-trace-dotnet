@@ -172,7 +172,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var actualValue = GetTag(span, key);
 
-                if (expected != null && actualValue != expected)
+                if (actualValue != expected)
                 {
                     return FailureMessage(name: key, actual: actualValue, expected: expected);
                 }

@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output)
             : base("AspNetMvc4", "samples-aspnet", output)
         {
+            SetServiceVersion("1.0.0");
+
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
         }

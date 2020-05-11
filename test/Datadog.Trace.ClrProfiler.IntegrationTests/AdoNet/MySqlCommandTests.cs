@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public MySqlCommandTests(ITestOutputHelper output)
             : base("MySql", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Fact]

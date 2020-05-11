@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public MongoDbTests(ITestOutputHelper output)
             : base("MongoDB", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Theory]

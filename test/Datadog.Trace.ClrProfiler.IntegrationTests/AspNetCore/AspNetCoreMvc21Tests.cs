@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc21Tests : AspNetCoreMvcTestBase
     {
         public AspNetCoreMvc21Tests(ITestOutputHelper output)
-            : base("AspNetCoreMvc21", output)
+            : base("AspNetCoreMvc21", output, serviceVersion: "1.0.0")
         {
         }
 

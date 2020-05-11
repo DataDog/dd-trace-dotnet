@@ -13,25 +13,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public abstract class AspNetCoreMvcTestBase : TestHelper
     {
-        protected static readonly string TopLevelOperationName = "aspnet_core.request";
+        protected const string TopLevelOperationName = "aspnet_core.request";
 
-        protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output)
+        protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output, string serviceVersion)
             : base(sampleAppName, output)
         {
-            const string expectedServiceVersion = "1.0.0";
+            ServiceVersion = serviceVersion;
+            SetServiceVersion(ServiceVersion);
 
-            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index", serviceVersion: expectedServiceVersion);
-            CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}", serviceVersion: expectedServiceVersion);
-            CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}", serviceVersion: expectedServiceVersion);
-            CreateTopLevelExpectation(url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "/not-found", serviceVersion: expectedServiceVersion);
-            CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}", serviceVersion: expectedServiceVersion);
+            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index", serviceVersion: ServiceVersion);
+            CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}", serviceVersion: ServiceVersion);
+            CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}", serviceVersion: ServiceVersion);
+            CreateTopLevelExpectation(url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "/not-found", serviceVersion: ServiceVersion);
+            CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}", serviceVersion: ServiceVersion);
 
             CreateTopLevelExpectation(
                 url: "/bad-request",
                 httpMethod: "GET",
                 httpStatus: "500",
                 resourceUrl: "bad-request",
-                serviceVersion: expectedServiceVersion,
+                serviceVersion: ServiceVersion,
                 additionalCheck: span =>
                 {
                     var failures = new List<string>();
@@ -56,6 +57,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     return failures;
                 });
         }
+
+        public string ServiceVersion { get; }
 
         protected HttpClient HttpClient { get; } = new HttpClient();
 

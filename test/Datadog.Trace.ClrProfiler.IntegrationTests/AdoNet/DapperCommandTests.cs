@@ -11,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public DapperCommandTests(ITestOutputHelper output)
             : base("Dapper", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Fact]

@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public Elasticsearch6Tests(ITestOutputHelper output)
             : base("Elasticsearch", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Theory]

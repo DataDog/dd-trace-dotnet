@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public Elasticsearch5Tests(ITestOutputHelper output)
             : base("Elasticsearch.V5", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Theory]

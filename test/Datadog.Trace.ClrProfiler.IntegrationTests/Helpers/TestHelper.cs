@@ -230,6 +230,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
         }
 
+        protected void SetServiceVersion(string serviceVersion)
+        {
+            SetEnvironmentVariable("DD_VERSION", serviceVersion);
+        }
+
         protected async Task AssertWebServerSpan(
             string path,
             MockTracerAgent agent,

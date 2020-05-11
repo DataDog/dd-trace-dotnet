@@ -19,6 +19,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public AspNetWebFormsTests(IisFixture iisFixture, ITestOutputHelper output)
             : base("WebForms", "samples-aspnet", output)
         {
+            SetServiceVersion("1.0.0");
+
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
         }

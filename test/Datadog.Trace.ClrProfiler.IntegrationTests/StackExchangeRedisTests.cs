@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public StackExchangeRedisTests(ITestOutputHelper output)
             : base("StackExchange.Redis", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Theory]

@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public SqlCommandTests(ITestOutputHelper output)
             : base("SqlServer", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Theory]

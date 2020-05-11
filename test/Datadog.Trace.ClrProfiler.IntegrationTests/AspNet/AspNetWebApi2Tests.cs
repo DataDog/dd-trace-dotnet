@@ -15,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output)
             : base("AspNetMvc5", "samples-aspnet", output)
         {
+            SetServiceVersion("1.0.0");
+
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
         }

@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION", "true");
             SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
+            SetServiceVersion("1.0.0");
         }
 
         [Fact]
