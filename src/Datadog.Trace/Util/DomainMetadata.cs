@@ -3,6 +3,9 @@ using System.Diagnostics;
 
 namespace Datadog.Trace.Util
 {
+    /// <summary>
+    /// Dedicated helper class for consistently referencing Process and AppDomain information.
+    /// </summary>
     internal static class DomainMetadata
     {
         private static Process _currentProcess = null;
