@@ -265,7 +265,7 @@ namespace Datadog.Trace
 
                         while (true)
                         {
-                            if (_cancellationTokenSource.IsCancellationRequested)
+                            if (_cancellationTokenSource.Token.IsCancellationRequested)
                             {
                                 Log.Debug("Shutdown triggered for keep alive {0}.", path);
                                 return;
@@ -333,7 +333,8 @@ namespace Datadog.Trace
                     {
                         Log.Debug("Keep alive is dropping for {0}.", path);
                     }
-                });
+                },
+                _cancellationTokenSource.Token);
         }
 
         private static string ReadSingleLineNoLock(string file)
@@ -429,9 +430,22 @@ namespace Datadog.Trace
 
             public void Dispose()
             {
-                _portFileWatcher?.Dispose();
-                Process?.Dispose();
-                KeepAliveTask?.Dispose();
+                try
+                {
+                    _portFileWatcher?.Dispose();
+                    Process?.Dispose();
+                    KeepAliveTask?.Dispose();
+
+                    if (_isProcessManager)
+                    {
+                        // Do our best to give new instances a fresh slate
+                        File.Delete(PortFilePath);
+                    }
+                }
+                catch
+                {
+                    // ignore for dispose, to be safe
+                }
             }
 
             public void InitializePortFileWatcher()
