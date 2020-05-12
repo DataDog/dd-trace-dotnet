@@ -194,7 +194,7 @@ namespace Datadog.Trace
                 int? GetProcessIdFromFileName(string fullPath)
                 {
                     var fileName = Path.GetFileNameWithoutExtension(fullPath);
-                    if (int.TryParse(fileName?.Split('_')[0], out var pid))
+                    if (int.TryParse(NumberStyles.Integer, CultureInfo.InvariantCulture, fileName?.Split('_')[0], out var pid))
                     {
                         return pid;
                     }
