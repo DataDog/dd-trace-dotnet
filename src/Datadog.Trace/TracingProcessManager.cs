@@ -215,10 +215,7 @@ namespace Datadog.Trace
                             {
                                 using (var process = Process.GetProcessById(claimPid.Value))
                                 {
-                                    if (!process.HasExited)
-                                    {
-                                        isActive = true;
-                                    }
+                                    isActive = true;
                                 }
                             }
                         }
@@ -563,9 +560,16 @@ namespace Datadog.Trace
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // ignore
+                    try
+                    {
+                        Log.Error(ex, "Error when force killing process {0}.", ProcessPath);
+                    }
+                    catch
+                    {
+                        // ignore, to be safe
+                    }
                 }
             }
 
@@ -592,8 +596,17 @@ namespace Datadog.Trace
 
                     return false;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    try
+                    {
+                        Log.Error(ex, "Error when checking for running program {0}.", ProcessPath);
+                    }
+                    catch
+                    {
+                        // ignore, to be safe
+                    }
+
                     return false;
                 }
             }
