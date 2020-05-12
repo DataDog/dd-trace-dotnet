@@ -158,13 +158,36 @@ namespace Datadog.Trace
             var portManagerFiles = Directory.GetFiles(portManagerDirectory);
             if (portManagerFiles.Length > 0)
             {
-                var activePids = Process.GetProcesses().Select(p => p.Id.ToString()).ToList();
+                 int? GetProcessIdFromFileName(string fullPath)
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(fullPath);
+                    if (int.TryParse(fileName?.Split('_')[0], out var pid))
+                    {
+                        return pid;
+                    }
+
+                    return null;
+                }
+
                 foreach (var portManagerFileName in portManagerFiles)
                 {
                     try
                     {
                         var claimPid = GetProcessIdFromFileName(portManagerFileName);
-                        if (claimPid == null || !activePids.Contains(claimPid))
+                        var isActive = false;
+
+                        if (claimPid != null)
+                        {
+                            using (var process = Process.GetProcessById(claimPid.Value))
+                            {
+                                if (!process.HasExited)
+                                {
+                                    isActive = true;
+                                }
+                            }
+                        }
+
+                        if (!isActive)
                         {
                             File.Delete(portManagerFileName);
                         }
@@ -179,7 +202,7 @@ namespace Datadog.Trace
             var remainingFiles = Directory.GetFiles(portManagerDirectory);
             if (remainingFiles.Length == 0)
             {
-                File.WriteAllText(fileClaim, DateTime.Now.ToString(CultureInfo.InvariantCulture));
+                File.WriteAllText(fileClaim, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture));
                 _isProcessManager = true;
             }
         }
@@ -231,14 +254,8 @@ namespace Datadog.Trace
                 return true;
             }
 
-            Log.Debug("Program [{0}] managing child processes is no longer running", fullPath);
+            Log.Debug("Program [{0}] is no longer running", fullPath);
             return false;
-        }
-
-        private static string GetProcessIdFromFileName(string fullPath)
-        {
-            var fileName = Path.GetFileNameWithoutExtension(fullPath);
-            return fileName?.Split('_')[0];
         }
 
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata)
