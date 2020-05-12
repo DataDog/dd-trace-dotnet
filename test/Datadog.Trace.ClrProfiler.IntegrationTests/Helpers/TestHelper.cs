@@ -14,6 +14,10 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
+#if NETFRAMEWORK
+using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDefault()
+#endif
+
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class TestHelper
@@ -226,14 +230,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
         }
 
-        protected async Task AssertHttpSpan(
+        protected void SetServiceVersion(string serviceVersion)
+        {
+            SetEnvironmentVariable("DD_VERSION", serviceVersion);
+        }
+
+        protected async Task AssertWebServerSpan(
             string path,
             MockTracerAgent agent,
             int httpPort,
             HttpStatusCode expectedHttpStatusCode,
             string expectedSpanType,
             string expectedOperationName,
-            string expectedResourceName)
+            string expectedResourceName,
+            string expectedServiceVersion)
         {
             IImmutableList<MockTracerAgent.Span> spans;
 
@@ -259,6 +269,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Assert.Equal(expectedSpanType, span.Type);
             Assert.Equal(expectedOperationName, span.Name);
             Assert.Equal(expectedResourceName, span.Resource);
+            Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
+            Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
         internal class TupleList<T1, T2> : List<Tuple<T1, T2>>

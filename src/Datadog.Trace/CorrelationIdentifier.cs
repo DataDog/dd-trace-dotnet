@@ -7,6 +7,9 @@ namespace Datadog.Trace
     /// </summary>
     public static class CorrelationIdentifier
     {
+        internal static readonly string ServiceNameKey = "dd.service";
+        internal static readonly string ServiceVersionKey = "dd.version";
+        internal static readonly string EnvKey = "dd.env";
         internal static readonly string TraceIdKey = "dd.trace_id";
         internal static readonly string SpanIdKey = "dd.span_id";
 

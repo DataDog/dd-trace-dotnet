@@ -11,8 +11,12 @@ namespace Datadog.Trace.Logging
     /// </summary>
     internal class LibLogScopeEventSubscriber : IDisposable
     {
+        private const int _numPropertiesSetOnSpanEvent = 5;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(LibLogScopeEventSubscriber));
         private readonly IScopeManager _scopeManager;
+        private readonly string _defaultServiceName;
+        private readonly string _version;
+        private readonly string _env;
         private readonly ILogProvider _logProvider;
 
         // Each mapped context sets a key-value pair into the logging context
@@ -40,9 +44,12 @@ namespace Datadog.Trace.Logging
         //            but the target AppDomain is unable to de-serialize the object --
         //            this can easily happen if the target AppDomain cannot find/load the
         //            logging framework assemblies.
-        public LibLogScopeEventSubscriber(IScopeManager scopeManager)
+        public LibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
         {
             _scopeManager = scopeManager;
+            _defaultServiceName = defaultServiceName;
+            _version = version;
+            _env = env;
 
             try
             {
@@ -68,7 +75,7 @@ namespace Datadog.Trace.Logging
 
         public void StackOnSpanOpened(object sender, SpanEventArgs spanEventArgs)
         {
-            SetCorrelationIdentifierContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            SetCorrelationIdentifierContext(_defaultServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
         }
 
         public void StackOnSpanClosed(object sender, SpanEventArgs spanEventArgs)
@@ -79,7 +86,7 @@ namespace Datadog.Trace.Logging
         public void MapOnSpanActivated(object sender, SpanEventArgs spanEventArgs)
         {
             RemoveAllCorrelationIdentifierContexts();
-            SetCorrelationIdentifierContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+            SetCorrelationIdentifierContext(_defaultServiceName, _version, _env, spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
         }
 
         public void MapOnTraceEnded(object sender, SpanEventArgs spanEventArgs)
@@ -106,15 +113,15 @@ namespace Datadog.Trace.Logging
 
         private void SetDefaultValues()
         {
-            SetCorrelationIdentifierContext(0, 0);
+            SetCorrelationIdentifierContext(_defaultServiceName, _version, _env, 0, 0);
         }
 
         private void RemoveLastCorrelationIdentifierContext()
         {
             // TODO: Debug logs
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < _numPropertiesSetOnSpanEvent; i++)
             {
-                if (_contextDisposalStack.TryPop(out IDisposable ctxDisposable))
+                if (_contextDisposalStack.TryPop(out var ctxDisposable))
                 {
                     ctxDisposable.Dispose();
                 }
@@ -137,7 +144,7 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        private void SetCorrelationIdentifierContext(ulong traceId, ulong spanId)
+        private void SetCorrelationIdentifierContext(string service, string version, string env, ulong traceId, ulong spanId)
         {
             if (!_safeToAddToMdc)
             {
@@ -147,6 +154,15 @@ namespace Datadog.Trace.Logging
             try
             {
                 // TODO: Debug logs
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.ServiceNameKey, service, destructure: false));
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.ServiceVersionKey, version, destructure: false));
+                _contextDisposalStack.Push(
+                    LogProvider.OpenMappedContext(
+                        CorrelationIdentifier.EnvKey, env, destructure: false));
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
                         CorrelationIdentifier.TraceIdKey, traceId.ToString(), destructure: false));

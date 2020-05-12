@@ -1,4 +1,5 @@
 using Datadog.Core.Tools;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -10,6 +11,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public MongoDbTests(ITestOutputHelper output)
             : base("MongoDB", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Theory]
@@ -39,11 +41,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         Assert.Equal("mongodb.query", spans[i].Name);
                         Assert.Equal(SpanTypes.MongoDb, spans[i].Type);
+                        Assert.False(spans[i].Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                     }
                     else
                     {
                         // These are manual traces
                         Assert.Equal("Samples.MongoDB", spans[i].Service);
+                        Assert.Equal("1.0.0", spans[i].Tags?.GetValueOrDefault(Tags.Version));
                     }
                 }
             }

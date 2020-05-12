@@ -14,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output)
             : base("AspNetMvc4", "samples-aspnet", output)
         {
+            SetServiceVersion("1.0.0");
+
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
         }
@@ -26,14 +28,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string path,
             string expectedResourceName)
         {
-            await AssertHttpSpan(
+            await AssertWebServerSpan(
                 path,
                 _iisFixture.Agent,
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
                 "web",
                 "aspnet-mvc.request",
-                expectedResourceName);
+                expectedResourceName,
+                "1.0.0");
         }
     }
 }

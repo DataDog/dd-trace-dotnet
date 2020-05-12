@@ -90,6 +90,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
                      environment::agent_port,
                      environment::env,
                      environment::service_name,
+                     environment::service_version,
                      environment::disabled_integrations,
                      environment::clr_disable_optimizations,
                      environment::domain_neutral_instrumentation,

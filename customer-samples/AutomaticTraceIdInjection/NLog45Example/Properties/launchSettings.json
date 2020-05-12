@@ -1,11 +1,18 @@
 {
   "profiles": {
-    "NLog45Example": {
+    "LaunchWithServiceUnification": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_LOGS_INJECTION": "true",
+        "DD_ENV": "customer-sample",
+        "DD_VERSION": "1.0.0-beta"
+      }
+    },
+    "LaunchWithoutServiceUnification": {
       "commandName": "Project",
       "environmentVariables": {
         "DD_LOGS_INJECTION": "true"
-      },
-      "nativeDebugging": true
+      }
     }
   }
 }

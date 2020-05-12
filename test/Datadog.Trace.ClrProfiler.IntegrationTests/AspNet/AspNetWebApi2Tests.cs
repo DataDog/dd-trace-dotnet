@@ -15,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output)
             : base("AspNetMvc5", "samples-aspnet", output)
         {
+            SetServiceVersion("1.0.0");
+
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
         }
@@ -31,14 +33,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string path,
             string expectedResourceName)
         {
-            await AssertHttpSpan(
+            await AssertWebServerSpan(
                 path,
                 _iisFixture.Agent,
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
                 "web",
                 "aspnet-webapi.request",
-                expectedResourceName);
+                expectedResourceName,
+                "1.0.0");
         }
     }
 }

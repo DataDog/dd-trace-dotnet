@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
@@ -12,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public Elasticsearch6Tests(ITestOutputHelper output)
             : base("Elasticsearch", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Theory]
@@ -119,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         "DeleteUser",
                     });
 
-                    if (string.IsNullOrEmpty(packageVersion) || packageVersion.CompareTo("6.1.0") < 0)
+                    if (string.IsNullOrEmpty(packageVersion) || string.Compare(packageVersion, "6.1.0", StringComparison.Ordinal) < 0)
                     {
                         expected.Remove("SplitIndex");
                         expected.Remove("GetOverallBuckets");
@@ -137,6 +139,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("elasticsearch.query", span.Name);
                     Assert.Equal("Samples.Elasticsearch-elasticsearch", span.Service);
                     Assert.Equal("elasticsearch", span.Type);
+                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
                 ValidateSpans(spans, (span) => span.Resource, expected);

@@ -13,6 +13,8 @@
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
+        "DD_VERSION": "1.0.0",
+
         "DD_TRACE_SAMPLE_RATE": "0.6",
         "DD_TRACE_SAMPLING_RULES": "[{\"service\":\"rat.*\", \"name\":\".*run.*\", \"sample_rate\":0}, {\"service\":\"dog.*\",\"name\":\".+walk\",\"sample_rate\":1.0},{\"service\":\"cat.*\",\"name\":\".+walk\",\"sample_rate\":0.8},{\"name\":\".+walk\",\"sample_rate\":0.5},{\"service\":\"dog.*\",\"sample_rate\":0.2},{\"service\":\"cat.*\",\"sample_rate\":0.1}]"
       },

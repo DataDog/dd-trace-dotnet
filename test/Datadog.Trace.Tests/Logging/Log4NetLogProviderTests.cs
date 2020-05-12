@@ -15,6 +15,7 @@ namespace Datadog.Trace.Tests.Logging
     [Collection(nameof(Datadog.Trace.Tests.Logging))]
     public class Log4NetLogProviderTests
     {
+        private const string Log4NetExpectedStringFormat = "\"{0}\":\"{1}\"";
         private readonly ILogProvider _logProvider;
         private readonly ILog _logger;
         private readonly MemoryAppender _memoryAppender;
@@ -31,139 +32,129 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
-        public void EnabledLibLogSubscriberAddsTraceData()
+        public void LogsInjectionEnabledAddsParentCorrelationIdentifiers()
         {
             // Assert that the Log4Net log provider is correctly being used
             Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.LogInParentSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-
-            int logIndex = 0;
-            LoggingEvent logEvent;
-
-            // The first log should not have dd.span_id or dd.trace_id
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = filteredLogs[logIndex++];
-            Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
-
-            // Scope: Parent scope
-            // Custom property: N/A
-            logEvent = filteredLogs[logIndex++];
-            logEvent.Contains(parentScope);
-            Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
-
-            // Scope: Parent scope
-            // Custom property: SET
-            logEvent = filteredLogs[logIndex++];
-            logEvent.Contains(parentScope);
-            Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
-
-            // Scope: Child scope
-            // Custom property: SET
-            logEvent = filteredLogs[logIndex++];
-            logEvent.Contains(childScope);
-            Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
-
-            // Scope: Parent scope
-            // Custom property: SET
-            logEvent = filteredLogs[logIndex++];
-            logEvent.Contains(parentScope);
-            Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
-
-            // EXISTING: Verify the log event is decorated with the parent scope properties
-            // Scope: Parent scope
-            // Custom property: N/A
-            logEvent = filteredLogs[logIndex++];
-            logEvent.Contains(parentScope);
-            Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
-
-            // Scope: Default values of TraceId=0,SpanId=0
-            // Custom property: N/A
-            logEvent = filteredLogs[logIndex++];
-            logEvent.Contains(traceId: 0, spanId: 0);
-            Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, parentScope));
         }
 
         [Fact]
-        public void DisabledLibLogSubscriberDoesNotAddTraceData()
+        public void LogsInjectionEnabledAddsChildCorrelationIdentifiers()
+        {
+            // Assert that the Log4Net log provider is correctly being used
+            Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInChildSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
+            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, childScope));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabledDoesNotAddCorrelationIdentifiersOutsideSpans()
+        {
+            // Assert that the Log4Net log provider is correctly being used
+            Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogOutsideSpans(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
+            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabledUsesTracerServiceName()
+        {
+            // Assert that the Log4Net log provider is correctly being used
+            Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInSpanWithServiceName(tracer, _logger, _logProvider.OpenMappedContext, "custom-service", out var scope);
+
+            // Filter the logs
+            List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
+            filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, scope));
+        }
+
+        [Fact]
+        public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
         {
             // Assert that the Log4Net log provider is correctly being used
             Assert.IsType<Log4NetLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+        }
 
-            int logIndex = 0;
-            LoggingEvent logEvent;
+        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string service, string version, string env, Scope scope)
+        {
+            LogEventContains(logEvent, service, version, env, scope.Span.TraceId, scope.Span.SpanId);
+        }
 
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = filteredLogs[logIndex++];
-            Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
+        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string service, string version, string env, ulong traceId, ulong spanId)
+        {
+            Assert.Contains(CorrelationIdentifier.ServiceNameKey, logEvent.Properties.GetKeys());
+            Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceNameKey].ToString());
 
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = filteredLogs[logIndex++];
-            Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
+            Assert.Contains(CorrelationIdentifier.ServiceVersionKey, logEvent.Properties.GetKeys());
+            Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.ServiceVersionKey].ToString());
 
-            // Scope: N/A
-            // Custom property: SET
-            logEvent = filteredLogs[logIndex++];
-            Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
+            Assert.Contains(CorrelationIdentifier.EnvKey, logEvent.Properties.GetKeys());
+            Assert.Equal(env, logEvent.Properties[CorrelationIdentifier.EnvKey].ToString());
 
-            // Scope: N/A
-            // Custom property: SET
-            logEvent = filteredLogs[logIndex++];
-            Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
+            Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
 
-            // Scope: N/A
-            // Custom property: SET
-            logEvent = filteredLogs[logIndex++];
-            Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.Contains(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
-            Assert.Equal<int>(LoggingProviderTestHelpers.CustomPropertyValue, int.Parse(logEvent.Properties[LoggingProviderTestHelpers.CustomPropertyName].ToString()));
+            Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+        }
 
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = filteredLogs[logIndex++];
-            Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
+        internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, ulong traceId, ulong spanId)
+        {
+            Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
 
-            // Scope: N/A
-            // Custom property: N/A
-            logEvent = filteredLogs[logIndex++];
-            Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.DoesNotContain(LoggingProviderTestHelpers.CustomPropertyName, logEvent.Properties.GetKeys());
+            Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
+            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+        }
+
+        internal static void LogEventDoesNotContainCorrelationIdentifiers(log4net.Core.LoggingEvent logEvent)
+        {
+            if (logEvent.Properties.Contains(CorrelationIdentifier.SpanIdKey) &&
+                logEvent.Properties.Contains(CorrelationIdentifier.TraceIdKey))
+            {
+                LogEventContains(logEvent, traceId: 0, spanId: 0);
+            }
+            else
+            {
+                Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
+                Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
+            }
         }
 
         /// <summary>

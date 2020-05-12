@@ -15,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output)
             : base("AspNetMvc5", "samples-aspnet", output)
         {
+            SetServiceVersion("1.0.0");
+
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this);
         }
@@ -30,14 +32,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string expectedVerb,
             string expectedResourceSuffix)
         {
-            await AssertHttpSpan(
+            await AssertWebServerSpan(
                 path,
                 _iisFixture.Agent,
                 _iisFixture.HttpPort,
                 HttpStatusCode.OK,
                 "web",
                 "aspnet-mvc.request",
-                $"{expectedVerb} {expectedResourceSuffix}");
+                $"{expectedVerb} {expectedResourceSuffix}",
+                "1.0.0");
         }
     }
 }

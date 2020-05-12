@@ -13,6 +13,7 @@
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
+        "DD_VERSION": "1.0.0",
 
         "DD_MAX_TRACES_PER_SECOND": "50"
       },

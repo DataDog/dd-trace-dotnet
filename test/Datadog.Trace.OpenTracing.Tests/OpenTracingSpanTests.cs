@@ -40,6 +40,31 @@ namespace Datadog.Trace.OpenTracing.Tests
         }
 
         [Fact]
+        public void SetTag_SpecialTags_ServiceNameSetsService()
+        {
+            ISpan span = GetScope("Op1").Span;
+            const string value = "value";
+
+            span.SetTag(DatadogTags.ServiceName, value);
+
+            var otSpan = (OpenTracingSpan)span;
+            Assert.Equal(value, otSpan.Span.ServiceName);
+        }
+
+        [Fact]
+        public void SetTag_SpecialTags_ServiceVersionSetsVersion()
+        {
+            ISpan span = GetScope("Op1").Span;
+            const string value = "value";
+
+            span.SetTag(DatadogTags.ServiceVersion, value);
+
+            var otSpan = (OpenTracingSpan)span;
+            Assert.Equal(value, otSpan.GetTag(Tags.Version));
+            Assert.Equal(value, otSpan.GetTag(DatadogTags.ServiceVersion));
+        }
+
+        [Fact]
         public void SetOperationName_ValidOperationName_OperationNameIsProperlySet()
         {
             ISpan span = GetScope("Op0").Span;

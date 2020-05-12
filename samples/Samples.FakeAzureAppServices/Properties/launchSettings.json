@@ -13,6 +13,8 @@
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
+        "DD_VERSION": "1.0.0",
+
         "DD_AZURE_APP_SERVICES": "1",
         "DD_AGENT_PATH": "$(ProjectDir)$(OutputPath)Samples.FakeTraceAgent.exe",
         "DD_AGENT_CONFIG_PATH": "I_AM_THE_CONFIG_PATH"

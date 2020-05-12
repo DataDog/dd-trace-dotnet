@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public Elasticsearch5Tests(ITestOutputHelper output)
             : base("Elasticsearch.V5", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Theory]
@@ -132,6 +133,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("elasticsearch.query", span.Name);
                     Assert.Equal("Samples.Elasticsearch.V5-elasticsearch", span.Service);
                     Assert.Equal("elasticsearch", span.Type);
+                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
                 ValidateSpans(spans, (span) => span.Resource, expected);

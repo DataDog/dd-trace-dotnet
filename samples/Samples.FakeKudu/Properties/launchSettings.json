@@ -13,6 +13,8 @@
 
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
+        "DD_VERSION": "1.0.0",
+
         "DD_AZURE_APP_SERVICES": "1", // We need to pretend we are in the context of AAS to filter by the APP_POOL_ID
         "APP_POOL_ID": "~1KuduScmProcessIsFilteredByTilde"
       },

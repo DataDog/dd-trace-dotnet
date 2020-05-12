@@ -46,7 +46,10 @@ const WSTRING env = "DD_ENV"_W;
 // Sets the default service name for every span.
 // If not set, Tracer will try to determine service name automatically
 // from application name (e.g. entry assembly or IIS application name).
-const WSTRING service_name = "DD_SERVICE_NAME"_W;
+const WSTRING service_name = "DD_SERVICE"_W;
+
+// Sets the "service_version" tag for every span that belong to the root service (and not an external service).
+const WSTRING service_version = "DD_VERSION"_W;
 
 // Sets a list of integrations to disable. All other integrations will remain
 // enabled. If not set (default), all integrations are enabled. Supports

@@ -129,8 +129,9 @@ namespace Datadog.Trace.TestHelpers
                 "DD_DOTNET_TRACER_HOME",
                 "DD_INTEGRATIONS",
                 "DD_DISABLED_INTEGRATIONS",
-                "DATADOG_PROFILER_PROCESSES",
-                "DATADOG_INTEGRATIONS",
+                "DD_SERVICE",
+                "DD_VERSION",
+                "DD_TAGS"
             };
 
             foreach (string variable in environmentVariables)

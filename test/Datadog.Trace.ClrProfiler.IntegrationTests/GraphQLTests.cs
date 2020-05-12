@@ -16,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class GraphQLTests : TestHelper
     {
+        private const string ServiceVersion = "1.0.0";
+
         private static readonly string _graphQLValidateOperationName = "graphql.validate";
         private static readonly string _graphQLExecuteOperationName = "graphql.execute";
 
@@ -57,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public GraphQLTests(ITestOutputHelper output)
             : base("GraphQL", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Fact]
@@ -178,6 +181,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 GraphQLOperationName = graphQLOperationName,
                 GraphQLSource = graphQLSource,
                 IsGraphQLError = failsValidation,
+                ServiceVersion = null
             });
             _expectedGraphQLValidateSpanCount++;
 
@@ -192,6 +196,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 GraphQLOperationName = graphQLOperationName,
                 GraphQLSource = graphQLSource,
                 IsGraphQLError = failsExecution,
+                ServiceVersion = null
             });
             _expectedGraphQLExecuteSpanCount++;
 

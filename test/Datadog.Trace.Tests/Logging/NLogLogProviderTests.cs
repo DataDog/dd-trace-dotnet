@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tests.Logging
     [TestCaseOrderer("Datadog.Trace.TestHelpers.AlphabeticalOrderer", "Datadog.Trace.TestHelpers")]
     public class NLogLogProviderTests
     {
-        private const string ExpectedStringFormat = "\"{0}\": \"{1}\"";
+        private const string NLogExpectedStringFormat = "\"{0}\": \"{1}\"";
 
         private readonly ILogProvider _logProvider;
         private readonly ILog _logger;
@@ -43,138 +43,103 @@ namespace Datadog.Trace.Tests.Logging
         }
 
         [Fact]
-        public void EnabledLibLogSubscriberAddsTraceData()
+        public void LogsInjectionEnabledAddsParentCorrelationIdentifiers()
         {
             // Assert that the NLog log provider is correctly being used
             Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.LogInParentSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-
-            int logIndex = 0;
-            string logString;
-
-            // The first log should not have dd.span_id or dd.trace_id
-            // Scope: N/A
-            // Custom property: N/A
-            logString = filteredLogs[logIndex++];
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.SpanIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.TraceIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{LoggingProviderTestHelpers.CustomPropertyName}\"", logString);
-
-            // Scope: Parent scope
-            // Custom property: N/A
-            logString = filteredLogs[logIndex++];
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.SpanIdKey, parentScope.Span.SpanId), logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.TraceIdKey, parentScope.Span.TraceId), logString);
-            Assert.DoesNotContain($"\"{LoggingProviderTestHelpers.CustomPropertyName}\"", logString);
-
-            // Scope: Parent scope
-            // Custom property: SET
-            logString = filteredLogs[logIndex++];
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.SpanIdKey, parentScope.Span.SpanId), logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.TraceIdKey, parentScope.Span.TraceId), logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, LoggingProviderTestHelpers.CustomPropertyName, LoggingProviderTestHelpers.CustomPropertyValue), logString);
-
-            // Scope: Child scope
-            // Custom property: SET
-            logString = filteredLogs[logIndex++];
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.SpanIdKey, childScope.Span.SpanId), logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.TraceIdKey, childScope.Span.TraceId), logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, LoggingProviderTestHelpers.CustomPropertyName, LoggingProviderTestHelpers.CustomPropertyValue), logString);
-
-            // Scope: Parent scope
-            // Custom property: SET
-            logString = filteredLogs[logIndex++];
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.SpanIdKey, parentScope.Span.SpanId), logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.TraceIdKey, childScope.Span.TraceId), logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, LoggingProviderTestHelpers.CustomPropertyName, LoggingProviderTestHelpers.CustomPropertyValue), logString);
-
-            // Scope: Parent scope
-            // Custom property: N/A
-            logString = filteredLogs[logIndex++];
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.SpanIdKey, parentScope.Span.SpanId), logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.TraceIdKey, childScope.Span.TraceId), logString);
-            Assert.DoesNotContain($"\"{LoggingProviderTestHelpers.CustomPropertyName}\"", logString);
-
-            // Scope: Default values of TraceId=0,SpanId=0
-            // Custom property: N/A
-            logString = filteredLogs[logIndex++];
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.SpanIdKey, 0), logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, CorrelationIdentifier.TraceIdKey, 0), logString);
-            Assert.DoesNotContain($"\"{LoggingProviderTestHelpers.CustomPropertyName}\"", logString);
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, parentScope));
         }
 
         [Fact]
-        public void DisabledLibLogSubscriberDoesNotAddTraceData()
+        public void LogsInjectionEnabledAddsChildCorrelationIdentifiers()
+        {
+            // Assert that the NLog log provider is correctly being used
+            Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInChildSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            List<string> filteredLogs = new List<string>(_target.Logs);
+            filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, childScope));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabledDoesNotAddCorrelationIdentifiersOutsideSpans()
+        {
+            // Assert that the NLog log provider is correctly being used
+            Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogOutsideSpans(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+
+            // Filter the logs
+            List<string> filteredLogs = new List<string>(_target.Logs);
+            filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+        }
+
+        [Fact]
+        public void LogsInjectionEnabledUsesTracerServiceName()
+        {
+            // Assert that the NLog log provider is correctly being used
+            Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
+
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            LoggingProviderTestHelpers.LogInSpanWithServiceName(tracer, _logger, _logProvider.OpenMappedContext, "custom-service", out var scope);
+
+            // Filter the logs
+            List<string> filteredLogs = new List<string>(_target.Logs);
+            filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, scope));
+        }
+
+        [Fact]
+        public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
         {
             // Assert that the NLog log provider is correctly being used
             Assert.IsType<NLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.PerformParentChildScopeSequence(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
+            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+        }
 
-            int logIndex = 0;
-            string logString;
+        internal static void LogEventContains(string nLogString, string service, string version, string env, Scope scope)
+        {
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceNameKey, service), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.EnvKey, env), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceVersionKey, version), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, scope.Span.SpanId), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, scope.Span.TraceId), nLogString);
+        }
 
-            // Scope: N/A
-            // Custom property: N/A
-            logString = filteredLogs[logIndex++];
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.SpanIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.TraceIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{LoggingProviderTestHelpers.CustomPropertyName}\"", logString);
-
-            // Scope: N/A
-            // Custom property: N/A
-            logString = filteredLogs[logIndex++];
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.SpanIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.TraceIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{LoggingProviderTestHelpers.CustomPropertyName}\"", logString);
-
-            // Scope: N/A
-            // Custom property: SET
-            logString = filteredLogs[logIndex++];
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.SpanIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.TraceIdKey}\"", logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, LoggingProviderTestHelpers.CustomPropertyName, LoggingProviderTestHelpers.CustomPropertyValue), logString);
-
-            // Scope: N/A
-            // Custom property: SET
-            logString = filteredLogs[logIndex++];
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.SpanIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.TraceIdKey}\"", logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, LoggingProviderTestHelpers.CustomPropertyName, LoggingProviderTestHelpers.CustomPropertyValue), logString);
-
-            // Scope: N/A
-            // Custom property: SET
-            logString = filteredLogs[logIndex++];
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.SpanIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.TraceIdKey}\"", logString);
-            Assert.Contains(string.Format(ExpectedStringFormat, LoggingProviderTestHelpers.CustomPropertyName, LoggingProviderTestHelpers.CustomPropertyValue), logString);
-
-            // Scope: N/A
-            // Custom property: N/A
-            logString = filteredLogs[logIndex++];
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.SpanIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.TraceIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{LoggingProviderTestHelpers.CustomPropertyName}\"", logString);
-
-            // Scope: N/A
-            // Custom property: N/A
-            logString = filteredLogs[logIndex++];
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.SpanIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{CorrelationIdentifier.TraceIdKey}\"", logString);
-            Assert.DoesNotContain($"\"{LoggingProviderTestHelpers.CustomPropertyName}\"", logString);
+        internal static void LogEventDoesNotContainCorrelationIdentifiers(string nLogString)
+        {
+            // Do not assert on the service property
+            Assert.True(
+                nLogString.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, 0)) ||
+                !nLogString.Contains($"\"{CorrelationIdentifier.SpanIdKey}\""));
+            Assert.True(
+                nLogString.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, 0)) ||
+                !nLogString.Contains($"\"{CorrelationIdentifier.TraceIdKey}\""));
         }
     }
 }

@@ -24,7 +24,13 @@ namespace Datadog.Trace.Configuration
         /// and used to determine service name of some child spans.
         /// </summary>
         /// <seealso cref="TracerSettings.ServiceName"/>
-        public const string ServiceName = "DD_SERVICE_NAME";
+        public const string ServiceName = "DD_SERVICE";
+
+        /// <summary>
+        /// Configuration key for the application's version. Sets the "version" tag on every <see cref="Span"/>.
+        /// </summary>
+        /// <seealso cref="TracerSettings.ServiceVersion"/>
+        public const string ServiceVersion = "DD_VERSION";
 
         /// <summary>
         /// Configuration key for enabling or disabling the Tracer.
@@ -88,7 +94,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for a list of tags to be applied globally to spans.
         /// </summary>
-        public const string GlobalTags = "DD_TRACE_GLOBAL_TAGS";
+        public const string GlobalTags = "DD_TAGS";
 
         /// <summary>
         /// Configuration key for enabling or disabling the automatic injection

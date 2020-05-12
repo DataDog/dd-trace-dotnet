@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Core.Tools;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
+
+#if NETFRAMEWORK
+using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDefault()
+#endif
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -14,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public StackExchangeRedisTests(ITestOutputHelper output)
             : base("StackExchange.Redis", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         [Theory]
@@ -260,14 +264,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("redis.command", span.Name);
                     Assert.Equal("Samples.StackExchange.Redis-redis", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
-                    Assert.Equal(host, span.Tags.GetValueOrDefault<string>("out.host"));
-                    Assert.Equal(port, span.Tags.GetValueOrDefault<string>("out.port"));
+                    Assert.Equal(host, span.Tags.GetValueOrDefault("out.host"));
+                    Assert.Equal(port, span.Tags.GetValueOrDefault("out.port"));
+                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
                 var spanLookup = new Dictionary<Tuple<string, string>, int>();
                 foreach (var span in spans)
                 {
-                    var key = new Tuple<string, string>(span.Resource, span.Tags.GetValueOrDefault<string>("redis.raw_command"));
+                    var key = new Tuple<string, string>(span.Resource, span.Tags.GetValueOrDefault("redis.raw_command"));
                     if (spanLookup.ContainsKey(key))
                     {
                         spanLookup[key]++;
