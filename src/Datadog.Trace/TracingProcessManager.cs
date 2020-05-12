@@ -434,9 +434,16 @@ namespace Datadog.Trace
                         File.Delete(PortFilePath);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // ignore for dispose, to be safe
+                    try
+                    {
+                        Log.Error(ex, "Error when disposing of process manager resources.");
+                    }
+                    catch
+                    {
+                        // ignore for dispose, to be safe
+                    }
                 }
             }
 
