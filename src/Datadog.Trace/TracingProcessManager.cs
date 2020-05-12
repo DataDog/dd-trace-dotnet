@@ -221,8 +221,9 @@ namespace Datadog.Trace
                 return false;
             }
 
-            var processId = GetProcessIdFromFileName(fullPath);
-            var processesByName = Process.GetProcessesByName(processId);
+            // fileName will match either TraceAgentMetadata.Name or DogStatsDMetadata.Name
+            var fileName = Path.GetFileNameWithoutExtension(fullPath);
+            var processesByName = Process.GetProcessesByName(fileName);
 
             if (processesByName?.Length > 0)
             {
@@ -230,6 +231,7 @@ namespace Datadog.Trace
                 return true;
             }
 
+            Log.Debug("Program [{0}] managing child processes is no longer running", fullPath);
             return false;
         }
 
