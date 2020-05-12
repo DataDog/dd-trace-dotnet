@@ -17,9 +17,13 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {
+    /// <summary>
+    /// This class is used to manage agent processes in contexts where the user can not, such as Azure App Services.
+    /// </summary>
     internal class TracingProcessManager
     {
-        internal static readonly int KeepAliveInterval = 20_000;
+        internal static readonly int KeepAliveInterval = 120_000;
+        internal static readonly int ExceptionRetryInterval = 1_000;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
@@ -56,6 +60,43 @@ namespace Datadog.Trace
 
         private static CancellationTokenSource _cancellationTokenSource;
         private static bool _isProcessManager;
+
+        public static void TryForceTraceAgentRefresh()
+        {
+            if (string.IsNullOrEmpty(TraceAgentMetadata.DirectoryPath))
+            {
+                Log.Debug("This is not a context where we manage sub processes.");
+                return;
+            }
+
+            Log.Warning("We are attempting to force a child process refresh.");
+            InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
+
+            if (!_isProcessManager)
+            {
+                Log.Debug("This process is not responsible for managing agent processes.");
+                return;
+            }
+
+            if (Processes.All(p => p.HasAttemptedStartup))
+            {
+                Log.Debug("Forcing a full refresh on agent processes.");
+
+                StopProcesses();
+
+                _cancellationTokenSource = new CancellationTokenSource();
+
+                if (_isProcessManager)
+                {
+                    Log.Debug("Starting child processes from process {0}, AppDomain {1}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
+                    StartProcesses();
+                }
+            }
+            else
+            {
+                Log.Debug("This process has not had a chance to initialize agent processes.");
+            }
+        }
 
         public static void SubscribeToTraceAgentPortOverride(Action<int> subscriber)
         {
@@ -110,15 +151,13 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var traceAgentDirectory = Path.GetDirectoryName(TraceAgentMetadata.ProcessPath);
-
-                if (!Directory.Exists(traceAgentDirectory))
+                if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
                 {
-                    Log.Warning("Directory for trace agent does not exist: {0}", traceAgentDirectory);
+                    Log.Warning("Directory for trace agent does not exist: {0}", TraceAgentMetadata.DirectoryPath);
                     return;
                 }
 
-                InitializePortManagerClaimFiles(traceAgentDirectory);
+                InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
                 _cancellationTokenSource = new CancellationTokenSource();
 
                 if (_isProcessManager)
@@ -126,13 +165,11 @@ namespace Datadog.Trace
                     Log.Debug("Starting child processes from process {0}, AppDomain {1}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
                     StartProcesses();
                 }
-                else
+
+                Log.Debug("Initializing sub process port file watchers.");
+                foreach (var instance in Processes)
                 {
-                    Log.Debug("Initializing sub process port file watchers.");
-                    foreach (var instance in Processes)
-                    {
-                        instance.InitializePortFileWatcher();
-                    }
+                    instance.InitializePortFileWatcher();
                 }
             }
             catch (Exception ex)
@@ -158,7 +195,7 @@ namespace Datadog.Trace
             var portManagerFiles = Directory.GetFiles(portManagerDirectory);
             if (portManagerFiles.Length > 0)
             {
-                 int? GetProcessIdFromFileName(string fullPath)
+                int? GetProcessIdFromFileName(string fullPath)
                 {
                     var fileName = Path.GetFileNameWithoutExtension(fullPath);
                     if (int.TryParse(fileName?.Split('_')[0], out var pid))
@@ -176,20 +213,25 @@ namespace Datadog.Trace
                         var claimPid = GetProcessIdFromFileName(portManagerFileName);
                         var isActive = false;
 
-                        if (claimPid != null)
+                        try
                         {
-                            using (var process = Process.GetProcessById(claimPid.Value))
+                            if (claimPid != null)
                             {
-                                if (!process.HasExited)
+                                using (var process = Process.GetProcessById(claimPid.Value))
                                 {
-                                    isActive = true;
+                                    if (!process.HasExited)
+                                    {
+                                        isActive = true;
+                                    }
                                 }
                             }
                         }
-
-                        if (!isActive)
+                        finally
                         {
-                            File.Delete(portManagerFileName);
+                            if (!isActive)
+                            {
+                                File.Delete(portManagerFileName);
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -213,7 +255,10 @@ namespace Datadog.Trace
             {
                 if (!string.IsNullOrWhiteSpace(metadata.ProcessPath))
                 {
-                    metadata.KeepAliveTask = StartProcessWithKeepAlive(metadata);
+                    if (!metadata.IsBeingManaged)
+                    {
+                        metadata.KeepAliveTask = StartProcessWithKeepAlive(metadata);
+                    }
                 }
                 else
                 {
@@ -226,9 +271,9 @@ namespace Datadog.Trace
         {
             try
             {
-                if (metadata.Process != null && !metadata.Process.HasExited)
+                if (_isProcessManager)
                 {
-                    metadata.Process.Kill();
+                    metadata.SafelyForceKill();
                 }
             }
             catch (Exception ex)
@@ -237,29 +282,9 @@ namespace Datadog.Trace
             }
         }
 
-        private static bool ProgramIsRunning(string fullPath)
-        {
-            if (string.IsNullOrWhiteSpace(fullPath))
-            {
-                return false;
-            }
-
-            // fileName will match either TraceAgentMetadata.Name or DogStatsDMetadata.Name
-            var fileName = Path.GetFileNameWithoutExtension(fullPath);
-            var processesByName = Process.GetProcessesByName(fileName);
-
-            if (processesByName?.Length > 0)
-            {
-                // We enforce a unique enough naming within contexts where we would use sub-processes
-                return true;
-            }
-
-            Log.Debug("Program [{0}] is no longer running", fullPath);
-            return false;
-        }
-
         private static Task StartProcessWithKeepAlive(ProcessMetadata metadata)
         {
+            const int circuitBreakerMax = 3;
             var path = metadata.ProcessPath;
             Log.Debug("Starting keep alive for {0}.", path);
 
@@ -268,7 +293,7 @@ namespace Datadog.Trace
                 {
                     try
                     {
-                        var circuitBreakerMax = 3;
+                        metadata.IsBeingManaged = true;
                         var sequentialFailures = 0;
 
                         while (true)
@@ -281,13 +306,9 @@ namespace Datadog.Trace
 
                             try
                             {
-                                if (metadata.Process != null && metadata.Process.HasExited == false)
-                                {
-                                    Log.Debug("We already have an active reference to {0}.", path);
-                                    continue;
-                                }
+                                metadata.IsFaulted = false;
 
-                                if (ProgramIsRunning(path))
+                                if (metadata.ProgramIsRunning())
                                 {
                                     Log.Debug("{0} is already running.", path);
                                     continue;
@@ -304,7 +325,7 @@ namespace Datadog.Trace
                                 GrabFreePortForInstance(metadata);
                                 metadata.Process = Process.Start(startInfo);
 
-                                await Task.Delay(200);
+                                await Task.Delay(150, _cancellationTokenSource.Token);
 
                                 if (metadata.Process == null || metadata.Process.HasExited)
                                 {
@@ -321,13 +342,23 @@ namespace Datadog.Trace
                             }
                             catch (Exception ex)
                             {
+                                metadata.IsFaulted = true;
                                 Log.Error(ex, "Exception when trying to start an instance of {0}.", path);
                                 sequentialFailures++;
                             }
                             finally
                             {
+                                metadata.HasAttemptedStartup = true;
                                 // Delay for a reasonable amount of time before we check to see if the process is alive again.
-                                await Task.Delay(KeepAliveInterval);
+                                if (metadata.IsFaulted)
+                                {
+                                    // Quicker retry in these cases
+                                    await Task.Delay(ExceptionRetryInterval, _cancellationTokenSource.Token);
+                                }
+                                else
+                                {
+                                    await Task.Delay(KeepAliveInterval, _cancellationTokenSource.Token);
+                                }
                             }
 
                             if (sequentialFailures >= circuitBreakerMax)
@@ -340,6 +371,7 @@ namespace Datadog.Trace
                     finally
                     {
                         Log.Debug("Keep alive is dropping for {0}.", path);
+                        metadata.IsBeingManaged = false;
                     }
                 },
                 _cancellationTokenSource.Token);
@@ -405,6 +437,21 @@ namespace Datadog.Trace
 
             public Task KeepAliveTask { get; set; }
 
+            /// <summary>
+            /// Gets or sets a value indicating whether this is being managed by active keep alive tasks.
+            /// </summary>
+            public bool IsBeingManaged { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the last attempt at running this process faulted.
+            /// </summary>
+            public bool IsFaulted { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the process has ever been tried.
+            /// </summary>
+            public bool HasAttemptedStartup { get; set; }
+
             public string PortFilePath { get; private set; }
 
             public string ProcessPath
@@ -413,9 +460,12 @@ namespace Datadog.Trace
                 set
                 {
                     _processPath = value;
+                    DirectoryPath = Path.GetDirectoryName(_processPath);
                     PortFilePath = !string.IsNullOrWhiteSpace(_processPath) ? $"{_processPath}.port" : null;
                 }
             }
+
+            public string DirectoryPath { get; private set; }
 
             public string ProcessArguments { get; set; }
 
@@ -497,6 +547,59 @@ namespace Datadog.Trace
                 }
 
                 ReadPortAndAlertSubscribers();
+            }
+
+            public void SafelyForceKill()
+            {
+                try
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(ProcessPath);
+                    var processesByName = Process.GetProcessesByName(fileName);
+                    foreach (var process in processesByName)
+                    {
+                        try
+                        {
+                            process.Kill();
+                        }
+                        finally
+                        {
+                            process.Dispose();
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            public bool ProgramIsRunning()
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(ProcessPath))
+                    {
+                        return false;
+                    }
+
+                    // fileName will match either TraceAgentMetadata.Name or DogStatsDMetadata.Name
+                    var fileName = Path.GetFileNameWithoutExtension(ProcessPath);
+                    var processesByName = Process.GetProcessesByName(fileName);
+
+                    if (processesByName?.Length > 0)
+                    {
+                        // We enforce a unique enough naming within contexts where we would use child processes
+                        return true;
+                    }
+
+                    Log.Debug("Program [{0}] is no longer running", ProcessPath);
+
+                    return false;
+                }
+                catch
+                {
+                    return false;
+                }
             }
 
             private void OnPortFileChanged(object source, FileSystemEventArgs e)
