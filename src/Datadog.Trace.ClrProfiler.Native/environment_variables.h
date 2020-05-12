@@ -48,7 +48,7 @@ const WSTRING env = "DD_ENV"_W;
 // from application name (e.g. entry assembly or IIS application name).
 const WSTRING service_name = "DD_SERVICE"_W;
 
-// Sets the "service_version" tag for every span.
+// Sets the "service_version" tag for every span that belong to the root service (and not an external service).
 const WSTRING service_version = "DD_VERSION"_W;
 
 // Sets a list of integrations to disable. All other integrations will remain
