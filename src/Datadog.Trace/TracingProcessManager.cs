@@ -186,7 +186,7 @@ namespace Datadog.Trace
             var fileClaim =
                 Path.Combine(
                     portManagerDirectory,
-                    $"{DomainMetadata.ProcessId}_{DomainMetadata.AppDomainId}");
+                    string.Format(CultureInfo.InvariantCulture, "{0}_{1}", DomainMetadata.ProcessId, DomainMetadata.AppDomainId);
 
             var portManagerFiles = Directory.GetFiles(portManagerDirectory);
             if (portManagerFiles.Length > 0)
