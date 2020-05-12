@@ -29,10 +29,11 @@ CorProfiler* profiler = nullptr;
     "Datadog.Trace"_W,
     "Datadog.Trace.ClrProfiler.Managed"_W,
     "Datadog.Trace.ClrProfiler.Managed.Core"_W,
-    "MsgPack"_W,
-    "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers0"_W,
-    "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers1"_W,
-    "MsgPack.Serialization.EmittingSerializers.GeneratedSerealizers2"_W,
+    "Datadog.Trace.ClrProfiler.Managed.Loader"_W,
+    "MessagePack"_W,
+    "MessagePack.Resolvers.DynamicEnumResolver"_W,
+    "MessagePack.Resolvers.DynamicObjectResolver"_W,
+    "MessagePack.Resolvers.DynamicUnionResolver"_W,
     "Sigil"_W,
     "Sigil.Emit.DynamicAssembly"_W,
     "System.Core"_W,
@@ -49,14 +50,12 @@ CorProfiler* profiler = nullptr;
     "Microsoft.Extensions.Options"_W,
     "Microsoft.Extensions.ObjectPool"_W,
     "System.Configuration"_W,
+    "System.Web"_W,
+    "System.Xml"_W,
     "System.Xml.Linq"_W,
     "Microsoft.AspNetCore.Razor.Language"_W,
-    "Microsoft.AspNetCore.Mvc.RazorPages"_W,
-    "Microsoft.CSharp"_W,
-    "Newtonsoft.Json"_W,
-    "Anonymously Hosted DynamicMethods Assembly"_W,
-    "ISymWrapper"_W
-};
+    "Microsoft.AspNetCore.Mvc.RazorPages"_W
+ };
 
 //
 // ICorProfilerCallback methods
@@ -581,8 +580,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 
   if (debug_logging_enabled) {
     Debug("JITCompilationStarted: function_id=", function_id,
-          " token=", function_token, " name=", caller.type.name, ".",
-          caller.name, "()");
+         " token=", function_token, " name=", caller.type.name, ".",
+         caller.name, "()");
   }
 
   // The first time a method is JIT compiled in an AppDomain, insert our startup
@@ -691,8 +690,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
 
   ASSEMBLYMETADATA assembly_metadata{};
 
-  // Consider doing ZeroMemory(&assembly_metadata, sizeof(assembly_metadata));
-
   assembly_metadata.usMajorVersion = assemblyReference.version.major;
   assembly_metadata.usMinorVersion = assemblyReference.version.minor;
   assembly_metadata.usBuildNumber = assemblyReference.version.build;
@@ -712,30 +709,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
     public_key_size = 0;
   }
 
-  for (auto& i : filtered_integrations) {
-    if (true) {
-      COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
-      asmRefInfo.pbPublicKeyOrToken =
-          (void*)&assemblyReference.public_key.data[0];
-      asmRefInfo.cbPublicKeyOrToken = public_key_size;
-      asmRefInfo.szName = assemblyReference.name.c_str();
-      asmRefInfo.pMetaData = &assembly_metadata;
-      asmRefInfo.pbHashValue = nullptr;
-      asmRefInfo.cbHashValue = 0;
-      asmRefInfo.dwAssemblyRefFlags = 0;
+    COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
+    asmRefInfo.pbPublicKeyOrToken =
+        (void*)&assemblyReference.public_key.data[0];
+    asmRefInfo.cbPublicKeyOrToken = public_key_size;
+    asmRefInfo.szName = assemblyReference.name.c_str();
+    asmRefInfo.pMetaData = &assembly_metadata;
+    asmRefInfo.pbHashValue = nullptr;
+    asmRefInfo.cbHashValue = 0;
+    asmRefInfo.dwAssemblyRefFlags = 0;
 
-      auto hr = pAsmRefProvider->AddAssemblyReference(&asmRefInfo);
+    auto hr = pAsmRefProvider->AddAssemblyReference(&asmRefInfo);
 
-      if (FAILED(hr)) {
-        Warn("GetAssemblyReferences failed for call from ", wszAssemblyPath);
-        return S_OK;
-      }
-
-      Debug("GetAssemblyReferences extending assembly closure for ",
-            assembly_name, " to include", asmRefInfo.szName);
-      return S_OK;
+    if (FAILED(hr)) {
+    Warn("GetAssemblyReferences failed for call from ", wszAssemblyPath);
+    return S_OK;
     }
-  }
+
+    Debug("GetAssemblyReferences extending assembly closure for ",
+        assembly_name, " to include ", asmRefInfo.szName);
 
   return S_OK;
 }
