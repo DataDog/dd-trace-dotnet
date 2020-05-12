@@ -100,7 +100,8 @@ namespace Datadog.Trace.Util
 
         public static bool ShouldAvoidAppDomain()
         {
-            if (AppDomainName.Contains("applicationinsights", StringComparison.OrdinalIgnoreCase))
+            var domainUpper = AppDomainName.ToUpperInvariant();
+            if (domainUpper.Contains("APPLICATIONINSIGHTS"))
             {
                 return true;
             }
