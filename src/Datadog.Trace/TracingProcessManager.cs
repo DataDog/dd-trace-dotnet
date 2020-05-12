@@ -81,16 +81,12 @@ namespace Datadog.Trace
             if (Processes.All(p => p.HasAttemptedStartup))
             {
                 Log.Debug("Forcing a full refresh on agent processes.");
-
                 StopProcesses();
 
                 _cancellationTokenSource = new CancellationTokenSource();
 
-                if (_isProcessManager)
-                {
-                    Log.Debug("Starting child processes from process {0}, AppDomain {1}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
-                    StartProcesses();
-                }
+                Log.Debug("Starting child processes.");
+                StartProcesses();
             }
             else
             {
