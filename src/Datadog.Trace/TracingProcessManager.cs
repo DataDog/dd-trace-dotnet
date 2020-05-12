@@ -150,7 +150,10 @@ namespace Datadog.Trace
                 Directory.CreateDirectory(portManagerDirectory);
             }
 
-            var fileClaim = Path.Combine(portManagerDirectory, ClaimFileName());
+            var fileClaim =
+                Path.Combine(
+                    portManagerDirectory,
+                    $"{DomainMetadata.ProcessId}_{DomainMetadata.AppDomainId}");
 
             var portManagerFiles = Directory.GetFiles(portManagerDirectory);
             if (portManagerFiles.Length > 0)
@@ -179,12 +182,6 @@ namespace Datadog.Trace
                 File.WriteAllText(fileClaim, DateTime.Now.ToString(CultureInfo.InvariantCulture));
                 _isProcessManager = true;
             }
-        }
-
-        private static string ClaimFileName()
-        {
-            var fileClaimName = $"{DomainMetadata.ProcessId}_{DomainMetadata.AppDomainId}";
-            return fileClaimName;
         }
 
         private static void StartProcesses()
