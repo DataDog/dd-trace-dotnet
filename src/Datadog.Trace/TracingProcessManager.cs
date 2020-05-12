@@ -186,7 +186,7 @@ namespace Datadog.Trace
             var fileClaim =
                 Path.Combine(
                     portManagerDirectory,
-                    string.Format(CultureInfo.InvariantCulture, "{0}_{1}", DomainMetadata.ProcessId, DomainMetadata.AppDomainId);
+                    string.Format(CultureInfo.InvariantCulture, "{0}_{1}", DomainMetadata.ProcessId, DomainMetadata.AppDomainId));
 
             var portManagerFiles = Directory.GetFiles(portManagerDirectory);
             if (portManagerFiles.Length > 0)
@@ -194,7 +194,7 @@ namespace Datadog.Trace
                 int? GetProcessIdFromFileName(string fullPath)
                 {
                     var fileName = Path.GetFileNameWithoutExtension(fullPath);
-                    if (int.TryParse(NumberStyles.Integer, CultureInfo.InvariantCulture, fileName?.Split('_')[0], out var pid))
+                    if (int.TryParse(fileName?.Split('_')[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var pid))
                     {
                         return pid;
                     }
@@ -213,7 +213,7 @@ namespace Datadog.Trace
                         {
                             if (claimPid != null)
                             {
-                                using (var process = Process.GetProcessById(claimPid.Value))
+                                using (Process.GetProcessById(claimPid.Value))
                                 {
                                     isActive = true;
                                 }
