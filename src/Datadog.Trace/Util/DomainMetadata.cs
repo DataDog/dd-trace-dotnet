@@ -9,14 +9,9 @@ namespace Datadog.Trace.Util
     internal static class DomainMetadata
     {
         private const string UnknownName = "unknown";
-        private static Process _currentProcess = null;
-        private static bool _processDataPoisoned = false;
-        private static bool _domainDataPoisoned = false;
-
-        static DomainMetadata()
-        {
-            TrySetProcess();
-        }
+        private static Process _currentProcess;
+        private static bool _processDataPoisoned;
+        private static bool _domainDataPoisoned;
 
         public static string ProcessName
         {
@@ -24,7 +19,8 @@ namespace Datadog.Trace.Util
             {
                 try
                 {
-                    return !_processDataPoisoned ? _currentProcess.ProcessName : UnknownName;
+                    TrySetProcess();
+                    return _currentProcess?.ProcessName ?? UnknownName;
                 }
                 catch
                 {
@@ -40,7 +36,8 @@ namespace Datadog.Trace.Util
             {
                 try
                 {
-                    return !_processDataPoisoned ? _currentProcess.MachineName : UnknownName;
+                    TrySetProcess();
+                    return _currentProcess?.MachineName ?? UnknownName;
                 }
                 catch
                 {
@@ -56,7 +53,8 @@ namespace Datadog.Trace.Util
             {
                 try
                 {
-                    return !_processDataPoisoned ? _currentProcess.Id : -1;
+                    TrySetProcess();
+                    return _currentProcess?.Id ?? -1;
                 }
                 catch
                 {
