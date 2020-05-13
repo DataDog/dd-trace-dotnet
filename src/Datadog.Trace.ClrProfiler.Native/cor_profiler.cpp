@@ -428,14 +428,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     }
   }
 
-  mdModule module;
-  hr = metadata_import->GetModuleFromScope(&module);
-  if (FAILED(hr)) {
-    Warn("ModuleLoadFinished failed to get module metadata token for ",
-         module_id, " ", module_info.assembly.name);
-    return S_OK;
-  }
-
   GUID module_version_id;
   hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
   if (FAILED(hr)) {
@@ -651,7 +643,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
 
   // TODO: Make this assembly reference dynamic vs hard-coded
   const AssemblyReference assemblyReference = trace::AssemblyReference(
-      L"Datadog.Trace.ClrProfiler.Managed, Version=1.16.1.0, Culture="
+      L"Datadog.Trace.ClrProfiler.Managed, Version=1.16.2.0, Culture="
       L"neutral, PublicKeyToken=def86d061d0d2eeb");
 
   ASSEMBLYMETADATA assembly_metadata{};
