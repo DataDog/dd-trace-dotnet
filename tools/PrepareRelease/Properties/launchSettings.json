@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PrepareRelease": {
+      "commandName": "Project",
+      "commandLineArgs": "versions integrations msi"
+    }
+  }
+}
