@@ -82,8 +82,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             Process process = StartSample(traceAgentPort, arguments, packageVersion, aspNetCorePort: 5000);
 
-            string standardOutput = process.StandardOutput.ReadToEnd();
-            string standardError = process.StandardError.ReadToEnd();
+            string standardOutput = string.Empty; // process.StandardOutput.ReadToEnd();
+            string standardError = string.Empty; // process.StandardError.ReadToEnd();
             process.WaitForExit();
             int exitCode = process.ExitCode;
 
