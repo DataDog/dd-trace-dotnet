@@ -27,6 +27,7 @@ CorProfiler* profiler = nullptr;
     "mscorlib"_W,
     "netstandard"_W,
     "Datadog.Trace"_W,
+    "Datadog.Trace.AspNet"_W,
     "Datadog.Trace.ClrProfiler.Managed"_W,
     "Datadog.Trace.ClrProfiler.Managed.Core"_W,
     "Datadog.Trace.ClrProfiler.Managed.Loader"_W,
@@ -54,7 +55,10 @@ CorProfiler* profiler = nullptr;
     "System.Xml"_W,
     "System.Xml.Linq"_W,
     "Microsoft.AspNetCore.Razor.Language"_W,
-    "Microsoft.AspNetCore.Mvc.RazorPages"_W
+    "Microsoft.AspNetCore.Mvc.RazorPages"_W,
+    "Newtonsoft.Json"_W,
+    "Anonymously Hosted DynamicMethods Assembly"_W,
+    "ISymWrapper"_W
  };
 
 //
@@ -370,44 +374,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
 
   // We must never try to add assembly references to
   // mscorlib or netstandard. Skip other known assemblies.
-  WSTRING skip_assemblies[]{
-      "mscorlib"_W,
-      "netstandard"_W,
-      "Datadog.Trace"_W,
-      "Datadog.Trace.AspNet"_W,
-      "Datadog.Trace.ClrProfiler.Managed"_W,
-      "Datadog.Trace.ClrProfiler.Managed.Core"_W,
-      "Datadog.Trace.ClrProfiler.Managed.Loader"_W,
-      "MessagePack"_W,
-      "MessagePack.Resolvers.DynamicEnumResolver"_W,
-      "MessagePack.Resolvers.DynamicObjectResolver"_W,
-      "MessagePack.Resolvers.DynamicUnionResolver"_W,
-      "Sigil"_W,
-      "Sigil.Emit.DynamicAssembly"_W,
-      "System.Core"_W,
-      "System.Runtime"_W,
-      "System.IO.FileSystem"_W,
-      "System.Collections"_W,
-      "System.Runtime.Extensions"_W,
-      "System.Threading.Tasks"_W,
-      "System.Runtime.InteropServices"_W,
-      "System.Runtime.InteropServices.RuntimeInformation"_W,
-      "System.ComponentModel"_W,
-      "System.Console"_W,
-      "System.Diagnostics.DiagnosticSource"_W,
-      "Microsoft.Extensions.Options"_W,
-      "Microsoft.Extensions.ObjectPool"_W,
-      "System.Configuration"_W,
-      "System.Web"_W,
-      "System.Xml"_W,
-      "System.Xml.Linq"_W,
-      "Microsoft.AspNetCore.Razor.Language"_W,
-      "Microsoft.AspNetCore.Mvc.RazorPages"_W,
-      "Microsoft.CSharp"_W,
-      "Newtonsoft.Json"_W,
-      "Anonymously Hosted DynamicMethods Assembly"_W,
-      "ISymWrapper"_W};
-
   for (auto&& skip_assembly : skip_assemblies) {
     if (module_info.assembly.name == skip_assembly) {
       Debug("ModuleLoadFinished skipping known module: ", module_id, " ",
