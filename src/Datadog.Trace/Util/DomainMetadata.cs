@@ -13,14 +13,18 @@ namespace Datadog.Trace.Util
         private static bool _processDataPoisoned;
         private static bool _domainDataPoisoned;
 
+        static DomainMetadata()
+        {
+            TrySetProcess();
+        }
+
         public static string ProcessName
         {
             get
             {
                 try
                 {
-                    TrySetProcess();
-                    return _currentProcess?.ProcessName ?? UnknownName;
+                    return !_processDataPoisoned ? _currentProcess.ProcessName : UnknownName;
                 }
                 catch
                 {
@@ -36,8 +40,7 @@ namespace Datadog.Trace.Util
             {
                 try
                 {
-                    TrySetProcess();
-                    return _currentProcess?.MachineName ?? UnknownName;
+                    return !_processDataPoisoned ? _currentProcess.MachineName : UnknownName;
                 }
                 catch
                 {
@@ -53,8 +56,7 @@ namespace Datadog.Trace.Util
             {
                 try
                 {
-                    TrySetProcess();
-                    return _currentProcess?.Id ?? -1;
+                    return !_processDataPoisoned ? _currentProcess.Id : -1;
                 }
                 catch
                 {
