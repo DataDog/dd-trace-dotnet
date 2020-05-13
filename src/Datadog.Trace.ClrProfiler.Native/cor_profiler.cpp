@@ -28,6 +28,7 @@ CorProfiler* profiler = nullptr;
     "mscorlib"_W,
     "netstandard"_W,
     "Datadog.Trace"_W,
+    "Datadog.Trace.AspNet"_W,
     "Datadog.Trace.ClrProfiler.Managed"_W,
     "Datadog.Trace.ClrProfiler.Managed.Core"_W,
     "Datadog.Trace.ClrProfiler.Managed.Loader"_W,
@@ -55,7 +56,10 @@ CorProfiler* profiler = nullptr;
     "System.Xml"_W,
     "System.Xml.Linq"_W,
     "Microsoft.AspNetCore.Razor.Language"_W,
-    "Microsoft.AspNetCore.Mvc.RazorPages"_W
+    "Microsoft.AspNetCore.Mvc.RazorPages"_W,
+    "Newtonsoft.Json"_W,
+    "Anonymously Hosted DynamicMethods Assembly"_W,
+    "ISymWrapper"_W
  };
 
 //
