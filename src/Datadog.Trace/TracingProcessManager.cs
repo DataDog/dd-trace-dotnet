@@ -65,11 +65,11 @@ namespace Datadog.Trace
         {
             if (string.IsNullOrEmpty(TraceAgentMetadata.DirectoryPath))
             {
-                Log.Debug("This is not a context where we manage sub processes.");
+                Log.Debug("This is not a context where we manage agent processes.");
                 return;
             }
 
-            Log.Warning("We are attempting to force a child process refresh.");
+            Log.Warning("Attempting to force a child process refresh.");
             InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
 
             if (!_isProcessManager)
