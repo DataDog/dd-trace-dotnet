@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -47,9 +48,8 @@ namespace Datadog.Trace.Logging
                     return;
                 }
 
-                var currentProcess = Process.GetCurrentProcess();
                 // Ends in a dash because of the date postfix
-                var managedLogPath = Path.Combine(logDirectory, $"dotnet-tracer-{currentProcess.ProcessName}-.log");
+                var managedLogPath = Path.Combine(logDirectory, $"dotnet-tracer-{DomainMetadata.ProcessName}-.log");
 
                 var loggerConfiguration =
                     new LoggerConfiguration()
@@ -64,10 +64,9 @@ namespace Datadog.Trace.Logging
 
                 try
                 {
-                    var currentAppDomain = AppDomain.CurrentDomain;
-                    loggerConfiguration.Enrich.WithProperty("MachineName", currentProcess.MachineName);
-                    loggerConfiguration.Enrich.WithProperty("Process", $"[{currentProcess.Id} {currentProcess.ProcessName}]");
-                    loggerConfiguration.Enrich.WithProperty("AppDomain", $"[{currentAppDomain.Id} {currentAppDomain.FriendlyName}]");
+                    loggerConfiguration.Enrich.WithProperty("MachineName", DomainMetadata.MachineName);
+                    loggerConfiguration.Enrich.WithProperty("Process", $"[{DomainMetadata.ProcessId} {DomainMetadata.ProcessName}]");
+                    loggerConfiguration.Enrich.WithProperty("AppDomain", $"[{DomainMetadata.AppDomainId} {DomainMetadata.AppDomainName}]");
                     loggerConfiguration.Enrich.WithProperty("TracerVersion", TracerConstants.AssemblyVersion);
                 }
                 catch

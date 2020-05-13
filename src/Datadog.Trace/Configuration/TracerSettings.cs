@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -260,14 +261,24 @@ namespace Datadog.Trace.Configuration
 
         internal bool IsIntegrationEnabled(string name)
         {
-            bool disabled = Integrations[name].Enabled == false || DisabledIntegrationNames.Contains(name);
-            return TraceEnabled && !disabled;
+            if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
+            {
+                bool disabled = Integrations[name].Enabled == false || DisabledIntegrationNames.Contains(name);
+                return !disabled;
+            }
+
+            return false;
         }
 
         internal bool IsOptInIntegrationEnabled(string name)
         {
-            bool disabled = Integrations[name].Enabled != true || DisabledIntegrationNames.Contains(name);
-            return TraceEnabled && !disabled;
+            if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
+            {
+                var disabled = Integrations[name].Enabled != true || DisabledIntegrationNames.Contains(name);
+                return !disabled;
+            }
+
+            return false;
         }
 
         internal double? GetIntegrationAnalyticsSampleRate(string name, bool enabledWithGlobalSetting)

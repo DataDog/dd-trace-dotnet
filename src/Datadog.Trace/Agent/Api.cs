@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
@@ -117,6 +118,14 @@ namespace Datadog.Trace.Agent
                         return;
                     }
 #endif
+                    var isSocketException = false;
+                    if (ex.InnerException is SocketException se)
+                    {
+                        isSocketException = true;
+                        Log.Error(se, "Unable to communicate with the trace agent at {Endpoint}", _tracesEndpoint);
+                        TracingProcessManager.TryForceTraceAgentRefresh();
+                    }
+
                     if (retryCount >= retryLimit)
                     {
                         // stop retrying
@@ -128,7 +137,13 @@ namespace Datadog.Trace.Agent
                     await Task.Delay(sleepDuration).ConfigureAwait(false);
                     retryCount++;
                     sleepDuration *= 2;
-                    TracingProcessManager.TraceAgentMetadata.ForcePortFileRead();
+
+                    if (isSocketException)
+                    {
+                        // Ensure we have the most recent port before trying again
+                        TracingProcessManager.TraceAgentMetadata.ForcePortFileRead();
+                    }
+
                     continue;
                 }
 
