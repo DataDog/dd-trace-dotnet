@@ -193,9 +193,9 @@ jobs:
       mv $(Pipeline.Workspace)/linux-packages/*.deb s3_upload/
     displayName: Move deb package and MSI to s3_upload folder
 
-# for prerelease versions, rename datadog-dotnet-apm-{version}-amd64.deb
-# to datadog-dotnet-apm-{version}-{tag}-amd64.deb
-# by copying the filename from datadog-dotnet-apm-{version}-{tag}-x64.msi
+  # for prerelease versions, rename datadog-dotnet-apm-{version}-amd64.deb
+  # to datadog-dotnet-apm-{version}-{tag}-amd64.deb
+  # by copying the filename from datadog-dotnet-apm-{version}-{tag}-x64.msi
   - script: |
       MSI_NAME=$(ls s3_upload/*.msi)
       PACKAGE_NAME=${MSI_NAME::-7}
