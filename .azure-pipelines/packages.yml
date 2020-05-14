@@ -174,7 +174,7 @@ jobs:
       succeeded(),
       or(
         and(eq(variables['Build.SourceBranch'], 'refs/heads/master'), ne(variables['push_artifacts_to_s3'], 'false')),
-        and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['push_artifacts_to_s3'], 'true')),
+        and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['push_artifacts_to_s3'], 'true'))
       )
     )
 
