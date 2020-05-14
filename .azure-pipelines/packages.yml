@@ -171,10 +171,6 @@ stages:
   jobs:
   - job: s3_upload
 
-    dependsOn:
-      - windows_packages_and_nuget
-      - linux_packages
-
     pool:
       vmImage: ubuntu-18.04
 
