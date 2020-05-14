@@ -164,26 +164,6 @@ jobs:
     artifact: linux-alpine-packages
 
 - job: s3_upload
-  # by default, run this job on master branch only, use "push_artifacts_to_s3" to override
-
-  # variable "push_artifacts_to_s3":
-  #   "true": run this job and push to s3 (run everything)
-  #   "false": do NOT run this job, do NOT push to s3 (skip everything)
-  #   "test": run this job, but do NOT push to s3 (skip last step)
-
-  # condition = succeeded &&
-  #             ((push_artifacts_to_s3 == "true") ||
-  #              (push_artifacts_to_s3 == "test") ||
-  #              (branch == "master" && push_artifacts_to_s3 != "false"))
-  condition: >
-    and(
-      succeeded(),
-      or(
-        eq(variables['push_artifacts_to_s3'], 'true'),
-        eq(variables['push_artifacts_to_s3'], 'test'),
-        and(eq(variables['Build.SourceBranch'], 'refs/heads/master'), ne(variables['push_artifacts_to_s3'], 'false'))
-      )
-    )
 
   dependsOn:
     - windows_packages_and_nuget
@@ -245,6 +225,20 @@ jobs:
     env:
       SECRET: $(AWS_SECRET_ACCESS_KEY)
 
+  # by default, run this step on master branch only.
+  # use "push_artifacts_to_s3" to override:
+  #   "true": run this step
+  #   "false": do NOT run this step
+  #   else: run this stage if branch is master
+
   - script: aws s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive
     displayName: Upload deb, MSI, index.txt to s3
-    condition: and(succeeded(), ne(variables['push_artifacts_to_s3'], 'test'))
+    condition: >
+      and(
+        succeeded(),
+        ne(variables['push_artifacts_to_s3'], 'false'),
+        or(
+          eq(variables['push_artifacts_to_s3'], 'true'),
+          eq(variables['Build.SourceBranch'], 'refs/heads/master')
+        )
+      )
