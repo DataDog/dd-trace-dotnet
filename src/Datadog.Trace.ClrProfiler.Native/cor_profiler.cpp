@@ -343,6 +343,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "Sigil.Emit.DynamicAssembly"_W,
       "System.Core"_W,
       "System.Runtime"_W,
+      "System.Runtime.Caching"_W,
       "System.IO.FileSystem"_W,
       "System.Collections"_W,
       "System.Runtime.Extensions"_W,
@@ -355,12 +356,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "Microsoft.Extensions.Options"_W,
       "Microsoft.Extensions.ObjectPool"_W,
       "System.Configuration"_W,
-      "System.Web"_W,
       "System.Xml"_W,
       "System.Xml.Linq"_W,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
       "Microsoft.CSharp"_W,
+      "Microsoft.Build.Utilities.v4.0"_W,
       "Newtonsoft.Json"_W,
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
@@ -541,12 +542,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
+  // we don't actually need to instrument anything in
+  // System.Web, it was included only to ensure the startup
+  // hook is called for AspNet applications
+  auto valid_startup_hook_callsite = true;
+  if (module_metadata->assemblyName == "System"_W ||
+     (module_metadata->assemblyName == "System.Web"_W && !(caller.type.name == "System.Web.Compilation.BuildManager"_W && caller.name == "ExecutePreAppStart"_W))) {
+    valid_startup_hook_callsite = false;
+  }
+
   // The first time a method is JIT compiled in an AppDomain, insert our startup
   // hook which, at a minimum, must add an AssemblyResolve event so we can find
   // Datadog.Trace.ClrProfiler.Managed.dll and its dependencies on-disk since it
   // is no longer provided in a NuGet package
-  if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
-      first_jit_compilation_app_domains.end()) {
+  if (valid_startup_hook_callsite &&
+      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
+      first_jit_compilation_app_domains.end() &&
+      !(module_metadata->assemblyName == "System"_W)) {
     bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded && module_metadata->app_domain_id == corlib_app_domain_id;
     Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
           " token=", function_token, " name=", caller.type.name, ".",
