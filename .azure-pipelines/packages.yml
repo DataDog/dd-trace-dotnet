@@ -169,11 +169,12 @@ jobs:
   # variable "push_artifacts_to_s3":
   #   "true": run this job and push to s3 (run everything)
   #   "false": do NOT run this job, do NOT push to s3 (skip everything)
-  #   "test": run this job, do NOT push to s3 (skip last step)
+  #   "test": run this job, but do NOT push to s3 (skip last step)
 
   # condition = succeeded &&
   #             ((push_artifacts_to_s3 == "true") ||
-  #              (branch == master && push_artifacts_to_s3 != "false"))
+  #              (push_artifacts_to_s3 == "test") ||
+  #              (branch == "master" && push_artifacts_to_s3 != "false"))
   condition: >
     and(
       succeeded(),
