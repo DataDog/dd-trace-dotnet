@@ -198,7 +198,7 @@ jobs:
   # by copying the filename from datadog-dotnet-apm-{version}-{tag}-x64.msi
   - script: |
       MSI_NAME=$(ls s3_upload/*.msi)
-      PACKAGE_NAME=${MSI_NAME::-7}
+      PACKAGE_NAME=${MSI_NAME::-8}
       echo Renaming deb package to $PACKAGE_NAME-amd64.deb
       mv s3_upload/*.deb $PACKAGE_NAME-amd64.deb
     displayName: Rename deb package name to match MSI name
@@ -207,7 +207,7 @@ jobs:
       INDEX_FILE=$(pwd)/s3_upload/index.txt
       echo $(GitVersion.BranchName) >> $INDEX_FILE
       echo $(GitVersion.Sha) >> $INDEX_FILE
-      pushd s3_upload && name=$(ls *.deb) && echo "${name::-7}*" >> $INDEX_FILE && popd
+      pushd s3_upload && name=$(ls *.deb) && echo "${name::-9}*" >> $INDEX_FILE && popd
       git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
       cat $INDEX_FILE
     displayName: Write index.txt
