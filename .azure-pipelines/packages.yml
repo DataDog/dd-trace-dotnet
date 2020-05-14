@@ -164,7 +164,7 @@ jobs:
     artifact: linux-alpine-packages
 
 - job: s3_upload
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['push_to_s3'], 'true'))
+  condition: and(succeeded(), not(startsWith(variables['Build.SourceBranch'], 'refs/tags/')))
 
   dependsOn:
     - windows_packages_and_nuget
@@ -199,6 +199,7 @@ jobs:
   - script: |
       MSI_NAME=$(ls s3_upload/*.msi)
       PACKAGE_NAME=${MSI_NAME::-7}
+      echo Renaming deb package to $PACKAGE_NAME-amd64.deb
       mv s3_upload/*.deb $PACKAGE_NAME-amd64.deb
     displayName: Rename deb package name to match MSI name
 
@@ -208,20 +209,25 @@ jobs:
       echo $(GitVersion.Sha) >> $INDEX_FILE
       pushd s3_upload && name=$(ls *.deb) && echo "${name::-7}*" >> $INDEX_FILE && popd
       git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
+      cat $INDEX_FILE
     displayName: Write index.txt
 
   - script: sudo apt-get install -y awscli
     displayName: Install AWS CLI
+    condition: eq(variables['push_to_s3'], 'true')
 
   - script: aws configure set aws_access_key_id $SECRET
     displayName: Authenticate aws_access_key_id
+    condition: eq(variables['push_to_s3'], 'true')
     env:
       SECRET: $(AWS_ACCESS_KEY_ID)
 
   - script: aws configure set aws_secret_access_key $SECRET
     displayName: Authenticate aws_secret_access_key
+    condition: eq(variables['push_to_s3'], 'true')
     env:
       SECRET: $(AWS_SECRET_ACCESS_KEY)
 
   - script: aws s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive
     displayName: Upload deb, MSI, index.txt to s3
+    condition: eq(variables['push_to_s3'], 'true')
