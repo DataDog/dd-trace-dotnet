@@ -194,8 +194,8 @@ jobs:
     displayName: Move deb package and MSI to s3_upload folder
 
   # for prerelease versions, rename datadog-dotnet-apm-{version}-amd64.deb
-  # to datadog-dotnet-apm-{version}-{tag}-amd64.deb
-  # by copying the filename from datadog-dotnet-apm-{version}-{tag}-x64.msi
+  # to datadog-dotnet-apm-{version}-{tag}-amd64.deb (i.e. add the prerelease tag)
+  # by copying most of the filename from datadog-dotnet-apm-{version}-{tag}-x64.msi
   - script: |
       MSI_NAME=$(ls s3_upload/*.msi)
       PACKAGE_NAME=${MSI_NAME::-8}
@@ -209,6 +209,7 @@ jobs:
       echo $(GitVersion.Sha) >> $INDEX_FILE
       pushd s3_upload && name=$(ls *.deb) && echo "${name::-9}*" >> $INDEX_FILE && popd
       git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
+      echo Generated index.txt file:
       cat $INDEX_FILE
     displayName: Write index.txt
 
