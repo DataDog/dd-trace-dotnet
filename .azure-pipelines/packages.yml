@@ -10,215 +10,237 @@ variables:
   dotnetCoreSdkVersion: 3.1.x
   publishOutput: $(Build.SourcesDirectory)/src/bin/managed-publish
 
-jobs:
+stages:
+- stage: build
+  jobs:
 
-#### Windows and NuGet packages
+  #### Windows and NuGet packages
 
-- job: windows_packages_and_nuget
-  pool:
-    vmImage: windows-2019
-  variables:
-    tracerHomeName: windows-tracer-home
-    tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
-    msiHome: $(System.DefaultWorkingDirectory)/src/bin/msi
-    nuget_packages: $(Pipeline.Workspace)/.nuget/packages
+  - job: windows_packages_and_nuget
+    pool:
+      vmImage: windows-2019
+    variables:
+      tracerHomeName: windows-tracer-home
+      tracerHome: $(System.DefaultWorkingDirectory)/src/bin/$(tracerHomeName)
+      msiHome: $(System.DefaultWorkingDirectory)/src/bin/msi
+      nuget_packages: $(Pipeline.Workspace)/.nuget/packages
 
-  steps:
+    steps:
 
-  - task: UseDotNet@2
-    displayName: install dotnet core sdk
-    inputs:
-      packageType: sdk
-      version: $(dotnetCoreSdkVersion)
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk
+      inputs:
+        packageType: sdk
+        version: $(dotnetCoreSdkVersion)
 
-  - task: NuGetToolInstaller@1
-    displayName: install nuget
+    - task: NuGetToolInstaller@1
+      displayName: install nuget
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet restore
-    inputs:
-      command: restore
-      projects: src/**/*.csproj
+    - task: DotNetCoreCLI@2
+      displayName: dotnet restore
+      inputs:
+        command: restore
+        projects: src/**/*.csproj
 
-  # native projects must be restored with nuget.exe
-  - task: NuGetCommand@2
-    displayName: nuget restore native
-    inputs:
-      restoreSolution: Datadog.Trace.Native.sln
-      verbosityRestore: Normal
+    # native projects must be restored with nuget.exe
+    - task: NuGetCommand@2
+      displayName: nuget restore native
+      inputs:
+        restoreSolution: Datadog.Trace.Native.sln
+        verbosityRestore: Normal
 
-  # this triggers a dependency chain that builds all the managed, x64, and x86 dlls, and the zip and msi files
-  - task: MSBuild@1
-    displayName: build both msi
-    inputs:
-      solution: Datadog.Trace.proj
-      configuration: $(buildConfiguration)
-      msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;TracerHomeDirectory=$(tracerHome);RunWixToolsOutOfProc=true;MsiOutputPath=$(msiHome)
-      maximumCpuCount: true
+    # this triggers a dependency chain that builds all the managed, x64, and x86 dlls, and the zip and msi files
+    - task: MSBuild@1
+      displayName: build both msi
+      inputs:
+        solution: Datadog.Trace.proj
+        configuration: $(buildConfiguration)
+        msbuildArguments: /t:msi /p:Platform=All;ZipHomeDirectory=true;TracerHomeDirectory=$(tracerHome);RunWixToolsOutOfProc=true;MsiOutputPath=$(msiHome)
+        maximumCpuCount: true
 
-  - publish: $(msiHome)/en-us
-    artifact: windows-msi
+    - publish: $(msiHome)/en-us
+      artifact: windows-msi
 
-  - publish: $(tracerHome).zip
-    artifact: $(tracerHomeName)
+    - publish: $(tracerHome).zip
+      artifact: $(tracerHomeName)
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet pack
-    inputs:
-      command: pack
-      packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
-      packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
-      configuration: $(buildConfiguration)
+    - task: DotNetCoreCLI@2
+      displayName: dotnet pack
+      inputs:
+        command: pack
+        packagesToPack: src/Datadog.Trace/Datadog.Trace.csproj;src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
+        packDirectory: $(System.DefaultWorkingDirectory)/nuget-output
+        configuration: $(buildConfiguration)
 
-  - publish: $(System.DefaultWorkingDirectory)/nuget-output
-    artifact: nuget-packages
+    - publish: $(System.DefaultWorkingDirectory)/nuget-output
+      artifact: nuget-packages
 
-#### Linux packages
+  #### Linux packages
 
-- job: linux_packages
-  pool:
-    vmImage: ubuntu-18.04
-  variables:
-    tracerHome: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
+  - job: linux_packages
+    pool:
+      vmImage: ubuntu-18.04
+    variables:
+      tracerHome: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
 
-  steps:
-  - task: UseDotNet@2
-    displayName: install dotnet core sdk
-    inputs:
-      version: $(dotnetCoreSdkVersion)
+    steps:
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk
+      inputs:
+        version: $(dotnetCoreSdkVersion)
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
-    inputs:
-      command: build
-      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-      arguments: --configuration $(buildConfiguration)
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+      inputs:
+        command: build
+        projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        arguments: --configuration $(buildConfiguration)
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
-    inputs:
-      command: publish
-      publishWebProjects: false
-      modifyOutputPath: false
-      zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(tracerHome)/netstandard2.0
+    - task: DotNetCoreCLI@2
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+        arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(tracerHome)/netstandard2.0
 
-  - task: DockerCompose@0
-    displayName: docker-compose run Profiler
-    inputs:
-      containerregistrytype: Container Registry
-      dockerComposeCommand: run Profiler
+    - task: DockerCompose@0
+      displayName: docker-compose run Profiler
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run Profiler
 
-  - task: DockerCompose@0
-    displayName: docker-compose run package
-    inputs:
-      containerregistrytype: Container Registry
-      dockerComposeCommand: run package
+    - task: DockerCompose@0
+      displayName: docker-compose run package
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run package
 
-  - publish: deploy/linux
-    artifact: linux-packages
+    - publish: deploy/linux
+      artifact: linux-packages
 
-- job: linux_alpine_packages
-  pool:
-    vmImage: ubuntu-18.04
-  variables:
-    tracerHome: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
+  - job: linux_alpine_packages
+    pool:
+      vmImage: ubuntu-18.04
+    variables:
+      tracerHome: $(System.DefaultWorkingDirectory)/src/bin/managed-publish
 
-  steps:
-  - task: UseDotNet@2
-    displayName: install dotnet core sdk
-    inputs:
-      version: $(dotnetCoreSdkVersion)
+    steps:
+    - task: UseDotNet@2
+      displayName: install dotnet core sdk
+      inputs:
+        version: $(dotnetCoreSdkVersion)
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
-    inputs:
-      command: build
-      projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-      arguments: --configuration $(buildConfiguration)
+    - task: DotNetCoreCLI@2
+      displayName: dotnet build Datadog.Trace.ClrProfiler.Managed.Loader
+      inputs:
+        command: build
+        projects: src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+        arguments: --configuration $(buildConfiguration)
 
-  - task: DotNetCoreCLI@2
-    displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
-    inputs:
-      command: publish
-      publishWebProjects: false
-      modifyOutputPath: false
-      zipAfterPublish: false
-      projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-      arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(tracerHome)/netstandard2.0
+    - task: DotNetCoreCLI@2
+      displayName: dotnet publish Datadog.Trace.ClrProfiler.Managed
+      inputs:
+        command: publish
+        publishWebProjects: false
+        modifyOutputPath: false
+        zipAfterPublish: false
+        projects: src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
+        arguments: --configuration $(buildConfiguration) --framework netstandard2.0 --output $(tracerHome)/netstandard2.0
 
-  - task: DockerCompose@0
-    displayName: docker-compose run Profiler.Alpine
-    inputs:
-      containerregistrytype: Container Registry
-      dockerComposeCommand: run Profiler.Alpine
+    - task: DockerCompose@0
+      displayName: docker-compose run Profiler.Alpine
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run Profiler.Alpine
 
-  - task: DockerCompose@0
-    displayName: docker-compose run package.alpine
-    inputs:
-      containerregistrytype: Container Registry
-      dockerComposeCommand: run package.alpine
+    - task: DockerCompose@0
+      displayName: docker-compose run package.alpine
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run package.alpine
 
-  - publish: deploy/linux
-    artifact: linux-alpine-packages
+    - publish: deploy/linux
+      artifact: linux-alpine-packages
 
-- job: s3_upload
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['push_to_s3'], 'true'))
+  #### Upload artifacts to S3
 
-  dependsOn:
-    - windows_packages_and_nuget
-    - linux_packages
+- stage: upload
+  jobs:
+  - job: s3_upload
 
-  pool:
-    vmImage: ubuntu-16.04
+    pool:
+      vmImage: ubuntu-18.04
 
-  steps:
-  - task: GitVersion@5
-    displayName: GitVersion
-    inputs:
-      preferBundledVersion: false
+    steps:
+    - task: GitVersion@5
+      displayName: GitVersion
+      inputs:
+        preferBundledVersion: false
 
-  - download: current
-    artifact: windows-msi
-    patterns: '**/*x64.msi'
+    - download: current
+      artifact: windows-msi
+      patterns: '**/*x64.msi'
 
-  - download: current
-    artifact: linux-packages
-    patterns: '**/*amd64.deb'
+    - download: current
+      artifact: linux-packages
+      patterns: '**/*amd64.deb'
 
-  - script: |
-      mkdir s3_upload
-      mv $(Pipeline.Workspace)/windows-msi/*.msi s3_upload/
-      mv $(Pipeline.Workspace)/linux-packages/*.deb s3_upload/
-    displayName: Move deb package and MSI to s3_upload folder
+    - script: |
+        mkdir s3_upload
+        mv $(Pipeline.Workspace)/windows-msi/*.msi s3_upload/
+        mv $(Pipeline.Workspace)/linux-packages/*.deb s3_upload/
+      displayName: Move deb package and MSI to s3_upload folder
 
-  - script: |
-      MSI_NAME=$(ls s3_upload/*.msi)
-      PACKAGE_NAME=${MSI_NAME::-4}
-      mv s3_upload/*.deb $PACKAGE_NAME.deb
-    displayName: Rename deb package name to match MSI name
+    # for prerelease versions, rename datadog-dotnet-apm-{version}-amd64.deb
+    # to datadog-dotnet-apm-{version}-{tag}-amd64.deb (i.e. add the prerelease tag)
+    # by copying most of the filename from datadog-dotnet-apm-{version}-{tag}-x64.msi
+    - script: |
+        MSI_NAME=$(ls s3_upload/*.msi)
+        PACKAGE_NAME=${MSI_NAME::-8}
+        echo Renaming deb package to $PACKAGE_NAME-amd64.deb
+        mv s3_upload/*.deb $PACKAGE_NAME-amd64.deb
+      displayName: Rename deb package name to match MSI name
 
-  - script: |
-      INDEX_FILE=$(pwd)/s3_upload/index.txt
-      echo $(GitVersion.BranchName) >> $INDEX_FILE
-      echo $(GitVersion.Sha) >> $INDEX_FILE
-      pushd s3_upload && name=$(ls *.deb) && echo "${name::-7}*" >> $INDEX_FILE && popd
-      git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
-    displayName: Write index.txt
+    - script: |
+        INDEX_FILE=$(pwd)/s3_upload/index.txt
+        echo $(GitVersion.BranchName) >> $INDEX_FILE
+        echo $(GitVersion.Sha) >> $INDEX_FILE
+        pushd s3_upload && name=$(ls *.deb) && echo "${name::-9}*" >> $INDEX_FILE && popd
+        git show -s --format='%ae' $(GitVersion.Sha) >> $INDEX_FILE
+        echo Generated index.txt file:
+        cat $INDEX_FILE
+      displayName: Write index.txt
 
-  - script: sudo apt-get install -y awscli
-    displayName: Install AWS CLI
+    - script: sudo apt-get install -y awscli
+      displayName: Install AWS CLI
 
-  - script: aws configure set aws_access_key_id $SECRET
-    displayName: Authenticate aws_access_key_id
-    env:
-      SECRET: $(AWS_ACCESS_KEY_ID)
+    - script: aws configure set aws_access_key_id $SECRET
+      displayName: Authenticate aws_access_key_id
+      env:
+        SECRET: $(AWS_ACCESS_KEY_ID)
 
-  - script: aws configure set aws_secret_access_key $SECRET
-    displayName: Authenticate aws_secret_access_key
-    env:
-      SECRET: $(AWS_SECRET_ACCESS_KEY)
+    - script: aws configure set aws_secret_access_key $SECRET
+      displayName: Authenticate aws_secret_access_key
+      env:
+        SECRET: $(AWS_SECRET_ACCESS_KEY)
 
-  - script: aws s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive
-    displayName: Upload deb, MSI, index.txt to s3
+    # by default, run this step on master branch only.
+    # use "push_artifacts_to_s3" to override:
+    #   "true": run this step
+    #   "false": do NOT run this step
+    #   else: run this stage if branch is master
+
+    - script: aws s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive
+      displayName: Upload deb, MSI, index.txt to s3
+      condition: >
+        and(
+          succeeded(),
+          ne(variables['push_artifacts_to_s3'], 'false'),
+          or(
+            eq(variables['push_artifacts_to_s3'], 'true'),
+            eq(variables['Build.SourceBranch'], 'refs/heads/master')
+          )
+        )
