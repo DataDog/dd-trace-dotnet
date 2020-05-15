@@ -553,9 +553,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
-  // we don't actually need to instrument anything in
-  // System.Web, it was included only to ensure the startup
-  // hook is called for AspNet applications
+  // Specifically exclude a subset of .NET framework assemblies and methods from
+  // receiving the startup hook
+  // IIS: By excluding System.dll, System.Web.dll will be the first assembly that
+  // will have JITCompilationStarted events that will be considered for startup hook injection.
+  // By specifying System.Web.Compilation.BuildManager.InvokePreStartInitMethods as the only good
+  // call-site, we can ensure that IIS startup behavior will only invoke the startup hook once per
+  // application.
   auto valid_startup_hook_callsite = true;
   if (module_metadata->assemblyName == "System"_W ||
      (module_metadata->assemblyName == "System.Web"_W && !(caller.type.name == "System.Web.Compilation.BuildManager"_W && caller.name == "InvokePreStartInitMethods"_W))) {
