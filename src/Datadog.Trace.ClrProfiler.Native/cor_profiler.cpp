@@ -317,6 +317,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
+  // In IIS, the startup hook will be inserted into a method in System.Web (which is domain-neutral)
+  // but the Datadog.Trace.ClrProfiler.Managed.Loader assembly that the startup hook loads from a
+  // byte array will be loaded into a non-shared AppDomain.
+  // In this case, do not insert another startup hook into that non-shared AppDomain
+  if (module_info.assembly.name == "Datadog.Trace.ClrProfiler.Managed.Loader"_W) {
+    Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ",
+          app_domain_id, " ", module_info.assembly.app_domain_name);
+    first_jit_compilation_app_domains.insert(app_domain_id);
+    return S_OK;
+  }
+
   if (module_info.IsWindowsRuntime()) {
     // We cannot obtain writable metadata interfaces on Windows Runtime modules
     // or instrument their IL.
@@ -343,6 +354,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "Sigil.Emit.DynamicAssembly"_W,
       "System.Core"_W,
       "System.Runtime"_W,
+      "System.Runtime.Caching"_W,
       "System.IO.FileSystem"_W,
       "System.Collections"_W,
       "System.Runtime.Extensions"_W,
@@ -355,12 +367,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
       "Microsoft.Extensions.Options"_W,
       "Microsoft.Extensions.ObjectPool"_W,
       "System.Configuration"_W,
-      "System.Web"_W,
       "System.Xml"_W,
       "System.Xml.Linq"_W,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
       "Microsoft.CSharp"_W,
+      "Microsoft.Build.Utilities.v4.0"_W,
       "Newtonsoft.Json"_W,
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
@@ -541,11 +553,23 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
           caller.name, "()");
   }
 
+  // IIS: Ensure that the startup hook is inserted into System.Web.Compilation.BuildManager.InvokePreStartInitMethods.
+  // This will be the first call-site considered for the startup hook injection,
+  // which correctly loads Datadog.Trace.ClrProfiler.Managed.Loader into the application's
+  // own AppDomain because at this point in the code path, the ApplicationImpersonationContext
+  // has been started.
+  auto valid_startup_hook_callsite = true;
+  if (module_metadata->assemblyName == "System"_W ||
+     (module_metadata->assemblyName == "System.Web"_W && !(caller.type.name == "System.Web.Compilation.BuildManager"_W && caller.name == "InvokePreStartInitMethods"_W))) {
+    valid_startup_hook_callsite = false;
+  }
+
   // The first time a method is JIT compiled in an AppDomain, insert our startup
   // hook which, at a minimum, must add an AssemblyResolve event so we can find
   // Datadog.Trace.ClrProfiler.Managed.dll and its dependencies on-disk since it
   // is no longer provided in a NuGet package
-  if (first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
+  if (valid_startup_hook_callsite &&
+      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
       first_jit_compilation_app_domains.end()) {
     bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded && module_metadata->app_domain_id == corlib_app_domain_id;
     Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
