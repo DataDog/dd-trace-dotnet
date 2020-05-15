@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Pipes;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -66,6 +67,44 @@ namespace Datadog.Trace
         {
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
+
+            try
+            {
+                Log.Information("Starting fakestatsd");
+                Process.Start("D:\\home\\datadog\\tracer\\v0_3_1\\agent\\FakeStatsd.exe");
+                Log.Information("Finished starting fakestatsd");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Unable to start fakestatsd");
+            }
+
+            Task.Run(
+                () =>
+                {
+                    while (true)
+                    {
+                        try
+                        {
+                            Thread.Sleep(4500);
+                            using (var pipeClient =
+                                new NamedPipeClientStream(
+                                    ".",
+                                    "testing_dd", // FakeStatsDMetadata.Port.ToString(),
+                                    PipeDirection.InOut,
+                                    PipeOptions.WriteThrough))
+                            {
+                                pipeClient.Connect();
+                                var ss = new StreamString(pipeClient);
+                                ss.WriteString("Fake stats: " + Guid.NewGuid());
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Unable to hit named pipe");
+                        }
+                    }
+                });
 
             Settings = settings ?? TracerSettings.FromDefaultSources();
 

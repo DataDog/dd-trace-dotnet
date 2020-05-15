@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -463,6 +464,8 @@ namespace Datadog.Trace
             public string ProcessArguments { get; set; }
 
             public Action RefreshPortVars { get; set; }
+
+            public string UniquePostfix { get; set; }
 
             public int? Port { get; set; }
 
