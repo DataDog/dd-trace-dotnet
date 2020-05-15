@@ -4,7 +4,7 @@
     <RootNamespace>Datadog.Trace.ClrProfiler</RootNamespace>
 
     <!-- NuGet -->
-    <Version>1.16.3-prerelease</Version>
+    <Version>1.17.0</Version>
     <IsPackable>false</IsPackable>
 
     <!-- Allow the GenerateAssemblyInfo task in the .NET SDK to generate all
