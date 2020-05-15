@@ -317,6 +317,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
+  // In IIS, the startup hook will be inserted into a method in System.Web (which is domain-neutral)
+  // but the Datadog.Trace.ClrProfiler.Managed.Loader assembly that the startup hook loads from a
+  // byte array will be loaded into a non-shared AppDomain.
+  // In this case, do not insert another startup hook into that non-shared AppDomain
+  if (module_info.assembly.name == "Datadog.Trace.ClrProfiler.Managed.Loader"_W) {
+    Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ",
+          app_domain_id, " ", module_info.assembly.app_domain_name);
+    first_jit_compilation_app_domains.insert(app_domain_id);
+    return S_OK;
+  }
+
   if (module_info.IsWindowsRuntime()) {
     // We cannot obtain writable metadata interfaces on Windows Runtime modules
     // or instrument their IL.
@@ -547,7 +558,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // hook is called for AspNet applications
   auto valid_startup_hook_callsite = true;
   if (module_metadata->assemblyName == "System"_W ||
-     (module_metadata->assemblyName == "System.Web"_W && !(caller.type.name == "System.Web.Compilation.BuildManager"_W && caller.name == "ExecutePreAppStart"_W))) {
+     (module_metadata->assemblyName == "System.Web"_W && !(caller.type.name == "System.Web.Compilation.BuildManager"_W && caller.name == "InvokePreStartInitMethods"_W))) {
     valid_startup_hook_callsite = false;
   }
 
