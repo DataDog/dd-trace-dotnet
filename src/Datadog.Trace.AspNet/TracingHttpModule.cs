@@ -167,11 +167,15 @@ namespace Datadog.Trace.AspNet
             try
             {
                 var httpContext = (sender as HttpApplication)?.Context;
+                var exception = httpContext?.Error;
 
-                if (httpContext?.Error != null &&
-                    httpContext.Items[_httpContextScopeKey] is Scope scope)
+                // We want to ignore 404 exceptions here, as they are not errors
+                var httpException = exception as HttpException;
+                var is404 = httpException?.GetHttpCode() == 404;
+
+                if (exception != null && !is404 && httpContext.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    scope.Span.SetException(httpContext.Error);
+                    scope.Span.SetException(exception);
                 }
             }
             catch (Exception ex)
