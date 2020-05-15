@@ -568,8 +568,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // is no longer provided in a NuGet package
   if (valid_startup_hook_callsite &&
       first_jit_compilation_app_domains.find(module_metadata->app_domain_id) ==
-      first_jit_compilation_app_domains.end() &&
-      !(module_metadata->assemblyName == "System"_W)) {
+      first_jit_compilation_app_domains.end()) {
     bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded && module_metadata->app_domain_id == corlib_app_domain_id;
     Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
           " token=", function_token, " name=", caller.type.name, ".",
