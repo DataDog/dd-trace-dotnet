@@ -428,6 +428,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     }
   }
 
+  mdModule module;
+  hr = metadata_import->GetModuleFromScope(&module);
+  if (FAILED(hr)) {
+    Warn("ModuleLoadFinished failed to get module metadata token for ",
+         module_id, " ", module_info.assembly.name);
+    return S_OK;
+  }
+
   GUID module_version_id;
   hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
   if (FAILED(hr)) {

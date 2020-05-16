@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http.Headers;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
