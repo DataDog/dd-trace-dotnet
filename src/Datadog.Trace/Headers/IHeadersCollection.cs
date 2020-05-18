@@ -5,7 +5,7 @@ namespace Datadog.Trace.Headers
     /// <summary>
     /// Specified a common interface that can be used to manipulate collections of headers.
     /// </summary>
-    internal interface IHeadersCollection
+    public interface IHeadersCollection
     {
         /// <summary>
         /// Returns all header values for a specified header stored in the collection.

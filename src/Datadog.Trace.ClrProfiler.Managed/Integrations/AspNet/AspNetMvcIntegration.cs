@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     return null;
                 }
 
-                var httpContext = controllerContext.GetProperty<HttpContextBase>("HttpContext").GetValueOrDefault();
+                dynamic httpContext = controllerContext.GetProperty<HttpContextBase>("HttpContext").GetValueOrDefault();
 
                 if (httpContext == null)
                 {

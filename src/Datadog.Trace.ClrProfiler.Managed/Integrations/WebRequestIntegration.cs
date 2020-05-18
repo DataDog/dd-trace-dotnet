@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -72,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            var request = (WebRequest)webRequest;
+            dynamic request = (WebRequest)webRequest;
 
             if (!(request is HttpWebRequest) || !IsTracingEnabled(request))
             {
@@ -86,13 +87,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     if (scope != null)
                     {
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers);
                     }
 
-                    WebResponse response = callGetResponse(webRequest);
+                    dynamic response = callGetResponse(webRequest);
 
                     if (scope != null && response is HttpWebResponse webResponse)
                     {
+                        webResponse = response;
                         scope.Span.SetTag(Tags.HttpStatusCode, ((int)webResponse.StatusCode).ToString());
                     }
 
@@ -171,7 +173,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     if (scope != null)
                     {
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.Inject(scope.Span.Context, webRequest.Headers.Wrap());
+                        dynamic headers = webRequest.Headers;
+                        headers.Wrap();
+
+                        SpanContextPropagator.Instance.Inject(scope.Span.Context, headers);
                     }
 
                     WebResponse response = await originalMethod(webRequest).ConfigureAwait(false);

@@ -128,7 +128,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         try
                         {
-                            var headers = httpRequestMessageProperty.Headers.Wrap();
+                            dynamic headers = httpRequestMessageProperty.Headers as WebHeaderCollection;
+                            headers = headers.Wrap();
+
                             propagatedContext = SpanContextPropagator.Instance.Extract(headers);
                         }
                         catch (Exception ex)

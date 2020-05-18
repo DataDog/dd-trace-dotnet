@@ -11,6 +11,8 @@ namespace DomainNeutralAssemblies.App.NoBindingRedirects
         static void Main(string[] args)
         {
             Console.WriteLine($"Executing {typeof(DomainNeutralAssemblies.App.NoBindingRedirects.Program).FullName}.Main");
+            Console.WriteLine("pid: {0}", System.Diagnostics.Process.GetCurrentProcess().Id);
+            Console.ReadKey();
             InnerMethodToAllowProfilerInjection();
         }
 
@@ -38,9 +40,10 @@ namespace DomainNeutralAssemblies.App.NoBindingRedirects
                 var response = client.GetAsync(url).GetAwaiter().GetResult();
                 response.EnsureSuccessStatusCode();
             }
-            catch
+            catch(Exception e)
             {
                 // do nothing
+                Console.WriteLine(e.Message);
             }
 
             Console.WriteLine("All done!");
