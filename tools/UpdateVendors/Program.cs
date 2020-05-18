@@ -25,25 +25,32 @@ namespace UpdateVendors
             InitializeCleanDirectory(DownloadDirectory);
             var solutionDirectory = GetSolutionDirectory();
             _vendorProjectDirectory = Path.Combine(solutionDirectory, "src", "Datadog.Trace", "Vendors");
-            InitializeCleanDirectory(_vendorProjectDirectory);
+
+            // UpdateVendor(
+            //     libraryName: "Serilog",
+            //     branchDownload: "https://github.com/serilog/serilog/archive/v2.8.0.zip",
+            //     pathToSrc: new[] { "serilog-2.8.0", "src", "Serilog" },
+            //     transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
+
+            // UpdateVendor(
+            //     libraryName: "Serilog.Sinks.File",
+            //     branchDownload: "https://github.com/serilog/serilog-sinks-file/archive/v4.0.0.zip",
+            //     pathToSrc: new[] { "serilog-sinks-file-4.0.0", "src", "Serilog.Sinks.File" },
+            //     transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
+
+            // UpdateVendor(
+            //     libraryName: "StatsdClient",
+            //     branchDownload: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
+            //     pathToSrc: new[] { "dogstatsd-csharp-client-3.3.0", "src", "StatsdClient" },
+            //     transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
+
+            var monoVersion = "6.10.0.104";
 
             UpdateVendor(
-                libraryName: "Serilog",
-                branchDownload: "https://github.com/serilog/serilog/archive/v2.8.0.zip",
-                pathToSrc: new[] { "serilog-2.8.0", "src", "Serilog" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
-
-            UpdateVendor(
-                libraryName: "Serilog.Sinks.File",
-                branchDownload: "https://github.com/serilog/serilog-sinks-file/archive/v4.0.0.zip",
-                pathToSrc: new[] { "serilog-sinks-file-4.0.0", "src", "Serilog.Sinks.File" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
-
-            UpdateVendor(
-                libraryName: "StatsdClient",
-                branchDownload: "https://github.com/DataDog/dogstatsd-csharp-client/archive/3.3.0.zip",
-                pathToSrc: new[] { "dogstatsd-csharp-client-3.3.0", "src", "StatsdClient" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
+                libraryName: "System.Net.Http",
+                branchDownload: $"https://github.com/mono/mono/archive/mono-{monoVersion}.zip",
+                pathToSrc: new[] { $"mono-{monoVersion}", "src", "mono", "mcs", "class", "System.Net.Http", "System.Net.Http" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Net.Http"));
         }
 
         private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, Func<string, string, string> extraTransform = null)
@@ -79,7 +86,11 @@ namespace UpdateVendors
             string[] pathToSrc,
             Action<string> transform = null)
         {
-            Console.WriteLine($"Starting {libraryName} upgrade.");
+            Console.WriteLine($"Cleaning vendor directory for {libraryName}.");
+
+            InitializeCleanDirectory(Path.Combine(_vendorProjectDirectory, libraryName));
+
+            Console.WriteLine($"Starting {libraryName} vendoring.");
 
             var zipLocation = Path.Combine(DownloadDirectory, $"{libraryName}.zip");
             var extractLocation = Path.Combine(DownloadDirectory, $"{libraryName}");

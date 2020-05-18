@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http.Headers;
+using Datadog.Trace.Vendors.System.Net.Http.Headers;
 
 namespace Datadog.Trace.Headers
 {
