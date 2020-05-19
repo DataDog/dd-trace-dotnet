@@ -78,8 +78,9 @@ msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x64
 rem Build MSI installer for Windows x86 (supports x86 apps only)
 msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x86
 
-rem Build tracer home directory for Windows (x64 and x86)
-msbuild Datadog.Trace.proj /t:CreateHomeDirectory /p:Configuration=Release;Platform=x64
+rem Build tracer home directory for Windows.
+rem Valid values for property `Platform` are `x64`, `x86`, and `All`.
+msbuild Datadog.Trace.proj /t:CreateHomeDirectory /p:Configuration=Release;Platform=All
 ```
 
 ## Linux
