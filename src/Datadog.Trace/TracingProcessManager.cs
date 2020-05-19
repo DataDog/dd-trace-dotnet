@@ -174,20 +174,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static bool GetTraceAgentDirectory(out string traceAgentDirectory)
-        {
-            traceAgentDirectory = Path.GetDirectoryName(TraceAgentMetadata.ProcessPath);
-
-            if (!Directory.Exists(traceAgentDirectory))
-            {
-                Log.Warning("Directory for trace agent does not exist: {0}", traceAgentDirectory);
-                return true;
-            }
-
-            return false;
-        }
-
-        private static void ForceRefreshPortManagerClaimFiles(string traceAgentDirectory)
+        private static void InitializePortManagerClaimFiles(string traceAgentDirectory)
         {
             var portManagerDirectory = Path.Combine(traceAgentDirectory, "port-manager");
 
@@ -544,7 +531,7 @@ namespace Datadog.Trace
                 _portFileWatcher.EnableRaisingEvents = true;
             }
 
-            public void ForcePortRefresh()
+            public void ForcePortFileRead()
             {
                 if (KeepAliveTask == null)
                 {
@@ -552,19 +539,7 @@ namespace Datadog.Trace
                     return;
                 }
 
-                if (!_isProcessManager && GetTraceAgentDirectory(out var traceAgentDirectory))
-                {
-                    ForceRefreshPortManagerClaimFiles(traceAgentDirectory);
-                }
-
-                if (_isProcessManager)
-                {
-                    InitializePortFileWatcher();
-                }
-                else
-                {
-                    ReadPortAndAlertSubscribers();
-                }
+                ReadPortAndAlertSubscribers();
             }
 
             public void SafelyForceKill()
