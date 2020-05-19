@@ -118,16 +118,19 @@ namespace Datadog.Trace
         {
             _cancellationTokenSource?.Cancel();
 
-            foreach (var metadata in Processes)
+            if (_isProcessManager)
             {
-                try
+                foreach (var metadata in Processes)
                 {
-                    SafelyKillProcess(metadata);
-                    metadata.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error when cancelling process {0}.", metadata.Name);
+                    try
+                    {
+                        SafelyKillProcess(metadata);
+                        metadata.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error when cancelling process {0}.", metadata.Name);
+                    }
                 }
             }
         }
