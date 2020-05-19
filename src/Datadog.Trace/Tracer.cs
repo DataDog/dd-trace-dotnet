@@ -515,7 +515,14 @@ namespace Datadog.Trace
                 Log.Error(ex, "Error flushing traces on shutdown.");
             }
 
-            TracingProcessManager.StopProcesses();
+            try
+            {
+                TracingProcessManager.StopProcesses();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error stopping sub processes on shutdown.");
+            }
         }
 
         private void HeartbeatCallback(object state)
