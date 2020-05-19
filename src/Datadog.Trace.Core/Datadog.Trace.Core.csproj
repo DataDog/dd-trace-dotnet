@@ -3,7 +3,7 @@
   <PropertyGroup>
   
     <!-- NuGet -->
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Title>Context Storage for Datadog APM</Title>
     <Description>Context storage and management for Datadog .NET Tracer library.</Description>
     <RootNamespace>Datadog.Trace</RootNamespace>
