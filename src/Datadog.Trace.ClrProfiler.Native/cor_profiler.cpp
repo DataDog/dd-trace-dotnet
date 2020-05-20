@@ -319,7 +319,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  for (auto&& skip_assembly_pattern : skip_assemblies_that_begin_with) {
+  for (auto&& skip_assembly_pattern : skip_assembly_prefixes) {
     if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0) {
       Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ",
             module_info.assembly.name);

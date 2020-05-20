@@ -25,15 +25,18 @@ inline WSTRING env_vars_to_display[]{
     environment::azure_app_services_app_pool_id,
     environment::azure_app_services_cli_telemetry_profile_value};
 
- inline WSTRING skip_assemblies_that_begin_with[]{
+ inline WSTRING skip_assembly_prefixes[]{
     "Datadog.Trace"_W,
     "MessagePack"_W,
     "Microsoft.AI"_W,
     "Microsoft.ApplicationInsights"_W,
+    "Microsoft.Build"_W,
+    "Microsoft.CSharp"_W,
     "Microsoft.Extensions"_W,
     "Sigil"_W,
     "System.Core"_W,
     "System.Collections"_W,
+    "System.Diagnostics"_W,
     "System.Runtime"_W,
     "System.Xml"_W,
     "Newtonsoft"_W,};
@@ -45,14 +48,9 @@ inline WSTRING env_vars_to_display[]{
       "System.Threading.Tasks"_W,
       "System.ComponentModel"_W,
       "System.Console"_W,
-      "System.Diagnostics.DiagnosticSource"_W,
       "System.Configuration"_W,
-      "System.Xml"_W,
-      "System.Xml.Linq"_W,
       "Microsoft.AspNetCore.Razor.Language"_W,
       "Microsoft.AspNetCore.Mvc.RazorPages"_W,
-      "Microsoft.CSharp"_W,
-      "Microsoft.Build.Utilities.v4.0"_W,
       "Anonymously Hosted DynamicMethods Assembly"_W,
       "ISymWrapper"_W};
 
