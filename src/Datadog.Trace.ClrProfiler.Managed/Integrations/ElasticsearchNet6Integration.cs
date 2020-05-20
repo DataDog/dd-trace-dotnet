@@ -84,9 +84,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     return callElasticSearch(pipeline, requestData);
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
@@ -176,9 +176,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     return await callElasticSearchAsync(pipeline, requestData, cancellationToken).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (scope?.Span.SetExceptionForFilter(ex) ?? false)
+                catch (Exception ex)
                 {
-                    // unreachable code
+                    scope?.Span.SetException(ex);
                     throw;
                 }
             }
