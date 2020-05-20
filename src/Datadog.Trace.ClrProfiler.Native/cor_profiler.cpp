@@ -6,6 +6,7 @@
 
 #include "version.h"
 #include "clr_helpers.h"
+#include "dd_profiler_constants.h"
 #include "dllmain.h"
 #include "environment_variables.h"
 #include "il_rewriter.h"
@@ -80,25 +81,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   Info("Environment variables:");
 
-  WSTRING env_vars[]{environment::tracing_enabled,
-                     environment::debug_enabled,
-                     environment::profiler_home_path,
-                     environment::integrations_path,
-                     environment::include_process_names,
-                     environment::exclude_process_names,
-                     environment::agent_host,
-                     environment::agent_port,
-                     environment::env,
-                     environment::service_name,
-                     environment::service_version,
-                     environment::disabled_integrations,
-                     environment::clr_disable_optimizations,
-                     environment::domain_neutral_instrumentation,
-                     environment::azure_app_services,
-                     environment::azure_app_services_app_pool_id,
-                     environment::azure_app_services_cli_telemetry_profile_value};
-
-  for (auto&& env_var : env_vars) {
+  for (auto&& env_var : env_vars_to_display) {
     Info("  ", env_var, "=", GetEnvironmentValue(env_var));
   }
 
@@ -336,46 +319,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     return S_OK;
   }
 
-  // We must never try to add assembly references to
-  // mscorlib or netstandard. Skip other known assemblies.
-  WSTRING skip_assemblies[]{
-      "mscorlib"_W,
-      "netstandard"_W,
-      "Datadog.Trace"_W,
-      "Datadog.Trace.AspNet"_W,
-      "Datadog.Trace.ClrProfiler.Managed"_W,
-      "Datadog.Trace.ClrProfiler.Managed.Core"_W,
-      "Datadog.Trace.ClrProfiler.Managed.Loader"_W,
-      "MessagePack"_W,
-      "MessagePack.Resolvers.DynamicEnumResolver"_W,
-      "MessagePack.Resolvers.DynamicObjectResolver"_W,
-      "MessagePack.Resolvers.DynamicUnionResolver"_W,
-      "Sigil"_W,
-      "Sigil.Emit.DynamicAssembly"_W,
-      "System.Core"_W,
-      "System.Runtime"_W,
-      "System.Runtime.Caching"_W,
-      "System.IO.FileSystem"_W,
-      "System.Collections"_W,
-      "System.Runtime.Extensions"_W,
-      "System.Threading.Tasks"_W,
-      "System.Runtime.InteropServices"_W,
-      "System.Runtime.InteropServices.RuntimeInformation"_W,
-      "System.ComponentModel"_W,
-      "System.Console"_W,
-      "System.Diagnostics.DiagnosticSource"_W,
-      "Microsoft.Extensions.Options"_W,
-      "Microsoft.Extensions.ObjectPool"_W,
-      "System.Configuration"_W,
-      "System.Xml"_W,
-      "System.Xml.Linq"_W,
-      "Microsoft.AspNetCore.Razor.Language"_W,
-      "Microsoft.AspNetCore.Mvc.RazorPages"_W,
-      "Microsoft.CSharp"_W,
-      "Microsoft.Build.Utilities.v4.0"_W,
-      "Newtonsoft.Json"_W,
-      "Anonymously Hosted DynamicMethods Assembly"_W,
-      "ISymWrapper"_W};
+  for (auto&& skip_assembly_pattern : skip_assembly_prefixes) {
+    if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0) {
+      Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ",
+            module_info.assembly.name);
+      return S_OK;
+    }
+  }
 
   for (auto&& skip_assembly : skip_assemblies) {
     if (module_info.assembly.name == skip_assembly) {
