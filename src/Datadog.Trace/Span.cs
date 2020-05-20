@@ -363,12 +363,6 @@ namespace Datadog.Trace
             return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
         }
 
-        internal bool SetExceptionForFilter(Exception exception)
-        {
-            SetException(exception);
-            return false;
-        }
-
         internal double? GetMetric(string key)
         {
             // no need to lock on single reads
