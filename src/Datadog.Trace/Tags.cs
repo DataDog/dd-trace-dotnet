@@ -10,7 +10,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The environment of the profiled service.
         /// </summary>
-        public const string Env = CoreTags.Env;
+        public const string Env = "env";
 
         /// <summary>
         /// The version of the profiled service.
@@ -21,18 +21,18 @@ namespace Datadog.Trace
         /// The name of the integration that generated the span.
         /// Use OpenTracing tag "component"
         /// </summary>
-        public const string InstrumentationName = CoreTags.InstrumentationName;
+        public const string InstrumentationName = "component";
 
         /// <summary>
         /// The name of the method that was instrumented to generate the span.
         /// </summary>
-        public const string InstrumentedMethod = CoreTags.InstrumentedMethod;
+        public const string InstrumentedMethod = "instrumented.method";
 
         /// <summary>
         /// The kind of span (e.g. client, server). Not to be confused with <see cref="Span.Type"/>.
         /// </summary>
         /// <seealso cref="SpanKinds"/>
-        public const string SpanKind = CoreTags.SpanKind;
+        public const string SpanKind = "span.kind";
 
         /// <summary>
         /// The URL of an HTTP request
@@ -57,17 +57,17 @@ namespace Datadog.Trace
         /// <summary>
         /// The error message of an exception
         /// </summary>
-        public const string ErrorMsg = CoreTags.ErrorMsg;
+        public const string ErrorMsg = "error.msg";
 
         /// <summary>
         /// The type of an exception
         /// </summary>
-        public const string ErrorType = CoreTags.ErrorType;
+        public const string ErrorType = "error.type";
 
         /// <summary>
         /// The stack trace of an exception
         /// </summary>
-        public const string ErrorStack = CoreTags.ErrorStack;
+        public const string ErrorStack = "error.stack";
 
         /// <summary>
         /// The type of database (e.g. mssql, mysql)
@@ -152,39 +152,39 @@ namespace Datadog.Trace
         /// <summary>
         /// The sampling priority for the entire trace.
         /// </summary>
-        public const string SamplingPriority = CoreTags.SamplingPriority;
+        public const string SamplingPriority = "sampling.priority";
 
         /// <summary>
         /// Obsolete. Use <see cref="ManualKeep"/>.
         /// </summary>
         [Obsolete("This field will be removed in futures versions of this library. Use ManualKeep instead.")]
-        public const string ForceKeep = CoreTags.ForceKeep;
+        public const string ForceKeep = "force.keep";
 
         /// <summary>
         /// Obsolete. Use <see cref="ManualDrop"/>.
         /// </summary>
         [Obsolete("This field will be removed in futures versions of this library. Use ManualDrop instead.")]
-        public const string ForceDrop = CoreTags.ForceDrop;
+        public const string ForceDrop = "force.drop";
 
         /// <summary>
         /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserKeep"/>.
         /// </summary>
-        public const string ManualKeep = CoreTags.ManualKeep;
+        public const string ManualKeep = "manual.keep";
 
         /// <summary>
         /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserReject"/>.
         /// </summary>
-        public const string ManualDrop = CoreTags.ManualDrop;
+        public const string ManualDrop = "manual.drop";
 
         /// <summary>
         /// Configures Trace Analytics.
         /// </summary>
-        public const string Analytics = CoreTags.Analytics;
+        public const string Analytics = "_dd1.sr.eausr";
 
         /// <summary>
         /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
         /// </summary>
-        public const string Language = CoreTags.Language;
+        public const string Language = "language";
 
         /// <summary>
         /// The resource id of the site instance in azure app services where the traced application is running.

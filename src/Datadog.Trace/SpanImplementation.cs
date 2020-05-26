@@ -109,7 +109,7 @@ namespace Datadog.Trace
 
                     break;
 #pragma warning disable CS0618 // Type or member is obsolete
-                case Trace.CoreTags.ForceKeep:
+                case Trace.Tags.ForceKeep:
                 case Trace.Tags.ManualKeep:
                     if (value.ToBoolean() ?? false)
                     {
@@ -118,7 +118,7 @@ namespace Datadog.Trace
                     }
 
                     break;
-                case Trace.CoreTags.ForceDrop:
+                case Trace.Tags.ForceDrop:
                 case Trace.Tags.ManualDrop:
                     if (value.ToBoolean() ?? false)
                     {
