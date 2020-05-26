@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                var parent = tracer.ActiveScope?.Span;
+                Span parent = tracer.ActiveScope?.Span;
 
                 if (parent != null &&
                     parent.Type == SpanTypes.Http &&
@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler
                     return null;
                 }
 
-                var parent = tracer.ActiveScope?.Span;
+                Span parent = tracer.ActiveScope?.Span;
 
                 if (parent != null &&
                     parent.Type == SpanTypes.Sql &&

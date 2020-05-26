@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 scope = Tracer.Instance.StartActive(OperationName, propagatedContext);
-                var span = scope.Span;
+                Span span = scope.Span;
 
                 // Fail safe to catch templates in routing values
                 resourceName =
