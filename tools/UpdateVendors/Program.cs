@@ -17,11 +17,6 @@ namespace UpdateVendors
 //------------------------------------------------------------------------------
 ";
 
-        private static readonly List<string> FilesToSkip = new List<string>()
-        {
-            @"\Serilog\Events\LogEventLevel.cs",
-        };
-
         private static readonly string DownloadDirectory = Path.Combine(Environment.CurrentDirectory, "downloads");
         private static string _vendorProjectDirectory;
 
@@ -173,6 +168,7 @@ namespace UpdateVendors
                 "StatsdClient\\MetricsTimer.cs",
                 "StatsdClient\\IDogStatsD.cs",
                 "StatsdClient\\DogStatsD.cs",
+                "Serilog\\Events\\LogEventLevel.cs",
             };
 
             foreach (var drop in drops)
