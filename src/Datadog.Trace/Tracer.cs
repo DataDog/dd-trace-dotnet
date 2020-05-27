@@ -474,7 +474,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Unable to instantiate {nameof(Statsd)} client.");
+                Log.SafeLog(ex, $"Unable to instantiate {nameof(Statsd)} client.");
                 return new NoOpStatsd();
             }
         }
@@ -512,7 +512,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error flushing traces on shutdown.");
+                Log.SafeLog(ex, "Error flushing traces on shutdown.");
             }
 
             try
@@ -521,7 +521,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error stopping sub processes on shutdown.");
+                Log.SafeLog(ex, "Error stopping sub processes on shutdown.");
             }
         }
 
