@@ -147,28 +147,28 @@ namespace Datadog.Trace.DiagnosticListeners
             }
             else
             {
-                var request = httpContext.Request;
-                var host = request.Host.Value;
-                var httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-                var url = GetUrl(request);
+                HttpRequest request = httpContext.Request;
+                string host = request.Host.Value;
+                string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                string url = GetUrl(request);
 
-                var resourceUrl = UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true)
+                string resourceUrl = UriHelpers.GetRelativeUrl(new Uri(url), tryRemoveIds: true)
                                                .ToLowerInvariant();
 
-                var resourceName = $"{httpMethod} {resourceUrl}";
+                string resourceName = $"{httpMethod} {resourceUrl}";
 
-                var propagatedContext = ExtractPropagatedContext(request);
+                SpanContext propagatedContext = ExtractPropagatedContext(request);
 
-                var span = _tracer.StartSpan(HttpRequestInOperationName, propagatedContext);
+                Span span = _tracer.StartSpan(HttpRequestInOperationName, propagatedContext)
+                                   .SetTag(Tags.InstrumentationName, ComponentName);
 
-                span.SetTag(Tags.InstrumentationName, ComponentName);
                 span.DecorateWebServerSpan(resourceName, httpMethod, host, url);
 
                 // set analytics sample rate if enabled
-                var analyticsSampleRate = _tracer.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
+                var analyticsSampleRate = _tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
                 span.SetMetric(Tags.Analytics, analyticsSampleRate);
 
-                var scope = _tracer.ActivateSpan(span);
+                Scope scope = _tracer.ActivateSpan(span);
 
                 _options.OnRequest?.Invoke(scope.Span, httpContext);
             }
