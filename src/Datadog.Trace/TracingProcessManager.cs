@@ -63,34 +63,41 @@ namespace Datadog.Trace
 
         public static void TryForceTraceAgentRefresh()
         {
-            if (string.IsNullOrEmpty(TraceAgentMetadata.DirectoryPath))
+            try
             {
-                Log.Debug("This is not a context where we manage agent processes.");
-                return;
+                if (string.IsNullOrEmpty(TraceAgentMetadata.DirectoryPath))
+                {
+                    Log.Debug("This is not a context where we manage agent processes.");
+                    return;
+                }
+
+                Log.Warning("Attempting to force a child process refresh.");
+                InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
+
+                if (!_isProcessManager)
+                {
+                    Log.Debug("This process is not responsible for managing agent processes.");
+                    return;
+                }
+
+                if (Processes.All(p => p.HasAttemptedStartup))
+                {
+                    Log.Debug("Forcing a full refresh on agent processes.");
+                    StopProcesses();
+
+                    _cancellationTokenSource = new CancellationTokenSource();
+
+                    Log.Debug("Starting child processes.");
+                    StartProcesses();
+                }
+                else
+                {
+                    Log.Debug("This process has not had a chance to initialize agent processes.");
+                }
             }
-
-            Log.Warning("Attempting to force a child process refresh.");
-            InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
-
-            if (!_isProcessManager)
+            catch (Exception ex)
             {
-                Log.Debug("This process is not responsible for managing agent processes.");
-                return;
-            }
-
-            if (Processes.All(p => p.HasAttemptedStartup))
-            {
-                Log.Debug("Forcing a full refresh on agent processes.");
-                StopProcesses();
-
-                _cancellationTokenSource = new CancellationTokenSource();
-
-                Log.Debug("Starting child processes.");
-                StartProcesses();
-            }
-            else
-            {
-                Log.Debug("This process has not had a chance to initialize agent processes.");
+                Log.SafeLogError(ex, "Error when forcing a trace agent process refresh.");
             }
         }
 
