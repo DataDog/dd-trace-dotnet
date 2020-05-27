@@ -118,7 +118,10 @@ namespace Datadog.Trace
             // fall back to default implementations of each dependency if not provided
             _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri, delegatingHandler: null, Statsd), Statsd);
 
-            _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
+            // Central Datadog.Trace version independent scope storage
+            CoreStorage.ScopeManager = scopeManager ?? new AsyncLocalScopeManager();
+
+            _scopeManager = scopeManager ?? CoreStorage.ScopeManager;
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
 
             if (!string.IsNullOrWhiteSpace(Settings.CustomSamplingRules))
