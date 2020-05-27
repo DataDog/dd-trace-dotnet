@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -16,7 +17,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void One_Is_Allowed()
         {
-            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
+            var traceContext = new TraceContext(MockTraceContextStrategy.AutoKeep);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new SpanImplementation(spanContext, null);
             var rateLimiter = new RateLimiter(maxTracesPerInterval: null);
@@ -106,7 +107,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private static int AskTheRateLimiterABunchOfTimes(RateLimiter rateLimiter, int howManyTimes)
         {
-            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
+            var traceContext = new TraceContext(MockTraceContextStrategy.AutoKeep);
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new SpanImplementation(spanContext, null);
 
@@ -146,7 +147,7 @@ namespace Datadog.Trace.Tests.Sampling
             var end = DateTime.Now;
             var endLock = new object();
 
-            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
+            var traceContext = new TraceContext(MockTraceContextStrategy.AutoKeep);
 
             for (var i = 0; i < test.NumberOfBursts; i++)
             {

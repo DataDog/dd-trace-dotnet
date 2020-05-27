@@ -33,6 +33,7 @@ namespace Datadog.Trace
         private readonly Timer _heartbeatTimer;
 
         private IAgentWriter _agentWriter;
+        private ITraceContextStrategy _traceContextStrategy;
 
         static Tracer()
         {
@@ -164,6 +165,8 @@ namespace Datadog.Trace
             {
                 InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
             }
+
+            _traceContextStrategy = new TraceContextStrategy(this, Sampler);
         }
 
         /// <summary>
@@ -316,14 +319,14 @@ namespace Datadog.Trace
             if (parent is SpanContext parentSpanContext)
             {
                 traceContext = parentSpanContext.TraceContext ??
-                               new TraceContext(_agentWriter.WriteTrace, Sampler.GetSamplingPriority)
+                               new TraceContext(_traceContextStrategy)
                                {
                                    SamplingPriority = parentSpanContext.SamplingPriority
                                };
             }
             else
             {
-                traceContext = new TraceContext(_agentWriter.WriteTrace, Sampler.GetSamplingPriority);
+                traceContext = new TraceContext(_traceContextStrategy);
             }
 
             var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;

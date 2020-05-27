@@ -1,17 +1,17 @@
 using System;
-using Moq;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests
 {
     public class TraceContextTests
     {
-        private readonly Mock<IDatadogTracer> _tracerMock = new Mock<IDatadogTracer>();
+        private readonly MockTraceContextStrategy _autoKeep = new MockTraceContextStrategy(spans => { }, span => SamplingPriority.AutoKeep);
 
         [Fact]
         public void UtcNow_GivesLegitTime()
         {
-            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
+            var traceContext = new TraceContext(_autoKeep);
 
             var now = traceContext.UtcNow;
             var expectedNow = DateTimeOffset.UtcNow;
@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void UtcNow_IsMonotonic()
         {
-            var traceContext = new TraceContext(spans => { }, span => SamplingPriority.AutoKeep);
+            var traceContext = new TraceContext(_autoKeep);
 
             var t1 = traceContext.UtcNow;
             var t2 = traceContext.UtcNow;

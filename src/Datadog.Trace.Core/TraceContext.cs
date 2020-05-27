@@ -13,17 +13,15 @@ namespace Datadog.Trace
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
         private readonly List<Span> _spans = new List<Span>();
 
-        private readonly Action<Span[]> _submit = null;
-        private readonly Func<Span, SamplingPriority> _getSamplingPriority;
+        private readonly ITraceContextStrategy _traceContextStrategy = null;
 
         private int _openSpans;
         private SamplingPriority? _samplingPriority;
         private bool _samplingPriorityLocked;
 
-        public TraceContext(Action<Span[]> submit, Func<Span, SamplingPriority> getSamplingPriority)
+        public TraceContext(ITraceContextStrategy traceContextStrategy)
         {
-            _submit = submit;
-            _getSamplingPriority = getSamplingPriority;
+            _traceContextStrategy = traceContextStrategy;
         }
 
         public Span RootSpan { get; private set; }
@@ -49,11 +47,6 @@ namespace Datadog.Trace
             }
         }
 
-        public static void SetRootSpanDecorator(Action<Span> spanDecorator)
-        {
-            _decorateRootSpan = _decorateRootSpan ?? spanDecorator;
-        }
-
         public void AddSpan(Span span)
         {
             lock (_spans)
@@ -77,7 +70,7 @@ namespace Datadog.Trace
                         {
                             // this is a local root span (i.e. not propagated).
                             // determine an initial sampling priority for this trace, but don't lock it yet
-                            _samplingPriority = _getSamplingPriority(RootSpan);
+                            _samplingPriority = _traceContextStrategy.GetSamplingPriority(RootSpan);
                         }
                     }
                 }
@@ -119,7 +112,7 @@ namespace Datadog.Trace
 
             if (spansToWrite != null)
             {
-                _submit(spansToWrite);
+                _traceContextStrategy.Write(spansToWrite);
             }
         }
 
