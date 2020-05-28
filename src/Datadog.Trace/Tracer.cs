@@ -29,6 +29,8 @@ namespace Datadog.Trace
         /// </summary>
         private static int _liveTracerCount;
 
+        private static Tracer _instance;
+
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
 
@@ -118,11 +120,7 @@ namespace Datadog.Trace
 
             // fall back to default implementations of each dependency if not provided
             _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri, delegatingHandler: null, Statsd), Statsd);
-
-            // Central Datadog.Trace version independent scope storage
-            CoreStorage.ScopeManager = scopeManager ?? new AsyncLocalScopeManager();
-
-            _scopeManager = scopeManager ?? CoreStorage.ScopeManager;
+            _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
 
             if (!string.IsNullOrWhiteSpace(Settings.CustomSamplingRules))
@@ -181,7 +179,19 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets the global tracer object
         /// </summary>
-        public static Tracer Instance { get; set; }
+        public static Tracer Instance
+        {
+            get
+            {
+                return _instance;
+            }
+
+            set
+            {
+                _instance = value;
+                CoreStorage.ScopeManager = _instance._scopeManager;
+            }
+        }
 
         /// <summary>
         /// Gets the active scope
