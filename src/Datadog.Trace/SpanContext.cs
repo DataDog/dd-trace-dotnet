@@ -79,15 +79,15 @@ namespace Datadog.Trace
         public string ServiceName { get; set; }
 
         /// <summary>
+        /// Gets the sampling priority for contexts created from incoming propagated context.
+        /// Returns null for local contexts.
+        /// </summary>
+        public SamplingPriority? SamplingPriority { get; }
+
+        /// <summary>
         /// Gets the trace context.
         /// Returns null for contexts created from incoming propagated context.
         /// </summary>
         internal ITraceContext TraceContext { get; }
-
-        /// <summary>
-        /// Gets the sampling priority for contexts created from incoming propagated context.
-        /// Returns null for local contexts.
-        /// </summary>
-        internal SamplingPriority? SamplingPriority { get; }
     }
 }
