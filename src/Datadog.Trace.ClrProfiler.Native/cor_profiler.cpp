@@ -791,10 +791,8 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       }
 
       // At this point we know we've hit a match. Error out if
-      //   1) The target assembly is Datadog.Trace.ClrProfiler.Managed
-      //   2) The managed profiler has not been loaded yet
-      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
-          method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+      //   1) The managed profiler has not been loaded yet
+      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
         Warn(
             "JITCompilationStarted skipping method: Method replacement "
             "found but the managed profiler has not yet been loaded "
@@ -808,11 +806,9 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       // At this point we know we've hit a match. Error out if
       //   1) The calling assembly is domain-neutral
       //   2) The profiler is not configured to instrument domain-neutral assemblies
-      //   3) The target assembly is Datadog.Trace.ClrProfiler.Managed
       if (runtime_information_.is_desktop() && corlib_module_loaded &&
           module_metadata->app_domain_id == corlib_app_domain_id &&
-          !instrument_domain_neutral_assemblies &&
-          method_replacement.wrapper_method.assembly.name == "Datadog.Trace.ClrProfiler.Managed"_W) {
+          !instrument_domain_neutral_assemblies) {
         Warn(
             "JITCompilationStarted skipping method: Method replacement",
             " found but the calling assembly ", module_metadata->assemblyName,
