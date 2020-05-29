@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1.200
 
 # Instructions to install .NET Core runtimes from
 # https://docs.microsoft.com/en-us/dotnet/core/install/linux-package-manager-debian10
