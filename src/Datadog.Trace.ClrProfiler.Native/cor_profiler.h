@@ -59,6 +59,7 @@ class CorProfiler : public CorProfilerBase {
                                          const FunctionInfo& caller,
                                          const std::vector<MethodReplacement> method_replacements);
   bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
+  bool ProfilerAssemblyIsLoadedIntoAnyAppDomain();
 
   //
   // Startup methods
