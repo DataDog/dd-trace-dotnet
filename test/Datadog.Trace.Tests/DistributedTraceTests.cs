@@ -12,8 +12,8 @@ namespace Datadog.Trace.Tests
 
             ulong traceId;
             ulong parentSpanId;
-            SamplingPriority? samplingPriority = null;
-            var expectedSamplingPriority = (int)SamplingPriority.AutoKeep;
+            string samplingPriorityText = null;
+            var expectedSamplingPriority = (int)SamplingPriority.UserKeep;
 
             using (var scope = tracer.StartActive("manual.trace"))
             {
@@ -23,26 +23,18 @@ namespace Datadog.Trace.Tests
                 using (var parentSpanOfDistributedTrace = tracer.StartActive("SortOrders"))
                 {
                     parentSpanId = scope.Span.SpanId;
-                    var samplingPriorityText = parentSpanOfDistributedTrace.Span.GetTag(Tags.SamplingPriority);
-                    if (samplingPriorityText != null && int.TryParse(samplingPriorityText, out var samplingPriorityInt))
-                    {
-                        samplingPriority = (SamplingPriority)samplingPriorityInt;
-                    }
+                    samplingPriorityText = parentSpanOfDistributedTrace.Span.GetTag(Tags.SamplingPriority);
                 }
             }
 
-            if (samplingPriority == null)
-            {
-                throw new Exception("Sampling priority should not be null for this test");
-            }
-
-            var distributedTraceContext = new SpanContext(traceId, parentSpanId, samplingPriority);
+            var distributedTraceContext = new SpanContext(traceId, parentSpanId);
 
             using (var scope = Tracer.Instance.StartActive("manual.trace", parent: distributedTraceContext))
             {
+                scope.Span.SetTag(Tags.SamplingPriority, samplingPriorityText);
                 Assert.True(scope.Span.TraceId == traceId, "Trace ID must match the parent trace.");
-                var samplingPriorityText = scope.Span.GetTag(Tags.SamplingPriority);
-                Assert.True(samplingPriorityText.Equals(expectedSamplingPriority.ToString()), "Sampling priority of manual distributed trace must match the original trace.");
+                var actualSamplingPriorityText = scope.Span.GetTag(Tags.SamplingPriority);
+                Assert.True(actualSamplingPriorityText.Equals(expectedSamplingPriority.ToString()), "Sampling priority of manual distributed trace must match the original trace.");
             }
         }
     }
