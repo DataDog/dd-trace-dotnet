@@ -37,6 +37,11 @@ namespace Datadog.Trace.Tests
         public void Send_metrics_when_enabled()
         {
             var statsd = new Mock<IStatsd>();
+
+            // Setup mock to set a bool when receiving a successful response from the agent, so we know to verify success or error.
+            var markOneSuccess = false;
+            statsd.Setup(s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Responses, 1, 1, "status:200")).Callback(() => markOneSuccess = true);
+
             var spans = SendSpan(tracerMetricsEnabled: true, statsd);
 
             Assert.True(spans.Count == 1, "Expected one span");
@@ -62,9 +67,23 @@ namespace Datadog.Trace.Tests
                 s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Requests, 1, 1, null),
                 Times.Once());
 
+            // Verify success or error was called once
             statsd.Verify(
-                s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Responses, 1, 1, "status:200"),
+                markOneSuccess switch
+                {
+                    true => (s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Responses, 1, 1, "status:200")),
+                    false => (s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Errors, 1, 1, null)),
+                },
                 Times.Once());
+
+            // If success, verify error was called zero times, or vice-versa.
+            statsd.Verify(
+                markOneSuccess switch
+                {
+                    true => (s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Errors, 1, 1, null)),
+                    false => (s => s.Add<Statsd.Counting, int>(TracerMetricNames.Api.Responses, 1, 1, "status:200")),
+                },
+                Times.Never());
 
             // these methods can be called multiple times with a "0" value (no more traces left)
             /*
