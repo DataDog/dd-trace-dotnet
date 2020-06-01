@@ -359,8 +359,14 @@ namespace Datadog.Trace
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
         public string GetTag(string key)
         {
-            // no need to lock on single reads
-            return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
+            switch (key)
+            {
+                case Trace.Tags.SamplingPriority:
+                    return ((int?)(Context.TraceContext?.SamplingPriority ?? Context.SamplingPriority))?.ToString();
+                default:
+                    // no need to lock on single reads
+                    return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
+            }
         }
 
         internal double? GetMetric(string key)

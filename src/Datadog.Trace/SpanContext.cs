@@ -22,7 +22,7 @@ namespace Datadog.Trace
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
-        public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority, string serviceName = null)
+        public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null)
             : this(traceId, serviceName)
         {
             SpanId = spanId;
