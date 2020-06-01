@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public void HttpClient()
         {
             int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 2 : 1;
@@ -64,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public void HttpClient_TracingDisabled()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -90,6 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public void WebClient()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -124,6 +127,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public void WebClient_TracingDisabled()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
