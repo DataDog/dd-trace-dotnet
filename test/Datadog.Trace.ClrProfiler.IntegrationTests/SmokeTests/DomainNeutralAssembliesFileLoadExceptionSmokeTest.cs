@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         [TargetFrameworkVersionsFact("net461")]
         [Trait("Category", "Smoke")]
+        [Trait("LoadFromGAC", "True")]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);
