@@ -362,7 +362,7 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.SamplingPriority:
-                    return Context.TraceContext.SamplingPriority.ToString();
+                    return ((int?)(Context.TraceContext?.SamplingPriority ?? Context.SamplingPriority))?.ToString();
                 default:
                     // no need to lock on single reads
                     return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
