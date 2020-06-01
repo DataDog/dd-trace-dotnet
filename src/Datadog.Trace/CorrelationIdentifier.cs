@@ -20,7 +20,7 @@ namespace Datadog.Trace
         {
             get
             {
-                return Tracer.Instance.Settings.ServiceName ?? string.Empty;
+                return Tracer.Instance.DefaultServiceName ?? string.Empty;
             }
         }
 

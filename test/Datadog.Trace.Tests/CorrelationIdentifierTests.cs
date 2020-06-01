@@ -2,6 +2,7 @@ using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using Moq;
 using Xunit;
 
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void ServiceIdentifiers_EmptyStringIfUnset()
+        public void VersionAndEnv_EmptyStringIfUnset()
         {
             var settings = new TracerSettings();
             var tracer = new Tracer(settings);
@@ -74,14 +75,28 @@ namespace Datadog.Trace.Tests
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
             {
-                Assert.Equal(string.Empty, CorrelationIdentifier.Service);
                 Assert.Equal(string.Empty, CorrelationIdentifier.Version);
                 Assert.Equal(string.Empty, CorrelationIdentifier.Env);
             }
 
-            Assert.Equal(string.Empty, CorrelationIdentifier.Service);
             Assert.Equal(string.Empty, CorrelationIdentifier.Version);
             Assert.Equal(string.Empty, CorrelationIdentifier.Env);
+        }
+
+        [Fact]
+        public void Service_DefaultServiceNameIfUnset()
+        {
+            var settings = new TracerSettings();
+            var tracer = new Tracer(settings);
+            Tracer.Instance = tracer;
+
+            using (var parentScope = Tracer.Instance.StartActive("parent"))
+            using (var childScope = Tracer.Instance.StartActive("child"))
+            {
+                Assert.Contains(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+            }
+
+            Assert.Contains(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
         }
     }
 }
