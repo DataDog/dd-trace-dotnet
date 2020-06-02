@@ -61,7 +61,7 @@ namespace Datadog.Trace.Tests
             sw.Stop();
 
             Assert.Equal(5, handler.RequestsCount);
-            Assert.InRange(sw.ElapsedMilliseconds, 1000, 12000); // should be ~ 1600ms
+            Assert.InRange(sw.ElapsedMilliseconds, 1000, 16000); // should be ~ 3200ms
 
             // TODO:bertrand check that it's properly logged
         }
