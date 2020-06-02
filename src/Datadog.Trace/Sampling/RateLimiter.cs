@@ -30,7 +30,7 @@ namespace Datadog.Trace.Sampling
             _maxTracesPerInterval = maxTracesPerInterval ?? 100;
             _intervalMilliseconds = 1_000;
             _interval = TimeSpan.FromMilliseconds(_intervalMilliseconds);
-            _windowBegin = _lastRefresh = DateTime.Now;
+            _windowBegin = _lastRefresh = DateTime.UtcNow;
         }
 
         public bool Allowed(Span span)
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Sampling
                     return false;
                 }
 
-                _intervalQueue.Enqueue(DateTime.Now);
+                _intervalQueue.Enqueue(DateTime.UtcNow);
                 Interlocked.Increment(ref _windowAllowed);
 
                 return true;
@@ -121,7 +121,7 @@ namespace Datadog.Trace.Sampling
                 // Block threads
                 _refreshEvent.Reset();
 
-                var now = DateTime.Now;
+                var now = DateTime.UtcNow;
                 _lastRefresh = now;
 
                 var timeSinceWindowStart = (now - _windowBegin).TotalMilliseconds;
