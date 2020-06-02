@@ -705,7 +705,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
     }
 
     Debug("GetAssemblyReferences extending assembly closure for ",
-        assembly_name, " to include ", asmRefInfo.szName);
+          assembly_name, " to include ", asmRefInfo.szName,
+          ". Path=", wszAssemblyPath);
 
   return S_OK;
 }
