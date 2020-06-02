@@ -104,13 +104,13 @@ namespace Datadog.Trace.Sampling
 
         private void WaitForRefresh()
         {
-            int refreshing = 0;
+            int refreshInProgress = 0;
 
             try
             {
-                refreshing = Interlocked.CompareExchange(ref _refreshing, 1, 0);
+                refreshInProgress = Interlocked.CompareExchange(ref _refreshing, 1, 0);
 
-                if (refreshing != 0)
+                if (refreshInProgress != 0)
                 {
                     // A refresh is already in progress
                     return;
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Sampling
             }
             finally
             {
-                if (refreshing == 0)
+                if (refreshInProgress == 0)
                 {
                     // If refreshing is 0, it means that this thread acquired the lock
                     // Releasing it before leaving
