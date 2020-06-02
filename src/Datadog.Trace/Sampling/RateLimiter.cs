@@ -9,7 +9,6 @@ namespace Datadog.Trace.Sampling
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<RateLimiter>();
 
-        private readonly ManualResetEventSlim _refreshEvent = new ManualResetEventSlim(initialState: true);
         private readonly ConcurrentQueue<DateTime> _intervalQueue = new ConcurrentQueue<DateTime>();
 
         private readonly int _maxTracesPerInterval;
@@ -17,7 +16,8 @@ namespace Datadog.Trace.Sampling
         private readonly TimeSpan _interval;
 
         private DateTime _windowBegin;
-        private DateTime _lastRefresh;
+
+        private int _refreshing;
 
         private int _windowChecks = 0;
         private int _windowAllowed = 0;
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Sampling
             _maxTracesPerInterval = maxTracesPerInterval ?? 100;
             _intervalMilliseconds = 1_000;
             _interval = TimeSpan.FromMilliseconds(_intervalMilliseconds);
-            _windowBegin = _lastRefresh = DateTime.UtcNow;
+            _windowBegin = DateTime.UtcNow;
         }
 
         public bool Allowed(Span span)
@@ -104,25 +104,19 @@ namespace Datadog.Trace.Sampling
 
         private void WaitForRefresh()
         {
-            var previousRefresh = _lastRefresh;
-
-            // Block if a refresh event is happening
-            _refreshEvent.Wait();
-
-            if (previousRefresh != _lastRefresh)
-            {
-                // Some other thread already did this very recently
-                // Let's save some cycles and prevent contention
-                return;
-            }
+            int refreshing = 0;
 
             try
             {
-                // Block threads
-                _refreshEvent.Reset();
+                refreshing = Interlocked.CompareExchange(ref _refreshing, 1, 0);
+
+                if (refreshing != 0)
+                {
+                    // A refresh is already in progress
+                    return;
+                }
 
                 var now = DateTime.UtcNow;
-                _lastRefresh = now;
 
                 var timeSinceWindowStart = (now - _windowBegin).TotalMilliseconds;
 
@@ -143,8 +137,13 @@ namespace Datadog.Trace.Sampling
             }
             finally
             {
-                // Resume threads
-                _refreshEvent.Set();
+                if (refreshing == 0)
+                {
+                    // If refreshing is 0, it means that this thread acquired the lock
+                    // Releasing it before leaving
+                    // Note: a full fence might not be needed here, but better safe than sorry
+                    Interlocked.Exchange(ref _refreshing, 0);
+                }
             }
         }
     }
