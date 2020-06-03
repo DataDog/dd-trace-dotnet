@@ -21,7 +21,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
             catch
             {
-                // ignore
+                try
+                {
+                    Console.WriteLine(message, args);
+                }
+                catch
+                {
+                    // ignore
+                }
             }
         }
 
