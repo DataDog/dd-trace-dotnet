@@ -69,7 +69,7 @@ namespace Datadog.Trace.Logging
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
+                Log.SafeLogError(ex, "Could not successfully start the LibLogScopeEventSubscriber. There was an issue resolving the application logger.");
             }
         }
 

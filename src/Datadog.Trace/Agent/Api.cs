@@ -46,7 +46,7 @@ namespace Datadog.Trace.Agent
             }
             catch (Exception e)
             {
-                Log.Error(e, "Error getting framework description");
+                Log.SafeLogError(e, "Error getting framework description");
             }
 
             // report Tracer version

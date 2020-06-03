@@ -115,7 +115,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error extracting propagated HTTP headers.");
+                Log.SafeLogError(ex, "Error extracting propagated HTTP headers.");
             }
 
             return null;

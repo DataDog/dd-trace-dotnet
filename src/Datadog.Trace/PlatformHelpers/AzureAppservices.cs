@@ -91,7 +91,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Could not successfully setup the resource id for azure app services.");
+                Log.SafeLogError(ex, "Could not successfully setup the resource id for azure app services.");
             }
 
             return resourceId;
@@ -113,7 +113,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Could not successfully retrieve the subscription id for azure app services.");
+                Log.SafeLogError(ex, "Could not successfully retrieve the subscription id for azure app services.");
             }
 
             return null;

@@ -98,7 +98,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.Error(e, "Error getting framework name from RuntimeInformation");
+                Log.SafeLogError(e, "Error getting framework name from RuntimeInformation");
             }
 
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
@@ -145,7 +145,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.Error(e, "Error getting .NET Framework version from Windows Registry");
+                Log.SafeLogError(e, "Error getting .NET Framework version from Windows Registry");
             }
 
             if (productVersion == null)
@@ -186,7 +186,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Error getting .NET Core version from assembly path");
+                    Log.SafeLogError(e, "Error getting .NET Core version from assembly path");
                 }
             }
 
@@ -220,7 +220,7 @@ namespace Datadog.Trace
             }
             catch (Exception e)
             {
-                Log.Error(e, "Error getting framework version from [AssemblyInformationalVersion]");
+                Log.SafeLogError(e, "Error getting framework version from [AssemblyInformationalVersion]");
             }
 
             if (productVersion == null)
@@ -233,7 +233,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Error getting framework version from [AssemblyFileVersion]");
+                    Log.SafeLogError(e, "Error getting framework version from [AssemblyFileVersion]");
                 }
             }
 

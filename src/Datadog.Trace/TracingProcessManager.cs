@@ -63,34 +63,41 @@ namespace Datadog.Trace
 
         public static void TryForceTraceAgentRefresh()
         {
-            if (string.IsNullOrEmpty(TraceAgentMetadata.DirectoryPath))
+            try
             {
-                Log.Debug("This is not a context where we manage agent processes.");
-                return;
+                if (string.IsNullOrEmpty(TraceAgentMetadata.DirectoryPath))
+                {
+                    Log.Debug("This is not a context where we manage agent processes.");
+                    return;
+                }
+
+                Log.Warning("Attempting to force a child process refresh.");
+                InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
+
+                if (!_isProcessManager)
+                {
+                    Log.Debug("This process is not responsible for managing agent processes.");
+                    return;
+                }
+
+                if (Processes.All(p => p.HasAttemptedStartup))
+                {
+                    Log.Debug("Forcing a full refresh on agent processes.");
+                    StopProcesses();
+
+                    _cancellationTokenSource = new CancellationTokenSource();
+
+                    Log.Debug("Starting child processes.");
+                    StartProcesses();
+                }
+                else
+                {
+                    Log.Debug("This process has not had a chance to initialize agent processes.");
+                }
             }
-
-            Log.Warning("Attempting to force a child process refresh.");
-            InitializePortManagerClaimFiles(TraceAgentMetadata.DirectoryPath);
-
-            if (!_isProcessManager)
+            catch (Exception ex)
             {
-                Log.Debug("This process is not responsible for managing agent processes.");
-                return;
-            }
-
-            if (Processes.All(p => p.HasAttemptedStartup))
-            {
-                Log.Debug("Forcing a full refresh on agent processes.");
-                StopProcesses();
-
-                _cancellationTokenSource = new CancellationTokenSource();
-
-                Log.Debug("Starting child processes.");
-                StartProcesses();
-            }
-            else
-            {
-                Log.Debug("This process has not had a chance to initialize agent processes.");
+                Log.SafeLogError(ex, "Error when forcing a trace agent process refresh.");
             }
         }
 
@@ -129,7 +136,7 @@ namespace Datadog.Trace
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error when cancelling process {0}.", metadata.Name);
+                        Log.SafeLogError(ex, "Error when cancelling process {0}.", metadata.Name);
                     }
                 }
             }
@@ -173,7 +180,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error when attempting to initialize process manager.");
+                Log.SafeLogError(ex, "Error when attempting to initialize process manager.");
             }
         }
 
@@ -232,7 +239,7 @@ namespace Datadog.Trace
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error when cleaning port claims.");
+                        Log.SafeLogError(ex, "Error when cleaning port claims.");
                     }
                 }
             }
@@ -396,7 +403,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error trying to get a free port.");
+                Log.SafeLogError(ex, "Error trying to get a free port.");
                 return null;
             }
             finally
@@ -498,14 +505,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception ex)
                 {
-                    try
-                    {
-                        Log.Error(ex, "Error when disposing of process manager resources.");
-                    }
-                    catch
-                    {
-                        // ignore for dispose, to be safe
-                    }
+                    Log.SafeLogError(ex, "Error when disposing of process manager resources.");
                 }
             }
 

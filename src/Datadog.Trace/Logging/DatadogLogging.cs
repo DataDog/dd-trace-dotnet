@@ -94,6 +94,26 @@ namespace Datadog.Trace.Logging
             return GetLogger(typeof(T));
         }
 
+        public static void SafeLogError(this ILogger logger, Exception ex, string message, params object[] args)
+        {
+            try
+            {
+                logger.Error(ex, message, args);
+            }
+            catch
+            {
+                try
+                {
+                    message = string.Format(message, args);
+                    Console.Error.WriteLine($"{message} {ex}");
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+        }
+
         internal static void SetLogLevel(LogEventLevel logLevel)
         {
             LoggingLevelSwitch.MinimumLevel = logLevel;
