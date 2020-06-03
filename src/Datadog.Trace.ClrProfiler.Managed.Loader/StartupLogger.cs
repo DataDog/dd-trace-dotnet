@@ -8,27 +8,34 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private const string NixDefaultDirectory = "/var/log/datadog/dotnet";
 
         private static readonly string LogDirectory = GetLogDirectory();
-        private static readonly string StartupLogFilePath = Path.Combine(LogDirectory, "dotnet-tracer-loader.log");
+        private static readonly string StartupLogFilePath = LogDirectory != null ? Path.Combine(LogDirectory, "dotnet-tracer-loader.log") : null;
 
         public static void Log(string message, params object[] args)
         {
             try
             {
-                using (var fileSink = new FileSink(StartupLogFilePath))
+                if (StartupLogFilePath != null)
                 {
-                    fileSink.Info($"[{DateTime.UtcNow}] {message}{Environment.NewLine}", args);
+                    try
+                    {
+                        using (var fileSink = new FileSink(StartupLogFilePath))
+                        {
+                            fileSink.Info($"[{DateTime.UtcNow}] {message}{Environment.NewLine}", args);
+                        }
+
+                        return;
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
                 }
+
+                Console.WriteLine(message, args);
             }
             catch
             {
-                try
-                {
-                    Console.WriteLine(message, args);
-                }
-                catch
-                {
-                    // ignore
-                }
+                // ignore
             }
         }
 
