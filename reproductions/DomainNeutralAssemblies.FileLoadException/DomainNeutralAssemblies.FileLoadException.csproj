@@ -4,6 +4,10 @@
     <TargetFrameworks>net45;net451;net452;net46;net461;net462;net47;net471;net472;net48</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
+  
+    <!-- Test Settings -->
+    <RunHttpNuGetWithBindingRedirect Condition="$(TargetFramework.StartsWith('net46')) or '$(TargetFramework)' == 'net47' or '$(TargetFramework)' == 'net471'">true</RunHttpNuGetWithBindingRedirect>
+    <DefineConstants Condition="'$(RunHttpNuGetWithBindingRedirect)' == 'true'">$(DefineConstants);RUNHTTPNUGETWITHBINDINGREDIRECT</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\DomainNeutralAssemblies.App.HttpBindingRedirects.csproj">
+    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\DomainNeutralAssemblies.App.HttpBindingRedirects.csproj" Condition="'$(RunHttpNuGetWithBindingRedirect)' == 'true'">
       <Name>DomainNeutralAssemblies.App.HttpBindingRedirects</Name>
     </SubApplications>
     <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\DomainNeutralAssemblies.App.NoBindingRedirects.csproj">
