@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var corlib461Version = new Version(corlib461FileVersionString);
             var tracerFrameworkDirectory = corlibVersion < corlib461Version ? "net45" : "net461";
 
-            var tracerHomeDirectory = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
+            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
             return Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
         }
 

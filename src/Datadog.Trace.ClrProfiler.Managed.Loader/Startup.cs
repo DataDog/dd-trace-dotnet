@@ -40,5 +40,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // ignore
             }
         }
+
+        private static string ReadEnvironmentVariable(string key)
+        {
+            try
+            {
+                return Environment.GetEnvironmentVariable(key);
+            }
+            catch
+            {
+                // Unfortunately we don't have a way to log those yet
+            }
+
+            return null;
+        }
     }
 }
