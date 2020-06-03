@@ -8,6 +8,7 @@ using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Sigil;
 
 namespace Datadog.Trace.ClrProfiler.Emit
@@ -52,10 +53,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         static MethodBuilder()
         {
-            ForceMdTokenLookup = bool.TryParse(Environment.GetEnvironmentVariable(ConfigurationKeys.Debug.ForceMdTokenLookup), out bool result)
+            ForceMdTokenLookup = bool.TryParse(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debug.ForceMdTokenLookup), out bool result)
                     ? result
                     : false;
-            ForceFallbackLookup = bool.TryParse(Environment.GetEnvironmentVariable(ConfigurationKeys.Debug.ForceFallbackLookup), out result)
+            ForceFallbackLookup = bool.TryParse(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debug.ForceFallbackLookup), out result)
                     ? result && !ForceMdTokenLookup
                     : false;
         }

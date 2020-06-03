@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.PlatformHelpers
 {
@@ -32,7 +33,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         static AzureAppServices()
         {
-            Metadata = new AzureAppServices(Environment.GetEnvironmentVariables());
+            Metadata = new AzureAppServices(EnvironmentHelpers.GetEnvironmentVariables());
         }
 
         public AzureAppServices(IDictionary environmentVariables)
