@@ -1,4 +1,4 @@
-using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -11,7 +11,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         public override string GetString(string key)
         {
-            return Environment.GetEnvironmentVariable(key);
+            return EnvironmentHelpers.GetEnvironmentVariable(key);
         }
     }
 }

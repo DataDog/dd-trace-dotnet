@@ -6,7 +6,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Collections.Generic;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
@@ -47,13 +47,13 @@ namespace Datadog.Trace.Vendors.StatsdClient
 
         private static string GetHostNameFromEnvVar()
         {
-            return Environment.GetEnvironmentVariable(StatsdConfig.DD_AGENT_HOST_ENV_VAR);
+            return EnvironmentHelpers.GetEnvironmentVariable(StatsdConfig.DD_AGENT_HOST_ENV_VAR);
         }
 
         private static int GetPortFromEnvVar(int defaultValue)
         {
             int port = defaultValue;
-            string portString = Environment.GetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR);
+            string portString = EnvironmentHelpers.GetEnvironmentVariable(StatsdConfig.DD_DOGSTATSD_PORT_ENV_VAR);
             if (portString != null)
             {
                 try

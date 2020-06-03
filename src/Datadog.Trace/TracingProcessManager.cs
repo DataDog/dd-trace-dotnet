@@ -28,8 +28,8 @@ namespace Datadog.Trace
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
             Name = "datadog-trace-agent",
-            ProcessPath = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
-            ProcessArguments = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
+            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentPath),
+            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceAgentArgs),
             RefreshPortVars = () =>
             {
                 var portString = TraceAgentMetadata.Port?.ToString(CultureInfo.InvariantCulture);
@@ -41,8 +41,8 @@ namespace Datadog.Trace
         internal static readonly ProcessMetadata DogStatsDMetadata = new ProcessMetadata
         {
             Name = "dogstatsd",
-            ProcessPath = Environment.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
-            ProcessArguments = Environment.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
+            ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
+            ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
             RefreshPortVars = () =>
             {
                 var portString = DogStatsDMetadata.Port?.ToString(CultureInfo.InvariantCulture);

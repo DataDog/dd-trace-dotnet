@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
@@ -236,7 +237,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
             RandomGenerator = randomGenerator;
             _prefix = prefix;
 
-            string entityId = Environment.GetEnvironmentVariable(StatsdConfig.DD_ENTITY_ID_ENV_VAR);
+            string entityId = EnvironmentHelpers.GetEnvironmentVariable(StatsdConfig.DD_ENTITY_ID_ENV_VAR);
 
             if (string.IsNullOrEmpty(entityId))
             {

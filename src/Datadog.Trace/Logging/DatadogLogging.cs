@@ -33,7 +33,7 @@ namespace Datadog.Trace.Logging
                     LoggingLevelSwitch.MinimumLevel = LogEventLevel.Verbose;
                 }
 
-                var maxLogSizeVar = Environment.GetEnvironmentVariable(ConfigurationKeys.MaxLogFileSize);
+                var maxLogSizeVar = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MaxLogFileSize);
                 if (long.TryParse(maxLogSizeVar, out var maxLogSize))
                 {
                     // No verbose or debug logs
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Logging
 
         private static string GetLogDirectory()
         {
-            var nativeLogFile = Environment.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
+            var nativeLogFile = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
             string logDirectory = null;
 
             if (!string.IsNullOrEmpty(nativeLogFile))
