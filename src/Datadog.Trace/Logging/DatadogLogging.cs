@@ -94,7 +94,7 @@ namespace Datadog.Trace.Logging
             return GetLogger(typeof(T));
         }
 
-        public static void SafeLogError(this ILogger logger, Exception ex, string message, params string[] args)
+        public static void SafeLogError(this ILogger logger, Exception ex, string message, params object[] args)
         {
             try
             {
@@ -102,7 +102,16 @@ namespace Datadog.Trace.Logging
             }
             catch
             {
-                // ignore
+
+                try
+                {
+                    message = string.Format(message, args);
+                    Console.Error.WriteLine($"{message} {ex}");
+                }
+                catch
+                {
+                    // ignore
+                }
             }
         }
 

@@ -136,7 +136,7 @@ namespace Datadog.Trace
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error when cancelling process {0}.", metadata.Name);
+                        Log.SafeLogError(ex, "Error when cancelling process {0}.", metadata.Name);
                     }
                 }
             }
@@ -180,7 +180,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error when attempting to initialize process manager.");
+                Log.SafeLogError(ex, "Error when attempting to initialize process manager.");
             }
         }
 
@@ -239,7 +239,7 @@ namespace Datadog.Trace
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error when cleaning port claims.");
+                        Log.SafeLogError(ex, "Error when cleaning port claims.");
                     }
                 }
             }
@@ -403,7 +403,7 @@ namespace Datadog.Trace
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error trying to get a free port.");
+                Log.SafeLogError(ex, "Error trying to get a free port.");
                 return null;
             }
             finally
@@ -505,14 +505,7 @@ namespace Datadog.Trace
                 }
                 catch (Exception ex)
                 {
-                    try
-                    {
-                        Log.Error(ex, "Error when disposing of process manager resources.");
-                    }
-                    catch
-                    {
-                        // ignore for dispose, to be safe
-                    }
+                    Log.SafeLogError(ex, "Error when disposing of process manager resources.");
                 }
             }
 
