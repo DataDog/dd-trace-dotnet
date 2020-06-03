@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [TargetFrameworkVersionsFact("net452;net461")]
+        [TargetFrameworkVersionsFact("net452;net461", Skip="Re-enable when domain-neutral instrumentation is truly tackled.")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
