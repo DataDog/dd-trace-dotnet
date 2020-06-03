@@ -102,7 +102,6 @@ namespace Datadog.Trace.Logging
             }
             catch
             {
-
                 try
                 {
                     message = string.Format(message, args);
