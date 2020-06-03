@@ -797,8 +797,7 @@ HRESULT CorProfiler::ProcessReplacementCalls(
       // At this point we know we've hit a match. Error out if
       //   1) The managed profiler has not been loaded yet
       //   2) The caller is domain-neutral AND we want to instrument domain-neutral assemblies AND the Profiler has already been loaded
-      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id) &&
-          !(caller_assembly_is_domain_neutral && instrument_domain_neutral_assemblies && ProfilerAssemblyIsLoadedIntoAnyAppDomain())) {
+      if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id)) {
         Warn(
             "JITCompilationStarted skipping method: Method replacement "
             "found but the managed profiler has not yet been loaded "
@@ -1104,10 +1103,6 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
   return managed_profiler_loaded_domain_neutral ||
          managed_profiler_loaded_app_domains.find(app_domain_id) !=
              managed_profiler_loaded_app_domains.end();
-}
-
-bool CorProfiler::ProfilerAssemblyIsLoadedIntoAnyAppDomain() {
-  return !managed_profiler_loaded_app_domains.empty();
 }
 
 //
