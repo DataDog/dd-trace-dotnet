@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Security;
 using System.Security.Permissions;
+using System.Threading;
 
 namespace DomainNeutralAssemblies.FileLoadException
 {
@@ -17,13 +18,13 @@ namespace DomainNeutralAssemblies.FileLoadException
                 // First load the application that does not have bindingRedirect policies
                 // This will instrument at least one domain-neutral assembly with a
                 // domain-neutral version of Datadog.Trace.ClrProfiler.Managed.dll
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.NoBindingRedirects", "DomainNeutralAssemblies.App.NoBindingRedirects");
+                CreateAndRunAppDomain("DomainNeutralAssemblies.App.NoBindingRedirects");
 
                 // Next load an application that does the same thing, still does not have
                 // bindingRedirect policies, but it uses the System.Net.Http NuGet package
                 // instead of the built-in version.
                 // TBD if this breaks in the non-GAC scenario
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.HttpNoBindingRedirects", "DomainNeutralAssemblies.App.HttpNoBindingRedirects");
+                CreateAndRunAppDomain("DomainNeutralAssemblies.App.HttpNoBindingRedirects");
 
                 // Next load the application that has a bindingRedirect policy on Newtonsoft.Json.
                 // This will cause a sharing violation when the domain-neutral assembly attempts
@@ -31,7 +32,7 @@ namespace DomainNeutralAssemblies.FileLoadException
                 // can no longer be loaded shared with the bindingRedirect policy in place. This breaks
                 // the consistency check of all domain-neutral assemblies only depending on other
                 // domain-neutral assemblies
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.JsonNuGetRedirects", "DomainNeutralAssemblies.App.JsonNuGetRedirects");
+                CreateAndRunAppDomain("DomainNeutralAssemblies.App.JsonNuGetRedirects");
 
                 // Next load the application that has a bindingRedirect policy on System.Net.Http.
                 // This will cause a sharing violation when the domain-neutral assembly attempts
@@ -39,11 +40,7 @@ namespace DomainNeutralAssemblies.FileLoadException
                 // can no longer be loaded shared with the bindingRedirect policy in place. This breaks
                 // the consistency check of all domain-neutral assemblies only depending on other
                 // domain-neutral assemblies
-#if RUNHTTPNUGETWITHBINDINGREDIRECT
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.HttpBindingRedirects", "DomainNeutralAssemblies.App.HttpBindingRedirects");
-#else
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.HttpBindingRedirects", "EXPECT.FAILURE.DomainNeutralAssemblies.App.HttpBindingRedirects");
-#endif
+                CreateAndRunAppDomain("DomainNeutralAssemblies.App.HttpBindingRedirects");
             }
             catch (Exception ex)
             {
@@ -62,7 +59,7 @@ namespace DomainNeutralAssemblies.FileLoadException
             }
         }
 
-        private static void CreateAndRunAppDomain(string appName, string appDomainName)
+        private static void CreateAndRunAppDomain(string appName)
         {
             try
             {
@@ -77,13 +74,13 @@ namespace DomainNeutralAssemblies.FileLoadException
 
                 PermissionSet ps = new PermissionSet(PermissionState.Unrestricted);
                 System.AppDomain appDomain1 = System.AppDomain.CreateDomain(
-                    appDomainName,
+                    appName,
                     System.AppDomain.CurrentDomain.Evidence,
                     ads,
                     ps);
 
                 Console.WriteLine("**********************************************");
-                Console.WriteLine($"Starting code execution in AppDomain {appDomainName}");
+                Console.WriteLine($"Starting code execution in AppDomain {appName}");
                 appDomain1.ExecuteAssemblyByName(
                     appName,
                     new string[0]);
@@ -94,7 +91,7 @@ namespace DomainNeutralAssemblies.FileLoadException
             }
             finally
             {
-                Console.WriteLine($"Finished code execution in AppDomain {appDomainName}");
+                Console.WriteLine($"Finished code execution in AppDomain {appName}");
                 Console.WriteLine("**********************************************");
                 Console.WriteLine();
             }

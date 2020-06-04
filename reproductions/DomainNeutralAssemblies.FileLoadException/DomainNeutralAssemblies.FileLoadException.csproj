@@ -4,10 +4,6 @@
     <TargetFrameworks>net45;net451;net452;net46;net461;net462;net47;net471;net472;net48</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
-  
-    <!-- Test Settings -->
-    <RunHttpNuGetWithBindingRedirect Condition="$(TargetFramework.StartsWith('net46')) or '$(TargetFramework)' == 'net47' or '$(TargetFramework)' == 'net471'">true</RunHttpNuGetWithBindingRedirect>
-    <DefineConstants Condition="'$(RunHttpNuGetWithBindingRedirect)' == 'true'">$(DefineConstants);RUNHTTPNUGETWITHBINDINGREDIRECT</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
