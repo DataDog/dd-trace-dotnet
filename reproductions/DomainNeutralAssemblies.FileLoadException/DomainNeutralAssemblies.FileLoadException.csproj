@@ -12,18 +12,20 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-    <!--
-    <ProjectReference Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\DomainNeutralAssemblies.App.HttpBindingRedirects.csproj" />
-    <ProjectReference Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\DomainNeutralAssemblies.App.NoBindingRedirects.csproj" />
-    -->
   </ItemGroup>
 
   <ItemGroup>
-    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\DomainNeutralAssemblies.App.HttpBindingRedirects.csproj" Condition="'$(RunHttpNuGetWithBindingRedirect)' == 'true'">
-      <Name>DomainNeutralAssemblies.App.HttpBindingRedirects</Name>
-    </SubApplications>
     <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\DomainNeutralAssemblies.App.NoBindingRedirects.csproj">
       <Name>DomainNeutralAssemblies.App.NoBindingRedirects</Name>
+    </SubApplications>
+    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpNoBindingRedirects\DomainNeutralAssemblies.App.HttpNoBindingRedirects.csproj">
+      <Name>DomainNeutralAssemblies.App.HttpNoBindingRedirects</Name>
+    </SubApplications>
+    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.JsonNuGetRedirects\DomainNeutralAssemblies.App.JsonNuGetRedirects.csproj">
+      <Name>DomainNeutralAssemblies.App.JsonNuGetRedirects</Name>
+    </SubApplications>
+    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\DomainNeutralAssemblies.App.HttpBindingRedirects.csproj">
+      <Name>DomainNeutralAssemblies.App.HttpBindingRedirects</Name>
     </SubApplications>
   </ItemGroup>
 
