@@ -31,11 +31,5 @@ namespace Datadog.Trace.ClrProfiler
         public const string HttpResponseMessageTask = "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>";
 
         public const string GenericTask = "System.Threading.Tasks.Task`1";
-
-        public const string HttpCompletionOption = "System.Net.Http.HttpCompletionOption";
-
-        public const string Uri = "System.Uri";
-
-        public const string HttpContent = "System.Net.Http.HttpContent";
     }
 }
