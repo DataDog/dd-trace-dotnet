@@ -92,6 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public void WebClient()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -126,6 +127,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public void WebClient_TracingDisabled()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
