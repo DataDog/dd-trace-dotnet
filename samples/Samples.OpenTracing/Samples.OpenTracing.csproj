@@ -7,4 +7,13 @@
     <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="OpenTracing" Version="0.12.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj" />
+    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
 </Project>
