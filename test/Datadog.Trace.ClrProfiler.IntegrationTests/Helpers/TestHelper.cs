@@ -35,25 +35,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected TestHelper(EnvironmentHelper environmentHelper, ITestOutputHelper output)
         {
             EnvironmentHelper = environmentHelper;
-            SampleAppName = EnvironmentHelper.SampleName;
             Output = output;
 
-            PathToSample = EnvironmentHelper.GetSampleApplicationOutputDirectory();
             Output.WriteLine($"Platform: {EnvironmentTools.GetPlatform()}");
             Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
-            Output.WriteLine($"Application: {EnvironmentHelper.GetSampleApplicationPath()}");
             Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
         }
 
         protected EnvironmentHelper EnvironmentHelper { get; set; }
 
         protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
-
-        protected string SampleAppName { get; }
-
-        protected string PathToSample { get; }
 
         protected ITestOutputHelper Output { get; }
 
@@ -69,6 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
+            Output.WriteLine($"Starting Application: {sampleAppPath}");
             return ProfilerHelper.StartProcessWithProfiler(
                 EnvironmentHelper.GetSampleExecutionSource(),
                 sampleAppPath,
