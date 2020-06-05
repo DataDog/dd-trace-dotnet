@@ -625,7 +625,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
 
   // TODO: Make this assembly reference dynamic vs hard-coded
   const AssemblyReference assemblyReference = trace::AssemblyReference(
-      "Datadog.Trace.ClrProfiler.Managed, Version=1.16.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W);
+      "Datadog.Trace.ClrProfiler.Managed, Version=1.17.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W);
 
   ASSEMBLYMETADATA assembly_metadata{};
 
