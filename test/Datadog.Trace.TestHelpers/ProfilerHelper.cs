@@ -7,6 +7,8 @@ namespace Datadog.Trace.TestHelpers
     public class ProfilerHelper
     {
         public static Process StartProcessWithProfiler(
+            string executable,
+            string applicationPath,
             EnvironmentHelper environmentHelper,
             IEnumerable<string> integrationPaths,
             string arguments = null,
@@ -24,9 +26,6 @@ namespace Datadog.Trace.TestHelpers
                 throw new ArgumentNullException(nameof(integrationPaths));
             }
 
-            var applicationPath = environmentHelper.GetSampleApplicationPath();
-            var executable = environmentHelper.GetSampleExecutionSource();
-
             // clear all relevant environment variables to start with a clean slate
             EnvironmentHelper.ClearProfilerEnvironmentVariables();
 
@@ -40,7 +39,7 @@ namespace Datadog.Trace.TestHelpers
             else
             {
                 // .NET Framework
-                startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
+                startInfo = new ProcessStartInfo(applicationPath, $"{arguments ?? string.Empty}");
             }
 
             environmentHelper.SetEnvironmentVariables(traceAgentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);

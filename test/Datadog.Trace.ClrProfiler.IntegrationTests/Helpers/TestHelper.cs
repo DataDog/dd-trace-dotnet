@@ -70,6 +70,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
             return ProfilerHelper.StartProcessWithProfiler(
+                EnvironmentHelper.GetSampleExecutionSource(),
+                sampleAppPath,
                 EnvironmentHelper,
                 integrationPaths,
                 arguments,
@@ -117,6 +119,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"[webserver] starting {exe} {string.Join(" ", args)}");
 
             var process = ProfilerHelper.StartProcessWithProfiler(
+                EnvironmentHelper.GetSampleExecutionSource(),
+                EnvironmentHelper.GetSampleApplicationPath(),
                 EnvironmentHelper,
                 integrationPaths,
                 arguments: string.Join(" ", args),
