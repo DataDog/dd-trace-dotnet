@@ -13,8 +13,6 @@ namespace DomainNeutralAssemblies.FileLoadException
         {
             try
             {
-                CheckGAC();
-
                 // First load the application that does not have bindingRedirect policies
                 // This will instrument at least one domain-neutral assembly with a
                 // domain-neutral version of Datadog.Trace.ClrProfiler.Managed.dll
@@ -49,14 +47,6 @@ namespace DomainNeutralAssemblies.FileLoadException
             }
 
             return (int)ExitCode.Success;
-        }
-
-        private static void CheckGAC()
-        {
-            if (!typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.GlobalAssemblyCache)
-            {
-                throw new Exception("Datadog.Trace.ClrProfiler.Managed was not loaded from the GAC. Ensure that the assembly and its dependencies are installed in the GAC before running.");
-            }
         }
 
         private static void CreateAndRunAppDomain(string appName)
