@@ -6,7 +6,7 @@
 
 namespace trace {
 
-inline WSTRING env_vars_to_display[]{
+  WSTRING env_vars_to_display[]{
     environment::tracing_enabled,
     environment::debug_enabled,
     environment::profiler_home_path,
@@ -25,7 +25,7 @@ inline WSTRING env_vars_to_display[]{
     environment::azure_app_services_app_pool_id,
     environment::azure_app_services_cli_telemetry_profile_value};
 
- inline WSTRING skip_assembly_prefixes[]{
+  WSTRING skip_assembly_prefixes[]{
     "Datadog.Trace"_W,
     "MessagePack"_W,
     "Microsoft.AI"_W,
@@ -46,7 +46,7 @@ inline WSTRING env_vars_to_display[]{
     "System.Xml"_W,
     "Newtonsoft"_W,};
 
-  inline WSTRING skip_assemblies[]{
+  WSTRING skip_assemblies[]{
       "mscorlib"_W,
       "netstandard"_W,
       "System.Configuration"_W,
