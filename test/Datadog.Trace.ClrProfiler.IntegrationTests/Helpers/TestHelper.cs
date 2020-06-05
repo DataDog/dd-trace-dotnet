@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
-            Output.WriteLine($"Application: {GetSampleApplicationPath()}");
+            Output.WriteLine($"Application: {EnvironmentHelper.GetSampleApplicationPath()}");
             Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
         }
 
@@ -57,15 +57,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
-        public string GetSampleApplicationPath(string packageVersion = "")
-        {
-            return EnvironmentHelper.GetSampleApplicationPath(packageVersion);
-        }
-
         public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort)
         {
             // get path to sample app that the profiler will attach to
-            string sampleAppPath = GetSampleApplicationPath(packageVersion);
+            string sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion);
             if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
