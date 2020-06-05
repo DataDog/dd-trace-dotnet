@@ -651,8 +651,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
 
   // TODO: Make this assembly reference dynamic vs hard-coded
   const AssemblyReference assemblyReference = trace::AssemblyReference(
-      L"Datadog.Trace.ClrProfiler.Managed, Version=1.16.2.0, Culture="
-      L"neutral, PublicKeyToken=def86d061d0d2eeb");
+      "Datadog.Trace.ClrProfiler.Managed, Version=1.16.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W);
 
   ASSEMBLYMETADATA assembly_metadata{};
 
@@ -661,8 +660,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
   assembly_metadata.usBuildNumber = assemblyReference.version.build;
   assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
   if (assemblyReference.locale == "neutral"_W) {
-    wchar_t nulltermEmptyStr[2] = L"\0";
-    assembly_metadata.szLocale = nulltermEmptyStr;
+    assembly_metadata.szLocale = const_cast<WCHAR*>("\0"_W.c_str());
     assembly_metadata.cbLocale = 0;
   } else {
     assembly_metadata.szLocale =
