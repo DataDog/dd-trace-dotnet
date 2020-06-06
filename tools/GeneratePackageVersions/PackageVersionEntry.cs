@@ -10,6 +10,8 @@ namespace GeneratePackageVersions
 
         public string MinVersion { get; set; }
 
+        public string MinVersionNetCore { get; set; } = string.Empty;
+
         public string MaxVersionExclusive { get; set; }
 
         public string SampleTargetFramework { get; set; }

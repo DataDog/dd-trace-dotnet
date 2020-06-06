@@ -58,6 +58,11 @@ namespace GeneratePackageVersions
 
             foreach (var entry in entries)
             {
+                if (!Version.TryParse(entry.MinVersionNetCore, out var entryNetCoreMinVersion))
+                {
+                    entryNetCoreMinVersion = null;
+                }
+
                 var packageVersions = await NuGetPackageHelper.GetNugetPackageVersions(entry);
                 var typedVersions =
                     packageVersions
@@ -68,9 +73,8 @@ namespace GeneratePackageVersions
                        .ThenBy(v => v.Build)
                        .ToList();
 
-                var typicalTestVersions = new HashSet<string>();
-
                 // Add the last for every minor
+                var lastMinorVersions = new HashSet<Version>();
 
                 var majorGroups = typedVersions.GroupBy(v => v.Major);
 
@@ -79,14 +83,19 @@ namespace GeneratePackageVersions
                     var minorGroups = majorGroup.GroupBy(v => v.Minor);
                     foreach (var minorGroup in minorGroups)
                     {
-                        typicalTestVersions.Add(minorGroup.Last().ToString());
+                        lastMinorVersions.Add(minorGroup.Last());
                     }
                 }
 
-                var allVersions = typedVersions.Select(v => v.ToString()).ToHashSet();
-                _latestMinors.Write(entry, typicalTestVersions);
-                _comprehensive.Write(entry, allVersions);
-                _strategyGenerator.Write(entry, null);
+                var allNetFrameworkVersions = typedVersions.Where(v => entryNetCoreMinVersion != null && v.CompareTo(entryNetCoreMinVersion) < 0).Select(v => v.ToString()).ToHashSet();
+                var allNetCoreVersions = typedVersions.Where(v => entryNetCoreMinVersion == null || v.CompareTo(entryNetCoreMinVersion) >= 0).Select(v => v.ToString()).ToHashSet();
+
+                var lastMinorNetFrameworkVersions = lastMinorVersions.Where(v => entryNetCoreMinVersion != null && v.CompareTo(entryNetCoreMinVersion) < 0).Select(v => v.ToString()).ToHashSet();
+                var lastMinorNetCoreVersions = lastMinorVersions.Where(v => entryNetCoreMinVersion == null || v.CompareTo(entryNetCoreMinVersion) >= 0).Select(v => v.ToString()).ToHashSet();
+
+                _latestMinors.Write(entry, lastMinorNetFrameworkVersions, lastMinorNetCoreVersions);
+                _comprehensive.Write(entry, allNetFrameworkVersions, allNetCoreVersions);
+                _strategyGenerator.Write(entry, null, null);
             }
 
             _latestMinors.Finish();
@@ -121,10 +130,10 @@ namespace GeneratePackageVersions
                 _xUnitFileGenerator.Start();
             }
 
-            public void Write(PackageVersionEntry entry, HashSet<string> versions)
+            public void Write(PackageVersionEntry entry, HashSet<string> netFrameworkversions, HashSet<string> netCoreVersions)
             {
-                _msBuildPropsFileGenerator.Write(entry, versions);
-                _xUnitFileGenerator.Write(entry, versions);
+                _msBuildPropsFileGenerator.Write(entry, netFrameworkversions, netCoreVersions);
+                _xUnitFileGenerator.Write(entry, netFrameworkversions, netCoreVersions);
             }
 
             public void Finish()
