@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     public class DapperCommandTests : TestHelper
     {
         public DapperCommandTests(ITestOutputHelper output)
-            : base("Dapper", output)
+            : base("Samples.Dapper", output)
         {
             SetServiceVersion("1.0.0");
         }

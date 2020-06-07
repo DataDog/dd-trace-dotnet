@@ -55,7 +55,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                 anchorType: this.GetType(),
                 output: Output,
                 samplesDirectory: directory,
-                prependSamplesToAppName: false,
                 requiresProfiling: requiresAgent);
 
             loadTestPart.EnvironmentHelper = env;

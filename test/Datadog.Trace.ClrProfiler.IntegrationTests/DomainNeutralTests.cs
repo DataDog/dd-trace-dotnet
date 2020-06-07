@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class DomainNeutralTests : TestHelper
     {
         public DomainNeutralTests(ITestOutputHelper output)
-            : base("NetFramework.DomainNeutralInstrumentationWithoutGac", output)
+            : base("Samples.NetFramework.DomainNeutralInstrumentationWithoutGac", output)
         {
             SetEnvironmentVariable("DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION", "true");
             SetServiceVersion("1.0.0");

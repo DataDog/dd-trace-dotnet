@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     public class SqlCommandTests : TestHelper
     {
         public SqlCommandTests(ITestOutputHelper output)
-            : base("SqlServer", output)
+            : base("Samples.SqlServer", output)
         {
             SetServiceVersion("1.0.0");
         }

@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class Elasticsearch5Tests : TestHelper
     {
         public Elasticsearch5Tests(ITestOutputHelper output)
-            : base("Elasticsearch.V5", output)
+            : base("Samples.Elasticsearch.V5", output)
         {
             SetServiceVersion("1.0.0");
         }

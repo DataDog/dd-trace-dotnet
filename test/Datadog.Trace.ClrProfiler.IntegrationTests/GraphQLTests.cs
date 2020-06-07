@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public GraphQLTests(ITestOutputHelper output)
-            : base("GraphQL", output)
+            : base("Samples.GraphQL", output)
         {
             SetServiceVersion("1.0.0");
         }

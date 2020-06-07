@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AzureAppServices
 {
     public class FakeAzureAppServicesTests : TestHelper
     {
-        private const string SampleName = "FakeAzureAppServices";
+        private const string SampleName = "Samples.FakeAzureAppServices";
 
         public FakeAzureAppServicesTests(ITestOutputHelper output)
             : base(SampleName, output)

@@ -12,7 +12,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public class EnvironmentHelper
     {
-        private static readonly Assembly EntryAssembly = Assembly.GetEntryAssembly();
         private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
 
@@ -21,12 +20,9 @@ namespace Datadog.Trace.TestHelpers
         private readonly int _minor;
         private readonly string _patch = null;
 
-        private readonly string _appNamePrepend;
         private readonly string _runtime;
         private readonly bool _isCoreClr;
         private readonly string _samplesDirectory;
-        private readonly Type _anchorType;
-        private readonly Assembly _anchorAssembly;
         private readonly TargetFrameworkAttribute _targetFramework;
 
         private bool _requiresProfiling;
@@ -38,14 +34,11 @@ namespace Datadog.Trace.TestHelpers
             Type anchorType,
             ITestOutputHelper output,
             string samplesDirectory = "samples",
-            bool prependSamplesToAppName = true,
             bool requiresProfiling = true)
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? "samples";
-            _anchorType = anchorType;
-            _anchorAssembly = Assembly.GetAssembly(_anchorType);
-            _targetFramework = _anchorAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
+            _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             _requiresProfiling = requiresProfiling;
 
@@ -61,10 +54,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 _patch = versionParts[2];
             }
-
-            _appNamePrepend = prependSamplesToAppName
-                          ? "Samples."
-                          : string.Empty;
         }
 
         public bool DebugModeEnabled { get; set; }
@@ -73,8 +62,6 @@ namespace Datadog.Trace.TestHelpers
 
         public string SampleName { get; }
 
-        public string FullSampleName => $"{_appNamePrepend}{SampleName}";
-
         public static EnvironmentHelper NonProfiledHelper(Type anchor, string appName, string directory)
         {
             return new EnvironmentHelper(
@@ -82,7 +69,6 @@ namespace Datadog.Trace.TestHelpers
                 anchorType: anchor,
                 output: null,
                 samplesDirectory: directory,
-                prependSamplesToAppName: false,
                 requiresProfiling: false);
         }
 
@@ -302,7 +288,7 @@ namespace Datadog.Trace.TestHelpers
             return _profilerFileLocation;
         }
 
-        public string GetSampleApplicationPath(string packageVersion = "")
+        public string GetSampleApplicationPath(string packageVersion = "", string framework = "")
         {
             string extension = "exe";
 
@@ -311,8 +297,8 @@ namespace Datadog.Trace.TestHelpers
                 extension = "dll";
             }
 
-            var appFileName = $"{FullSampleName}.{extension}";
-            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion), appFileName);
+            var appFileName = $"{SampleName}.{extension}";
+            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
             return sampleAppPath;
         }
 
@@ -330,7 +316,7 @@ namespace Datadog.Trace.TestHelpers
             }
             else
             {
-                var appFileName = $"{FullSampleName}.exe";
+                var appFileName = $"{SampleName}.exe";
                 executor = Path.Combine(GetSampleApplicationOutputDirectory(), appFileName);
 
                 if (!File.Exists(executor))
@@ -348,12 +334,13 @@ namespace Datadog.Trace.TestHelpers
             var projectDir = Path.Combine(
                 solutionDirectory,
                 _samplesDirectory,
-                $"{FullSampleName}");
+                $"{SampleName}");
             return projectDir;
         }
 
-        public string GetSampleApplicationOutputDirectory(string packageVersion = "")
+        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "")
         {
+            var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
             var binDir = Path.Combine(
                 GetSampleProjectDirectory(),
                 "bin");
@@ -371,7 +358,7 @@ namespace Datadog.Trace.TestHelpers
                     packageVersion,
                     EnvironmentTools.GetPlatform(),
                     EnvironmentTools.GetBuildConfiguration(),
-                    GetTargetFramework());
+                    targetFramework);
             }
             else
             {
@@ -379,7 +366,7 @@ namespace Datadog.Trace.TestHelpers
                     binDir,
                     packageVersion,
                     EnvironmentTools.GetBuildConfiguration(),
-                    GetTargetFramework(),
+                    targetFramework,
                     "publish");
             }
 
