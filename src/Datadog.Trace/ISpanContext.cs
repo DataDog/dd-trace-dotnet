@@ -19,5 +19,10 @@ namespace Datadog.Trace
         /// Gets the service name to propagate to child spans.
         /// </summary>
         string ServiceName { get; }
+
+        /// <summary>
+        /// Gets the parent context of this context. Returns null if no parent.
+        /// </summary>
+        ISpanContext Parent { get; }
     }
 }
