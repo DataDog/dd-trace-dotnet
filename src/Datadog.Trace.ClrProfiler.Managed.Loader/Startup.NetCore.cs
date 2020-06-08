@@ -40,12 +40,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 && assemblyName.FullName.IndexOf("PublicKeyToken=def86d061d0d2eeb", StringComparison.OrdinalIgnoreCase) >= 0
                 && File.Exists(path))
             {
-                StartupLogger.Log("Loading {0} with Assembly.LoadFrom", path);
+                StartupLogger.Debug("Loading {0} with Assembly.LoadFrom", path);
                 return Assembly.LoadFrom(path); // Load the main profiler and tracer into the default Assembly Load Context
             }
             else if (File.Exists(path))
             {
-                StartupLogger.Log("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
+                StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
                 return DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
             }
 

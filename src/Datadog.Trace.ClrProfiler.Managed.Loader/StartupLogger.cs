@@ -8,6 +8,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     {
         private const string NixDefaultDirectory = "/var/log/datadog/dotnet";
 
+        private static readonly bool ShouldDebugLog = IsDebugEnabled();
         private static readonly string LogDirectory = GetLogDirectory();
         private static readonly string StartupLogFilePath = SetStartupLogFilePath();
 
@@ -44,6 +45,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             message = $"{message}{Environment.NewLine}{ex}";
             Log(message, args);
+        }
+
+        public static void Debug(string message, params object[] args)
+        {
+            if (ShouldDebugLog)
+            {
+                Log(message, args);
+            }
         }
 
         private static string GetLogDirectory()
@@ -122,6 +131,40 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             {
                 // We can't get the process info
                 return Path.Combine(LogDirectory, "dotnet-tracer-loader.log");
+            }
+        }
+
+        private static bool IsDebugEnabled()
+        {
+            try
+            {
+                var ddTraceDebugValue = Environment.GetEnvironmentVariable("DD_TRACE_DEBUG");
+
+                if (ddTraceDebugValue == null)
+                {
+                    return false;
+                }
+
+                switch (ddTraceDebugValue.ToUpperInvariant())
+                {
+                    case "TRUE":
+                    case "YES":
+                    case "T":
+                    case "1":
+                        return true;
+                    case "FALSE":
+                    case "NO":
+                    case "F":
+                    case "0":
+                        return false;
+                    default:
+                        return false;
+                }
+            }
+            catch
+            {
+                // Default to not enabled
+                return false;
             }
         }
     }
