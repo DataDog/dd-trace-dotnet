@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
@@ -8,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private const string NixDefaultDirectory = "/var/log/datadog/dotnet";
 
         private static readonly string LogDirectory = GetLogDirectory();
-        private static readonly string StartupLogFilePath = LogDirectory != null ? Path.Combine(LogDirectory, "dotnet-tracer-loader.log") : null;
+        private static readonly string StartupLogFilePath = SetStartupLogFilePath();
 
         /// <summary>
         /// Gets a value indicating whether this OS is Windows.
@@ -120,9 +121,29 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 {
                     // Unable to create the directory meaning that the user
                     // will have to create it on their own.
-                    // It is unsafe to log, so clear the out param
+                    // It is unsafe to log here, so clear the out param
                     logDirectory = null;
                 }
+            }
+        }
+
+        private static string SetStartupLogFilePath()
+        {
+            if (LogDirectory == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var process = Process.GetCurrentProcess();
+                // Do our best to not block other processes on write
+                return Path.Combine(LogDirectory, $"dotnet-tracer-loader-{process.ProcessName}-{process.Id}.log");
+            }
+            catch
+            {
+                // We can't get the process info
+                return Path.Combine(LogDirectory, "dotnet-tracer-loader.log");
             }
         }
     }
