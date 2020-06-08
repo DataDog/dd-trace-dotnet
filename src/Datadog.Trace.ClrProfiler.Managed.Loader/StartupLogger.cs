@@ -10,6 +10,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static readonly string LogDirectory = GetLogDirectory();
         private static readonly string StartupLogFilePath = LogDirectory != null ? Path.Combine(LogDirectory, "dotnet-tracer-loader.log") : null;
 
+        /// <summary>
+        /// Gets a value indicating whether this OS is Windows.
+        /// Prevents the need for a direct System.Runtime reference.
+        /// </summary>
         public static bool IsWindows
         {
             get
