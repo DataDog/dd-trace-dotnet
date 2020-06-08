@@ -11,19 +11,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static readonly string LogDirectory = GetLogDirectory();
         private static readonly string StartupLogFilePath = SetStartupLogFilePath();
 
-        /// <summary>
-        /// Gets a value indicating whether this OS is Windows.
-        /// Prevents the need for a direct System.Runtime reference.
-        /// </summary>
-        public static bool IsWindows
-        {
-            get
-            {
-                var p = (int)Environment.OSVersion.Platform;
-                return (p == 0) || (p == 1) || (p == 2) || (p == 3);
-            }
-        }
-
         public static void Log(string message, params object[] args)
         {
             try
@@ -74,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (logDirectory == null)
                 {
-                    if (IsWindows)
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
                         var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
                         logDirectory = CreateDirectoryIfMissing(windowsDefaultDirectory);
