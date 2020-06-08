@@ -131,7 +131,7 @@ namespace Datadog.Trace.Logging
                 }
                 else
                 {
-                    // either Linux or OS X
+                    // Linux
                     if (Directory.Exists(NixDefaultDirectory))
                     {
                         logDirectory = NixDefaultDirectory;

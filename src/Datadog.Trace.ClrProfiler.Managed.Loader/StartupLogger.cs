@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     }
                     else
                     {
-                        // either Linux or OS X
+                        // Linux
                         CreateDirectoryIfMissing(NixDefaultDirectory, out logDirectory);
                     }
                 }
