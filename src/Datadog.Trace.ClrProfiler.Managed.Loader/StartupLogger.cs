@@ -64,20 +64,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     {
                         var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
-                        logDirectory = CreateDirectoryIfMissing(windowsDefaultDirectory);
+                        logDirectory = windowsDefaultDirectory;
                     }
                     else
                     {
                         // Linux
-                        logDirectory = CreateDirectoryIfMissing(NixDefaultDirectory);
+                        logDirectory = NixDefaultDirectory;
                     }
                 }
 
-                if (logDirectory == null)
-                {
-                    // Last effort at writing logs
-                    logDirectory = Path.GetTempPath();
-                }
+                logDirectory = CreateDirectoryIfMissing(logDirectory) ?? Path.GetTempPath();
             }
             catch
             {
@@ -86,6 +82,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 //   - Directory.Exists
                 //   - Environment.GetFolderPath
                 //   - Path.GetTempPath
+
+                // Unsafe to log
+                logDirectory = null;
             }
 
             return logDirectory;
