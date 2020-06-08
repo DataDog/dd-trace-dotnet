@@ -77,12 +77,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     if (IsWindows)
                     {
                         var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
-                        CreateDirectoryIfMissing(windowsDefaultDirectory, out logDirectory);
+                        logDirectory = CreateDirectoryIfMissing(windowsDefaultDirectory);
                     }
                     else
                     {
                         // Linux
-                        CreateDirectoryIfMissing(NixDefaultDirectory, out logDirectory);
+                        logDirectory = CreateDirectoryIfMissing(NixDefaultDirectory);
                     }
                 }
 
@@ -104,26 +104,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return logDirectory;
         }
 
-        private static void CreateDirectoryIfMissing(string pathToCreate, out string logDirectory)
+        private static string CreateDirectoryIfMissing(string pathToCreate)
         {
-            if (Directory.Exists(pathToCreate))
+            try
             {
-                logDirectory = pathToCreate;
+                Directory.CreateDirectory(pathToCreate);
+                return pathToCreate;
             }
-            else
+            catch
             {
-                try
-                {
-                    Directory.CreateDirectory(pathToCreate);
-                    logDirectory = pathToCreate;
-                }
-                catch
-                {
-                    // Unable to create the directory meaning that the user
-                    // will have to create it on their own.
-                    // It is unsafe to log here, so clear the out param
-                    logDirectory = null;
-                }
+                // Unable to create the directory meaning that the user will have to create it on their own.
+                // It is unsafe to log here, so return null to defer deciding what the path is
+                return null;
             }
         }
 
