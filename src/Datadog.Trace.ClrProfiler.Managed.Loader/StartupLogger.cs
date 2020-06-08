@@ -10,6 +10,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static readonly string LogDirectory = GetLogDirectory();
         private static readonly string StartupLogFilePath = LogDirectory != null ? Path.Combine(LogDirectory, "dotnet-tracer-loader.log") : null;
 
+        public static bool IsWindows
+        {
+            get
+            {
+                var p = (int)Environment.OSVersion.Platform;
+                return (p == 0) || (p == 1) || (p == 2) || (p == 3);
+            }
+        }
+
         public static void Log(string message, params object[] args)
         {
             try
@@ -31,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     }
                 }
 
-                Console.WriteLine(message, args);
+                Console.Error.WriteLine(message, args);
             }
             catch
             {
@@ -60,31 +69,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (logDirectory == null)
                 {
-                    var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
-                    if (Directory.Exists(windowsDefaultDirectory))
+                    if (IsWindows)
                     {
-                        logDirectory = windowsDefaultDirectory;
+                        var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
+                        CreateDirectoryIfMissing(windowsDefaultDirectory, out logDirectory);
                     }
                     else
                     {
                         // either Linux or OS X
-                        if (Directory.Exists(NixDefaultDirectory))
-                        {
-                            logDirectory = NixDefaultDirectory;
-                        }
-                        else
-                        {
-                            try
-                            {
-                                Directory.CreateDirectory(NixDefaultDirectory);
-                                logDirectory = NixDefaultDirectory;
-                            }
-                            catch
-                            {
-                                // Unable to create the directory meaning that the user
-                                // will have to create it on their own.
-                            }
-                        }
+                        CreateDirectoryIfMissing(NixDefaultDirectory, out logDirectory);
                     }
                 }
 
@@ -104,6 +97,29 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             return logDirectory;
+        }
+
+        private static void CreateDirectoryIfMissing(string pathToCreate, out string logDirectory)
+        {
+            if (Directory.Exists(pathToCreate))
+            {
+                logDirectory = pathToCreate;
+            }
+            else
+            {
+                try
+                {
+                    Directory.CreateDirectory(pathToCreate);
+                    logDirectory = pathToCreate;
+                }
+                catch
+                {
+                    // Unable to create the directory meaning that the user
+                    // will have to create it on their own.
+                    // It is unsafe to log, so clear the out param
+                    logDirectory = null;
+                }
+            }
         }
     }
 }
