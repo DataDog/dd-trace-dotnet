@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     {
         private const string NixDefaultDirectory = "/var/log/datadog/dotnet";
 
-        private static readonly bool ShouldDebugLog = IsDebugEnabled();
+        private static readonly bool DebugEnabled = IsDebugEnabled();
         private static readonly string LogDirectory = GetLogDirectory();
         private static readonly string StartupLogFilePath = SetStartupLogFilePath();
 
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         public static void Debug(string message, params object[] args)
         {
-            if (ShouldDebugLog)
+            if (DebugEnabled)
             {
                 Log(message, args);
             }
@@ -149,14 +149,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 {
                     case "TRUE":
                     case "YES":
+                    case "Y":
                     case "T":
                     case "1":
                         return true;
-                    case "FALSE":
-                    case "NO":
-                    case "F":
-                    case "0":
-                        return false;
                     default:
                         return false;
                 }
