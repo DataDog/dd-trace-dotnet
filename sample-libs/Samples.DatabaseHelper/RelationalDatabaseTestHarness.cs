@@ -56,9 +56,9 @@ namespace Samples.DatabaseHelper
             _executeReaderWithBehaviorAsync = executeReaderWithBehaviorAsync;
         }
 
-        public async Task RunAsync()
+        public async Task RunAsync(string spanName = "run.all")
         {
-            using (var scopeAll = Tracer.Instance.StartActive("run.all"))
+            using (var scopeAll = Tracer.Instance.StartActive(spanName))
             {
                 scopeAll.Span.SetTag("command-type", typeof(TCommand).FullName);
 
