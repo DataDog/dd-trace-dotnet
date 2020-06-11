@@ -35,11 +35,13 @@ namespace Datadog.Trace.ExtensionMethods
                 case "TRUE":
                 case "YES":
                 case "T":
+                case "Y":
                 case "1":
                     return true;
                 case "FALSE":
                 case "NO":
                 case "F":
+                case "N":
                 case "0":
                     return false;
                 default:
