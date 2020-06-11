@@ -1,11 +1,7 @@
 #if NETCOREAPP
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
@@ -44,10 +40,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 && assemblyName.FullName.IndexOf("PublicKeyToken=def86d061d0d2eeb", StringComparison.OrdinalIgnoreCase) >= 0
                 && File.Exists(path))
             {
+                StartupLogger.Debug("Loading {0} with Assembly.LoadFrom", path);
                 return Assembly.LoadFrom(path); // Load the main profiler and tracer into the default Assembly Load Context
             }
             else if (File.Exists(path))
             {
+                StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
                 return DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
             }
 

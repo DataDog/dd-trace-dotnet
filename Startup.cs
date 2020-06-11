@@ -35,9 +35,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     method?.Invoke(obj: null, parameters: null);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore
+                StartupLogger.Log(ex, "Error when loading managed assemblies.");
             }
         }
     }

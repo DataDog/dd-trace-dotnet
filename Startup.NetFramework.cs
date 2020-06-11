@@ -44,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
             if (File.Exists(path))
             {
+                StartupLogger.Debug("Loading {0}", path);
                 return Assembly.LoadFrom(path);
             }
 
