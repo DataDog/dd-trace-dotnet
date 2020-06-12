@@ -15,7 +15,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public DomainNeutralReproductionTests(ITestOutputHelper output)
             : base("DomainNeutralAssemblies.FileLoadException", "reproductions", output)
         {
-            SetEnvironmentVariable("DD_TRACE_DOMAIN_NEUTRAL_INSTRUMENTATION", "true");
         }
 
         public static IEnumerable<object[]> TargetFrameworks =>
@@ -42,7 +41,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void WorksOutsideTheGAC(string targetFramework)
         {
             Assert.False(typeof(Instrumentation).Assembly.GlobalAssemblyCache, "Datadog.Trace.ClrProfiler.Managed was loaded from the GAC. Ensure that the assembly and its dependencies are not installed in the GAC when running this test.");
-            MainSubRoutine(targetFramework);
+
+            var expectedMap = new Dictionary<string, int>()
+            {
+                { "DomainNeutralAssemblies.App.NoBindingRedirects-http-client", 2 },
+                { "DomainNeutralAssemblies.App.HttpNoBindingRedirects-http-client", 2 },
+                { "DomainNeutralAssemblies.App.JsonNuGetRedirects-http-client", 2 },
+            };
+            if (!targetFramework.StartsWith("net45"))
+            {
+                expectedMap.Add("DomainNeutralAssemblies.App.HttpBindingRedirects-http-client", 2);
+            }
+
+            MainSubRoutine(targetFramework, expectedMap);
         }
 
         [Theory]
@@ -53,21 +64,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void WorksInsideTheGAC(string targetFramework)
         {
             Assert.True(typeof(Instrumentation).Assembly.GlobalAssemblyCache, "Datadog.Trace.ClrProfiler.Managed was not loaded from the GAC. Ensure that the assembly and its dependencies are installed in the GAC when running this test.");
-            MainSubRoutine(targetFramework);
-        }
-#endif
-
-        private void MainSubRoutine(string targetFramework)
-        {
-            const int expectedSpanCount = 1;
-            const string expectedOperationName = "http.request";
             var expectedMap = new Dictionary<string, int>()
             {
                 { "DomainNeutralAssemblies.App.NoBindingRedirects-http-client", 2 },
                 { "DomainNeutralAssemblies.App.HttpNoBindingRedirects-http-client", 2 },
-                { "DomainNeutralAssemblies.App.HttpBindingRedirects-http-client", 2 },
-                { "DomainNeutralAssemblies.App.JsonNuGetRedirects-http-client", 2 }
+                { "DomainNeutralAssemblies.App.JsonNuGetRedirects-http-client", 2 },
             };
+            if (!targetFramework.StartsWith("net45"))
+            {
+                expectedMap.Add("DomainNeutralAssemblies.App.HttpBindingRedirects-http-client", 2);
+            }
+
+            MainSubRoutine(targetFramework, expectedMap);
+        }
+#endif
+
+        private void MainSubRoutine(string targetFramework, Dictionary<string, int> expectedMap)
+        {
+            const int expectedSpanCount = 1;
+            const string expectedOperationName = "http.request";
+
             var actualMap = new Dictionary<string, int>();
 
             int agentPort = TcpPortProvider.GetOpenPort();

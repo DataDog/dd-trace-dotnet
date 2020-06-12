@@ -33,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             // .NET Core in the 2.0 servicing branch, so we should not see this
             // occur, but guard against it anyways. If we do see it, exit early
             // so we don't cause infinite recursion.
-            if (string.Equals(assemblyName.Name, "System.Private.CoreLib.resources", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(assemblyName.Name, "System.Private.CoreLib.resources", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(assemblyName.Name, "System.Net.Http", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }

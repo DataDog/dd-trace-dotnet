@@ -36,7 +36,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             // to enter the AssemblyResolve event when searching for resources
             // in its satellite assemblies. Exit early so we don't cause
             // infinite recursion.
-            if (string.Equals(assemblyName, "mscorlib.resources", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(assemblyName, "mscorlib.resources", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(assemblyName, "System.Net.Http", StringComparison.OrdinalIgnoreCase))
             {
                 return null;
             }

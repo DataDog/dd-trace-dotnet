@@ -1,7 +1,6 @@
 #if !NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -67,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
         /// <returns>A task with the result</returns>
-        private static async Task<HttpResponseMessage> ExecuteAsyncInternal(
+        private static async Task<object> ExecuteAsyncInternal(
             object apiController,
             object controllerContext,
             CancellationToken cancellationToken,
@@ -75,13 +74,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<object, object, CancellationToken, Task<HttpResponseMessage>> instrumentedMethod;
+            Func<object, object, CancellationToken, Task<object>> instrumentedMethod;
 
             try
             {
                 var httpControllerType = apiController.GetInstrumentedInterface(HttpControllerTypeName);
 
-                instrumentedMethod = MethodBuilder<Func<object, object, CancellationToken, Task<HttpResponseMessage>>>
+                instrumentedMethod = MethodBuilder<Func<object, object, CancellationToken, Task<object>>>
                                     .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteAsync))
                                     .WithConcreteType(httpControllerType)
                                     .WithParameters(controllerContext, cancellationToken)
@@ -146,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 var tracer = Tracer.Instance;
-                var request = controllerContext.GetProperty<HttpRequestMessage>("Request").GetValueOrDefault();
+                var request = controllerContext.GetProperty<object>("Request").GetValueOrDefault();
                 SpanContext propagatedContext = null;
 
                 if (request != null && tracer.ActiveScope == null)
@@ -182,7 +181,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         {
             try
             {
-                var req = controllerContext?.Request as HttpRequestMessage;
+                var req = controllerContext?.Request;
 
                 string host = req?.Headers?.Host ?? string.Empty;
                 string rawUrl = req?.RequestUri?.ToString().ToLowerInvariant() ?? string.Empty;
