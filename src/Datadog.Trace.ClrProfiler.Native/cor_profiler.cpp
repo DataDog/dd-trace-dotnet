@@ -161,6 +161,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
          "Please ensure that there is only one AppDomain or, if applications are being hosted in IIS, ",
          "ensure that all Application Pools have at most one application each. ",
          "Otherwise, a sharing violation (HRESULT 0x80131401) may occur.");
+    Info("Note: This flag is unnecessary when running against the .NET Framework 4.5.2 or higher.");
     instrument_domain_neutral_assemblies = true;
   }
 
@@ -674,6 +675,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
   Debug("GetAssemblyReferences extending assembly closure for ",
       assembly_name, " to include ", asmRefInfo.szName,
       ". Path=", wszAssemblyPath);
+  instrument_domain_neutral_assemblies = true;
 
   return S_OK;
 }
