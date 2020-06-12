@@ -611,11 +611,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
   // Get assembly name
   const WSTRING assembly_name = ToWSTRING(filename);
 
-  // We must never try to add assembly references to
-  // mscorlib or netstandard. Skip other known assemblies.
+  for (auto&& skip_assembly_pattern : skip_assembly_prefixes) {
+    if (assembly_name.rfind(skip_assembly_pattern, 0) == 0) {
+      Debug("GetAssemblyReferences skipping module by pattern: Name=",
+           assembly_name, " Path=", wszAssemblyPath);
+      return S_OK;
+    }
+  }
+
   for (auto&& skip_assembly : skip_assemblies) {
     if (assembly_name == skip_assembly) {
-      Debug("GetAssemblyReferences skipping known assembly: ", wszAssemblyPath);
+      Debug("GetAssemblyReferences skipping known assembly: Name=",
+          assembly_name, " Path=", wszAssemblyPath);
       return S_OK;
     }
   }
@@ -646,27 +653,27 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
   if (assemblyReference.public_key == trace::PublicKey()) {
     public_key_size = 0;
   }
-
-    COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
-    asmRefInfo.pbPublicKeyOrToken =
+  
+  COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
+  asmRefInfo.pbPublicKeyOrToken =
         (void*)&assemblyReference.public_key.data[0];
-    asmRefInfo.cbPublicKeyOrToken = public_key_size;
-    asmRefInfo.szName = assemblyReference.name.c_str();
-    asmRefInfo.pMetaData = &assembly_metadata;
-    asmRefInfo.pbHashValue = nullptr;
-    asmRefInfo.cbHashValue = 0;
-    asmRefInfo.dwAssemblyRefFlags = 0;
+  asmRefInfo.cbPublicKeyOrToken = public_key_size;
+  asmRefInfo.szName = assemblyReference.name.c_str();
+  asmRefInfo.pMetaData = &assembly_metadata;
+  asmRefInfo.pbHashValue = nullptr;
+  asmRefInfo.cbHashValue = 0;
+  asmRefInfo.dwAssemblyRefFlags = 0;
 
-    auto hr = pAsmRefProvider->AddAssemblyReference(&asmRefInfo);
+  auto hr = pAsmRefProvider->AddAssemblyReference(&asmRefInfo);
 
-    if (FAILED(hr)) {
+  if (FAILED(hr)) {
     Warn("GetAssemblyReferences failed for call from ", wszAssemblyPath);
     return S_OK;
-    }
+  }
 
-    Debug("GetAssemblyReferences extending assembly closure for ",
-          assembly_name, " to include ", asmRefInfo.szName,
-          ". Path=", wszAssemblyPath);
+  Debug("GetAssemblyReferences extending assembly closure for ",
+      assembly_name, " to include ", asmRefInfo.szName,
+      ". Path=", wszAssemblyPath);
 
   return S_OK;
 }
