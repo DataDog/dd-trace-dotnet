@@ -154,8 +154,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     try
                     {
                         // extract propagated http headers
-                        var headers = request.Headers.Wrap();
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                        // var headers = request.Headers.Wrap();
+                        // propagatedContext = SpanContextPropagator.Instance.Extract(headers);
                     }
                     catch (Exception ex)
                     {

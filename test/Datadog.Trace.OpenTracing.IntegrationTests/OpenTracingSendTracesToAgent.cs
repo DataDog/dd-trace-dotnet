@@ -20,7 +20,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
 
             var endpoint = new Uri("http://localhost:8126");
             _httpRecorder = new RecordHttpHandler();
-            var api = new Api(endpoint, _httpRecorder, statsd: null);
+            var api = new Api(endpoint, statsd: null);
             var agentWriter = new AgentWriter(api, statsd: null);
 
             var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
