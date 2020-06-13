@@ -60,7 +60,7 @@ namespace PrepareRelease
                 FullAssemblyNameReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp",
+                "src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
                 FullAssemblyNameReplace);
 
             // Locked AssemblyVersion #.0.0.0 updates

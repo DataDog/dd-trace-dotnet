@@ -632,8 +632,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
       FlattenIntegrations(integrations_);
 
   // TODO: Make this assembly reference dynamic vs hard-coded
-  const AssemblyReference assemblyReference = trace::AssemblyReference(
-      "Datadog.Trace.ClrProfiler.Managed, Version=1.17.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb"_W);
+  const AssemblyReference assemblyReference = trace::AssemblyReference(managed_profiler_full_assembly_version);
 
   ASSEMBLYMETADATA assembly_metadata{};
 
