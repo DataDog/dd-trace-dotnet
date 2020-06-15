@@ -321,7 +321,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetHttpWithRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\Samples.MultiDomainHost.App.NuGetHttpWithRedirects.csproj", "{5717623C-56D3-4B15-BF59-1594A44C4BE6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.Runner", "reproductions\DomainNeutralAssemblies.FileLoadException\Samples.MultiDomainHost.Runner.csproj", "{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.Runner", "samples\Samples.MultiDomainHost.Runner\Samples.MultiDomainHost.Runner.csproj", "{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.NetFramework.DomainNeutralInstrumentationWithoutGac", "samples\Samples.NetFramework.DomainNeutralInstrumentationWithoutGac\Samples.NetFramework.DomainNeutralInstrumentationWithoutGac.csproj", "{CB9789C7-9FC4-41AE-9943-D647954CA326}"
 EndProject
