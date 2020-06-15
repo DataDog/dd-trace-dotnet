@@ -312,6 +312,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StackExchange.Redis.AssemblyConflict.SdkProject", "reproductions\StackExchange.Redis.AssemblyConflict.SdkProject\StackExchange.Redis.AssemblyConflict.SdkProject.csproj", "{C41023C9-65C3-4FB3-9053-4DE963A81500}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Dapper", "samples\Samples.Dapper\Samples.Dapper.csproj", "{7E563BF6-47F2-4531-A1CE-FB9445DF3253}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "linux", "linux", "{7DB68365-AA9E-4C3E-A553-31BFB5704B01}"
 	ProjectSection(SolutionItems) = preProject
