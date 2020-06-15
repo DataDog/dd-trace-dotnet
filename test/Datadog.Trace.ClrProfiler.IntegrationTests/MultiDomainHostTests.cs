@@ -1,6 +1,9 @@
+#if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
@@ -10,11 +13,12 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class DomainNeutralReproductionTests : TestHelper
+    public class MultiDomainHostTests : TestHelper
     {
-        public DomainNeutralReproductionTests(ITestOutputHelper output)
-            : base("DomainNeutralAssemblies.FileLoadException", "reproductions", output)
+        public MultiDomainHostTests(ITestOutputHelper output)
+            : base("Samples.MultiDomainHost.Runner", output)
         {
+            SetServiceVersion("1.0.0");
         }
 
         public static IEnumerable<object[]> TargetFrameworks =>
@@ -31,7 +35,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "net472" },
                 new object[] { "net48" },
             };
-#if NETFRAMEWORK
 
         [Theory]
         [MemberData(nameof(TargetFrameworks))]
@@ -53,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 expectedMap.Add("DomainNeutralAssemblies.App.HttpBindingRedirects-http-client", 2);
             }
 
-            MainSubRoutine(targetFramework, expectedMap);
+            RunSampleAndAssertAgainstExpectations(targetFramework, expectedMap);
         }
 
         [Theory]
@@ -75,13 +78,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 expectedMap.Add("DomainNeutralAssemblies.App.HttpBindingRedirects-http-client", 2);
             }
 
-            MainSubRoutine(targetFramework, expectedMap);
+            RunSampleAndAssertAgainstExpectations(targetFramework, expectedMap);
         }
-#endif
 
-        private void MainSubRoutine(string targetFramework, Dictionary<string, int> expectedMap)
+        [Theory]
+        [MemberData(nameof(TargetFrameworks))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void DoesNotCrashInBadConfiguration(string targetFramework)
         {
-            const int expectedSpanCount = 1;
+            // Set bad configuration
+            SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+
+            int agentPort = TcpPortProvider.GetOpenPort();
+            int httpPort = TcpPortProvider.GetOpenPort();
+
+            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+
+            using (var agent = new MockTracerAgent(agentPort))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, framework: targetFramework))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
+            }
+        }
+
+        private void RunSampleAndAssertAgainstExpectations(string targetFramework, Dictionary<string, int> expectedMap)
+        {
+            int expectedSpanCount = expectedMap.Values.Sum();
             const string expectedOperationName = "http.request";
 
             var actualMap = new Dictionary<string, int>();
@@ -95,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(expectedSpanCount);
-                // Assert.True(spans.Count >= expectedSpanCount, $"Expected at least {expectedSpanCount} span, only received {spans.Count}");
+                Assert.True(spans.Count >= expectedSpanCount, $"Expected at least {expectedSpanCount} span, only received {spans.Count}");
 
                 foreach (var span in spans)
                 {
@@ -118,3 +142,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
+#endif
