@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(SpanTypes.Http, span.Type);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
 
-                    // Regiser the service to our service<->span map
+                    // Register the service to our service<->span map
                     if (!actualMap.TryGetValue(span.Service, out int newCount))
                     {
                         newCount = 0;
