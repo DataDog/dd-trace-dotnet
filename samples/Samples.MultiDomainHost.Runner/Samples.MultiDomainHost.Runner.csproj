@@ -7,16 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\Samples.MultiDomainHost.App.FrameworkHttpNoRedirects.csproj">
+    <SubApplications Include="..\..\sample-libs\Samples.MultiDomainHost.App.FrameworkHttpNoRedirects\Samples.MultiDomainHost.App.FrameworkHttpNoRedirects.csproj">
       <Name>Samples.MultiDomainHost.App.FrameworkHttpNoRedirects</Name>
     </SubApplications>
-    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpNoBindingRedirects\Samples.MultiDomainHost.App.NuGetHttpNoRedirects.csproj">
+    <SubApplications Include="..\..\sample-libs\Samples.MultiDomainHost.App.NuGetHttpNoRedirects\Samples.MultiDomainHost.App.NuGetHttpNoRedirects.csproj">
       <Name>Samples.MultiDomainHost.App.NuGetHttpNoRedirects</Name>
     </SubApplications>
-    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\Samples.MultiDomainHost.App.NuGetHttpWithRedirects.csproj">
+    <SubApplications Include="..\..\sample-libs\Samples.MultiDomainHost.App.NuGetHttpWithRedirects\Samples.MultiDomainHost.App.NuGetHttpWithRedirects.csproj">
       <Name>Samples.MultiDomainHost.App.NuGetHttpWithRedirects</Name>
     </SubApplications>
-    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.JsonNuGetRedirects\Samples.MultiDomainHost.App.NuGetJsonWithRedirects.csproj">
+    <SubApplications Include="..\..\sample-libs\Samples.MultiDomainHost.App.NuGetJsonWithRedirects\Samples.MultiDomainHost.App.NuGetJsonWithRedirects.csproj">
       <Name>Samples.MultiDomainHost.App.NuGetJsonWithRedirects</Name>
     </SubApplications>
   </ItemGroup>
