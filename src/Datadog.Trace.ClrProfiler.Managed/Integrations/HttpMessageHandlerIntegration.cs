@@ -208,16 +208,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object request,
             CancellationToken cancellationToken)
         {
+            var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
             if (!(reportedType.FullName.Equals(HttpClientHandler, StringComparison.OrdinalIgnoreCase) || IsSocketsHttpHandlerEnabled(reportedType)) ||
-                !IsTracingEnabled(request))
+                !IsTracingEnabled(headers))
             {
                 // skip instrumentation
                 var task = (Task<T>)sendAsync(handler, request, cancellationToken);
                 return await task.ConfigureAwait(false);
             }
 
-            string httpMethod = request.GetProperty("Method").GetProperty<string>("Method").GetValueOrDefault();
-            Uri requestUri = request.GetProperty<Uri>("RequestUri").GetValueOrDefault();
+            var httpMethod = request.GetProperty("Method").GetProperty<string>("Method").GetValueOrDefault();
+            var requestUri = request.GetProperty<Uri>("RequestUri").GetValueOrDefault();
 
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, httpMethod, requestUri, IntegrationName))
             {
@@ -228,7 +229,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
 
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.InjectWithReflection(scope.Span.Context, request.GetProperty<object>("Headers").GetValueOrDefault());
+                        SpanContextPropagator.Instance.InjectWithReflection(scope.Span.Context, headers);
                     }
 
                     var task = (Task<T>)sendAsync(handler, request, cancellationToken);
@@ -253,12 +254,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return Tracer.Instance.Settings.IsOptInIntegrationEnabled("HttpSocketsHandler") && reportedType.FullName.Equals("System.Net.Http.SocketsHttpHandler", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static bool IsTracingEnabled(dynamic request)
+        private static bool IsTracingEnabled(object headers)
         {
-            if (request.Headers.Contains(HttpHeaderNames.TracingEnabled))
+            if (headers.CallMethod<string, bool>("Contains", HttpHeaderNames.TracingEnabled).Value)
             {
-                var headerValues = (IEnumerable<string>)request.Headers.GetValues(HttpHeaderNames.TracingEnabled);
-                if (headerValues.Any(s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
+                var headerValues = headers.CallMethod<string, IEnumerable<string>>("GetValues", HttpHeaderNames.TracingEnabled).Value;
+                if (headerValues != null && headerValues.Any(s => string.Equals(s, "false", StringComparison.OrdinalIgnoreCase)))
                 {
                     // tracing is disabled for this request via http header
                     return false;
