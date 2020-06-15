@@ -598,6 +598,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
     const WCHAR* wszAssemblyPath,
     ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) {
+  // Convert the assembly path to the assembly name, assuming the assembly name
+  // is either <assembly_name.ni.dll> or <assembly_name>.dll
   auto assemblyPathString = ToString(wszAssemblyPath);
   auto filename =
       assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
@@ -609,9 +611,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
     filename.erase(lastDllPeriodIndex, 4);
   }
 
-  // Get assembly name
   const WSTRING assembly_name = ToWSTRING(filename);
 
+  // Skip known framework assemblies that we will not instrument and,
+  // as a result, will not need an assembly reference to the
+  // managed profiler
   for (auto&& skip_assembly_pattern : skip_assembly_prefixes) {
     if (assembly_name.rfind(skip_assembly_pattern, 0) == 0) {
       Debug("GetAssemblyReferences skipping module by pattern: Name=",
@@ -628,12 +632,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
     }
   }
 
-  std::vector<IntegrationMethod> filtered_integrations =
-      FlattenIntegrations(integrations_);
-
-  // TODO: Make this assembly reference dynamic vs hard-coded
+  // Construct an ASSEMBLYMETADATA structure for the managed profiler that can
+  // be consumed by the runtime
   const AssemblyReference assemblyReference = trace::AssemblyReference(managed_profiler_full_assembly_version);
-
   ASSEMBLYMETADATA assembly_metadata{};
 
   assembly_metadata.usMajorVersion = assemblyReference.version.major;
@@ -664,8 +665,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
   asmRefInfo.cbHashValue = 0;
   asmRefInfo.dwAssemblyRefFlags = 0;
 
+  // Attempt to extend the assembly closure of the provided assembly to include
+  // the managed profiler
   auto hr = pAsmRefProvider->AddAssemblyReference(&asmRefInfo);
-
   if (FAILED(hr)) {
     Warn("GetAssemblyReferences failed for call from ", wszAssemblyPath);
     return S_OK;
