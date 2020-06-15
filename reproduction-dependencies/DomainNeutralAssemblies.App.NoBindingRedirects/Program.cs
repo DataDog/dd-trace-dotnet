@@ -3,14 +3,14 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 
-namespace DomainNeutralAssemblies.App.NoBindingRedirects
+namespace Samples.MultiDomainHost.App.FrameworkHttpNoRedirects
 {
     public class Program
     {
         [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
         static void Main(string[] args)
         {
-            Console.WriteLine($"Executing {typeof(DomainNeutralAssemblies.App.NoBindingRedirects.Program).FullName}.Main");
+            Console.WriteLine($"Executing {typeof(Program).FullName}.Main");
             InnerMethodToAllowProfilerInjection();
         }
 

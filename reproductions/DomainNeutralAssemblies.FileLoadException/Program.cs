@@ -4,7 +4,7 @@ using System.Security;
 using System.Security.Permissions;
 using System.Threading;
 
-namespace DomainNeutralAssemblies.FileLoadException
+namespace Samples.MultiDomainHost.Runner
 {
     public class Program
     {
@@ -16,13 +16,13 @@ namespace DomainNeutralAssemblies.FileLoadException
                 // First load the application that does not have bindingRedirect policies
                 // This will instrument at least one domain-neutral assembly with a
                 // domain-neutral version of Datadog.Trace.ClrProfiler.Managed.dll
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.NoBindingRedirects");
+                CreateAndRunAppDomain("Samples.MultiDomainHost.App.FrameworkHttpNoRedirects");
 
                 // Next load an application that does the same thing, still does not have
                 // bindingRedirect policies, but it uses the System.Net.Http NuGet package
                 // instead of the built-in version.
                 // TBD if this breaks in the non-GAC scenario
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.HttpNoBindingRedirects");
+                CreateAndRunAppDomain("Samples.MultiDomainHost.App.NuGetHttpNoRedirects");
 
                 // Next load the application that has a bindingRedirect policy on Newtonsoft.Json.
                 // This will cause a sharing violation when the domain-neutral assembly attempts
@@ -30,7 +30,7 @@ namespace DomainNeutralAssemblies.FileLoadException
                 // can no longer be loaded shared with the bindingRedirect policy in place. This breaks
                 // the consistency check of all domain-neutral assemblies only depending on other
                 // domain-neutral assemblies
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.JsonNuGetRedirects");
+                CreateAndRunAppDomain("Samples.MultiDomainHost.App.NuGetJsonWithRedirects");
 
                 // Next load the application that has a bindingRedirect policy on System.Net.Http.
                 // This will cause a sharing violation when the domain-neutral assembly attempts
@@ -38,7 +38,7 @@ namespace DomainNeutralAssemblies.FileLoadException
                 // can no longer be loaded shared with the bindingRedirect policy in place. This breaks
                 // the consistency check of all domain-neutral assemblies only depending on other
                 // domain-neutral assemblies
-                CreateAndRunAppDomain("DomainNeutralAssemblies.App.HttpBindingRedirects");
+                CreateAndRunAppDomain("Samples.MultiDomainHost.App.NuGetHttpWithRedirects");
             }
             catch (Exception ex)
             {

@@ -317,17 +317,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DogStatsD.RaceCondition", "reproductions\DogStatsD.RaceCondition\DogStatsD.RaceCondition.csproj", "{AAD9038B-8F16-4E09-93AF-B13E9F7ACD66}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.App.NoBindingRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\DomainNeutralAssemblies.App.NoBindingRedirects.csproj", "{4BB17962-8146-462F-8657-0DD4C2FFFFB7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.FrameworkHttpNoRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\Samples.MultiDomainHost.App.FrameworkHttpNoRedirects.csproj", "{4BB17962-8146-462F-8657-0DD4C2FFFFB7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.App.HttpBindingRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\DomainNeutralAssemblies.App.HttpBindingRedirects.csproj", "{5717623C-56D3-4B15-BF59-1594A44C4BE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetHttpWithRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\Samples.MultiDomainHost.App.NuGetHttpWithRedirects.csproj", "{5717623C-56D3-4B15-BF59-1594A44C4BE6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.FileLoadException", "reproductions\DomainNeutralAssemblies.FileLoadException\DomainNeutralAssemblies.FileLoadException.csproj", "{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.Runner", "reproductions\DomainNeutralAssemblies.FileLoadException\Samples.MultiDomainHost.Runner.csproj", "{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.NetFramework.DomainNeutralInstrumentationWithoutGac", "samples\Samples.NetFramework.DomainNeutralInstrumentationWithoutGac\Samples.NetFramework.DomainNeutralInstrumentationWithoutGac.csproj", "{CB9789C7-9FC4-41AE-9943-D647954CA326}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.App.JsonNuGetRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.JsonNuGetRedirects\DomainNeutralAssemblies.App.JsonNuGetRedirects.csproj", "{9C1D778D-44A7-43AB-8342-1DC3DA046ACD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetJsonWithRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.JsonNuGetRedirects\Samples.MultiDomainHost.App.NuGetJsonWithRedirects.csproj", "{9C1D778D-44A7-43AB-8342-1DC3DA046ACD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DomainNeutralAssemblies.App.HttpNoBindingRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.HttpNoBindingRedirects\DomainNeutralAssemblies.App.HttpNoBindingRedirects.csproj", "{3B8A0B2B-23EF-402F-8EDE-8028B5DC7CE6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetHttpNoRedirects", "reproduction-dependencies\DomainNeutralAssemblies.App.HttpNoBindingRedirects\Samples.MultiDomainHost.App.NuGetHttpNoRedirects.csproj", "{3B8A0B2B-23EF-402F-8EDE-8028B5DC7CE6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Http", "src\Datadog.Trace.Http\Datadog.Trace.Http.csproj", "{BF76AD56-44E6-4D1E-AB05-A8420015DA07}"
 EndProject
@@ -1305,12 +1305,12 @@ Global
 		{7E563BF6-47F2-4531-A1CE-FB9445DF3253} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{D95D5E26-F32A-481D-A15A-EF7B3B56D2E0} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{AAD9038B-8F16-4E09-93AF-B13E9F7ACD66} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
-		{4BB17962-8146-462F-8657-0DD4C2FFFFB7} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
-		{5717623C-56D3-4B15-BF59-1594A44C4BE6} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
-		{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68} = {550AE553-2BBB-4021-B55A-137EF31A6B1F}
+		{4BB17962-8146-462F-8657-0DD4C2FFFFB7} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
+		{5717623C-56D3-4B15-BF59-1594A44C4BE6} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
+		{38EF60FF-9127-4C6B-93F7-8E62C3DF5C68} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
 		{CB9789C7-9FC4-41AE-9943-D647954CA326} = {AA6F5582-3B71-49AC-AA39-8F7815AC46BE}
-		{9C1D778D-44A7-43AB-8342-1DC3DA046ACD} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
-		{3B8A0B2B-23EF-402F-8EDE-8028B5DC7CE6} = {641C9C61-53FD-4504-B8D9-84008BDB89D1}
+		{9C1D778D-44A7-43AB-8342-1DC3DA046ACD} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
+		{3B8A0B2B-23EF-402F-8EDE-8028B5DC7CE6} = {FA03944C-2391-4C25-8979-2E078A8CE0DD}
 		{BF76AD56-44E6-4D1E-AB05-A8420015DA07} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

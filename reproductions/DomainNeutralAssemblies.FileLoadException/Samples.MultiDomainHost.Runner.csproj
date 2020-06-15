@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net451;net452;net46;net461;net462;net47;net471;net472;net48</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.NoBindingRedirects\Samples.MultiDomainHost.App.FrameworkHttpNoRedirects.csproj">
+      <Name>Samples.MultiDomainHost.App.FrameworkHttpNoRedirects</Name>
+    </SubApplications>
+    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpNoBindingRedirects\Samples.MultiDomainHost.App.NuGetHttpNoRedirects.csproj">
+      <Name>Samples.MultiDomainHost.App.NuGetHttpNoRedirects</Name>
+    </SubApplications>
+    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.HttpBindingRedirects\Samples.MultiDomainHost.App.NuGetHttpWithRedirects.csproj">
+      <Name>Samples.MultiDomainHost.App.NuGetHttpWithRedirects</Name>
+    </SubApplications>
+    <SubApplications Include="..\..\reproduction-dependencies\DomainNeutralAssemblies.App.JsonNuGetRedirects\Samples.MultiDomainHost.App.NuGetJsonWithRedirects.csproj">
+      <Name>Samples.MultiDomainHost.App.NuGetJsonWithRedirects</Name>
+    </SubApplications>
+  </ItemGroup>
+
+  <Target Name="ProduceSubApplications" AfterTargets="AfterBuild">
+    <ConvertToAbsolutePath Paths="$(OutputPath)">
+      <Output TaskParameter="AbsolutePaths" PropertyName="AbsoluteOutputPath" />
+    </ConvertToAbsolutePath>
+    <MSBuild Projects="@(SubApplications)" Targets="Restore;Build" Properties="OutputPath=$(AbsoluteOutputPath)\%(Name)\;TargetFramework=$(TargetFramework);ExcludeNativeProfiler=true;ExcludeManagedProfiler=true;LoadManagedProfilerFromProfilerDirectory=false" />
+  </Target>
+
+</Project>
