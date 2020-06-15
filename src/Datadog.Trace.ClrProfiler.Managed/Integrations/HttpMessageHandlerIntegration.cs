@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ClrProfiler.Extensions;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -75,12 +76,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            Func<object, object, CancellationToken, Task<object>> instrumentedMethod = null;
+            Func<object, object, CancellationToken, object> instrumentedMethod = null;
 
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Func<object, object, CancellationToken, Task<object>>>
+                    MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpMessageHandler)
                        .WithParameters(request, cancellationToken)
@@ -163,12 +164,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 throw;
             }
 
-            Func<object, object, CancellationToken, Task<object>> instrumentedMethod = null;
+            Func<object, object, CancellationToken, object> instrumentedMethod = null;
 
             try
             {
                 instrumentedMethod =
-                    MethodBuilder<Func<object, object, CancellationToken, Task<object>>>
+                    MethodBuilder<Func<object, object, CancellationToken, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpClientHandler)
                        .WithParameters(request, cancellationToken)
@@ -227,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
 
                         // add distributed tracing headers to the HTTP request
-                        // SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
+                        SpanContextPropagator.Instance.InjectWithReflection(scope.Span.Context, request.GetProperty<object>("Headers").GetValueOrDefault());
                     }
 
                     var task = (Task<T>)sendAsync(handler, request, cancellationToken);
