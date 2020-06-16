@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                var currentHttpAssembly = handler.GetType().Assembly;
+                var currentHttpAssembly = httpMessageHandler.Assembly;
                 taskResultType = currentHttpAssembly.GetType("System.Net.Http.HttpResponseMessage", true);
             }
             catch (Exception ex)
@@ -153,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                var currentHttpAssembly = handler.GetType().Assembly;
+                var currentHttpAssembly = httpClientHandler.Assembly;
                 taskResultType = currentHttpAssembly.GetType("System.Net.Http.HttpResponseMessage", true);
             }
             catch (Exception ex)
@@ -229,7 +229,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
 
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.InjectWithReflection(scope.Span.Context, headers);
+                        SpanContextPropagator.Instance.InjectHttpHeadersWithReflection(scope.Span.Context, headers);
                     }
 
                     var task = (Task<T>)sendAsync(handler, request, cancellationToken);
