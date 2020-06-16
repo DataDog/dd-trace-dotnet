@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.HttpMessageHandlers;
@@ -26,32 +27,40 @@ namespace Datadog.Trace.Tests
             _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
-        [Fact(Skip = "Skip for now while I figure out to more easily mock this")]
+        [Fact]
         public async Task SendTraceAsync_200OK_AllGood()
         {
-            var response = new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK
-            };
-            var handler = new SetResponseHandler(response);
-            var api = new Api(new Uri("http://localhost:1234"), statsd: null);
+            var responseMock = new Mock<IApiResponse>();
+            responseMock.Setup(x => x.StatusCode).Returns(200);
+
+            var requestMock = new Mock<IApiRequest>();
+            requestMock.Setup(x => x.PostAsync(It.IsAny<Span[][]>(), It.IsAny<FormatterResolverWrapper>())).ReturnsAsync(responseMock.Object);
+
+            var factoryMock = new Mock<IApiRequestFactory>();
+            factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
+
+            var api = new Api(new Uri("http://localhost:1234"), apiRequestFactory: factoryMock.Object, statsd: null);
 
             var span = _tracer.StartSpan("Operation");
             var traces = new[] { new[] { span } };
             await api.SendTracesAsync(traces);
 
-            Assert.Equal(1, handler.RequestsCount);
+            requestMock.Verify(x => x.PostAsync(It.IsAny<Span[][]>(), It.IsAny<FormatterResolverWrapper>()), Times.Once());
         }
 
-        [Fact(Skip = "Skip for now while I figure out to more easily mock this")]
+        [Fact]
         public async Task SendTracesAsync_500_ErrorIsCaught()
         {
-            var response = new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.InternalServerError
-            };
-            var handler = new SetResponseHandler(response);
-            var api = new Api(new Uri("http://localhost:1234"), statsd: null);
+            var responseMock = new Mock<IApiResponse>();
+            responseMock.Setup(x => x.StatusCode).Returns(500);
+
+            var requestMock = new Mock<IApiRequest>();
+            requestMock.Setup(x => x.PostAsync(It.IsAny<Span[][]>(), It.IsAny<FormatterResolverWrapper>())).ReturnsAsync(responseMock.Object);
+
+            var factoryMock = new Mock<IApiRequestFactory>();
+            factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
+
+            var api = new Api(new Uri("http://localhost:1234"), apiRequestFactory: factoryMock.Object, statsd: null);
 
             var sw = new Stopwatch();
             sw.Start();
@@ -60,7 +69,7 @@ namespace Datadog.Trace.Tests
             await api.SendTracesAsync(traces);
             sw.Stop();
 
-            Assert.Equal(5, handler.RequestsCount);
+            requestMock.Verify(x => x.PostAsync(It.IsAny<Span[][]>(), It.IsAny<FormatterResolverWrapper>()), Times.Exactly(5));
             Assert.InRange(sw.ElapsedMilliseconds, 1000, 16000); // should be ~ 3200ms
 
             // TODO:bertrand check that it's properly logged

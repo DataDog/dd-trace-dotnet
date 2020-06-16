@@ -95,7 +95,7 @@ namespace Datadog.Trace
                     Log.Debug("Attempting to override trace agent port with {0}", port);
                     var builder = new UriBuilder(Settings.AgentUri) { Port = port };
                     var baseEndpoint = builder.Uri;
-                    IApi overridingApiClient = new Api(baseEndpoint, Statsd);
+                    IApi overridingApiClient = new Api(baseEndpoint, apiRequestFactory: null, Statsd);
                     if (_agentWriter == null)
                     {
                         _agentWriter = _agentWriter ?? new AgentWriter(overridingApiClient, Statsd);
@@ -107,7 +107,7 @@ namespace Datadog.Trace
                 });
 
             // fall back to default implementations of each dependency if not provided
-            _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri, Statsd), Statsd);
+            _agentWriter = agentWriter ?? new AgentWriter(new Api(Settings.AgentUri, apiRequestFactory: null, Statsd), Statsd);
 
             _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
             Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
