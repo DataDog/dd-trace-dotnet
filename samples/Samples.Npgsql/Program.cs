@@ -26,7 +26,7 @@ namespace Samples.Npgsql
                     (command, behavior) => command.ExecuteReaderAsync(behavior)
                 );
 
-                await testQueries.RunAsync();
+                await testQueries.RunAsync("NpgsqlCommand");
             }
 
 #if NETCOREAPP
@@ -63,7 +63,7 @@ namespace Samples.Npgsql
                     (command, behavior) => command.ExecuteReaderAsync(behavior)
                 );
 
-                await testQueries.RunAsync();
+                await testQueries.RunAsync("DbCommand");
             }
 
             using (var connection = CreateConnection())
@@ -80,7 +80,7 @@ namespace Samples.Npgsql
                     executeReaderWithBehaviorAsync: null
                 );
 
-                await testQueries.RunAsync();
+                await testQueries.RunAsync("IDbCommand");
             }
         }
 
