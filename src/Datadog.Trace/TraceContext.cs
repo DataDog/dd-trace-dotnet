@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace
 {
@@ -11,7 +12,7 @@ namespace Datadog.Trace
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<TraceContext>();
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
-        private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+        private readonly long _timestamp = Stopwatch.GetTimestamp();
         private readonly List<Span> _spans = new List<Span>();
 
         private int _openSpans;
@@ -25,7 +26,7 @@ namespace Datadog.Trace
 
         public Span RootSpan { get; private set; }
 
-        public DateTimeOffset UtcNow => _utcStart.Add(_stopwatch.Elapsed);
+        public DateTimeOffset UtcNow => _utcStart.Add(StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp));
 
         public IDatadogTracer Tracer { get; }
 
