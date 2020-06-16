@@ -46,6 +46,6 @@ namespace GeneratePackageVersions
             Finished = true;
         }
 
-        public abstract void Write(PackageVersionEntry packageVersionEntry, IEnumerable<string> packageVersions);
+        public abstract void Write(PackageVersionEntry packageVersionEntry, IEnumerable<string> netFrameworkPackageVersions, IEnumerable<string> netCorePackageVersions);
     }
 }

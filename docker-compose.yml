@@ -220,6 +220,8 @@ services:
     command: bash -c "/project/docker/with-profiler-logs.bash wait-for-it mongo:27017 -- /project/docker/with-profiler.bash dotnet /project/samples/Samples.MongoDB/bin/${buildConfiguration}/${publishTargetFramework}/publish/Samples.MongoDB.dll"
     volumes:
     - ./:/project
+    environment:
+    - MONGO_HOST=mongo
     depends_on:
     - mongo
 
