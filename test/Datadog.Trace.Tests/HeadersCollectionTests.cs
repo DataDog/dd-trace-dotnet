@@ -16,25 +16,6 @@ namespace Datadog.Trace.Tests
     public class HeadersCollectionTests
     {
         [Fact]
-        public void HttpRequestMessage_InjectExtract_Identity()
-        {
-            const int traceId = 9;
-            const int spanId = 7;
-            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
-
-            IHeadersCollection headers = new HttpRequestMessage().Headers.Wrap();
-            var context = new SpanContext(traceId, spanId, samplingPriority);
-
-            SpanContextPropagator.Instance.Inject(context, headers);
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
-
-            Assert.NotNull(resultContext);
-            Assert.Equal(context.SpanId, resultContext.SpanId);
-            Assert.Equal(context.TraceId, resultContext.TraceId);
-            Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
-        }
-
-        [Fact]
         public void WebRequest_InjectExtract_Identity()
         {
             const int traceId = 9;
@@ -115,7 +96,7 @@ namespace Datadog.Trace.Tests
 
         private static IHeadersCollection InjectContext(string traceId, string spanId, string samplingPriority)
         {
-            IHeadersCollection headers = new HttpRequestMessage().Headers.Wrap();
+            IHeadersCollection headers = new DictionaryHeadersCollection();
             headers.Add(HttpHeaderNames.TraceId, traceId);
             headers.Add(HttpHeaderNames.ParentId, spanId);
             headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority);
