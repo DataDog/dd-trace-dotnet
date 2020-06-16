@@ -4,7 +4,7 @@ using System.Threading;
 using Datadog.Trace.Util;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.Tests.Util
 {
     public class StopwatchTests
     {
