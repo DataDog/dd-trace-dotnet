@@ -47,9 +47,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             {
                 return Environment.GetEnvironmentVariable(key);
             }
-            catch
+            catch (Exception ex)
             {
-                // Unfortunately we don't have a way to log those yet
+                StartupLogger.Log(ex, "Error while loading environment variable " + key);
             }
 
             return null;
