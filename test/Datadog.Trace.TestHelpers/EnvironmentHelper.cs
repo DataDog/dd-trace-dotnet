@@ -44,7 +44,6 @@ namespace Datadog.Trace.TestHelpers
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? "samples";
             _anchorType = anchorType;
-            _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
