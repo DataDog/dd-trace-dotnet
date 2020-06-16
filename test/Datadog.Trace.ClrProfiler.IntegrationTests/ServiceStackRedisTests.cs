@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class ServiceStackRedisTests : TestHelper
     {
         public ServiceStackRedisTests(ITestOutputHelper output)
-            : base("Samples.ServiceStack.Redis", output)
+            : base("ServiceStack.Redis", output)
         {
             SetServiceVersion("1.0.0");
         }

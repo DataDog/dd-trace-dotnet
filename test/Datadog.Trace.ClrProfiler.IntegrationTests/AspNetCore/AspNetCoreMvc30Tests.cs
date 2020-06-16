@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc30Tests : AspNetCoreMvcTestBase
     {
         public AspNetCoreMvc30Tests(ITestOutputHelper output)
-            : base("Samples.AspNetCoreMvc30", output, serviceVersion: "1.0.0")
+            : base("AspNetCoreMvc30", output, serviceVersion: "1.0.0")
         {
             // EnableDebugMode();
         }

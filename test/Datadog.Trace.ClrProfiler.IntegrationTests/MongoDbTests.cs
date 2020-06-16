@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class MongoDbTests : TestHelper
     {
         public MongoDbTests(ITestOutputHelper output)
-            : base("Samples.MongoDB", output)
+            : base("MongoDB", output)
         {
             SetServiceVersion("1.0.0");
         }

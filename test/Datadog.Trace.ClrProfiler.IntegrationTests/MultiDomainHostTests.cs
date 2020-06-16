@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class MultiDomainHostTests : TestHelper
     {
         public MultiDomainHostTests(ITestOutputHelper output)
-            : base("Samples.MultiDomainHost.Runner", output)
+            : base("MultiDomainHost.Runner", output)
         {
             SetServiceVersion("1.0.0");
         }

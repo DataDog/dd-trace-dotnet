@@ -165,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var resourceName = $"{httpMethod.ToUpper()} {resourceUrl}";
 
             var expectation = new AspNetCoreMvcSpanExpectation(
-                                  EnvironmentHelper.SampleName,
+                                  EnvironmentHelper.FullSampleName,
                                   serviceVersion,
                                   TopLevelOperationName,
                                   resourceName,

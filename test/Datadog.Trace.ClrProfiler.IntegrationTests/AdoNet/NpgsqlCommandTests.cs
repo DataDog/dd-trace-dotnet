@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     public class NpgsqlCommandTests : TestHelper
     {
         public NpgsqlCommandTests(ITestOutputHelper output)
-            : base("Samples.Npgsql", output)
+            : base("Npgsql", output)
         {
             SetServiceVersion("1.0.0");
         }

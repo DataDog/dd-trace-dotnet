@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class HttpClientTests : TestHelper
     {
         public HttpClientTests(ITestOutputHelper output)
-            : base("Samples.HttpMessageHandler", output)
+            : base("HttpMessageHandler", output)
         {
             SetEnvironmentVariable("DD_HttpSocketsHandler_ENABLED", "true");
             SetServiceVersion("1.0.0");

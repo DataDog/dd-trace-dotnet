@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AzureAppServices
     public class FakeKuduTests : TestHelper
     {
         public FakeKuduTests(ITestOutputHelper output)
-            : base("Samples.FakeKudu", output)
+            : base("FakeKudu", output)
         {
             SetEnvironmentVariable(PlatformHelpers.AzureAppServices.AzureAppServicesContextKey, "1");
             SetEnvironmentVariable("APP_POOL_ID", "~1KuduScmProcessIsFilteredByTilde");

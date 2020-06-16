@@ -8,7 +8,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     public class MySqlCommandTests : TestHelper
     {
         public MySqlCommandTests(ITestOutputHelper output)
-            : base("Samples.MySql", output)
+            : base("MySql", output)
         {
             SetServiceVersion("1.0.0");
         }

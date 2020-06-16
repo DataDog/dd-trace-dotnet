@@ -21,7 +21,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 smokeTestName,
                 this.GetType(),
                 output,
-                samplesDirectory: "reproductions");
+                samplesDirectory: "reproductions",
+                prependSamplesToAppName: false);
         }
 
         protected ITestOutputHelper Output { get; }
