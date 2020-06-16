@@ -35,15 +35,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected TestHelper(EnvironmentHelper environmentHelper, ITestOutputHelper output)
         {
             EnvironmentHelper = environmentHelper;
-            SampleAppName = EnvironmentHelper.SampleName;
             Output = output;
 
-            PathToSample = EnvironmentHelper.GetSampleApplicationOutputDirectory();
             Output.WriteLine($"Platform: {EnvironmentTools.GetPlatform()}");
             Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
-            Output.WriteLine($"Application: {GetSampleApplicationPath()}");
             Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
         }
 
@@ -51,21 +48,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
 
-        protected string SampleAppName { get; }
-
-        protected string PathToSample { get; }
-
         protected ITestOutputHelper Output { get; }
-
-        public string GetSampleApplicationPath(string packageVersion = "")
-        {
-            return EnvironmentHelper.GetSampleApplicationPath(packageVersion);
-        }
 
         public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort)
         {
             // get path to sample app that the profiler will attach to
-            string sampleAppPath = GetSampleApplicationPath(packageVersion);
+            string sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion);
             if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
@@ -74,7 +62,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
+            Output.WriteLine($"Starting Application: {sampleAppPath}");
             return ProfilerHelper.StartProcessWithProfiler(
+                EnvironmentHelper.GetSampleExecutionSource(),
+                sampleAppPath,
                 EnvironmentHelper,
                 integrationPaths,
                 arguments,
@@ -122,6 +113,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"[webserver] starting {exe} {string.Join(" ", args)}");
 
             var process = ProfilerHelper.StartProcessWithProfiler(
+                EnvironmentHelper.GetSampleExecutionSource(),
+                EnvironmentHelper.GetSampleApplicationPath(),
                 EnvironmentHelper,
                 integrationPaths,
                 arguments: string.Join(" ", args),

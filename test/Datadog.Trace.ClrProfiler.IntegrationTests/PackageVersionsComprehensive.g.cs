@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NETFRAMEWORK
                 new object[] { "2.0.0" },
                 new object[] { "2.0.1" },
                 new object[] { "2.0.2" },
@@ -36,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.2.2" },
                 new object[] { "2.2.3" },
                 new object[] { "2.2.4" },
+#endif
                 new object[] { "2.3.0" },
                 new object[] { "2.4.0" },
                 new object[] { "2.4.1" },
@@ -57,6 +59,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.9.2" },
                 new object[] { "2.9.3" },
                 new object[] { "2.10.0" },
+                new object[] { "2.10.1" },
+                new object[] { "2.10.2" },
+                new object[] { "2.10.3" },
+                new object[] { "2.10.4" },
 #endif
             };
 
@@ -67,6 +73,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NETFRAMEWORK
+#endif
                 new object[] { "6.0.0" },
                 new object[] { "6.0.1" },
                 new object[] { "6.0.2" },
@@ -85,6 +93,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.8.1" },
                 new object[] { "6.8.2" },
                 new object[] { "6.8.3" },
+                new object[] { "6.8.4" },
+                new object[] { "6.8.5" },
+                new object[] { "6.8.6" },
 #endif
             };
 
@@ -95,6 +106,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NETFRAMEWORK
+#endif
                 new object[] { "5.3.0" },
                 new object[] { "5.3.1" },
                 new object[] { "5.4.0" },
@@ -116,6 +129,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NETFRAMEWORK
+#endif
                 new object[] { "4.0.0" },
                 new object[] { "4.0.1" },
                 new object[] { "4.0.2" },
@@ -130,6 +145,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.1.0" },
                 new object[] { "4.1.1" },
                 new object[] { "4.1.2" },
+                new object[] { "4.1.3" },
+                new object[] { "4.1.3.1" },
 #endif
             };
 
@@ -140,6 +157,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NETFRAMEWORK
+#endif
                 new object[] { "4.1.0" },
                 new object[] { "4.3.0" },
                 new object[] { "4.3.1" },
@@ -149,10 +168,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.4.3" },
                 new object[] { "4.5.0" },
                 new object[] { "4.5.1" },
+                new object[] { "4.5.3" },
                 new object[] { "4.6.0" },
                 new object[] { "4.6.1" },
                 new object[] { "4.7.0" },
                 new object[] { "4.8.0" },
+                new object[] { "4.8.1" },
 #endif
             };
 
@@ -163,6 +184,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NETFRAMEWORK
                 new object[] { "1.0.187" },
                 new object[] { "1.0.190" },
                 new object[] { "1.0.206" },
@@ -212,6 +234,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.1.553" },
                 new object[] { "1.1.572" },
                 new object[] { "1.1.603" },
+#endif
                 new object[] { "1.1.605" },
                 new object[] { "1.1.606" },
                 new object[] { "1.1.607" },
@@ -233,6 +256,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NETFRAMEWORK
                 new object[] { "4.0.48" },
                 new object[] { "4.0.50" },
                 new object[] { "4.0.52" },
@@ -249,6 +273,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.5.10" },
                 new object[] { "4.5.12" },
                 new object[] { "4.5.14" },
+#endif
                 new object[] { "5.0.0" },
                 new object[] { "5.0.2" },
                 new object[] { "5.1.0" },
@@ -258,6 +283,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.6.0" },
                 new object[] { "5.7.0" },
                 new object[] { "5.8.0" },
+                new object[] { "5.9.0" },
 #endif
             };
 

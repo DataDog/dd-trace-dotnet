@@ -4,6 +4,7 @@
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
     "MinVersion": "2.0.0",
+    "MinVersionNetCore": "2.3.0",
     "MaxVersionExclusive": "3.0.0"
   },
   {
@@ -39,6 +40,7 @@
     "SampleProjectName": "Samples.StackExchange.Redis",
     "NugetPackageSearchName": "StackExchange.Redis",
     "MinVersion": "1.0.187",
+    "MinVersionNetCore": "1.1.605",
     "MaxVersionExclusive": "2.0.0"
   },
   {
@@ -46,6 +48,7 @@
     "SampleProjectName": "Samples.ServiceStack.Redis",
     "NugetPackageSearchName": "ServiceStack.Redis",
     "MinVersion": "4.0.48",
+    "MinVersionNetCore": "5.0.0",
     "MaxVersionExclusive": "6.0.0"
   }
 ]
