@@ -47,13 +47,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var expectedMap = new Dictionary<string, int>()
             {
-                { "DomainNeutralAssemblies.App.NoBindingRedirects-http-client", 2 },
-                { "DomainNeutralAssemblies.App.HttpNoBindingRedirects-http-client", 2 },
-                { "DomainNeutralAssemblies.App.JsonNuGetRedirects-http-client", 2 },
+                { "Samples.MultiDomainHost.App.FrameworkHttpNoRedirects-http-client", 2 },
+                { "Samples.MultiDomainHost.App.NuGetHttpNoRedirects-http-client", 2 },
+                { "Samples.MultiDomainHost.App.NuGetJsonWithRedirects-http-client", 2 },
             };
             if (!targetFramework.StartsWith("net45"))
             {
-                expectedMap.Add("DomainNeutralAssemblies.App.HttpBindingRedirects-http-client", 2);
+                expectedMap.Add("Samples.MultiDomainHost.App.NuGetHttpWithRedirects-http-client", 2);
             }
 
             RunSampleAndAssertAgainstExpectations(targetFramework, expectedMap);
@@ -67,15 +67,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void WorksInsideTheGAC(string targetFramework)
         {
             Assert.True(typeof(Instrumentation).Assembly.GlobalAssemblyCache, "Datadog.Trace.ClrProfiler.Managed was not loaded from the GAC. Ensure that the assembly and its dependencies are installed in the GAC when running this test.");
+
             var expectedMap = new Dictionary<string, int>()
             {
-                { "DomainNeutralAssemblies.App.NoBindingRedirects-http-client", 2 },
-                { "DomainNeutralAssemblies.App.HttpNoBindingRedirects-http-client", 2 },
-                { "DomainNeutralAssemblies.App.JsonNuGetRedirects-http-client", 2 },
+                { "Samples.MultiDomainHost.App.FrameworkHttpNoRedirects-http-client", 2 },
+                { "Samples.MultiDomainHost.App.NuGetHttpNoRedirects-http-client", 2 },
+                { "Samples.MultiDomainHost.App.NuGetJsonWithRedirects-http-client", 2 },
             };
             if (!targetFramework.StartsWith("net45"))
             {
-                expectedMap.Add("DomainNeutralAssemblies.App.HttpBindingRedirects-http-client", 2);
+                expectedMap.Add("Samples.MultiDomainHost.App.NuGetHttpWithRedirects-http-client", 2);
             }
 
             RunSampleAndAssertAgainstExpectations(targetFramework, expectedMap);
