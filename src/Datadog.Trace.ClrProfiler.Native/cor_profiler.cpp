@@ -520,6 +520,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // has been started.
   auto valid_startup_hook_callsite = true;
   if (module_metadata->assemblyName == "System"_W ||
+      module_metadata->assemblyName == "System.Net.Http"_W ||
+      module_metadata->assemblyName == "Microsoft.WindowsAzure.WebSites.Diagnostics"_W ||
      (module_metadata->assemblyName == "System.Web"_W && !(caller.type.name == "System.Web.Compilation.BuildManager"_W && caller.name == "InvokePreStartInitMethods"_W))) {
     valid_startup_hook_callsite = false;
   }
@@ -598,6 +600,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
 HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
     const WCHAR* wszAssemblyPath,
     ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) {
+  if (in_azure_app_services) {
+    Debug("GetAssemblyReferences skipping entire callback because this is running in Azure App Services, which isn't yet supported for this feature. AssemblyPath=", wszAssemblyPath);
+    return S_OK;
+  }
+
   // Convert the assembly path to the assembly name, assuming the assembly name
   // is either <assembly_name.ni.dll> or <assembly_name>.dll
   auto assemblyPathString = ToString(wszAssemblyPath);
