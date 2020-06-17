@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Security;
 using System.Security.Permissions;
 using System.Threading;
@@ -11,6 +12,12 @@ namespace Samples.MultiDomainHost.Runner
         [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
         static int Main(string[] args)
         {
+            Console.WriteLine("Loading System.dll early in the process");
+
+            using (var webClient = new WebClient())
+            {
+            }
+
             try
             {
                 // First load the application that does not have bindingRedirect policies
