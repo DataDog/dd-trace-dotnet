@@ -74,7 +74,7 @@ namespace Datadog.Trace.Util
 
                 Type typedPropertyFetcher = typeof(TypedFetchProperty<,>);
                 Type instantiatedTypedPropertyFetcher = typedPropertyFetcher.GetTypeInfo().MakeGenericType(
-                    propertyInfo.PropertyType, propertyInfo.DeclaringType, propertyInfo.PropertyType);
+                    typeof(T), propertyInfo.DeclaringType, propertyInfo.PropertyType);
 
                 return (PropertyFetch<T>)Activator.CreateInstance(instantiatedTypedPropertyFetcher, propertyInfo);
             }
@@ -89,7 +89,8 @@ namespace Datadog.Trace.Util
                 return default;
             }
 
-            private class TypedFetchProperty<TObject, TProperty> : PropertyFetch<TProperty>
+            private class TypedFetchProperty<TObject, TProperty> : PropertyFetch<T>
+                where TProperty : T
             {
                 private readonly Func<TObject, TProperty> _propertyFetch;
 
@@ -98,7 +99,7 @@ namespace Datadog.Trace.Util
                     _propertyFetch = (Func<TObject, TProperty>)property.GetMethod.CreateDelegate(typeof(Func<TObject, TProperty>));
                 }
 
-                public override TProperty Fetch(object obj)
+                public override T Fetch(object obj)
                 {
                     return _propertyFetch((TObject)obj);
                 }

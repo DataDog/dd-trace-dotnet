@@ -227,7 +227,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         private static PropertyFetcherCacheKey GetKey<TResult>(string name, Type type)
         {
-            return new PropertyFetcherCacheKey(typeof(TResult), type, name);
+            return new PropertyFetcherCacheKey(type, typeof(TResult), name);
         }
 
         private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
