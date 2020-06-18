@@ -93,10 +93,10 @@ namespace Datadog.Trace.Tests
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
             {
-                Assert.Contains(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+                Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
             }
 
-            Assert.Contains(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+            Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
         }
     }
 }
