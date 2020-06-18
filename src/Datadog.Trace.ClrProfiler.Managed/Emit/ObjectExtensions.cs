@@ -322,9 +322,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             public PropertyFetcherCacheKey(Type type1, Type type2, string name)
             {
-                Type1 = type1;
+                Type1 = type1 ?? throw new ArgumentNullException(nameof(type1));
                 Type2 = type2;
-                Name = name;
+                Name = name ?? throw new ArgumentNullException(nameof(name));
             }
 
             public bool Equals(PropertyFetcherCacheKey other)
@@ -341,9 +341,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 unchecked
                 {
-                    var hashCode = (Type1 != null ? Type1.GetHashCode() : 0);
+                    var hashCode = Type1.GetHashCode();
                     hashCode = (hashCode * 397) ^ (Type2 != null ? Type2.GetHashCode() : 0);
-                    hashCode = (hashCode * 397) ^ (Name != null ? Name.GetHashCode() : 0);
+                    hashCode = (hashCode * 397) ^ Name.GetHashCode();
                     return hashCode;
                 }
             }
