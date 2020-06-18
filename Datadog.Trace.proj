@@ -11,7 +11,7 @@
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <SampleProject Include="samples*\**\*.csproj"/>
-    <SampleLibProject Include="sample-libs\**\*.csproj"/>
+    <SampleLibProject Include="sample-libs\**\*.csproj" Exclude="sample-libs\**\Samples.MultiDomainHost.App.*.csproj" />
     <WindowsInstallerProject Include="deploy\**\*.wixproj"/>
   </ItemGroup>
 
