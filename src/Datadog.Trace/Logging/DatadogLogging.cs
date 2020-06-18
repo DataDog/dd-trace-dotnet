@@ -141,6 +141,13 @@ namespace Datadog.Trace.Logging
             //   - Path.GetTempPath
             if (logDirectory == null)
             {
+#if NETFRAMEWORK
+                var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
+                if (Directory.Exists(windowsDefaultDirectory))
+                {
+                    logDirectory = windowsDefaultDirectory;
+                }
+#else
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     var windowsDefaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
@@ -170,6 +177,7 @@ namespace Datadog.Trace.Logging
                         }
                     }
                 }
+#endif
             }
 
             if (logDirectory == null)
