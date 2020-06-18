@@ -14,7 +14,7 @@ namespace Datadog.Trace
         internal static readonly string SpanIdKey = "dd.span_id";
 
         /// <summary>
-        /// Gets the service of the application
+        /// Gets the name of the service
         /// </summary>
         public static string Service
         {
@@ -25,7 +25,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the version of the application
+        /// Gets the version of the service
         /// </summary>
         public static string Version
         {
@@ -36,7 +36,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the env of the application
+        /// Gets the environment name of the service
         /// </summary>
         public static string Env
         {
@@ -47,8 +47,9 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the trace id of the active span
+        /// Gets the id of the active trace.
         /// </summary>
+        /// <returns>The id of the active trace. If there is no active trace, returns zero.</returns>
         public static ulong TraceId
         {
             get
@@ -58,8 +59,9 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the span id of the active span
+        /// Gets the id of the active span.
         /// </summary>
+        /// <returns>The id of the active span. If there is no active span, returns zero.</returns>
         public static ulong SpanId
         {
             get
