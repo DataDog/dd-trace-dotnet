@@ -28,7 +28,6 @@ namespace Samples.MultiDomainHost.Runner
                 // Next load an application that does the same thing, still does not have
                 // bindingRedirect policies, but it uses the System.Net.Http NuGet package
                 // instead of the built-in version.
-                // TBD if this breaks in the non-GAC scenario
                 CreateAndRunAppDomain("Samples.MultiDomainHost.App.NuGetHttpNoRedirects");
 
                 // Next load the application that has a bindingRedirect policy on Newtonsoft.Json.
