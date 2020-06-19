@@ -190,28 +190,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public TDelegate Build()
         {
-            var parameterTypesForCache = _explicitParameterTypes;
-
-            if (parameterTypesForCache == null)
-            {
-                parameterTypesForCache = _parameters;
-            }
-
             var cacheKey = new Key(
-                callingModule: _resolutionModule,
-                mdToken: _mdToken,
-                callOpCode: _opCode,
-                concreteType: _concreteType,
-                explicitParameterTypes: parameterTypesForCache,
-                methodGenerics: _methodGenerics,
-                declaringTypeGenerics: _declaringTypeGenerics);
+                this,
+                callingModule: _resolutionModule);
 
             return Cache.GetOrAdd(cacheKey, key =>
             {
                 // Validate requirements at the last possible moment
                 // Don't do more than needed before checking the cache
-                ValidateRequirements();
-                return EmitDelegate();
+                key.Builder.ValidateRequirements();
+                return key.Builder.EmitDelegate();
             });
         }
 
@@ -690,31 +678,17 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private struct Key
         {
             public readonly int CallingModuleMetadataToken;
-            public readonly int MethodMetadataToken;
-            public readonly OpCodeValue CallOpCode;
-            public readonly Type ConcreteType;
-            public readonly Type[] DeclaredTypeGenerics;
-            public readonly Type[] MethodGenerics;
-            public readonly Type[] ExplicitParams;
+            public readonly MethodBuilder<TDelegate> Builder;
 
             public Key(
-                Module callingModule,
-                int mdToken,
-                OpCodeValue callOpCode,
-                Type concreteType,
-                Type[] explicitParameterTypes,
-                Type[] methodGenerics,
-                Type[] declaringTypeGenerics)
+                MethodBuilder<TDelegate> builder,
+                Module callingModule)
             {
+                Builder = builder;
                 CallingModuleMetadataToken = callingModule.MetadataToken;
-                MethodMetadataToken = mdToken;
-                CallOpCode = callOpCode;
-                ConcreteType = concreteType;
-
-                MethodGenerics = methodGenerics;
-                DeclaredTypeGenerics = declaringTypeGenerics;
-                ExplicitParams = explicitParameterTypes;
             }
+
+            public Type[] ExplicitParams => Builder._explicitParameterTypes ?? Builder._parameters;
         }
 
         private class KeyComparer : IEqualityComparer<Key>
@@ -726,17 +700,20 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     return false;
                 }
 
-                if (x.MethodMetadataToken != y.MethodMetadataToken)
+                var builder1 = x.Builder;
+                var builder2 = y.Builder;
+
+                if (builder1._mdToken != builder2._mdToken)
                 {
                     return false;
                 }
 
-                if (x.CallOpCode != y.CallOpCode)
+                if (builder1._opCode != builder2._opCode)
                 {
                     return false;
                 }
 
-                if (x.ConcreteType != y.ConcreteType)
+                if (builder1._concreteType != builder2._concreteType)
                 {
                     return false;
                 }
@@ -746,12 +723,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     return false;
                 }
 
-                if (!ArrayEquals(x.DeclaredTypeGenerics, y.DeclaredTypeGenerics))
+                if (!ArrayEquals(builder1._methodGenerics, builder2._methodGenerics))
                 {
                     return false;
                 }
 
-                if (!ArrayEquals(x.MethodGenerics, y.MethodGenerics))
+                if (!ArrayEquals(builder1._declaringTypeGenerics, builder2._declaringTypeGenerics))
                 {
                     return false;
                 }
@@ -763,14 +740,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 unchecked
                 {
+                    var builder = obj.Builder;
+
                     int hash = 17;
                     hash = (hash * 23) + obj.CallingModuleMetadataToken.GetHashCode();
-                    hash = (hash * 23) + obj.MethodMetadataToken.GetHashCode();
-                    hash = (hash * 23) + ((short)obj.CallOpCode).GetHashCode();
-                    hash = (hash * 23) + obj.ConcreteType.GetHashCode();
+                    hash = (hash * 23) + builder._mdToken.GetHashCode();
+                    hash = (hash * 23) + ((short)builder._opCode).GetHashCode();
+                    hash = (hash * 23) + builder._concreteType.GetHashCode();
+                    hash = (hash * 23) + GetHashCode(builder._methodGenerics);
                     hash = (hash * 23) + GetHashCode(obj.ExplicitParams);
-                    hash = (hash * 23) + GetHashCode(obj.DeclaredTypeGenerics);
-                    hash = (hash * 23) + GetHashCode(obj.MethodGenerics);
+                    hash = (hash * 23) + GetHashCode(builder._declaringTypeGenerics);
                     return hash;
                 }
             }
