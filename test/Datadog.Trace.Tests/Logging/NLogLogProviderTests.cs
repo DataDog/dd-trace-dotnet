@@ -124,9 +124,9 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void LogEventContains(string nLogString, string service, string version, string env, Scope scope)
         {
-            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceNameKey, service), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceKey, service), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.EnvKey, env), nLogString);
-            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceVersionKey, version), nLogString);
+            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.VersionKey, version), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, scope.Span.SpanId), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, scope.Span.TraceId), nLogString);
         }
