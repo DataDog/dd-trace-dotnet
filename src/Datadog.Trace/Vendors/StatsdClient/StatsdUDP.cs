@@ -6,7 +6,6 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Collections.Generic;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
