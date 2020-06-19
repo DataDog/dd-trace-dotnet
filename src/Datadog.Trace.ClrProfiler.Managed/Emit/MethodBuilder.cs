@@ -21,6 +21,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MethodBuilder<TDelegate>));
 
+        private static readonly Type[] EmptyTypeArray = new Type[0];
+
         /// <summary>
         /// Feature flag used primarily for forcing testing of the token lookup strategy.
         /// </summary>
@@ -44,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private MethodBase _methodBase;
         private Type _concreteType;
         private string _concreteTypeName;
-        private object[] _parameters = new object[0];
+        private Type[] _parameters = EmptyTypeArray;
         private Type[] _explicitParameterTypes = null;
         private string[] _namespaceAndNameFilter = null;
         private Type[] _declaringTypeGenerics;
@@ -114,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithParameters(params object[] parameters)
+        public MethodBuilder<TDelegate> WithParameters(params Type[] parameters)
         {
             if (parameters == null)
             {
@@ -123,6 +125,37 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             _parameters = parameters;
             return this;
+        }
+
+        public MethodBuilder<TDelegate> WithParameters(params object[] parameters)
+        {
+            if (parameters == null)
+            {
+                throw new ArgumentNullException(nameof(parameters));
+            }
+
+            return WithParameters(Interception.ParamsToTypes(parameters));
+        }
+
+        public MethodBuilder<TDelegate> WithParameters<TParam>(TParam param1)
+        {
+            var types = new[] { param1?.GetType() };
+
+            return WithParameters(types);
+        }
+
+        public MethodBuilder<TDelegate> WithParameters<TParam1, TParam2>(TParam1 param1, TParam2 param2)
+        {
+            var types = new[] { param1?.GetType(), param2?.GetType() };
+
+            return WithParameters(types);
+        }
+
+        public MethodBuilder<TDelegate> WithParameters<TParam1, TParam2, TParam3>(TParam1 param1, TParam2 param2, TParam3 param3)
+        {
+            var types = new[] { param1?.GetType(), param2?.GetType(), param3?.GetType() };
+
+            return WithParameters(types);
         }
 
         public MethodBuilder<TDelegate> WithExplicitParameterTypes(params Type[] types)
@@ -161,7 +194,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             if (parameterTypesForCache == null)
             {
-                parameterTypesForCache = Interception.ParamsToTypes(_parameters);
+                parameterTypesForCache = _parameters;
             }
 
             var cacheKey = new Key(
@@ -399,7 +432,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 for (var i = 0; i < _explicitParameterTypes.Length; i++)
                 {
                     var explicitType = _explicitParameterTypes[i];
-                    var parameterType = _parameters[i]?.GetType();
+                    var parameterType = _parameters[i];
 
                     if (parameterType == null)
                     {
@@ -594,7 +627,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             return _explicitParameterTypes != null
                        ? _explicitParameterTypes[i]
-                       : _parameters[i]?.GetType();
+                       : _parameters[i];
         }
 
         private bool GenericsAreViable(MethodInfo mi)
