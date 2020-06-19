@@ -40,5 +40,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 StartupLogger.Log(ex, "Error when loading managed assemblies.");
             }
         }
+
+        private static string ReadEnvironmentVariable(string key)
+        {
+            try
+            {
+                return Environment.GetEnvironmentVariable(key);
+            }
+            catch (Exception ex)
+            {
+                StartupLogger.Log(ex, "Error while loading environment variable " + key);
+            }
+
+            return null;
+        }
     }
 }
