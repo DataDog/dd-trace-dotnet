@@ -155,13 +155,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       GetEnvironmentValue(environment::domain_neutral_instrumentation);
 
   if (domain_neutral_instrumentation == "1"_W || domain_neutral_instrumentation == "true"_W) {
-    Info("Detected environment variable ", environment::domain_neutral_instrumentation,
-         "=", domain_neutral_instrumentation);
-    Info("Enabling automatic instrumentation of methods called from domain-neutral assemblies. ",
-         "Please ensure that there is only one AppDomain or, if applications are being hosted in IIS, ",
-         "ensure that all Application Pools have at most one application each. ",
-         "Otherwise, a sharing violation (HRESULT 0x80131401) may occur.");
-    Info("Note: This flag is unnecessary when running against the .NET Framework 4.5.2 or higher.");
     instrument_domain_neutral_assemblies = true;
   }
 
@@ -173,8 +166,21 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   if (SUCCEEDED(hr)) {
     Debug("Interface ICorProfilerInfo6 found.");
     hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+
+    if (instrument_domain_neutral_assemblies) {
+      Info("Note: The ", environment::domain_neutral_instrumentation, " environment variable is not needed when running on .NET Framework 4.5.2 or higher, and will be ignored.");
+    }
   } else {
     hr = this->info_->SetEventMask(event_mask);
+
+    if (instrument_domain_neutral_assemblies) {
+      Info("Detected environment variable ", environment::domain_neutral_instrumentation,
+          "=", domain_neutral_instrumentation);
+      Info("Enabling automatic instrumentation of methods called from domain-neutral assemblies. ",
+          "Please ensure that there is only one AppDomain or, if applications are being hosted in IIS, ",
+          "ensure that all Application Pools have at most one application each. ",
+          "Otherwise, a sharing violation (HRESULT 0x80131401) may occur.");
+    }
   }
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
