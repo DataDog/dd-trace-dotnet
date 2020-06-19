@@ -692,9 +692,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
             public readonly int CallingModuleMetadataToken;
             public readonly int MethodMetadataToken;
             public readonly OpCodeValue CallOpCode;
-            public readonly string ConcreteTypeName;
-            public readonly string GenericSpec;
-            public readonly string ExplicitParams;
+            public readonly Type ConcreteType;
+            public readonly Type[] DeclaredTypeGenerics;
+            public readonly Type[] MethodGenerics;
+            public readonly Type[] ExplicitParams;
 
             public Key(
                 Module callingModule,
@@ -708,34 +709,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 CallingModuleMetadataToken = callingModule.MetadataToken;
                 MethodMetadataToken = mdToken;
                 CallOpCode = callOpCode;
-                ConcreteTypeName = concreteType.AssemblyQualifiedName;
+                ConcreteType = concreteType;
 
-                GenericSpec = "_gArgs_";
-
-                if (methodGenerics != null)
-                {
-                    for (var i = 0; i < methodGenerics.Length; i++)
-                    {
-                        GenericSpec = string.Concat(GenericSpec, $"_{methodGenerics[i]?.AssemblyQualifiedName ?? "NULL"}_");
-                    }
-                }
-
-                GenericSpec = string.Concat(GenericSpec, "_gParams_");
-
-                if (declaringTypeGenerics != null)
-                {
-                    for (var i = 0; i < declaringTypeGenerics.Length; i++)
-                    {
-                        GenericSpec = string.Concat(GenericSpec, $"_{declaringTypeGenerics[i]?.AssemblyQualifiedName ?? "NULL"}_");
-                    }
-                }
-
-                ExplicitParams = string.Empty;
-
-                if (explicitParameterTypes != null)
-                {
-                    ExplicitParams = string.Join("_", explicitParameterTypes.Select(ept => ept?.AssemblyQualifiedName ?? "NULL"));
-                }
+                MethodGenerics = methodGenerics;
+                DeclaredTypeGenerics = declaringTypeGenerics;
+                ExplicitParams = explicitParameterTypes;
             }
         }
 
@@ -758,17 +736,22 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     return false;
                 }
 
-                if (!string.Equals(x.ConcreteTypeName, y.ConcreteTypeName))
+                if (x.ConcreteType != y.ConcreteType)
                 {
                     return false;
                 }
 
-                if (!string.Equals(x.ExplicitParams, y.ExplicitParams))
+                if (!ArrayEquals(x.ExplicitParams, y.ExplicitParams))
                 {
                     return false;
                 }
 
-                if (!string.Equals(x.GenericSpec, y.GenericSpec))
+                if (!ArrayEquals(x.DeclaredTypeGenerics, y.DeclaredTypeGenerics))
+                {
+                    return false;
+                }
+
+                if (!ArrayEquals(x.MethodGenerics, y.MethodGenerics))
                 {
                     return false;
                 }
@@ -784,11 +767,57 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     hash = (hash * 23) + obj.CallingModuleMetadataToken.GetHashCode();
                     hash = (hash * 23) + obj.MethodMetadataToken.GetHashCode();
                     hash = (hash * 23) + ((short)obj.CallOpCode).GetHashCode();
-                    hash = (hash * 23) + obj.ConcreteTypeName.GetHashCode();
-                    hash = (hash * 23) + obj.GenericSpec.GetHashCode();
-                    hash = (hash * 23) + obj.ExplicitParams.GetHashCode();
+                    hash = (hash * 23) + obj.ConcreteType.GetHashCode();
+                    hash = (hash * 23) + GetHashCode(obj.ExplicitParams);
+                    hash = (hash * 23) + GetHashCode(obj.DeclaredTypeGenerics);
+                    hash = (hash * 23) + GetHashCode(obj.MethodGenerics);
                     return hash;
                 }
+            }
+
+            private static int GetHashCode(Type[] array)
+            {
+                if (array == null)
+                {
+                    return 0;
+                }
+
+                int value = array.Length;
+
+                for (int i = 0; i < array.Length; i++)
+                {
+                    value = unchecked((value * 31) + array[i]?.GetHashCode() ?? 0);
+                }
+
+                return value;
+            }
+
+            private static bool ArrayEquals(Type[] array1, Type[] array2)
+            {
+                if (array1 == null)
+                {
+                    return array2 == null;
+                }
+
+                if (array2 == null)
+                {
+                    return false;
+                }
+
+                if (array1.Length != array2.Length)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < array1.Length; i++)
+                {
+                    if (array1[i] != array2[i])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
         }
     }
