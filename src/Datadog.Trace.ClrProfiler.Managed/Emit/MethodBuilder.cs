@@ -743,17 +743,17 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             public bool Equals(Key x, Key y)
             {
-                if (!int.Equals(x.CallingModuleMetadataToken, y.CallingModuleMetadataToken))
+                if (x.CallingModuleMetadataToken != y.CallingModuleMetadataToken)
                 {
                     return false;
                 }
 
-                if (!int.Equals(x.MethodMetadataToken, y.MethodMetadataToken))
+                if (x.MethodMetadataToken != y.MethodMetadataToken)
                 {
                     return false;
                 }
 
-                if (!short.Equals(x.CallOpCode, y.CallOpCode))
+                if (x.CallOpCode != y.CallOpCode)
                 {
                     return false;
                 }
@@ -783,7 +783,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                     int hash = 17;
                     hash = (hash * 23) + obj.CallingModuleMetadataToken.GetHashCode();
                     hash = (hash * 23) + obj.MethodMetadataToken.GetHashCode();
-                    hash = (hash * 23) + obj.CallOpCode.GetHashCode();
+                    hash = (hash * 23) + ((short)obj.CallOpCode).GetHashCode();
                     hash = (hash * 23) + obj.ConcreteTypeName.GetHashCode();
                     hash = (hash * 23) + obj.GenericSpec.GetHashCode();
                     hash = (hash * 23) + obj.ExplicitParams.GetHashCode();
