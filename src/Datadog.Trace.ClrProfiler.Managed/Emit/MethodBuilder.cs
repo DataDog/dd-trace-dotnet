@@ -158,6 +158,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return WithParameters(types);
         }
 
+        public MethodBuilder<TDelegate> WithParameters<TParam1, TParam2, TParam3, TParam4>(TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4)
+        {
+            var types = new[] { param1?.GetType(), param2?.GetType(), param3?.GetType(), param4?.GetType() };
+
+            return WithParameters(types);
+        }
+
         public MethodBuilder<TDelegate> WithExplicitParameterTypes(params Type[] types)
         {
             _explicitParameterTypes = types;
