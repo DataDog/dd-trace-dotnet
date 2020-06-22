@@ -1,14 +1,12 @@
 using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.ClrProfiler.Extensions;
-using Datadog.Trace.Headers;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
-    public class SpanContextPropagationExtensionsTests
+    public class SpanContextPropagationHelpersTests
     {
         [Fact]
         public void HttpRequestMessage_InjectExtract_Identity()
@@ -20,8 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var request = new HttpRequestMessage();
             var context = new SpanContext(traceId, spanId, samplingPriority);
 
-            SpanContextPropagator.Instance.InjectHttpHeadersWithReflection(context, (object)request.Headers);
-            var resultContext = SpanContextPropagator.Instance.ExtractHttpHeadersWithReflection(request.Headers);
+            SpanContextPropagatorHelpers.InjectHttpHeadersWithReflection(context, (object)request.Headers);
+            var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(context.SpanId, resultContext.SpanId);
@@ -40,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var request = new HttpRequestMessage();
             InjectContext(request.Headers, traceId, spanId, samplingPriority);
-            var resultContext = SpanContextPropagator.Instance.ExtractHttpHeadersWithReflection(request.Headers);
+            var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
             // invalid traceId should return a null context even if other values are set
             Assert.Null(resultContext);
@@ -62,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 spanId,
                 ((int)samplingPriority).ToString(CultureInfo.InvariantCulture));
 
-            var resultContext = SpanContextPropagator.Instance.ExtractHttpHeadersWithReflection(request.Headers);
+            var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(traceId, resultContext.TraceId);
@@ -86,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 spanId.ToString(CultureInfo.InvariantCulture),
                 samplingPriority);
 
-            var resultContext = SpanContextPropagator.Instance.ExtractHttpHeadersWithReflection(request.Headers);
+            var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(traceId, resultContext.TraceId);
