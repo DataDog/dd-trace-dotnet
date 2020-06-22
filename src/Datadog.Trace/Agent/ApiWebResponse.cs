@@ -26,7 +26,7 @@ namespace Datadog.Trace.Agent
             using (var responseStream = _response.GetResponseStream())
             {
                 var reader = new StreamReader(responseStream);
-                return await reader.ReadToEndAsync();
+                return await reader.ReadToEndAsync().ConfigureAwait(false);
             }
         }
     }
