@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.ClrProfiler.Extensions;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.ExtensionMethods;
@@ -202,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // extract propagated http headers
                         var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
-                        propagatedContext = SpanContextPropagator.Instance.ExtractHttpHeadersWithReflection(headers);
+                        propagatedContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(headers);
                     }
                     catch (Exception ex)
                     {

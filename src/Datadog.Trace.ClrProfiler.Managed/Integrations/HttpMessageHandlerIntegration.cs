@@ -4,9 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.ClrProfiler.Extensions;
 using Datadog.Trace.ClrProfiler.Helpers;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -229,7 +227,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         scope.Span.SetTag("http-client-handler-type", reportedType.FullName);
 
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.InjectHttpHeadersWithReflection(scope.Span.Context, headers);
+                        SpanContextPropagatorHelpers.InjectHttpHeadersWithReflection(scope.Span.Context, headers);
                     }
 
                     var task = (Task<T>)sendAsync(handler, request, cancellationToken);

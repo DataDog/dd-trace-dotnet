@@ -5,16 +5,16 @@ using System.Linq;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.Extensions
+namespace Datadog.Trace.ClrProfiler.Helpers
 {
-    internal static class SpanContextPropagatorExtensions
+    internal static class SpanContextPropagatorHelpers
     {
         private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
-        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(SpanContextPropagatorExtensions));
+        private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(SpanContextPropagatorHelpers));
 
-        public static void InjectHttpHeadersWithReflection(this SpanContextPropagator spanContextPropagator, SpanContext context, object headers)
+        public static void InjectHttpHeadersWithReflection(SpanContext context, object headers)
         {
             if (context == null) { throw new ArgumentNullException(nameof(context)); }
 
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Extensions
                 samplingPriority?.ToString(InvariantCulture));
         }
 
-        public static SpanContext ExtractHttpHeadersWithReflection(this SpanContextPropagator spanContextPropagator, object headers)
+        public static SpanContext ExtractHttpHeadersWithReflection(object headers)
         {
             if (headers == null)
             {
