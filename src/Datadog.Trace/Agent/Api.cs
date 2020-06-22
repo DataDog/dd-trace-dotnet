@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
+using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
@@ -8,6 +9,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
+using MessagePack;
 using Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent
@@ -18,50 +20,36 @@ namespace Datadog.Trace.Agent
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Api>();
 
-        private readonly HttpClient _client;
+        private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IStatsd _statsd;
         private readonly Uri _tracesEndpoint;
         private readonly FormatterResolverWrapper _formatterResolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
+        private readonly string _containerId;
+        private readonly FrameworkDescription _frameworkDescription;
 
-        public Api(Uri baseEndpoint, DelegatingHandler delegatingHandler, IStatsd statsd)
+        public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IStatsd statsd)
         {
             Log.Debug("Creating new Api");
 
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
-            _client = delegatingHandler == null ? new HttpClient() : new HttpClient(delegatingHandler);
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.Language, ".NET");
+            _containerId = ContainerMetadata.GetContainerId();
+            _apiRequestFactory = apiRequestFactory ?? new ApiWebRequestFactory();
 
             // report runtime details
             try
             {
-                var frameworkDescription = FrameworkDescription.Create();
+                _frameworkDescription = FrameworkDescription.Create();
 
-                if (frameworkDescription != null)
+                if (_frameworkDescription != null)
                 {
-                    Log.Information(frameworkDescription.ToString());
-                    _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageInterpreter, frameworkDescription.Name);
-                    _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.LanguageVersion, frameworkDescription.ProductVersion);
+                    Log.Information(_frameworkDescription.ToString());
                 }
             }
             catch (Exception e)
             {
                 Log.SafeLogError(e, "Error getting framework description");
             }
-
-            // report Tracer version
-            _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion);
-
-            // report container id (only Linux containers supported for now)
-            var containerId = ContainerMetadata.GetContainerId();
-
-            if (containerId != null)
-            {
-                _client.DefaultRequestHeaders.Add(AgentHttpHeaderNames.ContainerId, containerId);
-            }
-
-            // don't add automatic instrumentation to requests from this HttpClient
-            _client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
         }
 
         public async Task SendTracesAsync(Span[][] traces)
@@ -74,39 +62,63 @@ namespace Datadog.Trace.Agent
 
             while (true)
             {
-                HttpResponseMessage responseMessage;
+                var request = _apiRequestFactory.Create(_tracesEndpoint);
 
+                // Set additional headers
+                request.AddHeader(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
+                if (_frameworkDescription != null)
+                {
+                    request.AddHeader(AgentHttpHeaderNames.LanguageInterpreter, _frameworkDescription.Name);
+                    request.AddHeader(AgentHttpHeaderNames.LanguageVersion, _frameworkDescription.ProductVersion);
+                }
+
+                if (_containerId != null)
+                {
+                    request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
+                }
+
+                IApiResponse response;
                 try
                 {
-                    // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-                    using (var content = new TracesMessagePackContent(traces, _formatterResolver))
+                    try
                     {
-                        content.Headers.Add(AgentHttpHeaderNames.TraceCount, traceIds.Count.ToString());
+                        _statsd?.AppendIncrementCount(TracerMetricNames.Api.Requests);
+                        response = await request.PostAsync(traces, _formatterResolver).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // count the exceptions thrown by the HttpClient,
+                        // not responses with 5xx status codes
+                        // (which cause EnsureSuccessStatusCode() to throw below)
+                        _statsd?.AppendIncrementCount(TracerMetricNames.Api.Errors);
+                        throw;
+                    }
 
-                        try
+                    if (_statsd != null)
+                    {
+                        // don't bother creating the tags array if trace metrics are disabled
+                        string[] tags = { $"status:{response.StatusCode}" };
+
+                        // count every response, grouped by status code
+                        _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
+                    }
+
+                    // Attempt a retry if the status code is not SUCCESS
+                    if (response.StatusCode < 200 || response.StatusCode > 300)
+                    {
+                        if (retryCount >= retryLimit)
                         {
-                            _statsd?.AppendIncrementCount(TracerMetricNames.Api.Requests);
-                            responseMessage = await _client.PostAsync(_tracesEndpoint, content).ConfigureAwait(false);
-                        }
-                        catch
-                        {
-                            // count the exceptions thrown by the HttpClient,
-                            // not responses with 5xx status codes
-                            // (which cause EnsureSuccessStatusCode() to throw below)
-                            _statsd?.AppendIncrementCount(TracerMetricNames.Api.Errors);
-                            throw;
+                            // stop retrying
+                            Log.Error("An error occurred while sending traces to the agent at {Endpoint}", _tracesEndpoint);
+                            return;
                         }
 
-                        if (_statsd != null)
-                        {
-                            // don't bother creating the tags array if trace metrics are disabled
-                            string[] tags = { $"status:{(int)responseMessage.StatusCode}" };
+                        // retry
+                        await Task.Delay(sleepDuration).ConfigureAwait(false);
+                        retryCount++;
+                        sleepDuration *= 2;
 
-                            // count every response, grouped by status code
-                            _statsd.AppendIncrementCount(TracerMetricNames.Api.Responses, tags: tags);
-                        }
-
-                        responseMessage.EnsureSuccessStatusCode();
+                        continue;
                     }
                 }
                 catch (Exception ex)
@@ -149,13 +161,11 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    if (responseMessage.Content != null && Tracer.Instance.Sampler != null)
+                    if (response.ContentLength > 0 && Tracer.Instance.Sampler != null)
                     {
-                        // build the sample rate map from the response json
-                        var responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        var response = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
-
-                        Tracer.Instance.Sampler.SetDefaultSampleRates(response?.RateByService);
+                        var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                        Tracer.Instance.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
                     }
                 }
                 catch (Exception ex)

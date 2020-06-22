@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
@@ -50,10 +51,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected ITestOutputHelper Output { get; }
 
-        public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort)
+        public Process StartSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort, string framework = "")
         {
             // get path to sample app that the profiler will attach to
-            string sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion);
+            string sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
@@ -73,9 +74,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 aspNetCorePort: aspNetCorePort);
         }
 
-        public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, string arguments = null, string packageVersion = "")
+        public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, string arguments = null, string packageVersion = "", string framework = "")
         {
-            var process = StartSample(traceAgentPort, arguments, packageVersion, aspNetCorePort: 5000);
+            var process = StartSample(traceAgentPort, arguments, packageVersion, aspNetCorePort: 5000, framework: framework);
 
             var standardOutput = process.StandardOutput.ReadToEnd();
             var standardError = process.StandardError.ReadToEnd();

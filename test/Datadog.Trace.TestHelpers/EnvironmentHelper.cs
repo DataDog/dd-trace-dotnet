@@ -45,7 +45,7 @@ namespace Datadog.Trace.TestHelpers
             _samplesDirectory = samplesDirectory ?? "samples";
             _anchorType = anchorType;
             _anchorAssembly = Assembly.GetAssembly(_anchorType);
-            _targetFramework = _anchorAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
+            _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             _requiresProfiling = requiresProfiling;
 
@@ -302,7 +302,7 @@ namespace Datadog.Trace.TestHelpers
             return _profilerFileLocation;
         }
 
-        public string GetSampleApplicationPath(string packageVersion = "")
+        public string GetSampleApplicationPath(string packageVersion = "", string framework = "")
         {
             string extension = "exe";
 
@@ -312,7 +312,7 @@ namespace Datadog.Trace.TestHelpers
             }
 
             var appFileName = $"{FullSampleName}.{extension}";
-            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion), appFileName);
+            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
             return sampleAppPath;
         }
 
@@ -352,8 +352,9 @@ namespace Datadog.Trace.TestHelpers
             return projectDir;
         }
 
-        public string GetSampleApplicationOutputDirectory(string packageVersion = "")
+        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "")
         {
+            var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
             var binDir = Path.Combine(
                 GetSampleProjectDirectory(),
                 "bin");
@@ -371,7 +372,7 @@ namespace Datadog.Trace.TestHelpers
                     packageVersion,
                     EnvironmentTools.GetPlatform(),
                     EnvironmentTools.GetBuildConfiguration(),
-                    GetTargetFramework());
+                    targetFramework);
             }
             else
             {
@@ -379,7 +380,7 @@ namespace Datadog.Trace.TestHelpers
                     binDir,
                     packageVersion,
                     EnvironmentTools.GetBuildConfiguration(),
-                    GetTargetFramework(),
+                    targetFramework,
                     "publish");
             }
 

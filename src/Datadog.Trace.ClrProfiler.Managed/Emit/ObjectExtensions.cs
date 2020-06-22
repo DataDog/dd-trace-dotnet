@@ -50,6 +50,41 @@ namespace Datadog.Trace.ClrProfiler.Emit
         }
 
         /// <summary>
+        /// Tries to call an instance method with the specified name, two parameters, and no return value.
+        /// </summary>
+        /// <typeparam name="TArg1">The type of the method's first parameter.</typeparam>
+        /// <typeparam name="TArg2">The type of the method's second parameter.</typeparam>
+        /// <param name="source">The object to call the method on.</param>
+        /// <param name="methodName">The name of the method to call.</param>
+        /// <param name="arg1">The value to pass as the method's first argument.</param>
+        /// <param name="arg2">The value to pass as the method's second argument.</param>
+        /// <returns><c>true</c> if the method was found, <c>false</c> otherwise.</returns>
+        public static bool TryCallVoidMethod<TArg1, TArg2>(this object source, string methodName, TArg1 arg1, TArg2 arg2)
+        {
+            var type = source.GetType();
+            var paramType1 = typeof(TArg1);
+            var paramType2 = typeof(TArg2);
+
+            object cachedItem = Cache.GetOrAdd(
+                $"{type.AssemblyQualifiedName}.{methodName}.{paramType1.AssemblyQualifiedName}.{paramType2.AssemblyQualifiedName}",
+                key =>
+                    DynamicMethodBuilder<Action<object, TArg1, TArg2>>
+                       .CreateMethodCallDelegate(
+                            type,
+                            methodName,
+                            OpCodeValue.Callvirt,
+                            methodParameterTypes: new[] { paramType1, paramType2 }));
+
+            if (cachedItem is Action<object, TArg1, TArg2> func)
+            {
+                func(source, arg1, arg2);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Tries to call an instance method with the specified name and a return value.
         /// </summary>
         /// <typeparam name="TResult">The type of the method's result value.</typeparam>
@@ -97,6 +132,13 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return source.TryCallMethod(methodName, out TResult result)
                        ? new MemberResult<TResult>(result)
                        : MemberResult<TResult>.NotFound;
+        }
+
+        public static MemberResult<object> CallVoidMethod<TArg1, TArg2>(this object source, string methodName, TArg1 arg1, TArg2 arg2)
+        {
+            return source.TryCallVoidMethod(methodName, arg1, arg2)
+                       ? new MemberResult<object>(null)
+                       : MemberResult<object>.NotFound;
         }
 
         /// <summary>

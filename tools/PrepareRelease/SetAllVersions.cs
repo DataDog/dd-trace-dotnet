@@ -59,6 +59,10 @@ namespace PrepareRelease
                 "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
                 FullAssemblyNameReplace);
 
+            SynchronizeVersion(
+                "src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
+                FullAssemblyNameReplace);
+
             // Locked AssemblyVersion #.0.0.0 updates
             SynchronizeVersion(
                 "src/Datadog.Trace.AspNet/AssemblyInfo.cs",

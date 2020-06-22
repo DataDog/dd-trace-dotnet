@@ -2,20 +2,24 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using Newtonsoft.Json;
 
-namespace DomainNeutralAssemblies.App.NoBindingRedirects
+namespace Samples.MultiDomainHost.App.NuGetJsonWithRedirects
 {
     public class Program
     {
         [LoaderOptimization(LoaderOptimization.MultiDomainHost)]
         static void Main(string[] args)
         {
-            Console.WriteLine($"Executing {typeof(DomainNeutralAssemblies.App.NoBindingRedirects.Program).FullName}.Main");
+            Console.WriteLine($"Executing {typeof(Program).FullName}.Main");
             InnerMethodToAllowProfilerInjection();
         }
 
         static void InnerMethodToAllowProfilerInjection()
         {
+            // Add static dependency to Newtonsoft.Json
+            var serializer = new JsonSerializer();
+
             var url = "http://www.contoso.com/";
 
             // Add dependency on System.Net.WebClient which lives in the System assembly

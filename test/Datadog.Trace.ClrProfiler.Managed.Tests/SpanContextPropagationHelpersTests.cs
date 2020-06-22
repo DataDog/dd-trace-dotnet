@@ -1,32 +1,25 @@
 using System.Globalization;
-using System.Net;
 using System.Net.Http;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
+using System.Net.Http.Headers;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
-    // TODO: for now, these tests cover all of this,
-    // but we should probably split them up into actual *unit* tests for:
-    // - HttpHeadersCollection wrapper over HttpHeaders (Get, Set, Add, Remove)
-    // - NameValueHeadersCollection wrapper over NameValueCollection (Get, Set, Add, Remove)
-    // - SpanContextPropagator.Inject()
-    // - SpanContextPropagator.Extract()
-    public class HeadersCollectionTests
+    public class SpanContextPropagationHelpersTests
     {
         [Fact]
-        public void WebRequest_InjectExtract_Identity()
+        public void HttpRequestMessage_InjectExtract_Identity()
         {
             const int traceId = 9;
             const int spanId = 7;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
 
-            IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
+            var request = new HttpRequestMessage();
             var context = new SpanContext(traceId, spanId, samplingPriority);
 
-            SpanContextPropagator.Instance.Inject(context, headers);
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            SpanContextPropagatorHelpers.InjectHttpHeadersWithReflection(context, (object)request.Headers);
+            var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(context.SpanId, resultContext.SpanId);
@@ -43,8 +36,9 @@ namespace Datadog.Trace.Tests
             const string spanId = "7";
             const string samplingPriority = "2";
 
-            var headers = InjectContext(traceId, spanId, samplingPriority);
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            var request = new HttpRequestMessage();
+            InjectContext(request.Headers, traceId, spanId, samplingPriority);
+            var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
             // invalid traceId should return a null context even if other values are set
             Assert.Null(resultContext);
@@ -59,12 +53,14 @@ namespace Datadog.Trace.Tests
             const ulong traceId = 9;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
 
-            var headers = InjectContext(
+            var request = new HttpRequestMessage();
+            InjectContext(
+                request.Headers,
                 traceId.ToString(CultureInfo.InvariantCulture),
                 spanId,
                 ((int)samplingPriority).ToString(CultureInfo.InvariantCulture));
 
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(traceId, resultContext.TraceId);
@@ -81,12 +77,14 @@ namespace Datadog.Trace.Tests
             const ulong traceId = 9;
             const ulong spanId = 7;
 
-            var headers = InjectContext(
+            var request = new HttpRequestMessage();
+            InjectContext(
+                request.Headers,
                 traceId.ToString(CultureInfo.InvariantCulture),
                 spanId.ToString(CultureInfo.InvariantCulture),
                 samplingPriority);
 
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(traceId, resultContext.TraceId);
@@ -94,13 +92,11 @@ namespace Datadog.Trace.Tests
             Assert.Null(resultContext.SamplingPriority);
         }
 
-        private static IHeadersCollection InjectContext(string traceId, string spanId, string samplingPriority)
+        private static void InjectContext(HttpRequestHeaders headers, string traceId, string spanId, string samplingPriority)
         {
-            IHeadersCollection headers = new DictionaryHeadersCollection();
             headers.Add(HttpHeaderNames.TraceId, traceId);
             headers.Add(HttpHeaderNames.ParentId, spanId);
             headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority);
-            return headers;
         }
     }
 }

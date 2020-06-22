@@ -155,17 +155,33 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       GetEnvironmentValue(environment::domain_neutral_instrumentation);
 
   if (domain_neutral_instrumentation == "1"_W || domain_neutral_instrumentation == "true"_W) {
-    Info("Detected environment variable ", environment::domain_neutral_instrumentation,
-         "=", domain_neutral_instrumentation);
-    Info("Enabling automatic instrumentation of methods called from domain-neutral assemblies. ",
-         "Please ensure that there is only one AppDomain or, if applications are being hosted in IIS, ",
-         "ensure that all Application Pools have at most one application each. ",
-         "Otherwise, a sharing violation (HRESULT 0x80131401) may occur.");
     instrument_domain_neutral_assemblies = true;
   }
 
   // set event mask to subscribe to events and disable NGEN images
-  hr = this->info_->SetEventMask(event_mask);
+  // get ICorProfilerInfo6 for net452+
+  ICorProfilerInfo6* info6;
+  hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo6>(&info6);
+
+  if (SUCCEEDED(hr)) {
+    Debug("Interface ICorProfilerInfo6 found.");
+    hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+
+    if (instrument_domain_neutral_assemblies) {
+      Info("Note: The ", environment::domain_neutral_instrumentation, " environment variable is not needed when running on .NET Framework 4.5.2 or higher, and will be ignored.");
+    }
+  } else {
+    hr = this->info_->SetEventMask(event_mask);
+
+    if (instrument_domain_neutral_assemblies) {
+      Info("Detected environment variable ", environment::domain_neutral_instrumentation,
+          "=", domain_neutral_instrumentation);
+      Info("Enabling automatic instrumentation of methods called from domain-neutral assemblies. ",
+          "Please ensure that there is only one AppDomain or, if applications are being hosted in IIS, ",
+          "ensure that all Application Pools have at most one application each. ",
+          "Otherwise, a sharing violation (HRESULT 0x80131401) may occur.");
+    }
+  }
   if (FAILED(hr)) {
     Warn("Failed to attach profiler: unable to set event mask.");
     return E_FAIL;
@@ -510,6 +526,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // has been started.
   auto valid_startup_hook_callsite = true;
   if (module_metadata->assemblyName == "System"_W ||
+      module_metadata->assemblyName == "System.Net.Http"_W ||
+      module_metadata->assemblyName == "Microsoft.WindowsAzure.WebSites.Diagnostics"_W ||
      (module_metadata->assemblyName == "System.Web"_W && !(caller.type.name == "System.Web.Compilation.BuildManager"_W && caller.name == "InvokePreStartInitMethods"_W))) {
     valid_startup_hook_callsite = false;
   }
@@ -578,6 +596,100 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
     Warn("JITCompilationStarted: Call to ProcessReplacementCalls() failed for ", function_id, " ", module_id, " ", function_token);
     return S_OK;
   }
+
+  return S_OK;
+}
+
+//
+// ICorProfilerCallback6 methods
+//
+HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(
+    const WCHAR* wszAssemblyPath,
+    ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) {
+  if (in_azure_app_services) {
+    Debug("GetAssemblyReferences skipping entire callback because this is running in Azure App Services, which isn't yet supported for this feature. AssemblyPath=", wszAssemblyPath);
+    return S_OK;
+  }
+
+  // Convert the assembly path to the assembly name, assuming the assembly name
+  // is either <assembly_name.ni.dll> or <assembly_name>.dll
+  auto assemblyPathString = ToString(wszAssemblyPath);
+  auto filename =
+      assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
+  auto lastNiDllPeriodIndex = filename.rfind(".ni.dll");
+  auto lastDllPeriodIndex = filename.rfind(".dll");
+  if (lastNiDllPeriodIndex != std::string::npos) {
+    filename.erase(lastNiDllPeriodIndex, 7);
+  } else if (lastDllPeriodIndex != std::string::npos) {
+    filename.erase(lastDllPeriodIndex, 4);
+  }
+
+  const WSTRING assembly_name = ToWSTRING(filename);
+
+  // Skip known framework assemblies that we will not instrument and,
+  // as a result, will not need an assembly reference to the
+  // managed profiler
+  for (auto&& skip_assembly_pattern : skip_assembly_prefixes) {
+    if (assembly_name.rfind(skip_assembly_pattern, 0) == 0) {
+      Debug("GetAssemblyReferences skipping module by pattern: Name=",
+           assembly_name, " Path=", wszAssemblyPath);
+      return S_OK;
+    }
+  }
+
+  for (auto&& skip_assembly : skip_assemblies) {
+    if (assembly_name == skip_assembly) {
+      Debug("GetAssemblyReferences skipping known assembly: Name=",
+          assembly_name, " Path=", wszAssemblyPath);
+      return S_OK;
+    }
+  }
+
+  // Construct an ASSEMBLYMETADATA structure for the managed profiler that can
+  // be consumed by the runtime
+  const AssemblyReference assemblyReference = trace::AssemblyReference(managed_profiler_full_assembly_version);
+  ASSEMBLYMETADATA assembly_metadata{};
+
+  assembly_metadata.usMajorVersion = assemblyReference.version.major;
+  assembly_metadata.usMinorVersion = assemblyReference.version.minor;
+  assembly_metadata.usBuildNumber = assemblyReference.version.build;
+  assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
+  if (assemblyReference.locale == "neutral"_W) {
+    assembly_metadata.szLocale = const_cast<WCHAR*>("\0"_W.c_str());
+    assembly_metadata.cbLocale = 0;
+  } else {
+    assembly_metadata.szLocale =
+        const_cast<WCHAR*>(assemblyReference.locale.c_str());
+    assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
+  }
+
+  DWORD public_key_size = 8;
+  if (assemblyReference.public_key == trace::PublicKey()) {
+    public_key_size = 0;
+  }
+  
+  COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
+  asmRefInfo.pbPublicKeyOrToken =
+        (void*)&assemblyReference.public_key.data[0];
+  asmRefInfo.cbPublicKeyOrToken = public_key_size;
+  asmRefInfo.szName = assemblyReference.name.c_str();
+  asmRefInfo.pMetaData = &assembly_metadata;
+  asmRefInfo.pbHashValue = nullptr;
+  asmRefInfo.cbHashValue = 0;
+  asmRefInfo.dwAssemblyRefFlags = 0;
+
+  // Attempt to extend the assembly closure of the provided assembly to include
+  // the managed profiler
+  auto hr = pAsmRefProvider->AddAssemblyReference(&asmRefInfo);
+  if (FAILED(hr)) {
+    Warn("GetAssemblyReferences failed for call from ", wszAssemblyPath);
+    return S_OK;
+  }
+
+  Debug("GetAssemblyReferences extending assembly closure for ",
+      assembly_name, " to include ", asmRefInfo.szName,
+      ". Path=", wszAssemblyPath);
+  instrument_domain_neutral_assemblies = true;
 
   return S_OK;
 }

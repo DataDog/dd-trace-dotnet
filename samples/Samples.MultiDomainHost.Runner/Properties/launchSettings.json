@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "DomainNeutralAssemblies.FileLoadException": {
+    "Samples.MultiDomainHost.Runner": {
       "commandName": "Project",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
