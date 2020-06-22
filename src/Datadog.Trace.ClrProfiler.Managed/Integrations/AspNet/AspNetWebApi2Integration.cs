@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Extensions;
 using Datadog.Trace.ClrProfiler.Helpers;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -76,6 +77,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // This should never happen, but put in a reasonable fallback of finding the first System.Net.Http.dll in the AppDomain
                 else
                 {
+                    var statsd = Tracer.Instance.Statsd;
+                    if (statsd != null)
+                    {
+                        statsd.AppendWarning(source: $"{nameof(AspNetWebApi2Integration)}.{nameof(ExecuteAsync)}", message: "Using fallback logic to find System.Net.Http.HttpResponseMessage Type needed for return type", null);
+                        statsd.Send();
+                    }
+
                     var systemNetHttpAssemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.GetName().Name.Equals("System.Net.Http", StringComparison.OrdinalIgnoreCase));
                     var firstSystemNetHttpAssembly = systemNetHttpAssemblies.First();
                     taskResultType = firstSystemNetHttpAssembly.GetType("System.Net.Http.HttpResponseMessage", true);
