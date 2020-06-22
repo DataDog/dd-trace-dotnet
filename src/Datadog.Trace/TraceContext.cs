@@ -26,7 +26,7 @@ namespace Datadog.Trace
 
         public Span RootSpan { get; private set; }
 
-        public DateTimeOffset UtcNow => _utcStart.Add(StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp));
+        public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
 
         public IDatadogTracer Tracer { get; }
 
@@ -46,6 +46,8 @@ namespace Datadog.Trace
                 }
             }
         }
+
+        private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
 
         public void AddSpan(Span span)
         {
@@ -127,6 +129,11 @@ namespace Datadog.Trace
             {
                 _samplingPriorityLocked = true;
             }
+        }
+
+        public TimeSpan ElapsedSince(DateTimeOffset date)
+        {
+            return Elapsed + (_utcStart - date);
         }
 
         private void DecorateRootSpan(Span span)
