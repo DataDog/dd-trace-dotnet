@@ -76,10 +76,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 // This should never happen, but put in a reasonable fallback of finding the first System.Net.Http.dll in the AppDomain
                 else
                 {
+                    Log.Warning($"{nameof(AspNetWebApi2Integration)}.{nameof(ExecuteAsync)}: Unable to find System.Net.Http.HttpResponseMessage Type from method arguments. Using fallback logic to find the Type needed for return type.");
                     var statsd = Tracer.Instance.Statsd;
                     if (statsd != null)
                     {
-                        statsd.AppendWarning(source: $"{nameof(AspNetWebApi2Integration)}.{nameof(ExecuteAsync)}", message: "Using fallback logic to find System.Net.Http.HttpResponseMessage Type needed for return type", null);
+                        statsd.AppendWarning(source: $"{nameof(AspNetWebApi2Integration)}.{nameof(ExecuteAsync)}", message: "Unable to find System.Net.Http.HttpResponseMessage Type from method arguments. Using fallback logic to find the Type needed for return type.", null);
                         statsd.Send();
                     }
 
