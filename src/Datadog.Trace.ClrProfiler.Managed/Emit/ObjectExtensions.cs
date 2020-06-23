@@ -66,14 +66,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var paramType2 = typeof(TArg2);
 
             object cachedItem = Cache.GetOrAdd(
-                $"{type.AssemblyQualifiedName}.{methodName}.{paramType1.AssemblyQualifiedName}.{paramType2.AssemblyQualifiedName}",
+                new PropertyFetcherCacheKey(type, paramType1, paramType2, methodName),
                 key =>
                     DynamicMethodBuilder<Action<object, TArg1, TArg2>>
                        .CreateMethodCallDelegate(
-                            type,
-                            methodName,
+                            key.Type1,
+                            key.Name,
                             OpCodeValue.Callvirt,
-                            methodParameterTypes: new[] { paramType1, paramType2 }));
+                            methodParameterTypes: new[] { key.Type2, key.Type3 }));
 
             if (cachedItem is Action<object, TArg1, TArg2> func)
             {
@@ -318,18 +318,25 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             public readonly Type Type1;
             public readonly Type Type2;
+            public readonly Type Type3;
             public readonly string Name;
 
             public PropertyFetcherCacheKey(Type type1, Type type2, string name)
+                : this(type1, type2, null, name)
+            {
+            }
+
+            public PropertyFetcherCacheKey(Type type1, Type type2, Type type3, string name)
             {
                 Type1 = type1 ?? throw new ArgumentNullException(nameof(type1));
                 Type2 = type2;
+                Type3 = type3;
                 Name = name ?? throw new ArgumentNullException(nameof(name));
             }
 
             public bool Equals(PropertyFetcherCacheKey other)
             {
-                return Equals(Type1, other.Type1) && Equals(Type2, other.Type2) && Name == other.Name;
+                return Equals(Type1, other.Type1) && Equals(Type2, other.Type2) && Equals(Type3, other.Type3) && Name == other.Name;
             }
 
             public override bool Equals(object obj)
@@ -343,6 +350,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 {
                     var hashCode = Type1.GetHashCode();
                     hashCode = (hashCode * 397) ^ (Type2 != null ? Type2.GetHashCode() : 0);
+                    hashCode = (hashCode * 397) ^ (Type3 != null ? Type3.GetHashCode() : 0);
                     hashCode = (hashCode * 397) ^ Name.GetHashCode();
                     return hashCode;
                 }
