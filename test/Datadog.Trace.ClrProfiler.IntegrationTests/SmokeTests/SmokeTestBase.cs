@@ -121,27 +121,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
 
-                    var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds) && outputWaitHandle.WaitOne() && errorWaitHandle.WaitOne();
+                    var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds) && outputWaitHandle.WaitOne(MaxTestRunMilliseconds / 2) && errorWaitHandle.WaitOne(MaxTestRunMilliseconds / 2);
                     var standardOutput = outputBuffer.ToString();
                     var standardError = errorBuffer.ToString();
-
-                    if (AssumeSuccessOnTimeout && !ranToCompletion)
-                    {
-                        if (!process.HasExited)
-                        {
-                            try
-                            {
-                                process.Kill();
-                            }
-                            catch
-                            {
-                                // Do nothing
-                            }
-                        }
-
-                        Assert.True(true, "No smoke is a good sign for this case, even on timeout.");
-                        return;
-                    }
 
                     if (!ranToCompletion)
                     {
@@ -157,11 +139,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                             }
                         }
 
-                        Output.WriteLine("The smoke test is running for too long or was lost.");
-                        Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-                        Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+                        if (AssumeSuccessOnTimeout)
+                        {
+                            Assert.True(true, "No smoke is a good sign for this case, even on timeout.");
+                            return;
+                        }
+                        else
+                        {
+                            Output.WriteLine("The smoke test is running for too long or was lost.");
+                            Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+                            Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
 
-                        throw new TimeoutException("The smoke test is running for too long or was lost.");
+                            throw new TimeoutException("The smoke test is running for too long or was lost.");
+                        }
                     }
 
                     if (!string.IsNullOrWhiteSpace(standardOutput))
