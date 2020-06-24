@@ -1,5 +1,8 @@
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Threading;
 using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -95,6 +98,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                         throw new NullException("We need a reference to the process for this test.");
                     }
 
+                    var cancellationTokenSource = new CancellationTokenSource();
+
+                    // Drain and store the output
+                    var stdoutReader = new OutputReader(process.StandardOutput, cancellationTokenSource.Token);
+                    var stderrReader = new OutputReader(process.StandardError, cancellationTokenSource.Token);
+
                     var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds);
 
                     if (AssumeSuccessOnTimeout && !ranToCompletion)
@@ -106,12 +115,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
                     if (!ranToCompletion)
                     {
+                        Output.WriteLine("The smoke test is running for too long or was lost.");
+                        Output.WriteLine($"StandardOutput:{Environment.NewLine}{stdoutReader.GetOutput()}");
+                        Output.WriteLine($"StandardError:{Environment.NewLine}{stderrReader.GetOutput()}");
+
+                        cancellationTokenSource.Cancel();
+
                         throw new TimeoutException("The smoke test is running for too long or was lost.");
                     }
 
-                    string standardOutput = process.StandardOutput.ReadToEnd();
-                    string standardError = process.StandardError.ReadToEnd();
-                    int exitCode = process.ExitCode;
+                    var standardOutput = stdoutReader.GetOutput(waitForCompletion: true);
+                    var standardError = stderrReader.GetOutput(waitForCompletion: true);
 
                     if (!string.IsNullOrWhiteSpace(standardOutput))
                     {
@@ -123,6 +137,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                         Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
                     }
 
+                    int exitCode = process.ExitCode;
+
                     result = new ProcessResult(process, standardOutput, standardError, exitCode);
                 }
             }
@@ -130,6 +146,49 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             var successCode = 0;
             Assert.True(successCode == result.ExitCode, $"Non-success exit code {result.ExitCode}");
             Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
+        }
+
+        private class OutputReader
+        {
+            private readonly StreamReader _reader;
+            private readonly StringBuilder _buffer = new StringBuilder();
+            private readonly CancellationToken _cancellationToken;
+            private readonly Thread _thread;
+
+            public OutputReader(StreamReader reader, CancellationToken token)
+            {
+                _reader = reader;
+                _cancellationToken = token;
+
+                _thread = new Thread(Drain) { IsBackground = true };
+                _thread.Start();
+            }
+
+            public string GetOutput(bool waitForCompletion = false)
+            {
+                if (waitForCompletion)
+                {
+                    _thread.Join();
+                }
+
+                lock (_buffer)
+                {
+                    return _buffer.ToString();
+                }
+            }
+
+            private void Drain()
+            {
+                while (!_reader.EndOfStream && !_cancellationToken.IsCancellationRequested)
+                {
+                    var line = _reader.ReadLine();
+
+                    lock (_buffer)
+                    {
+                        _buffer.Append(line);
+                    }
+                }
+            }
         }
     }
 }
