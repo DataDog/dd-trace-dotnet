@@ -1,6 +1,7 @@
 // From https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/DiagnosticSourceEventSource.cs
 
 using System;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Datadog.Trace.Util
@@ -58,6 +59,28 @@ namespace Datadog.Trace.Util
         /// <typeparam name="T">Return type of the property.</typeparam>
         private class PropertyFetch<T>
         {
+            private readonly Func<object, T> _propertyFetch;
+
+            private PropertyFetch()
+            {
+                _propertyFetch = _ => default;
+            }
+
+            private PropertyFetch(PropertyInfo propertyInfo)
+            {
+                // Generate lambda: arg => (T)((TObject)arg).get_property();
+                var param = Expression.Parameter(typeof(object), "arg"); // arg =>
+                var cast = Expression.Convert(param, propertyInfo.DeclaringType); // (TObject)arg
+                var propertyFetch = Expression.Property(cast, propertyInfo); // get_property()
+                var castResult = Expression.Convert(propertyFetch, typeof(T)); // (T)result
+
+                // Generate the actual lambda
+                var lambda = Expression.Lambda(typeof(Func<object, T>), castResult, param);
+
+                // Compile it for faster access
+                _propertyFetch = (Func<object, T>)lambda.Compile();
+            }
+
             /// <summary>
             /// Create a property fetcher from a .NET Reflection <see cref="PropertyInfo"/> class that
             /// represents a property of a particular type.
@@ -72,11 +95,7 @@ namespace Datadog.Trace.Util
                     return new PropertyFetch<T>();
                 }
 
-                Type typedPropertyFetcher = typeof(TypedFetchProperty<,>);
-                Type instantiatedTypedPropertyFetcher = typedPropertyFetcher.GetTypeInfo().MakeGenericType(
-                    typeof(T), propertyInfo.DeclaringType, propertyInfo.PropertyType);
-
-                return (PropertyFetch<T>)Activator.CreateInstance(instantiatedTypedPropertyFetcher, propertyInfo);
+                return new PropertyFetch<T>(propertyInfo);
             }
 
             /// <summary>
@@ -84,25 +103,9 @@ namespace Datadog.Trace.Util
             /// </summary>
             /// <param name="obj">The object that contains the property.</param>
             /// <returns>The value of the property on the specified object.</returns>
-            public virtual T Fetch(object obj)
+            public T Fetch(object obj)
             {
-                return default;
-            }
-
-            private class TypedFetchProperty<TObject, TProperty> : PropertyFetch<T>
-                where TProperty : T
-            {
-                private readonly Func<TObject, TProperty> _propertyFetch;
-
-                public TypedFetchProperty(PropertyInfo property)
-                {
-                    _propertyFetch = (Func<TObject, TProperty>)property.GetMethod.CreateDelegate(typeof(Func<TObject, TProperty>));
-                }
-
-                public override T Fetch(object obj)
-                {
-                    return _propertyFetch((TObject)obj);
-                }
+                return _propertyFetch(obj);
             }
         }
     }
