@@ -106,30 +106,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
                     if (!ranToCompletion)
                     {
+                        Output.WriteLine("The smoke test is running for too long or was lost.");
+                        DumpOutput(process, Output);
+
                         throw new TimeoutException("The smoke test is running for too long or was lost.");
                     }
 
-                    string standardOutput = process.StandardOutput.ReadToEnd();
-                    string standardError = process.StandardError.ReadToEnd();
+                    var output = DumpOutput(process, Output);
+
                     int exitCode = process.ExitCode;
 
-                    if (!string.IsNullOrWhiteSpace(standardOutput))
-                    {
-                        Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(standardError))
-                    {
-                        Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
-                    }
-
-                    result = new ProcessResult(process, standardOutput, standardError, exitCode);
+                    result = new ProcessResult(process, output.Item1, output.Item2, exitCode);
                 }
             }
 
             var successCode = 0;
             Assert.True(successCode == result.ExitCode, $"Non-success exit code {result.ExitCode}");
             Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
+        }
+
+        private static Tuple<string, string> DumpOutput(Process process, ITestOutputHelper output)
+        {
+            var standardOutput = process.StandardOutput.ReadToEnd();
+            var standardError = process.StandardError.ReadToEnd();
+
+            if (!string.IsNullOrWhiteSpace(standardOutput))
+            {
+                output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
+
+            return Tuple.Create(standardOutput, standardError);
         }
     }
 }
