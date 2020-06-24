@@ -185,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
                     lock (_buffer)
                     {
-                        _buffer.Append(line);
+                        _buffer.AppendLine(line);
                     }
                 }
             }
