@@ -127,13 +127,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
                     if (AssumeSuccessOnTimeout && !ranToCompletion)
                     {
-                        process.Kill();
+                        if (!process.HasExited)
+                        {
+                            try
+                            {
+                                process.Kill();
+                            }
+                            catch
+                            {
+                                // Do nothing
+                            }
+                        }
+
                         Assert.True(true, "No smoke is a good sign for this case, even on timeout.");
                         return;
                     }
 
                     if (!ranToCompletion)
                     {
+                        if (!process.HasExited)
+                        {
+                            try
+                            {
+                                process.Kill();
+                            }
+                            catch
+                            {
+                                // Do nothing
+                            }
+                        }
+
                         Output.WriteLine("The smoke test is running for too long or was lost.");
                         Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
                         Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
