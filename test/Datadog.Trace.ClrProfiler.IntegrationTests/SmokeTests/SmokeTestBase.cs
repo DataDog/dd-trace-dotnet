@@ -60,72 +60,99 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             // clear all relevant environment variables to start with a clean slate
             EnvironmentHelper.ClearProfilerEnvironmentVariables();
 
-            ProcessStartInfo startInfo;
-
             int agentPort = TcpPortProvider.GetOpenPort();
             int aspNetCorePort = TcpPortProvider.GetOpenPort(); // unused for now
             Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
             Output.WriteLine($"Assigning port {aspNetCorePort} for the aspNetCorePort.");
-
-            if (EnvironmentHelper.IsCoreClr())
-            {
-                // .NET Core
-                startInfo = new ProcessStartInfo(executable, $"{applicationPath}");
-            }
-            else
-            {
-                // .NET Framework
-                startInfo = new ProcessStartInfo(executable);
-            }
-
-            EnvironmentHelper.SetEnvironmentVariables(agentPort, aspNetCorePort, executable, startInfo.EnvironmentVariables);
-
-            startInfo.UseShellExecute = false;
-            startInfo.CreateNoWindow = true;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.RedirectStandardError = true;
-            startInfo.RedirectStandardInput = false;
 
             ProcessResult result;
 
             using (var agent = new MockTracerAgent(agentPort))
             {
                 agent.ShouldDeserializeTraces = shouldDeserializeTraces;
-                using (var process = Process.Start(startInfo))
+
+                // Using the following code to avoid possible hangs on WaitForExit due to synchronous reads: https://stackoverflow.com/questions/139593/processstartinfo-hanging-on-waitforexit-why
+                using (var outputWaitHandle = new AutoResetEvent(false))
+                using (var errorWaitHandle = new AutoResetEvent(false))
+                using (var process = new Process())
                 {
-                    if (process == null)
+                    // Initialize StartInfo
+                    process.StartInfo.FileName = executable;
+                    EnvironmentHelper.SetEnvironmentVariables(agentPort, aspNetCorePort, executable, process.StartInfo.EnvironmentVariables);
+                    if (EnvironmentHelper.IsCoreClr())
                     {
-                        throw new NullException("We need a reference to the process for this test.");
+                        // Command becomes: dotnet.exe <applicationPath>
+                        process.StartInfo.Arguments = applicationPath;
                     }
 
-                    var cancellationTokenSource = new CancellationTokenSource();
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.CreateNoWindow = true;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.RedirectStandardError = true;
+                    process.StartInfo.RedirectStandardInput = false;
 
-                    // Drain and store the output
-                    var stdoutReader = new OutputReader(process.StandardOutput, cancellationTokenSource.Token);
-                    var stderrReader = new OutputReader(process.StandardError, cancellationTokenSource.Token);
-
-                    var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds);
-
-                    if (AssumeSuccessOnTimeout && !ranToCompletion)
+                    // Set up buffered output for stdout and stderr
+                    var outputBuffer = new StringBuilder();
+                    var errorBuffer = new StringBuilder();
+                    process.OutputDataReceived += (sender, e) =>
                     {
-                        process.Kill();
-                        Assert.True(true, "No smoke is a good sign for this case, even on timeout.");
-                        return;
-                    }
+                        if (e.Data == null)
+                        {
+                            outputWaitHandle.Set();
+                        }
+                        else
+                        {
+                            outputBuffer.AppendLine(e.Data);
+                        }
+                    };
+                    process.ErrorDataReceived += (sender, e) =>
+                    {
+                        if (e.Data == null)
+                        {
+                            errorWaitHandle.Set();
+                        }
+                        else
+                        {
+                            errorBuffer.AppendLine(e.Data);
+                        }
+                    };
+
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
+                    var ranToCompletion = process.WaitForExit(MaxTestRunMilliseconds) && outputWaitHandle.WaitOne(MaxTestRunMilliseconds / 2) && errorWaitHandle.WaitOne(MaxTestRunMilliseconds / 2);
+                    var standardOutput = outputBuffer.ToString();
+                    var standardError = errorBuffer.ToString();
 
                     if (!ranToCompletion)
                     {
-                        Output.WriteLine("The smoke test is running for too long or was lost.");
-                        Output.WriteLine($"StandardOutput:{Environment.NewLine}{stdoutReader.GetOutput()}");
-                        Output.WriteLine($"StandardError:{Environment.NewLine}{stderrReader.GetOutput()}");
+                        if (!process.HasExited)
+                        {
+                            try
+                            {
+                                process.Kill();
+                            }
+                            catch
+                            {
+                                // Do nothing
+                            }
+                        }
 
-                        cancellationTokenSource.Cancel();
+                        if (AssumeSuccessOnTimeout)
+                        {
+                            Assert.True(true, "No smoke is a good sign for this case, even on timeout.");
+                            return;
+                        }
+                        else
+                        {
+                            Output.WriteLine("The smoke test is running for too long or was lost.");
+                            Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+                            Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
 
-                        throw new TimeoutException("The smoke test is running for too long or was lost.");
+                            throw new TimeoutException("The smoke test is running for too long or was lost.");
+                        }
                     }
-
-                    var standardOutput = stdoutReader.GetOutput(waitForCompletion: true);
-                    var standardError = stderrReader.GetOutput(waitForCompletion: true);
 
                     if (!string.IsNullOrWhiteSpace(standardOutput))
                     {
@@ -146,49 +173,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             var successCode = 0;
             Assert.True(successCode == result.ExitCode, $"Non-success exit code {result.ExitCode}");
             Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
-        }
-
-        private class OutputReader
-        {
-            private readonly StreamReader _reader;
-            private readonly StringBuilder _buffer = new StringBuilder();
-            private readonly CancellationToken _cancellationToken;
-            private readonly Thread _thread;
-
-            public OutputReader(StreamReader reader, CancellationToken token)
-            {
-                _reader = reader;
-                _cancellationToken = token;
-
-                _thread = new Thread(Drain) { IsBackground = true };
-                _thread.Start();
-            }
-
-            public string GetOutput(bool waitForCompletion = false)
-            {
-                if (waitForCompletion)
-                {
-                    _thread.Join();
-                }
-
-                lock (_buffer)
-                {
-                    return _buffer.ToString();
-                }
-            }
-
-            private void Drain()
-            {
-                while (!_reader.EndOfStream && !_cancellationToken.IsCancellationRequested)
-                {
-                    var line = _reader.ReadLine();
-
-                    lock (_buffer)
-                    {
-                        _buffer.Append(line);
-                    }
-                }
-            }
         }
     }
 }
