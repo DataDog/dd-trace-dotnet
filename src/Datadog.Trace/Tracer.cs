@@ -421,6 +421,8 @@ namespace Datadog.Trace
         {
             try
             {
+                var frameworkDescription = FrameworkDescription.Create();
+
                 var stringWriter = new StringWriter();
 
                 using (var writer = new JsonTextWriter(stringWriter))
@@ -431,24 +433,22 @@ namespace Datadog.Trace
                     writer.WriteValue(DateTime.Now);
 
                     writer.WritePropertyName("os_name");
-#if NETSTANDARD
-                    writer.WriteValue(System.Runtime.InteropServices.RuntimeInformation.OSDescription);
-#else
+                    writer.WriteValue(frameworkDescription.OSPlatform);
+
+                    writer.WritePropertyName("os_version");
                     writer.WriteValue(Environment.OSVersion.ToString());
-#endif
 
                     writer.WritePropertyName("version");
                     writer.WriteValue(typeof(Tracer).Assembly.GetName().Version.ToString());
 
+                    writer.WritePropertyName("bitness");
+                    writer.WriteValue(frameworkDescription.ProcessArchitecture);
+
                     writer.WritePropertyName("lang");
-                    writer.WriteValue(".net");
+                    writer.WriteValue(frameworkDescription.Name);
 
                     writer.WritePropertyName("lang_version");
-#if NETSTANDARD
-                    writer.WriteValue(System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription);
-#else
-                    writer.WriteValue(Environment.Version.ToString());
-#endif
+                    writer.WriteValue(frameworkDescription.ProductVersion);
 
                     writer.WritePropertyName("env");
                     writer.WriteValue(Settings.Environment);
@@ -490,6 +490,16 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("runtime_metrics_enabled");
                     writer.WriteValue(Settings.TracerMetricsEnabled);
+
+                    writer.WritePropertyName("disabled_integrations");
+                    writer.WriteStartArray();
+
+                    foreach (var integration in Settings.DisabledIntegrationNames)
+                    {
+                        writer.WriteValue(integration);
+                    }
+
+                    writer.WriteEndArray();
 
                     writer.WriteEndObject();
                 }
