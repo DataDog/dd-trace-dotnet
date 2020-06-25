@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace
 {
@@ -412,6 +414,91 @@ namespace Datadog.Trace
                 var diagnosticManager = new DiagnosticManager(observers);
                 diagnosticManager.Start();
                 DiagnosticManager = diagnosticManager;
+            }
+        }
+
+        internal void WriteDiagnosticLog()
+        {
+            try
+            {
+                var stringWriter = new StringWriter();
+
+                using (var writer = new JsonTextWriter(stringWriter))
+                {
+                    writer.WriteStartObject();
+
+                    writer.WritePropertyName("date");
+                    writer.WriteValue(DateTime.Now);
+
+                    writer.WritePropertyName("os_name");
+#if NETSTANDARD
+                    writer.WriteValue(System.Runtime.InteropServices.RuntimeInformation.OSDescription);
+#else
+                    writer.WriteValue(Environment.OSVersion.ToString());
+#endif
+
+                    writer.WritePropertyName("version");
+                    writer.WriteValue(typeof(Tracer).Assembly.GetName().Version.ToString());
+
+                    writer.WritePropertyName("lang");
+                    writer.WriteValue(".net");
+
+                    writer.WritePropertyName("lang_version");
+#if NETSTANDARD
+                    writer.WriteValue(System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription);
+#else
+                    writer.WriteValue(Environment.Version.ToString());
+#endif
+
+                    writer.WritePropertyName("env");
+                    writer.WriteValue(Settings.Environment);
+
+                    writer.WritePropertyName("enabled");
+                    writer.WriteValue(Settings.TraceEnabled);
+
+                    writer.WritePropertyName("service");
+                    writer.WriteValue(DefaultServiceName);
+
+                    writer.WritePropertyName("agent_url");
+                    writer.WriteValue(Settings.AgentUri);
+
+                    writer.WritePropertyName("debug");
+                    writer.WriteValue(GlobalSettings.Source.DebugEnabled);
+
+                    writer.WritePropertyName("analytics_enabled");
+                    writer.WriteValue(Settings.AnalyticsEnabled);
+
+                    writer.WritePropertyName("sample_rate");
+                    writer.WriteValue(Settings.GlobalSamplingRate);
+
+                    writer.WritePropertyName("sampling_rules");
+                    writer.WriteValue(Settings.CustomSamplingRules);
+
+                    writer.WritePropertyName("tags");
+
+                    writer.WriteStartArray();
+
+                    foreach (var entry in Settings.GlobalTags)
+                    {
+                        writer.WriteValue(string.Concat(entry.Key, ":", entry.Value));
+                    }
+
+                    writer.WriteEndArray();
+
+                    writer.WritePropertyName("log_injection_enabled");
+                    writer.WriteValue(Settings.LogsInjectionEnabled);
+
+                    writer.WritePropertyName("runtime_metrics_enabled");
+                    writer.WriteValue(Settings.TracerMetricsEnabled);
+
+                    writer.WriteEndObject();
+                }
+
+                Log.Information("DATADOG TRACER CONFIGURATION - {0}", stringWriter.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "DATADOG TRACER DIAGNOSTICS - Error fetching configuration");
             }
         }
 

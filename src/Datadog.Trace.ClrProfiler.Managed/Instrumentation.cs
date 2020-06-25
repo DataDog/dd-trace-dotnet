@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -50,6 +51,8 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     tracer.StartDiagnosticObservers();
                 }
+
+                tracer.WriteDiagnosticLog();
             }
             catch
             {
