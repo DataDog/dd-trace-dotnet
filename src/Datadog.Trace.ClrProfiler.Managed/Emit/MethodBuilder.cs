@@ -21,6 +21,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private static readonly ConcurrentDictionary<Key, TDelegate> Cache = new ConcurrentDictionary<Key, TDelegate>(new KeyComparer());
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(MethodBuilder<TDelegate>));
 
+        private static readonly Type[] EmptyTypeArray = new Type[0];
+
         /// <summary>
         /// Feature flag used primarily for forcing testing of the token lookup strategy.
         /// </summary>
@@ -44,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private MethodBase _methodBase;
         private Type _concreteType;
         private string _concreteTypeName;
-        private object[] _parameters = new object[0];
+        private Type[] _parameters = EmptyTypeArray;
         private Type[] _explicitParameterTypes = null;
         private string[] _namespaceAndNameFilter = null;
         private Type[] _declaringTypeGenerics;
@@ -114,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return this;
         }
 
-        public MethodBuilder<TDelegate> WithParameters(params object[] parameters)
+        public MethodBuilder<TDelegate> WithParameters(params Type[] parameters)
         {
             if (parameters == null)
             {
@@ -123,6 +125,44 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             _parameters = parameters;
             return this;
+        }
+
+        public MethodBuilder<TDelegate> WithParameters(params object[] parameters)
+        {
+            if (parameters == null)
+            {
+                throw new ArgumentNullException(nameof(parameters));
+            }
+
+            return WithParameters(Interception.ParamsToTypes(parameters));
+        }
+
+        public MethodBuilder<TDelegate> WithParameters<TParam>(TParam param1)
+        {
+            var types = new[] { param1?.GetType() };
+
+            return WithParameters(types);
+        }
+
+        public MethodBuilder<TDelegate> WithParameters<TParam1, TParam2>(TParam1 param1, TParam2 param2)
+        {
+            var types = new[] { param1?.GetType(), param2?.GetType() };
+
+            return WithParameters(types);
+        }
+
+        public MethodBuilder<TDelegate> WithParameters<TParam1, TParam2, TParam3>(TParam1 param1, TParam2 param2, TParam3 param3)
+        {
+            var types = new[] { param1?.GetType(), param2?.GetType(), param3?.GetType() };
+
+            return WithParameters(types);
+        }
+
+        public MethodBuilder<TDelegate> WithParameters<TParam1, TParam2, TParam3, TParam4>(TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4)
+        {
+            var types = new[] { param1?.GetType(), param2?.GetType(), param3?.GetType(), param4?.GetType() };
+
+            return WithParameters(types);
         }
 
         public MethodBuilder<TDelegate> WithExplicitParameterTypes(params Type[] types)
@@ -157,28 +197,16 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public TDelegate Build()
         {
-            var parameterTypesForCache = _explicitParameterTypes;
-
-            if (parameterTypesForCache == null)
-            {
-                parameterTypesForCache = Interception.ParamsToTypes(_parameters);
-            }
-
             var cacheKey = new Key(
-                callingModule: _resolutionModule,
-                mdToken: _mdToken,
-                callOpCode: _opCode,
-                concreteType: _concreteType,
-                explicitParameterTypes: parameterTypesForCache,
-                methodGenerics: _methodGenerics,
-                declaringTypeGenerics: _declaringTypeGenerics);
+                this,
+                callingModule: _resolutionModule);
 
             return Cache.GetOrAdd(cacheKey, key =>
             {
                 // Validate requirements at the last possible moment
                 // Don't do more than needed before checking the cache
-                ValidateRequirements();
-                return EmitDelegate();
+                key.Builder.ValidateRequirements();
+                return key.Builder.EmitDelegate();
             });
         }
 
@@ -399,7 +427,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
                 for (var i = 0; i < _explicitParameterTypes.Length; i++)
                 {
                     var explicitType = _explicitParameterTypes[i];
-                    var parameterType = _parameters[i]?.GetType();
+                    var parameterType = _parameters[i];
 
                     if (parameterType == null)
                     {
@@ -594,7 +622,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         {
             return _explicitParameterTypes != null
                        ? _explicitParameterTypes[i]
-                       : _parameters[i]?.GetType();
+                       : _parameters[i];
         }
 
         private bool GenericsAreViable(MethodInfo mi)
@@ -657,85 +685,57 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private struct Key
         {
             public readonly int CallingModuleMetadataToken;
-            public readonly int MethodMetadataToken;
-            public readonly OpCodeValue CallOpCode;
-            public readonly string ConcreteTypeName;
-            public readonly string GenericSpec;
-            public readonly string ExplicitParams;
+            public readonly MethodBuilder<TDelegate> Builder;
 
             public Key(
-                Module callingModule,
-                int mdToken,
-                OpCodeValue callOpCode,
-                Type concreteType,
-                Type[] explicitParameterTypes,
-                Type[] methodGenerics,
-                Type[] declaringTypeGenerics)
+                MethodBuilder<TDelegate> builder,
+                Module callingModule)
             {
+                Builder = builder;
                 CallingModuleMetadataToken = callingModule.MetadataToken;
-                MethodMetadataToken = mdToken;
-                CallOpCode = callOpCode;
-                ConcreteTypeName = concreteType.AssemblyQualifiedName;
-
-                GenericSpec = "_gArgs_";
-
-                if (methodGenerics != null)
-                {
-                    for (var i = 0; i < methodGenerics.Length; i++)
-                    {
-                        GenericSpec = string.Concat(GenericSpec, $"_{methodGenerics[i]?.AssemblyQualifiedName ?? "NULL"}_");
-                    }
-                }
-
-                GenericSpec = string.Concat(GenericSpec, "_gParams_");
-
-                if (declaringTypeGenerics != null)
-                {
-                    for (var i = 0; i < declaringTypeGenerics.Length; i++)
-                    {
-                        GenericSpec = string.Concat(GenericSpec, $"_{declaringTypeGenerics[i]?.AssemblyQualifiedName ?? "NULL"}_");
-                    }
-                }
-
-                ExplicitParams = string.Empty;
-
-                if (explicitParameterTypes != null)
-                {
-                    ExplicitParams = string.Join("_", explicitParameterTypes.Select(ept => ept?.AssemblyQualifiedName ?? "NULL"));
-                }
             }
+
+            public Type[] ExplicitParams => Builder._explicitParameterTypes ?? Builder._parameters;
         }
 
         private class KeyComparer : IEqualityComparer<Key>
         {
             public bool Equals(Key x, Key y)
             {
-                if (!int.Equals(x.CallingModuleMetadataToken, y.CallingModuleMetadataToken))
+                if (x.CallingModuleMetadataToken != y.CallingModuleMetadataToken)
                 {
                     return false;
                 }
 
-                if (!int.Equals(x.MethodMetadataToken, y.MethodMetadataToken))
+                var builder1 = x.Builder;
+                var builder2 = y.Builder;
+
+                if (builder1._mdToken != builder2._mdToken)
                 {
                     return false;
                 }
 
-                if (!short.Equals(x.CallOpCode, y.CallOpCode))
+                if (builder1._opCode != builder2._opCode)
                 {
                     return false;
                 }
 
-                if (!string.Equals(x.ConcreteTypeName, y.ConcreteTypeName))
+                if (builder1._concreteType != builder2._concreteType)
                 {
                     return false;
                 }
 
-                if (!string.Equals(x.ExplicitParams, y.ExplicitParams))
+                if (!ArrayEquals(x.ExplicitParams, y.ExplicitParams))
                 {
                     return false;
                 }
 
-                if (!string.Equals(x.GenericSpec, y.GenericSpec))
+                if (!ArrayEquals(builder1._methodGenerics, builder2._methodGenerics))
+                {
+                    return false;
+                }
+
+                if (!ArrayEquals(builder1._declaringTypeGenerics, builder2._declaringTypeGenerics))
                 {
                     return false;
                 }
@@ -747,15 +747,63 @@ namespace Datadog.Trace.ClrProfiler.Emit
             {
                 unchecked
                 {
+                    var builder = obj.Builder;
+
                     int hash = 17;
                     hash = (hash * 23) + obj.CallingModuleMetadataToken.GetHashCode();
-                    hash = (hash * 23) + obj.MethodMetadataToken.GetHashCode();
-                    hash = (hash * 23) + obj.CallOpCode.GetHashCode();
-                    hash = (hash * 23) + obj.ConcreteTypeName.GetHashCode();
-                    hash = (hash * 23) + obj.GenericSpec.GetHashCode();
-                    hash = (hash * 23) + obj.ExplicitParams.GetHashCode();
+                    hash = (hash * 23) + builder._mdToken.GetHashCode();
+                    hash = (hash * 23) + ((short)builder._opCode).GetHashCode();
+                    hash = (hash * 23) + builder._concreteType.GetHashCode();
+                    hash = (hash * 23) + GetHashCode(builder._methodGenerics);
+                    hash = (hash * 23) + GetHashCode(obj.ExplicitParams);
+                    hash = (hash * 23) + GetHashCode(builder._declaringTypeGenerics);
                     return hash;
                 }
+            }
+
+            private static int GetHashCode(Type[] array)
+            {
+                if (array == null)
+                {
+                    return 0;
+                }
+
+                int value = array.Length;
+
+                for (int i = 0; i < array.Length; i++)
+                {
+                    value = unchecked((value * 31) + array[i]?.GetHashCode() ?? 0);
+                }
+
+                return value;
+            }
+
+            private static bool ArrayEquals(Type[] array1, Type[] array2)
+            {
+                if (array1 == null)
+                {
+                    return array2 == null;
+                }
+
+                if (array2 == null)
+                {
+                    return false;
+                }
+
+                if (array1.Length != array2.Length)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < array1.Length; i++)
+                {
+                    if (array1[i] != array2[i])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
         }
     }
