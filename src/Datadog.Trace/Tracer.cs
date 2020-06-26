@@ -31,6 +31,11 @@ namespace Datadog.Trace
         /// </summary>
         private static int _liveTracerCount;
 
+        /// <summary>
+        /// Indicates whether we're initializing a tracer for the first time
+        /// </summary>
+        private static int _firstInitialization = 1;
+
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
 
@@ -153,6 +158,11 @@ namespace Datadog.Trace
             if (Settings.LogsInjectionEnabled)
             {
                 InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
+            }
+
+            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
+            {
+                WriteDiagnosticLog();
             }
         }
 

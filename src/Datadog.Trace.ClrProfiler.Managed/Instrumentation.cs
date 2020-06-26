@@ -51,8 +51,6 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     tracer.StartDiagnosticObservers();
                 }
-
-                tracer.WriteDiagnosticLog();
             }
             catch
             {
