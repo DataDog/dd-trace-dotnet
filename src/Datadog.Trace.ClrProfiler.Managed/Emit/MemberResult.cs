@@ -2,12 +2,14 @@ using System;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
-    internal sealed class MemberResult<T>
+    internal readonly struct MemberResult<T>
     {
         /// <summary>
         /// A static value used to represent a member that was not found.
         /// </summary>
-        public static readonly MemberResult<T> NotFound = new MemberResult<T>();
+        public static readonly MemberResult<T> NotFound = default;
+
+        public readonly bool HasValue;
 
         private readonly T _value;
 
@@ -17,16 +19,10 @@ namespace Datadog.Trace.ClrProfiler.Emit
             HasValue = true;
         }
 
-        private MemberResult()
-        {
-        }
-
         public T Value =>
             HasValue
                 ? _value
                 : throw new InvalidOperationException("Reflected member not found.");
-
-        public bool HasValue { get; }
 
         public T GetValueOrDefault()
         {
@@ -35,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public MemberResult<TResult> GetProperty<TResult>(string propertyName)
         {
-            if (ReferenceEquals(this, NotFound) || Value == null || !Value.TryGetPropertyValue(propertyName, out TResult result))
+            if (!HasValue || Value == null || !Value.TryGetPropertyValue(propertyName, out TResult result))
             {
                 return MemberResult<TResult>.NotFound;
             }
@@ -50,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public MemberResult<TResult> GetField<TResult>(string fieldName)
         {
-            if (ReferenceEquals(this, NotFound) || Value == null || !Value.TryGetFieldValue(fieldName, out TResult result))
+            if (!HasValue || Value == null || !Value.TryGetFieldValue(fieldName, out TResult result))
             {
                 return MemberResult<TResult>.NotFound;
             }
@@ -65,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public MemberResult<TResult> CallMethod<TArg1, TResult>(string methodName, TArg1 arg1)
         {
-            if (ReferenceEquals(this, NotFound) || Value == null || !Value.TryCallMethod(methodName, arg1, out TResult result))
+            if (!HasValue || Value == null || !Value.TryCallMethod(methodName, arg1, out TResult result))
             {
                 return MemberResult<TResult>.NotFound;
             }
@@ -80,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
         public override string ToString()
         {
-            if (ReferenceEquals(this, NotFound) || Value == null)
+            if (!HasValue || Value == null)
             {
                 return string.Empty;
             }

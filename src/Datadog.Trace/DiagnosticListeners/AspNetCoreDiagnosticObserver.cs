@@ -136,7 +136,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
-            var httpContext = (HttpContext)HttpRequestInStartHttpContextFetcher.Fetch(arg);
+            var httpContext = HttpRequestInStartHttpContextFetcher.Fetch<HttpContext>(arg);
 
             if (ShouldIgnore(httpContext))
             {
@@ -176,7 +176,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var httpContext = (HttpContext)BeforeActionHttpContextFetcher.Fetch(arg);
+            var httpContext = BeforeActionHttpContextFetcher.Fetch<HttpContext>(arg);
 
             if (ShouldIgnore(httpContext))
             {
@@ -193,7 +193,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                     //       has been selected but no filters have run and model binding hasn't occured.
-                    var actionDescriptor = (ActionDescriptor)BeforeActionActionDescriptorFetcher.Fetch(arg);
+                    var actionDescriptor = BeforeActionActionDescriptorFetcher.Fetch<ActionDescriptor>(arg);
                     HttpRequest request = httpContext.Request;
 
                     string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
@@ -214,7 +214,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                var httpContext = (HttpContext)HttpRequestInStopHttpContextFetcher.Fetch(arg);
+                var httpContext = HttpRequestInStopHttpContextFetcher.Fetch<HttpContext>(arg);
                 scope.Span.SetTag(Tags.HttpStatusCode, httpContext.Response.StatusCode.ToString());
 
                 if (httpContext.Response.StatusCode / 100 == 5)
@@ -233,8 +233,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null)
             {
-                var exception = (Exception)UnhandledExceptionExceptionFetcher.Fetch(arg);
-                var httpContext = (HttpContext)UnhandledExceptionHttpContextFetcher.Fetch(arg);
+                var exception = UnhandledExceptionExceptionFetcher.Fetch<Exception>(arg);
+                var httpContext = UnhandledExceptionHttpContextFetcher.Fetch<HttpContext>(arg);
 
                 span.SetException(exception);
                 _options.OnError?.Invoke(span, exception, httpContext);

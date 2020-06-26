@@ -11,8 +11,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
     /// </summary>
     internal static class ObjectExtensions
     {
-        private static readonly ConcurrentDictionary<string, object> Cache = new ConcurrentDictionary<string, object>();
-        private static readonly ConcurrentDictionary<string, PropertyFetcher> PropertyFetcherCache = new ConcurrentDictionary<string, PropertyFetcher>();
+        private static readonly ConcurrentDictionary<PropertyFetcherCacheKey, object> Cache = new ConcurrentDictionary<PropertyFetcherCacheKey, object>();
+        private static readonly ConcurrentDictionary<PropertyFetcherCacheKey, PropertyFetcher> PropertyFetcherCache = new ConcurrentDictionary<PropertyFetcherCacheKey, PropertyFetcher>();
 
         /// <summary>
         /// Tries to call an instance method with the specified name, a single parameter, and a return value.
@@ -30,14 +30,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var paramType1 = typeof(TArg1);
 
             object cachedItem = Cache.GetOrAdd(
-                $"{type.AssemblyQualifiedName}.{methodName}.{paramType1.AssemblyQualifiedName}",
+                new PropertyFetcherCacheKey(type, paramType1, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TArg1, TResult>>
                        .CreateMethodCallDelegate(
-                            type,
-                            methodName,
+                            key.Type1,
+                            key.Name,
                             OpCodeValue.Callvirt,
-                            methodParameterTypes: new[] { paramType1 }));
+                            methodParameterTypes: new[] { key.Type2 }));
 
             if (cachedItem is Func<object, TArg1, TResult> func)
             {
@@ -66,14 +66,14 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var paramType2 = typeof(TArg2);
 
             object cachedItem = Cache.GetOrAdd(
-                $"{type.AssemblyQualifiedName}.{methodName}.{paramType1.AssemblyQualifiedName}.{paramType2.AssemblyQualifiedName}",
+                new PropertyFetcherCacheKey(type, paramType1, paramType2, methodName),
                 key =>
                     DynamicMethodBuilder<Action<object, TArg1, TArg2>>
                        .CreateMethodCallDelegate(
-                            type,
-                            methodName,
+                            key.Type1,
+                            key.Name,
                             OpCodeValue.Callvirt,
-                            methodParameterTypes: new[] { paramType1, paramType2 }));
+                            methodParameterTypes: new[] { key.Type2, key.Type3 }));
 
             if (cachedItem is Action<object, TArg1, TArg2> func)
             {
@@ -97,12 +97,12 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var type = source.GetType();
 
             object cachedItem = Cache.GetOrAdd(
-                $"{type.AssemblyQualifiedName}.{methodName}",
+                new PropertyFetcherCacheKey(type, null, methodName),
                 key =>
                     DynamicMethodBuilder<Func<object, TResult>>
                        .CreateMethodCallDelegate(
-                            type,
-                            methodName,
+                            key.Type1,
+                            key.Name,
                             OpCodeValue.Callvirt));
 
             if (cachedItem is Func<object, TResult> func)
@@ -157,11 +157,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
                 PropertyFetcher fetcher = PropertyFetcherCache.GetOrAdd(
                     GetKey<TResult>(propertyName, type),
-                    key => new PropertyFetcher(propertyName));
+                    key => new PropertyFetcher(key.Name));
 
                 if (fetcher != null)
                 {
-                    value = (TResult)fetcher.Fetch(source);
+                    value = fetcher.Fetch<TResult>(source, type);
                     return true;
                 }
             }
@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             object cachedItem = Cache.GetOrAdd(
                 GetKey<TResult>(fieldName, type),
-                key => CreateFieldDelegate<TResult>(type, fieldName));
+                key => CreateFieldDelegate<TResult>(key.Type1, key.Name));
 
             if (cachedItem is Func<object, TResult> func)
             {
@@ -225,9 +225,9 @@ namespace Datadog.Trace.ClrProfiler.Emit
             return GetField<object>(source, fieldName);
         }
 
-        private static string GetKey<TResult>(string name, Type type)
+        private static PropertyFetcherCacheKey GetKey<TResult>(string name, Type type)
         {
-            return $"{typeof(TResult).AssemblyQualifiedName}:{type.AssemblyQualifiedName}:{name}";
+            return new PropertyFetcherCacheKey(type, typeof(TResult), name);
         }
 
         private static Func<object, TResult> CreatePropertyDelegate<TResult>(Type containerType, string propertyName)
@@ -312,6 +312,49 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             dynamicMethod.Return();
             return dynamicMethod.CreateDelegate();
+        }
+
+        private readonly struct PropertyFetcherCacheKey : IEquatable<PropertyFetcherCacheKey>
+        {
+            public readonly Type Type1;
+            public readonly Type Type2;
+            public readonly Type Type3;
+            public readonly string Name;
+
+            public PropertyFetcherCacheKey(Type type1, Type type2, string name)
+                : this(type1, type2, null, name)
+            {
+            }
+
+            public PropertyFetcherCacheKey(Type type1, Type type2, Type type3, string name)
+            {
+                Type1 = type1 ?? throw new ArgumentNullException(nameof(type1));
+                Type2 = type2;
+                Type3 = type3;
+                Name = name ?? throw new ArgumentNullException(nameof(name));
+            }
+
+            public bool Equals(PropertyFetcherCacheKey other)
+            {
+                return Equals(Type1, other.Type1) && Equals(Type2, other.Type2) && Equals(Type3, other.Type3) && Name == other.Name;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is PropertyFetcherCacheKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    var hashCode = Type1.GetHashCode();
+                    hashCode = (hashCode * 397) ^ (Type2 != null ? Type2.GetHashCode() : 0);
+                    hashCode = (hashCode * 397) ^ (Type3 != null ? Type3.GetHashCode() : 0);
+                    hashCode = (hashCode * 397) ^ Name.GetHashCode();
+                    return hashCode;
+                }
+            }
         }
     }
 }

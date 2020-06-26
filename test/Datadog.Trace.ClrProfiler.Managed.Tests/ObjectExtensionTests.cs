@@ -5,6 +5,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
     public class ObjectExtensionTests
     {
+        private enum SomeEnum
+        {
+            Zero = 0,
+            One = 1,
+            Two = 2
+        }
+
         [Fact]
         public void GetProperty_WithDifferentType_ShouldNotAffectResult()
         {
@@ -17,6 +24,21 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var actualResult = someCast.GetProperty<int>("SomeIntProperty");
 
             Assert.Equal(expected, (int)objectResult.GetValueOrDefault());
+            Assert.Equal(expected, actualResult.GetValueOrDefault());
+        }
+
+        [Fact]
+        public void GetProperty_WithNoDirectInheritance_ShouldNotAffectResult()
+        {
+            var someInstance = new SomeClass();
+            var expected = someInstance.SomeEnumProperty;
+
+            var someCast = (object)someInstance;
+
+            var intResult = someCast.GetProperty<int>("SomeEnumProperty");
+            var actualResult = someCast.GetProperty<SomeEnum>("SomeEnumProperty");
+
+            Assert.Equal((int)expected, intResult.GetValueOrDefault());
             Assert.Equal(expected, actualResult.GetValueOrDefault());
         }
 
@@ -40,6 +62,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             private readonly int someIntField = 305;
 
             public override int SomeIntProperty { get; } = 205;
+
+            public SomeEnum SomeEnumProperty { get; } = SomeEnum.Two;
 
             public int GetSomeIntField()
             {
