@@ -44,7 +44,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       GetEnvironmentValue(environment::tracing_enabled);
 
   if (tracing_enabled == "0"_W || tracing_enabled == "false"_W) {
-    Info("Profiler disabled in ", environment::tracing_enabled);
+    Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled in ", environment::tracing_enabled);
     return E_FAIL;
   }
 
@@ -56,7 +56,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   // process's name is on the list
   if (!include_process_names.empty() &&
       !Contains(include_process_names, process_name)) {
-    Info("Profiler disabled: ", process_name, " not found in ",
+    Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " not found in ",
          environment::include_process_names, ".");
     return E_FAIL;
   }
@@ -66,7 +66,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   // attach profiler only if this process's name is NOT on the list
   if (Contains(exclude_process_names, process_name)) {
-    Info("Profiler disabled: ", process_name, " found in ",
+    Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " found in ",
          environment::exclude_process_names, ".");
     return E_FAIL;
   }
@@ -75,7 +75,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
       &this->info_);
   if (FAILED(hr)) {
-    Warn("Failed to attach profiler: interface ICorProfilerInfo3 not found.");
+    Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo3 not found.");
     return E_FAIL;
   }
 
@@ -96,7 +96,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
         GetEnvironmentValue(environment::azure_app_services_app_pool_id);
 
     if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~') {
-      Info("Profiler disabled: ", environment::azure_app_services_app_pool_id,
+      Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", environment::azure_app_services_app_pool_id,
            " ", app_pool_id_value,
            " is recognized as an Azure App Services infrastructure process.");
       return E_FAIL;
@@ -106,7 +106,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
         environment::azure_app_services_cli_telemetry_profile_value);
 
     if (cli_telemetry_profile_value == "AzureKudu"_W) {
-      Info("Profiler disabled: ", app_pool_id_value,
+      Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", app_pool_id_value,
            " is recognized as Kudu, an Azure App Services reserved process.");
       return E_FAIL;
     }
@@ -117,7 +117,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
       GetEnvironmentValue(environment::integrations_path);
 
   if (integrations_paths.empty()) {
-    Warn("Profiler disabled: ", environment::integrations_path,
+    Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", environment::integrations_path,
          " environment variable not set.");
     return E_FAIL;
   }
@@ -136,7 +136,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   // check if there are any enabled integrations left
   if (integrations_.empty()) {
-    Warn("Profiler disabled: no enabled integrations found.");
+    Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: no enabled integrations found.");
     return E_FAIL;
   }
 
@@ -183,7 +183,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     }
   }
   if (FAILED(hr)) {
-    Warn("Failed to attach profiler: unable to set event mask.");
+    Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: unable to set event mask.");
     return E_FAIL;
   }
 

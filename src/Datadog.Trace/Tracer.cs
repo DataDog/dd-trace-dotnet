@@ -441,7 +441,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("version");
                     writer.WriteValue(typeof(Tracer).Assembly.GetName().Version.ToString());
 
-                    writer.WritePropertyName("bitness");
+                    writer.WritePropertyName("platform");
                     writer.WriteValue(frameworkDescription.ProcessArchitecture);
 
                     writer.WritePropertyName("lang");
