@@ -162,7 +162,7 @@ namespace Datadog.Trace
 
             if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
             {
-                WriteDiagnosticLog();
+                _ = WriteDiagnosticLog();
             }
         }
 
@@ -427,8 +427,24 @@ namespace Datadog.Trace
             }
         }
 
-        internal void WriteDiagnosticLog()
+        internal async Task WriteDiagnosticLog()
         {
+            string agentError = null;
+
+            try
+            {
+                var success = await _agentWriter.Ping().ConfigureAwait(false);
+
+                if (!success)
+                {
+                    agentError = "An error occurred while sending traces to the agent";
+                }
+            }
+            catch (Exception ex)
+            {
+                agentError = ex.Message;
+            }
+
             try
             {
                 var frameworkDescription = FrameworkDescription.Create();
@@ -510,6 +526,12 @@ namespace Datadog.Trace
                     }
 
                     writer.WriteEndArray();
+
+                    writer.WritePropertyName("agent_reachable");
+                    writer.WriteValue(agentError == null);
+
+                    writer.WritePropertyName("agent_error");
+                    writer.WriteValue(agentError ?? string.Empty);
 
                     writer.WriteEndObject();
                 }

@@ -32,6 +32,11 @@ namespace Datadog.Trace.Agent
             _api = api;
         }
 
+        public Task<bool> Ping()
+        {
+            return _api.SendTracesAsync(new Span[0][]);
+        }
+
         public void WriteTrace(Span[] trace)
         {
             var success = _tracesBuffer.Push(trace);

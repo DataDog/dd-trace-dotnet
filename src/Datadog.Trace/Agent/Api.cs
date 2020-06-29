@@ -52,7 +52,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public async Task SendTracesAsync(Span[][] traces)
+        public async Task<bool> SendTracesAsync(Span[][] traces)
         {
             // retry up to 5 times with exponential back-off
             var retryLimit = 5;
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Agent
                         {
                             // stop retrying
                             Log.Error("An error occurred while sending traces to the agent at {Endpoint}", _tracesEndpoint);
-                            return;
+                            return false;
                         }
 
                         // retry
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Agent
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
                         Log.Error("An error occurred while sending traces to the agent at {Endpoint}\n{Exception}", ex, _tracesEndpoint, ex.ToString());
-                        return;
+                        return false;
                     }
 #endif
                     var isSocketException = false;
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Agent
                     {
                         // stop retrying
                         Log.Error("An error occurred while sending traces to the agent at {Endpoint}", ex, _tracesEndpoint);
-                        return;
+                        return false;
                     }
 
                     // retry
@@ -174,7 +174,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 _statsd?.Send();
-                return;
+                return true;
             }
         }
 
