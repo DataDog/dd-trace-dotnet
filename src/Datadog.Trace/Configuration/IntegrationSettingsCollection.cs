@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 
 namespace Datadog.Trace.Configuration
@@ -9,6 +10,7 @@ namespace Datadog.Trace.Configuration
     {
         private readonly IConfigurationSource _source;
         private readonly ConcurrentDictionary<string, IntegrationSettings> _settings;
+        private readonly Func<string, IntegrationSettings> _valueFactory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettingsCollection"/> class.
@@ -18,6 +20,7 @@ namespace Datadog.Trace.Configuration
         {
             _source = source;
             _settings = new ConcurrentDictionary<string, IntegrationSettings>();
+            _valueFactory = name => new IntegrationSettings(name, _source);
         }
 
         /// <summary>
@@ -26,6 +29,6 @@ namespace Datadog.Trace.Configuration
         /// <param name="integrationName">The name of the integration.</param>
         /// <returns>The integration-specific settings for the specified integration.</returns>
         public IntegrationSettings this[string integrationName] =>
-            _settings.GetOrAdd(integrationName, name => new IntegrationSettings(name, _source));
+            _settings.GetOrAdd(integrationName, _valueFactory);
     }
 }

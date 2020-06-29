@@ -8,6 +8,7 @@ namespace Datadog.Trace.Util
     /// </summary>
     internal static class DomainMetadata
     {
+        private const string IsAppInsightKey = "DD_IsAppInsight";
         private const string UnknownName = "unknown";
         private static Process _currentProcess;
         private static bool _processDataPoisoned;
@@ -100,12 +101,15 @@ namespace Datadog.Trace.Util
 
         public static bool ShouldAvoidAppDomain()
         {
-            if (AppDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0)
+            var appDomain = AppDomain.CurrentDomain;
+
+            if (!(appDomain.GetData(IsAppInsightKey) is bool isAppInsight))
             {
-                return true;
+                isAppInsight = AppDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0;
+                appDomain.SetData(IsAppInsightKey, isAppInsight);
             }
 
-            return false;
+            return isAppInsight;
         }
 
         private static void TrySetProcess()
