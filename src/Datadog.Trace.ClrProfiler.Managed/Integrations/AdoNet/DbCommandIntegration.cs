@@ -175,7 +175,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.IDataReader, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
-        public static object ExecuteReaderWithBehaviorInternal(
+        public static object ExecuteReaderWithBehaviorExplicit(
             object command,
             int behavior,
             int opCode,
@@ -199,7 +199,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         private static object ExecuteReaderWithBehaviorInternal(object command, CommandBehavior commandBehavior, int opCode, int mdToken, long moduleVersionPtr, string methodName, string returnTypeName)
         {
             Func<DbCommand, CommandBehavior, DbDataReader> instrumentedMethod;
-
 
             try
             {
