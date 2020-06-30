@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Threading.Tasks;
+using Datadog.Trace;
 using Npgsql;
 using Samples.DatabaseHelper;
 
@@ -11,77 +12,86 @@ namespace Samples.Npgsql
     {
         private static async Task Main()
         {
-            using (var connection = CreateConnection())
+            using (var root = Tracer.Instance.StartActive("root"))
             {
-                // using DbDataReader here (instead of NpgsqlDataReader)
-                // let's us run the ExecuteReaderAsync() overloads
-                var testQueries = new RelationalDatabaseTestHarness<NpgsqlConnection, NpgsqlCommand, DbDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    command => command.ExecuteScalarAsync(),
-                    command => command.ExecuteReaderAsync(),
-                    (command, behavior) => command.ExecuteReaderAsync(behavior)
-                );
+                using (var connection = CreateConnection())
+                {
+                    // using DbDataReader here (instead of NpgsqlDataReader)
+                    // let's us run the ExecuteReaderAsync() overloads
+                    var testQueries = new RelationalDatabaseTestHarness<NpgsqlConnection, NpgsqlCommand, DbDataReader>(
+                        connection,
+                        command => command.ExecuteNonQuery(),
+                        command => command.ExecuteScalar(),
+                        command => command.ExecuteReader(),
+                        (command, behavior) => command.ExecuteReader(behavior),
+                        command => command.ExecuteNonQueryAsync(),
+                        command => command.ExecuteScalarAsync(),
+                        command => command.ExecuteReaderAsync(),
+                        (command, behavior) => command.ExecuteReaderAsync(behavior)
+                    );
 
-                await testQueries.RunAsync("NpgsqlCommand");
-            }
+                    await testQueries.RunAsync("NpgsqlCommand");
+                }
+
+                await Task.Delay(100);
 
 #if NETCOREAPP
-            // use DbCommandWrapper to reference DbCommand in netstandard.dll
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
-                    connection,
-                    command => new DbCommandWrapper(command).ExecuteNonQuery(),
-                    command => new DbCommandWrapper(command).ExecuteScalar(),
-                    command => new DbCommandWrapper(command).ExecuteReader(),
-                    (command, behavior) => new DbCommandWrapper(command).ExecuteReader(behavior),
-                    command => new DbCommandWrapper(command).ExecuteNonQueryAsync(),
-                    command => new DbCommandWrapper(command).ExecuteScalarAsync(),
-                    command => new DbCommandWrapper(command).ExecuteReaderAsync(),
-                    (command, behavior) => new DbCommandWrapper(command).ExecuteReaderAsync(behavior)
-                );
+                // use DbCommandWrapper to reference DbCommand in netstandard.dll
+                using (var connection = CreateConnection())
+                {
+                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
+                        connection,
+                        command => new DbCommandWrapper(command).ExecuteNonQuery(),
+                        command => new DbCommandWrapper(command).ExecuteScalar(),
+                        command => new DbCommandWrapper(command).ExecuteReader(),
+                        (command, behavior) => new DbCommandWrapper(command).ExecuteReader(behavior),
+                        command => new DbCommandWrapper(command).ExecuteNonQueryAsync(),
+                        command => new DbCommandWrapper(command).ExecuteScalarAsync(),
+                        command => new DbCommandWrapper(command).ExecuteReaderAsync(),
+                        (command, behavior) => new DbCommandWrapper(command).ExecuteReaderAsync(behavior)
+                    );
 
-                await testQueries.RunAsync("DbCommandWrapper");
-            }
+                    await testQueries.RunAsync("DbCommandWrapper");
+                }
+
+                await Task.Delay(100);
 #endif
 
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    command => command.ExecuteNonQueryAsync(),
-                    command => command.ExecuteScalarAsync(),
-                    command => command.ExecuteReaderAsync(),
-                    (command, behavior) => command.ExecuteReaderAsync(behavior)
-                );
+                using (var connection = CreateConnection())
+                {
+                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
+                        connection,
+                        command => command.ExecuteNonQuery(),
+                        command => command.ExecuteScalar(),
+                        command => command.ExecuteReader(),
+                        (command, behavior) => command.ExecuteReader(behavior),
+                        command => command.ExecuteNonQueryAsync(),
+                        command => command.ExecuteScalarAsync(),
+                        command => command.ExecuteReaderAsync(),
+                        (command, behavior) => command.ExecuteReaderAsync(behavior)
+                    );
 
-                await testQueries.RunAsync("DbCommand");
-            }
+                    await testQueries.RunAsync("DbCommand");
+                }
 
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(
-                    connection,
-                    command => command.ExecuteNonQuery(),
-                    command => command.ExecuteScalar(),
-                    command => command.ExecuteReader(),
-                    (command, behavior) => command.ExecuteReader(behavior),
-                    executeNonQueryAsync: null,
-                    executeScalarAsync: null,
-                    executeReaderAsync: null,
-                    executeReaderWithBehaviorAsync: null
-                );
+                await Task.Delay(100);
 
-                await testQueries.RunAsync("IDbCommand");
+                using (var connection = CreateConnection())
+                {
+                    var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(
+                        connection,
+                        command => command.ExecuteNonQuery(),
+                        command => command.ExecuteScalar(),
+                        command => command.ExecuteReader(),
+                        (command, behavior) => command.ExecuteReader(behavior),
+                        executeNonQueryAsync: null,
+                        executeScalarAsync: null,
+                        executeReaderAsync: null,
+                        executeReaderWithBehaviorAsync: null
+                    );
+
+                    await testQueries.RunAsync("IDbCommand");
+                }
             }
         }
 

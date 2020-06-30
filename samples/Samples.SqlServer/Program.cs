@@ -32,24 +32,28 @@ namespace Samples.SqlServer
                     await testQueries.RunAsync("SqlCommand");
                 }
 
-#if NETCOREAPP
-            // use DbCommandWrapper to reference DbCommand in netstandard.dll
-            using (var connection = CreateConnection())
-            {
-                var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
-                    connection,
-                    command => new DbCommandWrapper(command).ExecuteNonQuery(),
-                    command => new DbCommandWrapper(command).ExecuteScalar(),
-                    command => new DbCommandWrapper(command).ExecuteReader(),
-                    (command, behavior) => new DbCommandWrapper(command).ExecuteReader(behavior),
-                    command => new DbCommandWrapper(command).ExecuteNonQueryAsync(),
-                    command => new DbCommandWrapper(command).ExecuteScalarAsync(),
-                    command => new DbCommandWrapper(command).ExecuteReaderAsync(),
-                    (command, behavior) => new DbCommandWrapper(command).ExecuteReaderAsync(behavior)
-                );
+                await Task.Delay(100);
 
-                await testQueries.RunAsync("DbCommandWrapper");
-            }
+#if NETCOREAPP
+                // use DbCommandWrapper to reference DbCommand in netstandard.dll
+                using (var connection = CreateConnection())
+                {
+                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
+                        connection,
+                        command => new DbCommandWrapper(command).ExecuteNonQuery(),
+                        command => new DbCommandWrapper(command).ExecuteScalar(),
+                        command => new DbCommandWrapper(command).ExecuteReader(),
+                        (command, behavior) => new DbCommandWrapper(command).ExecuteReader(behavior),
+                        command => new DbCommandWrapper(command).ExecuteNonQueryAsync(),
+                        command => new DbCommandWrapper(command).ExecuteScalarAsync(),
+                        command => new DbCommandWrapper(command).ExecuteReaderAsync(),
+                        (command, behavior) => new DbCommandWrapper(command).ExecuteReaderAsync(behavior)
+                    );
+
+                    await testQueries.RunAsync("DbCommandWrapper");
+                }
+
+                await Task.Delay(100);
 #endif
 
                 using (var connection = CreateConnection())
@@ -68,6 +72,8 @@ namespace Samples.SqlServer
 
                     await testQueries.RunAsync("DbCommand");
                 }
+
+                await Task.Delay(100);
 
                 using (var connection = CreateConnection())
                 {
