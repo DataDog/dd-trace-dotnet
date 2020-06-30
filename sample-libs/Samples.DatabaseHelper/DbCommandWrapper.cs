@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Samples.DatabaseHelper
 {
+    // Used to compile this project with netstandard2.0 as target to create calls to DbCommand in netstandard.dll
     public class DbCommandWrapper
     {
         private readonly DbCommand _command;
