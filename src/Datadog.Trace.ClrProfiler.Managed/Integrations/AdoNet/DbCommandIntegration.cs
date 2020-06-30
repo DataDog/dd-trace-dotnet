@@ -459,13 +459,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteNonQueryAsync;
             Func<DbCommand, CancellationToken, Task<int>> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQueryAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(DbCommand))
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
@@ -473,7 +474,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {AdoNetConstants.TypeNames.DbCommand}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: AdoNetConstants.TypeNames.DbCommand,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -632,13 +640,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteScalarAsync;
             Func<DbCommand, CancellationToken, Task<object>> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(DbCommand))
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
@@ -646,7 +655,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {AdoNetConstants.TypeNames.DbCommand}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: AdoNetConstants.TypeNames.DbCommand,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
