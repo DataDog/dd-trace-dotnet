@@ -22,8 +22,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             public const string IDbCommand = "System.Data.IDbCommand";
             // ReSharper restore InconsistentNaming
 
-            public const string DbCommand = "System.Data.Common.DbCommand";
             public const string DbDataReader = "System.Data.Common.DbDataReader";
+            public const string DbCommand = "System.Data.Common.DbCommand";
             public const string CommandBehavior = "System.Data.CommandBehavior";
         }
 
