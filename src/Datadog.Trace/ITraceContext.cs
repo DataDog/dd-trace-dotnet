@@ -15,5 +15,7 @@ namespace Datadog.Trace
         void CloseSpan(Span span);
 
         void LockSamplingPriority();
+
+        TimeSpan ElapsedSince(DateTimeOffset date);
     }
 }

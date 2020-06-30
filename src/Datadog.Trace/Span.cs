@@ -272,7 +272,7 @@ namespace Datadog.Trace
         /// </summary>
         public void Finish()
         {
-            Finish(Context.TraceContext.UtcNow);
+            Finish(Context.TraceContext.ElapsedSince(StartTime));
         }
 
         /// <summary>
@@ -282,41 +282,7 @@ namespace Datadog.Trace
         /// <param name="finishTimestamp">Explicit value for the end time of the Span</param>
         public void Finish(DateTimeOffset finishTimestamp)
         {
-            var shouldCloseSpan = false;
-            lock (_lock)
-            {
-                ResourceName ??= OperationName;
-
-                if (!IsFinished)
-                {
-                    Duration = finishTimestamp - StartTime;
-                    if (Duration < TimeSpan.Zero)
-                    {
-                        Duration = TimeSpan.Zero;
-                    }
-
-                    IsFinished = true;
-                    shouldCloseSpan = true;
-                }
-            }
-
-            if (shouldCloseSpan)
-            {
-                Context.TraceContext.CloseSpan(this);
-
-                if (IsLogLevelDebugEnabled)
-                {
-                    Log.Debug(
-                        "Span closed: [s_id: {0}, p_id: {1}, t_id: {2}] for (Service: {3}, Resource: {4}, Operation: {5}, Tags: [{6}])",
-                        SpanId,
-                        Context.ParentId,
-                        TraceId,
-                        ServiceName,
-                        ResourceName,
-                        OperationName,
-                        Tags == null ? string.Empty : string.Join(",", Tags.Keys));
-                }
-            }
+            Finish(finishTimestamp - StartTime);
         }
 
         /// <summary>
@@ -366,6 +332,45 @@ namespace Datadog.Trace
                 default:
                     // no need to lock on single reads
                     return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
+            }
+        }
+
+        internal void Finish(TimeSpan duration)
+        {
+            var shouldCloseSpan = false;
+            lock (_lock)
+            {
+                ResourceName ??= OperationName;
+
+                if (!IsFinished)
+                {
+                    Duration = duration;
+                    if (Duration < TimeSpan.Zero)
+                    {
+                        Duration = TimeSpan.Zero;
+                    }
+
+                    IsFinished = true;
+                    shouldCloseSpan = true;
+                }
+            }
+
+            if (shouldCloseSpan)
+            {
+                Context.TraceContext.CloseSpan(this);
+
+                if (IsLogLevelDebugEnabled)
+                {
+                    Log.Debug(
+                        "Span closed: [s_id: {0}, p_id: {1}, t_id: {2}] for (Service: {3}, Resource: {4}, Operation: {5}, Tags: [{6}])",
+                        SpanId,
+                        Context.ParentId,
+                        TraceId,
+                        ServiceName,
+                        ResourceName,
+                        OperationName,
+                        Tags == null ? string.Empty : string.Join(",", Tags.Keys));
+                }
             }
         }
 
