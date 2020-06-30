@@ -13,7 +13,8 @@ namespace Samples.Npgsql
         {
             using (var connection = CreateConnection())
             {
-                // using DbDataReader here let's us run the ExecuteReaderAsync() overloads
+                // using DbDataReader here (instead of NpgsqlDataReader)
+                // let's us run the ExecuteReaderAsync() overloads
                 var testQueries = new RelationalDatabaseTestHarness<NpgsqlConnection, NpgsqlCommand, DbDataReader>(
                     connection,
                     command => command.ExecuteNonQuery(),

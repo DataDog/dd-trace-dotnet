@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace Samples.DatabaseHelper
 {
-    // Used to compile this project with netstandard2.0 as target to create calls to DbCommand in netstandard.dll
+    /// <summary>
+    /// Light wrapper around <see cref="DbCommand"/> used to target calls in <c>netstandard.dll</c>
+    /// when this project targets netstandard.20
+    /// </summary>
     public class DbCommandWrapper
     {
         private readonly DbCommand _command;
