@@ -15,8 +15,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     {
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
-
-        private const string SqlCommandTypeName = "System.Data.SqlClient.SqlCommand";
+        private const string TargetType = "System.Data.SqlClient.SqlCommand";
         private const string SqlDataReaderTypeName = "System.Data.SqlClient.SqlDataReader";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(SqlCommandIntegration));
@@ -31,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = SqlCommandTypeName,
+            TargetType = TargetType,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SqlDataReaderTypeName },
             TargetMinimumVersion = Major4,
@@ -42,22 +41,30 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             Func<object, object> instrumentedMethod;
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(TargetType);
 
                 instrumentedMethod =
                     MethodBuilder<Func<object, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(SqlDataReaderTypeName)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: TargetType,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -86,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = SqlCommandTypeName,
+            TargetType = TargetType,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
@@ -98,16 +105,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<object, CommandBehavior, object> instrumentedMethod;
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             var commandBehavior = (CommandBehavior)behavior;
+            Func<object, CommandBehavior, object> instrumentedMethod;
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(TargetType);
 
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(SqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior)
@@ -115,7 +123,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReader}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: TargetType,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -145,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = SqlCommandTypeName,
+            TargetType = TargetType,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -157,12 +172,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            var cancellationToken = (CancellationToken)boxedCancellationToken;
-
             return ExecuteReaderAsyncInternal(
                 (DbCommand)command,
                 (CommandBehavior)behavior,
-                cancellationToken,
+                (CancellationToken)boxedCancellationToken,
                 opCode,
                 mdToken,
                 moduleVersionPtr);
@@ -176,15 +189,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
             Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>> instrumentedMethod;
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(TargetType);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, nameof(ExecuteReaderAsync))
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(commandBehavior, cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken)
@@ -192,7 +206,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteReaderAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: TargetType,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -220,7 +241,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = SqlCommandTypeName,
+            TargetType = TargetType,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -230,22 +251,30 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteNonQuery;
             Func<DbCommand, int> instrumentedMethod;
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(TargetType);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: TargetType,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -276,7 +305,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = SqlCommandTypeName,
+            TargetType = TargetType,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -287,11 +316,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            var cancellationToken = (CancellationToken)boxedCancellationToken;
-
             return ExecuteNonQueryAsyncInternal(
-                command as DbCommand,
-                cancellationToken,
+                (DbCommand)command,
+                (CancellationToken)boxedCancellationToken,
                 opCode,
                 mdToken,
                 moduleVersionPtr);
@@ -304,15 +331,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteNonQueryAsync;
             Func<DbCommand, CancellationToken, Task<int>> instrumentedMethod;
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(TargetType);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQueryAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
@@ -320,7 +348,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteNonQueryAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: TargetType,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -348,7 +383,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = SqlCommandTypeName,
+            TargetType = TargetType,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -358,22 +393,30 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteScalar;
             Func<DbCommand, object> instrumentedMethod;
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(TargetType);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: TargetType,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -404,7 +447,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = SqlCommandTypeName,
+            TargetType = TargetType,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -415,11 +458,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            var cancellationToken = (CancellationToken)boxedCancellationToken;
-
             return ExecuteScalarAsyncInternal(
-                command as DbCommand,
-                cancellationToken,
+                (DbCommand)command,
+                (CancellationToken)boxedCancellationToken,
                 opCode,
                 mdToken,
                 moduleVersionPtr);
@@ -432,15 +473,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteScalarAsync;
             Func<DbCommand, CancellationToken, Task<object>> instrumentedMethod;
 
             try
             {
-                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
+                var targetType = command.GetInstrumentedType(TargetType);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalarAsync)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(targetType)
                        .WithParameters(cancellationToken)
                        .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.CancellationToken)
@@ -448,7 +490,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {SqlCommandTypeName}.{AdoNetConstants.MethodNames.ExecuteScalarAsync}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: TargetType,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 

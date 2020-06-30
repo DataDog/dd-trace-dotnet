@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     {
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
+        private const string TargetType = AdoNetConstants.TypeNames.IDbCommand;
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(IDbCommandIntegration));
 
@@ -26,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon, AdoNetConstants.AssemblyNames.NetStandard },
-            TargetType = AdoNetConstants.TypeNames.IDbCommand,
+            TargetType = TargetType,
             TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.IDataReader },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -36,13 +37,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             Func<IDbCommand, IDataReader> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, IDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(IDbCommand))
                        .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.IDataReader)
                        .Build();
@@ -54,8 +56,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: AdoNetConstants.TypeNames.IDbCommand,
-                    methodName: nameof(ExecuteReader),
+                    instrumentedType: TargetType,
+                    methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -99,14 +101,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            Func<IDbCommand, CommandBehavior, IDataReader> instrumentedMethod;
+            const string methodName = AdoNetConstants.MethodNames.ExecuteReader;
             var commandBehavior = (CommandBehavior)behavior;
+            Func<IDbCommand, CommandBehavior, IDataReader> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, CommandBehavior, IDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(IDbCommand))
                        .WithParameters(commandBehavior)
                        .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.IDataReader, AdoNetConstants.TypeNames.CommandBehavior)
@@ -119,8 +122,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: AdoNetConstants.TypeNames.IDbCommand,
-                    methodName: nameof(ExecuteReader),
+                    instrumentedType: TargetType,
+                    methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -161,20 +164,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteNonQuery;
             Func<IDbCommand, int> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, int>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(IDbCommand))
                        .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {AdoNetConstants.TypeNames.IDbCommand}.{AdoNetConstants.MethodNames.ExecuteNonQuery}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: TargetType,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
@@ -214,20 +225,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
+            const string methodName = AdoNetConstants.MethodNames.ExecuteScalar;
             Func<IDbCommand, object> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<IDbCommand, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
                        .WithConcreteType(typeof(IDbCommand))
                        .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error resolving {AdoNetConstants.TypeNames.IDbCommand}.{AdoNetConstants.MethodNames.ExecuteScalar}(...)");
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: TargetType,
+                    methodName: methodName,
+                    instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
 
