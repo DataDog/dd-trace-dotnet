@@ -15,7 +15,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     {
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
-        private const string TargetType = "System.Data.SqlClient.SqlCommand";
+
+        private const string SqlCommandTypeName = "System.Data.SqlClient.SqlCommand";
         private const string SqlDataReaderTypeName = "System.Data.SqlClient.SqlDataReader";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(SqlCommandIntegration));
@@ -30,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = TargetType,
+            TargetType = SqlCommandTypeName,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SqlDataReaderTypeName },
             TargetMinimumVersion = Major4,
@@ -46,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(TargetType);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
 
                 instrumentedMethod =
                     MethodBuilder<Func<object, object>>
@@ -62,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: SqlCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -93,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = TargetType,
+            TargetType = SqlCommandTypeName,
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { SqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major4,
@@ -111,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(TargetType);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
 
                 instrumentedMethod =
                     MethodBuilder<Func<object, CommandBehavior, object>>
@@ -128,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: SqlCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -160,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = TargetType,
+            TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -194,7 +195,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(TargetType);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, CancellationToken, Task<DbDataReader>>>
@@ -211,7 +212,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: SqlCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -241,7 +242,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = TargetType,
+            TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -256,7 +257,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(TargetType);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
@@ -272,7 +273,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: SqlCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -305,7 +306,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = TargetType,
+            TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Int32>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -336,7 +337,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(TargetType);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<int>>>
@@ -353,7 +354,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: SqlCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -383,7 +384,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = TargetType,
+            TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -398,7 +399,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(TargetType);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
@@ -414,7 +415,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: SqlCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -447,7 +448,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataSqlClient },
-            TargetType = TargetType,
+            TargetType = SqlCommandTypeName,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Object>", ClrNames.CancellationToken },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -478,7 +479,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
             try
             {
-                var targetType = command.GetInstrumentedType(TargetType);
+                var targetType = command.GetInstrumentedType(SqlCommandTypeName);
 
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CancellationToken, Task<object>>>
@@ -495,7 +496,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: SqlCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;

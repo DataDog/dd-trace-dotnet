@@ -13,7 +13,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     {
         private const string IntegrationName = "AdoNet";
         private const string Major4 = "4";
-        private const string TargetType = AdoNetConstants.TypeNames.IDbCommand;
+
+        private const string IDbCommandTypeName = AdoNetConstants.TypeNames.IDbCommand;
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(IDbCommandIntegration));
 
@@ -27,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         /// <returns>The value returned by the instrumented method.</returns>
         [InterceptMethod(
             TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon, AdoNetConstants.AssemblyNames.NetStandard },
-            TargetType = TargetType,
+            TargetType = IDbCommandTypeName,
             TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.IDataReader },
             TargetMinimumVersion = Major4,
             TargetMaximumVersion = Major4)]
@@ -56,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: IDbCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -122,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: IDbCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -183,7 +184,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: IDbCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
@@ -244,7 +245,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     moduleVersionPointer: moduleVersionPtr,
                     mdToken: mdToken,
                     opCode: opCode,
-                    instrumentedType: TargetType,
+                    instrumentedType: IDbCommandTypeName,
                     methodName: methodName,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
