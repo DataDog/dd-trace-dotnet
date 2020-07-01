@@ -1,5 +1,8 @@
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Util;
 using Moq;
 using Xunit;
 
@@ -7,6 +10,12 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 {
     public class SpanExtensionsTests
     {
+        public SpanExtensionsTests()
+        {
+            // Reset the cache
+            DbCommandCache.Cache = new ConcurrentDictionary<string, KeyValuePair<string, string>[]>();
+        }
+
         [Theory]
         [InlineData("Server=myServerName,myPortNumber;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
         [InlineData(@"Server=myServerName\myInstanceName;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", @"myServerName\myInstanceName")]
@@ -20,13 +29,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             var spanContext = new SpanContext(Mock.Of<ISpanContext>(), Mock.Of<ITraceContext>(), "test");
             var span = new Span(spanContext, null);
 
-            var dbConnection = new Mock<IDbConnection>();
-            dbConnection.SetupGet(c => c.ConnectionString).Returns(connectionString);
-
-            var dbCommand = new Mock<IDbCommand>();
-            dbCommand.SetupGet(c => c.Connection).Returns(dbConnection.Object);
-
-            span.AddTagsFromDbCommand(dbCommand.Object);
+            span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
 
             Assert.Equal(span.GetTag(Tags.DbName), expectedDbName);
             Assert.Equal(span.GetTag(Tags.DbUser), expectedUserId);
@@ -36,12 +39,51 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [Fact]
         public void SetSpanTypeToSql()
         {
-            const string connectionString = "Server=myServerName,myPortNumber;Database=myDataBase;User Id=myUsername;Password=myPassword;";
+            const string connectionString = "Server=myServerName;Database=myDataBase;User Id=myUsername;Password=myPassword;";
             const string commandText = "SELECT * FROM Table ORDER BY id";
 
             var spanContext = new SpanContext(Mock.Of<ISpanContext>(), Mock.Of<ITraceContext>(), "test");
             var span = new Span(spanContext, null);
 
+            span.AddTagsFromDbCommand(CreateDbCommand(connectionString, commandText));
+
+            Assert.Equal(SpanTypes.Sql, span.Type);
+            Assert.Equal(commandText, span.ResourceName);
+        }
+
+        [Fact]
+        public void ShouldDisableCacheIfTooManyConnectionStrings()
+        {
+            const string connectionStringTemplate = "Server=myServerName{0};Database=myDataBase;User Id=myUsername;Password=myPassword;";
+
+            var spanContext = new SpanContext(Mock.Of<ISpanContext>(), Mock.Of<ITraceContext>(), "test");
+            var span = new Span(spanContext, null);
+
+            // Fill-up the cache and test the logic with cache enabled
+            for (int i = 0; i <= DbCommandCache.MaxConnectionStrings; i++)
+            {
+                var connectionString = string.Format(connectionStringTemplate, i);
+
+                span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
+
+                Assert.NotNull(DbCommandCache.Cache);
+                Assert.Equal("myServerName" + i, span.GetTag(Tags.OutHost));
+            }
+
+            // Test the logic with cache disabled
+            for (int i = 0; i <= 10; i++)
+            {
+                var connectionString = string.Format(connectionStringTemplate, "NoCache" + i);
+
+                span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
+
+                Assert.Null(DbCommandCache.Cache);
+                Assert.Equal("myServerName" + "NoCache" + i, span.GetTag(Tags.OutHost));
+            }
+        }
+
+        private static IDbCommand CreateDbCommand(string connectionString, string commandText = null)
+        {
             var dbConnection = new Mock<IDbConnection>();
             dbConnection.SetupGet(c => c.ConnectionString).Returns(connectionString);
 
@@ -49,10 +91,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             dbCommand.SetupGet(c => c.Connection).Returns(dbConnection.Object);
             dbCommand.SetupGet(c => c.CommandText).Returns(commandText);
 
-            span.AddTagsFromDbCommand(dbCommand.Object);
-
-            Assert.Equal(SpanTypes.Sql, span.Type);
-            Assert.Equal(commandText, span.ResourceName);
+            return dbCommand.Object;
         }
     }
 }
