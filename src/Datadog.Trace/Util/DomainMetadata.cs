@@ -12,6 +12,7 @@ namespace Datadog.Trace.Util
         private static Process _currentProcess;
         private static bool _processDataPoisoned;
         private static bool _domainDataPoisoned;
+        private static bool? _isAppInsightsAppDomain;
 
         static DomainMetadata()
         {
@@ -100,12 +101,12 @@ namespace Datadog.Trace.Util
 
         public static bool ShouldAvoidAppDomain()
         {
-            if (AppDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (_isAppInsightsAppDomain == null)
             {
-                return true;
+                _isAppInsightsAppDomain = AppDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0;
             }
 
-            return false;
+            return _isAppInsightsAppDomain.Value;
         }
 
         private static void TrySetProcess()
