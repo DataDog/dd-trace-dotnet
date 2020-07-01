@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
+using Newtonsoft.Json;
 
 namespace Datadog.Trace
 {
@@ -28,6 +30,11 @@ namespace Datadog.Trace
         /// "live" Tracers that could potentially be sending traces to the Agent.
         /// </summary>
         private static int _liveTracerCount;
+
+        /// <summary>
+        /// Indicates whether we're initializing a tracer for the first time
+        /// </summary>
+        private static int _firstInitialization = 1;
 
         private readonly IScopeManager _scopeManager;
         private readonly Timer _heartbeatTimer;
@@ -151,6 +158,11 @@ namespace Datadog.Trace
             if (Settings.LogsInjectionEnabled)
             {
                 InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
+            }
+
+            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
+            {
+                _ = WriteDiagnosticLog();
             }
         }
 
@@ -412,6 +424,123 @@ namespace Datadog.Trace
                 var diagnosticManager = new DiagnosticManager(observers);
                 diagnosticManager.Start();
                 DiagnosticManager = diagnosticManager;
+            }
+        }
+
+        internal async Task WriteDiagnosticLog()
+        {
+            string agentError = null;
+
+            try
+            {
+                var success = await _agentWriter.Ping().ConfigureAwait(false);
+
+                if (!success)
+                {
+                    agentError = "An error occurred while sending traces to the agent";
+                }
+            }
+            catch (Exception ex)
+            {
+                agentError = ex.Message;
+            }
+
+            try
+            {
+                var frameworkDescription = FrameworkDescription.Create();
+
+                var stringWriter = new StringWriter();
+
+                using (var writer = new JsonTextWriter(stringWriter))
+                {
+                    writer.WriteStartObject();
+
+                    writer.WritePropertyName("date");
+                    writer.WriteValue(DateTime.Now);
+
+                    writer.WritePropertyName("os_name");
+                    writer.WriteValue(frameworkDescription.OSPlatform);
+
+                    writer.WritePropertyName("os_version");
+                    writer.WriteValue(Environment.OSVersion.ToString());
+
+                    writer.WritePropertyName("version");
+                    writer.WriteValue(typeof(Tracer).Assembly.GetName().Version.ToString());
+
+                    writer.WritePropertyName("platform");
+                    writer.WriteValue(frameworkDescription.ProcessArchitecture);
+
+                    writer.WritePropertyName("lang");
+                    writer.WriteValue(frameworkDescription.Name);
+
+                    writer.WritePropertyName("lang_version");
+                    writer.WriteValue(frameworkDescription.ProductVersion);
+
+                    writer.WritePropertyName("env");
+                    writer.WriteValue(Settings.Environment);
+
+                    writer.WritePropertyName("enabled");
+                    writer.WriteValue(Settings.TraceEnabled);
+
+                    writer.WritePropertyName("service");
+                    writer.WriteValue(DefaultServiceName);
+
+                    writer.WritePropertyName("agent_url");
+                    writer.WriteValue(Settings.AgentUri);
+
+                    writer.WritePropertyName("debug");
+                    writer.WriteValue(GlobalSettings.Source.DebugEnabled);
+
+                    writer.WritePropertyName("analytics_enabled");
+                    writer.WriteValue(Settings.AnalyticsEnabled);
+
+                    writer.WritePropertyName("sample_rate");
+                    writer.WriteValue(Settings.GlobalSamplingRate);
+
+                    writer.WritePropertyName("sampling_rules");
+                    writer.WriteValue(Settings.CustomSamplingRules);
+
+                    writer.WritePropertyName("tags");
+
+                    writer.WriteStartArray();
+
+                    foreach (var entry in Settings.GlobalTags)
+                    {
+                        writer.WriteValue(string.Concat(entry.Key, ":", entry.Value));
+                    }
+
+                    writer.WriteEndArray();
+
+                    writer.WritePropertyName("log_injection_enabled");
+                    writer.WriteValue(Settings.LogsInjectionEnabled);
+
+                    writer.WritePropertyName("runtime_metrics_enabled");
+                    writer.WriteValue(Settings.TracerMetricsEnabled);
+
+                    writer.WritePropertyName("disabled_integrations");
+                    writer.WriteStartArray();
+
+                    foreach (var integration in Settings.DisabledIntegrationNames)
+                    {
+                        writer.WriteValue(integration);
+                    }
+
+                    writer.WriteEndArray();
+
+                    writer.WritePropertyName("agent_reachable");
+                    writer.WriteValue(agentError == null);
+
+                    writer.WritePropertyName("agent_error");
+                    writer.WriteValue(agentError ?? string.Empty);
+
+                    writer.WriteEndObject();
+                }
+
+                Log.Information("DATADOG TRACER CONFIGURATION - {0}", stringWriter.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "DATADOG TRACER DIAGNOSTICS - Error fetching configuration");
             }
         }
 

@@ -6,6 +6,8 @@ namespace Datadog.Trace.Agent
     {
         void WriteTrace(Span[] trace);
 
+        Task<bool> Ping();
+
         Task FlushAndCloseAsync();
 
         void OverrideApi(IApi api);
