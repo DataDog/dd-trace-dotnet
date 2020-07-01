@@ -71,11 +71,6 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
     return E_FAIL;
   }
 
-  if (process_name == "w3wp.exe"_W  ||
-      process_name == "iisexpresstray.exe"_W) {
-    is_iis = true;
-  }
-
   // get Profiler interface
   HRESULT hr = cor_profiler_info_unknown->QueryInterface<ICorProfilerInfo3>(
       &this->info_);
@@ -193,6 +188,10 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   runtime_information_ = GetRuntimeInformation(this->info_);
+  if (process_name == "w3wp.exe"_W  ||
+      process_name == "iisexpresstray.exe"_W) {
+    is_desktop_iis = runtime_information_.is_desktop();
+  }
 
   // we're in!
   Info("Profiler attached.");
@@ -529,8 +528,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   // which correctly loads Datadog.Trace.ClrProfiler.Managed.Loader into the application's
   // own AppDomain because at this point in the code path, the ApplicationImpersonationContext
   // has been started.
+  //
+  // Note: This check must only run on desktop because it is possible (and the default) to host
+  // ASP.NET Core in-process, so a new .NET Core runtime is instantiated and run in the same w3wp.exe process
   auto valid_startup_hook_callsite = true;
-  if (is_iis) {
+  if (is_desktop_iis) {
       valid_startup_hook_callsite =
             module_metadata->assemblyName == "System.Web"_W &&
             caller.type.name == "System.Web.Compilation.BuildManager"_W &&
