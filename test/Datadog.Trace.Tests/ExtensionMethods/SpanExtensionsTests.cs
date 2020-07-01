@@ -31,9 +31,9 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
             span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
 
-            Assert.Equal(span.GetTag(Tags.DbName), expectedDbName);
-            Assert.Equal(span.GetTag(Tags.DbUser), expectedUserId);
-            Assert.Equal(span.GetTag(Tags.OutHost), expectedHost);
+            Assert.Equal(expectedDbName, span.GetTag(Tags.DbName));
+            Assert.Equal(expectedUserId, span.GetTag(Tags.DbUser));
+            Assert.Equal(expectedHost, span.GetTag(Tags.OutHost));
         }
 
         [Fact]
