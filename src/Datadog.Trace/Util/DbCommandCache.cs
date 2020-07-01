@@ -57,7 +57,7 @@ namespace Datadog.Trace.Util
                 // Use atomic operation to log only once
                 if (Interlocked.Exchange(ref _cache, null) != null)
                 {
-                    Log.Information("More than 100 different connection strings were used, disabling cache");
+                    Log.Information($"More than {MaxConnectionStrings} different connection strings were used, disabling cache");
                 }
             }
 
