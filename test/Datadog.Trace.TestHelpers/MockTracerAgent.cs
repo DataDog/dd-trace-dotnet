@@ -127,7 +127,7 @@ namespace Datadog.Trace.TestHelpers
                     {
                         if (int.TryParse(header, out int traceCount))
                         {
-                            return traceCount > 0;
+                            return traceCount >= 0;
                         }
 
                         return false;
