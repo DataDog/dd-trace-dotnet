@@ -189,7 +189,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
 
   runtime_information_ = GetRuntimeInformation(this->info_);
   if (process_name == "w3wp.exe"_W  ||
-      process_name == "iisexpresstray.exe"_W) {
+      process_name == "iisexpress.exe"_W) {
     is_desktop_iis = runtime_information_.is_desktop();
   }
 
