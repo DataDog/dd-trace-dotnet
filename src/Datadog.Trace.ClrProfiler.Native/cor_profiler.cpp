@@ -537,6 +537,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
             module_metadata->assemblyName == "System.Web"_W &&
             caller.type.name == "System.Web.Compilation.BuildManager"_W &&
             caller.name == "InvokePreStartInitMethods"_W;
+  } else if (module_metadata->assemblyName == "System"_W ||
+             module_metadata->assemblyName == "System.Net.Http"_W) {
+    valid_startup_hook_callsite = false;
   }
 
   // The first time a method is JIT compiled in an AppDomain, insert our startup
