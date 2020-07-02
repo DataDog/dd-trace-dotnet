@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -12,6 +12,18 @@ namespace Datadog.Trace
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<SpanContextPropagator>();
+
+        private static readonly Dictionary<string, SamplingPriority> SamplingPriorities;
+
+        static SpanContextPropagator()
+        {
+            SamplingPriorities = new Dictionary<string, SamplingPriority>();
+
+            foreach (SamplingPriority value in Enum.GetValues(typeof(SamplingPriority)))
+            {
+                SamplingPriorities.Add(value.ToString(), value);
+            }
+        }
 
         private SpanContextPropagator()
         {
@@ -48,8 +60,10 @@ namespace Datadog.Trace
         /// Extracts a <see cref="SpanContext"/> from the values found in the specified headers.
         /// </summary>
         /// <param name="headers">The headers that contain the values to be extracted.</param>
+        /// <typeparam name="T">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
-        public SpanContext Extract(IHeadersCollection headers)
+        public SpanContext Extract<T>(T headers)
+            where T : IHeadersCollection
         {
             if (headers == null)
             {
@@ -65,47 +79,55 @@ namespace Datadog.Trace
             }
 
             var parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
-            var samplingPriority = ParseEnum<SamplingPriority>(headers, HttpHeaderNames.SamplingPriority);
+            var samplingPriority = ParseSamplingPriority(headers, HttpHeaderNames.SamplingPriority);
 
             return new SpanContext(traceId, parentId, samplingPriority);
         }
 
-        private static ulong ParseUInt64(IHeadersCollection headers, string headerName)
+        private static ulong ParseUInt64<T>(T headers, string headerName)
+            where T : IHeadersCollection
         {
-            var headerValues = headers.GetValues(headerName).ToList();
+            var headerValues = headers.GetValues(headerName);
 
-            if (headerValues.Count > 0)
+            bool hasValue = false;
+
+            foreach (string headerValue in headerValues)
             {
-                foreach (string headerValue in headerValues)
+                if (ulong.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
                 {
-                    if (ulong.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
-                    {
-                        return result;
-                    }
+                    return result;
                 }
 
+                hasValue = true;
+            }
+
+            if (hasValue)
+            {
                 Log.Information("Could not parse {0} headers: {1}", headerName, string.Join(",", headerValues));
             }
 
             return 0;
         }
 
-        private static T? ParseEnum<T>(IHeadersCollection headers, string headerName)
-            where T : struct, Enum
+        private static SamplingPriority? ParseSamplingPriority<T>(T headers, string headerName)
+            where T : IHeadersCollection
         {
-            var headerValues = headers.GetValues(headerName).ToList();
+            var headerValues = headers.GetValues(headerName);
 
-            if (headerValues.Count > 0)
+            bool hasValue = false;
+
+            foreach (string headerValue in headerValues)
             {
-                foreach (string headerValue in headerValues)
+                if (SamplingPriorities.TryGetValue(headerValue, out var result))
                 {
-                    if (Enum.TryParse<T>(headerValue, out var result) &&
-                        Enum.IsDefined(typeof(T), result))
-                    {
-                        return result;
-                    }
+                    return result;
                 }
 
+                hasValue = true;
+            }
+
+            if (hasValue)
+            {
                 Log.Information(
                     "Could not parse {0} headers: {1}",
                     headerName,
