@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -34,17 +35,12 @@ namespace Datadog.Trace.ExtensionMethods
             span.ResourceName = command.CommandText;
             span.Type = SpanTypes.Sql;
 
-            // parse the connection string
-            var builder = new DbConnectionStringBuilder { ConnectionString = command.Connection.ConnectionString };
+            var tags = DbCommandCache.GetTagsFromDbCommand(command);
 
-            string database = GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog");
-            span.SetTag(Tags.DbName, database);
-
-            string user = GetConnectionStringValue(builder, "User ID", "UserID");
-            span.SetTag(Tags.DbUser, user);
-
-            string server = GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host");
-            span.SetTag(Tags.OutHost, server);
+            foreach (var pair in tags)
+            {
+                span.SetTag(pair.Key, pair.Value);
+            }
         }
 
         internal static void DecorateWebServerSpan(
@@ -61,20 +57,6 @@ namespace Datadog.Trace.ExtensionMethods
             span.SetTag(Tags.HttpRequestHeadersHost, host);
             span.SetTag(Tags.HttpUrl, httpUrl);
             span.SetTag(Tags.Language, TracerConstants.Language);
-        }
-
-        private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)
-        {
-            foreach (string name in names)
-            {
-                if (builder.TryGetValue(name, out object valueObj) &&
-                    valueObj is string value)
-                {
-                    return value;
-                }
-            }
-
-            return null;
         }
     }
 }
