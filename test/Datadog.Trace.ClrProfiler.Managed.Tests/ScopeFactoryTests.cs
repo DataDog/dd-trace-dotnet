@@ -1,5 +1,9 @@
 using System;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
@@ -64,6 +68,39 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             string actual = UriHelpers.CleanUri(new Uri(uri), removeScheme: false, tryRemoveIds: false);
 
             Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData("HttpMessageHandler")]
+        [InlineData("WebRequest")]
+        public void CreateOutboundHttpScope_AlwaysCreatesOneAutomaticInstrumentationScope(string integrationName)
+        {
+            // Set up Tracer
+            var settings = new TracerSettings();
+            var writerMock = new Mock<IAgentWriter>();
+            var samplerMock = new Mock<ISampler>();
+            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+
+            const string method = "GET";
+            const string url = "http://www.contoso.com";
+
+            // Manually create a span decorated with HTTP information
+            using (var manualScope = tracer.StartActive("http.request"))
+            {
+                manualScope.Span.Type = SpanTypes.Http;
+                manualScope.Span.ResourceName = $"{method} {url}";
+                manualScope.Span.ServiceName = $"{tracer.DefaultServiceName}-http-client";
+
+                using (var automaticScope1 = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(url), integrationName))
+                {
+                    using (var automaticScope2 = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(url), integrationName))
+                    {
+                        Assert.NotNull(manualScope);
+                        Assert.NotNull(automaticScope1);
+                        Assert.Null(automaticScope2);
+                    }
+                }
+            }
         }
     }
 }

@@ -41,8 +41,9 @@ namespace Datadog.Trace.ClrProfiler
 
                 if (parent != null &&
                     parent.Type == SpanTypes.Http &&
-                    parent.GetTag(Tags.HttpMethod).Equals(httpMethod, StringComparison.OrdinalIgnoreCase) &&
-                    parent.GetTag(Tags.HttpUrl).Equals(UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false), StringComparison.OrdinalIgnoreCase))
+                    integrationName.Equals(parent.GetTag(Tags.InstrumentationName), StringComparison.OrdinalIgnoreCase) &&
+                    httpMethod.Equals(parent.GetTag(Tags.HttpMethod), StringComparison.OrdinalIgnoreCase) &&
+                    UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false).Equals(parent.GetTag(Tags.HttpUrl), StringComparison.OrdinalIgnoreCase))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
