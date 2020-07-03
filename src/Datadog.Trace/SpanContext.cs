@@ -87,7 +87,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the origin of the trace
         /// </summary>
-        public string Origin { get; }
+        internal string Origin { get; }
 
         /// <summary>
         /// Gets the trace context.

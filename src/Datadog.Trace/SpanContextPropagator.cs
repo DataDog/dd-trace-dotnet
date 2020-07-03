@@ -147,22 +147,14 @@ namespace Datadog.Trace
 
         private static string ParseString(IHeadersCollection headers, string headerName)
         {
-            var headerValues = headers.GetValues(headerName).ToList();
+            var headerValues = headers.GetValues(headerName);
 
-            if (headerValues.Count > 0)
+            foreach (string headerValue in headerValues)
             {
-                foreach (string headerValue in headerValues)
+                if (!string.IsNullOrEmpty(headerValue))
                 {
-                    if (!string.IsNullOrEmpty(headerValue))
-                    {
-                        return headerValue;
-                    }
+                    return headerValue;
                 }
-
-                Log.Information(
-                    "Could not parse {0} headers: {1}",
-                    headerName,
-                    string.Join(",", headerValues));
             }
 
             return null;
