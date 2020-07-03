@@ -76,6 +76,12 @@ namespace Datadog.Trace
                                 Tracer.Sampler?.GetSamplingPriority(RootSpan);
                         }
                     }
+
+                    // set the origin tag to the root span of each trace/subtrace
+                    if (span.Context.Origin != null)
+                    {
+                        span.SetTag(Tags.Origin, span.Context.Origin);
+                    }
                 }
 
                 _spans.Add(span);

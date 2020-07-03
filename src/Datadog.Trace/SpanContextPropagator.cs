@@ -44,6 +44,12 @@ namespace Datadog.Trace
             headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
             headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
 
+            // avoid writing origin header if not set, keeping the previous behavior.
+            if (context.Origin != null)
+            {
+                headers.Set(HttpHeaderNames.Origin, context.Origin);
+            }
+
             var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
 
             headers.Set(
@@ -75,8 +81,9 @@ namespace Datadog.Trace
 
             var parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
             var samplingPriority = ParseSamplingPriority(headers, HttpHeaderNames.SamplingPriority);
+            var origin = ParseString(headers, HttpHeaderNames.Origin);
 
-            return new SpanContext(traceId, parentId, samplingPriority);
+            return new SpanContext(traceId, parentId, samplingPriority, origin: origin);
         }
 
         private static ulong ParseUInt64<T>(T headers, string headerName)
@@ -136,6 +143,29 @@ namespace Datadog.Trace
             }
 
             return default;
+        }
+
+        private static string ParseString(IHeadersCollection headers, string headerName)
+        {
+            var headerValues = headers.GetValues(headerName).ToList();
+
+            if (headerValues.Count > 0)
+            {
+                foreach (string headerValue in headerValues)
+                {
+                    if (!string.IsNullOrEmpty(headerValue))
+                    {
+                        return headerValue;
+                    }
+                }
+
+                Log.Information(
+                    "Could not parse {0} headers: {1}",
+                    headerName,
+                    string.Join(",", headerValues));
+            }
+
+            return null;
         }
     }
 }
