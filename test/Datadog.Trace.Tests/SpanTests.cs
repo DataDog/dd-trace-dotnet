@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests
             const string key = "Key";
             const string value = "Value";
             var span = _tracer.StartSpan("Operation");
-            Assert.Null(span.GetTag(key));
+            Assert.Null((string)span.GetTag(key));
 
             span.SetTag(key, value);
 

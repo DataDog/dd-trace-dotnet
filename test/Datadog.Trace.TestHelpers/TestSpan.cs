@@ -14,14 +14,14 @@ namespace Datadog.Trace.TestHelpers
 
         private Dictionary<string, string> Tags { get; } = new Dictionary<string, string>();
 
-        ISpan ISpan.SetTag(string key, string value)
+        ISpan ISpan.SetTag(string key, TagValue value)
         {
             SetTagInternal(key, value);
 
             return this;
         }
 
-        public string GetTag(string key)
+        public TagValue GetTag(string key)
             => Tags.TryGetValue(key, out var tagValue)
                    ? tagValue
                    : null;

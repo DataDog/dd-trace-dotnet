@@ -148,7 +148,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        public Span SetTag(string key, string value)
+        public Span SetTag(string key, TagValue value)
         {
             if (IsFinished)
             {
@@ -221,7 +221,11 @@ namespace Datadog.Trace
 
                     break;
                 default:
-                    if (value == null)
+                    if (value.IsMetrics)
+                    {
+                        SetMetric(key, value);
+                    }
+                    else if (value.IsNull)
                     {
                         if (Tags != null)
                         {
@@ -263,7 +267,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        ISpan ISpan.SetTag(string key, string value)
+        ISpan ISpan.SetTag(string key, TagValue value)
             => SetTag(key, value);
 
         /// <summary>
@@ -323,7 +327,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
-        public string GetTag(string key)
+        public TagValue GetTag(string key)
         {
             switch (key)
             {
@@ -331,7 +335,17 @@ namespace Datadog.Trace
                     return ((int?)(Context.TraceContext?.SamplingPriority ?? Context.SamplingPriority))?.ToString();
                 default:
                     // no need to lock on single reads
-                    return Tags != null && Tags.TryGetValue(key, out var value) ? value : null;
+                    if (Tags != null && Tags.TryGetValue(key, out var tagValue))
+                    {
+                        return tagValue;
+                    }
+
+                    if (Metrics != null && Metrics.TryGetValue(key, out double metricValue))
+                    {
+                        return metricValue;
+                    }
+
+                    return default;
             }
         }
 
