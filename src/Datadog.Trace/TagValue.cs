@@ -7,32 +7,18 @@ namespace Datadog.Trace
     /// </summary>
     public readonly struct TagValue : IEquatable<TagValue>
     {
-        private readonly string _stringValue;
-        private readonly double? _doubleValue;
-
         private TagValue(string value)
         {
-            _stringValue = value;
-            _doubleValue = default;
+            StringValue = value;
+            DoubleValue = default;
             IsMetrics = false;
         }
 
-        private TagValue(double? value)
+        private TagValue(double value)
         {
-            _stringValue = null;
-            _doubleValue = value;
+            StringValue = null;
+            DoubleValue = value;
             IsMetrics = true;
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether if the tag value is null
-        /// </summary>
-        public bool IsNull
-        {
-            get
-            {
-                return IsMetrics ? !_doubleValue.HasValue : _stringValue is null;
-            }
         }
 
         /// <summary>
@@ -43,24 +29,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the string value
         /// </summary>
-        public string StringValue
-        {
-            get
-            {
-                return _stringValue;
-            }
-        }
+        public string StringValue { get; }
 
         /// <summary>
         /// Gets the double value
         /// </summary>
-        public double DoubleValue
-        {
-            get
-            {
-                return _doubleValue ?? default;
-            }
-        }
+        public double DoubleValue { get; }
 
         /// <summary>
         /// Implicit conversion to string
@@ -68,7 +42,8 @@ namespace Datadog.Trace
         /// <param name="tagValue">Span tag value</param>
         public static implicit operator string(TagValue tagValue)
         {
-            return tagValue._stringValue;
+            if (tagValue.IsMetrics) { throw new InvalidCastException(); }
+            return tagValue.StringValue;
         }
 
         /// <summary>
@@ -77,16 +52,8 @@ namespace Datadog.Trace
         /// <param name="tagValue">Span tag value</param>
         public static implicit operator double(TagValue tagValue)
         {
-            return tagValue._doubleValue ?? default;
-        }
-
-        /// <summary>
-        /// Implicit conversion to nullable double
-        /// </summary>
-        /// <param name="tagValue">Span tag value</param>
-        public static implicit operator double?(TagValue tagValue)
-        {
-            return tagValue._doubleValue;
+            if (!tagValue.IsMetrics) { throw new InvalidCastException(); }
+            return tagValue.DoubleValue;
         }
 
         /// <summary>
@@ -103,15 +70,6 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="value">Double value</param>
         public static implicit operator TagValue(double value)
-        {
-            return new TagValue(value);
-        }
-
-        /// <summary>
-        /// Implicit conversion from nullable double
-        /// </summary>
-        /// <param name="value">Double value</param>
-        public static implicit operator TagValue(double? value)
         {
             return new TagValue(value);
         }
@@ -139,24 +97,24 @@ namespace Datadog.Trace
         {
             if (obj is null)
             {
-                return IsNull;
+                return false;
             }
 
             if (obj is string stringValue)
             {
-                return string.Equals(_stringValue, stringValue);
+                return string.Equals(StringValue, stringValue);
             }
 
             if (obj is double doubleValue)
             {
-                return _doubleValue == doubleValue;
+                return DoubleValue == doubleValue;
             }
 
             if (obj is TagValue tagValue)
             {
                 return IsMetrics == tagValue.IsMetrics &&
-                    _stringValue == tagValue._stringValue &&
-                    _doubleValue == tagValue._doubleValue;
+                    StringValue == tagValue.StringValue &&
+                    DoubleValue == tagValue.DoubleValue;
             }
 
             return base.Equals(obj);
@@ -166,8 +124,8 @@ namespace Datadog.Trace
         public bool Equals(TagValue value)
         {
             return IsMetrics == value.IsMetrics &&
-                    _stringValue == value._stringValue &&
-                    _doubleValue == value._doubleValue;
+                    StringValue == value.StringValue &&
+                    DoubleValue == value.DoubleValue;
         }
 
         /// <inheritdoc/>
@@ -176,11 +134,11 @@ namespace Datadog.Trace
             int hash = 17;
             if (IsMetrics)
             {
-                hash = (hash * 23) + _doubleValue.GetHashCode();
+                hash = (hash * 23) + DoubleValue.GetHashCode();
             }
             else
             {
-                hash = (hash * 23) + _stringValue.GetHashCode();
+                hash = (hash * 23) + StringValue.GetHashCode();
             }
 
             return hash;
@@ -191,10 +149,10 @@ namespace Datadog.Trace
         {
             if (IsMetrics)
             {
-                return (_doubleValue ?? default).ToString("G17");
+                return DoubleValue.ToString("G17");
             }
 
-            return _stringValue;
+            return StringValue;
         }
     }
 }

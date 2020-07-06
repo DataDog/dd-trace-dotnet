@@ -168,7 +168,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        public Span SetTagValue(string key, TagValue value)
+        public Span SetTagValue(string key, TagValue? value)
         {
             if (IsFinished)
             {
@@ -241,11 +241,11 @@ namespace Datadog.Trace
 
                     break;
                 default:
-                    if (value.IsNull)
+                    if (value == null)
                     {
                         RemoveTag(key);
                     }
-                    else if (value.IsMetrics)
+                    else if (value.Value.IsMetrics)
                     {
                         SetMetric(key, value);
                     }
@@ -331,7 +331,7 @@ namespace Datadog.Trace
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
         public string GetTag(string key)
         {
-            return GetTagValue(key).StringValue;
+            return GetTagValue(key);
         }
 
         /// <summary>
@@ -339,7 +339,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
-        public TagValue GetTagValue(string key)
+        public TagValue? GetTagValue(string key)
         {
             switch (key)
             {
@@ -357,7 +357,7 @@ namespace Datadog.Trace
                         return metricValue;
                     }
 
-                    return default;
+                    return null;
             }
         }
 

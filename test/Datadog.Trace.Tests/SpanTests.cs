@@ -48,12 +48,12 @@ namespace Datadog.Trace.Tests
             const string key = "Key";
             const double value = 123456789d;
             var span = _tracer.StartSpan("Operation");
-            Assert.True(span.GetTagValue(key).IsNull);
+            Assert.Null(span.GetTagValue(key));
 
             span.SetTagValue(key, value);
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
-            Assert.Equal(value, span.GetTagValue(key).DoubleValue);
+            Assert.Equal(value, span.GetTagValue(key).Value.DoubleValue);
             Assert.Equal(value, (double)span.GetTagValue(key));
         }
 
@@ -63,12 +63,12 @@ namespace Datadog.Trace.Tests
             const string key = "Key";
             const double value = 9007199254740992;
             var span = _tracer.StartSpan("Operation");
-            Assert.True(span.GetTagValue(key).IsNull);
+            Assert.Null(span.GetTagValue(key));
 
             span.SetTagValue(key, value);
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
-            Assert.Equal("9007199254740992", span.GetTagValue(key).StringValue);
+            Assert.Equal("9007199254740992", span.GetTagValue(key).Value.StringValue);
             Assert.Equal("9007199254740992", span.GetTagValue(key));
         }
 
@@ -94,12 +94,12 @@ namespace Datadog.Trace.Tests
             const string value = "Value";
             var span = _tracer.StartSpan("Operation");
 
-            Assert.True(span.GetTagValue(key).IsNull);
+            Assert.Null(span.GetTagValue(key));
             span.SetTagValue(key, value);
-            span.SetTagValue(key, (string)null);
+            span.SetTagValue(key, null);
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
-            Assert.True(span.GetTagValue(key).IsNull);
+            Assert.Null(span.GetTagValue(key));
         }
 
         [Fact]
@@ -109,12 +109,12 @@ namespace Datadog.Trace.Tests
             const double value = 123456789d;
             var span = _tracer.StartSpan("Operation");
 
-            Assert.True(span.GetTagValue(key).IsNull);
+            Assert.Null(span.GetTagValue(key));
             span.SetTagValue(key, value);
-            span.SetTagValue(key, default);
+            span.SetTagValue(key, null);
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
-            Assert.True(span.GetTagValue(key).IsNull);
+            Assert.Null(span.GetTagValue(key));
         }
 
         [Fact]
@@ -124,13 +124,13 @@ namespace Datadog.Trace.Tests
             const double value = 9007199254740992;
             var span = _tracer.StartSpan("Operation");
 
-            Assert.True(span.GetTagValue(key).IsNull);
+            Assert.Null(span.GetTagValue(key));
             span.SetTagValue(key, value);
             Assert.Equal(value.ToString("G17"), span.GetTagValue(key));
-            span.SetTagValue(key, default);
+            span.SetTagValue(key, null);
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
-            Assert.True(span.GetTagValue(key).IsNull);
+            Assert.Null(span.GetTagValue(key));
         }
 
         [Fact]

@@ -10,32 +10,35 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="value">The TagValue to convert.</param>
         /// <returns><c>true</c> if is one of the accepted values for <c>true</c>; <c>false</c> otherwise.</returns>
-        public static bool? ToBoolean(this TagValue value)
+        public static bool? ToBoolean(this TagValue? value)
         {
-            if (value.IsMetrics)
+            if (value == null) { throw new ArgumentNullException(nameof(value)); }
+
+            var tagValue = value.Value;
+            if (tagValue.IsMetrics)
             {
-                return value.DoubleValue == 1d;
+                return tagValue.DoubleValue == 1d;
             }
 
-            if (value.StringValue == null)
+            if (tagValue.StringValue == null)
             {
                 return null;
             }
 
-            if (string.Compare("TRUE", value.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare("YES", value.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare("T", value.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare("Y", value.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare("1", value.StringValue, StringComparison.Ordinal) == 0)
+            if (string.Compare("TRUE", tagValue.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare("YES", tagValue.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare("T", tagValue.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare("Y", tagValue.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare("1", tagValue.StringValue, StringComparison.Ordinal) == 0)
             {
                 return true;
             }
 
-            if (string.Compare("FALSE", value.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare("NO", value.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare("F", value.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare("N", value.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare("0", value.StringValue, StringComparison.Ordinal) == 0)
+            if (string.Compare("FALSE", tagValue.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare("NO", tagValue.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare("F", tagValue.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare("N", tagValue.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare("0", tagValue.StringValue, StringComparison.Ordinal) == 0)
             {
                 return true;
             }
