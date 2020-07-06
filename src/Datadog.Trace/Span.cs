@@ -148,7 +148,27 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        public Span SetTag(string key, TagValue value)
+        public Span SetTag(string key, string value)
+        {
+            return SetTagValue(key, value);
+        }
+
+        /// <summary>
+        /// Add a the specified tag to this span.
+        /// </summary>
+        /// <param name="key">The tag's key.</param>
+        /// <param name="value">The tag's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
+        ISpan ISpan.SetTag(string key, string value)
+            => SetTag(key, value);
+
+        /// <summary>
+        /// Add a the specified tag to this span.
+        /// </summary>
+        /// <param name="key">The tag's key.</param>
+        /// <param name="value">The tag's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
+        public Span SetTagValue(string key, TagValue value)
         {
             if (IsFinished)
             {
@@ -221,22 +241,13 @@ namespace Datadog.Trace
 
                     break;
                 default:
-                    if (value.IsMetrics)
+                    if (value.IsNull)
+                    {
+                        RemoveTag(key);
+                    }
+                    else if (value.IsMetrics)
                     {
                         SetMetric(key, value);
-                    }
-                    else if (value.IsNull)
-                    {
-                        if (Tags != null)
-                        {
-                            // lock when modifying the collection
-                            lock (_tagsLock)
-                            {
-                                // Agent doesn't accept null tag values,
-                                // remove them instead
-                                Tags.Remove(key);
-                            }
-                        }
                     }
                     else
                     {
@@ -260,15 +271,6 @@ namespace Datadog.Trace
 
             return this;
         }
-
-        /// <summary>
-        /// Add a the specified tag to this span.
-        /// </summary>
-        /// <param name="key">The tag's key.</param>
-        /// <param name="value">The tag's value.</param>
-        /// <returns>This span to allow method chaining.</returns>
-        ISpan ISpan.SetTag(string key, TagValue value)
-            => SetTag(key, value);
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.
@@ -327,7 +329,17 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
-        public TagValue GetTag(string key)
+        public string GetTag(string key)
+        {
+            return GetTagValue(key).StringValue;
+        }
+
+        /// <summary>
+        /// Gets the value (or default/null if the key is not a valid tag) of a tag with the key value passed
+        /// </summary>
+        /// <param name="key">The tag's key</param>
+        /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
+        public TagValue GetTagValue(string key)
         {
             switch (key)
             {
@@ -398,14 +410,7 @@ namespace Datadog.Trace
         {
             if (value == null)
             {
-                if (Metrics != null)
-                {
-                    // lock when modifying the collection
-                    lock (_metricLock)
-                    {
-                        Metrics.Remove(key);
-                    }
-                }
+                RemoveTag(key);
             }
             else
             {
@@ -419,11 +424,47 @@ namespace Datadog.Trace
                         Metrics = new Dictionary<string, double>();
                     }
 
-                    Metrics[key] = value.Value;
+                    const long Pow2_53 = 9007199254740992;
+
+                    if (value > -Pow2_53 && value < Pow2_53)
+                    {
+                        Metrics[key] = value.Value;
+                        return this;
+                    }
+                    else
+                    {
+                        SetTag(key, value.Value.ToString("G17"));
+                    }
                 }
             }
 
             return this;
+        }
+
+        private void RemoveTag(string key)
+        {
+            // we don't know if the value we trying to remove was converted to string,
+            // so we have to check in both dictionaries to remove the key.
+
+            if (Metrics != null)
+            {
+                // lock when modifying the collection
+                lock (_metricLock)
+                {
+                    Metrics.Remove(key);
+                }
+            }
+
+            if (Tags != null)
+            {
+                // lock when modifying the collection
+                lock (_tagsLock)
+                {
+                    // Agent doesn't accept null tag values,
+                    // remove them instead
+                    Tags.Remove(key);
+                }
+            }
         }
     }
 }

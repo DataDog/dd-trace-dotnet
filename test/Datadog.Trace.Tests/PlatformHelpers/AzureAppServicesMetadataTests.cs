@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 string.Join(
                     Environment.NewLine,
                     rootSpansMissingExpectedTag.Select(
-                        r => $"Expected {ExpectedResourceId} {newLine}but received {(string)r.GetTag(Tags.AzureAppServicesResourceId) ?? "NULL"} {newLine}{newLine}({r}) {newLine}"));
+                        r => $"Expected {ExpectedResourceId} {newLine}but received {r.GetTag(Tags.AzureAppServicesResourceId) ?? "NULL"} {newLine}{newLine}({r}) {newLine}"));
 
             var envVarValues = string.Join(", ", EnvVars.Select(e => $"{e}: {Environment.GetEnvironmentVariable(e)}"));
 

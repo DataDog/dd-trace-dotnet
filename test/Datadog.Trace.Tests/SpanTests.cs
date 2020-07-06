@@ -34,12 +34,103 @@ namespace Datadog.Trace.Tests
             const string key = "Key";
             const string value = "Value";
             var span = _tracer.StartSpan("Operation");
-            Assert.Null((string)span.GetTag(key));
+            Assert.Null(span.GetTag(key));
 
             span.SetTag(key, value);
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
             Assert.Equal(span.GetTag(key), value);
+        }
+
+        [Fact]
+        public void SetTag_KeyValue_DoubleValueSet()
+        {
+            const string key = "Key";
+            const double value = 123456789d;
+            var span = _tracer.StartSpan("Operation");
+            Assert.True(span.GetTagValue(key).IsNull);
+
+            span.SetTagValue(key, value);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.Equal(value, span.GetTagValue(key).DoubleValue);
+            Assert.Equal(value, (double)span.GetTagValue(key));
+        }
+
+        [Fact]
+        public void SetTag_Key_Value_DoubleValueOverflowSet()
+        {
+            const string key = "Key";
+            const double value = 9007199254740992;
+            var span = _tracer.StartSpan("Operation");
+            Assert.True(span.GetTagValue(key).IsNull);
+
+            span.SetTagValue(key, value);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.Equal("9007199254740992", span.GetTagValue(key).StringValue);
+            Assert.Equal("9007199254740992", span.GetTagValue(key));
+        }
+
+        [Fact]
+        public void SetTag_Key_Value_DeleteTag()
+        {
+            const string key = "Key";
+            const string value = "Value";
+            var span = _tracer.StartSpan("Operation");
+
+            Assert.Null(span.GetTag(key));
+            span.SetTag(key, value);
+            span.SetTag(key, null);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.Null(span.GetTag(key));
+        }
+
+        [Fact]
+        public void SetTag_Key_Value_DeleteStringTag()
+        {
+            const string key = "Key";
+            const string value = "Value";
+            var span = _tracer.StartSpan("Operation");
+
+            Assert.True(span.GetTagValue(key).IsNull);
+            span.SetTagValue(key, value);
+            span.SetTagValue(key, (string)null);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.True(span.GetTagValue(key).IsNull);
+        }
+
+        [Fact]
+        public void SetTag_Key_Value_DeleteDoubleTag()
+        {
+            const string key = "Key";
+            const double value = 123456789d;
+            var span = _tracer.StartSpan("Operation");
+
+            Assert.True(span.GetTagValue(key).IsNull);
+            span.SetTagValue(key, value);
+            span.SetTagValue(key, default);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.True(span.GetTagValue(key).IsNull);
+        }
+
+        [Fact]
+        public void SetTag_Key_Value_DeleteDoubleOverflowTag()
+        {
+            const string key = "Key";
+            const double value = 9007199254740992;
+            var span = _tracer.StartSpan("Operation");
+
+            Assert.True(span.GetTagValue(key).IsNull);
+            span.SetTagValue(key, value);
+            Assert.Equal(value.ToString("G17"), span.GetTagValue(key));
+            span.SetTagValue(key, default);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.True(span.GetTagValue(key).IsNull);
         }
 
         [Fact]

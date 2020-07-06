@@ -13,9 +13,9 @@ namespace Datadog.Trace.Abstractions
         /// </summary>
         bool Error { get; set; }
 
-        ISpan SetTag(string key, TagValue value);
+        ISpan SetTag(string key, string value);
 
-        TagValue GetTag(string key);
+        string GetTag(string key);
 
         void SetException(Exception exception);
     }
