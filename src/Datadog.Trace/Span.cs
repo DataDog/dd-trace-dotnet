@@ -17,6 +17,7 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable, ISpan
     {
+        internal const long Pow2e53 = 9007199254740992;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
@@ -424,9 +425,7 @@ namespace Datadog.Trace
                         Metrics = new Dictionary<string, double>();
                     }
 
-                    const long Pow2_53 = 9007199254740992;
-
-                    if (value > -Pow2_53 && value < Pow2_53)
+                    if (value > -Pow2e53 && value < Pow2e53)
                     {
                         Metrics[key] = value.Value;
                         return this;

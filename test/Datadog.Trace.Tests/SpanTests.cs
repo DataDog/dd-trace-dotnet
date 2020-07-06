@@ -61,7 +61,7 @@ namespace Datadog.Trace.Tests
         public void SetTag_Key_Value_DoubleValueOverflowSet()
         {
             const string key = "Key";
-            const double value = 9007199254740992;
+            const double value = Span.Pow2e53;
             var span = _tracer.StartSpan("Operation");
             Assert.Null(span.GetTagValue(key));
 
@@ -121,7 +121,7 @@ namespace Datadog.Trace.Tests
         public void SetTag_Key_Value_DeleteDoubleOverflowTag()
         {
             const string key = "Key";
-            const double value = 9007199254740992;
+            const double value = Span.Pow2e53;
             var span = _tracer.StartSpan("Operation");
 
             Assert.Null(span.GetTagValue(key));
