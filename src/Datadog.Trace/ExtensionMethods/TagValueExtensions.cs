@@ -40,7 +40,7 @@ namespace Datadog.Trace.ExtensionMethods
                 string.Compare("N", tagValue.StringValue, StringComparison.OrdinalIgnoreCase) == 0 ||
                 string.Compare("0", tagValue.StringValue, StringComparison.Ordinal) == 0)
             {
-                return true;
+                return false;
             }
 
             return null;
