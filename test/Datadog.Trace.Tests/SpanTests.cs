@@ -43,6 +43,82 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void SetMetric_KeyValue_KeyValueSet()
+        {
+            const string key = "Key";
+            const double value = 123456789d;
+            var span = _tracer.StartSpan("Operation");
+            Assert.Null(span.GetMetric(key));
+
+            span.SetMetric(key, value);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.Equal(value, span.GetMetric(key));
+        }
+
+        [Fact]
+        public void SetMetric_KeyValue_KeyValueOverflowSet()
+        {
+            const string key = "Key";
+            const double value = Span.Pow2e53;
+            var span = _tracer.StartSpan("Operation");
+            Assert.Null(span.GetMetric(key));
+
+            span.SetMetric(key, value);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.Equal(value.ToString("G17"), span.GetTag(key));
+            Assert.Equal(value, span.GetMetric(key));
+        }
+
+        [Fact]
+        public void SetTag_Key_Value_DeleteTag()
+        {
+            const string key = "Key";
+            const string value = "Value";
+            var span = _tracer.StartSpan("Operation");
+
+            Assert.Null(span.GetTag(key));
+            span.SetTag(key, value);
+            span.SetTag(key, null);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.Null(span.GetTag(key));
+        }
+
+        [Fact]
+        public void SetMetric_Key_Value_DeleteDoubleMetric()
+        {
+            const string key = "Key";
+            const double value = 123456789d;
+            var span = _tracer.StartSpan("Operation");
+
+            Assert.Null(span.GetMetric(key));
+            span.SetMetric(key, value);
+            span.SetMetric(key, null);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.Null(span.GetMetric(key));
+        }
+
+        [Fact]
+        public void SetMetric_Key_Value_DeleteDoubleOverflowMetric()
+        {
+            const string key = "Key";
+            const double value = Span.Pow2e53;
+            var span = _tracer.StartSpan("Operation");
+
+            Assert.Null(span.GetMetric(key));
+            span.SetMetric(key, value);
+            Assert.Equal(value.ToString("G17"), span.GetTag(key));
+            span.SetMetric(key, null);
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<Span[]>()), Times.Never);
+            Assert.Null(span.GetMetric(key));
+            Assert.Null(span.GetTag(key));
+        }
+
+        [Fact]
         public void Finish_StartTimeInThePastWithNoEndTime_DurationProperlyComputed()
         {
             // The 100 additional milliseconds account for the clock precision

@@ -17,6 +17,10 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable, ISpan
     {
+        /// <summary>
+        /// Maximum value golang float64 can handle for metrics
+        /// </summary>
+        internal const long Pow2e53 = 9007199254740992;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
@@ -335,6 +339,87 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// Gets the value (or default/null if the key is not a valid metric) of a matric with the key value passed
+        /// </summary>
+        /// <param name="key">The metric's key</param>
+        /// <returns> The value for the metric with the key specified, or null if the metric does not exist</returns>
+        public double? GetMetric(string key)
+        {
+            // no need to lock on single reads
+            if (Metrics != null && Metrics.TryGetValue(key, out double value))
+            {
+                return value;
+            }
+
+            // value could has been converted to string previously due the golang float64 limitation
+            if (Tags != null && Tags.TryGetValue(key, out string strValue) && double.TryParse(strValue, out double doubleValue))
+            {
+                // increase the odds that the value was converted previously
+                if (!(doubleValue > -Pow2e53 && doubleValue < Pow2e53))
+                {
+                    return doubleValue;
+                }
+            }
+
+            return default;
+        }
+
+        /// <summary>
+        /// Add a the specified metric to this span.
+        /// </summary>
+        /// <param name="key">The metric's key.</param>
+        /// <param name="value">The metric's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
+        public Span SetMetric(string key, double? value)
+        {
+            if (value == null)
+            {
+                if (Metrics != null)
+                {
+                    // lock when modifying the collection
+                    lock (_metricLock)
+                    {
+                        if (Metrics.Remove(key))
+                        {
+                            return this;
+                        }
+                    }
+                }
+
+                // value could has been converted to string previously due the golang float64 limitation
+                if (Tags != null && Tags.TryGetValue(key, out string strValue) && double.TryParse(strValue, out double doubleValue))
+                {
+                    // increase the odds that the value was converted previously
+                    if (!(doubleValue > -Pow2e53 && doubleValue < Pow2e53))
+                    {
+                        SetTag(key, null);
+                    }
+                }
+            }
+            else if (value > -Pow2e53 && value < Pow2e53)
+            {
+                // lock when modifying the collection
+                lock (_metricLock)
+                {
+                    if (Metrics == null)
+                    {
+                        // defer instantiation until needed to
+                        // avoid unnecessary allocations per span
+                        Metrics = new Dictionary<string, double>();
+                    }
+
+                    Metrics[key] = value.Value;
+                }
+            }
+            else
+            {
+                SetTag(key, value.Value.ToString("G17"));
+            }
+
+            return this;
+        }
+
         internal void Finish(TimeSpan duration)
         {
             var shouldCloseSpan = false;
@@ -372,44 +457,6 @@ namespace Datadog.Trace
                         Tags == null ? string.Empty : string.Join(",", Tags.Keys));
                 }
             }
-        }
-
-        internal double? GetMetric(string key)
-        {
-            // no need to lock on single reads
-            return Metrics != null && Metrics.TryGetValue(key, out double value) ? value : default;
-        }
-
-        internal Span SetMetric(string key, double? value)
-        {
-            if (value == null)
-            {
-                if (Metrics != null)
-                {
-                    // lock when modifying the collection
-                    lock (_metricLock)
-                    {
-                        Metrics.Remove(key);
-                    }
-                }
-            }
-            else
-            {
-                // lock when modifying the collection
-                lock (_metricLock)
-                {
-                    if (Metrics == null)
-                    {
-                        // defer instantiation until needed to
-                        // avoid unnecessary allocations per span
-                        Metrics = new Dictionary<string, double>();
-                    }
-
-                    Metrics[key] = value.Value;
-                }
-            }
-
-            return this;
         }
     }
 }
