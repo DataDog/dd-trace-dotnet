@@ -72,7 +72,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetTag_Key_Value_DeleteTag()
+        public void SetTag_KeyValue_DeleteTag()
         {
             const string key = "Key";
             const string value = "Value";
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetMetric_Key_Value_DeleteDoubleMetric()
+        public void SetMetric_KeyValue_DeleteDoubleMetric()
         {
             const string key = "Key";
             const double value = 123456789d;
@@ -102,7 +102,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetMetric_Key_Value_DeleteDoubleOverflowMetric()
+        public void SetMetric_KeyValue_DeleteDoubleOverflowMetric()
         {
             const string key = "Key";
             const double value = Span.Pow2e53;

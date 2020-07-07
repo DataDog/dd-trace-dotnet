@@ -27,6 +27,9 @@ namespace Datadog.Trace
         private readonly object _lock = new object();
         private readonly object _tagsLock = new object();
         private readonly object _metricLock = new object();
+        private readonly object _convertedMetricLock = new object();
+
+        private HashSet<string> _convertedMetric;
 
         internal Span(SpanContext context, DateTimeOffset? start)
         {
@@ -237,6 +240,15 @@ namespace Datadog.Trace
                                 Tags.Remove(key);
                             }
                         }
+
+                        // value could has been converted to string previously due the golang float64 limitation
+                        if (_convertedMetric != null)
+                        {
+                            lock (_convertedMetricLock)
+                            {
+                                _convertedMetric.Remove(key);
+                            }
+                        }
                     }
                     else
                     {
@@ -353,13 +365,10 @@ namespace Datadog.Trace
             }
 
             // value could has been converted to string previously due the golang float64 limitation
-            if (Tags != null && Tags.TryGetValue(key, out string strValue) && double.TryParse(strValue, out double doubleValue))
+            if (_convertedMetric != null && _convertedMetric.Contains(key) &&
+                Tags != null && Tags.TryGetValue(key, out string strValue) && double.TryParse(strValue, out double doubleValue))
             {
-                // increase the odds that the value was converted previously
-                if (!(doubleValue > -Pow2e53 && doubleValue < Pow2e53))
-                {
-                    return doubleValue;
-                }
+                return doubleValue;
             }
 
             return default;
@@ -380,21 +389,22 @@ namespace Datadog.Trace
                     // lock when modifying the collection
                     lock (_metricLock)
                     {
-                        if (Metrics.Remove(key))
-                        {
-                            return this;
-                        }
+                        Metrics.Remove(key);
                     }
                 }
 
                 // value could has been converted to string previously due the golang float64 limitation
-                if (Tags != null && Tags.TryGetValue(key, out string strValue) && double.TryParse(strValue, out double doubleValue))
+                if (_convertedMetric != null)
                 {
-                    // increase the odds that the value was converted previously
-                    if (!(doubleValue > -Pow2e53 && doubleValue < Pow2e53))
+                    lock (_convertedMetricLock)
                     {
-                        SetTag(key, null);
+                        if (!_convertedMetric.Remove(key))
+                        {
+                            return this;
+                        }
                     }
+
+                    SetTag(key, null);
                 }
             }
             else if (value > -Pow2e53 && value < Pow2e53)
@@ -414,7 +424,18 @@ namespace Datadog.Trace
             }
             else
             {
-                SetTag(key, value.Value.ToString("G17"));
+                lock (_convertedMetricLock)
+                {
+                    if (_convertedMetric == null)
+                    {
+                        // defer instantiation until needed to
+                        // avoid unnecessary allocations per span
+                        _convertedMetric = new HashSet<string>();
+                    }
+
+                    _convertedMetric.Add(key);
+                    SetTag(key, value.Value.ToString("G17"));
+                }
             }
 
             return this;
