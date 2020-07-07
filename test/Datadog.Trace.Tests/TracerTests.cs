@@ -378,13 +378,12 @@ namespace Datadog.Trace.Tests
 
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
 
-            SpanContextPropagator.Instance.Inject(firstSpan.Span.Context, headers);
+            SpanContextPropagator.Instance.Inject(secondSpan.Span.Context, headers);
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
 
             Assert.NotNull(resultContext);
-            Assert.Equal(firstSpan.Span.Context.SpanId, resultContext.SpanId);
-            Assert.Equal(firstSpan.Span.Context.TraceId, resultContext.TraceId);
             Assert.Equal(firstSpan.Span.Context.Origin, resultContext.Origin);
+            Assert.Equal(secondSpan.Span.Context.Origin, resultContext.Origin);
             Assert.Equal(origin, resultContext.Origin);
         }
     }
