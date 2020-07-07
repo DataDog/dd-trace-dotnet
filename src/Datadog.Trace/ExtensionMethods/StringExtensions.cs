@@ -50,14 +50,14 @@ namespace Datadog.Trace.ExtensionMethods
                 return null;
             }
 
-            if (string.Compare(value, "TRUE", StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare(value, "YES", StringComparison.OrdinalIgnoreCase) == 0)
+            if (string.Equals(value, "TRUE", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "YES", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
-            if (string.Compare(value, "FALSE", StringComparison.OrdinalIgnoreCase) == 0 ||
-                string.Compare(value, "NO", StringComparison.OrdinalIgnoreCase) == 0)
+            if (string.Equals(value, "FALSE", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "NO", StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
