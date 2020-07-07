@@ -52,26 +52,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
-        public static SpanContext ExtractPropagatedContext(HttpRequest request)
-        {
-            try
-            {
-                // extract propagation details from http headers
-                var requestHeaders = request.Headers;
-
-                if (requestHeaders != null)
-                {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(requestHeaders));
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.SafeLogError(ex, "Error extracting propagated HTTP headers.");
-            }
-
-            return null;
-        }
-
         protected override void OnNext(string eventName, object arg)
         {
             switch (eventName)
@@ -93,6 +73,26 @@ namespace Datadog.Trace.DiagnosticListeners
                     OnHostingUnhandledException(arg);
                     break;
             }
+        }
+
+        private static SpanContext ExtractPropagatedContext(HttpRequest request)
+        {
+            try
+            {
+                // extract propagation details from http headers
+                var requestHeaders = request.Headers;
+
+                if (requestHeaders != null)
+                {
+                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(requestHeaders));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.SafeLogError(ex, "Error extracting propagated HTTP headers.");
+            }
+
+            return null;
         }
 
         private static string GetUrl(HttpRequest request)
