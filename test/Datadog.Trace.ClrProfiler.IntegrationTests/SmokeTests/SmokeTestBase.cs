@@ -19,6 +19,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             int maxTestRunSeconds = 30)
         {
             Output = output;
+
+            // Arbitrarily increase max test run
+            maxTestRunSeconds *= 5;
+
             MaxTestRunMilliseconds = maxTestRunSeconds * 1000;
             EnvironmentHelper = new EnvironmentHelper(
                 smokeTestName,
