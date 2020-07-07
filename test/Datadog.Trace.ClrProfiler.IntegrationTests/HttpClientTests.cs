@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.True(spans.Count >= expectedSpanCount, $"Expected at least {expectedSpanCount} span, only received {spans.Count}" + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
+                Assert.Equal(expectedSpanCount, spans.Count);
 
                 foreach (var span in spans)
                 {
@@ -91,6 +91,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void WebClient()
         {
+            int expectedSpanCount = 1;
+            const string expectedOperationName = "http.request";
+            const string expectedServiceName = "Samples.HttpMessageHandler-http-client";
+
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
@@ -99,8 +103,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
-                var spans = agent.WaitForSpans(1);
-                Assert.True(spans.Count > 0, "expected at least one span." + System.Environment.NewLine + "IMPORTANT: Make sure Datadog.Trace.ClrProfiler.Managed.dll and its dependencies are in the GAC.");
+                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                Assert.Equal(expectedSpanCount, spans.Count);
 
                 var traceId = GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
@@ -108,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // inspect the top-level span, underlying spans can be HttpMessageHandler in .NET Core
                 var firstSpan = spans.First();
                 Assert.Equal("http.request", firstSpan.Name);
-                Assert.Equal("Samples.HttpMessageHandler-http-client", firstSpan.Service);
+                Assert.Equal(expectedServiceName, firstSpan.Service);
                 Assert.Equal(SpanTypes.Http, firstSpan.Type);
                 Assert.Equal(nameof(WebRequest), firstSpan.Tags?[Tags.InstrumentationName]);
                 Assert.False(firstSpan.Tags?.ContainsKey(Tags.Version), "Http client span should not have service version tag.");

@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 if (parent != null &&
                     parent.Type == SpanTypes.Http &&
-                    integrationName.Equals(parent.GetTag(Tags.InstrumentationName), StringComparison.OrdinalIgnoreCase) &&
+                    parent.GetTag(Tags.InstrumentationName) != null &&
                     httpMethod.Equals(parent.GetTag(Tags.HttpMethod), StringComparison.OrdinalIgnoreCase) &&
                     UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false).Equals(parent.GetTag(Tags.HttpUrl), StringComparison.OrdinalIgnoreCase))
                 {
