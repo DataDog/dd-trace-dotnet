@@ -58,10 +58,7 @@ namespace Datadog.Trace.ClrProfiler
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
-                span.ResourceName = string.Join(
-                    " ",
-                    httpMethod,
-                    resourceUrl);
+                span.ResourceName = $"{httpMethod} {resourceUrl}";
 
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
