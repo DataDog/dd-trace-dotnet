@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler
                     UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true));
 
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
-                span.SetTag(Tags.HttpMethod, httpMethod.ToUpperInvariant());
+                span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
                 span.SetTag(Tags.HttpUrl, httpUrl);
                 span.SetTag(Tags.InstrumentationName, integrationName);
 
