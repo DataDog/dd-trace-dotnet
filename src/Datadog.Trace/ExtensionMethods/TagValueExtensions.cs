@@ -6,15 +6,18 @@ namespace Datadog.Trace.ExtensionMethods
     {
         /// <summary>
         /// Converts a <see cref="TagValue"/> into a <see cref="bool"/> by comparing it to commonly used values
-        /// such as "True", "yes", or "1". Case-insensitive. Defaults to <c>false</c> if string is not recognized.
+        /// such as "True", "yes", "T", "Y", or "1" for <c>true</c> and "False", "no", "F", "N", or "0" for <c>false</c>
+        /// when the <see cref="TagValue"/> is a <see cref="string"/>.
+        /// Returns <c>true</c> if <see cref="TagValue"/> is a <see cref="double"/> equal to 1.
+        /// Case-insensitive. Defaults to <c>null</c> if <see cref="TagValue"/> is not recognized.
         /// </summary>
         /// <param name="value">The TagValue to convert.</param>
-        /// <returns><c>true</c> if is one of the accepted values for <c>true</c>; <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c> if is one of the accepted values for <c>true</c>, <c>false</c> if is one of the accepted values for <c>false</c>; <c>null</c> otherwise.</returns>
         public static bool? ToBoolean(this TagValue? value)
         {
             if (value == null) { throw new ArgumentNullException(nameof(value)); }
 
-            var tagValue = value.Value;
+            TagValue tagValue = value.Value;
             if (tagValue.IsMetrics)
             {
                 return tagValue.DoubleValue == 1d;

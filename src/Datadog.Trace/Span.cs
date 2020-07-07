@@ -17,6 +17,9 @@ namespace Datadog.Trace
     /// </summary>
     public class Span : IDisposable, ISpan
     {
+        /// <summary>
+        /// Maximum value golang float64 can handle for metrics
+        /// </summary>
         internal const long Pow2e53 = 9007199254740992;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
@@ -242,11 +245,8 @@ namespace Datadog.Trace
 
                     break;
                 default:
-                    if (value == null)
-                    {
-                        RemoveTag(key);
-                    }
-                    else if (value.Value.IsMetrics)
+                    RemoveTag(key);
+                    if (value.Value.IsMetrics)
                     {
                         SetMetric(key, value);
                     }
