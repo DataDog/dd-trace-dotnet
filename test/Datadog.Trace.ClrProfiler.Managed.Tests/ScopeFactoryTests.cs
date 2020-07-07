@@ -32,20 +32,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Theory]
-        [InlineData("https://username:password@example.com/path/to/file.aspx?query=1#fragment", "example.com/path/to/file.aspx")]
-        [InlineData("https://username@example.com/path/to/file.aspx", "example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/to/file.aspx?query=1", "example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/to/file.aspx#fragment", "example.com/path/to/file.aspx")]
-        [InlineData("http://example.com/path/to/file.aspx", "example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/123/file.aspx", "example.com/path/" + Id + "/file.aspx")]
-        [InlineData("https://example.com/path/123/", "example.com/path/" + Id + "/")]
-        [InlineData("https://example.com/path/123", "example.com/path/" + Id)]
-        [InlineData("https://example.com/path/4294967294/file.aspx", "example.com/path/" + Id + "/file.aspx")]
-        [InlineData("https://example.com/path/4294967294/", "example.com/path/" + Id + "/")]
-        [InlineData("https://example.com/path/4294967294", "example.com/path/" + Id)]
-        [InlineData("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "example.com/path/" + Id)]
-        [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "example.com/path/" + Id)]
-        public void CleanUri_ResourceName(string uri, string expected)
+        [InlineData("https://username:password@example.com/path/to/file.aspx?query=1#fragment", "GET", "GET example.com/path/to/file.aspx")]
+        [InlineData("https://username@example.com/path/to/file.aspx", "GET", "GET example.com/path/to/file.aspx")]
+        [InlineData("https://example.com/path/to/file.aspx?query=1", "GET", "GET example.com/path/to/file.aspx")]
+        [InlineData("https://example.com/path/to/file.aspx#fragment", "GET", "GET example.com/path/to/file.aspx")]
+        [InlineData("http://example.com/path/to/file.aspx", "GET", "GET example.com/path/to/file.aspx")]
+        [InlineData("https://example.com/path/123/file.aspx", "GET", "GET example.com/path/" + Id + "/file.aspx")]
+        [InlineData("https://example.com/path/123/", "GET", "GET example.com/path/" + Id + "/")]
+        [InlineData("https://example.com/path/123", "GET", "GET example.com/path/" + Id)]
+        [InlineData("https://example.com/path/4294967294/file.aspx", "GET", "GET example.com/path/" + Id + "/file.aspx")]
+        [InlineData("https://example.com/path/4294967294/", "GET", "GET example.com/path/" + Id + "/")]
+        [InlineData("https://example.com/path/4294967294", "GET", "GET example.com/path/" + Id)]
+        [InlineData("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "GET", "GET example.com/path/" + Id)]
+        [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "GET", "GET example.com/path/" + Id)]
+        public void CleanUri_ResourceName(string uri, string method, string expected)
         {
             // Set up Tracer
             var settings = new TracerSettings();
@@ -53,13 +53,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var samplerMock = new Mock<ISampler>();
             var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
-            const string method = "GET";
             const string integrationName = "HttpMessageHandler";
 
-            // Manually create a span decorated with HTTP information
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), integrationName))
             {
-                Assert.Equal(string.Join(" ", method, expected), automaticScope.Span.ResourceName);
+                Assert.Equal(expected, automaticScope.Span.ResourceName);
             }
         }
 
@@ -85,7 +83,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             const string method = "GET";
             const string integrationName = "HttpMessageHandler";
 
-            // Manually create a span decorated with HTTP information
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), integrationName))
             {
                 Assert.Equal(expected, automaticScope.Span.GetTag(Tags.HttpUrl));
