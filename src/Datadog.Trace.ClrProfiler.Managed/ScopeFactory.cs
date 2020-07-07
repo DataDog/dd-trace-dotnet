@@ -38,12 +38,13 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 Span parent = tracer.ActiveScope?.Span;
+                string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
                 if (parent != null &&
                     parent.Type == SpanTypes.Http &&
                     parent.GetTag(Tags.InstrumentationName) != null &&
-                    httpMethod.Equals(parent.GetTag(Tags.HttpMethod), StringComparison.OrdinalIgnoreCase) &&
-                    UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false).Equals(parent.GetTag(Tags.HttpUrl), StringComparison.OrdinalIgnoreCase))
+                    string.Equals(httpMethod, parent.GetTag(Tags.HttpMethod), StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(httpUrl, parent.GetTag(Tags.HttpUrl), StringComparison.OrdinalIgnoreCase))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -61,13 +62,16 @@ namespace Datadog.Trace.ClrProfiler
                     UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true));
 
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
-                span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
-                span.SetTag(Tags.HttpUrl, UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false));
+                span.SetTag(Tags.HttpMethod, httpMethod.ToUpperInvariant());
+                span.SetTag(Tags.HttpUrl, httpUrl);
                 span.SetTag(Tags.InstrumentationName, integrationName);
 
                 // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+                if (integrationName != null)
+                {
+                    var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
+                    span.SetMetric(Tags.Analytics, analyticsSampleRate);
+                }
             }
             catch (Exception ex)
             {
