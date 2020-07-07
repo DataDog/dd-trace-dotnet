@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
+using Datadog.Trace.Abstractions;
+using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -38,19 +40,18 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 Span parent = tracer.ActiveScope?.Span;
-                string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
                 if (parent != null &&
                     parent.Type == SpanTypes.Http &&
-                    parent.GetTag(Tags.InstrumentationName) != null &&
-                    string.Equals(httpMethod, parent.GetTag(Tags.HttpMethod), StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(httpUrl, parent.GetTag(Tags.HttpUrl), StringComparison.OrdinalIgnoreCase))
+                    parent.GetTag(Tags.InstrumentationName) != null)
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
                     // e.g. HttpClientHandler.SendAsync() -> SocketsHttpHandler.SendAsync()
                     return null;
                 }
+
+                string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
                 scope = tracer.StartActive(OperationName, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
                 var span = scope.Span;
@@ -59,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler
                 span.ResourceName = string.Join(
                     " ",
                     httpMethod,
-                    UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true));
+                    httpUrl);
 
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
