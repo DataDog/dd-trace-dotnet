@@ -75,6 +75,21 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
+        private static string GetUrl(HttpRequest request)
+        {
+            if (request.Host.HasValue)
+            {
+                return $"{request.Scheme}://{request.Host.Value}{request.PathBase.Value}{request.Path.Value}";
+            }
+
+            // HTTP 1.0 requests are not required to provide a Host to be valid
+            // Since this is just for display, we can provide a string that is
+            // not an actual Uri with only the fields that are specified.
+            // request.GetDisplayUrl(), used above, will throw an exception
+            // if request.Host is null.
+            return $"{request.Scheme}://{NoHostSpecified}{request.PathBase.Value}{request.Path.Value}";
+        }
+
         private static SpanContext ExtractPropagatedContext(HttpRequest request)
         {
             try
@@ -93,21 +108,6 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             return null;
-        }
-
-        private static string GetUrl(HttpRequest request)
-        {
-            if (request.Host.HasValue)
-            {
-                return $"{request.Scheme}://{request.Host.Value}{request.PathBase.Value}{request.Path.Value}";
-            }
-
-            // HTTP 1.0 requests are not required to provide a Host to be valid
-            // Since this is just for display, we can provide a string that is
-            // not an actual Uri with only the fields that are specified.
-            // request.GetDisplayUrl(), used above, will throw an exception
-            // if request.Host is null.
-            return $"{request.Scheme}://{NoHostSpecified}{request.PathBase.Value}{request.Path.Value}";
         }
 
         private bool ShouldIgnore(HttpContext httpContext)
