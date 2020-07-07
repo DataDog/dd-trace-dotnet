@@ -47,9 +47,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "example.com/path/" + Id)]
         public void CleanUri_ResourceName(string uri, string expected)
         {
-            string actual = UriHelpers.CleanUri(new Uri(uri), removeScheme: true, tryRemoveIds: true);
+            // Set up Tracer
+            var settings = new TracerSettings();
+            var writerMock = new Mock<IAgentWriter>();
+            var samplerMock = new Mock<ISampler>();
+            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
-            Assert.Equal(expected, actual);
+            const string method = "GET";
+            const string integrationName = "HttpMessageHandler";
+
+            // Manually create a span decorated with HTTP information
+            using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), integrationName))
+            {
+                Assert.Equal(string.Join(" ", method, expected), automaticScope.Span.ResourceName);
+            }
         }
 
         [Theory]
@@ -65,9 +76,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3")]
         public void CleanUri_HttpUrlTag(string uri, string expected)
         {
-            string actual = UriHelpers.CleanUri(new Uri(uri), removeScheme: false, tryRemoveIds: false);
+            // Set up Tracer
+            var settings = new TracerSettings();
+            var writerMock = new Mock<IAgentWriter>();
+            var samplerMock = new Mock<ISampler>();
+            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
-            Assert.Equal(expected, actual);
+            const string method = "GET";
+            const string integrationName = "HttpMessageHandler";
+
+            // Manually create a span decorated with HTTP information
+            using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), integrationName))
+            {
+                Assert.Equal(expected, automaticScope.Span.GetTag(Tags.HttpUrl));
+            }
         }
 
         [Theory]

@@ -51,6 +51,7 @@ namespace Datadog.Trace.ClrProfiler
                     return null;
                 }
 
+                string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
                 string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
 
                 scope = tracer.StartActive(OperationName, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
@@ -60,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler
                 span.ResourceName = string.Join(
                     " ",
                     httpMethod,
-                    httpUrl);
+                    resourceUrl);
 
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
