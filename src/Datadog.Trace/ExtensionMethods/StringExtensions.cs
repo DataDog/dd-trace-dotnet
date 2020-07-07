@@ -22,31 +22,47 @@ namespace Datadog.Trace.ExtensionMethods
 
         /// <summary>
         /// Converts a <see cref="string"/> into a <see cref="bool"/> by comparing it to commonly used values
-        /// such as "True", "yes", or "1". Case-insensitive. Defaults to <c>false</c> if string is not recognized.
+        /// such as "True", "yes", "T", "Y", or "1" for <c>true</c> and "False", "no", "F", "N", or "0" for <c>false</c>. Case-insensitive.
+        /// Defaults to <c>null</c> if string is not recognized.
         /// </summary>
         /// <param name="value">The string to convert.</param>
-        /// <returns><c>true</c> if <paramref name="value"/> is one of the accepted values for <c>true</c>; <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c> or <c>false</c> if <paramref name="value"/> is one of the accepted values; <c>null</c> otherwise.</returns>
         public static bool? ToBoolean(this string value)
         {
             if (value == null) { throw new ArgumentNullException(nameof(value)); }
 
-            switch (value.ToUpperInvariant())
+            if (value.Length == 1)
             {
-                case "TRUE":
-                case "YES":
-                case "T":
-                case "Y":
-                case "1":
+                if (value[0] == 'T' || value[0] == 't' ||
+                    value[0] == 'Y' || value[0] == 'y' ||
+                    value[0] == '1')
+                {
                     return true;
-                case "FALSE":
-                case "NO":
-                case "F":
-                case "N":
-                case "0":
+                }
+
+                if (value[0] == 'F' || value[0] == 'f' ||
+                    value[0] == 'N' || value[0] == 'n' ||
+                    value[0] == '0')
+                {
                     return false;
-                default:
-                    return null;
+                }
+
+                return null;
             }
+
+            if (string.Compare(value, "TRUE", StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare(value, "YES", StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                return true;
+            }
+
+            if (string.Compare(value, "FALSE", StringComparison.OrdinalIgnoreCase) == 0 ||
+                string.Compare(value, "NO", StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                return false;
+            }
+
+            return null;
         }
     }
 }
