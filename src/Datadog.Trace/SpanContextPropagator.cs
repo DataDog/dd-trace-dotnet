@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -13,16 +13,11 @@ namespace Datadog.Trace
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.For<SpanContextPropagator>();
 
-        private static readonly Dictionary<string, SamplingPriority> SamplingPriorities;
+        private static readonly int[] SamplingPriorities;
 
         static SpanContextPropagator()
         {
-            SamplingPriorities = new Dictionary<string, SamplingPriority>();
-
-            foreach (SamplingPriority value in Enum.GetValues(typeof(SamplingPriority)))
-            {
-                SamplingPriorities.Add(value.ToString(), value);
-            }
+            SamplingPriorities = Enum.GetValues(typeof(SamplingPriority)).Cast<int>().ToArray();
         }
 
         private SpanContextPropagator()
@@ -118,9 +113,15 @@ namespace Datadog.Trace
 
             foreach (string headerValue in headerValues)
             {
-                if (SamplingPriorities.TryGetValue(headerValue, out var result))
+                if (int.TryParse(headerValue, out var result))
                 {
-                    return result;
+                    foreach (var validValue in SamplingPriorities)
+                    {
+                        if (validValue == result)
+                        {
+                            return (SamplingPriority)result;
+                        }
+                    }
                 }
 
                 hasValue = true;
