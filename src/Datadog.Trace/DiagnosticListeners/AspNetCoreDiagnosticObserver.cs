@@ -1,5 +1,7 @@
 #if NETSTANDARD
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -97,20 +99,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (requestHeaders != null)
                 {
-                    var headersCollection = new DictionaryHeadersCollection();
-
-                    foreach (var header in requestHeaders)
-                    {
-                        string key = header.Key;
-                        string[] values = header.Value.ToArray();
-
-                        if (key != null && values.Length > 0)
-                        {
-                            headersCollection.Add(key, values);
-                        }
-                    }
-
-                    return SpanContextPropagator.Instance.Extract(headersCollection);
+                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(requestHeaders));
                 }
             }
             catch (Exception ex)
@@ -238,6 +227,41 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 span.SetException(exception);
                 _options.OnError?.Invoke(span, exception, httpContext);
+            }
+        }
+
+        private readonly struct HeadersCollectionAdapter : IHeadersCollection
+        {
+            private readonly IHeaderDictionary _headers;
+
+            public HeadersCollectionAdapter(IHeaderDictionary headers)
+            {
+                _headers = headers;
+            }
+
+            public IEnumerable<string> GetValues(string name)
+            {
+                if (_headers.TryGetValue(name, out var values))
+                {
+                    return values.ToArray();
+                }
+
+                return Enumerable.Empty<string>();
+            }
+
+            public void Set(string name, string value)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Add(string name, string value)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Remove(string name)
+            {
+                throw new NotImplementedException();
             }
         }
     }
