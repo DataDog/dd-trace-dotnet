@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     public static class XUnitIntegration
     {
         private const string XUnitAssembly = "xunit.execution.dotnet";
-        private const string XUnitTestInvokerType = "Xunit.Sdk.TestInvoker";
+        private const string XUnitTestInvokerType = "Xunit.Sdk.TestInvoker`1";
         private const string XUnitCallTestMethod = "CallTestMethod";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
@@ -44,8 +44,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             Type testInvokerType = testInvoker.GetType();
 
-            Console.WriteLine("CallTestMethod interception: " + testInvoker.ToString());
-            Log.Warning("CallTestMethod interception: " + testInvoker.ToString());
+            Console.WriteLine("CallTestMethod interception: " + testInvokerType.ToString());
+            Log.Warning("CallTestMethod interception: " + testInvokerType.ToString());
 
             Func<object, object, object> execute;
 
@@ -55,8 +55,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     MethodBuilder<Func<object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, XUnitCallTestMethod)
                        .WithConcreteType(testInvokerType)
-                       .WithParameters(testClassInstance)
-                       .WithNamespaceAndNameFilters(ClrNames.Object, ClrNames.Object)
+                       .WithExplicitParameterTypes(typeof(object))
+                       // .WithParameters(testClassInstance)
+                       // .WithNamespaceAndNameFilters(ClrNames.Object, ClrNames.Object)
                        .Build();
             }
             catch (Exception ex)
