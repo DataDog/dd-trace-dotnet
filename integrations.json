@@ -2192,7 +2192,7 @@
         "caller": {},
         "target": {
           "assembly": "xunit.execution.dotnet",
-          "type": "Xunit.Sdk.TestInvoker",
+          "type": "Xunit.Sdk.TestInvoker`1",
           "method": "CallTestMethod",
           "signature_types": [
             "System.Object",
