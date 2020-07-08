@@ -61,6 +61,7 @@ namespace Datadog.Trace.Util
                     segment = absolutePath.Substring(previousIndex, index - previousIndex);
                 }
 
+                // replace path segments that look like numbers or guid
                 segment = long.TryParse(segment, out _) ||
                     Guid.TryParseExact(segment, "N", out _) ||
                     Guid.TryParseExact(segment, "D", out _)
