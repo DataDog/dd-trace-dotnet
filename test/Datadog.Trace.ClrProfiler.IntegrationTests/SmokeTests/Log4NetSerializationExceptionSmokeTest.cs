@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class Log4NetSerializationExceptionSmokeTest : SmokeTestBase
     {
         public Log4NetSerializationExceptionSmokeTest(ITestOutputHelper output)
-            : base(output, "Log4Net.SerializationException", maxTestRunSeconds: 60)
+            : base(output, "Log4Net.SerializationException", maxTestRunSeconds: 120)
         {
         }
 

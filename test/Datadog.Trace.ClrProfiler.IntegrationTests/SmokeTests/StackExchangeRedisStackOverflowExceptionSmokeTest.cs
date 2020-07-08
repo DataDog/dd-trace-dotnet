@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class StackExchangeRedisStackOverflowExceptionSmokeTest : SmokeTestBase
     {
         public StackExchangeRedisStackOverflowExceptionSmokeTest(ITestOutputHelper output)
-            : base(output, "StackExchange.Redis.StackOverflowException", maxTestRunSeconds: 15)
+            : base(output, "StackExchange.Redis.StackOverflowException", maxTestRunSeconds: 30)
         {
         }
 

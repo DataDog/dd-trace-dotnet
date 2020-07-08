@@ -16,9 +16,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         protected SmokeTestBase(
             ITestOutputHelper output,
             string smokeTestName,
-            int maxTestRunSeconds = 30)
+            int maxTestRunSeconds = 60)
         {
             Output = output;
+
             MaxTestRunMilliseconds = maxTestRunSeconds * 1000;
             EnvironmentHelper = new EnvironmentHelper(
                 smokeTestName,
