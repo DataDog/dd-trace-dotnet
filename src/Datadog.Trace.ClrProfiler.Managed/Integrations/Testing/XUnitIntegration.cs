@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -13,6 +14,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     /// </summary>
     public static class XUnitIntegration
     {
+        private const string IntegrationName = "XUnit";
+        private const string ServiceName = "test";
+
         private const string XUnitAssembly = "xunit.execution.dotnet";
         private const string XUnitTestInvokerType = "Xunit.Sdk.TestInvoker`1";
         private const string XUnitCallTestMethod = "CallTestMethod";
@@ -43,10 +47,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             if (testInvoker == null) { throw new ArgumentNullException(nameof(testInvoker)); }
 
             Type testInvokerType = testInvoker.GetType();
-
-            Console.WriteLine("CallTestMethod interception: " + testInvokerType.ToString());
-            Log.Warning("CallTestMethod interception: " + testInvokerType.ToString());
-
             Func<object, object, object> execute;
 
             try
@@ -55,9 +55,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     MethodBuilder<Func<object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, XUnitCallTestMethod)
                        .WithConcreteType(testInvokerType)
-                       .WithExplicitParameterTypes(typeof(object))
-                       // .WithParameters(testClassInstance)
-                       // .WithNamespaceAndNameFilters(ClrNames.Object, ClrNames.Object)
+                       .WithParameters(testClassInstance)
+                       .WithDeclaringTypeGenerics(testInvokerType.BaseType.GenericTypeArguments)
+                       .WithNamespaceAndNameFilters(ClrNames.Object, ClrNames.Object)
                        .Build();
             }
             catch (Exception ex)
@@ -73,7 +73,73 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 throw;
             }
 
-            return execute(testInvoker, testClassInstance);
+            var currentContext = SynchronizationContext.Current;
+
+            var scope = CreateScope(testInvoker, testClassInstance);
+            object returnValue;
+            try
+            {
+                returnValue = execute(testInvoker, testClassInstance);
+                if (returnValue is Task returnTask)
+                {
+                    // TODO: Propertly await or set a continuation task with the same returnType (Task or Task<T>)
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    returnTask.GetAwaiter().GetResult();
+                }
+            }
+            catch (Exception ex)
+            {
+                scope.Span.SetException(ex);
+                throw;
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(currentContext);
+                scope.Dispose();
+            }
+
+            return returnValue;
+        }
+
+        private static Scope CreateScope(object testInvoker, object testClassInstance)
+        {
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            string testSuite = null;
+            string testName = null;
+
+            testSuite = testClassInstance.GetType().ToString();
+            if (testInvoker.TryGetPropertyValue<MethodInfo>("TestMethod", out MethodInfo testMethod))
+            {
+                testName = testMethod.Name;
+            }
+
+            Tracer tracer = Tracer.Instance;
+            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+
+            Scope scope = null;
+
+            try
+            {
+                scope = tracer.StartActive("Test", serviceName: serviceName);
+                var span = scope.Span;
+                span.Type = SpanTypes.Test;
+                span.ResourceName = $"{testSuite}.{testName}";
+                span.SetTag("test.suite", testSuite);
+                span.SetTag("test.name", testName);
+                span.SetTag("test.framework", "xUnit");
+                span.SetMetric(Tags.Analytics, 1.0);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            return scope;
         }
     }
 }
