@@ -2214,5 +2214,35 @@
         }
       }
     ]
+  },
+  {
+    "name": "XUnit",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "xunit.execution.dotnet",
+          "type": "Xunit.Sdk.TestInvoker",
+          "method": "CallTestMethod",
+          "signature_types": [
+            "System.Object",
+            "System.Object"
+          ],
+          "minimum_major": 0,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 65535,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.18.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
+          "method": "CallTestMethod",
+          "signature": "00 05 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      }
+    ]
   }
 ]
