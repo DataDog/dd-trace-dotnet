@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.Net;
 using System.Net.Http;
@@ -24,6 +26,48 @@ namespace Datadog.Trace.Tests
             const string origin = "synthetics";
 
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
+            var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+
+            SpanContextPropagator.Instance.Inject(context, headers);
+            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+
+            Assert.NotNull(resultContext);
+            Assert.Equal(context.SpanId, resultContext.SpanId);
+            Assert.Equal(context.TraceId, resultContext.TraceId);
+            Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
+            Assert.Equal(context.Origin, resultContext.Origin);
+        }
+
+        [Fact]
+        public void NameValueCollection_InjectExtract_Identity()
+        {
+            const int traceId = 9;
+            const int spanId = 7;
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
+
+            IHeadersCollection headers = new NameValueCollection().Wrap();
+            var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+
+            SpanContextPropagator.Instance.Inject(context, headers);
+            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+
+            Assert.NotNull(resultContext);
+            Assert.Equal(context.SpanId, resultContext.SpanId);
+            Assert.Equal(context.TraceId, resultContext.TraceId);
+            Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
+            Assert.Equal(context.Origin, resultContext.Origin);
+        }
+
+        [Fact]
+        public void DictionaryHeadersCollection_InjectExtract_Identity()
+        {
+            const int traceId = 9;
+            const int spanId = 7;
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
+
+            IHeadersCollection headers = new DictionaryHeadersCollection();
             var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
 
             SpanContextPropagator.Instance.Inject(context, headers);
