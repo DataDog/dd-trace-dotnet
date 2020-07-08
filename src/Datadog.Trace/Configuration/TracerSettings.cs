@@ -108,6 +108,14 @@ namespace Datadog.Trace.Configuration
             GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
+            HeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags) ??
+                         // default value (empty)
+                         new ConcurrentDictionary<string, string>();
+
+            // Filter out tags with empty keys or empty values, and trim whitespace
+            HeaderTags = HeaderTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
+                                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+
             DogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort) ??
                             // default value
                             8125;
@@ -222,6 +230,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
         public IDictionary<string, string> GlobalTags { get; set; }
+
+        /// <summary>
+        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
+        /// </summary>
+        public IDictionary<string, string> HeaderTags { get; set; }
 
         /// <summary>
         /// Gets or sets the port where the DogStatsd server is listening for connections.

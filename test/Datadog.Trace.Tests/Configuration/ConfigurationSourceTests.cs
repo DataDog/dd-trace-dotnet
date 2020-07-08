@@ -12,6 +12,7 @@ namespace Datadog.Trace.Tests.Configuration
     {
         private static readonly Dictionary<string, string> TagsK1V1K2V2 = new Dictionary<string, string>() { { "k1", "v1" }, { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsK2V2 = new Dictionary<string, string>() { { "k2", "v2" } };
+        private static readonly Dictionary<string, string> HeaderTags = new Dictionary<string, string>() { { "header1", "tag1" } };
 
         public static IEnumerable<object[]> GetGlobalDefaultTestData()
         {
@@ -80,6 +81,8 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false };
+
+            yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,:tag2,header2:,:", CreateFunc(s => s.HeaderTags), HeaderTags };
         }
 
         // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
