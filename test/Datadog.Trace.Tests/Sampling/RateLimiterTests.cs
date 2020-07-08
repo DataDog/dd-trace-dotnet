@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Sampling;
 using Xunit;
 
@@ -133,81 +135,63 @@ namespace Datadog.Trace.Tests.Sampling
                 parallelism = 10;
             }
 
-            var resetEvent = new ManualResetEventSlim(initialState: false); // Start blocked
-
-            var workerReps = Enumerable.Range(1, parallelism).ToArray();
-
-            var registry = new ConcurrentQueue<Thread>();
-
             var result = new RateLimitResult();
 
-            var start = DateTime.Now;
             var limiter = new RateLimiter(maxTracesPerInterval: intervalLimit);
-            var end = DateTime.Now;
-            var endLock = new object();
 
             var traceContext = new TraceContext(Tracer.Instance);
 
-            for (var i = 0; i < test.NumberOfBursts; i++)
+            var barrier = new Barrier(parallelism + 1);
+
+            var numberPerThread = test.NumberPerBurst / parallelism;
+
+            var workers = new Task[parallelism];
+
+            for (int i = 0; i < workers.Length; i++)
             {
-                var remaining = test.NumberPerBurst;
-
-                var workers =
-                    workerReps
-                       .Select(t => new Thread(
-                                   thread =>
-                                   {
-                                       resetEvent.Wait();
-                                       while (remaining > 0)
-                                       {
-                                           Interlocked.Decrement(ref remaining);
-
-                                           var spanContext = new SpanContext(null, traceContext, "Weeeee");
-                                           var span = new Span(spanContext, null);
-
-                                           if (limiter.Allowed(span))
-                                           {
-                                               result.Allowed.Add(span.SpanId);
-                                           }
-                                           else
-                                           {
-                                               result.Denied.Add(span.SpanId);
-                                           }
-                                       }
-
-                                       lock (endLock)
-                                       {
-                                           end = DateTime.Now;
-                                       }
-                                   }));
-
-                foreach (var worker in workers)
-                {
-                    registry.Enqueue(worker);
-                    worker.Start();
-                }
-
-                resetEvent.Set();
-
-                Thread.Sleep(test.TimeBetweenBursts);
-
-                resetEvent.Reset();
-            }
-
-            while (!registry.IsEmpty)
-            {
-                if (registry.TryDequeue(out var item))
-                {
-                    if (item.IsAlive)
+                workers[i] = Task.Factory.StartNew(
+                    () =>
                     {
-                        registry.Enqueue(item);
-                    }
-                }
+                        for (var i = 0; i < test.NumberOfBursts; i++)
+                        {
+                            // Wait for every worker to be ready for next burst
+                            barrier.SignalAndWait();
+
+                            for (int j = 0; j < numberPerThread; j++)
+                            {
+                                var spanContext = new SpanContext(null, traceContext, "Weeeee");
+                                var span = new Span(spanContext, null);
+
+                                if (limiter.Allowed(span))
+                                {
+                                    result.Allowed.Add(span.SpanId);
+                                }
+                                else
+                                {
+                                    result.Denied.Add(span.SpanId);
+                                }
+                            }
+
+                            Thread.Sleep(test.TimeBetweenBursts);
+                        }
+                    },
+                    TaskCreationOptions.LongRunning);
             }
 
+            // Wait for all workers to be ready
+            barrier.SignalAndWait();
+
+            var sw = Stopwatch.StartNew();
+
+            // We do not need to synchronize with workers anymore
+            barrier.RemoveParticipant();
+
+            // Wait for workers to finish
+            Task.WaitAll(workers);
+
+            result.TimeElapsed = sw.Elapsed;
             result.RateLimiter = limiter;
             result.ReportedRate = limiter.GetEffectiveRate();
-            result.TimeElapsed = end.Subtract(start);
 
             return result;
         }
