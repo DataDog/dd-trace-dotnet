@@ -161,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     if (scope != null)
                     {
                         // some fields aren't set till after execution, so populate anything missing
-                        UpdateSpan(controllerContext, scope.Span);
+                        UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
                     }
 
                     return responseMessage;
@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     if (scope != null)
                     {
                         // some fields aren't set till after execution, so populate anything missing
-                        UpdateSpan(controllerContext, scope.Span);
+                        UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
                     }
 
                     scope?.Span.SetException(ex);
@@ -195,6 +195,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var tracer = Tracer.Instance;
                 var request = controllerContext.GetProperty<object>("Request").GetValueOrDefault();
                 SpanContext propagatedContext = null;
+                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
                 if (request != null && tracer.ActiveScope == null)
                 {
@@ -202,7 +203,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     {
                         // extract propagated http headers
                         var headers = request.GetProperty<object>("Headers").GetValueOrDefault();
-                        propagatedContext = SpanContextPropagator.Instance.Extract(new ReflectionHttpHeadersCollection(headers));
+                        var headersCollection = new ReflectionHttpHeadersCollection(headers);
+
+                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
+                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headersCollection, tracer.Settings.HeaderTags);
                     }
                     catch (Exception ex)
                     {
@@ -211,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 scope = tracer.StartActive(OperationName, propagatedContext);
-                UpdateSpan(controllerContext, scope.Span);
+                UpdateSpan(controllerContext, scope.Span, tagsFromHeaders);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
@@ -225,7 +229,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             return scope;
         }
 
-        private static void UpdateSpan(dynamic controllerContext, Span span)
+        private static void UpdateSpan(dynamic controllerContext, Span span, IEnumerable<KeyValuePair<string, string>> headerTags)
         {
             try
             {
@@ -280,7 +284,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     resourceName: resourceName,
                     method: method,
                     host: host,
-                    httpUrl: rawUrl);
+                    httpUrl: rawUrl,
+                    headerTags: headerTags);
                 span.SetTag(Tags.AspNetAction, action);
                 span.SetTag(Tags.AspNetController, controller);
                 span.SetTag(Tags.AspNetRoute, route);

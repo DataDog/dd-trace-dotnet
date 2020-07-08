@@ -108,6 +108,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 SpanContext propagatedContext = null;
                 var tracer = Tracer.Instance;
+                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
                 if (tracer.ActiveScope == null)
                 {
@@ -116,6 +117,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         // extract propagated http headers
                         var headers = httpContext.Request.Headers.Wrap();
                         propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags);
                     }
                     catch (Exception ex)
                     {
@@ -136,7 +138,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     resourceName: resourceName,
                     method: httpMethod,
                     host: host,
-                    httpUrl: url);
+                    httpUrl: url,
+                    headerTags: tagsFromHeaders);
                 span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);

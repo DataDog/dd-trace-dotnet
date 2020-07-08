@@ -1,5 +1,7 @@
 #if !NETSTANDARD2_0
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.ServiceModel.Channels;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -113,6 +115,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 SpanContext propagatedContext = null;
+                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
                 string host = null;
                 string httpMethod = null;
 
@@ -130,6 +133,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         {
                             var headers = httpRequestMessageProperty.Headers.Wrap();
                             propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                            tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags);
                         }
                         catch (Exception ex)
                         {
@@ -145,7 +149,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     resourceName: requestMessage.Headers.Action ?? requestMessage.Headers.To?.LocalPath,
                     httpMethod,
                     host,
-                    httpUrl: requestMessage.Headers.To?.AbsoluteUri);
+                    httpUrl: requestMessage.Headers.To?.AbsoluteUri,
+                    headerTags: tagsFromHeaders);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Headers;
@@ -84,6 +85,23 @@ namespace Datadog.Trace
             var origin = ParseString(headers, HttpHeaderNames.Origin);
 
             return new SpanContext(traceId, parentId, samplingPriority, null, origin);
+        }
+
+        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerTags)
+            where T : IHeadersCollection
+        {
+            Dictionary<string, string> tagsFromHeaders = new Dictionary<string, string>();
+
+            foreach (KeyValuePair<string, string> headerNameToTagName in headerTags)
+            {
+                string headerValue = ParseString(headers, headerNameToTagName.Key);
+                if (headerValue != null)
+                {
+                    tagsFromHeaders.Add(headerNameToTagName.Value, headerValue);
+                }
+            }
+
+            return tagsFromHeaders;
         }
 
         private static ulong ParseUInt64<T>(T headers, string headerName)

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -49,6 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 RegisterForDisposalWithPipeline(response, this);
 
                 SpanContext propagatedContext = null;
+                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
                 if (Tracer.ActiveScope == null)
                 {
@@ -73,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                             }
 
                             propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection);
+                            tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headersCollection, Tracer.Settings.HeaderTags);
                         }
                     }
                     catch (Exception ex)
@@ -91,7 +94,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     resourceName: resourceName,
                     method: httpMethod,
                     host: host,
-                    httpUrl: absoluteUri);
+                    httpUrl: absoluteUri,
+                    headerTags: tagsFromHeaders);
 
                 var statusCode = response.GetProperty<int>("StatusCode");
 

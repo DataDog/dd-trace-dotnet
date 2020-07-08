@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -102,6 +104,7 @@ namespace Datadog.Trace.AspNet
 
                 HttpRequest httpRequest = httpContext.Request;
                 SpanContext propagatedContext = null;
+                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
                 if (tracer.ActiveScope == null)
                 {
@@ -110,6 +113,7 @@ namespace Datadog.Trace.AspNet
                         // extract propagated http headers
                         var headers = httpRequest.Headers.Wrap();
                         propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                        tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, tracer.Settings.HeaderTags);
                     }
                     catch (Exception ex)
                     {
@@ -124,7 +128,7 @@ namespace Datadog.Trace.AspNet
                 string resourceName = $"{httpMethod} {path.ToLowerInvariant()}";
 
                 scope = tracer.StartActive(_requestOperationName, propagatedContext);
-                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url);
+                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tagsFromHeaders);
 
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
