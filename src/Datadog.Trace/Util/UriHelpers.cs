@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using System.Text;
 
 namespace Datadog.Trace.Util
 {
@@ -27,36 +27,58 @@ namespace Datadog.Trace.Util
         {
             // try to remove segments that look like ids
             string path = tryRemoveIds
-                              ? string.Concat(uri.Segments.Select(CleanUriSegment))
+                              ? CleanUriSegment(uri.AbsolutePath)
                               : uri.AbsolutePath;
             return path;
         }
 
-        public static string CleanUriSegment(string segment)
+        public static string CleanUriSegment(string absolutePath)
         {
-            if (string.IsNullOrWhiteSpace(segment))
+            if (string.IsNullOrWhiteSpace(absolutePath))
             {
-                return string.Empty;
+                return absolutePath;
             }
 
-            bool hasTrailingSlash = segment.EndsWith("/", StringComparison.Ordinal);
+            // Sanitized url will be at worse as long as the original
+            var sb = new StringBuilder(absolutePath.Length);
 
-            // remove trailing slash
-            if (hasTrailingSlash)
+            int previousIndex = 0;
+            int index = 0;
+
+            while (index != -1)
             {
-                segment = segment.Substring(0, segment.Length - 1);
+                index = absolutePath.IndexOf('/', previousIndex);
+
+                string segment;
+
+                if (index == -1)
+                {
+                    // Last segment
+                    segment = absolutePath.Substring(previousIndex);
+                }
+                else
+                {
+                    segment = absolutePath.Substring(previousIndex, index - previousIndex);
+                }
+
+                // replace path segments that look like numbers or guid
+                segment = long.TryParse(segment, out _) ||
+                    Guid.TryParseExact(segment, "N", out _) ||
+                    Guid.TryParseExact(segment, "D", out _)
+                        ? UrlIdPlaceholder
+                        : segment;
+
+                sb.Append(segment);
+
+                if (index != -1)
+                {
+                    sb.Append("/");
+                }
+
+                previousIndex = index + 1;
             }
 
-            // remove path segments that look like int or guid (with or without dashes)
-            segment = long.TryParse(segment, out _) ||
-                      Guid.TryParseExact(segment, "N", out _) ||
-                      Guid.TryParseExact(segment, "D", out _)
-                          ? UrlIdPlaceholder
-                          : segment;
-
-            return hasTrailingSlash
-                       ? segment + "/"
-                       : segment;
+            return sb.ToString();
         }
     }
 }
