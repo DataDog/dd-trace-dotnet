@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             const string origin = "synthetics";
 
             var request = new HttpRequestMessage();
-            var context = new SpanContext(traceId, spanId, samplingPriority, origin: origin);
+            var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
 
             SpanContextPropagatorHelpers.InjectHttpHeadersWithReflection(context, (object)request.Headers);
             var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);

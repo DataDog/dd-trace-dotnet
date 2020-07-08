@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests
             const string origin = "synthetics";
 
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
-            var context = new SpanContext(traceId, spanId, samplingPriority, origin: origin);
+            var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
 
             SpanContextPropagator.Instance.Inject(context, headers);
             var resultContext = SpanContextPropagator.Instance.Extract(headers);

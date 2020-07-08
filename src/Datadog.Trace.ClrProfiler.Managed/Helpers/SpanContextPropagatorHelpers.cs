@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Helpers
             var samplingPriority = ParseEnum<SamplingPriority>(headers, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(headers, HttpHeaderNames.Origin);
 
-            return new SpanContext(traceId, parentId, samplingPriority, origin: origin);
+            return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
 
         private static ulong ParseUInt64(object headers, string headerName)

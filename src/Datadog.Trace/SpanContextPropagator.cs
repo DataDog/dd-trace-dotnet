@@ -83,7 +83,7 @@ namespace Datadog.Trace
             var samplingPriority = ParseSamplingPriority(headers, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(headers, HttpHeaderNames.Origin);
 
-            return new SpanContext(traceId, parentId, samplingPriority, origin: origin);
+            return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
 
         private static ulong ParseUInt64<T>(T headers, string headerName)
