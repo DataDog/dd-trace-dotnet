@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class NLog10LogsInjectionNullReferenceExceptionSmokeTest : SmokeTestBase
     {
         public NLog10LogsInjectionNullReferenceExceptionSmokeTest(ITestOutputHelper output)
-            : base(output, "NLog10LogsInjection.NullReferenceException", maxTestRunSeconds: 45)
+            : base(output, "NLog10LogsInjection.NullReferenceException", maxTestRunSeconds: 90)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
         }

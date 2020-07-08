@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest : SmokeTestBase
     {
         public StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest(ITestOutputHelper output)
-            : base(output, "StackExchange.Redis.AssemblyConflict.LegacyProject", maxTestRunSeconds: 15)
+            : base(output, "StackExchange.Redis.AssemblyConflict.LegacyProject", maxTestRunSeconds: 30)
         {
         }
 
