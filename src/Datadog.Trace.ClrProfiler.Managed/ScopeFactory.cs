@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
+using Datadog.Trace.Abstractions;
+using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -41,8 +43,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 if (parent != null &&
                     parent.Type == SpanTypes.Http &&
-                    parent.GetTag(Tags.HttpMethod).Equals(httpMethod, StringComparison.OrdinalIgnoreCase) &&
-                    parent.GetTag(Tags.HttpUrl).Equals(UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false), StringComparison.OrdinalIgnoreCase))
+                    parent.GetTag(Tags.InstrumentationName) != null)
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -50,23 +51,26 @@ namespace Datadog.Trace.ClrProfiler
                     return null;
                 }
 
+                string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
+                string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
+
                 scope = tracer.StartActive(OperationName, serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
-                span.ResourceName = string.Join(
-                    " ",
-                    httpMethod,
-                    UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true));
+                span.ResourceName = $"{httpMethod} {resourceUrl}";
 
                 span.SetTag(Tags.SpanKind, SpanKinds.Client);
                 span.SetTag(Tags.HttpMethod, httpMethod?.ToUpperInvariant());
-                span.SetTag(Tags.HttpUrl, UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false));
+                span.SetTag(Tags.HttpUrl, httpUrl);
                 span.SetTag(Tags.InstrumentationName, integrationName);
 
                 // set analytics sample rate if enabled
-                var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
-                span.SetMetric(Tags.Analytics, analyticsSampleRate);
+                if (integrationName != null)
+                {
+                    var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(integrationName, enabledWithGlobalSetting: false);
+                    span.SetMetric(Tags.Analytics, analyticsSampleRate);
+                }
             }
             catch (Exception ex)
             {
