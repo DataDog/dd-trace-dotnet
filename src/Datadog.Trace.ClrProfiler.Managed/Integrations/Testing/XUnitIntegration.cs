@@ -1,10 +1,9 @@
 using System;
-using System.Net;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.Testing
@@ -15,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     public static class XUnitIntegration
     {
         private const string IntegrationName = "XUnit";
-        private const string ServiceName = "test";
 
         private const string XUnitAssembly = "xunit.execution.dotnet";
         private const string XUnitTestInvokerType = "Xunit.Sdk.TestInvoker`1";
@@ -76,20 +74,29 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             var currentContext = SynchronizationContext.Current;
 
             var scope = CreateScope(testInvoker, testClassInstance);
+            if (scope is null)
+            {
+                return execute(testInvoker, testClassInstance);
+            }
+
             object returnValue;
             try
             {
                 returnValue = execute(testInvoker, testClassInstance);
                 if (returnValue is Task returnTask)
                 {
-                    // TODO: Propertly await or set a continuation task with the same returnType (Task or Task<T>)
+                    // TODO: Propertly await or set a continuation task with the same returnType (ValueTask, ValueTask<T>, Task or Task<T>)
+                    // meanwhile we remove the syncronization context to avoid deadlocks
                     SynchronizationContext.SetSynchronizationContext(null);
                     returnTask.GetAwaiter().GetResult();
                 }
+
+                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
             }
             catch (Exception ex)
             {
                 scope.Span.SetException(ex);
+                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                 throw;
             }
             finally
@@ -111,15 +118,48 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             string testSuite = null;
             string testName = null;
+            List<KeyValuePair<string, string>> testArguments = null;
 
-            testSuite = testClassInstance.GetType().ToString();
             if (testInvoker.TryGetPropertyValue<MethodInfo>("TestMethod", out MethodInfo testMethod))
             {
                 testName = testMethod.Name;
             }
+            else
+            {
+                // if we don't have the test method info, we can't extract the info that we need.
+                Log.TestMethodNotFound();
+                return null;
+            }
+
+            AssemblyName testInvokerAssemblyName = testInvoker.GetType().Assembly.GetName();
+            AssemblyName testClassInstanceAssemblyName = testClassInstance.GetType().Assembly?.GetName();
+            Type testClassInstanceType = testClassInstance.GetType();
+
+            testSuite = testClassInstanceType.ToString();
+
+            ParameterInfo[] methodParameters = testMethod.GetParameters();
+            if (methodParameters?.Length > 0)
+            {
+                if (testInvoker.TryGetPropertyValue<object[]>("TestMethodArguments", out object[] testMethodArguments))
+                {
+                    testArguments = new List<KeyValuePair<string, string>>();
+
+                    for (int i = 0; i < methodParameters.Length; i++)
+                    {
+                        if (i < testMethodArguments.Length)
+                        {
+                            testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)"));
+                        }
+                        else
+                        {
+                            testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", "(default)"));
+                        }
+                    }
+                }
+            }
 
             Tracer tracer = Tracer.Instance;
-            string serviceName = string.Join("-", tracer.DefaultServiceName, ServiceName);
+            string serviceName = testClassInstanceAssemblyName?.Name ?? tracer.DefaultServiceName;
 
             Scope scope = null;
 
@@ -129,9 +169,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 var span = scope.Span;
                 span.Type = SpanTypes.Test;
                 span.ResourceName = $"{testSuite}.{testName}";
-                span.SetTag("test.suite", testSuite);
-                span.SetTag("test.name", testName);
-                span.SetTag("test.framework", "xUnit");
+                span.SetTag(TestTags.Suite, testSuite);
+                span.SetTag(TestTags.Name, testName);
+                span.SetTag(TestTags.Framework, "xUnit " + testInvokerAssemblyName.Version.ToString());
+
+                if (testArguments != null)
+                {
+                    foreach (KeyValuePair<string, string> argument in testArguments)
+                    {
+                        span.SetTag(argument.Key, argument.Value);
+                    }
+                }
+
                 span.SetMetric(Tags.Analytics, 1.0);
             }
             catch (Exception ex)
