@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Moq;
@@ -336,6 +339,52 @@ namespace Datadog.Trace.Tests
 
             // reset the environment variable to its original values (if any) when done
             Environment.SetEnvironmentVariable(name, originalEnv);
+        }
+
+        [Fact]
+        public void OriginHeader_RootSpanTag()
+        {
+            const ulong traceId = 9;
+            const ulong spanId = 7;
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
+
+            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            Assert.Equal(origin, propagatedContext.Origin);
+
+            using var firstSpan = _tracer.StartActive("First Span", propagatedContext);
+            Assert.True(firstSpan.Span.IsRootSpan);
+            Assert.Equal(origin, firstSpan.Span.Context.Origin);
+            Assert.Equal(origin, firstSpan.Span.GetTag(Tags.Origin));
+
+            using var secondSpan = _tracer.StartActive("Child", firstSpan.Span.Context);
+            Assert.False(secondSpan.Span.IsRootSpan);
+            Assert.Equal(origin, secondSpan.Span.Context.Origin);
+            Assert.Null(secondSpan.Span.GetTag(Tags.Origin));
+        }
+
+        [Fact]
+        public void OriginHeader_InjectFromChildSpan()
+        {
+            const ulong traceId = 9;
+            const ulong spanId = 7;
+            const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
+
+            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+
+            using var firstSpan = _tracer.StartActive("First Span", propagatedContext);
+            using var secondSpan = _tracer.StartActive("Child", firstSpan.Span.Context);
+
+            IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
+
+            SpanContextPropagator.Instance.Inject(secondSpan.Span.Context, headers);
+            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+
+            Assert.NotNull(resultContext);
+            Assert.Equal(firstSpan.Span.Context.Origin, resultContext.Origin);
+            Assert.Equal(secondSpan.Span.Context.Origin, resultContext.Origin);
+            Assert.Equal(origin, resultContext.Origin);
         }
     }
 }

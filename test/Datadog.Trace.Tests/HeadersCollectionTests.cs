@@ -21,9 +21,10 @@ namespace Datadog.Trace.Tests
             const int traceId = 9;
             const int spanId = 7;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
 
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
-            var context = new SpanContext(traceId, spanId, samplingPriority);
+            var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
 
             SpanContextPropagator.Instance.Inject(context, headers);
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
@@ -32,6 +33,7 @@ namespace Datadog.Trace.Tests
             Assert.Equal(context.SpanId, resultContext.SpanId);
             Assert.Equal(context.TraceId, resultContext.TraceId);
             Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
+            Assert.Equal(context.Origin, resultContext.Origin);
         }
 
         [Theory]
@@ -42,8 +44,9 @@ namespace Datadog.Trace.Tests
         {
             const string spanId = "7";
             const string samplingPriority = "2";
+            const string origin = "synthetics";
 
-            var headers = InjectContext(traceId, spanId, samplingPriority);
+            var headers = InjectContext(traceId, spanId, samplingPriority, origin);
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
 
             // invalid traceId should return a null context even if other values are set
@@ -58,11 +61,13 @@ namespace Datadog.Trace.Tests
         {
             const ulong traceId = 9;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
 
             var headers = InjectContext(
                 traceId.ToString(CultureInfo.InvariantCulture),
                 spanId,
-                ((int)samplingPriority).ToString(CultureInfo.InvariantCulture));
+                ((int)samplingPriority).ToString(CultureInfo.InvariantCulture),
+                origin);
 
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
 
@@ -70,6 +75,7 @@ namespace Datadog.Trace.Tests
             Assert.Equal(traceId, resultContext.TraceId);
             Assert.Equal(default(ulong), resultContext.SpanId);
             Assert.Equal(samplingPriority, resultContext.SamplingPriority);
+            Assert.Equal(origin, resultContext.Origin);
         }
 
         [Theory]
@@ -80,11 +86,13 @@ namespace Datadog.Trace.Tests
         {
             const ulong traceId = 9;
             const ulong spanId = 7;
+            const string origin = "synthetics";
 
             var headers = InjectContext(
                 traceId.ToString(CultureInfo.InvariantCulture),
                 spanId.ToString(CultureInfo.InvariantCulture),
-                samplingPriority);
+                samplingPriority,
+                origin);
 
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
 
@@ -92,14 +100,16 @@ namespace Datadog.Trace.Tests
             Assert.Equal(traceId, resultContext.TraceId);
             Assert.Equal(spanId, resultContext.SpanId);
             Assert.Null(resultContext.SamplingPriority);
+            Assert.Equal(origin, resultContext.Origin);
         }
 
-        private static IHeadersCollection InjectContext(string traceId, string spanId, string samplingPriority)
+        private static IHeadersCollection InjectContext(string traceId, string spanId, string samplingPriority, string origin)
         {
             IHeadersCollection headers = new DictionaryHeadersCollection();
             headers.Add(HttpHeaderNames.TraceId, traceId);
             headers.Add(HttpHeaderNames.ParentId, spanId);
             headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority);
+            headers.Add(HttpHeaderNames.Origin, origin);
             return headers;
         }
     }

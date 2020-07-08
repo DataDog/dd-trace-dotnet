@@ -145,6 +145,12 @@ namespace Datadog.Trace
                 span.SetTag(Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
                 span.SetTag(Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
             }
+
+            // set the origin tag to the root span of each trace/subtrace
+            if (span.Context.Origin != null)
+            {
+                span.SetTag(Tags.Origin, span.Context.Origin);
+            }
         }
     }
 }

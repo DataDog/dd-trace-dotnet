@@ -205,5 +205,10 @@ namespace Datadog.Trace
         /// The subscription id of the site instance in azure app services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesSubscriptionId = "aas.subscription.id";
+
+        /// <summary>
+        /// Configures the origin of the trace
+        /// </summary>
+        public const string Origin = "_dd.origin";
     }
 }

@@ -31,6 +31,24 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// from a propagated context. <see cref="Parent"/> will be null
+        /// since this is a root context locally.
+        /// </summary>
+        /// <param name="traceId">The propagated trace id.</param>
+        /// <param name="spanId">The propagated span id.</param>
+        /// <param name="samplingPriority">The propagated sampling priority.</param>
+        /// <param name="serviceName">The service name to propagate to child spans.</param>
+        /// <param name="origin">The propagated origin of the trace.</param>
+        internal SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority, string serviceName, string origin)
+            : this(traceId, serviceName)
+        {
+            SpanId = spanId;
+            SamplingPriority = samplingPriority;
+            Origin = origin;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContext"/> class
         /// that is the child of the specified parent context.
         /// </summary>
         /// <param name="parent">The parent context.</param>
@@ -42,6 +60,10 @@ namespace Datadog.Trace
             SpanId = _random.Value.NextUInt63();
             Parent = parent;
             TraceContext = traceContext;
+            if (parent is SpanContext spanContext)
+            {
+                Origin = spanContext.Origin;
+            }
         }
 
         private SpanContext(ulong? traceId, string serviceName)
@@ -77,6 +99,11 @@ namespace Datadog.Trace
         /// Gets or sets the service name to propagate to child spans.
         /// </summary>
         public string ServiceName { get; set; }
+
+        /// <summary>
+        /// Gets the origin of the trace
+        /// </summary>
+        internal string Origin { get; }
 
         /// <summary>
         /// Gets the trace context.

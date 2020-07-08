@@ -14,9 +14,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             const int traceId = 9;
             const int spanId = 7;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
 
             var request = new HttpRequestMessage();
-            var context = new SpanContext(traceId, spanId, samplingPriority);
+            var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
 
             SpanContextPropagatorHelpers.InjectHttpHeadersWithReflection(context, (object)request.Headers);
             var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
@@ -25,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(context.SpanId, resultContext.SpanId);
             Assert.Equal(context.TraceId, resultContext.TraceId);
             Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
+            Assert.Equal(context.Origin, resultContext.Origin);
         }
 
         [Theory]
@@ -35,9 +37,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             const string spanId = "7";
             const string samplingPriority = "2";
+            const string origin = "synthetics";
 
             var request = new HttpRequestMessage();
-            InjectContext(request.Headers, traceId, spanId, samplingPriority);
+            InjectContext(request.Headers, traceId, spanId, samplingPriority, origin);
             var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
             // invalid traceId should return a null context even if other values are set
@@ -52,13 +55,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             const ulong traceId = 9;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
+            const string origin = "synthetics";
 
             var request = new HttpRequestMessage();
             InjectContext(
                 request.Headers,
                 traceId.ToString(CultureInfo.InvariantCulture),
                 spanId,
-                ((int)samplingPriority).ToString(CultureInfo.InvariantCulture));
+                ((int)samplingPriority).ToString(CultureInfo.InvariantCulture),
+                origin);
 
             var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
@@ -66,6 +71,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(traceId, resultContext.TraceId);
             Assert.Equal(default(ulong), resultContext.SpanId);
             Assert.Equal(samplingPriority, resultContext.SamplingPriority);
+            Assert.Equal(origin, resultContext.Origin);
         }
 
         [Theory]
@@ -76,13 +82,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             const ulong traceId = 9;
             const ulong spanId = 7;
+            const string origin = "synthetics";
 
             var request = new HttpRequestMessage();
             InjectContext(
                 request.Headers,
                 traceId.ToString(CultureInfo.InvariantCulture),
                 spanId.ToString(CultureInfo.InvariantCulture),
-                samplingPriority);
+                samplingPriority,
+                origin);
 
             var resultContext = SpanContextPropagatorHelpers.ExtractHttpHeadersWithReflection(request.Headers);
 
@@ -90,13 +98,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(traceId, resultContext.TraceId);
             Assert.Equal(spanId, resultContext.SpanId);
             Assert.Null(resultContext.SamplingPriority);
+            Assert.Equal(origin, resultContext.Origin);
         }
 
-        private static void InjectContext(HttpRequestHeaders headers, string traceId, string spanId, string samplingPriority)
+        private static void InjectContext(HttpRequestHeaders headers, string traceId, string spanId, string samplingPriority, string origin)
         {
             headers.Add(HttpHeaderNames.TraceId, traceId);
             headers.Add(HttpHeaderNames.ParentId, spanId);
             headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority);
+            headers.Add(HttpHeaderNames.Origin, origin);
         }
     }
 }

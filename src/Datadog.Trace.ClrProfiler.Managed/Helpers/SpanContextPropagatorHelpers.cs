@@ -29,6 +29,13 @@ namespace Datadog.Trace.ClrProfiler.Helpers
             headers.CallMethod<string, bool>("Remove", HttpHeaderNames.ParentId);
             headers.CallVoidMethod<string, string>("Add", HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
 
+            headers.CallMethod<string, bool>("Remove", HttpHeaderNames.Origin);
+            // avoid writing origin header if not set, keeping the previous behavior.
+            if (context.Origin != null)
+            {
+                headers.CallVoidMethod<string, string>("Add", HttpHeaderNames.Origin, context.Origin);
+            }
+
             var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
 
             headers.CallMethod<string, bool>("Remove", HttpHeaderNames.SamplingPriority);
@@ -55,8 +62,9 @@ namespace Datadog.Trace.ClrProfiler.Helpers
 
             var parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
             var samplingPriority = ParseEnum<SamplingPriority>(headers, HttpHeaderNames.SamplingPriority);
+            var origin = ParseString(headers, HttpHeaderNames.Origin);
 
-            return new SpanContext(traceId, parentId, samplingPriority);
+            return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
 
         private static ulong ParseUInt64(object headers, string headerName)
@@ -106,6 +114,26 @@ namespace Datadog.Trace.ClrProfiler.Helpers
             }
 
             return default;
+        }
+
+        private static string ParseString(object headers, string headerName)
+        {
+            if (headers.CallMethod<string, bool>("Contains", headerName).Value)
+            {
+                var headerValues = headers.CallMethod<string, IEnumerable<string>>("GetValues", headerName).Value;
+                if (headerValues != null)
+                {
+                    foreach (string headerValue in headerValues)
+                    {
+                        if (!string.IsNullOrEmpty(headerValue))
+                        {
+                            return headerValue;
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }
