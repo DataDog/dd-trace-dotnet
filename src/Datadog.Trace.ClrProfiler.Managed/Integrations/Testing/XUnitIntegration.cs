@@ -93,6 +93,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                 scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
             }
+            catch (TargetInvocationException ex)
+            {
+                scope.Span.SetException(ex.InnerException);
+                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                throw;
+            }
             catch (Exception ex)
             {
                 scope.Span.SetException(ex);
