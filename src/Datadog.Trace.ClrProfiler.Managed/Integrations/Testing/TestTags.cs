@@ -49,5 +49,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// Test Skip status
         /// </summary>
         public const string StatusSkip = "SKIP";
+
+        /// <summary>
+        /// Test skip reason
+        /// </summary>
+        public const string SkipReason = "test.skipReason";
     }
 }

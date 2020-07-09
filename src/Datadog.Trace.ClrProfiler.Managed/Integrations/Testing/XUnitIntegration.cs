@@ -16,13 +16,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string IntegrationName = "XUnit";
 
         private const string XUnitAssembly = "xunit.execution.dotnet";
+
         private const string XUnitTestInvokerType = "Xunit.Sdk.TestInvoker`1";
         private const string XUnitCallTestMethod = "CallTestMethod";
+
+        private const string XUnitTestRunnerType = "Xunit.Sdk.TestRunner`1";
+        private const string XUnitRunAsyncMethod = "RunAsync";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
 
         /// <summary>
-        /// Wrap the original method by adding instrumentation code around it.
+        /// Wrap the original Xunit.Sdk.TestInvoker`1.CallTestMethod method by adding instrumentation code around it.
         /// </summary>
         /// <param name="testInvoker">The TestInvoker instance we are replacing.</param>
         /// <param name="testClassInstance">The TestClass instance.</param>
@@ -73,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             var currentContext = SynchronizationContext.Current;
 
-            var scope = CreateScope(testInvoker, testClassInstance);
+            var scope = CreateScope(testInvoker, testClassInstance.GetType());
             if (scope is null)
             {
                 return execute(testInvoker, testClassInstance);
@@ -114,7 +118,58 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             return returnValue;
         }
 
-        private static Scope CreateScope(object testInvoker, object testClassInstance)
+        /// <summary>
+        /// Wrap the original Xunit.Sdk.TestRunner`1.RunAsync method by adding instrumentation code around it
+        /// </summary>
+        /// <param name="testRunner">The TestRunner instance we are replacing.</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The original method's return value.</returns>
+        [InterceptMethod(
+            TargetAssembly = XUnitAssembly,
+            TargetType = XUnitTestRunnerType,
+            TargetMethod = XUnitRunAsyncMethod,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" })]
+        public static object RunAsync(
+            object testRunner,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (testRunner == null) { throw new ArgumentNullException(nameof(testRunner)); }
+
+            Type testRunnerType = testRunner.GetType();
+            Func<object, object> execute;
+
+            try
+            {
+                execute =
+                    MethodBuilder<Func<object, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, XUnitRunAsyncMethod)
+                       .WithConcreteType(testRunnerType)
+                       .WithDeclaringTypeGenerics(testRunnerType.BaseType.GenericTypeArguments)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: XUnitTestRunnerType,
+                    methodName: XUnitRunAsyncMethod,
+                    instanceType: testRunnerType.AssemblyQualifiedName);
+                throw;
+            }
+
+            CreateScope(testRunner, null);
+            return execute(testRunner);
+        }
+
+        private static Scope CreateScope(object testSdk, Type testClassType)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
@@ -124,9 +179,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             string testSuite = null;
             string testName = null;
+            string skipReason = null;
             List<KeyValuePair<string, string>> testArguments = null;
 
-            if (testInvoker.TryGetPropertyValue<MethodInfo>("TestMethod", out MethodInfo testMethod))
+            if (testClassType is null)
+            {
+                if (!testSdk.TryGetPropertyValue<Type>("TestClass", out testClassType))
+                {
+                    Log.TestClassTypeNotFound();
+                    return null;
+                }
+
+                testSdk.TryGetPropertyValue<string>("SkipReason", out skipReason);
+                if (skipReason == null)
+                {
+                    return null;
+                }
+            }
+
+            if (testSdk.TryGetPropertyValue<MethodInfo>("TestMethod", out MethodInfo testMethod))
             {
                 testName = testMethod.Name;
             }
@@ -137,16 +208,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 return null;
             }
 
-            AssemblyName testInvokerAssemblyName = testInvoker.GetType().Assembly.GetName();
-            AssemblyName testClassInstanceAssemblyName = testClassInstance.GetType().Assembly?.GetName();
-            Type testClassInstanceType = testClassInstance.GetType();
+            AssemblyName testInvokerAssemblyName = testSdk.GetType().Assembly.GetName();
+            AssemblyName testClassInstanceAssemblyName = testClassType.Assembly?.GetName();
 
-            testSuite = testClassInstanceType.ToString();
+            testSuite = testClassType.ToString();
 
             ParameterInfo[] methodParameters = testMethod.GetParameters();
             if (methodParameters?.Length > 0)
             {
-                if (testInvoker.TryGetPropertyValue<object[]>("TestMethodArguments", out object[] testMethodArguments))
+                if (testSdk.TryGetPropertyValue<object[]>("TestMethodArguments", out object[] testMethodArguments))
                 {
                     testArguments = new List<KeyValuePair<string, string>>();
 
@@ -171,13 +241,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             try
             {
-                scope = tracer.StartActive("Test", serviceName: serviceName);
+                scope = tracer.StartActive(testName, serviceName: serviceName);
                 var span = scope.Span;
                 span.Type = SpanTypes.Test;
-                span.ResourceName = $"{testSuite}.{testName}";
+                span.ResourceName = testSuite;
                 span.SetTag(TestTags.Suite, testSuite);
                 span.SetTag(TestTags.Name, testName);
                 span.SetTag(TestTags.Framework, "xUnit " + testInvokerAssemblyName.Version.ToString());
+                span.SetMetric(Tags.Analytics, 1.0);
 
                 if (testArguments != null)
                 {
@@ -187,7 +258,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     }
                 }
 
-                span.SetMetric(Tags.Analytics, 1.0);
+                if (skipReason != null)
+                {
+                    span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                    span.SetTag(TestTags.SkipReason, skipReason);
+                    span.Finish();
+                }
             }
             catch (Exception ex)
             {

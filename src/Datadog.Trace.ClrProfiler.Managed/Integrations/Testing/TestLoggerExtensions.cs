@@ -9,5 +9,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         {
             logger.Error("Error: the test method can't be retrieved.");
         }
+
+        public static void TestClassTypeNotFound(this Vendors.Serilog.ILogger logger)
+        {
+            logger.Error("Error: the test class type can't be retrieved.");
+        }
     }
 }
