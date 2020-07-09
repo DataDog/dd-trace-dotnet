@@ -16,6 +16,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         public const string Name = "test.name";
 
         /// <summary>
+        /// Test fqn
+        /// </summary>
+        public const string Fqn = "test.fqn";
+
+        /// <summary>
         /// Test framework
         /// </summary>
         public const string Framework = "test.framework";

@@ -61,6 +61,11 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        public Task FlushAsync()
+        {
+            return FlushTracesAsync();
+        }
+
         public async Task FlushAndCloseAsync()
         {
             if (!_processExit.TrySetResult(true))

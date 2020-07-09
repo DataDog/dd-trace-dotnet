@@ -260,8 +260,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             {
                 returnValue = AsyncTool.AddContinuation(returnValue, exception, async (r, ex) =>
                 {
-                    // We wait for the final flush for the assembly. (exit events of the tracer doesn't trigger)
-                    await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+                    await Tracer.Instance.FlushAsync().ConfigureAwait(false);
                     return r;
                 });
             }
@@ -336,19 +335,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             Tracer tracer = Tracer.Instance;
             string serviceName = testClassInstanceAssemblyName?.Name ?? tracer.DefaultServiceName;
+            string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
             Scope scope = null;
 
             try
             {
-                scope = tracer.StartActive(testName, serviceName: serviceName);
+                scope = tracer.StartActive(testName, serviceName: serviceName, finishOnClose: skipReason == null);
                 Span span = scope.Span;
                 span.Type = SpanTypes.Test;
                 span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
                 span.ResourceName = testSuite;
                 span.SetTag(TestTags.Suite, testSuite);
                 span.SetTag(TestTags.Name, testName);
-                span.SetTag(TestTags.Framework, "xUnit " + testInvokerAssemblyName.Version.ToString());
+                span.SetTag(TestTags.Fqn, $"{testSuite}.{testName}");
+                span.SetTag(TestTags.Framework, testFramework);
                 span.SetMetric(Tags.Analytics, 1.0d);
 
                 if (testArguments != null)
@@ -363,6 +364,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 {
                     span.SetTag(TestTags.Status, TestTags.StatusSkip);
                     span.SetTag(TestTags.SkipReason, skipReason);
+                    span.Finish(TimeSpan.Zero);
                     scope.Dispose();
                     return null;
                 }

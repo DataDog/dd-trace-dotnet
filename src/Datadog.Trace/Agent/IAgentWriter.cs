@@ -8,6 +8,8 @@ namespace Datadog.Trace.Agent
 
         Task<bool> Ping();
 
+        Task FlushAsync();
+
         Task FlushAndCloseAsync();
 
         void OverrideApi(IApi api);
