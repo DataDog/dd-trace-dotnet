@@ -17,8 +17,12 @@ namespace Datadog.Trace.ClrProfiler.Helpers
 
         public IEnumerable<string> GetValues(string name)
         {
-            return _headers.CallMethod<string, IEnumerable<string>>("GetValues", name).Value ??
-                    Enumerable.Empty<string>();
+            if (_headers.CallMethod<string, bool>("Contains", name).Value)
+            {
+                return _headers.CallMethod<string, IEnumerable<string>>("GetValues", name).Value ?? Enumerable.Empty<string>();
+            }
+
+            return Enumerable.Empty<string>();
         }
 
         public void Set(string name, string value)
