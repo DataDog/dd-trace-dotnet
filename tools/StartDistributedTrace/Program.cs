@@ -31,6 +31,7 @@ namespace StartDistributedTrace
                 // Set distributed tracing headers
                 client.DefaultRequestHeaders.Add(HttpHeaderNames.TraceId, span.TraceId.ToString(CultureInfo.InvariantCulture));
                 client.DefaultRequestHeaders.Add(HttpHeaderNames.ParentId, span.SpanId.ToString(CultureInfo.InvariantCulture));
+                client.DefaultRequestHeaders.Add("upstream-service", nameof(StartDistributedTrace));
 
                 // Send HTTP request
                 using (var responseMessage = client.GetAsync(url).Result)
