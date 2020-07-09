@@ -39,6 +39,15 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void WebRequest_Extract_EmptyHeadersReturnsNull()
+        {
+            IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
+            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+
+            Assert.Null(resultContext);
+        }
+
+        [Fact]
         public void NameValueCollection_InjectExtract_Identity()
         {
             const int traceId = 9;
@@ -60,6 +69,15 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void NameValueCollection_Extract_EmptyHeadersReturnsNull()
+        {
+            IHeadersCollection headers = new NameValueCollection().Wrap();
+            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+
+            Assert.Null(resultContext);
+        }
+
+        [Fact]
         public void DictionaryHeadersCollection_InjectExtract_Identity()
         {
             const int traceId = 9;
@@ -78,6 +96,15 @@ namespace Datadog.Trace.Tests
             Assert.Equal(context.TraceId, resultContext.TraceId);
             Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
             Assert.Equal(context.Origin, resultContext.Origin);
+        }
+
+        [Fact]
+        public void DictionaryHeadersCollection_Extract_EmptyHeadersReturnsNull()
+        {
+            IHeadersCollection headers = new DictionaryHeadersCollection();
+            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+
+            Assert.Null(resultContext);
         }
 
         [Theory]

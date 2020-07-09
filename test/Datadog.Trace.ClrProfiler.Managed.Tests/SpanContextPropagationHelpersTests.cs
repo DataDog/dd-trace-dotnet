@@ -29,5 +29,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Equal(context.SamplingPriority, resultContext.SamplingPriority);
             Assert.Equal(context.Origin, resultContext.Origin);
         }
+
+        [Fact]
+        public void HttpRequestMessage_Extract_EmptyHeadersReturnsNull()
+        {
+            var request = new HttpRequestMessage();
+            var resultContext = SpanContextPropagator.Instance.Extract(new ReflectionHttpHeadersCollection(request.Headers));
+
+            Assert.Null(resultContext);
+        }
     }
 }
