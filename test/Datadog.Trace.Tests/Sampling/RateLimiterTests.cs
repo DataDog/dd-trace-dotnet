@@ -52,13 +52,13 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Limits_Approximately_To_Defaults()
         {
-            Run_Limit_Test(intervalLimit: null, numberPerBurst: 200, numberOfBursts: 20, millisecondsBetweenBursts: 247);
+            Run_Limit_Test(intervalLimit: null, numberPerBurst: 200, numberOfBursts: 18, millisecondsBetweenBursts: 247);
         }
 
         [Fact]
         public void Limits_To_Custom_Amount_Per_Second()
         {
-            Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 20, millisecondsBetweenBursts: 247);
+            Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 18, millisecondsBetweenBursts: 247);
         }
 
         private static void Run_Limit_Test(int? intervalLimit, int numberPerBurst, int numberOfBursts, int millisecondsBetweenBursts)
