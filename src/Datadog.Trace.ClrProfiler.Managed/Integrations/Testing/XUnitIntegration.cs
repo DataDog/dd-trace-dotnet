@@ -24,10 +24,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string XUnitTestRunnerType = "Xunit.Sdk.TestRunner`1";
         private const string XUnitRunAsyncMethod = "RunAsync";
 
+        private const string XUnitTestAssemblyRunnerType = "Xunit.Sdk.TestAssemblyRunner`1";
+        private const string XUnitRunTestCollectionAsyncMethod = "RunTestCollectionAsync";
+
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
 
         private static long _testInvokerScopesCount;
-        private static long _testInvokerReturnTask;
         private static long _testInvokerScopesDisposedCount;
         private static long _testRunAsyncSkipped;
 
@@ -84,11 +86,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             var scope = CreateScope(testInvoker, testClassInstance.GetType());
             if (scope is null)
             {
-                Log.Debug($"** SCOPE is null!!!");
                 return execute(testInvoker, testClassInstance);
             }
 
-            Log.Debug($"** SCOPE Created for TestInvoker. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testInvokerReturnTask)}]");
+            Log.Debug($"** SCOPE ({scope.Span.Context.TraceId}) Created for TestInvoker. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testRunAsyncSkipped)}]");
 
             object returnValue = null;
             Exception exception = null;
@@ -121,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     }
 
                     scope.Dispose();
-                    Log.Debug($"** SCOPE Disposed for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testInvokerReturnTask)}]");
+                    Log.Debug($"** SCOPE ({scope.Span.Context.TraceId}) Disposed for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testRunAsyncSkipped)}]");
                     return r;
                 });
             }
@@ -142,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             TargetType = XUnitTestRunnerType,
             TargetMethod = XUnitRunAsyncMethod,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" })]
-        public static object RunAsync(
+        public static object TestRunner_RunAsync(
             object testRunner,
             int opCode,
             int mdToken,
@@ -178,10 +179,94 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             if (!(CreateScope(testRunner, null) is null))
             {
-                Log.Debug($"** SCOPE Test SKIPPED. [{Interlocked.Increment(ref _testRunAsyncSkipped)}]");
+                Log.Debug($"** SCOPE Test SKIPPED. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Increment(ref _testRunAsyncSkipped)}]");
             }
 
             return execute(testRunner);
+        }
+
+        /// <summary>
+        /// Wrap the original Xunit.Sdk.XunitTestAssemblyRunner.BeforeTestAssemblyFinishedAsync method by adding instrumentation code around it
+        /// </summary>
+        /// <param name="xunitTestAssemblyRunner">The XunitTestAssemblyRunner instance we are replacing.</param>
+        /// <param name="messageBus">Message bus instance</param>
+        /// <param name="testCollection">Test collection instance</param>
+        /// <param name="testCases">Test cases instance</param>
+        /// <param name="cancellationTokenSource">Cancellation token source</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The original method's return value.</returns>
+        [InterceptMethod(
+            TargetAssembly = XUnitAssembly,
+            TargetType = XUnitTestAssemblyRunnerType,
+            TargetMethod = XUnitRunTestCollectionAsyncMethod,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>", "Xunit.Sdk.IMessageBus", "Xunit.Abstractions.ITestCollection", "System.Collections.Generic.IEnumerable`1<T>", "System.Threading.CancellationTokenSource" })]
+        public static object AssemblyRunner_RunAsync(
+            object xunitTestAssemblyRunner,
+            object messageBus,
+            object testCollection,
+            object testCases,
+            object cancellationTokenSource,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (xunitTestAssemblyRunner == null) { throw new ArgumentNullException(nameof(xunitTestAssemblyRunner)); }
+
+            Type xunitTestAssemblyRunnerType = xunitTestAssemblyRunner.GetType();
+            Func<object, object, object, object, object, object> execute;
+
+            try
+            {
+                execute =
+                    MethodBuilder<Func<object, object, object, object, object, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, XUnitRunTestCollectionAsyncMethod)
+                       .WithConcreteType(xunitTestAssemblyRunnerType)
+                       .WithParameters(messageBus, testCollection, testCases, cancellationTokenSource)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, "Xunit.Sdk.IMessageBus", "Xunit.Abstractions.ITestCollection", "System.Collections.Generic.IEnumerable`1<T>", "System.Threading.CancellationTokenSource")
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: XUnitTestAssemblyRunnerType,
+                    methodName: XUnitRunTestCollectionAsyncMethod,
+                    instanceType: xunitTestAssemblyRunnerType.AssemblyQualifiedName);
+                throw;
+            }
+
+            object returnValue = null;
+            Exception exception = null;
+            try
+            {
+                returnValue = execute(xunitTestAssemblyRunner, messageBus, testCollection, testCases, cancellationTokenSource);
+            }
+            catch (TargetInvocationException ex)
+            {
+                exception = ex.InnerException;
+                throw;
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                throw;
+            }
+            finally
+            {
+                returnValue = AsyncTool.AddContinuation(returnValue, exception, async (r, ex) =>
+                {
+                    // We wait for the final flush for the assembly. (exit events of the tracer doesn't trigger)
+                    await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
+                    return r;
+                });
+            }
+
+            return returnValue;
         }
 
         private static Scope CreateScope(object testSdk, Type testClassType)
