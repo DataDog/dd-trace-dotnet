@@ -55,6 +55,52 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollectionImplementations))]
+        internal void ExtractHeaderTags_EmptyHeadersReturnsEmptyTagsList(IHeadersCollection headers)
+        {
+            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, new Dictionary<string, string>());
+
+            Assert.NotNull(tagsFromHeader);
+            Assert.Empty(tagsFromHeader);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetHeaderCollectionImplementations))]
+        internal void ExtractHeaderTags_MatchesCaseInsensitive(IHeadersCollection headers)
+        {
+            // Initialize constants
+            const string customHeader1Name = "dd-custom-header1";
+            const string customHeader1Value = "match1";
+            const string customHeader1TagName = "custom-header1-tag";
+
+            const string customHeader2Name = "DD-CUSTOM-HEADER-MISMATCHING-CASE";
+            const string customHeader2Value = "match2";
+            const string customHeader2TagName = "custom-header2-tag";
+            string customHeader2LowercaseHeaderName = customHeader2Name.ToLowerInvariant();
+
+            // Initialize WebRequest and add headers
+            headers.Add(customHeader1Name, customHeader1Value);
+            headers.Add(customHeader2Name, customHeader2Value);
+
+            // Initialize header tag arguments
+            var headerTags = new Dictionary<string, string>();
+            headerTags.Add(customHeader1Name, customHeader1TagName);
+            headerTags.Add(customHeader2LowercaseHeaderName, customHeader2TagName);
+
+            // Set expectations
+            var expectedResults = new Dictionary<string, string>();
+            expectedResults.Add(customHeader1TagName, customHeader1Value);
+            expectedResults.Add(customHeader2TagName, customHeader2Value);
+
+            // Test
+            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags);
+
+            // Assert
+            Assert.NotNull(tagsFromHeader);
+            Assert.Equal(expectedResults, tagsFromHeader);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetHeaderCollectionImplementations))]
         internal void Extract_EmptyHeadersReturnsNull(IHeadersCollection headers)
         {
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
