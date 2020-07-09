@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.Testing
@@ -24,6 +25,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string XUnitRunAsyncMethod = "RunAsync";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
+
+        private static long _testInvokerScopesCount;
+        private static long _testInvokerReturnTask;
+        private static long _testInvokerScopesDisposedCount;
+        private static long _testRunAsyncSkipped;
 
         /// <summary>
         /// Wrap the original Xunit.Sdk.TestInvoker`1.CallTestMethod method by adding instrumentation code around it.
@@ -75,24 +81,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 throw;
             }
 
-            var currentContext = SynchronizationContext.Current;
-
             var scope = CreateScope(testInvoker, testClassInstance.GetType());
             if (scope is null)
             {
                 return execute(testInvoker, testClassInstance);
             }
 
+            Log.Debug($"** SCOPE Created for TestInvoker. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testInvokerReturnTask)}]");
+
+            SynchronizationContext currentContext;
             object returnValue;
             try
             {
                 returnValue = execute(testInvoker, testClassInstance);
-                if (returnValue is Task returnTask)
+                if (returnValue is Task returnTask && !returnTask.IsCompleted)
                 {
-                    // TODO: Propertly await or set a continuation task with the same returnType (ValueTask, ValueTask<T>, Task or Task<T>)
-                    // meanwhile we remove the syncronization context to avoid deadlocks
-                    SynchronizationContext.SetSynchronizationContext(null);
-                    returnTask.GetAwaiter().GetResult();
+                    Log.Debug($"** SCOPE Task as Return Value for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Increment(ref _testInvokerReturnTask)}]");
+
+                    currentContext = SynchronizationContext.Current;
+                    try
+                    {
+                        SynchronizationContext.SetSynchronizationContext(null);
+                        returnTask.ConfigureAwait(false).GetAwaiter().GetResult();
+                    }
+                    finally
+                    {
+                        SynchronizationContext.SetSynchronizationContext(currentContext);
+                    }
                 }
 
                 scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
@@ -111,12 +126,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
             finally
             {
-                SynchronizationContext.SetSynchronizationContext(currentContext);
                 scope.Dispose();
+                Log.Debug($"** SCOPE Disposed for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testInvokerReturnTask)}]");
             }
 
             return returnValue;
         }
+
+        // private static async Task<T> WaitForAsync
 
         /// <summary>
         /// Wrap the original Xunit.Sdk.TestRunner`1.RunAsync method by adding instrumentation code around it
@@ -165,7 +182,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 throw;
             }
 
-            CreateScope(testRunner, null);
+            if (!(CreateScope(testRunner, null) is null))
+            {
+                Log.Debug($"** SCOPE Test SKIPPED. [{Interlocked.Increment(ref _testRunAsyncSkipped)}]");
+            }
+
             return execute(testRunner);
         }
 
@@ -242,13 +263,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             try
             {
                 scope = tracer.StartActive(testName, serviceName: serviceName);
-                var span = scope.Span;
+                Span span = scope.Span;
                 span.Type = SpanTypes.Test;
+                span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
                 span.ResourceName = testSuite;
                 span.SetTag(TestTags.Suite, testSuite);
                 span.SetTag(TestTags.Name, testName);
                 span.SetTag(TestTags.Framework, "xUnit " + testInvokerAssemblyName.Version.ToString());
-                span.SetMetric(Tags.Analytics, 1.0);
+                span.SetMetric(Tags.Analytics, 1.0d);
 
                 if (testArguments != null)
                 {
@@ -262,7 +284,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 {
                     span.SetTag(TestTags.Status, TestTags.StatusSkip);
                     span.SetTag(TestTags.SkipReason, skipReason);
-                    span.Finish();
+                    scope.Dispose();
+                    return null;
                 }
             }
             catch (Exception ex)

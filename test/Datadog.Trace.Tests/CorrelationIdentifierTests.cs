@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Not compatible with xUnit instrumentation.")]
         public void TraceIdSpanId_ZeroOutsideActiveSpan()
         {
             using (var parentScope = Tracer.Instance.StartActive("parent"))
