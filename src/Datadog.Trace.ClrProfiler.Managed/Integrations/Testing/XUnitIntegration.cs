@@ -84,56 +84,50 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             var scope = CreateScope(testInvoker, testClassInstance.GetType());
             if (scope is null)
             {
+                Log.Debug($"** SCOPE is null!!!");
                 return execute(testInvoker, testClassInstance);
             }
 
             Log.Debug($"** SCOPE Created for TestInvoker. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testInvokerReturnTask)}]");
 
-            SynchronizationContext currentContext;
-            object returnValue;
+            object returnValue = null;
+            Exception exception = null;
             try
             {
                 returnValue = execute(testInvoker, testClassInstance);
-                if (returnValue is Task returnTask && !returnTask.IsCompleted)
-                {
-                    Log.Debug($"** SCOPE Task as Return Value for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Increment(ref _testInvokerReturnTask)}]");
-
-                    currentContext = SynchronizationContext.Current;
-                    try
-                    {
-                        SynchronizationContext.SetSynchronizationContext(null);
-                        returnTask.ConfigureAwait(false).GetAwaiter().GetResult();
-                    }
-                    finally
-                    {
-                        SynchronizationContext.SetSynchronizationContext(currentContext);
-                    }
-                }
-
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
             }
             catch (TargetInvocationException ex)
             {
-                scope.Span.SetException(ex.InnerException);
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                exception = ex.InnerException;
                 throw;
             }
             catch (Exception ex)
             {
-                scope.Span.SetException(ex);
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                exception = ex;
                 throw;
             }
             finally
             {
-                scope.Dispose();
-                Log.Debug($"** SCOPE Disposed for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testInvokerReturnTask)}]");
+                returnValue = AsyncTool.AddContinuation(returnValue, exception, (r, ex) =>
+                {
+                    if (ex != null)
+                    {
+                        scope.Span.SetException(ex);
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                    }
+                    else
+                    {
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                    }
+
+                    scope.Dispose();
+                    Log.Debug($"** SCOPE Disposed for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testInvokerReturnTask)}]");
+                    return r;
+                });
             }
 
             return returnValue;
         }
-
-        // private static async Task<T> WaitForAsync
 
         /// <summary>
         /// Wrap the original Xunit.Sdk.TestRunner`1.RunAsync method by adding instrumentation code around it
