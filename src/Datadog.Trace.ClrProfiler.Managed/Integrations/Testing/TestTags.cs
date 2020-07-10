@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <summary>
         /// Test fqn
         /// </summary>
-        public const string ExecutionId = "test.executionId";
+        public const string ProcessId = "test.processId";
 
         /// <summary>
         /// Test framework

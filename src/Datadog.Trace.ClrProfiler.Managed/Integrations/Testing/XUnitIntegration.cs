@@ -307,19 +307,26 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             if (testClassType is null)
             {
-                if (!testSdk.TryGetPropertyValue<Type>("TestClass", out testClassType))
-                {
-                    Log.TestClassTypeNotFound();
-                    return null;
-                }
+                // If testClassType is null, is because this method is called from an upper caller,
+                // if we detect the SkipReason we write the Test skip span, if not we don't do nothing
+                // and wait for the other caller.
 
                 testSdk.TryGetPropertyValue<string>("SkipReason", out skipReason);
                 if (skipReason == null)
                 {
+                    // no skip reason, so we do nothing.
+                    return null;
+                }
+
+                if (!testSdk.TryGetPropertyValue<Type>("TestClass", out testClassType))
+                {
+                    // if we don't have the test class type, we can't extract the info that we need.
+                    Log.TestClassTypeNotFound();
                     return null;
                 }
             }
 
+            // Get test method name
             if (testSdk.TryGetPropertyValue<MethodInfo>("TestMethod", out MethodInfo testMethod))
             {
                 testName = testMethod.Name;
@@ -336,6 +343,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             testSuite = testClassType.ToString();
 
+            // Get test parameters
             ParameterInfo[] methodParameters = testMethod.GetParameters();
             if (methodParameters?.Length > 0)
             {
@@ -362,7 +370,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
             Scope scope = null;
-
             try
             {
                 scope = tracer.StartActive(testName, serviceName: serviceName, finishOnClose: skipReason == null);
@@ -385,7 +392,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
                 if (_processId != null)
                 {
-                    span.SetTag(TestTags.ExecutionId, _processId);
+                    span.SetTag(TestTags.ProcessId, _processId);
                 }
 
                 if (testArguments != null)
