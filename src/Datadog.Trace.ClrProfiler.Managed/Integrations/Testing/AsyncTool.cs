@@ -78,18 +78,26 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         {
             return ContinuationsCache.GetOrAdd(type, tType =>
             {
-                Type[] gTypeArgs = tType.GenericTypeArguments;
-                if (gTypeArgs.Length == 0)
+                // We need to find the appropiate generic parameter for the task
+
+                Type currentType = tType;
+                while (currentType != null)
                 {
-                    return new TaskContinuations();
+                    Type[] typeArguments = currentType.GenericTypeArguments ?? Type.EmptyTypes;
+
+                    switch (typeArguments.Length)
+                    {
+                        case 0:
+                            return new TaskContinuations();
+                        case 1:
+                            return (ITaskContinuations)Activator.CreateInstance(typeof(TaskContinuations<>).MakeGenericType(typeArguments[0]));
+                        default:
+                            currentType = currentType.BaseType;
+                            break;
+                    }
                 }
 
-                if (gTypeArgs.Length > 1 && tType.BaseType != null && tType.BaseType.BaseType == typeof(Task) && tType.BaseType.GenericTypeArguments?.Length == 1)
-                {
-                    gTypeArgs = tType.BaseType.GenericTypeArguments;
-                }
-
-                return (ITaskContinuations)Activator.CreateInstance(typeof(TaskContinuations<>).MakeGenericType(gTypeArgs[0]));
+                return new TaskContinuations();
             });
         }
 
