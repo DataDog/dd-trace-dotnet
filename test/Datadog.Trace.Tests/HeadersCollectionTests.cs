@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -25,31 +26,17 @@ namespace Datadog.Trace.Tests
             yield return new object[] { new DictionaryHeadersCollection() };
         }
 
-        public static IEnumerable<object[]> GetInvalidIds()
-        {
-            yield return new object[] { "0" };
-            yield return new object[] { "-1" };
-            yield return new object[] { "id" };
-        }
-
-        public static IEnumerable<object[]> GetInvalidSamplingPriorities()
-        {
-            yield return new object[] { "-2" };
-            yield return new object[] { "3" };
-            yield return new object[] { "sampling.priority" };
-        }
-
         public static IEnumerable<object[]> GetHeadersInvalidIdsCartesianProduct()
         {
             return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
-                   from invalidId in GetInvalidIds().SelectMany(i => i)
+                   from invalidId in HeadersCollectionTestHelpers.GetInvalidIds().SelectMany(i => i)
                    select new[] { header, invalidId };
         }
 
         public static IEnumerable<object[]> GetHeadersInvalidSamplingPrioritiesCartesianProduct()
         {
             return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
-                   from invalidSamplingPriority in GetInvalidSamplingPriorities().SelectMany(i => i)
+                   from invalidSamplingPriority in HeadersCollectionTestHelpers.GetInvalidSamplingPriorities().SelectMany(i => i)
                    select new[] { header, invalidSamplingPriority };
         }
 
