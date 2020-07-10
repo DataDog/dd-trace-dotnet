@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,6 +33,27 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private static long _testInvokerScopesCount;
         private static long _testInvokerScopesDisposedCount;
         private static long _testRunAsyncSkipped;
+
+        private static FrameworkDescription _runtimeDescription;
+
+        private static string _processId;
+
+        static XUnitIntegration()
+        {
+            // Preload environment variables.
+            CIEnvironmentValues.DecorateSpan(null);
+
+            _runtimeDescription = FrameworkDescription.Create();
+
+            try
+            {
+                _processId = Process.GetCurrentProcess().Id.ToString();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error getting the process id.");
+            }
+        }
 
         /// <summary>
         /// Wrap the original Xunit.Sdk.TestInvoker`1.CallTestMethod method by adding instrumentation code around it.
@@ -260,6 +282,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             {
                 returnValue = AsyncTool.AddContinuation(returnValue, exception, async (r, ex) =>
                 {
+                    // We have to ensure the flush of the buffer, for some reason, when all test are finished none of the callbacks to handling the tracer disposal is triggered.
+                    // So the last spans in buffer aren't send to the agent.
                     await Tracer.Instance.FlushAsync().ConfigureAwait(false);
                     return r;
                 });
@@ -351,6 +375,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 span.SetTag(TestTags.Fqn, $"{testSuite}.{testName}");
                 span.SetTag(TestTags.Framework, testFramework);
                 span.SetMetric(Tags.Analytics, 1.0d);
+                CIEnvironmentValues.DecorateSpan(span);
+
+                span.SetTag(TestTags.RuntimeName, _runtimeDescription.Name);
+                span.SetTag(TestTags.RuntimeOSArchitecture, _runtimeDescription.OSArchitecture);
+                span.SetTag(TestTags.RuntimeOSPlatform, _runtimeDescription.OSPlatform);
+                span.SetTag(TestTags.RuntimeProcessArchitecture, _runtimeDescription.ProcessArchitecture);
+                span.SetTag(TestTags.RuntimeVersion, _runtimeDescription.ProductVersion);
+
+                if (_processId != null)
+                {
+                    span.SetTag(TestTags.ExecutionId, _processId);
+                }
 
                 if (testArguments != null)
                 {

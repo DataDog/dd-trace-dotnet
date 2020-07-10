@@ -21,6 +21,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         public const string Fqn = "test.fqn";
 
         /// <summary>
+        /// Test fqn
+        /// </summary>
+        public const string ExecutionId = "test.executionId";
+
+        /// <summary>
         /// Test framework
         /// </summary>
         public const string Framework = "test.framework";
@@ -59,5 +64,70 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// Test skip reason
         /// </summary>
         public const string SkipReason = "test.skipReason";
+
+        /// <summary>
+        /// CI Provider
+        /// </summary>
+        public const string CIProvider = "ci.provider";
+
+        /// <summary>
+        /// CI Repository
+        /// </summary>
+        public const string CIRepository = "ci.repository";
+
+        /// <summary>
+        /// CI Commit hash
+        /// </summary>
+        public const string CICommit = "ci.commit";
+
+        /// <summary>
+        /// CI Branch name
+        /// </summary>
+        public const string CIBranch = "ci.branch";
+
+        /// <summary>
+        /// CI Source root
+        /// </summary>
+        public const string CISourceRoot = "ci.sourceRoot";
+
+        /// <summary>
+        /// CI Build id
+        /// </summary>
+        public const string CIBuildId = "ci.buildId";
+
+        /// <summary>
+        /// CI Build number
+        /// </summary>
+        public const string CIBuildNumber = "ci.buildNumber";
+
+        /// <summary>
+        /// CI Build url
+        /// </summary>
+        public const string CIBuildUrl = "ci.buildUrl";
+
+        /// <summary>
+        /// Runtime name
+        /// </summary>
+        public const string RuntimeName = "runtime.name";
+
+        /// <summary>
+        /// Runtime os architecture
+        /// </summary>
+        public const string RuntimeOSArchitecture = "runtime.osArchitecture";
+
+        /// <summary>
+        /// Runtime os platform
+        /// </summary>
+        public const string RuntimeOSPlatform = "runtime.osPlatform";
+
+        /// <summary>
+        /// Runtime process architecture
+        /// </summary>
+        public const string RuntimeProcessArchitecture = "runtime.processArchitecture";
+
+        /// <summary>
+        /// Runtime version
+        /// </summary>
+        public const string RuntimeVersion = "runtime.version";
     }
 }
