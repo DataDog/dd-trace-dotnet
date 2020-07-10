@@ -23,6 +23,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <summary>
         /// Test fqn
         /// </summary>
+        public const string Id = "test.id";
+
+        /// <summary>
+        /// Test fqn
+        /// </summary>
         public const string ProcessId = "test.processId";
 
         /// <summary>

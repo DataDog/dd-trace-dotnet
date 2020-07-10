@@ -300,10 +300,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 return null;
             }
 
+            string uniqueId = null;
             string testSuite = null;
             string testName = null;
             string skipReason = null;
             List<KeyValuePair<string, string>> testArguments = null;
+            List<KeyValuePair<string, string>> testTraits = null;
 
             if (testClassType is null)
             {
@@ -326,16 +328,33 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 }
             }
 
-            // Get test method name
-            if (testSdk.TryGetPropertyValue<MethodInfo>("TestMethod", out MethodInfo testMethod))
-            {
-                testName = testMethod.Name;
-            }
-            else
+            // Get test method
+            if (!testSdk.TryGetPropertyValue<MethodInfo>("TestMethod", out MethodInfo testMethod))
             {
                 // if we don't have the test method info, we can't extract the info that we need.
                 Log.TestMethodNotFound();
                 return null;
+            }
+
+            testName = testMethod.Name;
+
+            // Get traits
+            if (testSdk.TryGetPropertyValue("TestCase", out object testCase))
+            {
+                if (testCase.TryGetPropertyValue<Dictionary<string, List<string>>>("Traits", out Dictionary<string, List<string>> traits) && traits != null)
+                {
+                    if (traits.Count > 0)
+                    {
+                        testTraits = new List<KeyValuePair<string, string>>();
+
+                        foreach (KeyValuePair<string, List<string>> traitValue in traits)
+                        {
+                            testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Traits}.{traitValue.Key}", string.Join(", ", traitValue.Value) ?? "(null)"));
+                        }
+                    }
+                }
+
+                testCase.TryGetPropertyValue<string>("UniqueID", out uniqueId);
             }
 
             AssemblyName testInvokerAssemblyName = testSdk.GetType().Assembly.GetName();
@@ -390,6 +409,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 span.SetTag(TestTags.RuntimeProcessArchitecture, _runtimeDescription.ProcessArchitecture);
                 span.SetTag(TestTags.RuntimeVersion, _runtimeDescription.ProductVersion);
 
+                if (uniqueId != null)
+                {
+                    span.SetTag(TestTags.Id, uniqueId);
+                }
+
                 if (_processId != null)
                 {
                     span.SetTag(TestTags.ProcessId, _processId);
@@ -400,6 +424,14 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     foreach (KeyValuePair<string, string> argument in testArguments)
                     {
                         span.SetTag(argument.Key, argument.Value);
+                    }
+                }
+
+                if (testTraits != null)
+                {
+                    foreach (KeyValuePair<string, string> trait in testTraits)
+                    {
+                        span.SetTag(trait.Key, trait.Value);
                     }
                 }
 
