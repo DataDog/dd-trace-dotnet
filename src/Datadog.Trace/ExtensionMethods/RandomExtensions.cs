@@ -4,7 +4,9 @@ namespace Datadog.Trace.ExtensionMethods
 {
     internal static class RandomExtensions
     {
+#if !NETSTANDARD
         private static readonly Random GlobalRandom = new Random();
+#endif
 
         [ThreadStatic]
         private static Random _threadRandom;
