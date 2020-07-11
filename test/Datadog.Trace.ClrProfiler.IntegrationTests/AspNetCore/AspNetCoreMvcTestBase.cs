@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Core.Tools;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 
@@ -15,10 +16,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     {
         protected const string TopLevelOperationName = "aspnet_core.request";
 
+        protected const string HeaderName1 = "datadog-header-name";
+        protected const string HeaderName1Upper = "DATADOG-HEADER-NAME";
+        protected const string HeaderValue1 = "asp-net-core";
+        protected const string HeaderTagName1 = "datadog-header-tag";
+
         protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output, string serviceVersion)
             : base(sampleAppName, output)
         {
             ServiceVersion = serviceVersion;
+            HttpClient = new HttpClient();
+            HttpClient.DefaultRequestHeaders.Add(HeaderName1, HeaderValue1);
+            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1Upper}:{HeaderTagName1}");
+
             SetServiceVersion(ServiceVersion);
 
             CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index", serviceVersion: ServiceVersion);
@@ -60,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         public string ServiceVersion { get; }
 
-        protected HttpClient HttpClient { get; } = new HttpClient();
+        protected HttpClient HttpClient { get; }
 
         protected List<AspNetCoreMvcSpanExpectation> Expectations { get; set; } = new List<AspNetCoreMvcSpanExpectation>();
 
@@ -176,6 +186,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                               };
 
             expectation.RegisterDelegateExpectation(additionalCheck);
+            expectation.RegisterTagExpectation(HeaderTagName1, HeaderValue1);
 
             Expectations.Add(expectation);
         }
