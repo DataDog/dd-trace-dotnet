@@ -593,7 +593,7 @@ namespace Datadog.Trace
                     constantTags.Add($"env:{settings.Environment}");
                 }
 
-                if (settings.Environment != null)
+                if (settings.ServiceVersion != null)
                 {
                     constantTags.Add($"version:{settings.ServiceVersion}");
                 }
