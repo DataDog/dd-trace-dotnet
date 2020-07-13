@@ -29,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetWebApi2Integration));
 
+        internal static CrossIntegrationScope RootScope { get; } = new CrossIntegrationScope();
+
         /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.
         /// </summary>
@@ -150,33 +152,44 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             object controllerContext,
             CancellationToken cancellationToken)
         {
-            using (Scope scope = CreateScope(controllerContext))
+            Scope scope = CreateScope(controllerContext);
+
+            try
             {
-                try
+                // call the original method, inspecting (but not catching) any unhandled exceptions
+                var task = (Task<T>)instrumentedMethod(apiController, controllerContext, cancellationToken);
+                var responseMessage = await task.ConfigureAwait(false);
+
+                if (scope != null)
                 {
-                    // call the original method, inspecting (but not catching) any unhandled exceptions
-                    var task = (Task<T>)instrumentedMethod(apiController, controllerContext, cancellationToken);
-                    var responseMessage = await task.ConfigureAwait(false);
+                    // some fields aren't set till after execution, so populate anything missing
+                    UpdateSpan(controllerContext, scope.Span);
 
-                    if (scope != null)
-                    {
-                        // some fields aren't set till after execution, so populate anything missing
-                        UpdateSpan(controllerContext, scope.Span);
-                    }
-
-                    return responseMessage;
+                    var statusCode = responseMessage.GetProperty("StatusCode");
+                    scope.Span.SetTag(Tags.HttpStatusCode, ((int)statusCode.Value).ToString());
+                    scope.Dispose();
                 }
-                catch (Exception ex)
+
+                return responseMessage;
+            }
+            catch (Exception ex)
+            {
+                if (scope != null)
                 {
-                    if (scope != null)
-                    {
-                        // some fields aren't set till after execution, so populate anything missing
-                        UpdateSpan(controllerContext, scope.Span);
-                    }
+                    // some fields aren't set till after execution, so populate anything missing
+                    UpdateSpan(controllerContext, scope.Span);
+                    scope.Span.SetException(ex);
 
-                    scope?.Span.SetException(ex);
-                    throw;
+                    // The error status code isn't available at this stage
+                    // Ask the HttpMessageHandlerIntegration to fill it for us
+                    if (!RootScope.SetScope(scope))
+                    {
+                        // Looks like nobody is listening :(
+                        scope.Dispose();
+                    }
                 }
+
+                throw;
             }
         }
 
@@ -211,6 +224,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 scope = tracer.StartActive(OperationName, propagatedContext);
+
                 UpdateSpan(controllerContext, scope.Span);
 
                 // set analytics sample rate if enabled
