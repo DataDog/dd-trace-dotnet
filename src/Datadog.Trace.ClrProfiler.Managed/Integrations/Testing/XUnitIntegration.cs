@@ -19,10 +19,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string XUnitAssembly = "xunit.execution.dotnet";
 
         private const string XUnitTestInvokerType = "Xunit.Sdk.TestInvoker`1";
-        private const string XUnitCallTestMethod = "CallTestMethod";
+        private const string XUnitRunAsyncMethod = "RunAsync";
 
         private const string XUnitTestRunnerType = "Xunit.Sdk.TestRunner`1";
-        private const string XUnitRunAsyncMethod = "RunAsync";
 
         private const string XUnitTestAssemblyRunnerType = "Xunit.Sdk.TestAssemblyRunner`1";
         private const string XUnitRunTestCollectionAsyncMethod = "RunTestCollectionAsync";
@@ -47,10 +46,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         }
 
         /// <summary>
-        /// Wrap the original Xunit.Sdk.TestInvoker`1.CallTestMethod method by adding instrumentation code around it.
+        /// Wrap the original Xunit.Sdk.TestInvoker`1.RunAsync method by adding instrumentation code around it.
         /// </summary>
         /// <param name="testInvoker">The TestInvoker instance we are replacing.</param>
-        /// <param name="testClassInstance">The TestClass instance.</param>
         /// <param name="opCode">The OpCode used in the original method call.</param>
         /// <param name="mdToken">The mdToken of the original method call.</param>
         /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
@@ -58,11 +56,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         [InterceptMethod(
             TargetAssembly = XUnitAssembly,
             TargetType = XUnitTestInvokerType,
-            TargetMethod = XUnitCallTestMethod,
-            TargetSignatureTypes = new[] { ClrNames.Object, ClrNames.Object })]
+            TargetMethod = XUnitRunAsyncMethod,
+            TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Decimal>" })]
         public static object CallTestMethod(
             object testInvoker,
-            object testClassInstance,
             int opCode,
             int mdToken,
             long moduleVersionPtr)
@@ -70,17 +67,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             if (testInvoker == null) { throw new ArgumentNullException(nameof(testInvoker)); }
 
             Type testInvokerType = testInvoker.GetType();
-            Func<object, object, object> execute;
+            Func<object, object> execute;
 
             try
             {
                 execute =
-                    MethodBuilder<Func<object, object, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, XUnitCallTestMethod)
+                    MethodBuilder<Func<object, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, XUnitRunAsyncMethod)
                        .WithConcreteType(testInvokerType)
-                       .WithParameters(testClassInstance)
                        .WithDeclaringTypeGenerics(testInvokerType.BaseType.GenericTypeArguments)
-                       .WithNamespaceAndNameFilters(ClrNames.Object, ClrNames.Object)
+                       .WithNamespaceAndNameFilters(ClrNames.GenericTask)
                        .Build();
             }
             catch (Exception ex)
@@ -91,24 +87,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: XUnitTestInvokerType,
-                    methodName: XUnitCallTestMethod,
+                    methodName: XUnitRunAsyncMethod,
                     instanceType: testInvokerType.AssemblyQualifiedName);
                 throw;
             }
-
-            var scope = CreateScope(testInvoker, testClassInstance.GetType());
-            if (scope is null)
-            {
-                return execute(testInvoker, testClassInstance);
-            }
-
-            Log.Debug($"** SCOPE ({scope.Span.Context.TraceId}) Created for TestInvoker. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testRunAsyncSkipped)}]");
 
             object returnValue = null;
             Exception exception = null;
             try
             {
-                returnValue = execute(testInvoker, testClassInstance);
+                returnValue = execute(testInvoker);
             }
             catch (TargetInvocationException ex)
             {
@@ -124,18 +112,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             {
                 returnValue = AsyncTool.AddContinuation(returnValue, exception, (r, ex) =>
                 {
-                    if (ex != null)
+                    if (testInvoker.TryGetPropertyValue<object>("Aggregator", out object aggregator))
                     {
-                        scope.Span.SetException(ex);
-                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                        if (aggregator.TryCallMethod<Exception>("ToException", out Exception testException))
+                        {
+                            Span span = Tracer.Instance?.ActiveScope?.Span;
+                            if (span != null && testException != null)
+                            {
+                                span.SetException(testException);
+                                span.SetTag(TestTags.Status, TestTags.StatusFail);
+                            }
+                        }
                     }
-                    else
-                    {
-                        scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
-                    }
-
-                    scope.Dispose();
-                    Log.Debug($"** SCOPE ({scope.Span.Context.TraceId}) Disposed for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testRunAsyncSkipped)}]");
                     return r;
                 });
             }
@@ -190,12 +178,55 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 throw;
             }
 
-            if (!(CreateScope(testRunner, null) is null))
+            var scope = CreateScope(testRunner);
+            if (scope is null)
             {
                 Log.Debug($"** SCOPE Test SKIPPED. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Increment(ref _testRunAsyncSkipped)}]");
+                return execute(testRunner);
             }
 
-            return execute(testRunner);
+            Log.Debug($"** SCOPE ({scope.Span.Context.TraceId}) Created for TestInvoker. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testRunAsyncSkipped)}]");
+
+            object returnValue = null;
+            Exception exception = null;
+            try
+            {
+                returnValue = execute(testRunner);
+            }
+            catch (TargetInvocationException ex)
+            {
+                exception = ex.InnerException;
+                throw;
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                throw;
+            }
+            finally
+            {
+                returnValue = AsyncTool.AddContinuation(returnValue, exception, (r, ex) =>
+                {
+                    if (scope.Span.GetTag(TestTags.Status) == null)
+                    {
+                        if (ex != null)
+                        {
+                            scope.Span.SetException(ex);
+                            scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                        }
+                        else
+                        {
+                            scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                        }
+                    }
+
+                    scope.Dispose();
+                    Log.Debug($"** SCOPE ({scope.Span.Context.TraceId}) Disposed for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testRunAsyncSkipped)}]");
+                    return r;
+                });
+            }
+
+            return returnValue;
         }
 
         /// <summary>
@@ -283,7 +314,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             return returnValue;
         }
 
-        private static Scope CreateScope(object testSdk, Type testClassType)
+        private static Scope CreateScope(object testSdk)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationName))
             {
@@ -291,97 +322,87 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 return null;
             }
 
-            string uniqueId = null;
-            string testSuite = null;
-            string testName = null;
-            string skipReason = null;
-            List<KeyValuePair<string, string>> testArguments = null;
-            List<KeyValuePair<string, string>> testTraits = null;
-
-            if (testClassType is null)
+            Scope scope = null;
+            try
             {
-                // If testClassType is null, is because this method is called from an upper caller,
-                // if we detect the SkipReason we write the Test skip span, if not we don't do nothing
-                // and wait for the other caller.
+                string uniqueId = null;
+                string testSuite = null;
+                string testName = null;
+                string skipReason = null;
+                List<KeyValuePair<string, string>> testArguments = null;
+                List<KeyValuePair<string, string>> testTraits = null;
 
-                testSdk.TryGetPropertyValue<string>("SkipReason", out skipReason);
-                if (skipReason == null)
-                {
-                    // no skip reason, so we do nothing.
-                    return null;
-                }
-
-                if (!testSdk.TryGetPropertyValue<Type>("TestClass", out testClassType))
+                // Get test type
+                if (!testSdk.TryGetPropertyValue<Type>("TestClass", out Type testClassType))
                 {
                     // if we don't have the test class type, we can't extract the info that we need.
                     Log.TestClassTypeNotFound();
                     return null;
                 }
-            }
 
-            // Get test method
-            if (!testSdk.TryGetPropertyValue<MethodInfo>("TestMethod", out MethodInfo testMethod))
-            {
-                // if we don't have the test method info, we can't extract the info that we need.
-                Log.TestMethodNotFound();
-                return null;
-            }
-
-            testName = testMethod.Name;
-
-            // Get traits
-            if (testSdk.TryGetPropertyValue("TestCase", out object testCase))
-            {
-                if (testCase.TryGetPropertyValue<Dictionary<string, List<string>>>("Traits", out Dictionary<string, List<string>> traits) && traits != null)
+                // Get test method
+                if (!testSdk.TryGetPropertyValue<MethodInfo>("TestMethod", out MethodInfo testMethod))
                 {
-                    if (traits.Count > 0)
-                    {
-                        testTraits = new List<KeyValuePair<string, string>>();
+                    // if we don't have the test method info, we can't extract the info that we need.
+                    Log.TestMethodNotFound();
+                    return null;
+                }
 
-                        foreach (KeyValuePair<string, List<string>> traitValue in traits)
+                testName = testMethod.Name;
+
+                // Get skip reason
+                testSdk.TryGetPropertyValue<string>("SkipReason", out skipReason);
+
+                // Get traits
+                if (testSdk.TryGetPropertyValue("TestCase", out object testCase))
+                {
+                    if (testCase.TryGetPropertyValue<Dictionary<string, List<string>>>("Traits", out Dictionary<string, List<string>> traits) && traits != null)
+                    {
+                        if (traits.Count > 0)
                         {
-                            testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Traits}.{traitValue.Key}", string.Join(", ", traitValue.Value) ?? "(null)"));
+                            testTraits = new List<KeyValuePair<string, string>>();
+
+                            foreach (KeyValuePair<string, List<string>> traitValue in traits)
+                            {
+                                testTraits.Add(new KeyValuePair<string, string>($"{TestTags.Traits}.{traitValue.Key}", string.Join(", ", traitValue.Value) ?? "(null)"));
+                            }
+                        }
+                    }
+
+                    testCase.TryGetPropertyValue<string>("UniqueID", out uniqueId);
+                }
+
+                AssemblyName testInvokerAssemblyName = testSdk.GetType().Assembly.GetName();
+                AssemblyName testClassInstanceAssemblyName = testClassType.Assembly?.GetName();
+
+                testSuite = testClassType.ToString();
+
+                // Get test parameters
+                ParameterInfo[] methodParameters = testMethod.GetParameters();
+                if (methodParameters?.Length > 0)
+                {
+                    if (testSdk.TryGetPropertyValue<object[]>("TestMethodArguments", out object[] testMethodArguments))
+                    {
+                        testArguments = new List<KeyValuePair<string, string>>();
+
+                        for (int i = 0; i < methodParameters.Length; i++)
+                        {
+                            if (i < testMethodArguments.Length)
+                            {
+                                testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)"));
+                            }
+                            else
+                            {
+                                testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", "(default)"));
+                            }
                         }
                     }
                 }
 
-                testCase.TryGetPropertyValue<string>("UniqueID", out uniqueId);
-            }
+                Tracer tracer = Tracer.Instance;
+                string serviceName = testClassInstanceAssemblyName?.Name ?? tracer.DefaultServiceName;
+                string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
-            AssemblyName testInvokerAssemblyName = testSdk.GetType().Assembly.GetName();
-            AssemblyName testClassInstanceAssemblyName = testClassType.Assembly?.GetName();
-
-            testSuite = testClassType.ToString();
-
-            // Get test parameters
-            ParameterInfo[] methodParameters = testMethod.GetParameters();
-            if (methodParameters?.Length > 0)
-            {
-                if (testSdk.TryGetPropertyValue<object[]>("TestMethodArguments", out object[] testMethodArguments))
-                {
-                    testArguments = new List<KeyValuePair<string, string>>();
-
-                    for (int i = 0; i < methodParameters.Length; i++)
-                    {
-                        if (i < testMethodArguments.Length)
-                        {
-                            testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", testMethodArguments[i]?.ToString() ?? "(null)"));
-                        }
-                        else
-                        {
-                            testArguments.Add(new KeyValuePair<string, string>($"{TestTags.Arguments}.{methodParameters[i].Name}", "(default)"));
-                        }
-                    }
-                }
-            }
-
-            Tracer tracer = Tracer.Instance;
-            string serviceName = testClassInstanceAssemblyName?.Name ?? tracer.DefaultServiceName;
-            string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
-
-            Scope scope = null;
-            try
-            {
                 scope = tracer.StartActive(testName, serviceName: serviceName, finishOnClose: skipReason == null);
                 Span span = scope.Span;
                 span.Type = SpanTypes.Test;
