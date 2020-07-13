@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Newtonsoft.Json;
 using Xunit;
@@ -9,6 +10,9 @@ namespace Datadog.Trace.Tests.Configuration
 {
     public class ConfigurationSourceTests
     {
+        private static readonly Dictionary<string, string> TagsK1V1K2V2 = new Dictionary<string, string>() { { "k1", "v1" }, { "k2", "v2" } };
+        private static readonly Dictionary<string, string> TagsK2V2 = new Dictionary<string, string>() { { "k2", "v2" } };
+
         public static IEnumerable<object[]> GetGlobalDefaultTestData()
         {
             yield return new object[] { CreateGlobalFunc(s => s.DebugEnabled), false };
@@ -70,9 +74,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return new object[] { ConfigurationKeys.DisabledIntegrations, "integration1;integration2", CreateFunc(s => s.DisabledIntegrationNames.Count), 2 };
 
-            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags.Count), 2 };
-            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:,:,:v2,k3:v3", CreateFunc(s => s.GlobalTags.Count), 1 };
-            yield return new object[] { "DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags.Count), 2 };
+            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
+            yield return new object[] { ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2 };
+            yield return new object[] { "DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
 
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false };

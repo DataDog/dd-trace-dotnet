@@ -104,9 +104,9 @@ namespace Datadog.Trace.Configuration
                          // default value (empty)
                          new ConcurrentDictionary<string, string>();
 
-            // Filter out tags with empty keys or empty values
+            // Filter out tags with empty keys or empty values, and trim whitespace
             GlobalTags = GlobalTags.Where(kvp => !string.IsNullOrEmpty(kvp.Key) && !string.IsNullOrEmpty(kvp.Value))
-                                   .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             DogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort) ??
                             // default value

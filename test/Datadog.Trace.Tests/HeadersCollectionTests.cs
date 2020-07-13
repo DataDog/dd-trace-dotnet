@@ -1,4 +1,7 @@
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using Datadog.Trace.ExtensionMethods;
@@ -15,17 +18,59 @@ namespace Datadog.Trace.Tests
     // - SpanContextPropagator.Extract()
     public class HeadersCollectionTests
     {
-        [Fact]
-        public void WebRequest_InjectExtract_Identity()
+        public static IEnumerable<object[]> GetHeaderCollectionImplementations()
+        {
+            yield return new object[] { WebRequest.CreateHttp("http://localhost").Headers.Wrap() };
+            yield return new object[] { new NameValueCollection().Wrap() };
+            yield return new object[] { new DictionaryHeadersCollection() };
+        }
+
+        public static IEnumerable<object[]> GetInvalidIds()
+        {
+            yield return new object[] { "0" };
+            yield return new object[] { "-1" };
+            yield return new object[] { "id" };
+        }
+
+        public static IEnumerable<object[]> GetInvalidSamplingPriorities()
+        {
+            yield return new object[] { "-2" };
+            yield return new object[] { "3" };
+            yield return new object[] { "sampling.priority" };
+        }
+
+        public static IEnumerable<object[]> GetHeadersInvalidIdsCartesianProduct()
+        {
+            return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
+                   from invalidId in GetInvalidIds().SelectMany(i => i)
+                   select new[] { header, invalidId };
+        }
+
+        public static IEnumerable<object[]> GetHeadersInvalidSamplingPrioritiesCartesianProduct()
+        {
+            return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
+                   from invalidSamplingPriority in GetInvalidSamplingPriorities().SelectMany(i => i)
+                   select new[] { header, invalidSamplingPriority };
+        }
+
+        [Theory]
+        [MemberData(nameof(GetHeaderCollectionImplementations))]
+        internal void Extract_EmptyHeadersReturnsNull(IHeadersCollection headers)
+        {
+            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            Assert.Null(resultContext);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetHeaderCollectionImplementations))]
+        internal void InjectExtract_Identity(IHeadersCollection headers)
         {
             const int traceId = 9;
             const int spanId = 7;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
             const string origin = "synthetics";
 
-            IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
             var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
-
             SpanContextPropagator.Instance.Inject(context, headers);
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
 
@@ -37,16 +82,14 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData("0")]
-        [InlineData("-1")]
-        [InlineData("trace.id")]
-        public void Extract_InvalidTraceId(string traceId)
+        [MemberData(nameof(GetHeadersInvalidIdsCartesianProduct))]
+        internal void Extract_InvalidTraceId(IHeadersCollection headers, string traceId)
         {
             const string spanId = "7";
             const string samplingPriority = "2";
             const string origin = "synthetics";
 
-            var headers = InjectContext(traceId, spanId, samplingPriority, origin);
+            InjectContext(headers, traceId, spanId, samplingPriority, origin);
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
 
             // invalid traceId should return a null context even if other values are set
@@ -54,16 +97,15 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData("0")]
-        [InlineData("-1")]
-        [InlineData("span.id")]
-        public void Extract_InvalidSpanId(string spanId)
+        [MemberData(nameof(GetHeadersInvalidIdsCartesianProduct))]
+        internal void Extract_InvalidSpanId(IHeadersCollection headers, string spanId)
         {
             const ulong traceId = 9;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
             const string origin = "synthetics";
 
-            var headers = InjectContext(
+            InjectContext(
+                headers,
                 traceId.ToString(CultureInfo.InvariantCulture),
                 spanId,
                 ((int)samplingPriority).ToString(CultureInfo.InvariantCulture),
@@ -79,16 +121,15 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData("-2")]
-        [InlineData("3")]
-        [InlineData("sampling.priority")]
-        public void Extract_InvalidSamplingPriority(string samplingPriority)
+        [MemberData(nameof(GetHeadersInvalidSamplingPrioritiesCartesianProduct))]
+        internal void Extract_InvalidSamplingPriority(IHeadersCollection headers, string samplingPriority)
         {
             const ulong traceId = 9;
             const ulong spanId = 7;
             const string origin = "synthetics";
 
-            var headers = InjectContext(
+            InjectContext(
+                headers,
                 traceId.ToString(CultureInfo.InvariantCulture),
                 spanId.ToString(CultureInfo.InvariantCulture),
                 samplingPriority,
@@ -103,14 +144,12 @@ namespace Datadog.Trace.Tests
             Assert.Equal(origin, resultContext.Origin);
         }
 
-        private static IHeadersCollection InjectContext(string traceId, string spanId, string samplingPriority, string origin)
+        private static void InjectContext(IHeadersCollection headers, string traceId, string spanId, string samplingPriority, string origin)
         {
-            IHeadersCollection headers = new DictionaryHeadersCollection();
             headers.Add(HttpHeaderNames.TraceId, traceId);
             headers.Add(HttpHeaderNames.ParentId, spanId);
             headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority);
             headers.Add(HttpHeaderNames.Origin, origin);
-            return headers;
         }
     }
 }
