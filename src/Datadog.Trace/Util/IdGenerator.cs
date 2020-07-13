@@ -2,7 +2,7 @@ using System;
 
 namespace Datadog.Trace.Util
 {
-    internal class ThreadStaticRandom
+    internal class IdGenerator
     {
 #if !NETSTANDARD
         private static readonly Random GlobalRandom = new Random();
@@ -11,7 +11,20 @@ namespace Datadog.Trace.Util
         [ThreadStatic]
         private static Random _threadRandom;
 
-        public static Random GetRandom()
+        public static ulong NewSpanId()
+        {
+            var random = GetRandom();
+
+            long high = random.Next(int.MinValue, int.MaxValue);
+            long low = random.Next(int.MinValue, int.MaxValue);
+
+            // Concatenate both values, and truncate the 32 top bits from low
+            var value = high << 32 | (low & 0xFFFFFFFF);
+
+            return (ulong)value & 0x7FFFFFFFFFFFFFFF;
+        }
+
+        private static Random GetRandom()
         {
             var random = _threadRandom;
 
