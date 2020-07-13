@@ -162,7 +162,10 @@ namespace Datadog.Trace
 
             if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
             {
-                _ = WriteDiagnosticLog();
+                if (Settings.StartupDiagnosticLogEnabled)
+                {
+                    _ = WriteDiagnosticLog();
+                }
             }
         }
 

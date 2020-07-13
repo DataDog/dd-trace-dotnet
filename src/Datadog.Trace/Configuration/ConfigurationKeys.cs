@@ -111,6 +111,12 @@ namespace Datadog.Trace.Configuration
         public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
 
         /// <summary>
+        /// Configuration key for enabling or disabling the diagnostic log at startup
+        /// </summary>
+        /// <seealso cref="TracerSettings.StartupDiagnosticLogEnabled"/>
+        public const string StartupDiagnosticLogEnabled = "DD_TRACE_STARTUP_LOGS";
+
+        /// <summary>
         /// Configuration key for setting custom sampling rules based on regular expressions.
         /// Semi-colon separated list of sampling rules.
         /// The rule is matched in order of specification. The first match in a list is used.
