@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 
@@ -27,9 +28,13 @@ namespace Samples.DatabaseHelper
         private readonly Func<TCommand, CommandBehavior, TDataReader> _executeReaderWithBehavior;
 
         private readonly Func<TCommand, Task<int>> _executeNonQueryAsync;
+        private readonly Func<TCommand, CancellationToken, Task<int>> _executeNonQueryWithCancellationTokenAsync;
         private readonly Func<TCommand, Task<object>> _executeScalarAsync;
+        private readonly Func<TCommand, CancellationToken, Task<object>> _executeScalarWithCancellationTokenAsync;
         private readonly Func<TCommand, Task<TDataReader>> _executeReaderAsync;
         private readonly Func<TCommand, CommandBehavior, Task<TDataReader>> _executeReaderWithBehaviorAsync;
+        private readonly Func<TCommand, CancellationToken, Task<TDataReader>> _executeReaderWithCancellationTokenAsync;
+        private readonly Func<TCommand, CommandBehavior, CancellationToken, Task<TDataReader>> _executeReaderWithBehaviorAndCancellationTokenAsync;
 
         public RelationalDatabaseTestHarness(
             TConnection connection,
@@ -38,9 +43,13 @@ namespace Samples.DatabaseHelper
             Func<TCommand, TDataReader> executeReader,
             Func<TCommand, CommandBehavior, TDataReader> executeReaderWithBehavior,
             Func<TCommand, Task<int>> executeNonQueryAsync,
+            Func<TCommand, CancellationToken, Task<int>> executeNonQueryWithCancellationTokenAsync,
             Func<TCommand, Task<object>> executeScalarAsync,
+            Func<TCommand, CancellationToken, Task<object>> executeScalarWithCancellationTokenAsync,
             Func<TCommand, Task<TDataReader>> executeReaderAsync,
-            Func<TCommand, CommandBehavior, Task<TDataReader>> executeReaderWithBehaviorAsync)
+            Func<TCommand, CommandBehavior, Task<TDataReader>> executeReaderWithBehaviorAsync,
+            Func<TCommand, CancellationToken, Task<TDataReader>> executeReaderWithCancellationTokenAsync,
+            Func<TCommand, CommandBehavior, CancellationToken, Task<TDataReader>> executeReaderWithBehaviorAndCancellationTokenAsync)
         {
             _connection = connection ?? throw new ArgumentNullException(nameof(connection));
 
@@ -51,20 +60,27 @@ namespace Samples.DatabaseHelper
 
             // async methods are not implemented by all ADO.NET providers, so they can be null
             _executeNonQueryAsync = executeNonQueryAsync;
+            _executeNonQueryWithCancellationTokenAsync = executeNonQueryWithCancellationTokenAsync;
             _executeScalarAsync = executeScalarAsync;
+            _executeScalarWithCancellationTokenAsync = executeScalarWithCancellationTokenAsync;
             _executeReaderAsync = executeReaderAsync;
             _executeReaderWithBehaviorAsync = executeReaderWithBehaviorAsync;
+            _executeReaderWithCancellationTokenAsync = executeReaderWithCancellationTokenAsync;
+            _executeReaderWithBehaviorAndCancellationTokenAsync = executeReaderWithBehaviorAndCancellationTokenAsync;
         }
 
-        public async Task RunAsync(string spanName)
+        public async Task RunAsync(string spanName, CancellationToken cancellationToken)
         {
+            var commandType = typeof(TCommand).FullName;
+
             using (var scopeAll = Tracer.Instance.StartActive(spanName))
             {
-                scopeAll.Span.SetTag("command-type", typeof(TCommand).FullName);
+                scopeAll.Span.SetTag("command-type", commandType);
 
                 using (var scopeSync = Tracer.Instance.StartActive("run.sync"))
                 {
-                    scopeSync.Span.SetTag("command-type", typeof(TCommand).FullName);
+                    await Task.Delay(100);
+                    scopeSync.Span.SetTag("command-type", commandType);
 
                     _connection.Open();
                     CreateNewTable(_connection);
@@ -72,26 +88,40 @@ namespace Samples.DatabaseHelper
                     SelectScalar(_connection);
                     UpdateRow(_connection);
                     SelectRecords(_connection);
+                    SelectRecords(_connection, CommandBehavior.Default);
                     DeleteRecord(_connection);
                     _connection.Close();
                 }
 
                 if (_connection is DbConnection connection)
                 {
-                    // leave a small space between spans, for better visibility in the UI
-                    await Task.Delay(TimeSpan.FromSeconds(0.1));
+                    await Task.Delay(100);
 
                     using (var scopeAsync = Tracer.Instance.StartActive("run.async"))
                     {
-                        scopeAsync.Span.SetTag("command-type", typeof(TCommand).FullName);
+                        await Task.Delay(100);
+                        scopeAsync.Span.SetTag("command-type", commandType);
 
                         await connection.OpenAsync();
+
                         await CreateNewTableAsync(_connection);
                         await InsertRowAsync(_connection);
                         await SelectScalarAsync(_connection);
                         await UpdateRowAsync(_connection);
                         await SelectRecordsAsync(_connection);
+                        await SelectRecordsAsync(_connection, CommandBehavior.Default);
                         await DeleteRecordAsync(_connection);
+
+                        await Task.Delay(100);
+
+                        await CreateNewTableAsync(_connection, cancellationToken);
+                        await InsertRowAsync(_connection, cancellationToken);
+                        await SelectScalarAsync(_connection, cancellationToken);
+                        await UpdateRowAsync(_connection, cancellationToken);
+                        await SelectRecordsAsync(_connection, cancellationToken);
+                        await SelectRecordsAsync(_connection, CommandBehavior.Default, cancellationToken);
+                        await DeleteRecordAsync(_connection, cancellationToken);
+
                         _connection.Close();
                     }
                 }
@@ -106,7 +136,7 @@ namespace Samples.DatabaseHelper
                 command.AddParameterWithValue("Id", 1);
 
                 int records = _executeNonQuery(command);
-                Console.WriteLine($"Deleted {records} record(s).");
+                Console.WriteLine($"ExecuteNonQuery(). Deleted {records} record(s).");
             }
         }
 
@@ -121,20 +151,37 @@ namespace Samples.DatabaseHelper
                 {
                     var employees = reader.AsDataRecords()
                                           .Select(
-                                               r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
+                                               r => new
+                                                    {
+                                                        Id = (int)r["Id"],
+                                                        Name = (string)r["Name"]
+                                                    })
                                           .ToList();
 
-                    Console.WriteLine($"Selected {employees.Count} record(s).");
+                    Console.WriteLine($"ExecuteReader(). Selected {employees.Count} record(s).");
                 }
+            }
+        }
 
-                using (var reader = _executeReaderWithBehavior(command, CommandBehavior.Default))
+        private void SelectRecords(IDbConnection connection, CommandBehavior behavior)
+        {
+            using (var command = (TCommand)connection.CreateCommand())
+            {
+                command.CommandText = SelectManyCommandText;
+                command.AddParameterWithValue("Id", 1);
+
+                using (var reader = _executeReaderWithBehavior(command, behavior))
                 {
                     var employees = reader.AsDataRecords()
                                           .Select(
-                                               r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
+                                               r => new
+                                                    {
+                                                        Id = (int)r["Id"],
+                                                        Name = (string)r["Name"]
+                                                    })
                                           .ToList();
 
-                    Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
+                    Console.WriteLine($"ExecuteReader(CommandBehavior). Selected {employees.Count} record(s).");
                 }
             }
         }
@@ -148,7 +195,7 @@ namespace Samples.DatabaseHelper
                 command.AddParameterWithValue("Id", 1);
 
                 int records = _executeNonQuery(command);
-                Console.WriteLine($"Updated {records} record(s).");
+                Console.WriteLine($"ExecuteNonQuery(). Updated {records} record(s).");
             }
         }
 
@@ -160,7 +207,7 @@ namespace Samples.DatabaseHelper
                 command.AddParameterWithValue("Id", 1);
 
                 var name = _executeScalar(command) as string;
-                Console.WriteLine($"Selected scalar `{name ?? "(null)"}`.");
+                Console.WriteLine($"ExecuteScalar(). Selected scalar `{name ?? "(null)"}`.");
             }
         }
 
@@ -173,7 +220,7 @@ namespace Samples.DatabaseHelper
                 command.AddParameterWithValue("Name", "Name1");
 
                 int records = _executeNonQuery(command);
-                Console.WriteLine($"Inserted {records} record(s).");
+                Console.WriteLine($"ExecuteNonQuery(). Inserted {records} record(s).");
             }
         }
 
@@ -184,7 +231,8 @@ namespace Samples.DatabaseHelper
                 command.CommandText = DropCommandText;
 
                 int records = _executeNonQuery(command);
-                Console.WriteLine($"Dropped and recreated table. {records} record(s) affected.");
+
+                Console.WriteLine($"ExecuteNonQuery(). Dropped and recreated table. {records} record(s) affected.");
             }
         }
 
@@ -198,42 +246,77 @@ namespace Samples.DatabaseHelper
                 if (_executeNonQueryAsync != null)
                 {
                     int records = await _executeNonQueryAsync(command);
-                    Console.WriteLine($"Deleted {records} record(s).");
+                    Console.WriteLine($"ExecuteNonQueryAsync(). Deleted {records} record(s).");
+                }
+            }
+        }
+
+        private async Task DeleteRecordAsync(IDbConnection connection, CancellationToken cancellationToken)
+        {
+            using (var command = (TCommand)connection.CreateCommand())
+            {
+                command.CommandText = DeleteCommandText;
+                command.AddParameterWithValue("Id", 1);
+
+                if (_executeNonQueryWithCancellationTokenAsync != null)
+                {
+                    int records = await _executeNonQueryWithCancellationTokenAsync(command, cancellationToken);
+                    Console.WriteLine($"ExecuteNonQueryAsync(CancellationToken). Deleted {records} record(s).");
                 }
             }
         }
 
         private async Task SelectRecordsAsync(IDbConnection connection)
         {
+            if (_executeReaderAsync != null)
+            {
+                await SelectRecordsAsync(connection, "ExecuteReaderAsync()", command => _executeReaderAsync(command));
+            }
+        }
+
+        private async Task SelectRecordsAsync(IDbConnection connection, CommandBehavior behavior)
+        {
+            if (_executeReaderWithBehaviorAsync != null)
+            {
+                await SelectRecordsAsync(connection, "ExecuteReaderAsync(CommandBehavior)", command => _executeReaderWithBehaviorAsync(command, behavior));
+            }
+        }
+
+        private async Task SelectRecordsAsync(IDbConnection connection, CancellationToken cancellationToken)
+        {
+            if (_executeReaderWithCancellationTokenAsync != null)
+            {
+                await SelectRecordsAsync(connection, "ExecuteReaderAsync(CancellationToken)", command => _executeReaderWithCancellationTokenAsync(command, cancellationToken));
+            }
+        }
+
+        private async Task SelectRecordsAsync(IDbConnection connection, CommandBehavior behavior, CancellationToken cancellationToken)
+        {
+            if (_executeReaderWithBehaviorAndCancellationTokenAsync != null)
+            {
+                await SelectRecordsAsync(connection, "ExecuteReaderAsync(CommandBehavior, CancellationToken)", command => _executeReaderWithBehaviorAndCancellationTokenAsync(command, behavior, cancellationToken));
+            }
+        }
+
+        private async Task SelectRecordsAsync(IDbConnection connection, string method, Func<TCommand, Task<TDataReader>> func)
+        {
             using (var command = (TCommand)connection.CreateCommand())
             {
                 command.CommandText = SelectManyCommandText;
                 command.AddParameterWithValue("Id", 1);
 
-                if (_executeReaderAsync != null)
+                using (var reader = await func(command))
                 {
-                    using (var reader = await _executeReaderAsync(command))
-                    {
-                        var employees = reader.AsDataRecords()
-                                              .Select(
-                                                   r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
-                                              .ToList();
+                    var employees = reader.AsDataRecords()
+                                          .Select(
+                                               r => new
+                                                    {
+                                                        Id = (int)r["Id"],
+                                                        Name = (string)r["Name"]
+                                                    })
+                                          .ToList();
 
-                        Console.WriteLine($"Selected {employees.Count} record(s).");
-                    }
-                }
-
-                if (_executeReaderWithBehaviorAsync != null)
-                {
-                    using (var reader = await _executeReaderWithBehaviorAsync(command, CommandBehavior.Default))
-                    {
-                        var employees = reader.AsDataRecords()
-                                              .Select(
-                                                   r => new { Id = (int)r["Id"], Name = (string)r["Name"] })
-                                              .ToList();
-
-                        Console.WriteLine($"Selected {employees.Count} record(s) with `CommandBehavior.Default`.");
-                    }
+                    Console.WriteLine($"{method}. Selected {employees.Count} record(s).");
                 }
             }
         }
@@ -249,7 +332,23 @@ namespace Samples.DatabaseHelper
                 if (_executeNonQueryAsync != null)
                 {
                     int records = await _executeNonQueryAsync(command);
-                    Console.WriteLine($"Updated {records} record(s).");
+                    Console.WriteLine($"ExecuteNonQueryAsync(). Updated {records} record(s).");
+                }
+            }
+        }
+
+        private async Task UpdateRowAsync(IDbConnection connection, CancellationToken cancellationToken)
+        {
+            using (var command = (TCommand)connection.CreateCommand())
+            {
+                command.CommandText = UpdateCommandText;
+                command.AddParameterWithValue("Name", "Name2");
+                command.AddParameterWithValue("Id", 1);
+
+                if (_executeNonQueryWithCancellationTokenAsync != null)
+                {
+                    int records = await _executeNonQueryWithCancellationTokenAsync(command, cancellationToken);
+                    Console.WriteLine($"ExecuteNonQueryAsync(CancellationToken). Updated {records} record(s).");
                 }
             }
         }
@@ -264,8 +363,24 @@ namespace Samples.DatabaseHelper
                 if (_executeScalarAsync != null)
                 {
                     object nameObj = await _executeScalarAsync(command);
-                    var name = nameObj as string;
-                    Console.WriteLine($"Selected scalar `{name ?? "(null)"}`.");
+                    var name = nameObj as string ?? "(null)";
+                    Console.WriteLine($"ExecuteScalarAsync(). Selected scalar `{name}`.");
+                }
+            }
+        }
+
+        private async Task SelectScalarAsync(IDbConnection connection, CancellationToken cancellationToken)
+        {
+            using (var command = (TCommand)connection.CreateCommand())
+            {
+                command.CommandText = SelectOneCommandText;
+                command.AddParameterWithValue("Id", 1);
+
+                if (_executeScalarWithCancellationTokenAsync != null)
+                {
+                    object nameObj = await _executeScalarWithCancellationTokenAsync(command, cancellationToken);
+                    var name = nameObj as string ?? "(null)";
+                    Console.WriteLine($"ExecuteScalarAsync(CancellationToken). Selected scalar `{name}`.");
                 }
             }
         }
@@ -281,7 +396,23 @@ namespace Samples.DatabaseHelper
                 if (_executeNonQueryAsync != null)
                 {
                     int records = await _executeNonQueryAsync(command);
-                    Console.WriteLine($"Inserted {records} record(s).");
+                    Console.WriteLine($"ExecuteNonQueryAsync(). Inserted {records} record(s).");
+                }
+            }
+        }
+
+        private async Task InsertRowAsync(IDbConnection connection, CancellationToken cancellationToken)
+        {
+            using (var command = (TCommand)connection.CreateCommand())
+            {
+                command.CommandText = InsertCommandText;
+                command.AddParameterWithValue("Id", 1);
+                command.AddParameterWithValue("Name", "Name1");
+
+                if (_executeNonQueryWithCancellationTokenAsync != null)
+                {
+                    int records = await _executeNonQueryWithCancellationTokenAsync(command, cancellationToken);
+                    Console.WriteLine($"ExecuteNonQueryAsync(CancellationToken). Inserted {records} record(s).");
                 }
             }
         }
@@ -295,7 +426,21 @@ namespace Samples.DatabaseHelper
                 if (_executeNonQueryAsync != null)
                 {
                     int records = await _executeNonQueryAsync(command);
-                    Console.WriteLine($"Dropped and recreated table. {records} record(s) affected.");
+                    Console.WriteLine($"ExecuteNonQueryAsync(). Dropped and recreated table. {records} record(s) affected.");
+                }
+            }
+        }
+
+        private async Task CreateNewTableAsync(IDbConnection connection, CancellationToken cancellationToken)
+        {
+            using (var command = (TCommand)connection.CreateCommand())
+            {
+                command.CommandText = DropCommandText;
+
+                if (_executeNonQueryWithCancellationTokenAsync != null)
+                {
+                    int records = await _executeNonQueryWithCancellationTokenAsync(command, cancellationToken);
+                    Console.WriteLine($"ExecuteNonQueryAsync(CancellationToken). Dropped and recreated table. {records} record(s) affected.");
                 }
             }
         }
