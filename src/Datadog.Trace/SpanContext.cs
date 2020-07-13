@@ -1,5 +1,6 @@
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace
 {
@@ -54,7 +55,7 @@ namespace Datadog.Trace
         internal SpanContext(ISpanContext parent, ITraceContext traceContext, string serviceName)
             : this(parent?.TraceId, serviceName)
         {
-            SpanId = RandomExtensions.GetRandom().NextUInt63();
+            SpanId = ThreadStaticRandom.GetRandom().NextUInt63();
             Parent = parent;
             TraceContext = traceContext;
             if (parent is SpanContext spanContext)
@@ -67,7 +68,7 @@ namespace Datadog.Trace
         {
             TraceId = traceId > 0
                           ? traceId.Value
-                          : RandomExtensions.GetRandom().NextUInt63();
+                          : ThreadStaticRandom.GetRandom().NextUInt63();
 
             ServiceName = serviceName;
         }
