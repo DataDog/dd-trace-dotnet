@@ -160,12 +160,9 @@ namespace Datadog.Trace
                 InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
             }
 
-            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
+            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1 && Settings.StartupDiagnosticLogEnabled)
             {
-                if (Settings.StartupDiagnosticLogEnabled)
-                {
-                    _ = WriteDiagnosticLog();
-                }
+                _ = WriteDiagnosticLog();
             }
         }
 
