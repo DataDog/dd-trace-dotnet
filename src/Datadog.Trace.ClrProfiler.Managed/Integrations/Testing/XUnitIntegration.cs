@@ -304,8 +304,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             {
                 returnValue = AsyncTool.AddContinuation(returnValue, exception, async (r, ex) =>
                 {
-                    // We have to ensure the flush of the buffer, for some reason, when all test are finished none of the callbacks to handling the tracer disposal is triggered.
+                    // We have to ensure the flush of the buffer after we finish the tests of an assembly.
+                    // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
                     // So the last spans in buffer aren't send to the agent.
+                    // Other times we reach the 500 items of the buffer in a sec and the tracer start to drop spans.
+                    // In a test scenario we must keep all spans.
                     await Tracer.Instance.FlushAsync().ConfigureAwait(false);
                     return r;
                 });
@@ -348,6 +351,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     return null;
                 }
 
+                // Get test name
                 testName = testMethod.Name;
 
                 // Get skip reason
