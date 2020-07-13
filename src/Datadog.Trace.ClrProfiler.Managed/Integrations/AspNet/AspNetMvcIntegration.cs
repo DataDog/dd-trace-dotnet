@@ -144,6 +144,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
 
+                httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h));
+
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
                 span.SetMetric(Tags.Analytics, analyticsSampleRate);
@@ -324,9 +326,30 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 scope?.Span.SetException(ex);
                 throw;
             }
-            finally
+        }
+
+        private static void OnRequestCompleted(HttpContextBase httpContext)
+        {
+            var scope = (Scope)httpContext.Items[HttpContextKey];
+
+            SetStatusCode(scope, httpContext.Response.StatusCode);
+            scope?.Dispose();
+        }
+
+        private static void SetStatusCode(Scope scope, int? statusCode)
+        {
+            if (statusCode == null)
             {
-                scope?.Dispose();
+                return;
+            }
+
+            try
+            {
+                scope?.Span?.SetTag(Tags.HttpStatusCode, statusCode.Value.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while setting status code");
             }
         }
     }
