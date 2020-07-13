@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 {
@@ -44,15 +43,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             CIEnvironmentValues.DecorateSpan(null);
 
             _runtimeDescription = FrameworkDescription.Create();
-
-            try
-            {
-                _processId = Process.GetCurrentProcess().Id.ToString();
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Error getting the process id.");
-            }
+            _processId = DomainMetadata.ProcessId.ToString();
         }
 
         /// <summary>

@@ -7,29 +7,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 {
     internal static class AsyncTool
     {
-        private static readonly ConcurrentDictionary<Type, ITaskContinuations> ContinuationsCache = new ConcurrentDictionary<Type, ITaskContinuations>();
-
-        /// <summary>
-        /// Task continuations interface
-        /// </summary>
-        internal interface ITaskContinuations
-        {
-            /// <summary>
-            /// Sets a task continuation to the method delegate
-            /// </summary>
-            /// <param name="previousTask">Previous task</param>
-            /// <param name="continuation">Continuation</param>
-            /// <returns>Task with continuation</returns>
-            Task SetTaskContinuation(Task previousTask, Func<object, Exception, object> continuation);
-
-            /// <summary>
-            /// Sets a task continuation to the method async delegate
-            /// </summary>
-            /// <param name="previousTask">Previous task</param>
-            /// <param name="continuation">Async continuation</param>
-            /// <returns>Task with continuation</returns>
-            Task SetTaskContinuationAsync(Task previousTask, Func<object, Exception, Task<object>> continuation);
-        }
+        private static readonly ConcurrentDictionary<Type, TaskContinuationGenerator> ContinuationsCache = new ConcurrentDictionary<Type, TaskContinuationGenerator>();
 
         /// <summary>
         /// Adds a continuation based on the current returnValue
@@ -74,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
         }
 
-        private static ITaskContinuations GetContinuationFrom(Type type)
+        private static TaskContinuationGenerator GetContinuationFrom(Type type)
         {
             return ContinuationsCache.GetOrAdd(type, tType =>
             {
@@ -84,29 +62,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 while (currentType != null)
                 {
                     Type[] typeArguments = currentType.GenericTypeArguments ?? Type.EmptyTypes;
-
                     switch (typeArguments.Length)
                     {
                         case 0:
-                            return new TaskContinuations();
+                            return new TaskContinuationGenerator();
                         case 1:
-                            return (ITaskContinuations)Activator.CreateInstance(typeof(TaskContinuations<>).MakeGenericType(typeArguments[0]));
+                            return (TaskContinuationGenerator)Activator.CreateInstance(typeof(TaskContinuationGenerator<>).MakeGenericType(typeArguments[0]));
                         default:
                             currentType = currentType.BaseType;
                             break;
                     }
                 }
 
-                return new TaskContinuations();
+                return new TaskContinuationGenerator();
             });
         }
 
-        internal class TaskContinuations<TResult> : ITaskContinuations
+        internal sealed class TaskContinuationGenerator<TResult> : TaskContinuationGenerator
         {
-            public Task SetTaskContinuation(Task previousTask, Func<object, Exception, object> continuation)
+            public override Task SetTaskContinuation(Task previousTask, Func<object, Exception, object> continuation)
                 => SetTaskContinuation((Task<TResult>)previousTask, continuation);
 
-            public Task SetTaskContinuationAsync(Task previousTask, Func<object, Exception, Task<object>> continuation)
+            public override Task SetTaskContinuationAsync(Task previousTask, Func<object, Exception, Task<object>> continuation)
                 => SetTaskContinuationAsync((Task<TResult>)previousTask, continuation);
 
             private static async Task<TResult> SetTaskContinuation(Task<TResult> previousTask, Func<object, Exception, object> continuation)
@@ -142,9 +119,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
         }
 
-        internal class TaskContinuations : ITaskContinuations
+        internal class TaskContinuationGenerator
         {
-            public async Task SetTaskContinuation(Task previousTask, Func<object, Exception, object> continuation)
+            public virtual async Task SetTaskContinuation(Task previousTask, Func<object, Exception, object> continuation)
             {
                 try
                 {
@@ -159,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 continuation(null, null);
             }
 
-            public async Task SetTaskContinuationAsync(Task previousTask, Func<object, Exception, Task<object>> continuation)
+            public virtual async Task SetTaskContinuationAsync(Task previousTask, Func<object, Exception, Task<object>> continuation)
             {
                 try
                 {
