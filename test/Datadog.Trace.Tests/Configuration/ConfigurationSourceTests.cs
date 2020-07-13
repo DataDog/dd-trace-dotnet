@@ -75,7 +75,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.DisabledIntegrations, "integration1;integration2", CreateFunc(s => s.DisabledIntegrationNames.Count), 2 };
 
             yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
-            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:,k3,:,:v2,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2 };
+            yield return new object[] { ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2 };
             yield return new object[] { "DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
 
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };

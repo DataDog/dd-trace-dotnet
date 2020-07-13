@@ -1,14 +1,14 @@
 using System;
 using System.Globalization;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Datadog.Trace;
-using Datadog.Trace.Headers;
 
 namespace StartDistributedTrace
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             if (args.Length == 0)
             {
@@ -37,8 +37,7 @@ namespace StartDistributedTrace
                 using (var responseMessage = client.GetAsync(url).Result)
                 {
                     // read response content and headers
-                    var responseContent = responseMessage.Content.ReadAsStringAsync().Result;
-                    Console.WriteLine($"[HttpClient] response content: {responseContent}");
+                    var responseContent = await responseMessage.Content.ReadAsStringAsync();
 
                     foreach (var header in responseMessage.Headers)
                     {
@@ -46,6 +45,8 @@ namespace StartDistributedTrace
                         var values = string.Join(",", header.Value);
                         Console.WriteLine($"[HttpClient] response header: {name}={values}");
                     }
+
+                    Console.WriteLine($"[HttpClient] response content: {responseContent}");
                 }
             }
         }
