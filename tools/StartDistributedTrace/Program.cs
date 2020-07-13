@@ -34,7 +34,7 @@ namespace StartDistributedTrace
                 client.DefaultRequestHeaders.Add("upstream-service", nameof(StartDistributedTrace));
 
                 // Send HTTP request
-                using (var responseMessage = client.GetAsync(url).Result)
+                using (var responseMessage = await client.GetAsync(url))
                 {
                     // read response content and headers
                     var responseContent = await responseMessage.Content.ReadAsStringAsync();
