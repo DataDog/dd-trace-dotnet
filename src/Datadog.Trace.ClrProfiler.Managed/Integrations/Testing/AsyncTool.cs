@@ -7,7 +7,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 {
     internal static class AsyncTool
     {
-        private static readonly ConcurrentDictionary<Type, TaskContinuationGenerator> ContinuationsCache = new ConcurrentDictionary<Type, TaskContinuationGenerator>();
+        private static readonly ConcurrentDictionary<Type, TaskContinuationGenerator> ContinuationsGeneratorCache = new ConcurrentDictionary<Type, TaskContinuationGenerator>();
 
         /// <summary>
         /// Adds a continuation based on the current returnValue
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
         private static TaskContinuationGenerator GetContinuationFrom(Type type)
         {
-            return ContinuationsCache.GetOrAdd(type, tType =>
+            return ContinuationsGeneratorCache.GetOrAdd(type, tType =>
             {
                 // We need to find the appropiate generic parameter for the task
 
