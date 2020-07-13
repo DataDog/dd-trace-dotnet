@@ -123,6 +123,10 @@ namespace Datadog.Trace.Configuration
             DiagnosticSourceEnabled = source?.GetBool(ConfigurationKeys.DiagnosticSourceEnabled) ??
                                       // default value
                                       true;
+
+            StartupDiagnosticLogEnabled = source?.GetBool(ConfigurationKeys.StartupDiagnosticLogEnabled) ??
+                                          // default value
+                                          true;
         }
 
         /// <summary>
@@ -237,6 +241,11 @@ namespace Datadog.Trace.Configuration
         /// of <see cref="System.Diagnostics.DiagnosticSource"/> is enabled.
         /// </summary>
         public bool DiagnosticSourceEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
+        /// </summary>
+        public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
