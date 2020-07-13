@@ -64,16 +64,15 @@ namespace Datadog.Trace.Tests
             const string customHeader2TagName = "custom-header2-tag";
             string customHeader2LowercaseHeaderName = customHeader2Name.ToLowerInvariant();
 
-            // Initialize WebRequest and add headers
+            // Add headers
             headers.Add(customHeader1Name, customHeader1Value);
             headers.Add(customHeader2Name, customHeader2Value);
 
-            // Initialize header tag arguments
+            // Initialize header-tag arguments and expectations
             var headerTags = new Dictionary<string, string>();
             headerTags.Add(customHeader1Name, customHeader1TagName);
             headerTags.Add(customHeader2LowercaseHeaderName, customHeader2TagName);
 
-            // Set expectations
             var expectedResults = new Dictionary<string, string>();
             expectedResults.Add(customHeader1TagName, customHeader1Value);
             expectedResults.Add(customHeader2TagName, customHeader2Value);

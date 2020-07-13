@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false };
 
-            yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,:tag2,header2:,:", CreateFunc(s => s.HeaderTags), HeaderTags };
+            yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,:tagonly,headeronly:,:", CreateFunc(s => s.HeaderTags), HeaderTags };
             yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", CreateFunc(s => s.HeaderTags), HeaderTagsSameTag };
             yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", CreateFunc(s => s.HeaderTags.Count), 1 };
         }
