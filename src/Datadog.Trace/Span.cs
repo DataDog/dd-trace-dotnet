@@ -80,7 +80,7 @@ namespace Datadog.Trace
 
         internal SpanContext Context { get; }
 
-        internal DateTimeOffset StartTime { get; }
+        internal DateTimeOffset StartTime { get; private set; }
 
         internal TimeSpan Duration { get; private set; }
 
@@ -410,6 +410,11 @@ namespace Datadog.Trace
             }
 
             return this;
+        }
+
+        internal void ResetStartTime()
+        {
+            StartTime = Context.TraceContext.UtcNow;
         }
     }
 }

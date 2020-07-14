@@ -15,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     public static class XUnitIntegration
     {
         private const string IntegrationName = "XUnit";
+        private const string Major2 = "2";
+        private const string Major2Minor2 = "2.2";
 
         private const string XUnitAssembly = "xunit.execution.dotnet";
 
@@ -57,6 +59,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             TargetAssembly = XUnitAssembly,
             TargetType = XUnitTestInvokerType,
             TargetMethod = XUnitRunAsyncMethod,
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Decimal>" })]
         public static object CallTestMethod(
             object testInvoker,
@@ -67,11 +71,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             if (testInvoker == null) { throw new ArgumentNullException(nameof(testInvoker)); }
 
             Type testInvokerType = testInvoker.GetType();
-            Func<object, object> execute;
+            Func<object, object> executeAsync;
 
             try
             {
-                execute =
+                executeAsync =
                     MethodBuilder<Func<object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, XUnitRunAsyncMethod)
                        .WithConcreteType(testInvokerType)
@@ -96,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             Exception exception = null;
             try
             {
-                returnValue = execute(testInvoker);
+                returnValue = executeAsync(testInvoker);
             }
             catch (TargetInvocationException ex)
             {
@@ -110,22 +114,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
             finally
             {
-                returnValue = AsyncTool.AddContinuation(returnValue, exception, (r, ex) =>
+                returnValue = AsyncTool.AddContinuation(returnValue, exception, (r, ex, state) => InvokerContinuation(r, ex, state), testInvoker);
+            }
+
+            return returnValue;
+        }
+
+        private static object InvokerContinuation(object returnValue, Exception ex, object state)
+        {
+            if (state.TryGetPropertyValue<object>("Aggregator", out object aggregator))
+            {
+                if (aggregator.TryCallMethod<Exception>("ToException", out Exception testException))
                 {
-                    if (testInvoker.TryGetPropertyValue<object>("Aggregator", out object aggregator))
+                    Span span = Tracer.Instance?.ActiveScope?.Span;
+                    if (span != null && testException != null)
                     {
-                        if (aggregator.TryCallMethod<Exception>("ToException", out Exception testException))
-                        {
-                            Span span = Tracer.Instance?.ActiveScope?.Span;
-                            if (span != null && testException != null)
-                            {
-                                span.SetException(testException);
-                                span.SetTag(TestTags.Status, TestTags.StatusFail);
-                            }
-                        }
+                        span.SetException(testException);
+                        span.SetTag(TestTags.Status, TestTags.StatusFail);
                     }
-                    return r;
-                });
+                }
             }
 
             return returnValue;
@@ -143,6 +150,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             TargetAssembly = XUnitAssembly,
             TargetType = XUnitTestRunnerType,
             TargetMethod = XUnitRunAsyncMethod,
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" })]
         public static object TestRunner_RunAsync(
             object testRunner,
@@ -153,11 +162,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             if (testRunner == null) { throw new ArgumentNullException(nameof(testRunner)); }
 
             Type testRunnerType = testRunner.GetType();
-            Func<object, object> execute;
+            Func<object, object> executeAsync;
 
             try
             {
-                execute =
+                executeAsync =
                     MethodBuilder<Func<object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, XUnitRunAsyncMethod)
                        .WithConcreteType(testRunnerType)
@@ -182,7 +191,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             if (scope is null)
             {
                 Log.Debug($"** SCOPE Test SKIPPED. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Increment(ref _testRunAsyncSkipped)}]");
-                return execute(testRunner);
+                return executeAsync(testRunner);
             }
 
             Log.Debug($"** SCOPE ({scope.Span.Context.TraceId}) Created for TestInvoker. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testRunAsyncSkipped)}]");
@@ -191,7 +200,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             Exception exception = null;
             try
             {
-                returnValue = execute(testRunner);
+                // reset the start time of the span just before running the test
+                scope.Span.ResetStartTime();
+
+                // starts the test execution
+                returnValue = executeAsync(testRunner);
             }
             catch (TargetInvocationException ex)
             {
@@ -205,27 +218,28 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
             finally
             {
-                returnValue = AsyncTool.AddContinuation(returnValue, exception, (r, ex) =>
-                {
-                    if (scope.Span.GetTag(TestTags.Status) == null)
-                    {
-                        if (ex != null)
-                        {
-                            scope.Span.SetException(ex);
-                            scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                        }
-                        else
-                        {
-                            scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
-                        }
-                    }
-
-                    scope.Dispose();
-                    Log.Debug($"** SCOPE ({scope.Span.Context.TraceId}) Disposed for TestInvoker. [{Interlocked.Read(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testRunAsyncSkipped)}]");
-                    return r;
-                });
+                returnValue = AsyncTool.AddContinuation(returnValue, exception, (r, ex, state) => TestRunnerContinuation(r, ex, state), scope);
             }
 
+            return returnValue;
+        }
+
+        private static object TestRunnerContinuation(object returnValue, Exception ex, Scope scope)
+        {
+            if (scope.Span.GetTag(TestTags.Status) == null)
+            {
+                if (ex != null)
+                {
+                    scope.Span.SetException(ex);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                }
+                else
+                {
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                }
+            }
+
+            scope.Dispose();
             return returnValue;
         }
 
@@ -245,6 +259,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             TargetAssembly = XUnitAssembly,
             TargetType = XUnitTestAssemblyRunnerType,
             TargetMethod = XUnitRunTestCollectionAsyncMethod,
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>", "Xunit.Sdk.IMessageBus", "Xunit.Abstractions.ITestCollection", "System.Collections.Generic.IEnumerable`1<T>", "System.Threading.CancellationTokenSource" })]
         public static object AssemblyRunner_RunAsync(
             object xunitTestAssemblyRunner,
@@ -259,11 +275,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             if (xunitTestAssemblyRunner == null) { throw new ArgumentNullException(nameof(xunitTestAssemblyRunner)); }
 
             Type xunitTestAssemblyRunnerType = xunitTestAssemblyRunner.GetType();
-            Func<object, object, object, object, object, object> execute;
+            Func<object, object, object, object, object, object> executeAsync;
 
             try
             {
-                execute =
+                executeAsync =
                     MethodBuilder<Func<object, object, object, object, object, object>>
                        .Start(moduleVersionPtr, mdToken, opCode, XUnitRunTestCollectionAsyncMethod)
                        .WithConcreteType(xunitTestAssemblyRunnerType)
@@ -288,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             Exception exception = null;
             try
             {
-                returnValue = execute(xunitTestAssemblyRunner, messageBus, testCollection, testCases, cancellationTokenSource);
+                returnValue = executeAsync(xunitTestAssemblyRunner, messageBus, testCollection, testCases, cancellationTokenSource);
             }
             catch (TargetInvocationException ex)
             {
@@ -302,16 +318,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
             finally
             {
-                returnValue = AsyncTool.AddContinuation(returnValue, exception, async (r, ex) =>
-                {
-                    // We have to ensure the flush of the buffer after we finish the tests of an assembly.
-                    // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
-                    // So the last spans in buffer aren't send to the agent.
-                    // Other times we reach the 500 items of the buffer in a sec and the tracer start to drop spans.
-                    // In a test scenario we must keep all spans.
-                    await Tracer.Instance.FlushAsync().ConfigureAwait(false);
-                    return r;
-                });
+                returnValue = AsyncTool.AddContinuation<object>(
+                    returnValue,
+                    exception,
+                    async (r, ex, state) =>
+                    {
+                        // We have to ensure the flush of the buffer after we finish the tests of an assembly.
+                        // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
+                        // So the last spans in buffer aren't send to the agent.
+                        // Other times we reach the 500 items of the buffer in a sec and the tracer start to drop spans.
+                        // In a test scenario we must keep all spans.
+                        await Tracer.Instance.FlushAsync().ConfigureAwait(false);
+                        return r;
+                    },
+                    null);
             }
 
             return returnValue;
