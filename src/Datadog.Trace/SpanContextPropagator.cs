@@ -87,12 +87,12 @@ namespace Datadog.Trace
             return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
 
-        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerTags)
+        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap)
             where T : IHeadersCollection
         {
             var tagsFromHeaders = new Dictionary<string, string>();
 
-            foreach (KeyValuePair<string, string> headerNameToTagName in headerTags)
+            foreach (KeyValuePair<string, string> headerNameToTagName in headerToTagMap)
             {
                 string headerValue = ParseString(headers, headerNameToTagName.Key);
                 if (headerValue != null)

@@ -50,9 +50,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             headers.Add(customHeader2Name, customHeader2Value);
 
             // Initialize header tag arguments
-            var headerTags = new Dictionary<string, string>();
-            headerTags.Add(customHeader1Name, customHeader1TagName);
-            headerTags.Add(customHeader2LowercaseHeaderName, customHeader2TagName);
+            var headerToTagMap = new Dictionary<string, string>();
+            headerToTagMap.Add(customHeader1Name, customHeader1TagName);
+            headerToTagMap.Add(customHeader2LowercaseHeaderName, customHeader2TagName);
 
             // Set expectations
             var expectedResults = new Dictionary<string, string>();
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             expectedResults.Add(customHeader2TagName, customHeader2Value);
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags);
+            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerToTagMap);
 
             // Assert
             Assert.NotNull(tagsFromHeader);
