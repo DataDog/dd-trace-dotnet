@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>1.18.2</Version>
+  </PropertyGroup>
+
+  <!-- For VS testing purposes only, copy all implementation assemblies to the
+       to test the loading of managed profiler assemblies from disk -->
+  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' and '$(TargetFramework)' == 'netstandard2.0'">
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Framework" Version="14.3.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+  
+</Project>

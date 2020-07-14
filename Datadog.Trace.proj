@@ -131,6 +131,26 @@
     </MSBuild>
   </Target>
 
+  <Target Name="PublishBuildLoggerOnDisk">
+    <ItemGroup>
+      <BuildLoggerPublishProject Include="src\Datadog.Trace.Build\Datadog.Trace.Build.csproj">
+        <Properties>TargetFramework=net45;PublishDir=$(TracerHomeDirectory)\net45</Properties>
+      </BuildLoggerPublishProject>
+
+      <BuildLoggerPublishProject Include="src\Datadog.Trace.Build\Datadog.Trace.Build.csproj">
+        <Properties>TargetFramework=net461;PublishDir=$(TracerHomeDirectory)\net461</Properties>
+      </BuildLoggerPublishProject>
+
+      <BuildLoggerPublishProject Include="src\Datadog.Trace.Build\Datadog.Trace.Build.csproj">
+        <Properties>TargetFramework=netstandard2.0;PublishDir=$(TracerHomeDirectory)\netstandard2.0</Properties>
+      </BuildLoggerPublishProject>
+    </ItemGroup>
+
+    <MSBuild Targets="Publish" Projects="@(BuildLoggerPublishProject)" BuildInParallel="$(BuildInParallel)" RemoveProperties="Platform">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
   <Target Name="BuildLoader">
     <ItemGroup>
       <ManagedLoaderProject Include="src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj"/>
@@ -176,7 +196,7 @@
     </MSBuild>
   </Target>
 
-  <Target Name="CreateHomeDirectory" DependsOnTargets="PublishNativeProfilerOnDisk;PublishManagedProfilerOnDisk">
+  <Target Name="CreateHomeDirectory" DependsOnTargets="PublishNativeProfilerOnDisk;PublishManagedProfilerOnDisk;PublishBuildLoggerOnDisk">
     <PropertyGroup>
       <!-- enable zip by default to keep current behavior-->
       <ZipHomeDirectory Condition="'$(ZipHomeDirectory)' == ''">true</ZipHomeDirectory>
