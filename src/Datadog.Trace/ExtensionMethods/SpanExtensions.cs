@@ -50,7 +50,7 @@ namespace Datadog.Trace.ExtensionMethods
             string method,
             string host,
             string httpUrl,
-            IEnumerable<KeyValuePair<string, string>> headerTags)
+            IEnumerable<KeyValuePair<string, string>> tags)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ExtensionMethods
             span.SetTag(Tags.HttpUrl, httpUrl);
             span.SetTag(Tags.Language, TracerConstants.Language);
 
-            foreach (KeyValuePair<string, string> kvp in headerTags)
+            foreach (KeyValuePair<string, string> kvp in tags)
             {
                 span.SetTag(kvp.Key, kvp.Value);
             }

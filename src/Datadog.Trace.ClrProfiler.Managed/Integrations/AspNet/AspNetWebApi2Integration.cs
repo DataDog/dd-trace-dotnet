@@ -285,7 +285,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     method: method,
                     host: host,
                     httpUrl: rawUrl,
-                    headerTags: headerTags);
+                    tags: headerTags);
                 span.SetTag(Tags.AspNetAction, action);
                 span.SetTag(Tags.AspNetController, controller);
                 span.SetTag(Tags.AspNetRoute, route);

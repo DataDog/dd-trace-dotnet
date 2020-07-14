@@ -139,7 +139,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     method: httpMethod,
                     host: host,
                     httpUrl: url,
-                    headerTags: tagsFromHeaders);
+                    tags: tagsFromHeaders);
                 span.SetTag(Tags.AspNetRoute, route?.Url);
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
