@@ -90,7 +90,7 @@ namespace Datadog.Trace
         public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerTags)
             where T : IHeadersCollection
         {
-            Dictionary<string, string> tagsFromHeaders = new Dictionary<string, string>();
+            var tagsFromHeaders = new Dictionary<string, string>();
 
             foreach (KeyValuePair<string, string> headerNameToTagName in headerTags)
             {
