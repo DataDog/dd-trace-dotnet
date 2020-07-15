@@ -144,8 +144,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 span.SetTag(Tags.AspNetController, controllerName);
                 span.SetTag(Tags.AspNetAction, actionName);
 
-                httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h));
-
                 // set analytics sample rate if enabled
                 var analyticsSampleRate = tracer.Settings.GetIntegrationAnalyticsSampleRate(IntegrationName, enabledWithGlobalSetting: true);
                 span.SetMetric(Tags.Analytics, analyticsSampleRate);
@@ -319,16 +317,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             try
             {
                 // call the original method, inspecting (but not catching) any unhandled exceptions
-                return instrumentedMethod(asyncControllerActionInvoker, asyncResult);
+                var result = instrumentedMethod(asyncControllerActionInvoker, asyncResult);
+
+                if (scope != null)
+                {
+                    SetStatusCode(scope, httpContext.Response.StatusCode);
+                    scope.Dispose();
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
                 scope?.Span.SetException(ex);
+
+                if (httpContext != null)
+                {
+                    httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h));
+                }
+                else
+                {
+                    scope?.Dispose();
+                }
+
                 throw;
             }
         }
 
-        private static void OnRequestCompleted(HttpContextBase httpContext)
+        private static void OnRequestCompleted(HttpContext httpContext)
         {
             var scope = (Scope)httpContext.Items[HttpContextKey];
 
