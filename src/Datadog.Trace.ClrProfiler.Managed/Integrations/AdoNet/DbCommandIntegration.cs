@@ -41,56 +41,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteReaderInternal(
-                command,
-                opCode,
-                mdToken,
-                moduleVersionPtr,
-                methodName: AdoNetConstants.MethodNames.ExecuteReader,
-                returnTypeName: AdoNetConstants.TypeNames.DbDataReader);
-        }
-
-        /// <summary>
-        /// Instrumentation wrapper for explicit implementation of <see cref="IDbCommand.ExecuteReader()"/> in <see cref="DbCommand"/>.
-        /// </summary>
-        /// <param name="command">The object referenced "this" in the instrumented method.</param>
-        /// <param name="opCode">The OpCode used in the original method call.</param>
-        /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
-        /// <returns>The value returned by the instrumented method.</returns>
-        [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon, AdoNetConstants.AssemblyNames.NetStandard },
-            TargetMethod = AdoNetConstants.MethodNames.ExecuteReaderExplicit,
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.IDataReader },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
-        public static object ExecuteReaderExplicit(
-            object command,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
-            return ExecuteReaderInternal(
-                command,
-                opCode,
-                mdToken,
-                moduleVersionPtr,
-                methodName: AdoNetConstants.MethodNames.ExecuteReaderExplicit,
-                returnTypeName: AdoNetConstants.TypeNames.IDataReader);
-        }
-
-        private static object ExecuteReaderInternal(object command, int opCode, int mdToken, long moduleVersionPtr, string methodName, string returnTypeName)
-        {
             Func<DbCommand, DbDataReader> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, DbDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
                        .WithConcreteType(typeof(DbCommand))
-                       .WithNamespaceAndNameFilters(returnTypeName)
+                       .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.DbDataReader)
                        .Build();
             }
             catch (Exception ex)
@@ -101,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: methodName,
+                    methodName: AdoNetConstants.MethodNames.ExecuteReader,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -147,63 +106,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         {
             var commandBehavior = (CommandBehavior)behavior;
 
-            return ExecuteReaderWithBehaviorInternal(
-                command,
-                commandBehavior,
-                opCode,
-                mdToken,
-                moduleVersionPtr,
-                methodName: AdoNetConstants.MethodNames.ExecuteReader,
-                returnTypeName: AdoNetConstants.TypeNames.DbDataReader);
-        }
-
-        /// <summary>
-        /// Instrumentation wrapper for explicit implementation of <see cref="IDbCommand.ExecuteReader(CommandBehavior)"/> in <see cref="DbCommand"/>.
-        /// </summary>
-        /// <param name="command">The object referenced "this" in the instrumented method.</param>
-        /// <param name="behavior">The <see cref="CommandBehavior"/> value used in the original method call.</param>
-        /// <param name="opCode">The OpCode used in the original method call.</param>
-        /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
-        /// <returns>The value returned by the instrumented method.</returns>
-        [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon, AdoNetConstants.AssemblyNames.NetStandard },
-            TargetMethod = AdoNetConstants.MethodNames.ExecuteReaderExplicit,
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { AdoNetConstants.TypeNames.IDataReader, AdoNetConstants.TypeNames.CommandBehavior },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
-        public static object ExecuteReaderWithBehaviorExplicit(
-            object command,
-            int behavior,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
-            var commandBehavior = (CommandBehavior)behavior;
-
-            return ExecuteReaderWithBehaviorInternal(
-                command,
-                commandBehavior,
-                opCode,
-                mdToken,
-                moduleVersionPtr,
-                methodName: AdoNetConstants.MethodNames.ExecuteReaderExplicit,
-                returnTypeName: AdoNetConstants.TypeNames.IDataReader);
-        }
-
-        private static object ExecuteReaderWithBehaviorInternal(object command, CommandBehavior commandBehavior, int opCode, int mdToken, long moduleVersionPtr, string methodName, string returnTypeName)
-        {
             Func<DbCommand, CommandBehavior, DbDataReader> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, CommandBehavior, DbDataReader>>
-                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteReader)
                        .WithConcreteType(typeof(DbCommand))
                        .WithParameters(commandBehavior)
-                       .WithNamespaceAndNameFilters(returnTypeName, AdoNetConstants.TypeNames.CommandBehavior)
+                       .WithNamespaceAndNameFilters(AdoNetConstants.TypeNames.DbDataReader, AdoNetConstants.TypeNames.CommandBehavior)
                        .Build();
             }
             catch (Exception ex)
@@ -214,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: methodName,
+                    methodName: AdoNetConstants.MethodNames.ExecuteReader,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -339,56 +251,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteNonQueryInternal(
-                command,
-                opCode,
-                mdToken,
-                moduleVersionPtr,
-                methodName: AdoNetConstants.MethodNames.ExecuteNonQuery,
-                returnTypeName: ClrNames.Int32);
-        }
-
-        /// <summary>
-        /// Instrumentation wrapper for explicit implementation of <see cref="IDbCommand.ExecuteNonQuery()"/> in <see cref="DbCommand"/>.
-        /// </summary>
-        /// <param name="command">The object referenced by this in the instrumented method.</param>
-        /// <param name="opCode">The OpCode used in the original method call.</param>
-        /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
-        /// <returns>The value returned by the instrumented method.</returns>
-        [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon, AdoNetConstants.AssemblyNames.NetStandard },
-            TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQueryExplicit,
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Int32 },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
-        public static int ExecuteNonQueryExplicit(
-            object command,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
-            return ExecuteNonQueryInternal(
-                command,
-                opCode,
-                mdToken,
-                moduleVersionPtr,
-                methodName: AdoNetConstants.MethodNames.ExecuteNonQueryExplicit,
-                returnTypeName: ClrNames.Int32);
-        }
-
-        private static int ExecuteNonQueryInternal(object command, int opCode, int mdToken, long moduleVersionPtr, string methodName, string returnTypeName)
-        {
             Func<DbCommand, int> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, int>>
-                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteNonQuery)
                        .WithConcreteType(typeof(DbCommand))
-                       .WithNamespaceAndNameFilters(returnTypeName)
+                       .WithNamespaceAndNameFilters(ClrNames.Int32)
                        .Build();
             }
             catch (Exception ex)
@@ -399,7 +270,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: methodName,
+                    methodName: AdoNetConstants.MethodNames.ExecuteNonQuery,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }
@@ -520,56 +391,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             int mdToken,
             long moduleVersionPtr)
         {
-            return ExecuteScalarInternal(
-                command,
-                opCode,
-                mdToken,
-                moduleVersionPtr,
-                methodName: AdoNetConstants.MethodNames.ExecuteScalar,
-                returnTypeName: ClrNames.Object);
-        }
-
-        /// <summary>
-        /// Instrumentation wrapper for explicit implementation of <see cref="IDbCommand.ExecuteScalar()"/> in <see cref="DbCommand"/>.
-        /// </summary>
-        /// <param name="command">The object referenced by this in the instrumented method.</param>
-        /// <param name="opCode">The OpCode used in the original method call.</param>
-        /// <param name="mdToken">The mdToken of the original method call.</param>
-        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
-        /// <returns>The value returned by the instrumented method.</returns>
-        [InterceptMethod(
-            TargetAssemblies = new[] { AdoNetConstants.AssemblyNames.SystemData, AdoNetConstants.AssemblyNames.SystemDataCommon, AdoNetConstants.AssemblyNames.NetStandard },
-            TargetMethod = AdoNetConstants.MethodNames.ExecuteScalarExplicit,
-            TargetType = DbCommandTypeName,
-            TargetSignatureTypes = new[] { ClrNames.Object },
-            TargetMinimumVersion = Major4,
-            TargetMaximumVersion = Major4)]
-        public static object ExecuteScalarExplicit(
-            object command,
-            int opCode,
-            int mdToken,
-            long moduleVersionPtr)
-        {
-            return ExecuteScalarInternal(
-                command,
-                opCode,
-                mdToken,
-                moduleVersionPtr,
-                methodName: AdoNetConstants.MethodNames.ExecuteScalarExplicit,
-                returnTypeName: ClrNames.Object);
-        }
-
-        private static object ExecuteScalarInternal(object command, int opCode, int mdToken, long moduleVersionPtr, string methodName, string returnTypeName)
-        {
             Func<DbCommand, object> instrumentedMethod;
 
             try
             {
                 instrumentedMethod =
                     MethodBuilder<Func<DbCommand, object>>
-                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .Start(moduleVersionPtr, mdToken, opCode, AdoNetConstants.MethodNames.ExecuteScalar)
                        .WithConcreteType(typeof(DbCommand))
-                       .WithNamespaceAndNameFilters(returnTypeName)
+                       .WithNamespaceAndNameFilters(ClrNames.Object)
                        .Build();
             }
             catch (Exception ex)
@@ -580,7 +410,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                     mdToken: mdToken,
                     opCode: opCode,
                     instrumentedType: DbCommandTypeName,
-                    methodName: methodName,
+                    methodName: AdoNetConstants.MethodNames.ExecuteScalar,
                     instanceType: command.GetType().AssemblyQualifiedName);
                 throw;
             }

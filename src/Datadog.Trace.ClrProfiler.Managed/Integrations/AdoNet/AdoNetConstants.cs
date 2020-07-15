@@ -31,15 +31,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
         {
             public const string ExecuteNonQuery = "ExecuteNonQuery";
             public const string ExecuteNonQueryAsync = "ExecuteNonQueryAsync";
-            public const string ExecuteNonQueryExplicit = "System.Data.IDbCommand.ExecuteNonQuery";
 
             public const string ExecuteScalar = "ExecuteScalar";
             public const string ExecuteScalarAsync = "ExecuteScalarAsync";
-            public const string ExecuteScalarExplicit = "System.Data.IDbCommand.ExecuteScalar";
 
             public const string ExecuteReader = "ExecuteReader";
             public const string ExecuteReaderAsync = "ExecuteReaderAsync";
-            public const string ExecuteReaderExplicit = "System.Data.IDbCommand.ExecuteReader";
         }
     }
 }
