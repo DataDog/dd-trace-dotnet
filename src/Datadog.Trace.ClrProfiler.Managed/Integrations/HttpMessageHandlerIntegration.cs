@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -212,27 +211,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             if (!(reportedType.FullName.Equals(HttpClientHandler, StringComparison.OrdinalIgnoreCase) || IsSocketsHttpHandlerEnabled(reportedType))
                 || !IsTracingEnabled(headers))
             {
-#if !NETSTANDARD2_0
-                StrongBox<Scope> box = null;
-
-                if (reportedType.FullName.Equals("System.Web.Http.Dispatcher.HttpControllerDispatcher", StringComparison.OrdinalIgnoreCase))
-                {
-                    box = AspNetWebApi2Integration.RootScope.Init();
-                }
-#endif
-
                 // skip instrumentation
                 var task = (Task<T>)sendAsync(handler, request, cancellationToken);
-                var result = await task.ConfigureAwait(false);
-
-#if !NETSTANDARD2_0
-                if (box?.Value != null)
-                {
-                    box.Value.Span.SetTag(Tags.HttpStatusCode, ((int)result.GetProperty("StatusCode").Value).ToString());
-                    box.Value.Span.Dispose();
-                }
-#endif
-                return result;
+                return await task.ConfigureAwait(false);
             }
 
             var httpMethod = request.GetProperty("Method").GetProperty<string>("Method").GetValueOrDefault();

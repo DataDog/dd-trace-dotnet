@@ -22,14 +22,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string OperationName = "aspnet-webapi.request";
         private const string Major5Minor1 = "5.1";
         private const string Major5 = "5";
+        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration";
 
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
         private const string HttpControllerTypeName = "System.Web.Http.Controllers.IHttpController";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(AspNetWebApi2Integration));
-
-        internal static CrossIntegrationScope RootScope { get; } = new CrossIntegrationScope();
 
         /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.
@@ -158,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // call the original method, inspecting (but not catching) any unhandled exceptions
                 var task = (Task<T>)instrumentedMethod(apiController, controllerContext, cancellationToken);
-                var responseMessage = await task.ConfigureAwait(false);
+                var responseMessage = await task;
 
                 if (scope != null)
                 {
@@ -180,11 +179,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     UpdateSpan(controllerContext, scope.Span, Enumerable.Empty<KeyValuePair<string, string>>());
                     scope.Span.SetException(ex);
 
-                    // The error status code isn't available at this stage
-                    // Ask the HttpMessageHandlerIntegration to fill it for us
-                    if (!RootScope.SetScope(scope))
+                    // We don't have access to the final status code at this point
+                    // Ask the HttpContext to call us back to that we can get it
+                    var httpContext = System.Web.HttpContext.Current;
+
+                    if (httpContext != null)
                     {
-                        // Looks like nobody is listening :(
+                        httpContext.Items[HttpContextKey] = scope;
+                        httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h));
+                    }
+                    else
+                    {
+                        // Looks like we won't be able to get the final status code
                         scope.Dispose();
                     }
                 }
@@ -306,6 +312,34 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 Log.Error(ex, "Error populating scope data.");
+            }
+        }
+
+        private static void OnRequestCompleted(System.Web.HttpContext httpContext)
+        {
+            var scope = (Scope)httpContext.Items[HttpContextKey];
+
+            if (scope != null && !scope.Span.IsFinished)
+            {
+                SetStatusCode(scope, httpContext.Response.StatusCode);
+                scope.Dispose();
+            }
+        }
+
+        private static void SetStatusCode(Scope scope, int? statusCode)
+        {
+            if (statusCode == null)
+            {
+                return;
+            }
+
+            try
+            {
+                scope.Span.SetTag(Tags.HttpStatusCode, statusCode.Value.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while setting status code");
             }
         }
     }
