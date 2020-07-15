@@ -5,6 +5,8 @@ using System.IO;
 using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util;
 using Microsoft.Build.Framework;
 
 namespace Datadog.Trace.Build
@@ -15,10 +17,19 @@ namespace Datadog.Trace.Build
     public class DatadogLogger : INodeLogger
     {
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(DatadogLogger));
+        private static readonly bool _inContainer;
 
         private Tracer _tracer = null;
         private Span _buildSpan = null;
         private ConcurrentDictionary<int, Span> _projects = new ConcurrentDictionary<int, Span>();
+
+        static DatadogLogger()
+        {
+            // Preload environment variables.
+            CIEnvironmentValues.DecorateSpan(null);
+
+            _inContainer = EnvironmentHelpers.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" || ContainerMetadata.GetContainerId() != null;
+        }
 
         /// <summary>
         /// Gets or sets the logger Verbosity
@@ -82,7 +93,15 @@ namespace Datadog.Trace.Build
                 _buildSpan.SetTag($"{BuildTags.BuildEnvironment}.{envValue.Key}", envValue.Value);
             }
 
+            _buildSpan.SetTag(BuildTags.BuildCommand, Environment.CommandLine);
+            _buildSpan.SetTag(BuildTags.BuildWorkingFolder, Environment.CurrentDirectory);
             _buildSpan.SetTag(BuildTags.BuildStartMessage, e.Message);
+
+            _buildSpan.SetTag(BuildTags.BuildInContainer, _inContainer ? "true" : "false");
+            _buildSpan.SetTag(BuildTags.RuntimeOSArchitecture, Environment.Is64BitOperatingSystem ? "x64" : "x86");
+            _buildSpan.SetTag(BuildTags.RuntimeProcessArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
+
+            CIEnvironmentValues.DecorateSpan(_buildSpan);
         }
 
         private void EventSource_BuildFinished(object sender, BuildFinishedEventArgs e)
