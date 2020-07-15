@@ -68,7 +68,32 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <summary>
         /// Test skip reason
         /// </summary>
-        public const string SkipReason = "test.skipReason";
+        public const string SkipReason = "test.skip_reason";
+
+        /// <summary>
+        /// GIT Repository
+        /// </summary>
+        public const string GitRepository = "git.repository";
+
+        /// <summary>
+        /// GIT Commit hash
+        /// </summary>
+        public const string GitCommit = "git.commit";
+
+        /// <summary>
+        /// GIT Branch name
+        /// </summary>
+        public const string GitBranch = "git.branch";
+
+        /// <summary>
+        /// Build Source root
+        /// </summary>
+        public const string BuildSourceRoot = "build.source_root";
+
+        /// <summary>
+        /// Build InContainer flag
+        /// </summary>
+        public const string BuildInContainer = "build.incontainer";
 
         /// <summary>
         /// CI Provider
@@ -76,39 +101,19 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         public const string CIProvider = "ci.provider";
 
         /// <summary>
-        /// CI Repository
-        /// </summary>
-        public const string CIRepository = "ci.repository";
-
-        /// <summary>
-        /// CI Commit hash
-        /// </summary>
-        public const string CICommit = "ci.commit";
-
-        /// <summary>
-        /// CI Branch name
-        /// </summary>
-        public const string CIBranch = "ci.branch";
-
-        /// <summary>
-        /// CI Source root
-        /// </summary>
-        public const string CISourceRoot = "ci.sourceRoot";
-
-        /// <summary>
         /// CI Build id
         /// </summary>
-        public const string CIBuildId = "ci.buildId";
+        public const string CIBuildId = "ci.build_id";
 
         /// <summary>
         /// CI Build number
         /// </summary>
-        public const string CIBuildNumber = "ci.buildNumber";
+        public const string CIBuildNumber = "ci.build_number";
 
         /// <summary>
         /// CI Build url
         /// </summary>
-        public const string CIBuildUrl = "ci.buildUrl";
+        public const string CIBuildUrl = "ci.build_url";
 
         /// <summary>
         /// Runtime name
@@ -118,17 +123,17 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         /// <summary>
         /// Runtime os architecture
         /// </summary>
-        public const string RuntimeOSArchitecture = "runtime.osArchitecture";
+        public const string RuntimeOSArchitecture = "runtime.os_architecture";
 
         /// <summary>
         /// Runtime os platform
         /// </summary>
-        public const string RuntimeOSPlatform = "runtime.osPlatform";
+        public const string RuntimeOSPlatform = "runtime.os_platform";
 
         /// <summary>
         /// Runtime process architecture
         /// </summary>
-        public const string RuntimeProcessArchitecture = "runtime.processArchitecture";
+        public const string RuntimeProcessArchitecture = "runtime.process_architecture";
 
         /// <summary>
         /// Runtime version

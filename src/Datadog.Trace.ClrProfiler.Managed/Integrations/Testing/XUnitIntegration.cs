@@ -5,6 +5,7 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.Testing
@@ -19,24 +20,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string Major2Minor2 = "2.2";
 
         private const string XUnitAssembly = "xunit.execution.dotnet";
-
         private const string XUnitTestInvokerType = "Xunit.Sdk.TestInvoker`1";
-        private const string XUnitRunAsyncMethod = "RunAsync";
-
         private const string XUnitTestRunnerType = "Xunit.Sdk.TestRunner`1";
-
         private const string XUnitTestAssemblyRunnerType = "Xunit.Sdk.TestAssemblyRunner`1";
+
+        private const string XUnitRunAsyncMethod = "RunAsync";
         private const string XUnitRunTestCollectionAsyncMethod = "RunTestCollectionAsync";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
-
-        private static long _testInvokerScopesCount;
-        private static long _testInvokerScopesDisposedCount;
-        private static long _testRunAsyncSkipped;
-
-        private static FrameworkDescription _runtimeDescription;
-
-        private static string _processId;
+        private static readonly FrameworkDescription _runtimeDescription;
+        private static readonly bool _inContainer;
 
         static XUnitIntegration()
         {
@@ -44,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             CIEnvironmentValues.DecorateSpan(null);
 
             _runtimeDescription = FrameworkDescription.Create();
-            _processId = DomainMetadata.ProcessId.ToString();
+            _inContainer = EnvironmentHelpers.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" || ContainerMetadata.GetContainerId() != null;
         }
 
         /// <summary>
@@ -187,14 +180,11 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 throw;
             }
 
-            var scope = CreateScope(testRunner);
+            Scope scope = CreateScope(testRunner);
             if (scope is null)
             {
-                Log.Debug($"** SCOPE Test SKIPPED. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Increment(ref _testInvokerScopesDisposedCount)}:{Interlocked.Increment(ref _testRunAsyncSkipped)}]");
                 return executeAsync(testRunner);
             }
-
-            Log.Debug($"** SCOPE ({scope.Span.Context.TraceId}) Created for TestInvoker. [{Interlocked.Increment(ref _testInvokerScopesCount)}:{Interlocked.Read(ref _testInvokerScopesDisposedCount)}:{Interlocked.Read(ref _testRunAsyncSkipped)}]");
 
             object returnValue = null;
             Exception exception = null;
@@ -427,17 +417,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 string serviceName = testClassInstanceAssemblyName?.Name ?? tracer.DefaultServiceName;
                 string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
-                scope = tracer.StartActive(testName, serviceName: serviceName, finishOnClose: skipReason == null);
+                scope = tracer.StartActive("test", serviceName: serviceName);
                 Span span = scope.Span;
+                span.SetMetric(Tags.Analytics, 1.0d);
+
                 span.Type = SpanTypes.Test;
                 span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
-                span.ResourceName = testSuite;
+                span.ResourceName = $"{testSuite}.{testName}";
                 span.SetTag(TestTags.Suite, testSuite);
                 span.SetTag(TestTags.Name, testName);
-                span.SetTag(TestTags.Fqn, $"{testSuite}.{testName}");
                 span.SetTag(TestTags.Framework, testFramework);
-                span.SetMetric(Tags.Analytics, 1.0d);
                 CIEnvironmentValues.DecorateSpan(span);
+                if (CIEnvironmentValues.IsCI)
+                {
+                    // If we detect a CI then we force the env to CI (by semantic conventions)
+                    span.SetTag(Tags.Env, "ci");
+                }
+
+                span.SetTag(TestTags.BuildInContainer, _inContainer ? "true" : "false");
 
                 span.SetTag(TestTags.RuntimeName, _runtimeDescription.Name);
                 span.SetTag(TestTags.RuntimeOSArchitecture, _runtimeDescription.OSArchitecture);
@@ -448,11 +445,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 if (uniqueId != null)
                 {
                     span.SetTag(TestTags.Id, uniqueId);
-                }
-
-                if (_processId != null)
-                {
-                    span.SetTag(TestTags.ProcessId, _processId);
                 }
 
                 if (testArguments != null)

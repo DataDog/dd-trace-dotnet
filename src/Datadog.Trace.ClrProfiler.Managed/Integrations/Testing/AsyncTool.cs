@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 {
+    /// <summary>
+    /// This class is similar to AsyncHelper but removes the params array allocation, the string key allocation and the invoke by reflection.
+    /// </summary>
     internal static class AsyncTool
     {
         private static readonly ConcurrentDictionary<Type, TaskContinuationGenerator> ContinuationsGeneratorCache = new ConcurrentDictionary<Type, TaskContinuationGenerator>();

@@ -162,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
 
             try
             {
-                // Fix branch name
+                // Clean branch name
                 if (!string.IsNullOrEmpty(Branch))
                 {
                     var match = BranchRegex.Match(Branch);
@@ -204,13 +204,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
 
             span.SetTag(TestTags.CIProvider, Provider);
-            span.SetTag(TestTags.CIRepository, Repository);
-            span.SetTag(TestTags.CICommit, Commit);
-            span.SetTag(TestTags.CIBranch, Branch);
-            span.SetTag(TestTags.CISourceRoot, SourceRoot);
             span.SetTag(TestTags.CIBuildId, BuildId);
             span.SetTag(TestTags.CIBuildNumber, BuildNumber);
             span.SetTag(TestTags.CIBuildUrl, BuildUrl);
+
+            span.SetTag(TestTags.GitRepository, Repository);
+            span.SetTag(TestTags.GitCommit, Commit);
+            span.SetTag(TestTags.GitBranch, Branch);
+
+            span.SetTag(TestTags.BuildSourceRoot, SourceRoot);
         }
     }
 }
