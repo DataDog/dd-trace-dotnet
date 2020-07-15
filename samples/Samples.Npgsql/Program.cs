@@ -42,7 +42,7 @@ namespace Samples.Npgsql
 
                 await Task.Delay(100);
 
-#if NETCOREAPP
+#if !NET452
                 // use DbCommandWrapper to reference DbCommand in netstandard.dll
                 using (var connection = CreateConnection())
                 {
