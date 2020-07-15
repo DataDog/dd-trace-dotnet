@@ -8,7 +8,7 @@ namespace Samples.DatabaseHelper
 {
     /// <summary>
     /// Light wrapper around <see cref="DbCommand"/> used to target calls in <c>netstandard.dll</c>
-    /// when this project targets netstandard.20
+    /// when this project targets netstandard2.0
     /// </summary>
     public class DbCommandWrapper
     {
