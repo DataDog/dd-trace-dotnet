@@ -417,7 +417,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 string serviceName = testClassInstanceAssemblyName?.Name ?? tracer.DefaultServiceName;
                 string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
 
-                scope = tracer.StartActive("test", serviceName: serviceName);
+                scope = tracer.StartActive("xunit.test", serviceName: serviceName);
                 Span span = scope.Span;
                 span.SetMetric(Tags.Analytics, 1.0d);
 
@@ -428,11 +428,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 span.SetTag(TestTags.Name, testName);
                 span.SetTag(TestTags.Framework, testFramework);
                 CIEnvironmentValues.DecorateSpan(span);
-                if (CIEnvironmentValues.IsCI)
-                {
-                    // If we detect a CI then we force the env to CI (by semantic conventions)
-                    span.SetTag(Tags.Env, "ci");
-                }
 
                 span.SetTag(TestTags.BuildInContainer, _inContainer ? "true" : "false");
 
