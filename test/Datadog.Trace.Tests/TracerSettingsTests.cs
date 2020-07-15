@@ -1,14 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
@@ -73,6 +69,38 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable(ConfigurationKeys.GlobalTags, originalTagsValue, EnvironmentVariableTarget.Process);
 
             Assert.Equal(span.GetTag(tagKey), envValue);
+        }
+
+        [Theory]
+        [InlineData("", true)]
+        [InlineData("1", true)]
+        [InlineData("0", false)]
+        public void TraceEnabled(string value, bool areTracesEnabled)
+        {
+            var originalValue = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled);
+
+            try
+            {
+                Environment.SetEnvironmentVariable(ConfigurationKeys.TraceEnabled, value);
+
+                var settings = new TracerSettings(new EnvironmentConfigurationSource());
+
+                Assert.Equal(areTracesEnabled, settings.TraceEnabled);
+
+                _writerMock.ResetCalls();
+
+                var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+                var span = tracer.StartSpan("TestTracerDisabled");
+                span.Dispose();
+
+                var assertion = areTracesEnabled ? Times.Once() : Times.Never();
+
+                _writerMock.Verify(w => w.WriteTrace(It.IsAny<Span[]>()), assertion);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ConfigurationKeys.TraceEnabled, originalValue);
+            }
         }
     }
 }
