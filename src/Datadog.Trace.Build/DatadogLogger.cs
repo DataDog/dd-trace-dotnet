@@ -71,35 +71,31 @@ namespace Datadog.Trace.Build
         {
             Log.Information("Build Started");
 
-            _buildSpan = _tracer.StartSpan("Build");
+            _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
             _buildSpan.SetMetric(Tags.Analytics, 1.0d);
             _buildSpan.SetTraceSamplingPriority(SamplingPriority.UserKeep);
 
-            _buildSpan.Type = "build";
-            _buildSpan.SetTag("build.name", e.SenderName);
+            _buildSpan.Type = SpanTypes.Build;
+            _buildSpan.SetTag(BuildTags.BuildName, e.SenderName);
             foreach (KeyValuePair<string, string> envValue in e.BuildEnvironment)
             {
-                _buildSpan.SetTag("build.environment." + envValue.Key, envValue.Value);
+                _buildSpan.SetTag($"{BuildTags.BuildEnvironment}.{envValue.Key}", envValue.Value);
             }
 
-            _buildSpan.SetTag("build.startMessage", e.Message);
+            _buildSpan.SetTag(BuildTags.BuildStartMessage, e.Message);
         }
 
         private void EventSource_BuildFinished(object sender, BuildFinishedEventArgs e)
         {
             Log.Information("Build Finished");
 
-            if (e.Succeeded)
+            _buildSpan.SetTag(BuildTags.BuildStatus, e.Succeeded ? BuildTags.BuildSucceededStatus : BuildTags.BuildFailedStatus);
+            if (!e.Succeeded)
             {
-                _buildSpan.SetTag("build.status", "Succeeded");
-            }
-            else
-            {
-                _buildSpan.SetTag("build.status", "Failed");
                 _buildSpan.Error = true;
             }
 
-            _buildSpan.SetTag("build.finishMessage", e.Message);
+            _buildSpan.SetTag(BuildTags.BuildEndMessage, e.Message);
             _buildSpan.Finish(e.Timestamp);
         }
 
@@ -107,7 +103,7 @@ namespace Datadog.Trace.Build
         {
             if (e.TargetNames.StartsWith("_"))
             {
-                return;
+                // return;
             }
 
             Log.Information("Project Started");
@@ -120,24 +116,24 @@ namespace Datadog.Trace.Build
             }
 
             string projectName = Path.GetFileName(e.ProjectFile);
-            string operationName = string.IsNullOrEmpty(e.TargetNames) ?
-                $"{projectName}" :
-                $"{projectName} [{e.TargetNames}]";
 
-            Span projectSpan = _tracer.StartSpan(operationName, parent: parentSpan.Context);
+            Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context, serviceName: projectName + "-build");
+            projectSpan.ResourceName = projectName;
+            projectSpan.SetMetric(Tags.Analytics, 1.0d);
+            projectSpan.SetTraceSamplingPriority(SamplingPriority.UserKeep);
+            projectSpan.Type = SpanTypes.Build;
 
-            foreach (KeyValuePair<string, string> envValue in e.GlobalProperties)
+            foreach (KeyValuePair<string, string> prop in e.GlobalProperties)
             {
-                projectSpan.SetTag("project.properties." + envValue.Key, envValue.Value);
+                projectSpan.SetTag($"{BuildTags.ProjectProperties}.{prop.Key}", prop.Value);
             }
 
-            projectSpan.SetTag("project.name", projectName);
-            projectSpan.SetTag("project.file", e.ProjectFile);
-            projectSpan.SetTag("project.senderName", e.SenderName);
-            projectSpan.SetTag("project.targetNames", e.TargetNames);
-            projectSpan.SetTag("project.toolsVersion", e.ToolsVersion);
-            projectSpan.SetTag("build.startMessage", e.Message);
-
+            projectSpan.SetTag(BuildTags.ProjectFile, e.ProjectFile);
+            projectSpan.SetTag(BuildTags.ProjectSenderName, e.SenderName);
+            projectSpan.SetTag(BuildTags.ProjectTargetNames, e.TargetNames);
+            projectSpan.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
+            projectSpan.SetTag(BuildTags.BuildName, projectName);
+            projectSpan.SetTag(BuildTags.BuildStartMessage, e.Message);
             _projects.TryAdd(context, projectSpan);
         }
 
@@ -148,18 +144,13 @@ namespace Datadog.Trace.Build
             {
                 Log.Information("Project Finished");
 
-                if (e.Succeeded)
+                projectSpan.SetTag(BuildTags.BuildStatus, e.Succeeded ? BuildTags.BuildSucceededStatus : BuildTags.BuildFailedStatus);
+                if (!e.Succeeded)
                 {
-                    projectSpan.SetTag("build.status", "Succeeded");
-                }
-                else
-                {
-                    projectSpan.SetTag("build.status", "Failed");
                     projectSpan.Error = true;
                 }
 
-                projectSpan.SetTag("build.finishMessage", e.Message);
-
+                projectSpan.SetTag(BuildTags.BuildEndMessage, e.Message);
                 projectSpan.Finish(e.Timestamp);
             }
         }
@@ -172,37 +163,37 @@ namespace Datadog.Trace.Build
             if (_projects.TryGetValue(context, out Span projectSpan))
             {
                 projectSpan.Error = true;
-                projectSpan.SetTag(Trace.Tags.ErrorMsg, e.Message);
-                projectSpan.SetTag(Trace.Tags.ErrorType, e.SenderName?.ToUpperInvariant() + " Error");
-                projectSpan.SetTag("error.code", e.Code);
-                projectSpan.SetTag("error.startLocation.line", e.LineNumber.ToString());
-                projectSpan.SetTag("error.startLocation.column", e.ColumnNumber.ToString());
-                projectSpan.SetTag("error.projectFile", e.ProjectFile);
+                projectSpan.SetTag(BuildTags.ErrorMessage, e.Message);
+                projectSpan.SetTag(BuildTags.ErrorType, e.SenderName?.ToUpperInvariant() + " Error");
+                projectSpan.SetTag(BuildTags.ErrorCode, e.Code);
+                projectSpan.SetTag(BuildTags.ErrorStartLine, e.LineNumber.ToString());
+                projectSpan.SetTag(BuildTags.ErrorStartColumn, e.ColumnNumber.ToString());
+                projectSpan.SetTag(BuildTags.ErrorProjectFile, e.ProjectFile);
 
                 if (!string.IsNullOrEmpty(e.File))
                 {
                     var filePath = Path.Combine(Path.GetDirectoryName(e.ProjectFile), e.File);
 
-                    projectSpan.SetTag("error.file", filePath);
+                    projectSpan.SetTag(BuildTags.ErrorFile, filePath);
                     if (e.LineNumber != 0)
                     {
-                        projectSpan.SetTag(Trace.Tags.ErrorStack, $" at Source code in {filePath}:line {e.LineNumber}");
+                        projectSpan.SetTag(BuildTags.ErrorStack, $" at Source code in {filePath}:line {e.LineNumber}");
                     }
                 }
 
                 if (!string.IsNullOrEmpty(e.Subcategory))
                 {
-                    projectSpan.SetTag("error.subCategory", e.Subcategory);
-                }
-
-                if (e.EndColumnNumber != 0)
-                {
-                    projectSpan.SetTag("error.endLocation.column", e.EndColumnNumber.ToString());
+                    projectSpan.SetTag(BuildTags.ErrorSubCategory, e.Subcategory);
                 }
 
                 if (e.EndLineNumber != 0)
                 {
-                    projectSpan.SetTag("error.endLocation.line", e.EndLineNumber.ToString());
+                    projectSpan.SetTag(BuildTags.ErrorEndLine, e.EndLineNumber.ToString());
+                }
+
+                if (e.EndColumnNumber != 0)
+                {
+                    projectSpan.SetTag(BuildTags.ErrorEndColumn, e.EndColumnNumber.ToString());
                 }
             }
         }
@@ -214,38 +205,42 @@ namespace Datadog.Trace.Build
             int context = e.BuildEventContext.ProjectContextId;
             if (_projects.TryGetValue(context, out Span projectSpan))
             {
-                projectSpan.SetTag("warning.msg", e.Message);
-                projectSpan.SetTag("warning.type", e.SenderName?.ToUpperInvariant() + " Warning");
-                projectSpan.SetTag("warning.code", e.Code);
-                projectSpan.SetTag("warning.startLocation.line", e.LineNumber.ToString());
-                projectSpan.SetTag("warning.startLocation.column", e.ColumnNumber.ToString());
-                projectSpan.SetTag("warning.projectFile", e.ProjectFile);
+                Span warningSpan = _tracer.StartSpan("build.warning-event", projectSpan.Context);
+
+                warningSpan.SetTag(BuildTags.WarningMessage, e.Message);
+                warningSpan.SetTag(BuildTags.WarningType, e.SenderName?.ToUpperInvariant() + " Warning");
+                warningSpan.SetTag(BuildTags.WarningCode, e.Code);
+                warningSpan.SetTag(BuildTags.WarningStartLine, e.LineNumber.ToString());
+                warningSpan.SetTag(BuildTags.WarningStartColumn, e.ColumnNumber.ToString());
+                warningSpan.SetTag(BuildTags.WarningProjectFile, e.ProjectFile);
 
                 if (!string.IsNullOrEmpty(e.File))
                 {
                     var filePath = Path.Combine(Path.GetDirectoryName(e.ProjectFile), e.File);
 
-                    projectSpan.SetTag("warning.file", filePath);
+                    warningSpan.SetTag(BuildTags.WarningFile, filePath);
                     if (e.LineNumber != 0)
                     {
-                        projectSpan.SetTag("warning.stack", $" at Source code in {filePath}:line {e.LineNumber}");
+                        warningSpan.SetTag(BuildTags.WarningStack, $" at Source code in {filePath}:line {e.LineNumber}");
                     }
                 }
 
                 if (!string.IsNullOrEmpty(e.Subcategory))
                 {
-                    projectSpan.SetTag("warning.subCategory", e.Subcategory);
-                }
-
-                if (e.EndColumnNumber != 0)
-                {
-                    projectSpan.SetTag("warning.endLocation.column", e.EndColumnNumber.ToString());
+                    warningSpan.SetTag(BuildTags.WarningSubCategory, e.Subcategory);
                 }
 
                 if (e.EndLineNumber != 0)
                 {
-                    projectSpan.SetTag("warning.endLocation.line", e.EndLineNumber.ToString());
+                    warningSpan.SetTag(BuildTags.WarningEndLine, e.EndLineNumber.ToString());
                 }
+
+                if (e.EndColumnNumber != 0)
+                {
+                    warningSpan.SetTag(BuildTags.WarningEndColumn, e.EndColumnNumber.ToString());
+                }
+
+                warningSpan.Finish();
             }
         }
     }
