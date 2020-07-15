@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -268,64 +269,37 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData("ddagent", "5000", "http://ddagent:5000")]
-        [InlineData("", "", "http://localhost:8126")]
-        [InlineData(null, null, "http://localhost:8126")]
-        public void SetHostAndPortEnvironmentVariables(string host, string port, string expectedUri)
-        {
-            string originalHost = Environment.GetEnvironmentVariable("DD_AGENT_HOST");
-            string originalPort = Environment.GetEnvironmentVariable("DD_TRACE_AGENT_PORT");
-
-            Environment.SetEnvironmentVariable("DD_AGENT_HOST", host);
-            Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", port);
-
-            var settings = new TracerSettings(new EnvironmentConfigurationSource());
-            Assert.Equal(new Uri(expectedUri), settings.AgentUri);
-
-            // reset the environment variables to their original values (if any) when done
-            Environment.SetEnvironmentVariable("DD_AGENT_HOST", originalHost);
-            Environment.SetEnvironmentVariable("DD_TRACE_AGENT_PORT", originalPort);
-        }
-
-        [Theory]
         [InlineData(null)]
         [InlineData("test")]
-        public void SetEnvEnvironmentVariable(string env)
+        public void SetEnv(string env)
         {
-            var name = "DD_ENV";
-            string originalEnv = Environment.GetEnvironmentVariable(name);
+            var settings = new TracerSettings()
+            {
+                Environment = env,
+            };
 
-            // Tracer reads settings when created,
-            // so create a new one after setting the env var
-            Environment.SetEnvironmentVariable(name, env);
-            var tracer = new Tracer();
+            var tracer = new Tracer(settings);
             Span span = tracer.StartSpan("operation");
 
             Assert.Equal(env, span.GetTag(Tags.Env));
-
-            // reset the environment variable to its original value (if any) when done
-            Environment.SetEnvironmentVariable(name, originalEnv);
         }
 
         [Theory]
         // if no service name is specified, fallback to a best guess (e.g. assembly name, process name)
-        [InlineData(null, null, null, null)]
+        [InlineData(null, null, null)]
         // if only one is set, use that one
-        [InlineData("envService", null, null, "envService")]
-        [InlineData(null, "tracerService", null, "tracerService")]
-        [InlineData(null, null, "spanService", "spanService")]
-        // if more than one is set, follow precedence: span > tracer > env > default
-        [InlineData(null, "tracerService", "spanService", "spanService")]
-        [InlineData("envService", null, "spanService", "spanService")]
-        [InlineData("envService", "tracerService", null, "tracerService")]
-        [InlineData("envService", "tracerService", "spanService", "spanService")]
-        public void SetServiceName(string envServiceName, string tracerServiceName, string spanServiceName, string expectedServiceName)
+        [InlineData("tracerService", null, "tracerService")]
+        [InlineData(null, "spanService", "spanService")]
+        // if more than one is set, follow precedence: span > tracer  > default
+        [InlineData("tracerService", "spanService", "spanService")]
+        public void SetServiceName(string tracerServiceName, string spanServiceName, string expectedServiceName)
         {
-            var name = "DD_SERVICE_NAME";
-            string originalEnv = Environment.GetEnvironmentVariable(name);
-            Environment.SetEnvironmentVariable(name, envServiceName);
+            var settings = new TracerSettings()
+            {
+                ServiceName = tracerServiceName,
+            };
 
-            var tracer = Tracer.Create(defaultServiceName: tracerServiceName);
+            var tracer = new Tracer(settings);
             Span span = tracer.StartSpan("operationName", serviceName: spanServiceName);
 
             if (expectedServiceName == null)
@@ -336,9 +310,6 @@ namespace Datadog.Trace.Tests
             {
                 Assert.Equal(expectedServiceName, span.ServiceName);
             }
-
-            // reset the environment variable to its original values (if any) when done
-            Environment.SetEnvironmentVariable(name, originalEnv);
         }
 
         [Fact]
