@@ -1,59 +1,40 @@
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Globalization;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
-using Datadog.Trace.ExtensionMethods;
+using System.Net.Http.Headers;
+using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Headers;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
-    // TODO: for now, these tests cover all of this,
-    // but we should probably split them up into actual *unit* tests for:
-    // - HttpHeadersCollection wrapper over HttpHeaders (Get, Set, Add, Remove)
-    // - NameValueHeadersCollection wrapper over NameValueCollection (Get, Set, Add, Remove)
-    // - SpanContextPropagator.Inject()
-    // - SpanContextPropagator.Extract()
-    public class HeadersCollectionTests
+    public class ReflectionHttpHeadersCollectionTests
     {
-        public static IEnumerable<object[]> GetHeaderCollectionImplementations()
-        {
-            yield return new object[] { WebRequest.CreateHttp("http://localhost").Headers.Wrap() };
-            yield return new object[] { new NameValueCollection().Wrap() };
-            yield return new object[] { new DictionaryHeadersCollection() };
-        }
+        public static IEnumerable<object[]> GetInvalidIds() => HeadersCollectionTestHelpers.GetInvalidIds();
 
-        public static IEnumerable<object[]> GetHeadersInvalidIdsCartesianProduct()
-        {
-            return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
-                   from invalidId in HeadersCollectionTestHelpers.GetInvalidIds().SelectMany(i => i)
-                   select new[] { header, invalidId };
-        }
+        public static IEnumerable<object[]> GetInvalidSamplingPriorities() => HeadersCollectionTestHelpers.GetInvalidSamplingPriorities();
 
-        public static IEnumerable<object[]> GetHeadersInvalidSamplingPrioritiesCartesianProduct()
+        [Fact]
+        public void ExtractHeaderTags_EmptyHeadersReturnsEmptyTagsList()
         {
-            return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
-                   from invalidSamplingPriority in HeadersCollectionTestHelpers.GetInvalidSamplingPriorities().SelectMany(i => i)
-                   select new[] { header, invalidSamplingPriority };
-        }
+            // HttpRequestHeaders setup
+            var request = new HttpRequestMessage();
+            var headers = new ReflectionHttpHeadersCollection(request.Headers);
 
-        [Theory]
-        [MemberData(nameof(GetHeaderCollectionImplementations))]
-        internal void ExtractHeaderTags_EmptyHeadersReturnsEmptyTagsList(IHeadersCollection headers)
-        {
             var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, new Dictionary<string, string>());
 
             Assert.NotNull(tagsFromHeader);
             Assert.Empty(tagsFromHeader);
         }
 
-        [Theory]
-        [MemberData(nameof(GetHeaderCollectionImplementations))]
-        internal void ExtractHeaderTags_MatchesCaseInsensitive(IHeadersCollection headers)
+        [Fact]
+        public void ExtractHeaderTags_MatchesCaseInsensitive()
         {
+            // HttpRequestHeaders setup
+            var request = new HttpRequestMessage();
+            var headers = new ReflectionHttpHeadersCollection(request.Headers);
+
             // Initialize constants
             const string customHeader1Name = "dd-custom-header1";
             const string customHeader1Value = "match1";
@@ -64,15 +45,16 @@ namespace Datadog.Trace.Tests
             const string customHeader2TagName = "custom-header2-tag";
             string customHeader2LowercaseHeaderName = customHeader2Name.ToLowerInvariant();
 
-            // Add headers
+            // Initialize WebRequest and add headers
             headers.Add(customHeader1Name, customHeader1Value);
             headers.Add(customHeader2Name, customHeader2Value);
 
-            // Initialize header-tag arguments and expectations
+            // Initialize header tag arguments
             var headerToTagMap = new Dictionary<string, string>();
             headerToTagMap.Add(customHeader1Name, customHeader1TagName);
             headerToTagMap.Add(customHeader2LowercaseHeaderName, customHeader2TagName);
 
+            // Set expectations
             var expectedResults = new Dictionary<string, string>();
             expectedResults.Add(customHeader1TagName, customHeader1Value);
             expectedResults.Add(customHeader2TagName, customHeader2Value);
@@ -85,18 +67,24 @@ namespace Datadog.Trace.Tests
             Assert.Equal(expectedResults, tagsFromHeader);
         }
 
-        [Theory]
-        [MemberData(nameof(GetHeaderCollectionImplementations))]
-        internal void Extract_EmptyHeadersReturnsNull(IHeadersCollection headers)
+        [Fact]
+        public void Extract_EmptyHeadersReturnsNull()
         {
+            // HttpRequestHeaders setup
+            var request = new HttpRequestMessage();
+            var headers = new ReflectionHttpHeadersCollection(request.Headers);
+
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
             Assert.Null(resultContext);
         }
 
-        [Theory]
-        [MemberData(nameof(GetHeaderCollectionImplementations))]
-        internal void InjectExtract_Identity(IHeadersCollection headers)
+        [Fact]
+        public void InjectExtract_Identity()
         {
+            // HttpRequestHeaders setup
+            var request = new HttpRequestMessage();
+            var headers = new ReflectionHttpHeadersCollection(request.Headers);
+
             const int traceId = 9;
             const int spanId = 7;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
@@ -114,9 +102,13 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetHeadersInvalidIdsCartesianProduct))]
-        internal void Extract_InvalidTraceId(IHeadersCollection headers, string traceId)
+        [MemberData(nameof(GetInvalidIds))]
+        public void Extract_InvalidTraceId(string traceId)
         {
+            // HttpRequestHeaders setup
+            var request = new HttpRequestMessage();
+            var headers = new ReflectionHttpHeadersCollection(request.Headers);
+
             const string spanId = "7";
             const string samplingPriority = "2";
             const string origin = "synthetics";
@@ -129,9 +121,13 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetHeadersInvalidIdsCartesianProduct))]
-        internal void Extract_InvalidSpanId(IHeadersCollection headers, string spanId)
+        [MemberData(nameof(GetInvalidIds))]
+        public void Extract_InvalidSpanId(string spanId)
         {
+            // HttpRequestHeaders setup
+            var request = new HttpRequestMessage();
+            var headers = new ReflectionHttpHeadersCollection(request.Headers);
+
             const ulong traceId = 9;
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
             const string origin = "synthetics";
@@ -153,9 +149,13 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetHeadersInvalidSamplingPrioritiesCartesianProduct))]
-        internal void Extract_InvalidSamplingPriority(IHeadersCollection headers, string samplingPriority)
+        [MemberData(nameof(GetInvalidSamplingPriorities))]
+        public void Extract_InvalidSamplingPriority(string samplingPriority)
         {
+            // HttpRequestHeaders setup
+            var request = new HttpRequestMessage();
+            var headers = new ReflectionHttpHeadersCollection(request.Headers);
+
             const ulong traceId = 9;
             const ulong spanId = 7;
             const string origin = "synthetics";

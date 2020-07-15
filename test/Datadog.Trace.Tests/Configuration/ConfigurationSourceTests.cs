@@ -12,6 +12,8 @@ namespace Datadog.Trace.Tests.Configuration
     {
         private static readonly Dictionary<string, string> TagsK1V1K2V2 = new Dictionary<string, string>() { { "k1", "v1" }, { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsK2V2 = new Dictionary<string, string>() { { "k2", "v2" } };
+        private static readonly Dictionary<string, string> HeaderTags = new Dictionary<string, string>() { { "header1", "tag1" } };
+        private static readonly Dictionary<string, string> HeaderTagsSameTag = new Dictionary<string, string>() { { "header1", "tag1" }, { "header2", "tag1" } };
 
         public static IEnumerable<object[]> GetGlobalDefaultTestData()
         {
@@ -77,15 +79,20 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
             yield return new object[] { ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2 };
             yield return new object[] { "DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
+            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", CreateFunc(s => s.GlobalTags.Count), 1 };
 
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false };
+
+            yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,:tagonly,headeronly:,:,nocolon", CreateFunc(s => s.HeaderTags), HeaderTags };
+            yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", CreateFunc(s => s.HeaderTags), HeaderTagsSameTag };
+            yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", CreateFunc(s => s.HeaderTags.Count), 1 };
         }
 
         // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
         public static IEnumerable<object[]> GetJsonTestData()
         {
-            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"":""value1"", ""name2"": ""value2""} }", CreateFunc(s => s.GlobalTags.Count), 2 };
+            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""k1"":""v1"", ""k2"": ""v2""} }", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
         }
 
         public static IEnumerable<object[]> GetBadJsonTestData1()

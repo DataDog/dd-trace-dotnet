@@ -94,7 +94,15 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for a list of tags to be applied globally to spans.
         /// </summary>
+        /// <seealso cref="TracerSettings.GlobalTags"/>
         public const string GlobalTags = "DD_TAGS";
+
+        /// <summary>
+        /// Configuration key for a map of header keys to tag names.
+        /// Automatically apply header values as tags on traces.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HeaderTags"/>
+        public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
 
         /// <summary>
         /// Configuration key for enabling or disabling the automatic injection
