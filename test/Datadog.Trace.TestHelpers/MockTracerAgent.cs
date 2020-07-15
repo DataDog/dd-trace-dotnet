@@ -213,7 +213,7 @@ namespace Datadog.Trace.TestHelpers
                 }
                 catch (ObjectDisposedException)
                 {
-                    // the response has been disposed already.
+                    // the response has been already disposed.
                 }
             }
         }
