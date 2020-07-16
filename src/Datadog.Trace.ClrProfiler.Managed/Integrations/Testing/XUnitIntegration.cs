@@ -20,12 +20,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
         private const string Major2Minor2 = "2.2";
 
         private const string XUnitAssembly = "xunit.execution.dotnet";
+
         private const string XUnitTestInvokerType = "Xunit.Sdk.TestInvoker`1";
         private const string XUnitTestRunnerType = "Xunit.Sdk.TestRunner`1";
         private const string XUnitTestAssemblyRunnerType = "Xunit.Sdk.TestAssemblyRunner`1";
+        private const string XUnitTestOutputHelperType = "Xunit.Sdk.TestOutputHelper";
 
         private const string XUnitRunAsyncMethod = "RunAsync";
         private const string XUnitRunTestCollectionAsyncMethod = "RunTestCollectionAsync";
+        private const string XUnitQueueTestOutputMethod = "QueueTestOutput";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(XUnitIntegration));
         private static readonly FrameworkDescription _runtimeDescription;
@@ -55,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             TargetMinimumVersion = Major2Minor2,
             TargetMaximumVersion = Major2,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<System.Decimal>" })]
-        public static object CallTestMethod(
+        public static object TestInvoker_RunAsync(
             object testInvoker,
             int opCode,
             int mdToken,
@@ -473,6 +476,63 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             }
 
             return scope;
+        }
+
+        /// <summary>
+        /// Wrap the original Xunit.Sdk.TestOutputHelper.QueueTestOutput method by adding the TraceId and SpanId prefix to all outputs.
+        /// </summary>
+        /// <param name="testOutputHelper">The Xunit.Sdk.TestOutputHelper instance</param>
+        /// <param name="output">The string output instance</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>The original method's return value.</returns>
+        [InterceptMethod(
+            TargetAssembly = XUnitAssembly,
+            TargetType = XUnitTestOutputHelperType,
+            TargetMethod = XUnitQueueTestOutputMethod,
+            TargetMinimumVersion = Major2Minor2,
+            TargetMaximumVersion = Major2,
+            TargetSignatureTypes = new[] { ClrNames.Void, ClrNames.String })]
+        public static object TestOutputHelper_QueueTestOutput(
+            object testOutputHelper,
+            object output,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (testOutputHelper == null) { throw new ArgumentNullException(nameof(testOutputHelper)); }
+
+            Type testOutputHelperType = testOutputHelper.GetType();
+            Func<object, object, object> execute;
+
+            try
+            {
+                execute =
+                    MethodBuilder<Func<object, object, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, XUnitQueueTestOutputMethod)
+                       .WithConcreteType(testOutputHelperType)
+                       .WithParameters(output)
+                       .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.String)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: XUnitTestOutputHelperType,
+                    methodName: XUnitQueueTestOutputMethod,
+                    instanceType: testOutputHelperType.AssemblyQualifiedName);
+                throw;
+            }
+
+            output = $"[{CorrelationIdentifier.TraceIdKey}={CorrelationIdentifier.TraceId},{CorrelationIdentifier.SpanIdKey}={CorrelationIdentifier.SpanId}]{output}";
+            Log.Warning("Output: " + output);
+            Log.Warning("Execute: " + execute);
+            return execute(testOutputHelper, output);
         }
     }
 }

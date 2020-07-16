@@ -2207,7 +2207,7 @@
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.18.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
-          "method": "CallTestMethod",
+          "method": "TestInvoker_RunAsync",
           "signature": "00 04 1C 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
@@ -2261,6 +2261,31 @@
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
           "method": "AssemblyRunner_RunAsync",
           "signature": "00 08 1C 1C 1C 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "xunit.execution.dotnet",
+          "type": "Xunit.Sdk.TestOutputHelper",
+          "method": "QueueTestOutput",
+          "signature_types": [
+            "System.Void",
+            "System.String"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 2,
+          "minimum_patch": 0,
+          "maximum_major": 2,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.18.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
+          "method": "TestOutputHelper_QueueTestOutput",
+          "signature": "00 05 1C 1C 1C 08 08 0A",
           "action": "ReplaceTargetMethod"
         }
       }
