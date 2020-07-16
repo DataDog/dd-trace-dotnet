@@ -37,11 +37,7 @@ namespace Datadog.Trace.Agent
             _request.ContentType = "application/msgpack";
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-#if MESSAGEPACK_1_9
                 await MessagePackSerializer.SerializeAsync(requestStream, traces, formatterResolver).ConfigureAwait(false);
-#elif MESSAGEPACK_2_1
-                await MessagePackSerializer.SerializeAsync(requestStream, traces, formatterResolver.Options).ConfigureAwait(false);
-#endif
             }
 
             var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);

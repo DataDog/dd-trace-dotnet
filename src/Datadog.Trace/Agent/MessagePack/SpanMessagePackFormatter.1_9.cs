@@ -1,4 +1,3 @@
-#if MESSAGEPACK_1_9
 using System;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.MessagePack;
@@ -107,4 +106,3 @@ namespace Datadog.Trace.Agent.MessagePack
         }
     }
 }
-#endif
