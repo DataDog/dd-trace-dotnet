@@ -188,9 +188,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
 #if !ENABLE_IL2CPP && !UNITY_WSA && !NET_STANDARD_2_0
 
-            DynamicEnumResolver.Instance, // Try Enum
             DynamicGenericResolver.Instance, // Try Array, Tuple, Collection
-            DynamicUnionResolver.Instance, // Try Union(Interface)
 #endif
         };
     }
