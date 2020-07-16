@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Data.Common;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 using MySql.Data.MySqlClient;
@@ -12,47 +13,45 @@ namespace Samples.MySql
     {
         private static async Task Main()
         {
+            var cts = new CancellationTokenSource();
+            var commandFactory = new DbCommandFactory();
+
             using (var root = Tracer.Instance.StartActive("root"))
             {
-                /* TODO: enable this after adding a MySql-specific integration
+                // TODO: enable this after adding a MySql-specific integration
                 using (var connection = CreateConnection())
                 {
-                    var testQueries = new RelationalDatabaseTestHarness<MySqlConnection, MySqlCommand, MySqlDataReader>(
-                        connection,
+                    // using DbDataReader here (instead of MySqlDataReader)
+                    // let's us run the ExecuteReaderAsync() overloads
+                    var commandExecutor = new DbCommandExecutor<MySqlCommand, DbDataReader>(
                         command => command.ExecuteNonQuery(),
                         command => command.ExecuteScalar(),
                         command => command.ExecuteReader(),
                         (command, behavior) => command.ExecuteReader(behavior),
                         command => command.ExecuteNonQueryAsync(),
+                        (command, ct) => command.ExecuteNonQueryAsync(ct),
                         command => command.ExecuteScalarAsync(),
-                        executeReaderAsync: null,
-                        executeReaderWithBehaviorAsync: null
-                    );
+                        (command, ct) => command.ExecuteScalarAsync(ct),
+                        command => command.ExecuteReaderAsync(),
+                        (command, behavior) => command.ExecuteReaderAsync(behavior),
+                        (command, ct) => command.ExecuteReaderAsync(ct),
+                        (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
+
+                    var testQueries = new RelationalDatabaseTestHarness<MySqlConnection, MySqlCommand, DbDataReader>(commandFactory, commandExecutor);
 
 
-                    await testQueries.RunAsync("MySqlCommand");
+                    await testQueries.RunAsync(connection, "MySqlCommand", cts.Token);
                 }
 
                 await Task.Delay(100);
-                */
 
 #if !NET452
                 // use DbCommandWrapper to reference DbCommand in netstandard.dll
                 using (var connection = CreateConnection())
                 {
-                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
-                        connection,
-                        command => new DbCommandWrapper(command).ExecuteNonQuery(),
-                        command => new DbCommandWrapper(command).ExecuteScalar(),
-                        command => new DbCommandWrapper(command).ExecuteReader(),
-                        (command, behavior) => new DbCommandWrapper(command).ExecuteReader(behavior),
-                        command => new DbCommandWrapper(command).ExecuteNonQueryAsync(),
-                        command => new DbCommandWrapper(command).ExecuteScalarAsync(),
-                        command => new DbCommandWrapper(command).ExecuteReaderAsync(),
-                        (command, behavior) => new DbCommandWrapper(command).ExecuteReaderAsync(behavior)
-                    );
-
-                    await testQueries.RunAsync("DbCommandWrapper");
+                    var commandExecutor = DbCommandExecutor.GetDbWrapperExecutor();
+                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(commandFactory, commandExecutor);
+                    await testQueries.RunAsync(connection, "DbCommandWrapper", cts.Token);
                 }
 
                 await Task.Delay(100);
@@ -60,38 +59,18 @@ namespace Samples.MySql
 
                 using (var connection = CreateConnection())
                 {
-                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(
-                        connection,
-                        command => command.ExecuteNonQuery(),
-                        command => command.ExecuteScalar(),
-                        command => command.ExecuteReader(),
-                        (command, behavior) => command.ExecuteReader(behavior),
-                        command => command.ExecuteNonQueryAsync(),
-                        command => command.ExecuteScalarAsync(),
-                        command => command.ExecuteReaderAsync(),
-                        (command, behavior) => command.ExecuteReaderAsync(behavior)
-                    );
-
-                    await testQueries.RunAsync("DbCommand");
+                    var commandExecutor = DbCommandExecutor.GetDbCommandExecutor();
+                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(commandFactory, commandExecutor);
+                    await testQueries.RunAsync(connection, "DbCommand", cts.Token);
                 }
 
                 await Task.Delay(100);
 
                 using (var connection = CreateConnection())
                 {
-                    var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(
-                        connection,
-                        command => command.ExecuteNonQuery(),
-                        command => command.ExecuteScalar(),
-                        command => command.ExecuteReader(),
-                        (command, behavior) => command.ExecuteReader(behavior),
-                        executeNonQueryAsync: null,
-                        executeScalarAsync: null,
-                        executeReaderAsync: null,
-                        executeReaderWithBehaviorAsync: null
-                    );
-
-                    await testQueries.RunAsync("IDbCommand");
+                    var commandExecutor = DbCommandExecutor.GetIDbCommandExecutor();
+                    var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(commandFactory, commandExecutor);
+                    await testQueries.RunAsync(connection, "IDbCommand", cts.Token);
                 }
             }
         }
