@@ -331,7 +331,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error while setting status code");
+                Log.Error(ex, "Error while setting span tag with status code");
             }
         }
     }
