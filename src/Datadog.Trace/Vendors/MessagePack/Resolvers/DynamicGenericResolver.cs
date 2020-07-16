@@ -135,6 +135,9 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
 #if NETSTANDARD || NETFRAMEWORK
 
+                // ValueTask
+                // Deleted, unneeded for Datadog.Trace
+
                 // Tuple
                 else if (ti.FullName.StartsWith("System.Tuple"))
                 {
@@ -173,41 +176,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
                 }
 
                 // ValueTuple
-                else if (ti.FullName.StartsWith("System.ValueTuple"))
-                {
-                    Type tupleFormatterType = null;
-                    switch (ti.GenericTypeArguments.Length)
-                    {
-                        case 1:
-                            tupleFormatterType = typeof(ValueTupleFormatter<>);
-                            break;
-                        case 2:
-                            tupleFormatterType = typeof(ValueTupleFormatter<,>);
-                            break;
-                        case 3:
-                            tupleFormatterType = typeof(ValueTupleFormatter<,,>);
-                            break;
-                        case 4:
-                            tupleFormatterType = typeof(ValueTupleFormatter<,,,>);
-                            break;
-                        case 5:
-                            tupleFormatterType = typeof(ValueTupleFormatter<,,,,>);
-                            break;
-                        case 6:
-                            tupleFormatterType = typeof(ValueTupleFormatter<,,,,,>);
-                            break;
-                        case 7:
-                            tupleFormatterType = typeof(ValueTupleFormatter<,,,,,,>);
-                            break;
-                        case 8:
-                            tupleFormatterType = typeof(ValueTupleFormatter<,,,,,,,>);
-                            break;
-                        default:
-                            break;
-                    }
-
-                    return CreateInstance(tupleFormatterType, ti.GenericTypeArguments);
-                }
+                // Deleted, unneeded for Datadog.Trace
 
 #endif
 
