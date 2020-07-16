@@ -154,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                // call the original method, inspecting (but not catching) any unhandled exceptions
+                // call the original method, inspecting (and rethrowing) any unhandled exceptions
                 var task = (Task<T>)instrumentedMethod(apiController, controllerContext, cancellationToken);
                 var responseMessage = await task;
 
