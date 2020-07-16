@@ -135,16 +135,6 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
 #if NETSTANDARD || NETFRAMEWORK
 
-                // ValueTask
-                else if (genericType == typeof(ValueTask<>))
-                {
-                    return CreateInstance(typeof(ValueTaskFormatter<>), ti.GenericTypeArguments);
-                }
-                else if (isNullable && nullableElementType.IsConstructedGenericType && nullableElementType.GetGenericTypeDefinition() == typeof(ValueTask<>))
-                {
-                    return CreateInstance(typeof(NullableFormatter<>), new[] { nullableElementType });
-                }
-
                 // Tuple
                 else if (ti.FullName.StartsWith("System.Tuple"))
                 {
