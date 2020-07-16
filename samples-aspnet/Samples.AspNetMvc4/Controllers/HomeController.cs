@@ -38,6 +38,13 @@ namespace Samples.AspNetMvc4.Controllers
             return View();
         }
 
+        public ActionResult StatusCode(int value)
+        {
+            Response.StatusCode = value;
+            ViewBag.Message = "Status code set to " + value;
+            return View("About");
+        }
+
         public ActionResult BadRequest()
         {
             throw new Exception("Oops, it broke.");

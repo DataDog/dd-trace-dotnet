@@ -329,39 +329,39 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
             catch (Exception ex)
             {
-                scope?.Span.SetException(ex);
+                if (scope != null)
+                {
+                    scope.Span.SetException(ex);
 
-                if (httpContext != null)
-                {
-                    httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h));
-                }
-                else
-                {
-                    scope?.Dispose();
+                    if (httpContext != null)
+                    {
+                        // We don't know how long it'll take for ASP.NET to invoke the callback,
+                        // so we store the real finish time
+                        var now = scope.Span.Context.TraceContext.UtcNow;
+                        httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
+                    }
+                    else
+                    {
+                        scope.Dispose();
+                    }
                 }
 
                 throw;
             }
         }
 
-        private static void OnRequestCompleted(HttpContext httpContext)
+        private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
-            var scope = (Scope)httpContext.Items[HttpContextKey];
-
             SetStatusCode(scope, httpContext.Response.StatusCode);
-            scope?.Dispose();
+            scope.Span.Finish(finishTime);
+            scope.Dispose();
         }
 
-        private static void SetStatusCode(Scope scope, int? statusCode)
+        private static void SetStatusCode(Scope scope, int statusCode)
         {
-            if (statusCode == null)
-            {
-                return;
-            }
-
             try
             {
-                scope?.Span?.SetTag(Tags.HttpStatusCode, statusCode.Value.ToString());
+                scope?.Span?.SetTag(Tags.HttpStatusCode, statusCode.ToString());
             }
             catch (Exception ex)
             {

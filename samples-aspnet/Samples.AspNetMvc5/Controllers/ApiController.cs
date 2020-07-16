@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -28,6 +29,13 @@ namespace Samples.AspNetMvc5.Controllers
         public IHttpActionResult Environment()
         {
             return Json(System.Environment.GetEnvironmentVariables());
+        }
+
+        [HttpGet]
+        [Route("api/statuscode/{value}")]
+        public IHttpActionResult StatusCode(int value)
+        {
+            return this.Content((HttpStatusCode)value, "Status code set to " + value);
         }
 
         [HttpGet]

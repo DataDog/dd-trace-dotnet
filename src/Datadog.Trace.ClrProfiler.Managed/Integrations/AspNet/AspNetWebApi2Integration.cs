@@ -22,7 +22,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string OperationName = "aspnet-webapi.request";
         private const string Major5Minor1 = "5.1";
         private const string Major5 = "5";
-        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration";
 
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
         private const string HttpControllerTypeName = "System.Web.Http.Controllers.IHttpController";
@@ -185,8 +184,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     if (httpContext != null)
                     {
-                        httpContext.Items[HttpContextKey] = scope;
-                        httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h));
+                        // We don't know how long it'll take for ASP.NET to invoke the callback,
+                        // so we store the real finish time
+                        var now = scope.Span.Context.TraceContext.UtcNow;
+                        httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
                     }
                     else
                     {
@@ -315,27 +316,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
         }
 
-        private static void OnRequestCompleted(System.Web.HttpContext httpContext)
+        private static void OnRequestCompleted(System.Web.HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
-            var scope = (Scope)httpContext.Items[HttpContextKey];
-
-            if (scope != null && !scope.Span.IsFinished)
-            {
-                SetStatusCode(scope, httpContext.Response.StatusCode);
-                scope.Dispose();
-            }
+            SetStatusCode(scope, httpContext.Response.StatusCode);
+            scope.Span.Finish(finishTime);
+            scope.Dispose();
         }
 
-        private static void SetStatusCode(Scope scope, int? statusCode)
+        private static void SetStatusCode(Scope scope, int statusCode)
         {
-            if (statusCode == null)
-            {
-                return;
-            }
-
             try
             {
-                scope.Span.SetTag(Tags.HttpStatusCode, statusCode.Value.ToString());
+                scope.Span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
             }
             catch (Exception ex)
             {
