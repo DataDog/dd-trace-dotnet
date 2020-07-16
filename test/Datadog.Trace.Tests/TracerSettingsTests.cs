@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -77,30 +78,24 @@ namespace Datadog.Trace.Tests
         [InlineData("0", false)]
         public void TraceEnabled(string value, bool areTracesEnabled)
         {
-            var originalValue = Environment.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled);
-
-            try
+            var settings = new NameValueCollection
             {
-                Environment.SetEnvironmentVariable(ConfigurationKeys.TraceEnabled, value);
+                { ConfigurationKeys.TraceEnabled, value }
+            };
 
-                var settings = new TracerSettings(new EnvironmentConfigurationSource());
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-                Assert.Equal(areTracesEnabled, settings.TraceEnabled);
+            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
 
-                _writerMock.ResetCalls();
+            _writerMock.ResetCalls();
 
-                var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
-                var span = tracer.StartSpan("TestTracerDisabled");
-                span.Dispose();
+            var tracer = new Tracer(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var span = tracer.StartSpan("TestTracerDisabled");
+            span.Dispose();
 
-                var assertion = areTracesEnabled ? Times.Once() : Times.Never();
+            var assertion = areTracesEnabled ? Times.Once() : Times.Never();
 
-                _writerMock.Verify(w => w.WriteTrace(It.IsAny<Span[]>()), assertion);
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable(ConfigurationKeys.TraceEnabled, originalValue);
-            }
+            _writerMock.Verify(w => w.WriteTrace(It.IsAny<Span[]>()), assertion);
         }
     }
 }
