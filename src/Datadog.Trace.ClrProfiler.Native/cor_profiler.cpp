@@ -728,6 +728,11 @@ HRESULT CorProfiler::ProcessReplacementCalls(
     return hr;
   }
 
+  std::string originalILCodes = "";
+  if (debug_logging_enabled) {
+    originalILCodes = GetILCodes("/*** OLD IL OPCODES: ", &rewriter, caller);
+  }
+
   // Perform method call replacements
   for (auto& method_replacement : method_replacements) {
     // Exit early if the method replacement isn't actually doing a replacement
@@ -1074,7 +1079,16 @@ HRESULT CorProfiler::ProcessReplacementCalls(
   }
 
   if (modified) {
+
+    if (debug_logging_enabled) {
+      Debug(originalILCodes);
+    }
+
     hr = rewriter.Export();
+
+    if (debug_logging_enabled) {
+      Debug(GetILCodes("/*** NEW IL OPCODES: ", &rewriter, caller));
+    }
 
     if (FAILED(hr)) {
       Warn("ProcessReplacementCalls: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ", function_token);
@@ -1083,6 +1097,26 @@ HRESULT CorProfiler::ProcessReplacementCalls(
   }
 
   return S_OK;
+}
+
+std::string CorProfiler::GetILCodes(std::string title, ILRewriter* rewriter,
+                                    const FunctionInfo& caller) {
+  std::stringstream orig_sstream;
+  orig_sstream << title;
+  orig_sstream << ToString(caller.type.name);
+  orig_sstream << ".";
+  orig_sstream << ToString(caller.name.c_str());
+  orig_sstream << " : ";
+  for (ILInstr* cInstr = rewriter->GetILList()->m_pNext;
+       cInstr != rewriter->GetILList(); cInstr = cInstr->m_pNext) {
+    orig_sstream << "0x";
+    orig_sstream << std::setw(2) << std::setfill('0') << std::hex
+                 << cInstr->m_opcode;
+    orig_sstream << "-";
+    orig_sstream << cInstr->m_Arg64;
+    orig_sstream << " ";
+  }
+  return orig_sstream.str();
 }
 
 HRESULT CorProfiler::ProcessInsertionCalls(

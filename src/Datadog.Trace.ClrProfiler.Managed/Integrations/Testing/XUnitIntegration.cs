@@ -501,6 +501,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             int mdToken,
             long moduleVersionPtr)
         {
+            Log.Warning("TestOutputHelper_QueueTestOutput");
             if (testOutputHelper == null) { throw new ArgumentNullException(nameof(testOutputHelper)); }
 
             Type testOutputHelperType = testOutputHelper.GetType();
