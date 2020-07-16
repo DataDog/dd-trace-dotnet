@@ -9,7 +9,6 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
-using MessagePack;
 using Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent

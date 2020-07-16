@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.MessagePack;
-using MessagePack;
+using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Agent
 {

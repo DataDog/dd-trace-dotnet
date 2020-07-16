@@ -1,8 +1,8 @@
 #if MESSAGEPACK_1_9
 using System;
 using Datadog.Trace.ExtensionMethods;
-using MessagePack;
-using MessagePack.Formatters;
+using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Vendors.MessagePack.Formatters;
 
 namespace Datadog.Trace.Agent.MessagePack
 {

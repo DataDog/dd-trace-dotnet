@@ -1,5 +1,5 @@
-using MessagePack;
-using MessagePack.Formatters;
+using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Vendors.MessagePack.Formatters;
 
 namespace Datadog.Trace.Agent.MessagePack
 {
