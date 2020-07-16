@@ -179,12 +179,7 @@ namespace Datadog.Trace.Vendors.MessagePack
                 // Larger than 32-bits (or otherwise require special handling):
                 typeof(T) == typeof(long) ? (IEqualityComparer<T>)Int64EqualityComparer.Instance :
                 typeof(T) == typeof(ulong) ? (IEqualityComparer<T>)UInt64EqualityComparer.Instance :
-                typeof(T) == typeof(float) ? (IEqualityComparer<T>)SingleEqualityComparer.Instance :
-                typeof(T) == typeof(double) ? (IEqualityComparer<T>)DoubleEqualityComparer.Instance :
                 typeof(T) == typeof(string) ? (IEqualityComparer<T>)StringEqualityComparer.Instance :
-                typeof(T) == typeof(Guid) ? (IEqualityComparer<T>)GuidEqualityComparer.Instance :
-                typeof(T) == typeof(DateTime) ? (IEqualityComparer<T>)DateTimeEqualityComparer.Instance :
-                typeof(T) == typeof(DateTimeOffset) ? (IEqualityComparer<T>)DateTimeOffsetEqualityComparer.Instance :
                 typeof(T) == typeof(object) ? (IEqualityComparer<T>)this.objectFallbackEqualityComparer :
 
                 // Any type we don't explicitly whitelist here shouldn't be allowed to use as the key in a hash-based collection since it isn't known to be hash resistant.
@@ -345,69 +340,6 @@ namespace Datadog.Trace.Vendors.MessagePack
             public override int GetHashCode(long value) => HashCode.Combine((int)(value >> 32), unchecked((int)value));
         }
 
-        private class SingleEqualityComparer : CollisionResistantHasher<float>
-        {
-            internal static new readonly SingleEqualityComparer Instance = new SingleEqualityComparer();
-
-            public override unsafe int GetHashCode(float value)
-            {
-                // Special check for 0.0 so that the hash of 0.0 and -0.0 will equal.
-                if (value == 0.0f)
-                {
-                    return HashCode.Combine(0);
-                }
-
-                // Standardize on the binary representation of NaN prior to hashing.
-                if (float.IsNaN(value))
-                {
-                    value = float.NaN;
-                }
-
-                long l = *(long*)&value;
-                return HashCode.Combine((int)(l >> 32), unchecked((int)l));
-            }
-        }
-
-        private class DoubleEqualityComparer : CollisionResistantHasher<double>
-        {
-            internal static new readonly DoubleEqualityComparer Instance = new DoubleEqualityComparer();
-
-            public override unsafe int GetHashCode(double value)
-            {
-                // Special check for 0.0 so that the hash of 0.0 and -0.0 will equal.
-                if (value == 0.0)
-                {
-                    return HashCode.Combine(0);
-                }
-
-                // Standardize on the binary representation of NaN prior to hashing.
-                if (double.IsNaN(value))
-                {
-                    value = double.NaN;
-                }
-
-                long l = *(long*)&value;
-                return HashCode.Combine((int)(l >> 32), unchecked((int)l));
-            }
-        }
-
-        private class GuidEqualityComparer : CollisionResistantHasher<Guid>
-        {
-            internal static new readonly GuidEqualityComparer Instance = new GuidEqualityComparer();
-
-            public override unsafe int GetHashCode(Guid value)
-            {
-                var hash = default(HashCode);
-                int* pGuid = (int*)&value;
-                for (int i = 0; i < sizeof(Guid) / sizeof(int); i++)
-                {
-                    hash.Add(pGuid[i]);
-                }
-
-                return hash.ToHashCode();
-            }
-        }
-
         private class StringEqualityComparer : CollisionResistantHasher<string>
         {
             internal static new readonly StringEqualityComparer Instance = new StringEqualityComparer();
@@ -427,20 +359,6 @@ namespace Datadog.Trace.Vendors.MessagePack
                 return hash.ToHashCode();
 #endif
             }
-        }
-
-        private class DateTimeEqualityComparer : CollisionResistantHasher<DateTime>
-        {
-            internal static new readonly DateTimeEqualityComparer Instance = new DateTimeEqualityComparer();
-
-            public override unsafe int GetHashCode(DateTime value) => HashCode.Combine((int)(value.Ticks >> 32), unchecked((int)value.Ticks), value.Kind);
-        }
-
-        private class DateTimeOffsetEqualityComparer : CollisionResistantHasher<DateTimeOffset>
-        {
-            internal static new readonly DateTimeOffsetEqualityComparer Instance = new DateTimeOffsetEqualityComparer();
-
-            public override unsafe int GetHashCode(DateTimeOffset value) => HashCode.Combine((int)(value.UtcTicks >> 32), unchecked((int)value.UtcTicks));
         }
     }
 }

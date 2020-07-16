@@ -128,21 +128,6 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 #endif
         static ulong ByteArrayGetHashCode(byte[] x, int offset, int count)
         {
-#if NETSTANDARD || NETFRAMEWORK
-            // FarmHash https://github.com/google/farmhash
-            if (x == null) return 0;
-
-            if (Is32Bit)
-            {
-                return (ulong)FarmHash.Hash32(x, offset, count);
-            }
-            else
-            {
-                return FarmHash.Hash64(x, offset, count);
-            }
-
-#else
-
             // FNV1-1a 32bit https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
             uint hash = 0;
             if (x != null)
@@ -157,8 +142,6 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             }
 
             return (ulong)hash;
-
-#endif
         }
 
         static int CalculateCapacity(int collectionSize, float loadFactor)
