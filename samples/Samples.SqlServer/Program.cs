@@ -1,6 +1,4 @@
 using System;
-using System.Data;
-using System.Data.Common;
 using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,58 +14,29 @@ namespace Samples.SqlServer
             var cts = new CancellationTokenSource();
             var commandFactory = new DbCommandFactory();
 
+            using (var connection = CreateConnection())
             using (var root = Tracer.Instance.StartActive("root"))
             {
-                using (var connection = CreateConnection())
-                {
-                    var commandExecutor = new DbCommandExecutor<SqlCommand, SqlDataReader>(
-                        command => command.ExecuteNonQuery(),
-                        command => command.ExecuteScalar(),
-                        command => command.ExecuteReader(),
-                        (command, behavior) => command.ExecuteReader(behavior),
-                        command => command.ExecuteNonQueryAsync(),
-                        (command, ct) => command.ExecuteNonQueryAsync(ct),
-                        command => command.ExecuteScalarAsync(),
-                        (command, ct) => command.ExecuteScalarAsync(ct),
-                        command => command.ExecuteReaderAsync(),
-                        (command, behavior) => command.ExecuteReaderAsync(behavior),
-                        (command, ct) => command.ExecuteReaderAsync(ct),
-                        (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
+                var commandExecutor = new DbCommandExecutor<SqlCommand, SqlDataReader>(
+                    command => command.ExecuteNonQuery(),
+                    command => command.ExecuteScalar(),
+                    command => command.ExecuteReader(),
+                    (command, behavior) => command.ExecuteReader(behavior),
+                    command => command.ExecuteNonQueryAsync(),
+                    (command, ct) => command.ExecuteNonQueryAsync(ct),
+                    command => command.ExecuteScalarAsync(),
+                    (command, ct) => command.ExecuteScalarAsync(ct),
+                    command => command.ExecuteReaderAsync(),
+                    (command, behavior) => command.ExecuteReaderAsync(behavior),
+                    (command, ct) => command.ExecuteReaderAsync(ct),
+                    (command, behavior, ct) => command.ExecuteReaderAsync(behavior, ct));
 
-                    var testQueries = new RelationalDatabaseTestHarness<SqlConnection, SqlCommand, SqlDataReader>(commandFactory, commandExecutor);
-                    await testQueries.RunAsync(connection, "SqlCommand", cts.Token);
-                }
-
+                await RelationalDatabaseTestHarness.RunAllAsync(connection, commandFactory, commandExecutor, cts.Token);
                 await Task.Delay(100);
-
-#if !NET452
-                // use DbCommandWrapper to reference DbCommand in netstandard.dll
-                using (var connection = CreateConnection())
-                {
-                    var commandExecutor = DbCommandExecutor.GetDbWrapperExecutor();
-                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(commandFactory, commandExecutor);
-                    await testQueries.RunAsync(connection, "DbCommandWrapper", cts.Token);
-                }
-
-                await Task.Delay(100);
-#endif
-
-                using (var connection = CreateConnection())
-                {
-                    var commandExecutor = DbCommandExecutor.GetDbCommandExecutor();
-                    var testQueries = new RelationalDatabaseTestHarness<DbConnection, DbCommand, DbDataReader>(commandFactory, commandExecutor);
-                    await testQueries.RunAsync(connection, "DbCommand", cts.Token);
-                }
-
-                await Task.Delay(100);
-
-                using (var connection = CreateConnection())
-                {
-                    var commandExecutor = DbCommandExecutor.GetIDbCommandExecutor();
-                    var testQueries = new RelationalDatabaseTestHarness<IDbConnection, IDbCommand, IDataReader>(commandFactory, commandExecutor);
-                    await testQueries.RunAsync(connection, "IDbCommand", cts.Token);
-                }
             }
+
+            // allow time to flush
+            await Task.Delay(2000);
         }
 
         private static SqlConnection CreateConnection()
