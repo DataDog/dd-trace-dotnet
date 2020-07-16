@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Helpers;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations
@@ -19,11 +18,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string SystemNetHttp = "System.Net.Http";
         private const string Major4 = "4";
 
-        private const string HttpMessageHandler = "System.Net.Http.HttpMessageHandler";
-        private const string HttpClientHandler = "System.Net.Http.HttpClientHandler";
+        private const string HttpMessageHandlerTypeName = "HttpMessageHandler";
+        private const string HttpClientHandlerTypeName = "HttpClientHandler";
+
+        private const string HttpMessageHandler = SystemNetHttp + "." + HttpMessageHandlerTypeName;
+        private const string HttpClientHandler = SystemNetHttp + "." + HttpClientHandlerTypeName;
         private const string SendAsync = "SendAsync";
 
         private static readonly Vendors.Serilog.ILogger Log = DatadogLogging.GetLogger(typeof(HttpMessageHandlerIntegration));
+        private static readonly string[] NamespaceAndNameFilters = { ClrNames.GenericTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken };
+
+        private static Type _httpMessageHandlerResultType;
+        private static Type _httpClientHandlerResultType;
 
         /// <summary>
         /// Instrumentation wrapper for HttpMessageHandler.SendAsync/>.
@@ -59,20 +65,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // Task<HttpResponseMessage> HttpMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             var cancellationToken = (CancellationToken)boxedCancellationToken;
             var callOpCode = (OpCodeValue)opCode;
-            var httpMessageHandler = handler.GetInstrumentedType(HttpMessageHandler);
-            Type taskResultType;
+            var httpMessageHandler = handler.GetInstrumentedType(SystemNetHttp, HttpMessageHandlerTypeName);
+            Type taskResultType = _httpMessageHandlerResultType;
 
-            try
+            if (taskResultType == null || taskResultType.Assembly != httpMessageHandler.Assembly)
             {
-                var currentHttpAssembly = httpMessageHandler.Assembly;
-                taskResultType = currentHttpAssembly.GetType("System.Net.Http.HttpResponseMessage", true);
-            }
-            catch (Exception ex)
-            {
-                // This shouldn't happen because the System.Net.Http assembly should have been loaded if this method was called
-                // profiled app will not continue working as expected without this method
-                Log.Error(ex, "Error finding types in the user System.Net.Http assembly.");
-                throw;
+                try
+                {
+                    var currentHttpAssembly = httpMessageHandler.Assembly;
+                    taskResultType = currentHttpAssembly.GetType("System.Net.Http.HttpResponseMessage", true);
+                    _httpMessageHandlerResultType = taskResultType;
+                }
+                catch (Exception ex)
+                {
+                    // This shouldn't happen because the System.Net.Http assembly should have been loaded if this method was called
+                    // profiled app will not continue working as expected without this method
+                    Log.Error(ex, "Error finding types in the user System.Net.Http assembly.");
+                    throw;
+                }
             }
 
             Func<object, object, CancellationToken, object> instrumentedMethod = null;
@@ -84,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpMessageHandler)
                        .WithParameters(request, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(NamespaceAndNameFilters)
                        .Build();
             }
             catch (Exception ex)
@@ -109,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 callOpCode == OpCodeValue.Call ? httpMessageHandler : handler.GetType(),
                 handler,
                 request,
-                cancellationToken);
+                boxedCancellationToken);
         }
 
         /// <summary>
@@ -146,21 +156,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // Task<HttpResponseMessage> HttpClientHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             var cancellationToken = (CancellationToken)boxedCancellationToken;
             var callOpCode = (OpCodeValue)opCode;
-            var httpClientHandler = handler.GetInstrumentedType(HttpClientHandler);
+            var httpClientHandler = handler.GetInstrumentedType(SystemNetHttp, HttpClientHandlerTypeName);
 
-            Type taskResultType;
+            Type taskResultType = _httpClientHandlerResultType;
 
-            try
+            if (taskResultType == null || taskResultType.Assembly != httpClientHandler.Assembly)
             {
-                var currentHttpAssembly = httpClientHandler.Assembly;
-                taskResultType = currentHttpAssembly.GetType("System.Net.Http.HttpResponseMessage", true);
-            }
-            catch (Exception ex)
-            {
-                // This shouldn't happen because the System.Net.Http assembly should have been loaded if this method was called
-                // profiled app will not continue working as expected without this method
-                Log.Error(ex, "Error finding types in the user System.Net.Http assembly.");
-                throw;
+                try
+                {
+                    var currentHttpAssembly = httpClientHandler.Assembly;
+                    taskResultType = currentHttpAssembly.GetType("System.Net.Http.HttpResponseMessage", true);
+                    _httpClientHandlerResultType = taskResultType;
+                }
+                catch (Exception ex)
+                {
+                    // This shouldn't happen because the System.Net.Http assembly should have been loaded if this method was called
+                    // profiled app will not continue working as expected without this method
+                    Log.Error(ex, "Error finding types in the user System.Net.Http assembly.");
+                    throw;
+                }
             }
 
             Func<object, object, CancellationToken, object> instrumentedMethod = null;
@@ -172,7 +186,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                        .Start(moduleVersionPtr, mdToken, opCode, SendAsync)
                        .WithConcreteType(httpClientHandler)
                        .WithParameters(request, cancellationToken)
-                       .WithNamespaceAndNameFilters(ClrNames.GenericTask, ClrNames.HttpRequestMessage, ClrNames.CancellationToken)
+                       .WithNamespaceAndNameFilters(NamespaceAndNameFilters)
                        .Build();
             }
             catch (Exception ex)
@@ -197,10 +211,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 callOpCode == OpCodeValue.Call ? httpClientHandler : handler.GetType(),
                 handler,
                 request,
-                cancellationToken);
+                boxedCancellationToken);
         }
 
-        private static async Task<T> SendAsyncInternal<T>(
+        private static Task<T> SendAsyncInternal<T>(
             Func<object, object, CancellationToken, object> sendAsync,
             Type reportedType,
             object handler,
@@ -212,10 +226,20 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 !IsTracingEnabled(headers))
             {
                 // skip instrumentation
-                var task = (Task<T>)sendAsync(handler, request, cancellationToken);
-                return await task.ConfigureAwait(false);
+                return (Task<T>)sendAsync(handler, request, cancellationToken);
             }
 
+            return SendAsyncInternalScoped<T>(sendAsync, headers, reportedType, handler, request, cancellationToken);
+        }
+
+        private static async Task<T> SendAsyncInternalScoped<T>(
+            Func<object, object, CancellationToken, object> sendAsync,
+            object headers,
+            Type reportedType,
+            object handler,
+            object request,
+            CancellationToken cancellationToken)
+        {
             var httpMethod = request.GetProperty("Method").GetProperty<string>("Method").GetValueOrDefault();
             var requestUri = request.GetProperty<Uri>("RequestUri").GetValueOrDefault();
 
